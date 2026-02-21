@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "949772901427",
-    "project_id": "dllni-user-app",
-    "storage_bucket": "dllni-user-app.firebasestorage.app"
+    "project_number": "212739916006",
+    "project_id": "dllni-96b5a",
+    "storage_bucket": "dllni-96b5a.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:949772901427:android:ab4e07c21d1105ce465746",
+        "mobilesdk_app_id": "1:212739916006:android:6e5240151937eb6321fb27",
         "android_client_info": {
           "package_name": "com.dllni.userapp"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAz8SaAcYbE7_s-61OgExB8B9JpPtfk-7M"
+          "current_key": "AIzaSyAqKgNz1HcrWEXDt5YCk9F-4dK2wLTi_VU"
         }
       ],
       "services": {
