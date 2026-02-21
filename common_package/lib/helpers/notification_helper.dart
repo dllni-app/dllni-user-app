@@ -9,6 +9,7 @@ import 'package:common_package/helpers/shared_preferences_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 typedef NotificationTapCallback = FutureOr<void> Function(RemoteMessage message);
 typedef NotificationRouteArgumentsBuilder = Object? Function(String route, Map<String, dynamic> argsMap);
@@ -20,10 +21,14 @@ class _ResolvedRoute {
   const _ResolvedRoute({required this.route, this.arguments});
 }
 
+const String _lifecycleMarkerKey = '_notification_lifecycle';
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   final payload = message.data.map((k, v) => MapEntry(k.toString(), v.toString()));
+  // Store lifecycle marker to indicate this notification was created in background
+  payload[_lifecycleMarkerKey] = NotificationLifeCycle.Background.name;
 
   await AwesomeNotifications().createNotification(
     content: NotificationContent(
@@ -135,6 +140,8 @@ class NotificationHelper {
 
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
     final payload = message.data.map((k, v) => MapEntry(k.toString(), v.toString()));
+    // Store lifecycle marker to indicate this notification was created in foreground
+    payload[_lifecycleMarkerKey] = NotificationLifeCycle.Foreground.name;
 
     await _awesome.createNotification(
       content: NotificationContent(
@@ -175,8 +182,57 @@ class NotificationHelper {
     }
 
     final message = RemoteMessage(data: payload);
-    final lifeCycle = action.actionLifeCycle ?? NotificationLifeCycle.Terminated;
+    final lifeCycle = _detectNotificationLifeCycle(action, payload);
+    log('Detected notification lifecycle: ${lifeCycle.name} for action: ${action.id}');
     await _handleNotificationTap(message, lifeCycle);
+  }
+
+  static NotificationLifeCycle _detectNotificationLifeCycle(
+      ReceivedAction action,
+      Map<String, String?> payload,
+      ) {
+    // First, check if Awesome Notifications provided a lifecycle
+    if (action.actionLifeCycle != null) {
+      log('Using Awesome Notifications lifecycle: ${action.actionLifeCycle!.name}');
+      return action.actionLifeCycle!;
+    }
+
+    // Second, check if we stored a lifecycle marker in the payload
+    final storedLifecycle = payload[_lifecycleMarkerKey];
+    if (storedLifecycle != null) {
+      try {
+        final lifecycle = NotificationLifeCycle.values.firstWhere(
+              (lc) => lc.name == storedLifecycle,
+        );
+        log('Using stored lifecycle marker: ${lifecycle.name}');
+        return lifecycle;
+      } catch (_) {
+        log('Invalid stored lifecycle marker: $storedLifecycle');
+      }
+    }
+
+    // Third, try to detect current app state
+    try {
+      final lifecycleState = WidgetsBinding.instance.lifecycleState;
+      if (lifecycleState != null) {
+        // App is running - determine if foreground or background
+        if (lifecycleState == AppLifecycleState.resumed) {
+          log('Detected app in foreground (resumed)');
+          return NotificationLifeCycle.Foreground;
+        } else if (lifecycleState == AppLifecycleState.paused ||
+            lifecycleState == AppLifecycleState.inactive) {
+          log('Detected app in background (paused/inactive)');
+          return NotificationLifeCycle.Background;
+        }
+      }
+    } catch (e) {
+      log('Failed to detect app lifecycle state: $e');
+    }
+
+    // Default to Terminated if we can't determine the state
+    // This typically happens when the app was completely closed
+    log('Could not determine lifecycle, defaulting to Terminated');
+    return NotificationLifeCycle.Terminated;
   }
 
   static Future<void> _handleNotificationTap(RemoteMessage message, NotificationLifeCycle lifeCycle) async {
@@ -262,12 +318,17 @@ class NotificationHelper {
       NotificationLifeCycle.Terminated => _onTerminatedTap,
     };
 
+    log('Invoking tap callback for ${lifeCycle.name}. Callback ${callback == null ? "is null" : "exists"}.');
+
     if (callback == null) {
+      log('No callback registered for ${lifeCycle.name} lifecycle');
       return;
     }
 
     try {
+      log('Calling ${lifeCycle.name} tap callback with message data: ${message.data}');
       await Future.sync(() => callback.call(message));
+      log('Successfully invoked ${lifeCycle.name} tap callback');
     } catch (error, stackTrace) {
       log('Notification tap callback failed for ${lifeCycle.name}: $error', stackTrace: stackTrace);
     }
