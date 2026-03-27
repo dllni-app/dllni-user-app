@@ -1,7 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:flutter/material.dart';
-import 'package:dllni_user_app/features/home/view/home_screen.dart';
+import 'package:dllni_user_app/features/home/view/screens/home_screen.dart';
 
 class GeneratedAppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {

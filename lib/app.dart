@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'core/routes/app_router.dart';
-import 'features/home/view/home_screen.dart';
+import 'core/themes/app_theme.dart';
 
 class App extends StatelessWidget {
   const App({super.key, required this.navigatorKey});
@@ -13,13 +13,14 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      title: 'دللني',
+      title: 'My App',
+      theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
-      locale: context.locale,
+      // locale: context.locale,
+      locale: Locale("ar"),
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      home: const HomeScreen(),
     );
   }
 }
