@@ -6,7 +6,7 @@ import '../widgets/exclusive_offers_section.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/near_stores_section.dart';
 
-@AutoRoutePage(path: "/")
+@AutoRoutePage(path: "/home")
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 

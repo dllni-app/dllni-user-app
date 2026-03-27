@@ -21,6 +21,7 @@ class App extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
+      initialRoute: "/discover",
     );
   }
 }

@@ -82,7 +82,7 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
         20,
       ),
       decoration: BoxDecoration(
-        color: context.primary,
+        color: AppColors.primary,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
@@ -109,7 +109,7 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
             children: [
               Expanded(
                 child: _SearchField(
-                  hintText: "ابحث عن وجبة، مشروب...",
+                  hintText: "ابحث عن سوبر ماركت أو نوع منتج معين...",
                   onChanged: onSearchChanged,
                 ),
               ),
@@ -139,7 +139,7 @@ class _FilterButton extends StatelessWidget {
         decoration: BoxDecoration(
           // color: context.primary,
           gradient: LinearGradient(
-            colors: [const Color(0x996C63FF), context.primary],
+            colors: [const Color(0x996C63FF), AppColors.primary],
             stops: [.3, .9],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
