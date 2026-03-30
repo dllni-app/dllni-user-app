@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../themes/app_colors.dart';
 import '../utils/app_images.dart';
@@ -61,10 +62,12 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
     required this.title,
     required this.onSearchChanged,
     required this.onFilterTap,
+    this.onSearchTap,
   });
   final String title;
   final void Function(String value) onSearchChanged;
   final void Function() onFilterTap;
+  final void Function()? onSearchTap;
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -98,9 +101,11 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
         children: [
           AppText(
             title,
-            style: textTheme.titleSmall!.copyWith(
+            style: TextStyle(
               color: AppColors.white,
-              fontSize: 20,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              height: 32 / 24,
             ),
           ),
           //  TextStyle(fontSize: 24, color: context.primary, fontWeight: FontWeight.w700)),
@@ -111,6 +116,7 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
                 child: _SearchField(
                   hintText: "ابحث عن سوبر ماركت أو نوع منتج معين...",
                   onChanged: onSearchChanged,
+                  onTap: onSearchTap,
                 ),
               ),
               SizedBox(width: 12),
@@ -146,55 +152,76 @@ class _FilterButton extends StatelessWidget {
           ),
           borderRadius: BorderRadius.all(Radius.circular(24)),
         ),
-        child: AppImage.asset(AppImages.filter, width: 16, height: 16),
+        child: FaIcon(
+          FontAwesomeIcons.sliders,
+          size: 16,
+          color: AppColors.white,
+        ),
       ),
     );
   }
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({required this.onChanged, required this.hintText});
+  const _SearchField({
+    required this.onChanged,
+    this.onTap,
+    required this.hintText,
+  });
   final void Function(String value) onChanged;
+  final void Function()? onTap;
   final String hintText;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      style: TextStyle(fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(
-          fontFamily: "Cairo",
-          fontWeight: FontWeight.w500,
-          fontSize: 12,
-          color: AppColors.white,
-        ),
-        filled: true,
-        fillColor: AppColors.filledInputBackgroundColor,
-        contentPadding: EdgeInsets.fromLTRB(16, 14, 44, 13),
-        prefixIcon: Padding(
-          padding: EdgeInsets.only(right: 12),
-          child: AppImage.asset(
-            AppImages.search,
-            size: 16,
-            color: AppColors.white,
-          ),
-        ),
-        // prefixIcon: Icon(Icons.search, size: 32),
-        border: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.all(Radius.circular(24)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.all(Radius.circular(24)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: BorderRadius.all(Radius.circular(24)),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: AppColors.primary,
+          selectionColor: AppColors.primary.withValues(alpha: 0.3),
+          selectionHandleColor: AppColors.primary,
         ),
       ),
-      onSubmitted: onChanged,
+      child: TextField(
+        style: TextStyle(fontSize: 15, color: AppColors.white),
+        onTap: onTap,
+        onTapOutside:(_) => FocusScope.of(context).unfocus(),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontFamily: "Cairo",
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            color: AppColors.white,
+          ),
+          filled: true,
+          fillColor: AppColors.filledInputBackgroundColor,
+          contentPadding: EdgeInsets.fromLTRB(16, 14, 44, 13),
+          prefixIconConstraints: BoxConstraints(maxWidth: 44),
+          prefixIcon: Padding(
+            padding: EdgeInsets.only(right: 16, left: 8),
+            child: FaIcon(
+              FontAwesomeIcons.magnifyingGlass,
+              size: 16,
+              color: AppColors.white,
+            ),
+          ),
+          // prefixIcon: Icon(Icons.search, size: 32),
+          border: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+          ),
+        ),
+        onSubmitted: onChanged,
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:common_package/common_package.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +22,11 @@ class App extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: "/discover",
+      initialRoute:
+          SharedPreferencesHelper.getData(key: 'token') != null &&
+              SharedPreferencesHelper.getData(key: 'token') != ""
+          ? "/"
+          : "/login",
     );
   }
 }

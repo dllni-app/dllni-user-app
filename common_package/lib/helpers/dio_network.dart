@@ -16,12 +16,24 @@ class DioNetwork {
   final String? lang;
   final Function()? onRequestFunction;
 
-  DioNetwork({this.interceptors = const [], required this.baseUrl, this.onRequestFunction, this.fcm, this.token, this.lang}) {
+  DioNetwork({
+    this.interceptors = const [],
+    required this.baseUrl,
+    this.onRequestFunction,
+    this.fcm,
+    this.token,
+    this.lang,
+  }) {
     dio = Dio(BaseOptions(baseUrl: baseUrl, receiveDataWhenStatusError: true));
     dio.options.headers = {'Accept': 'application/json'};
     dio.interceptors.addAll([
       LoggerInterceptor(),
-      TokenInterceptor(lang: lang, token: token, fcm: fcm, onRequestFunction: onRequestFunction),
+      TokenInterceptor(
+        lang: lang,
+        tokenKey: token,
+        fcmKey: fcm,
+        onRequestFunction: onRequestFunction,
+      ),
       ...interceptors,
     ]);
   }
@@ -32,8 +44,15 @@ class DioNetwork {
           value is File ||
           value is Uint8List ||
           (value is List &&
-              value.any((item) => item is File || item is Uint8List || (item is Map && item.values.any((v) => v is File || v is Uint8List)))) ||
-          (value is Map && value.values.any((v) => v is File || v is Uint8List)),
+              value.any(
+                (item) =>
+                    item is File ||
+                    item is Uint8List ||
+                    (item is Map &&
+                        item.values.any((v) => v is File || v is Uint8List)),
+              )) ||
+          (value is Map &&
+              value.values.any((v) => v is File || v is Uint8List)),
     );
 
     if (hasFile) {
@@ -47,7 +66,11 @@ class DioNetwork {
           formData.files.add(await _handleFile(key, value));
         } else if (value is List) {
           bool isFileList = value.any(
-            (item) => item is File || item is Uint8List || (item is Map && item.values.any((v) => v is File || v is Uint8List)),
+            (item) =>
+                item is File ||
+                item is Uint8List ||
+                (item is Map &&
+                    item.values.any((v) => v is File || v is Uint8List)),
           );
 
           if (isFileList) {
@@ -59,9 +82,17 @@ class DioNetwork {
                   final fileKey = mapEntry.key;
                   final fileValue = mapEntry.value;
                   if (fileValue is File || fileValue is Uint8List) {
-                    formData.files.add(await _handleFile(key, fileValue, customFileName: fileKey));
+                    formData.files.add(
+                      await _handleFile(
+                        key,
+                        fileValue,
+                        customFileName: fileKey,
+                      ),
+                    );
                   } else {
-                    formData.fields.add(MapEntry(fileKey, fileValue.toString()));
+                    formData.fields.add(
+                      MapEntry(fileKey, fileValue.toString()),
+                    );
                   }
                 }
               } else {
@@ -78,7 +109,9 @@ class DioNetwork {
             final fileKey = mapEntry.key;
             final fileValue = mapEntry.value;
             if (fileValue is File || fileValue is Uint8List) {
-              formData.files.add(await _handleFile(key, fileValue, customFileName: fileKey));
+              formData.files.add(
+                await _handleFile(key, fileValue, customFileName: fileKey),
+              );
             } else {
               formData.fields.add(MapEntry(fileKey, fileValue.toString()));
             }
@@ -92,11 +125,27 @@ class DioNetwork {
     return data;
   }
 
-  Future<MapEntry<String, MultipartFile>> _handleFile(String key, dynamic file, {String? customFileName}) async {
+  Future<MapEntry<String, MultipartFile>> _handleFile(
+    String key,
+    dynamic file, {
+    String? customFileName,
+  }) async {
     if (file is File) {
-      return MapEntry(key, await MultipartFile.fromFile(file.path, filename: customFileName ?? file.path.split('/').last));
+      return MapEntry(
+        key,
+        await MultipartFile.fromFile(
+          file.path,
+          filename: customFileName ?? file.path.split('/').last,
+        ),
+      );
     } else if (file is Uint8List) {
-      return MapEntry(key, MultipartFile.fromBytes(file, filename: customFileName ?? 'uploaded_file'));
+      return MapEntry(
+        key,
+        MultipartFile.fromBytes(
+          file,
+          filename: customFileName ?? 'uploaded_file',
+        ),
+      );
     } else {
       throw UnsupportedError('Unsupported file type: ${file.runtimeType}');
     }
@@ -132,7 +181,11 @@ class DioNetwork {
   }) async {
     dio.options.headers.addAll(headers ?? {});
     dynamic requestData = await _prepareRequestData(data);
-    return await dio.patch(endPoint, data: requestData, queryParameters: params);
+    return await dio.patch(
+      endPoint,
+      data: requestData,
+      queryParameters: params,
+    );
   }
 
   Future<Response> deleteData({

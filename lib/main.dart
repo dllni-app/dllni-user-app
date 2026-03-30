@@ -11,13 +11,10 @@ Future<void> main() async {
     AppBootstrapConfig(
       navigatorKey: navigatorKey,
       app: App(navigatorKey: navigatorKey),
-      configureDependencies: configureDependencies,
+      configureDependencies: configureInjection,
       enableNotifications: true,
       fallbackLocale: const Locale('ar'),
-      supportedLocales: const <Locale>[
-        Locale('en'),
-        Locale('ar'),
-      ],
+      supportedLocales: const <Locale>[Locale('en'), Locale('ar')],
       translationsAssetPath: 'assets/translations',
       fcmTokenKey: 'fcm_token',
     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../themes/app_colors.dart';
 
@@ -18,10 +19,9 @@ class AppNavBar extends StatelessWidget {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     return Container(
       width: width,
-      padding: EdgeInsets.fromLTRB(24, 12, 24, 12 + bottomPadding),
+      padding: EdgeInsets.fromLTRB(8, 2, 8, 14 + bottomPadding),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
         boxShadow: [
           BoxShadow(
@@ -32,40 +32,46 @@ class AppNavBar extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(items.length, (index) {
           final bool isSelected = selectedIndex == index;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 4,
-            children: [
-              GestureDetector(
-                onTap: () => onChanged(index),
-                child: Container(
-                  width: isSelected ? 48 : 40,
-                  height: isSelected ? 48 : 40,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.accent.withValues(alpha: .16)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.all(Radius.circular(24)),
-                  ),
-                  child: Icon(
+          return Expanded(
+            child: InkWell(
+              onTap: () => onChanged(index),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  isSelected
+                      ? Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(100),
+                            ),
+                          ),
+                        )
+                      : SizedBox(height: 4),
+                  SizedBox(height: 8),
+                  FaIcon(
                     items[index].icon,
-                    size: 20,
-                    color: isSelected ? AppColors.accent : Color(0xFFA5AAC9),
+                    size: 18,
+                    color: isSelected ? AppColors.primary : Color(0xFFA5AAC9),
                   ),
-                ),
+                  SizedBox(height: 4),
+                  Text(
+                    items[index].title,
+                    style: TextStyle(
+                      color: isSelected ? AppColors.primary : Color(0xFFA5AAC9),
+                      fontSize: 10,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                items[index].title,
-                style: TextStyle(
-                  color: isSelected ? AppColors.accent : Color(0xFFA5AAC9),
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                ),
-              ),
-            ],
+            ),
           );
         }),
       ),
@@ -75,7 +81,7 @@ class AppNavBar extends StatelessWidget {
 
 class AppNavBarItem {
   final String title;
-  final IconData icon;
+  final FaIconData icon;
 
   AppNavBarItem({required this.title, required this.icon});
 }
