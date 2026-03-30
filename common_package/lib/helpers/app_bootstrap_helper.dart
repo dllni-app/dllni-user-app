@@ -14,6 +14,7 @@ class AppBootstrapConfig {
     this.supportedLocales = const [Locale('en'), Locale('ar')],
     this.fallbackLocale = const Locale('en'),
     this.translationsAssetPath = 'assets/translations',
+    this.startLocale,
     this.onTerminatedTap,
     this.onBackgroundTap,
     this.onForegroundTap,
@@ -28,6 +29,7 @@ class AppBootstrapConfig {
   final List<Locale> supportedLocales;
   final Locale fallbackLocale;
   final String translationsAssetPath;
+  final Locale? startLocale;
   final NotificationTapCallback? onTerminatedTap;
   final NotificationTapCallback? onBackgroundTap;
   final NotificationTapCallback? onForegroundTap;
@@ -63,6 +65,7 @@ Future<void> bootstrapApp(AppBootstrapConfig config) async {
     EasyLocalization(
       supportedLocales: config.supportedLocales,
       fallbackLocale: config.fallbackLocale,
+      startLocale: config.startLocale,
       path: config.translationsAssetPath,
       child: config.app,
     ),

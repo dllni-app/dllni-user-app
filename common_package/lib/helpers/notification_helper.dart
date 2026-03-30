@@ -187,10 +187,7 @@ class NotificationHelper {
     await _handleNotificationTap(message, lifeCycle);
   }
 
-  static NotificationLifeCycle _detectNotificationLifeCycle(
-      ReceivedAction action,
-      Map<String, String?> payload,
-      ) {
+  static NotificationLifeCycle _detectNotificationLifeCycle(ReceivedAction action, Map<String, String?> payload) {
     // First, check if Awesome Notifications provided a lifecycle
     if (action.actionLifeCycle != null) {
       log('Using Awesome Notifications lifecycle: ${action.actionLifeCycle!.name}');
@@ -201,9 +198,7 @@ class NotificationHelper {
     final storedLifecycle = payload[_lifecycleMarkerKey];
     if (storedLifecycle != null) {
       try {
-        final lifecycle = NotificationLifeCycle.values.firstWhere(
-              (lc) => lc.name == storedLifecycle,
-        );
+        final lifecycle = NotificationLifeCycle.values.firstWhere((lc) => lc.name == storedLifecycle);
         log('Using stored lifecycle marker: ${lifecycle.name}');
         return lifecycle;
       } catch (_) {
@@ -219,8 +214,7 @@ class NotificationHelper {
         if (lifecycleState == AppLifecycleState.resumed) {
           log('Detected app in foreground (resumed)');
           return NotificationLifeCycle.Foreground;
-        } else if (lifecycleState == AppLifecycleState.paused ||
-            lifecycleState == AppLifecycleState.inactive) {
+        } else if (lifecycleState == AppLifecycleState.paused || lifecycleState == AppLifecycleState.inactive) {
           log('Detected app in background (paused/inactive)');
           return NotificationLifeCycle.Background;
         }

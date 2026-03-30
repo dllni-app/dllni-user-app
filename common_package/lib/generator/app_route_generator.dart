@@ -53,9 +53,9 @@ class AggregatingAppRouteBuilder implements Builder {
             // Screen عندها parameters فعلية
             final paramAssignments = parameters
                 .map((p) {
-              final paramName = p.name;
-              return "$paramName: $paramName";
-            })
+                  final paramName = p.name;
+                  return "$paramName: args";
+                })
                 .join(', ');
 
             final paramType = parameters.first.type.getDisplayString();
@@ -79,7 +79,7 @@ class AggregatingAppRouteBuilder implements Builder {
     }
 
     final output =
-    '''
+        '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:flutter/material.dart';
