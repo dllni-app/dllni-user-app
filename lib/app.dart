@@ -2,7 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'core/routes/app_router.dart';
-import 'features/home/view/home_screen.dart';
+import 'features/cl_main/view/cl_main_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key, required this.navigatorKey});
@@ -19,7 +19,7 @@ class App extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      home: const HomeScreen(),
+      home: const ClMainScreen(),
     );
   }
 }

@@ -14,6 +14,7 @@ Future<void> main() async {
       configureDependencies: configureDependencies,
       enableNotifications: true,
       fallbackLocale: const Locale('ar'),
+      startLocale: const Locale('ar'),
       supportedLocales: const <Locale>[
         Locale('en'),
         Locale('ar'),
