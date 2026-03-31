@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../core/widgets/app_nav_bar.dart';
 import 'sm_discover/view/screens/sm_discover_screen.dart';
 import 'sm_home/view/screens/sm_home_screen.dart';
+import 'sm_orders/view/screens/sm_orders_screen.dart';
 
 @AutoRoutePage(path: "/")
 class SmMainPage extends StatefulWidget {
@@ -39,7 +40,7 @@ class _SmMainPageState extends State<SmMainPage>
           SmHomeScreen(),
           SmDiscoverScreen(),
           _OnDevelopingScreen(),
-          _OnDevelopingScreen(),
+          SmOrdersScreen(),
           _OnDevelopingScreen(),
         ],
       ),
