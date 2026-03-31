@@ -1,81 +1,53 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/features/rs_discover/view/screens/rs_restaurant_detail_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/di/injection.dart';
-import '../manager/bloc/rs_discover_bloc.dart';
-import '../widgets/rs_discover_header.dart';
-import '../widgets/rs_discover_restaurant_card.dart';
+import '../widgets/discover_tab_bar.dart';
+import '../widgets/store_card.dart';
 
-class RsDiscoverScreen extends StatelessWidget {
-  const RsDiscoverScreen({super.key});
+@AutoRoutePage(path: "/discover")
+class RsDiscoverScreen extends StatefulWidget {
+  const RsDiscoverScreen({super.key, this.selectedView = 0});
+
+  final int selectedView;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => getIt<RsDiscoverBloc>(), child: const _RsDiscoverView());
-  }
+  State<RsDiscoverScreen> createState() => _RsDiscoverScreenState();
 }
 
-class _RsDiscoverView extends StatelessWidget {
-  const _RsDiscoverView();
+class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
+  late int _selectedView;
+
+  @override
+  void initState() {
+    _selectedView = widget.selectedView;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF3F4F6),
-      body: SafeArea(
-        child: Column(
+      backgroundColor: _selectedView == 0 ? Color(0xFFF9FAFB) : Color(0xFFEFEFEF),
+      body: PopScope(
+        canPop: _selectedView == 0,
+        onPopInvokedWithResult: (didPop, result) {
+          if (_selectedView == 1) {
+            _selectedView = 0;
+            setState(() {});
+          }
+        },
+        child: IndexedStack(
+          index: _selectedView,
           children: [
-            const RsDiscoverHeader(),
-            Expanded(
-              child: BlocBuilder<RsDiscoverBloc, RsDiscoverState>(
-                builder: (context, state) {
-                  return CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 0),
-                          child: _SearchAndFiltersSection(state: state),
-                        ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsetsDirectional.fromSTEB(16, 18, 16, 24),
-                        sliver: SliverList.separated(
-                          itemCount: state.visibleRestaurants.length,
-                          itemBuilder: (context, index) {
-                            final restaurant = state.visibleRestaurants[index];
-                            return RsDiscoverRestaurantCard(
-                              restaurant: restaurant,
-                              onTap: () {
-                                context.pushRoute(
-                                  '/rsrestaurantdetail',
-                                  arguments: RsRestaurantDetailParams(
-                                    id: restaurant.id,
-                                    name: restaurant.name,
-                                    categoryLabel: restaurant.categoryLabel,
-                                    heroImageUrl: restaurant.heroImageUrl,
-                                    rating: restaurant.rating,
-                                    reviewCountLabel: restaurant.reviewCountLabel,
-                                    deliveryTimeLabel: restaurant.deliveryTimeLabel,
-                                    deliveryFeeLabel: restaurant.deliveryFeeLabel,
-                                    distanceLabel: restaurant.distanceLabel,
-                                    discountLabel: restaurant.discountLabel,
-                                    badgeLabel: restaurant.badgeLabel,
-                                    isOpen: restaurant.isOpen,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+            _MainDiscoverView(
+              onSearchTap: () {
+                if (_selectedView == 0) {
+                  _selectedView = 1;
+                  setState(() {});
+                }
+              },
             ),
+            _SearchView(),
           ],
         ),
       ),
@@ -83,141 +55,279 @@ class _RsDiscoverView extends StatelessWidget {
   }
 }
 
-class _SearchAndFiltersSection extends StatelessWidget {
-  const _SearchAndFiltersSection({required this.state});
+class _MainDiscoverView extends StatelessWidget {
+  const _MainDiscoverView({this.onSearchTap});
 
-  final RsDiscoverState state;
+  final void Function()? onSearchTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // AppSimpleAppBarWithSearch(title: "تصفح المتاجر", onSearchTap: onSearchTap, onSearchChanged: (value) {}, onFilterTap: () {}),
+        SizedBox(height: 16),
+        DiscoverTabBar(items: discoverTabs, onChanged: (index) {}),
+        SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              AppText(
+                "124 متجر متاح",
+                style: TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
+              ),
+              Spacer(),
+              InkWell(
+                onTap: () {},
+                borderRadius: BorderRadius.all(Radius.circular(4)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    children: [
+                      AppText(
+                        "ترتيب حسب: الأقرب",
+                        style: TextStyle(color: Color(0xFF4CAF50), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
+                      ),
+                      SizedBox(width: 4),
+                      FaIcon(FontAwesomeIcons.angleDown, size: 12, color: Color(0xFF4CAF50)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 4),
+        Expanded(
+          child: ListView.separated(
+            padding: EdgeInsets.all(20),
+            itemBuilder: (_, index) => StoreCard(store: stores[index]),
+            separatorBuilder: (_, _) => SizedBox(height: 16),
+            itemCount: stores.length,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SearchView extends StatelessWidget {
+  const _SearchView();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                textAlign: TextAlign.start,
-                decoration: InputDecoration(
-                  hintText: 'ابحث عن مطعم أو نوع مطبخ...',
-                  hintStyle: const TextStyle(color: Color(0xff9CA3AF), fontSize: 13, fontWeight: FontWeight.w400),
-                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xff9CA3AF)),
-                  filled: true,
-                  fillColor: const Color(0xffF9FAFB),
-                  contentPadding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Color(0xffE5E7EB)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Color(0xffE5E7EB)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(color: context.primary, width: 1.2),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            DecoratedBox(
-              decoration: BoxDecoration(color: context.primary, shape: BoxShape.circle),
-              child: IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.tune_rounded, color: context.onPrimary, size: 20),
-              ),
-            ),
-          ],
+        SizedBox(height: 24 + MediaQuery.paddingOf(context).top),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          // child: SearchFieldWithVoice(backgroundColor: Color(0xFFF9FAFB), onVoiceTap: () {}, onSearch: (search) {}),
         ),
-        const SizedBox(height: 14),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: List.generate(
-              state.filterOptions.length,
-              (index) => Padding(
-                padding: const EdgeInsetsDirectional.only(end: 8),
-                child: _FilterChipWidget(
-                  option: state.filterOptions[index],
-                  isSelected: state.selectedFilterIndex == index,
-                  onTap: () {
-                    context.read<RsDiscoverBloc>().add(RsDiscoverFilterChanged(index));
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
+        SizedBox(height: 18),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            AppText.titleSmall('${state.visibleRestaurants.length} مطعم متاح', fontWeight: FontWeight.w700, color: const Color(0xff374151)),
-            const Spacer(),
-            PopupMenuButton<RsDiscoverSort>(
-              onSelected: (value) {
-                context.read<RsDiscoverBloc>().add(RsDiscoverSortChanged(value));
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: RsDiscoverSort.nearest, child: Text('الأقرب')),
-                PopupMenuItem(value: RsDiscoverSort.highestRated, child: Text('الأعلى تقييماً')),
-                PopupMenuItem(value: RsDiscoverSort.fastestDelivery, child: Text('التسليم الأسرع')),
-              ],
+            SizedBox(width: 20),
+            FaIcon(FontAwesomeIcons.locationDot, size: 18, color: context.primary),
+            SizedBox(width: 8),
+            InkWell(
+              onTap: () {},
+              borderRadius: BorderRadius.all(Radius.circular(2)),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  AppText.labelLarge('ترتيب حسب: ${_sortLabel(state.selectedSort)}', color: const Color(0xff10B981), fontWeight: FontWeight.w700),
-                  const SizedBox(width: 3),
-                  const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xff10B981)),
+                  SizedBox(width: 2),
+                  AppText(
+                    "المنزل",
+                    style: TextStyle(color: context.primaryContainer, fontSize: 15, fontWeight: FontWeight.w500, height: 16 / 15),
+                  ),
+                  SizedBox(width: 9),
+                  FaIcon(FontAwesomeIcons.angleDown, size: 16, color: Color(0xFF9CA3AF), weight: 1.5),
+                  SizedBox(width: 2),
                 ],
               ),
             ),
           ],
         ),
+        SizedBox(height: 16),
+        Divider(height: 1, color: Color(0xFFDBDCDE)),
+        SizedBox(height: 16),
+        SearchesGroup(
+          title: "الأكثر بحثاً من قبل المستخدمين",
+          searches: ["لبن المراعي", "أندومي", "حليب مكثف", "حليب هوى الشام", "طحين كاتو", "رز كبسة"],
+          onSearchTap: (search) {
+            print(search);
+          },
+        ),
+        SizedBox(height: 16),
+        Divider(height: 1, color: Color(0xFFDBDCDE)),
+        SizedBox(height: 16),
+        SearchesGroup(
+          title: "تاريخ البحث",
+          searches: ["لبن المراعي", "أندومي", "حليب مكثف", "حليب هوى الشام", "طحين كاتو", "رز كبسة"],
+          onSearchTap: (search) {
+            print(search);
+          },
+          onDeleteAllTap: () {},
+        ),
       ],
     );
   }
+}
 
-  String _sortLabel(RsDiscoverSort sort) {
-    switch (sort) {
-      case RsDiscoverSort.highestRated:
-        return 'الأعلى تقييماً';
-      case RsDiscoverSort.fastestDelivery:
-        return 'التسليم الأسرع';
-      case RsDiscoverSort.nearest:
-        return 'الأقرب';
-    }
+class SearchesGroup extends StatelessWidget {
+  const SearchesGroup({super.key, required this.searches, required this.title, this.onDeleteAllTap, required this.onSearchTap});
+
+  final List<String> searches;
+  final String title;
+  final void Function(String search) onSearchTap;
+  final void Function()? onDeleteAllTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              AppText(
+                title,
+                style: TextStyle(color: Colors.black, fontSize: 14, height: 16 / 14),
+              ),
+              if (onDeleteAllTap != null)
+                InkWell(
+                  onTap: onDeleteAllTap,
+                  borderRadius: BorderRadius.all(Radius.circular(4)),
+                  child: AppText(
+                    " مسح الكل ",
+                    style: TextStyle(color: context.primaryContainer, fontSize: 10, fontWeight: FontWeight.w300, height: 19 / 10),
+                  ),
+                ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 12,
+            children: searches
+                .map<_SearchChip>(
+                  (search) => _SearchChip(
+                    label: search,
+                    onTap: () {
+                      onSearchTap(search);
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class _FilterChipWidget extends StatelessWidget {
-  const _FilterChipWidget({required this.option, required this.isSelected, required this.onTap});
+class _SearchChip extends StatelessWidget {
+  const _SearchChip({super.key, this.onTap, required this.label});
 
-  final RsDiscoverFilterOption option;
-  final bool isSelected;
-  final VoidCallback onTap;
+  final void Function()? onTap;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(999),
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 8),
-        decoration: BoxDecoration(
-          color: isSelected ? context.primary : context.onPrimary,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: isSelected ? context.primary : const Color(0xffE5E7EB)),
-        ),
+      borderRadius: BorderRadius.all(Radius.circular(22)),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(12, 4, 8, 5),
+        decoration: BoxDecoration(color: Color(0xFFDADCEA), borderRadius: BorderRadius.all(Radius.circular(22))),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            AppText.labelLarge(option.label, color: isSelected ? context.onPrimary : const Color(0xff4B5563), fontWeight: FontWeight.w700),
-            const SizedBox(width: 6),
-            Icon(option.icon, size: 16, color: isSelected ? context.onPrimary : const Color(0xff9CA3AF)),
+            FaIcon(FontAwesomeIcons.magnifyingGlass, size: 12, color: context.primary),
+            SizedBox(width: 4),
+            AppText(
+              label,
+              style: TextStyle(color: context.primary, fontSize: 10, fontWeight: FontWeight.w300, height: 19 / 10),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+final List<DiscoverTabBarItem> discoverTabs = [
+  DiscoverTabBarItem(title: "الكل"),
+  DiscoverTabBarItem(
+    title: "الأقرب",
+    icon: const FaIcon(FontAwesomeIcons.locationDot, size: 14, color: Color(0xFF9CA3AF)),
+  ),
+  DiscoverTabBarItem(
+    title: "الأعلى تقييماً",
+    icon: const FaIcon(FontAwesomeIcons.solidStar, size: 15, color: Color(0xFFFACC15)),
+  ),
+  DiscoverTabBarItem(
+    title: "الأسرع توصيلاً",
+    icon: const FaIcon(FontAwesomeIcons.bolt, size: 14, color: Color(0xFF4CAF50)),
+  ),
+  DiscoverTabBarItem(
+    title: "يوجد عروض",
+    icon: const FaIcon(FontAwesomeIcons.tag, size: 12, color: Color(0xFFEF4444)),
+  ),
+  DiscoverTabBarItem(
+    title: "مفتوح الآن",
+    icon: const FaIcon(
+      FontAwesomeIcons.solidClock,
+      size: 14,
+      color: Color(0xFF22C55E), // أزرق
+    ),
+  ),
+];
+
+final List<StoreData> stores = [
+  StoreData(
+    image: '',
+    name: "سوبر ماركت الأطرش",
+    description: "مفرزات • معلبات • منظفات • تسالي",
+    rating: 4.5,
+    distance: 1.2,
+    deliveryPrice: "15 ل.س",
+    time: "20-30 دقيقة",
+    discount: 20,
+    isFavorite: true,
+  ),
+  StoreData(
+    image: '',
+    name: "ماركت المدينة",
+    description: "خضار • فواكه • مواد غذائية",
+    rating: 4.2,
+    distance: 0.8,
+    deliveryPrice: "10 ل.س",
+    time: "15-25 دقيقة",
+    discount: 0,
+  ),
+  StoreData(
+    image: '',
+    name: "هايبر الشام",
+    description: "عروض يومية • أسعار منافسة",
+    rating: 4.7,
+    distance: 2.3,
+    deliveryPrice: "20 ل.س",
+    time: "25-35 دقيقة",
+    discount: 30,
+  ),
+  StoreData(
+    image: '',
+    name: "سوق الخير",
+    description: "مواد تنظيف • مستلزمات منزلية",
+    rating: 4.0,
+    distance: 3.1,
+    deliveryPrice: "12 ل.س",
+    time: "30-40 دقيقة",
+    discount: 10,
+  ),
+];
