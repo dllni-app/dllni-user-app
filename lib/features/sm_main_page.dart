@@ -47,7 +47,7 @@ class _SmMainPageState extends State<SmMainPage>
       bottomNavigationBar: AppNavBar(
         items: [
           AppNavBarItem(title: "الرئيسية", icon: FontAwesomeIcons.solidHouse),
-          AppNavBarItem(title: "اكتشف", icon: FontAwesomeIcons.solidCompass),
+          AppNavBarItem(title: "تصفح المتاجر", icon: FontAwesomeIcons.solidCompass),
           AppNavBarItem(title: "العروض", icon: FontAwesomeIcons.tags),
           AppNavBarItem(title: "طلباتي", icon: FontAwesomeIcons.receipt),
           AppNavBarItem(title: "حسابي", icon: FontAwesomeIcons.user),

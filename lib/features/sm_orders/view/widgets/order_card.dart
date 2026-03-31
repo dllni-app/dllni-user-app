@@ -3,8 +3,29 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/themes/app_colors.dart';
 
+class OrderItemData {
+  final String id;
+  final String imageUrl;
+  final String name;
+  final int quantity;
+  final num price;
+  final String date;
+  final bool isPaid;
+
+  OrderItemData({
+    required this.id,
+    required this.imageUrl,
+    required this.name,
+    required this.quantity,
+    required this.price,
+    required this.date,
+    required this.isPaid,
+  });
+}
+
 class OrderCard extends StatelessWidget {
-  const OrderCard({super.key});
+  const OrderCard({super.key, required this.order});
+  final OrderItemData order;
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +47,15 @@ class OrderCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
             child: Row(
               children: [
-                CircleAvatar(radius: 18, backgroundColor: Color(0xFFD9D9D9)),
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Color(0xFFD9D9D9),
+                  backgroundImage: AssetImage(order.imageUrl),
+                ),
                 SizedBox(width: 6),
                 Expanded(
                   child: AppText(
-                    "سوبر ماركت النور",
+                    order.name,
                     textAlign: TextAlign.start,
                     style: TextStyle(
                       color: Colors.black,
@@ -44,7 +69,7 @@ class OrderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     AppText(
-                      "#45687_755",
+                      "#${order.id}",
                       style: TextStyle(
                         color: Color(0xFF9CA3AF),
                         fontSize: 8,
@@ -53,7 +78,7 @@ class OrderCard extends StatelessWidget {
                       ),
                     ),
                     AppText(
-                      "فيراير 24 2026 2:31 م",
+                      order.date,
                       style: TextStyle(
                         color: Color(0xFF9CA3AF),
                         fontSize: 8,
@@ -66,7 +91,7 @@ class OrderCard extends StatelessWidget {
               ],
             ),
           ),
-          Divider(color: Color(0x669CA3AF),height: 1,),
+          Divider(color: Color(0x669CA3AF), height: 1),
           Padding(
             padding: const EdgeInsets.fromLTRB(35, 11, 55, 16),
             child: Row(
@@ -76,7 +101,7 @@ class OrderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText(
-                      "4 أصناف",
+                      "${order.quantity} أصناف",
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 8,
@@ -85,7 +110,7 @@ class OrderCard extends StatelessWidget {
                       ),
                     ),
                     AppText(
-                      "22000 ل.س",
+                      "${order.price} ل.س",
                       style: TextStyle(
                         color: AppColors.accent,
                         fontSize: 8,
@@ -96,7 +121,7 @@ class OrderCard extends StatelessWidget {
                   ],
                 ),
                 AppText(
-                  "مدفوعة",
+                  order.isPaid? "مدفوعة" : "غير مدفوعة",
                   style: TextStyle(
                     color: AppColors.accent,
                     fontSize: 8,

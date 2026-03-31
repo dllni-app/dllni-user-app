@@ -68,7 +68,7 @@ class _MainDiscoverView extends StatelessWidget {
     return Column(
       children: [
         AppSimpleAppBarWithSearch(
-          title: "اكتشف",
+          title: "تصفح المتاجر",
           onSearchTap: onSearchTap,
           onSearchChanged: (value) {},
           onFilterTap: () {},
