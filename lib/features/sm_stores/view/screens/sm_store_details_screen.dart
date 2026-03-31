@@ -36,7 +36,7 @@ class SmStoreDetailsScreen extends StatelessWidget {
             SizedBox(height: 20),
             Divider(height: 1, color: Color(0xFFF3F4F6)),
             ProductsSection(title: "مخبوزات"),
-            SizedBox(height: 500),
+            SizedBox(height: 350),
           ],
         ),
       ),

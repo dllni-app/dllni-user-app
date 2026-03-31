@@ -45,70 +45,77 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 112,
-      height: 180,
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              AppImage.asset(
-                AppImages.products,
-                size: 112,
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-                fit: BoxFit.cover,
-              ),
-              Positioned(
-                bottom: 6,
-                right: 5,
-                child: InkWell(
-                  onTap: () {},
-                  customBorder: CircleBorder(),
-                  child: Container(
-                    alignment: Alignment.center,
-                    width: 25,
-                    height: 25,
-                    decoration: ShapeDecoration(
-                      shape: CircleBorder(),
-                      color: AppColors.white,
-                      shadows: [
-                        BoxShadow(
-                          offset: Offset(0, 4),
-                          blurRadius: 4,
-                          color: Color(0x40000000),
-                        ),
-                      ],
-                    ),
-                    child: FaIcon(
-                      FontAwesomeIcons.plus,
-                      color: Color(0xFF4B5563),
-                      size: 10,
+    return InkWell(
+      onTap: () {
+        context.pushRoute("/product");
+      },
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      child: SizedBox(
+        width: 112,
+        height: 180,
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                AppImage.asset(
+                  AppImages.products,
+                  size: 112,
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  bottom: 6,
+                  right: 5,
+                  child: InkWell(
+                    onTap: () {},
+                    customBorder: CircleBorder(),
+                    child: Container(
+                      alignment: Alignment.center,
+                      width: 25,
+                      height: 25,
+                      decoration: ShapeDecoration(
+                        shape: CircleBorder(),
+                        color: AppColors.white,
+                        shadows: [
+                          BoxShadow(
+                            offset: Offset(0, 4),
+                            blurRadius: 4,
+                            color: Color(0x40000000),
+                          ),
+                        ],
+                      ),
+                      child: FaIcon(
+                        FontAwesomeIcons.plus,
+                        color: Color(0xFF4B5563),
+                        size: 10,
+                      ),
                     ),
                   ),
                 ),
+              ],
+            ),
+            SizedBox(height: 8),
+            AppText(
+              "هوى الشام لبنة كاملة الدسم",
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 16 / 12,
               ),
-            ],
-          ),
-          SizedBox(height: 8),
-          AppText(
-            "هوى الشام لبنة كاملة الدسم",
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 16 / 12,
             ),
-          ),
-          AppText(
-            "5000 ل.س",
-            style: TextStyle(
-              color: AppColors.primary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 28 / 12,
+            AppText(
+              "5000 ل.س",
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 28 / 12,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

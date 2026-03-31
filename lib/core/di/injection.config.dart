@@ -19,6 +19,11 @@ import '../../features/auth/data/source/auth_remote_data_source.dart' as _i777;
 import '../../features/auth/domain/repository/auth_repo.dart' as _i976;
 import '../../features/auth/domain/usecases/login_use_case.dart' as _i37;
 import '../../features/auth/view/manager/bloc/auth_bloc.dart' as _i958;
+import '../../features/sm_cart/data/repository/sm_cart_repo_impl.dart' as _i91;
+import '../../features/sm_cart/data/source/sm_cart_remote_data_source.dart'
+    as _i369;
+import '../../features/sm_cart/domain/repository/sm_cart_repo.dart' as _i579;
+import '../../features/sm_cart/view/manager/bloc/sm_cart_bloc.dart' as _i821;
 import '../../features/sm_discover/data/repository/sm_discover_repo_impl.dart'
     as _i43;
 import '../../features/sm_discover/data/source/sm_discover_remote_data_source.dart'
@@ -50,10 +55,14 @@ _i174.GetIt $initGetIt(
 }) {
   final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
   final injectableModule = _$InjectableModule();
+  gh.factory<_i821.SmCartBloc>(() => _i821.SmCartBloc());
   gh.factory<_i717.SmDiscoverBloc>(() => _i717.SmDiscoverBloc());
   gh.factory<_i626.SmHomeBloc>(() => _i626.SmHomeBloc());
   gh.factory<_i883.SmStoresBloc>(() => _i883.SmStoresBloc());
   gh.singleton<_i960.DioNetwork>(() => injectableModule.dio);
+  gh.lazySingleton<_i369.SmCartRemoteDataSource>(
+    () => _i369.SmCartRemoteDataSource(),
+  );
   gh.lazySingleton<_i949.SmDiscoverRemoteDataSource>(
     () => _i949.SmDiscoverRemoteDataSource(),
   );
@@ -65,6 +74,7 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i267.SmHomeRepo>(() => _i991.SmHomeRepoImpl());
   gh.lazySingleton<_i359.SmStoresRepo>(() => _i580.SmStoresRepoImpl());
+  gh.lazySingleton<_i579.SmCartRepo>(() => _i91.SmCartRepoImpl());
   gh.lazySingleton<_i777.AuthRemoteDataSource>(
     () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
   );

@@ -1,3 +1,4 @@
+import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -53,7 +54,9 @@ class HomeAppBar extends StatelessWidget {
               _AppBarAction(
                 hasNew: true,
                 icon: FontAwesomeIcons.cartShopping,
-                onTap: () {},
+                onTap: () {
+                  context.pushRoute("/cart");
+                },
               ),
               SizedBox(width: 12),
               _AppBarAction(
