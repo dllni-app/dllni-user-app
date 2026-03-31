@@ -1,3 +1,4 @@
+import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/utils/app_images.dart';
@@ -17,8 +18,12 @@ class SmOrdersScreen extends StatelessWidget {
             child: ListView.separated(
               padding: EdgeInsets.all(24),
               itemCount: orderList.length,
-              itemBuilder: (context, index) =>
-                  OrderCard(order: orderList[index]),
+              itemBuilder: (context, index) => OrderCard(
+                order: orderList[index],
+                onTap: () {
+                  context.pushRoute("/order_details");
+                },
+              ),
               separatorBuilder: (context, index) => SizedBox(height: 16),
             ),
           ),

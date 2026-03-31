@@ -5,7 +5,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../core/widgets/app_nav_bar.dart';
 import 'sm_discover/view/screens/sm_discover_screen.dart';
 import 'sm_home/view/screens/sm_home_screen.dart';
+import 'sm_offers/view/screens/sm_offers_screen.dart';
 import 'sm_orders/view/screens/sm_orders_screen.dart';
+import 'sm_profile/view/screens/sm_profile_screen.dart';
 
 @AutoRoutePage(path: "/")
 class SmMainPage extends StatefulWidget {
@@ -39,15 +41,18 @@ class _SmMainPageState extends State<SmMainPage>
         children: [
           SmHomeScreen(),
           SmDiscoverScreen(),
-          _OnDevelopingScreen(),
+          SmOffersScreen(),
           SmOrdersScreen(),
-          _OnDevelopingScreen(),
+          SmProfileScreen(),
         ],
       ),
       bottomNavigationBar: AppNavBar(
         items: [
           AppNavBarItem(title: "الرئيسية", icon: FontAwesomeIcons.solidHouse),
-          AppNavBarItem(title: "تصفح المتاجر", icon: FontAwesomeIcons.solidCompass),
+          AppNavBarItem(
+            title: "تصفح المتاجر",
+            icon: FontAwesomeIcons.solidCompass,
+          ),
           AppNavBarItem(title: "العروض", icon: FontAwesomeIcons.tags),
           AppNavBarItem(title: "طلباتي", icon: FontAwesomeIcons.receipt),
           AppNavBarItem(title: "حسابي", icon: FontAwesomeIcons.user),

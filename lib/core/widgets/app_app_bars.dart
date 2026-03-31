@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../themes/app_colors.dart';
-import '../utils/app_images.dart';
 
 class AppSimpleAppBar extends StatelessWidget {
   const AppSimpleAppBar({super.key, required this.title});
@@ -41,7 +40,7 @@ class AppSimpleAppBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: 4,
         children: [
-          // const ArrowBackButton(),
+          const ArrowBackButton(),
           AppText(
             title,
             style: TextStyle(
@@ -185,7 +184,7 @@ class _SearchField extends StatelessWidget {
       child: TextField(
         style: TextStyle(fontSize: 15, color: AppColors.white),
         onTap: onTap,
-        onTapOutside:(_) => FocusScope.of(context).unfocus(),
+        onTapOutside: (_) => FocusScope.of(context).unfocus(),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
@@ -221,6 +220,29 @@ class _SearchField extends StatelessWidget {
           ),
         ),
         onSubmitted: onChanged,
+      ),
+    );
+  }
+}
+
+class ArrowBackButton extends StatelessWidget {
+  const ArrowBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.pop(),
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      child: Container(
+        alignment: Alignment.center,
+        padding: EdgeInsets.all(12),
+        // decoration: BoxDecoration(
+        //   color: Color(0xFFF9FAFB),
+        //   borderRadius: BorderRadius.all(Radius.circular(12)),
+        //   border: Border.all(color: Color(0x291E2A78)),
+        // ),
+        child: Icon(Icons.arrow_back_ios, size: 16, color: AppColors.white),
+        //AppImage.asset(AppSvgs.arrow, size: 16, color: AppColors.white),
       ),
     );
   }

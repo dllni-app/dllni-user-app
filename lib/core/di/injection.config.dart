@@ -37,6 +37,30 @@ import '../../features/sm_home/data/source/sm_home_remote_data_source.dart'
     as _i1025;
 import '../../features/sm_home/domain/repository/sm_home_repo.dart' as _i267;
 import '../../features/sm_home/view/manager/bloc/sm_home_bloc.dart' as _i626;
+import '../../features/sm_offers/data/repository/sm_offers_repo_impl.dart'
+    as _i213;
+import '../../features/sm_offers/data/source/sm_offers_remote_data_source.dart'
+    as _i875;
+import '../../features/sm_offers/domain/repository/sm_offers_repo.dart'
+    as _i446;
+import '../../features/sm_offers/view/manager/bloc/sm_offers_bloc.dart'
+    as _i709;
+import '../../features/sm_orders/data/repository/sm_orders_repo_impl.dart'
+    as _i290;
+import '../../features/sm_orders/data/source/sm_orders_remote_data_source.dart'
+    as _i400;
+import '../../features/sm_orders/domain/repository/sm_orders_repo.dart'
+    as _i753;
+import '../../features/sm_orders/view/manager/bloc/sm_orders_bloc.dart'
+    as _i803;
+import '../../features/sm_profile/data/repository/sm_profile_repo_impl.dart'
+    as _i489;
+import '../../features/sm_profile/data/source/sm_profile_remote_data_source.dart'
+    as _i1065;
+import '../../features/sm_profile/domain/repository/sm_profile_repo.dart'
+    as _i130;
+import '../../features/sm_profile/view/manager/bloc/sm_profile_bloc.dart'
+    as _i602;
 import '../../features/sm_stores/data/repository/sm_stores_repo_impl.dart'
     as _i580;
 import '../../features/sm_stores/data/source/sm_stores_remote_data_source.dart'
@@ -58,6 +82,9 @@ _i174.GetIt $initGetIt(
   gh.factory<_i821.SmCartBloc>(() => _i821.SmCartBloc());
   gh.factory<_i717.SmDiscoverBloc>(() => _i717.SmDiscoverBloc());
   gh.factory<_i626.SmHomeBloc>(() => _i626.SmHomeBloc());
+  gh.factory<_i709.SmOffersBloc>(() => _i709.SmOffersBloc());
+  gh.factory<_i803.SmOrdersBloc>(() => _i803.SmOrdersBloc());
+  gh.factory<_i602.SmProfileBloc>(() => _i602.SmProfileBloc());
   gh.factory<_i883.SmStoresBloc>(() => _i883.SmStoresBloc());
   gh.singleton<_i960.DioNetwork>(() => injectableModule.dio);
   gh.lazySingleton<_i369.SmCartRemoteDataSource>(
@@ -69,16 +96,28 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i1025.SmHomeRemoteDataSource>(
     () => _i1025.SmHomeRemoteDataSource(),
   );
+  gh.lazySingleton<_i875.SmOffersRemoteDataSource>(
+    () => _i875.SmOffersRemoteDataSource(),
+  );
+  gh.lazySingleton<_i400.SmOrdersRemoteDataSource>(
+    () => _i400.SmOrdersRemoteDataSource(),
+  );
+  gh.lazySingleton<_i1065.SmProfileRemoteDataSource>(
+    () => _i1065.SmProfileRemoteDataSource(),
+  );
   gh.lazySingleton<_i179.SmStoresRemoteDataSource>(
     () => _i179.SmStoresRemoteDataSource(),
   );
+  gh.lazySingleton<_i130.SmProfileRepo>(() => _i489.SmProfileRepoImpl());
   gh.lazySingleton<_i267.SmHomeRepo>(() => _i991.SmHomeRepoImpl());
   gh.lazySingleton<_i359.SmStoresRepo>(() => _i580.SmStoresRepoImpl());
   gh.lazySingleton<_i579.SmCartRepo>(() => _i91.SmCartRepoImpl());
   gh.lazySingleton<_i777.AuthRemoteDataSource>(
     () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
   );
+  gh.lazySingleton<_i446.SmOffersRepo>(() => _i213.SmOffersRepoImpl());
   gh.lazySingleton<_i880.SmDiscoverRepo>(() => _i43.SmDiscoverRepoImpl());
+  gh.lazySingleton<_i753.SmOrdersRepo>(() => _i290.SmOrdersRepoImpl());
   gh.lazySingleton<_i976.AuthRepo>(
     () => _i751.AuthRepoImpl(
       authRemoteDataSource: gh<_i777.AuthRemoteDataSource>(),
