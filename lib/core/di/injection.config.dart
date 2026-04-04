@@ -33,6 +33,16 @@ import '../../features/rs_discover/domain/usecases/fetch_restaurant_product_deta
     as _i1;
 import '../../features/rs_discover/view/manager/bloc/rs_discover_bloc.dart'
     as _i589;
+import '../../features/rs_favourite/data/repository/rs_favourite_repo_impl.dart'
+    as _i489;
+import '../../features/rs_favourite/data/source/rs_favourite_remote_data_source.dart'
+    as _i206;
+import '../../features/rs_favourite/domain/repository/rs_favourite_repo.dart'
+    as _i865;
+import '../../features/rs_favourite/domain/usecases/fetch_rs_favourites_use_case.dart'
+    as _i1021;
+import '../../features/rs_favourite/view/manager/bloc/rs_favourite_bloc.dart'
+    as _i519;
 import '../../features/rs_home/data/repository/rs_home_repo_impl.dart' as _i500;
 import '../../features/rs_home/data/source/rs_home_remote_data_source.dart'
     as _i165;
@@ -68,48 +78,6 @@ import '../../features/rs_offers/data/source/rs_offers_remote_data_source.dart'
 import '../../features/rs_offers/domain/repository/rs_offers_repo.dart' as _i75;
 import '../../features/rs_offers/view/manager/bloc/rs_offers_bloc.dart'
     as _i391;
-import '../../features/rs_orders/data/repository/rs_orders_repo_impl.dart'
-    as _i879;
-import '../../features/rs_orders/data/source/rs_orders_remote_data_source.dart'
-    as _i761;
-import '../../features/rs_orders/domain/repository/rs_orders_repo.dart'
-    as _i623;
-import '../../features/rs_orders/domain/usecases/add_cart_item_use_case.dart'
-    as _i466;
-import '../../features/rs_orders/domain/usecases/checkout_order_use_case.dart'
-    as _i754;
-import '../../features/rs_orders/domain/usecases/list_orders_use_case.dart'
-    as _i850;
-import '../../features/rs_orders/domain/usecases/show_order_use_case.dart'
-    as _i538;
-import '../../features/rs_orders/view/manager/bloc/rs_orders_bloc.dart'
-    as _i761;
-import '../../features/rs_profile/data/repository/rs_profile_repo_impl.dart'
-    as _i793;
-import '../../features/rs_profile/data/source/rs_profile_remote_data_source.dart'
-    as _i562;
-import '../../features/rs_profile/domain/repository/rs_profile_repo.dart'
-    as _i611;
-import '../../features/rs_profile/domain/usecases/add_favorite_restaurant_use_case.dart'
-    as _i867;
-import '../../features/rs_profile/domain/usecases/create_vote_use_case.dart'
-    as _i206;
-import '../../features/rs_profile/domain/usecases/end_vote_use_case.dart'
-    as _i446;
-import '../../features/rs_profile/domain/usecases/fetch_addresses_use_case.dart'
-    as _i84;
-import '../../features/rs_profile/domain/usecases/fetch_favorite_restaurants_use_case.dart'
-    as _i431;
-import '../../features/rs_profile/domain/usecases/fetch_notifications_use_case.dart'
-    as _i353;
-import '../../features/rs_profile/domain/usecases/remove_favorite_restaurant_use_case.dart'
-    as _i901;
-import '../../features/rs_profile/domain/usecases/set_default_address_use_case.dart'
-    as _i151;
-import '../../features/rs_profile/domain/usecases/show_vote_use_case.dart'
-    as _i357;
-import '../../features/rs_profile/view/manager/bloc/rs_profile_bloc.dart'
-    as _i637;
 import 'injection.dart' as _i464;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -142,23 +110,15 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i341.RsDiscoverRemoteDataSource>(
     () => _i341.RsDiscoverRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
+  gh.lazySingleton<_i206.RsFavouriteRemoteDataSource>(
+    () => _i206.RsFavouriteRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
   gh.lazySingleton<_i165.RsHomeRemoteDataSource>(
     () => _i165.RsHomeRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
-  gh.lazySingleton<_i761.RsOrdersRemoteDataSource>(
-    () => _i761.RsOrdersRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
-  );
-  gh.lazySingleton<_i562.RsProfileRemoteDataSource>(
-    () => _i562.RsProfileRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
-  );
-  gh.lazySingleton<_i611.RsProfileRepo>(
-    () => _i793.RsProfileRepoImpl(
-      rsProfileRemoteDataSource: gh<_i562.RsProfileRemoteDataSource>(),
-    ),
-  );
-  gh.lazySingleton<_i623.RsOrdersRepo>(
-    () => _i879.RsOrdersRepoImpl(
-      rsOrdersRemoteDataSource: gh<_i761.RsOrdersRemoteDataSource>(),
+  gh.lazySingleton<_i865.RsFavouriteRepo>(
+    () => _i489.RsFavouriteRepoImpl(
+      rsFavouriteRemoteDataSource: gh<_i206.RsFavouriteRemoteDataSource>(),
     ),
   );
   gh.lazySingleton<_i622.RsDiscoverRepo>(
@@ -174,54 +134,10 @@ _i174.GetIt $initGetIt(
       rsHomeRemoteDataSource: gh<_i165.RsHomeRemoteDataSource>(),
     ),
   );
-  gh.lazySingleton<_i867.AddFavoriteRestaurantUseCase>(
-    () => _i867.AddFavoriteRestaurantUseCase(
-      rsProfileRepo: gh<_i611.RsProfileRepo>(),
+  gh.lazySingleton<_i1021.FetchRsFavouritesUseCase>(
+    () => _i1021.FetchRsFavouritesUseCase(
+      rsFavourite: gh<_i865.RsFavouriteRepo>(),
     ),
-  );
-  gh.lazySingleton<_i206.CreateVoteUseCase>(
-    () => _i206.CreateVoteUseCase(rsProfileRepo: gh<_i611.RsProfileRepo>()),
-  );
-  gh.lazySingleton<_i446.EndVoteUseCase>(
-    () => _i446.EndVoteUseCase(rsProfileRepo: gh<_i611.RsProfileRepo>()),
-  );
-  gh.lazySingleton<_i84.FetchAddressesUseCase>(
-    () => _i84.FetchAddressesUseCase(rsProfileRepo: gh<_i611.RsProfileRepo>()),
-  );
-  gh.lazySingleton<_i431.FetchFavoriteRestaurantsUseCase>(
-    () => _i431.FetchFavoriteRestaurantsUseCase(
-      rsProfileRepo: gh<_i611.RsProfileRepo>(),
-    ),
-  );
-  gh.lazySingleton<_i353.FetchNotificationsUseCase>(
-    () => _i353.FetchNotificationsUseCase(
-      rsProfileRepo: gh<_i611.RsProfileRepo>(),
-    ),
-  );
-  gh.lazySingleton<_i901.RemoveFavoriteRestaurantUseCase>(
-    () => _i901.RemoveFavoriteRestaurantUseCase(
-      rsProfileRepo: gh<_i611.RsProfileRepo>(),
-    ),
-  );
-  gh.lazySingleton<_i151.SetDefaultAddressUseCase>(
-    () => _i151.SetDefaultAddressUseCase(
-      rsProfileRepo: gh<_i611.RsProfileRepo>(),
-    ),
-  );
-  gh.lazySingleton<_i357.ShowVoteUseCase>(
-    () => _i357.ShowVoteUseCase(rsProfileRepo: gh<_i611.RsProfileRepo>()),
-  );
-  gh.lazySingleton<_i466.AddCartItemUseCase>(
-    () => _i466.AddCartItemUseCase(rsOrdersRepo: gh<_i623.RsOrdersRepo>()),
-  );
-  gh.lazySingleton<_i754.CheckoutOrderUseCase>(
-    () => _i754.CheckoutOrderUseCase(rsOrdersRepo: gh<_i623.RsOrdersRepo>()),
-  );
-  gh.lazySingleton<_i850.ListOrdersUseCase>(
-    () => _i850.ListOrdersUseCase(rsOrdersRepo: gh<_i623.RsOrdersRepo>()),
-  );
-  gh.lazySingleton<_i538.ShowOrderUseCase>(
-    () => _i538.ShowOrderUseCase(rsOrdersRepo: gh<_i623.RsOrdersRepo>()),
   );
   gh.lazySingleton<_i303.FetchDiscoverRestaurantsUseCase>(
     () => _i303.FetchDiscoverRestaurantsUseCase(
@@ -238,18 +154,6 @@ _i174.GetIt $initGetIt(
       rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
     ),
   );
-  gh.factory<_i637.RsProfileBloc>(
-    () => _i637.RsProfileBloc(
-      gh<_i84.FetchAddressesUseCase>(),
-      gh<_i151.SetDefaultAddressUseCase>(),
-      gh<_i353.FetchNotificationsUseCase>(),
-      gh<_i431.FetchFavoriteRestaurantsUseCase>(),
-      gh<_i901.RemoveFavoriteRestaurantUseCase>(),
-      gh<_i206.CreateVoteUseCase>(),
-      gh<_i357.ShowVoteUseCase>(),
-      gh<_i446.EndVoteUseCase>(),
-    ),
-  );
   gh.factory<_i958.AuthBloc>(() => _i958.AuthBloc(gh<_i37.LoginUseCase>()));
   gh.lazySingleton<_i555.FetchFeaturedOffersUseCase>(
     () => _i555.FetchFeaturedOffersUseCase(rsHome: gh<_i117.RsHomeRepo>()),
@@ -259,6 +163,9 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i181.FetchStoresUseCase>(
     () => _i181.FetchStoresUseCase(rsHome: gh<_i117.RsHomeRepo>()),
+  );
+  gh.factory<_i519.RsFavouriteBloc>(
+    () => _i519.RsFavouriteBloc(gh<_i1021.FetchRsFavouritesUseCase>()),
   );
   gh.lazySingleton<_i89.FetchRestaurantHomeCategoriesUseCase>(
     () => _i89.FetchRestaurantHomeCategoriesUseCase(
@@ -288,14 +195,6 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i339.FetchRestaurantHomeSuggestedProductsUseCase>(
     () => _i339.FetchRestaurantHomeSuggestedProductsUseCase(
       rsHomeRepo: gh<_i117.RsHomeRepo>(),
-    ),
-  );
-  gh.lazySingleton<_i761.RsOrdersBloc>(
-    () => _i761.RsOrdersBloc(
-      gh<_i850.ListOrdersUseCase>(),
-      gh<_i538.ShowOrderUseCase>(),
-      gh<_i754.CheckoutOrderUseCase>(),
-      gh<_i466.AddCartItemUseCase>(),
     ),
   );
   gh.factory<_i589.RsDiscoverBloc>(

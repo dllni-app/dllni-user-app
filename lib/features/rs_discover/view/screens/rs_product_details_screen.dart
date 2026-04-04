@@ -5,7 +5,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../data/models/fetch_restaurant_product_details_model.dart';
 import '../../domain/usecases/fetch_restaurant_product_details_use_case.dart';
-import '../../../rs_orders/domain/usecases/add_cart_item_use_case.dart';
 import '../models/product_preview_data.dart';
 
 class ProductDetailsScreenParams {
@@ -519,29 +518,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
           });
         },
         onAddPressed: () async {
-          final productId =
-              _details?.product?.id ?? widget.params.product.productId;
-          if (productId <= 0) return;
-          final modifierIds = _selectedModifierIdsByGroup.values
-              .expand((e) => e)
-              .toList();
-          final useCase = getIt<AddCartItemUseCase>();
-          final result = await useCase(
-            AddCartItemParams(
-              productId: productId,
-              quantity: _quantity,
-              modifierIds: modifierIds,
-              specialInstructions: notesController.text.trim(),
-            ),
-          );
-          result.fold(
-            (failure) => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(failure.message))),
-            (_) => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تمت إضافة المنتج إلى السلة')),
-            ),
-          );
+
         },
       ),
     );

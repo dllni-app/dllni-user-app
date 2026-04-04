@@ -2,10 +2,9 @@ import 'package:dllni_user_app/features/rs_main/view/widgets/rs_bottom_nav_bar.d
 import 'package:flutter/material.dart';
 
 import '../../rs_discover/view/screens/rs_discover_screen.dart';
+import '../../rs_favourite/view/screens/rs_favourite_screen.dart';
 import '../../rs_home/view/screens/rs_home_screen.dart';
 import '../../rs_offers/view/rs_offers_screen.dart';
-import '../../rs_orders/view/screens/rs_orders_screen.dart';
-import '../../rs_profile/view/screens/rs_profile_screen.dart';
 
 class RsMainScreen extends StatefulWidget {
   const RsMainScreen({super.key});
@@ -20,10 +19,10 @@ class _RsMainScreenState extends State<RsMainScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    controller = TabController(length: 5, vsync: this);
+    controller = TabController(length: 4, vsync: this);
   }
 
-  static const List<Widget> _pages = <Widget>[RsHomeScreen(), RsDiscoverScreen(), RsOffersScreen(), RsOrdersScreen(), RsProfileScreen()];
+  static const List<Widget> _pages = <Widget>[RsHomeScreen(), RsDiscoverScreen(), RsOffersScreen(), RsFavouriteScreen()];
 
   @override
   Widget build(BuildContext context) {

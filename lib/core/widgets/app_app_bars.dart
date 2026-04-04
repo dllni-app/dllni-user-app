@@ -10,31 +10,12 @@ class AppSimpleAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
-    );
-    final width = MediaQuery.sizeOf(context).width;
     return Container(
-      width: width,
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16 + MediaQuery.paddingOf(context).top,
-        16,
-        32,
-      ),
+      width: context.width,
       decoration: BoxDecoration(
         color: context.primary,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            offset: Offset(0, 4),
-            blurRadius: 7.3,
-            color: Color(0x40000000),
-          ),
-        ],
+        boxShadow: [BoxShadow(offset: Offset(0, 4), blurRadius: 7.3, color: Color(0x40000000))],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -42,11 +23,7 @@ class AppSimpleAppBar extends StatelessWidget {
         children: [
           AppText(
             title,
-            style: TextStyle(
-              color: context.onPrimary,
-              fontWeight: FontWeight.w500,
-              fontSize: 20,
-            ),
+            style: TextStyle(color: context.onPrimary, fontWeight: FontWeight.w500, fontSize: 20),
           ),
         ],
       ),
@@ -70,33 +47,15 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
-    );
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light, statusBarBrightness: Brightness.dark));
     return Container(
       width: context.width,
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16 + MediaQuery.paddingOf(context).top,
-        16,
-        20,
-      ),
+      padding: EdgeInsets.fromLTRB(16, 16 + MediaQuery.paddingOf(context).top, 16, 20),
       decoration: BoxDecoration(
         color: context.onPrimary,
-        border: Border(
-          bottom: BorderSide(color: context.primaryContainer, width: 2),
-        ),
+        border: Border(bottom: BorderSide(color: context.primaryContainer, width: 2)),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            offset: Offset(0, 1),
-            blurRadius: 2,
-            color: Color(0x0D000000),
-          ),
-        ],
+        boxShadow: [BoxShadow(offset: Offset(0, 1), blurRadius: 2, color: Color(0x0D000000))],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -104,22 +63,13 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
         children: [
           AppText(
             title,
-            style: TextStyle(
-              color: context.primary,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              height: 32 / 24,
-            ),
+            style: TextStyle(color: context.primary, fontSize: 24, fontWeight: FontWeight.w700, height: 32 / 24),
           ),
           SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: _SearchField(
-                  hintText: searchHintText,
-                  onChanged: onSearchChanged,
-                  onTap: onSearchTap,
-                ),
+                child: _SearchField(hintText: searchHintText, onChanged: onSearchChanged, onTap: onSearchTap),
               ),
             ],
           ),
@@ -130,11 +80,7 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({
-    required this.onChanged,
-    this.onTap,
-    required this.hintText,
-  });
+  const _SearchField({required this.onChanged, this.onTap, required this.hintText});
 
   final void Function(String value) onChanged;
   final void Function()? onTap;
@@ -156,36 +102,18 @@ class _SearchField extends StatelessWidget {
         onTapOutside: (_) => FocusScope.of(context).unfocus(),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(
-            fontFamily: "Cairo",
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-            color: Color(0xff9CA3AF),
-          ),
+          hintStyle: TextStyle(fontFamily: "Cairo", fontWeight: FontWeight.w500, fontSize: 12, color: Color(0xff9CA3AF)),
           filled: true,
           fillColor: context.surface,
           contentPadding: EdgeInsets.fromLTRB(16, 14, 44, 13),
           prefixIconConstraints: BoxConstraints(maxWidth: 44),
           prefixIcon: Padding(
             padding: EdgeInsets.only(right: 16, left: 8),
-            child: FaIcon(
-              FontAwesomeIcons.magnifyingGlass,
-              size: 16,
-              color: Color(0xff9CA3AF),
-            ),
+            child: FaIcon(FontAwesomeIcons.magnifyingGlass, size: 16, color: Color(0xff9CA3AF)),
           ),
-          border: OutlineInputBorder(
-            borderSide: BorderSide.none,
-            borderRadius: BorderRadius.all(Radius.circular(24)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide.none,
-            borderRadius: BorderRadius.all(Radius.circular(24)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide.none,
-            borderRadius: BorderRadius.all(Radius.circular(24)),
-          ),
+          border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
         ),
         onSubmitted: onChanged,
       ),

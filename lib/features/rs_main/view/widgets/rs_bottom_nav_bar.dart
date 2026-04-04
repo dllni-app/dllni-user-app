@@ -20,11 +20,10 @@ class _RsBottomNavBarState extends State<RsBottomNavBar> {
       Assets.images.rsHomeBottomNavBar.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
       Assets.images.rsDiscoverBottomNavBar.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
       Assets.images.rsOffersBottomNavBar.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
-      Assets.images.rsOrdersBottomNavBar.image(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
-      Assets.images.rsProfileBottomNavBar.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
+      Assets.images.rsFavourite.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
     ];
 
-    List<String> titles = ['الرئيسية', 'اكتشف', 'العروض', 'طلباتي', 'حسابي'];
+    List<String> titles = ['الرئيسية', 'اكتشف', 'العروض', 'المفضلة'];
 
     return Container(
       decoration: BoxDecoration(

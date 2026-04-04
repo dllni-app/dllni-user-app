@@ -21,6 +21,7 @@ class $AssetsImagesGen {
   const $AssetsImagesGen();
 
   final SvgGenImage rsDiscoverBottomNavBar = const SvgGenImage('assets/images/rs_discover_bottom_nav_bar.svg');
+  final SvgGenImage rsFavourite = const SvgGenImage('assets/images/rs_favourite.svg');
   final SvgGenImage rsHomeBottomNavBar = const SvgGenImage('assets/images/rs_home_bottom_nav_bar.svg');
   final SvgGenImage rsOffersBottomNavBar = const SvgGenImage('assets/images/rs_offers_bottom_nav_bar.svg');
   final AssetGenImage rsOrdersBottomNavBar = const AssetGenImage('assets/images/rs_orders_bottom_nav_bar.png');

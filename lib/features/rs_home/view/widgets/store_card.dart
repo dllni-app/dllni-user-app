@@ -1,11 +1,9 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/restaurant_preview_data.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_store_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../rs_profile/domain/usecases/add_favorite_restaurant_use_case.dart';
 import '../../data/models/fetch_restaurant_home_nearest_restaurants_model.dart';
 
 class StoreCard extends StatelessWidget {
@@ -78,13 +76,8 @@ class StoreCard extends StatelessWidget {
                     top: 12,
                     left: 12,
                     child: InkWell(
-                      onTap: () async {
-                        final id = store.id;
-                        if (id == null) return;
-                        final useCase = getIt<AddFavoriteRestaurantUseCase>();
-                        await useCase(
-                          AddFavoriteRestaurantParams(restaurantId: id),
-                        );
+                      onTap: () {
+
                       },
                       child: CircleAvatar(
                         radius: 18,
