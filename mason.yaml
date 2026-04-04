@@ -1,3 +1,5 @@
 bricks:
+  app_bootstrap:
+    path: common_package/bricks/apps/app_bootstrap
   feature:
-    path: ../common_package/bricks/features/feature
+    path: common_package/bricks/features/feature

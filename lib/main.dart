@@ -13,11 +13,9 @@ Future<void> main() async {
       app: App(navigatorKey: navigatorKey),
       configureDependencies: configureDependencies,
       enableNotifications: true,
+      startLocale: const Locale('ar'),
       fallbackLocale: const Locale('ar'),
-      supportedLocales: const <Locale>[
-        Locale('en'),
-        Locale('ar'),
-      ],
+      supportedLocales: const <Locale>[Locale('en'), Locale('ar')],
       translationsAssetPath: 'assets/translations',
       fcmTokenKey: 'fcm_token',
     ),
