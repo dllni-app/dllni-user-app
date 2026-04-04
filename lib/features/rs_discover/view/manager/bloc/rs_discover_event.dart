@@ -2,14 +2,23 @@ part of 'rs_discover_bloc.dart';
 
 abstract class RsDiscoverEvent {}
 
-class RsDiscoverFilterChanged extends RsDiscoverEvent {
-  RsDiscoverFilterChanged(this.filterIndex);
+class FetchDiscoverRestaurantsEvent extends RsDiscoverEvent with EventWithReload {
+  @override
+  final bool isReload;
 
-  final int filterIndex;
+  final bool loadMore;
+
+  FetchDiscoverRestaurantsEvent({this.isReload = false, this.loadMore = false});
 }
 
-class RsDiscoverSortChanged extends RsDiscoverEvent {
-  RsDiscoverSortChanged(this.sort);
+class DiscoverTabChangedEvent extends RsDiscoverEvent {
+  final int tabIndex;
 
-  final RsDiscoverSort sort;
+  DiscoverTabChangedEvent(this.tabIndex);
+}
+
+class DiscoverSearchQueryChangedEvent extends RsDiscoverEvent {
+  final String query;
+
+  DiscoverSearchQueryChangedEvent(this.query);
 }

@@ -3,16 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class StoreCoverSection extends StatelessWidget {
-  const StoreCoverSection({super.key});
+  const StoreCoverSection({super.key, required this.title, required this.subtitle, this.coverImageUrl, this.logoImageUrl});
+
+  final String title;
+  final String subtitle;
+  final String? coverImageUrl;
+  final String? logoImageUrl;
 
   @override
   Widget build(BuildContext context) {
+    final hasNetworkCover = coverImageUrl != null && (coverImageUrl!.startsWith('http://') || coverImageUrl!.startsWith('https://'));
+    final hasAssetCover = coverImageUrl != null && coverImageUrl!.isNotEmpty && !hasNetworkCover;
+    final hasNetworkLogo = logoImageUrl != null && (logoImageUrl!.startsWith('http://') || logoImageUrl!.startsWith('https://'));
+    final hasAssetLogo = logoImageUrl != null && logoImageUrl!.isNotEmpty && !hasNetworkLogo;
+
     return SizedBox(
       height: 280 + MediaQuery.paddingOf(context).top,
       child: Stack(
         children: [
           Positioned.fill(
-            child: AppImage.asset('', fit: BoxFit.cover),
+            child: hasNetworkCover
+                ? AppImage.network(
+                    coverImageUrl!,
+                    fit: BoxFit.cover,
+                    errorWidget: _imagePlaceholder(),
+                  )
+                : hasAssetCover
+                ? AppImage.asset(coverImageUrl!, fit: BoxFit.cover)
+                : _imagePlaceholder(),
           ),
           Positioned.fill(
             child: DecoratedBox(
@@ -20,11 +38,7 @@ class StoreCoverSection extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Color(0x99000000),
-                    Color(0x33000000),
-                    Color(0x00000000),
-                  ],
+                  colors: [Color(0x99000000), Color(0x33000000), Color(0x00000000)],
                 ),
               ),
             ),
@@ -32,10 +46,7 @@ class StoreCoverSection extends StatelessWidget {
           Positioned(
             top: MediaQuery.paddingOf(context).top + 12,
             right: 16,
-            child: _ActionButton(
-              icon: FontAwesomeIcons.arrowRight,
-              onTap: () => context.pop(),
-            ),
+            child: _ActionButton(icon: FontAwesomeIcons.arrowRight, onTap: () => context.pop()),
           ),
           Positioned(
             top: MediaQuery.paddingOf(context).top + 12,
@@ -59,38 +70,38 @@ class StoreCoverSection extends StatelessWidget {
                   width: 80,
                   height: 80,
                   padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: context.onPrimary,
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
-                  ),
-                  child: AppImage.asset('', fit: BoxFit.contain),
+                  decoration: BoxDecoration(color: context.onPrimary, borderRadius: BorderRadius.all(Radius.circular(16))),
+                  child: hasNetworkLogo
+                      ? AppImage.network(
+                          logoImageUrl!,
+                          fit: BoxFit.contain,
+                          errorWidget: _imagePlaceholder(iconSize: 28),
+                        )
+                      : hasAssetLogo
+                      ? AppImage.asset(logoImageUrl!, fit: BoxFit.contain)
+                      : _imagePlaceholder(iconSize: 28),
                 ),
                 SizedBox(width: 12),
-                Padding(
-                  padding: EdgeInsets.only(bottom: 4),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText(
-                        "سوبر ماركت النور",
-                        style: TextStyle(
-                          color: context.onPrimary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          height: 32 / 24,
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          title,
+                          style: TextStyle(color: context.onPrimary, fontSize: 24, fontWeight: FontWeight.w700),
+                          scrollText: true,
                         ),
-                      ),
-                      AppText(
-                        "فرع العلياء",
-                        style: TextStyle(
-                          color: context.onPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 20 / 14,
-                        ),
-                      ),
-                    ],
+                        if (subtitle.isNotEmpty)
+                          AppText(
+                            subtitle,
+                            scrollText: true,
+                            style: TextStyle(color: context.onPrimary, fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -102,8 +113,21 @@ class StoreCoverSection extends StatelessWidget {
   }
 }
 
+Widget _imagePlaceholder({double iconSize = 56}) {
+  return Container(
+    color: const Color(0xFFF5F5F5),
+    alignment: Alignment.center,
+    child: Icon(
+      Icons.image_outlined,
+      size: iconSize,
+      color: const Color(0xFF9CA3AF),
+    ),
+  );
+}
+
 class _ActionButton extends StatelessWidget {
   const _ActionButton({required this.icon, required this.onTap});
+
   final FaIconData icon;
   final void Function() onTap;
 
@@ -120,18 +144,8 @@ class _ActionButton extends StatelessWidget {
           color: context.onPrimary,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(
-              offset: Offset(0, 2),
-              blurRadius: 4,
-              spreadRadius: -2,
-              color: Color(0x1A000000),
-            ),
-            BoxShadow(
-              offset: Offset(0, 4),
-              blurRadius: 6,
-              spreadRadius: -1,
-              color: Color(0x1A000000),
-            ),
+            BoxShadow(offset: Offset(0, 2), blurRadius: 4, spreadRadius: -2, color: Color(0x1A000000)),
+            BoxShadow(offset: Offset(0, 4), blurRadius: 6, spreadRadius: -1, color: Color(0x1A000000)),
           ],
         ),
         child: FaIcon(icon, size: 18, color: Color(0xFF1F2937)),

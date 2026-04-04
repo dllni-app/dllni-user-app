@@ -1,5 +1,7 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/features/rs_home/view/manager/bloc/rs_home_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'offer_card.dart';
@@ -19,83 +21,35 @@ class ExclusiveOffersSection extends StatelessWidget {
             children: [
               AppText(
                 "عروض حصرية بالقرب منك",
-                style: TextStyle(
-                  color: Color(0xFF1A1A1A),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  height: 24 / 16,
-                ),
+                style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
               ),
               SizedBox(width: 8),
               FaIcon(FontAwesomeIcons.fire, color: context.primaryContainer, size: 14),
             ],
           ),
-          SizedBox(height: 16),
-          ...List.generate(3 * 2 - 1, (index) {
-            if (index.isOdd) return SizedBox(height: 12);
-            return OfferCard(data: offers[index ~/ 2]);
-          }),
+          BlocBuilder<RsHomeBloc, RsHomeState>(
+            builder: (context, state) {
+              if (state.restaurantExclusiveOffersStatus == BlocStatus.loading ||
+                  state.restaurantExclusiveOffersStatus == BlocStatus.init ||
+                  state.restaurantExclusiveOffersStatus == null) {
+                return Center(child: CircularProgressIndicator());
+              } else if (state.restaurantExclusiveOffersStatus == BlocStatus.failed) {
+                return Center(child: AppText.labelLarge(state.errorMessage ?? 'حدث خطا ما'));
+              } else {
+                final list = state.restaurantExclusiveOffers?.exclusiveOffers ?? const [];
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  padding: EdgeInsetsDirectional.symmetric(vertical: 10),
+                  itemBuilder: (context, index) => OfferCard(data: list[index]),
+                  separatorBuilder: (context, index) => SizedBox(height: 10),
+                  itemCount: list.length,
+                );
+              }
+            },
+          ),
         ],
       ),
     );
   }
 }
-
-final List<OfferCardData> offers = [
-  OfferCardData(
-    imagePath: '',
-    name: "عرض خاص على المواد الغذائية",
-    info: "خصم يصل إلى 30% على مجموعة مختارة من المنتجات",
-    distance: 1.2,
-    type: OfferType.limited,
-  ),
-  OfferCardData(
-    imagePath: '',
-    name: "تخفيضات نهاية اليوم",
-    info: "استفد من العروض قبل انتهاء الوقت",
-    distance: 0.8,
-    type: OfferType.almostFinished,
-  ),
-  OfferCardData(
-    imagePath: '',
-    name: "عرض يومي على الخضار",
-    info: "خضار طازجة بأسعار مميزة اليوم فقط",
-    distance: 2.5,
-    type: OfferType.daily,
-  ),
-  OfferCardData(
-    imagePath: '',
-    name: "خصومات على المشروبات",
-    info: "اشتري 2 واحصل على 1 مجاناً",
-    distance: 1.7,
-    type: OfferType.limited,
-  ),
-  OfferCardData(
-    imagePath: '',
-    name: "عرض أوشك على الانتهاء",
-    info: "سارع قبل نفاد الكمية",
-    distance: 3.0,
-    type: OfferType.almostFinished,
-  ),
-  OfferCardData(
-    imagePath: '',
-    name: "عرض اليوم على الألبان",
-    info: "أفضل الأسعار على منتجات الألبان",
-    distance: 0.5,
-    type: OfferType.daily,
-  ),
-  OfferCardData(
-    imagePath: '',
-    name: "عروض الوجبات السريعة",
-    info: "وجبات شهية بأسعار مخفضة",
-    distance: 4.2,
-    type: OfferType.limited,
-  ),
-  OfferCardData(
-    imagePath: '',
-    name: "تخفيضات اللحظة الأخيرة",
-    info: "لا تفوت الفرصة قبل انتهاء العرض",
-    distance: 2.0,
-    type: OfferType.almostFinished,
-  ),
-];

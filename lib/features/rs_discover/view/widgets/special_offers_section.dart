@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models/fetch_restaurant_details_model.dart';
 import 'special_offer_card.dart';
 
 class SpecialOffersSection extends StatelessWidget {
-  const SpecialOffersSection({super.key});
+  const SpecialOffersSection({super.key, required this.offers});
+
+  final List<RestaurantDetailsOffer> offers;
 
   @override
   Widget build(BuildContext context) {
+    if (offers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       children: [
         Padding(
@@ -27,7 +34,7 @@ class SpecialOffersSection extends StatelessWidget {
                 onTap: () {},
                 borderRadius: BorderRadius.all(Radius.circular(4)),
                 child: Text(
-                  " عرض الكل ",
+                  " ${offers.length} عروض ",
                   style: TextStyle(
                     color: Color(0xFF4CAF50),
                     fontSize: 14,
@@ -45,9 +52,9 @@ class SpecialOffersSection extends StatelessWidget {
           child: ListView.separated(
             padding: EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
-            itemCount: 3,
+            itemCount: offers.length,
             separatorBuilder: (_, _) => SizedBox(width: 12),
-            itemBuilder: (_, index) => SpecialOfferCard(),
+            itemBuilder: (_, index) => SpecialOfferCard(offer: offers[index]),
           ),
         ),
       ],

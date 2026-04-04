@@ -1,93 +1,109 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:flutter/material.dart';
 
-import '../../screens/rs_restaurant_detail_screen.dart';
+import 'package:common_package/helpers/droppable_helper.dart';
+import 'package:common_package/helpers/pagination_helper.dart';
 
+import '../../../data/models/fetch_discover_restaurants_model.dart';
+import '../../../domain/discover_tab_query.dart';
+import '../../../domain/params/fetch_discover_restaurants_params.dart';
+import '../../../domain/usecases/fetch_discover_restaurants_use_case.dart';
 
 part 'rs_discover_event.dart';
 part 'rs_discover_state.dart';
 
 @injectable
 class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
-  RsDiscoverBloc() : super(RsDiscoverState.initial()) {
-    on<RsDiscoverFilterChanged>(_onFilterChanged);
-    on<RsDiscoverSortChanged>(_onSortChanged);
+  final FetchDiscoverRestaurantsUseCase fetchDiscoverRestaurantsUseCase;
+
+  RsDiscoverBloc(this.fetchDiscoverRestaurantsUseCase) : super(RsDiscoverState()) {
+    on<FetchDiscoverRestaurantsEvent>(_onFetch, transformer: droppableProMax());
+    on<DiscoverTabChangedEvent>(_onTabChanged);
+    on<DiscoverSearchQueryChangedEvent>(_onSearchQueryChanged);
   }
 
-  void _onFilterChanged(
-    RsDiscoverFilterChanged event,
-    Emitter<RsDiscoverState> emit,
-  ) {
-    final updatedState = state.copyWith(
-      selectedFilterIndex: event.filterIndex,
-      visibleRestaurants: _buildVisibleRestaurants(
-        restaurants: state.restaurants,
-        selectedFilterIndex: event.filterIndex,
-        selectedSort: state.selectedSort,
-      ),
-    );
-    emit(updatedState);
+  Timer? _searchDebounce;
+
+  @override
+  Future<void> close() {
+    _searchDebounce?.cancel();
+    return super.close();
   }
 
-  void _onSortChanged(RsDiscoverSortChanged event, Emitter<RsDiscoverState> emit) {
-    final updatedState = state.copyWith(
-      selectedSort: event.sort,
-      visibleRestaurants: _buildVisibleRestaurants(
-        restaurants: state.restaurants,
-        selectedFilterIndex: state.selectedFilterIndex,
-        selectedSort: event.sort,
-      ),
-    );
-    emit(updatedState);
+  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
+    return (events, mapper) {
+      return events.transform(ExhaustMapStreamTransformer(mapper));
+    };
   }
 
-  List<RsRestaurantListItem> _buildVisibleRestaurants({
-    required List<RsRestaurantListItem> restaurants,
-    required int selectedFilterIndex,
-    required RsDiscoverSort selectedSort,
-  }) {
-    final filtered = restaurants.where((restaurant) {
-      switch (selectedFilterIndex) {
-        case 1:
-          return restaurant.isNearby;
-        case 2:
-          return restaurant.rating >= 4.7;
-        case 3:
-          return restaurant.isFastDelivery;
-        case 4:
-          return restaurant.hasOffer;
-        case 5:
-          return restaurant.isOpen;
-        case 0:
-        default:
-          return true;
-      }
-    }).toList();
+  void _onTabChanged(DiscoverTabChangedEvent event, Emitter<RsDiscoverState> emit) {
+    _searchDebounce?.cancel();
+    emit(state.copyWith(selectedTabIndex: event.tabIndex));
+    add(FetchDiscoverRestaurantsEvent(isReload: true));
+  }
 
-    filtered.sort((a, b) {
-      switch (selectedSort) {
-        case RsDiscoverSort.highestRated:
-          return b.rating.compareTo(a.rating);
-        case RsDiscoverSort.fastestDelivery:
-          return _extractFirstNumberFromText(a.deliveryTimeLabel).compareTo(
-            _extractFirstNumberFromText(b.deliveryTimeLabel),
-          );
-        case RsDiscoverSort.nearest:
-          return _extractFirstNumberFromText(
-            a.distanceLabel,
-          ).compareTo(_extractFirstNumberFromText(b.distanceLabel));
-      }
+  void _onSearchQueryChanged(DiscoverSearchQueryChangedEvent event, Emitter<RsDiscoverState> emit) {
+    emit(state.copyWith(searchQuery: event.query));
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (isClosed) return;
+      add(FetchDiscoverRestaurantsEvent(isReload: true));
     });
-
-    return filtered;
   }
 
-  double _extractFirstNumberFromText(String value) {
-    final match = RegExp(r'\d+(\.\d+)?').firstMatch(value);
-    if (match == null) {
-      return 0;
+  Future<void> _onFetch(FetchDiscoverRestaurantsEvent event, Emitter<RsDiscoverState> emit) async {
+    final tabQuery = DiscoverTabQuery.fromTabIndex(state.selectedTabIndex);
+    final perPage = state.restaurants.perPage;
+    final isLoadMore = event.loadMore && !event.isReload;
+
+    if (isLoadMore) {
+      if (state.restaurants.isEndPage) return;
+      emit(state.copyWith(restaurants: state.restaurants.setLoading(isReload: false)));
+    } else {
+      emit(state.copyWith(restaurants: state.restaurants.setLoading(isReload: event.isReload || state.restaurants.list.isEmpty)));
     }
-    return double.tryParse(match.group(0) ?? '') ?? 0;
+
+    final page = isLoadMore ? state.restaurants.pageNumber : 1;
+
+    final bool nearestSort = tabQuery.sort == 'nearest';
+    final params = FetchDiscoverRestaurantsParams(
+      page: page,
+      perPage: perPage,
+      search: state.searchQuery,
+      sort: tabQuery.sort,
+      filterOpenNow: tabQuery.filterOpenNow,
+      filterHasOffers: tabQuery.filterHasOffers,
+      latitude: nearestSort ? 31.97 : null,
+      longitude: nearestSort ? 35.935 : null,
+    );
+
+    final res = await fetchDiscoverRestaurantsUseCase(params);
+    res.fold(
+      (l) {
+        emit(state.copyWith(
+          restaurants: state.restaurants.setFaild(errorMessage: l.message),
+        ));
+      },
+      (r) {
+        final items = r.data ?? [];
+        final meta = r.meta;
+        final metaPerPage = meta?.perPage ?? perPage;
+        final currentPage = meta?.currentPage ?? page;
+        final lastPage = meta?.lastPage ?? currentPage;
+        final shortPage = items.length < metaPerPage;
+        final atLastPage = currentPage >= lastPage;
+        final endReached = atLastPage || shortPage;
+
+        var next = state.restaurants.setSuccess(data: items, perPage: metaPerPage);
+        next = next.copyWith(isEndPage: endReached);
+
+        emit(state.copyWith(
+          restaurants: next,
+          totalCount: meta?.total ?? next.list.length,
+        ));
+      },
+    );
   }
 }

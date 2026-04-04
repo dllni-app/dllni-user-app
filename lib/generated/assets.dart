@@ -26,13 +26,13 @@ class $AssetsImagesGen {
   final AssetGenImage rsOrdersBottomNavBar = const AssetGenImage('assets/images/rs_orders_bottom_nav_bar.png');
   final SvgGenImage rsProfileBottomNavBar = const SvgGenImage('assets/images/rs_profile_bottom_nav_bar.svg');
   final SvgGenImage rsProfileCoupon = const SvgGenImage('assets/images/rs_profile_coupon.svg');
+  final AssetGenImage test = const AssetGenImage('assets/images/test.png');
 }
 
 class AssetGenImage {
   const AssetGenImage(this._assetName, {this.size, this.flavors = const {}});
 
   final String _assetName;
-
 
   final Size? size;
   final Set<String> flavors;
@@ -90,25 +90,12 @@ class AssetGenImage {
     );
   }
 
-  ImageProvider provider({
-    AssetBundle? bundle,
-    String? package,
-  }) {
-    return AssetImage(
-      _assetName,
-      bundle: bundle,
-      package: package,
-    );
+  ImageProvider provider({AssetBundle? bundle, String? package}) {
+    return AssetImage(_assetName, bundle: bundle, package: package);
   }
 
-  Widget custom({
-    Key? key,
-    required Widget Function(BuildContext context, String assetPath) builder,
-  }) {
-    return Builder(
-      key: key,
-      builder: (context) => builder(context, _assetName),
-    );
+  Widget custom({Key? key, required Widget Function(BuildContext context, String assetPath) builder}) {
+    return Builder(key: key, builder: (context) => builder(context, _assetName));
   }
 
   String get path => _assetName;
@@ -162,18 +149,11 @@ class SvgGenImage {
     );
   }
 
-  Widget custom({
-    Key? key,
-    required Widget Function(BuildContext context, String assetPath) builder,
-  }) {
-    return Builder(
-      key: key,
-      builder: (context) => builder(context, _assetName),
-    );
+  Widget custom({Key? key, required Widget Function(BuildContext context, String assetPath) builder}) {
+    return Builder(key: key, builder: (context) => builder(context, _assetName));
   }
 
   String get path => _assetName;
 
   String get keyName => _assetName;
 }
-

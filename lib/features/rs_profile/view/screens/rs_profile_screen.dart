@@ -70,7 +70,10 @@ class RsProfileScreen extends StatelessWidget {
                           title: 'عناويني',
                           subtitle: 'إدارة عناوين التوصيل المحفوظة',
                           onTap: () {
-                            context.pushRoute('/rsmyaddresses');
+                            context.pushRoute(
+                              '/rsmyaddresses',
+                              arguments: false,
+                            );
                           },
                         ),
                         Padding(

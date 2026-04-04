@@ -1,7 +1,11 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/models/fetch_notifications_model.dart';
+import '../../domain/usecases/fetch_notifications_use_case.dart';
+import '../manager/bloc/rs_profile_bloc.dart';
 import '../widgets/notification_feed_item.dart';
 
 @AutoRoutePage()
@@ -13,106 +17,6 @@ class RsNotificationsScreen extends StatefulWidget {
 }
 
 class _RsNotificationsScreenState extends State<RsNotificationsScreen> {
-  late List<FetchNotificationsModelDataItem> _notifications;
-
-  @override
-  void initState() {
-    super.initState();
-    _notifications = _seedNotifications();
-  }
-
-  List<FetchNotificationsModelDataItem> _seedNotifications() {
-    final now = DateTime.now();
-    return [
-      FetchNotificationsModelDataItem(
-        type: 'order',
-        title: 'تم استلام طلبك',
-        body: 'تم استلام طلبك من مطعم البركة وجاري تجهيزه',
-        createdAt: now.subtract(const Duration(minutes: 5)).toIso8601String(),
-        isRead: false,
-        showTrailingAccent: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'inventory',
-        title: 'طلبك في الطريق',
-        body: 'السائق فؤاد إليك، الوصول المتوقع خلال 15 دقيقة',
-        createdAt: now.subtract(const Duration(minutes: 20)).toIso8601String(),
-        isRead: false,
-        showTrailingAccent: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'offers',
-        title: 'عرض خاص بالقرب منك',
-        body: 'خصم 20% على مطعم البيت الحلبي - صالح لغاية اليوم',
-        createdAt: now.subtract(const Duration(hours: 1)).toIso8601String(),
-        isRead: false,
-        showTrailingAccent: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'order',
-        title: 'طلبك أصبح جاهزاً للاستلام',
-        body: 'يمكنك استلام طلبك الآن من مطعم الشام - رقم الطلب 4528',
-        createdAt: now.subtract(const Duration(hours: 21)).toIso8601String(),
-        isRead: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'order',
-        title: 'تم توصيل طلبك بنجاح',
-        body: 'شكراً لطلبك! نتمنى أن تكون قد استمتعت بوجبتك',
-        createdAt: now
-            .subtract(const Duration(days: 1, hours: 2))
-            .toIso8601String(),
-        isRead: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'gift',
-        title: 'عرض خاص لك',
-        body: 'احصل على توصيل مجاني على طلبك القادم - FREE2024',
-        createdAt: now
-            .subtract(const Duration(days: 1, hours: 5))
-            .toIso8601String(),
-        isRead: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'alert',
-        title: 'تحديث التطبيق',
-        body: 'نسخة جديدة متاحة تتضمن تحسينات وتجربة أسرع',
-        createdAt: now
-            .subtract(const Duration(days: 2, hours: 4))
-            .toIso8601String(),
-        isRead: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'system',
-        title: 'مطاعم جديدة في منطقتك',
-        body: 'اكتشف 5 مطاعم جديدة تم إضافتها مؤخراً هنا',
-        createdAt: now.subtract(const Duration(days: 3)).toIso8601String(),
-        isRead: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'offers',
-        title: 'عروض نهاية الأسبوع',
-        body: 'خصومات تصل إلى 40% على مطاعم مختارة',
-        createdAt: now.subtract(const Duration(days: 4)).toIso8601String(),
-        isRead: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'unknown',
-        title: 'تحديث سياسة الخصوصية',
-        body: 'تم تحديث سياسة الخصوصية لحسابك، ننصحك بالاطلاع عليها',
-        createdAt: now.subtract(const Duration(days: 6)).toIso8601String(),
-        isRead: true,
-      ),
-      FetchNotificationsModelDataItem(
-        type: 'safety',
-        title: 'إرشادات سلامة مهمة',
-        body: 'نرجو اتباع إرشادات السلامة عند استلام الطلب',
-        createdAt: now.subtract(const Duration(days: 7)).toIso8601String(),
-        isRead: true,
-      ),
-    ];
-  }
-
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
@@ -131,7 +35,9 @@ class _RsNotificationsScreenState extends State<RsNotificationsScreen> {
     return 'الأقدم';
   }
 
-  Map<String, List<FetchNotificationsModelDataItem>> _groupNotifications() {
+  Map<String, List<FetchNotificationsModelDataItem>> _groupNotifications(
+    List<FetchNotificationsModelDataItem> notifications,
+  ) {
     final grouped = <String, List<FetchNotificationsModelDataItem>>{
       'اليوم': [],
       'أمس': [],
@@ -139,7 +45,7 @@ class _RsNotificationsScreenState extends State<RsNotificationsScreen> {
       'الأقدم': [],
     };
 
-    for (final item in _notifications) {
+    for (final item in notifications) {
       final parsed = DateTime.tryParse(item.createdAt ?? '');
       if (parsed == null) continue;
       grouped[_bucketLabel(parsed)]!.add(item);
@@ -148,71 +54,109 @@ class _RsNotificationsScreenState extends State<RsNotificationsScreen> {
     return grouped;
   }
 
-  void _markAllRead() {
-    setState(() {
-      _notifications = _notifications
-          .map((item) => item.copyWith(isRead: true, showTrailingAccent: false))
-          .toList();
-    });
+  void _markAllRead() =>
+      context.read<RsProfileBloc>().add(MarkAllNotificationsReadEvent());
+
+  Future<void> _refreshNotifications() async {
+    final bloc = context.read<RsProfileBloc>();
+    bloc.add(FetchNotificationsEvent(params: FetchNotificationsParams()));
+    await bloc.stream.firstWhere(
+      (state) => state.notificationsStatus != BlocStatus.loading,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final groups = _groupNotifications();
-    final sections = ['اليوم', 'أمس', 'الأسبوع الماضي', 'الأقدم'];
-
-    return Scaffold(
-      backgroundColor: const Color(0xffF9FAFB),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _RsNotificationsAppBar(onReadAll: _markAllRead),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
-                children: [
-                  for (final section in sections)
-                    if (groups[section]!.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsetsDirectional.fromSTEB(
-                          16,
-                          10,
-                          16,
-                          8,
-                        ),
-                        child: AppText.labelLarge(
-                          section,
-                          color: const Color(0xff9CA3AF),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Container(
-                        color: context.onPrimary,
-                        child: Column(
+    return BlocProvider<RsProfileBloc>(
+      lazy: false,
+      create: (_) => getIt<RsProfileBloc>()
+        ..add(FetchNotificationsEvent(params: FetchNotificationsParams())),
+      child: BlocListener<RsProfileBloc, RsProfileState>(
+        listenWhen: (previous, current) =>
+            previous.notificationsStatus != current.notificationsStatus &&
+            current.notificationsStatus == BlocStatus.failed,
+        listener: (context, state) {
+          if (state.errorMessage == null || state.errorMessage!.isEmpty) {
+            return;
+          }
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xffF9FAFB),
+          body: SafeArea(
+            child: Column(
+              children: [
+                _RsNotificationsAppBar(onReadAll: _markAllRead),
+                Expanded(
+                  child: BlocBuilder<RsProfileBloc, RsProfileState>(
+                    builder: (context, state) {
+                      final groups = _groupNotifications(state.notifications);
+                      const sections = ['اليوم', 'أمس', 'الأسبوع الماضي', 'الأقدم'];
+                      if (state.notificationsStatus == null ||
+                          state.notificationsStatus == BlocStatus.loading ||
+                          state.notificationsStatus == BlocStatus.init) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (state.notifications.isEmpty) {
+                        return const Center(child: Text('لا توجد إشعارات'));
+                      }
+                      return RefreshIndicator(
+                        onRefresh: _refreshNotifications,
+                        child: ListView(
+                          padding: const EdgeInsetsDirectional.only(
+                            top: 8,
+                            bottom: 16,
+                          ),
                           children: [
-                            for (
-                              var i = 0;
-                              i < groups[section]!.length;
-                              i++
-                            ) ...[
-                              NotificationFeedItem(
-                                notification: groups[section]![i],
-                              ),
-                              if (i != groups[section]!.length - 1)
-                                const Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: Color(0xffF3F4F6),
+                            for (final section in sections)
+                              if (groups[section]!.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsetsDirectional.fromSTEB(
+                                    16,
+                                    10,
+                                    16,
+                                    8,
+                                  ),
+                                  child: AppText.labelLarge(
+                                    section,
+                                    color: const Color(0xff9CA3AF),
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
-                            ],
+                                Container(
+                                  color: context.onPrimary,
+                                  child: Column(
+                                    children: [
+                                      for (
+                                        var i = 0;
+                                        i < groups[section]!.length;
+                                        i++
+                                      ) ...[
+                                        NotificationFeedItem(
+                                          notification: groups[section]![i],
+                                        ),
+                                        if (i != groups[section]!.length - 1)
+                                          const Divider(
+                                            height: 1,
+                                            thickness: 1,
+                                            color: Color(0xffF3F4F6),
+                                          ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
                           ],
                         ),
-                      ),
-                    ],
-                ],
-              ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

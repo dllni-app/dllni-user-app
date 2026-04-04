@@ -4,8 +4,23 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../data/models/fetch_restaurant_details_model.dart';
+
 class SpecialOfferCard extends StatelessWidget {
-  const SpecialOfferCard({super.key});
+  const SpecialOfferCard({super.key, required this.offer});
+
+  final RestaurantDetailsOffer offer;
+
+  String get _discountLabel {
+    final value = offer.discountValue;
+    if (value == null) return 'عرض خاص';
+    if (offer.discountType == 'percentage') {
+      return 'خصم ${value.toStringAsFixed(0)}%';
+    }
+    return 'خصم ${value.toStringAsFixed(2)} د.أ';
+  }
+
+  String get _title => offer.name ?? 'عرض خاص';
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +51,7 @@ class SpecialOfferCard extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     color: Color(0x33FFFFFF),
                     child: Text(
-                      "خصم 20%",
+                      _discountLabel,
                       style: TextStyle(
                         color: context.onPrimaryContainer,
                         fontSize: 12,
@@ -52,7 +67,7 @@ class SpecialOfferCard extends StatelessWidget {
           ),
           SizedBox(height: 12),
           AppText(
-            "الأندومي ب سعر 2000 ل.س",
+            _title,
             textAlign: TextAlign.start,
             style: TextStyle(
               color: context.onPrimaryContainer,
@@ -63,7 +78,7 @@ class SpecialOfferCard extends StatelessWidget {
           ),
           SizedBox(height: 8),
           AppText(
-            "احصل على خصم 20% على جميع أنواع منتجات البيت السعيد",
+            'احصل على $_discountLabel على الطلبات المؤهلة في هذا المتجر',
             textAlign: TextAlign.start,
             style: TextStyle(
               color: Color(0xE5FFFFFF),
@@ -102,7 +117,7 @@ class SpecialOfferCard extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     color: Color(0x33FFFFFF),
                     child: Text(
-                      "صالح حتى 31 ديسمبر",
+                      "عرض فعال الآن",
                       style: TextStyle(
                         color: context.onPrimaryContainer,
                         fontSize: 12,

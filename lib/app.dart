@@ -1,7 +1,8 @@
+import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/rs_main/view/rs_main_screen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-
 import 'core/routes/app_router.dart';
 
 class App extends StatelessWidget {
@@ -19,7 +20,9 @@ class App extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      home: RsMainScreen(),
+      home: SharedPreferencesHelper.getData(key: 'token') != null && SharedPreferencesHelper.getData(key: 'token') != ''
+          ? const RsMainScreen()
+          : const LoginScreen(),
       theme: ThemeData(
         fontFamily: 'cairo',
         colorScheme: ColorScheme(

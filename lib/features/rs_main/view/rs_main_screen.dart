@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../rs_discover/view/screens/rs_discover_screen.dart';
 import '../../rs_home/view/screens/rs_home_screen.dart';
 import '../../rs_offers/view/rs_offers_screen.dart';
-import '../../rs_orders/view/rs_orders_screen.dart';
+import '../../rs_orders/view/screens/rs_orders_screen.dart';
 import '../../rs_profile/view/screens/rs_profile_screen.dart';
 
 class RsMainScreen extends StatefulWidget {

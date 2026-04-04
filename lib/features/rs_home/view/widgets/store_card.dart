@@ -1,40 +1,31 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/features/rs_discover/view/models/restaurant_preview_data.dart';
+import 'package:dllni_user_app/features/rs_discover/view/screens/rs_store_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class StoreData {
-  final String image;
-  final String name;
-  final String description;
-  final double rating;
-  final double distance;
-  final String deliveryPrice;
-  final String time;
-  final int discount;
-  final bool isFavorite;
-
-  StoreData({
-    required this.image,
-    required this.name,
-    required this.description,
-    required this.rating,
-    required this.distance,
-    required this.deliveryPrice,
-    required this.time,
-    required this.discount,
-    this.isFavorite = false,
-  });
-}
+import '../../../rs_profile/domain/usecases/add_favorite_restaurant_use_case.dart';
+import '../../data/models/fetch_restaurant_home_nearest_restaurants_model.dart';
 
 class StoreCard extends StatelessWidget {
   const StoreCard({super.key, required this.store});
-  final StoreData store;
+
+  final RestaurantHomeNearestRestaurantItem store;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        context.pushRoute("/store");
+        final id = store.id;
+        if (id == null) return;
+        context.pushRoute(
+          '/store',
+          arguments: StoreDetailsScreenParams(
+            restaurantId: id,
+            preview: RestaurantPreviewData.fromHomeNearest(store),
+          ),
+        );
       },
       borderRadius: BorderRadius.all(Radius.circular(24)),
       child: Container(
@@ -43,103 +34,145 @@ class StoreCard extends StatelessWidget {
           borderRadius: BorderRadius.all(Radius.circular(24)),
           border: Border.all(color: Color(0xFFF3F4F6)),
         ),
+        height: 280,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              fit: StackFit.loose,
-              children: [
-                AppImage.asset(
-                  store.image,
-                  height: 160,
-                  width: context.width,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: InkWell(
-                    onTap: () {},
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: context.onPrimaryContainer,
-                      child: FaIcon(
-                        store.isFavorite
-                            ? FontAwesomeIcons.solidHeart
-                            : FontAwesomeIcons.heart,
-                        size: 16,
-                        color: store.isFavorite
-                            ? Colors.red
-                            : const Color(0xFF6B7280),
-                      ),
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
                     ),
-                  ),
-                ),
-                if (store.discount > 0)
-                  Positioned(
-                    bottom: 12,
-                    left: 12,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: context.primaryContainer,
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.tag,
-                            size: 10,
-                            color: context.onPrimaryContainer,
-                          ),
-                          SizedBox(width: 4),
-                          AppText(
-                            "خصم ${store.discount}%",
-                            style: TextStyle(
-                              color: context.onPrimaryContainer,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              height: 16 / 12,
+                    child:
+                        store.primaryImageUrl == null ||
+                            store.primaryImageUrl!.isEmpty
+                        ? Container(
+                            width: double.infinity,
+                            color: const Color(0xFFF5F5F5),
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_outlined,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          )
+                        : AppImage.network(
+                            store.primaryImageUrl!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: Container(
+                              width: double.infinity,
+                              color: const Color(0xFFF5F5F5),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  color: Color(0xFF9CA3AF),
+                                ),
+                              ),
                             ),
                           ),
-                        ],
+                  ),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: InkWell(
+                      onTap: () async {
+                        final id = store.id;
+                        if (id == null) return;
+                        final useCase = getIt<AddFavoriteRestaurantUseCase>();
+                        await useCase(
+                          AddFavoriteRestaurantParams(restaurantId: id),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: context.onPrimaryContainer,
+                        child: FaIcon(
+                          FontAwesomeIcons.heart,
+                          size: 16,
+                          color: const Color(0xFF6B7280),
+                        ),
                       ),
                     ),
                   ),
-                Positioned(
-                  bottom: 12,
-                  right: 12,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: context.onPrimaryContainer,
-                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                  if ((store.discountOfferBadge ?? '').isNotEmpty)
+                    Positioned(
+                      bottom: 12,
+                      left: 12,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.primaryContainer,
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.tag,
+                              size: 10,
+                              color: context.onPrimaryContainer,
+                            ),
+                            SizedBox(width: 4),
+                            AppText(
+                              store.discountOfferBadge!,
+                              style: TextStyle(
+                                color: context.onPrimaryContainer,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                height: 16 / 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AppText(
-                          store.time,
-                          style: TextStyle(
-                            color: Color(0xFF1A1A1A),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            height: 16 / 12,
-                          ),
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: Visibility(
+                      visible:
+                          store.estimatedDeliveryMinutesMin != null ||
+                          store.estimatedDeliveryMinutesMax != null,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                        SizedBox(width: 4),
-                        FaIcon(
-                          FontAwesomeIcons.motorcycle,
-                          size: 15,
-                          color: Color(0xFF6C63FF),
+                        decoration: BoxDecoration(
+                          color: context.onPrimaryContainer,
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppText(
+                              _deliveryTimeText(store),
+                              style: TextStyle(
+                                color: Color(0xFF1A1A1A),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                height: 16 / 12,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            FaIcon(
+                              FontAwesomeIcons.motorcycle,
+                              size: 15,
+                              color: Color(0xFF6C63FF),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             Padding(
               padding: EdgeInsets.all(16),
@@ -151,7 +184,7 @@ class StoreCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: AppText(
-                          store.name,
+                          store.name ?? '-',
                           textAlign: TextAlign.start,
                           style: TextStyle(
                             color: Color(0xFF1A1A1A),
@@ -175,7 +208,7 @@ class StoreCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             AppText(
-                              store.rating.toStringAsFixed(1),
+                              (store.rating ?? 0).toStringAsFixed(1),
                               style: TextStyle(
                                 color: Color(0xFF15803D),
                                 fontSize: 12,
@@ -196,7 +229,7 @@ class StoreCard extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   AppText(
-                    store.description,
+                    store.cuisineSummary ?? '-',
                     style: TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: 12,
@@ -205,36 +238,39 @@ class StoreCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 25),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      FaIcon(
-                        FontAwesomeIcons.locationArrow,
-                        size: 12,
-                        color: Color(0xB26C63FF),
-                      ),
-                      SizedBox(width: 8),
-                      AppText(
-                        "${store.distance.toStringAsFixed(1)} كم",
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12,
-                          height: 16 / 12,
+                      if (store.distanceKm != null) ...[
+                        FaIcon(
+                          FontAwesomeIcons.locationArrow,
+                          size: 12,
+                          color: Color(0xB26C63FF),
                         ),
-                      ),
-                      SizedBox(width: 8),
-                      CircleAvatar(
-                        radius: 2,
-                        backgroundColor: Color(0xFFD1D5DB),
-                      ),
-                      SizedBox(width: 8),
-                      AppText(
-                        "توصيل ${store.deliveryPrice} ل.س",
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12,
-                          height: 16 / 12,
+                        AppText(
+                          '${store.distanceKm!.toStringAsFixed(1)} كم',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 12,
+                            height: 16 / 12,
+                          ),
                         ),
-                      ),
+                      ],
+                      if (store.distanceKm != null && store.deliveryFee != null)
+                        CircleAvatar(
+                          radius: 2,
+                          backgroundColor: Color(0xFFD1D5DB),
+                        ),
+                      if (store.deliveryFee != null)
+                        AppText(
+                          '${store.deliveryFee} ${store.currency ?? ''}'.trim(),
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 12,
+                            height: 16 / 12,
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -245,4 +281,13 @@ class StoreCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _deliveryTimeText(RestaurantHomeNearestRestaurantItem store) {
+  final min = store.estimatedDeliveryMinutesMin;
+  final max = store.estimatedDeliveryMinutesMax;
+  if (min != null && max != null) return '$min-$max دقيقة';
+  if (max != null) return '$max دقيقة';
+  if (min != null) return '$min دقيقة';
+  return '';
 }
