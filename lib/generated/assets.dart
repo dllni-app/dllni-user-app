@@ -24,6 +24,7 @@ class $AssetsImagesGen {
   final SvgGenImage mainHome = const SvgGenImage('assets/images/main_home.svg');
   final AssetGenImage mainOrders = const AssetGenImage('assets/images/main_orders.png');
   final SvgGenImage mainProfile = const SvgGenImage('assets/images/main_profile.svg');
+  final SvgGenImage rsProfileCoupon = const SvgGenImage('assets/images/rs_profile_coupon.svg');
 }
 
 class AssetGenImage {
