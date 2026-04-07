@@ -14,11 +14,6 @@ import 'package:common_package/helpers/dio_network.dart' as _i497;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
-import '../../features/auth/data/repository/auth_repo_impl.dart' as _i751;
-import '../../features/auth/data/source/auth_remote_data_source.dart' as _i777;
-import '../../features/auth/domain/repository/auth_repo.dart' as _i976;
-import '../../features/auth/domain/usecases/login_use_case.dart' as _i37;
-import '../../features/auth/view/manager/bloc/auth_bloc.dart' as _i958;
 import '../../features/rs_discover/data/repository/rs_discover_repo_impl.dart'
     as _i992;
 import '../../features/rs_discover/data/source/rs_discover_remote_data_source.dart'
@@ -29,6 +24,8 @@ import '../../features/rs_discover/domain/usecases/add_restaurant_cart_item_use_
     as _i745;
 import '../../features/rs_discover/domain/usecases/fetch_discover_restaurants_use_case.dart'
     as _i303;
+import '../../features/rs_discover/domain/usecases/fetch_restaurant_cart_products_count_use_case.dart'
+    as _i716;
 import '../../features/rs_discover/domain/usecases/fetch_restaurant_details_use_case.dart'
     as _i112;
 import '../../features/rs_discover/domain/usecases/fetch_restaurant_product_details_use_case.dart'
@@ -105,18 +102,10 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i1070.RsMainRemoteDataSource>(
     () => _i1070.RsMainRemoteDataSource(),
   );
-  gh.lazySingleton<_i777.AuthRemoteDataSource>(
-    () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
-  );
   gh.lazySingleton<_i908.RsOffersRemoteDataSource>(
     () => _i908.RsOffersRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
   );
   gh.lazySingleton<_i744.RsMainRepo>(() => _i427.RsMainRepoImpl());
-  gh.lazySingleton<_i976.AuthRepo>(
-    () => _i751.AuthRepoImpl(
-      authRemoteDataSource: gh<_i777.AuthRemoteDataSource>(),
-    ),
-  );
   gh.lazySingleton<_i341.RsDiscoverRemoteDataSource>(
     () => _i341.RsDiscoverRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
@@ -140,9 +129,6 @@ _i174.GetIt $initGetIt(
     () => _i992.RsDiscoverRepoImpl(
       rsDiscoverRemoteDataSource: gh<_i341.RsDiscoverRemoteDataSource>(),
     ),
-  );
-  gh.lazySingleton<_i37.LoginUseCase>(
-    () => _i37.LoginUseCase(auth: gh<_i976.AuthRepo>()),
   );
   gh.lazySingleton<_i117.RsHomeRepo>(
     () => _i500.RsHomeRepoImpl(
@@ -192,6 +178,11 @@ _i174.GetIt $initGetIt(
       rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
     ),
   );
+  gh.lazySingleton<_i716.FetchRestaurantCartProductsCountUseCase>(
+    () => _i716.FetchRestaurantCartProductsCountUseCase(
+      rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
+    ),
+  );
   gh.lazySingleton<_i112.FetchRestaurantDetailsUseCase>(
     () => _i112.FetchRestaurantDetailsUseCase(
       rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
@@ -202,7 +193,6 @@ _i174.GetIt $initGetIt(
       rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
     ),
   );
-  gh.factory<_i958.AuthBloc>(() => _i958.AuthBloc(gh<_i37.LoginUseCase>()));
   gh.lazySingleton<_i555.FetchFeaturedOffersUseCase>(
     () => _i555.FetchFeaturedOffersUseCase(rsHome: gh<_i117.RsHomeRepo>()),
   );

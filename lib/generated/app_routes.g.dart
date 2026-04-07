@@ -1,7 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:flutter/material.dart';
-import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_discover_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_details_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_store_all_products_screen.dart';
@@ -15,11 +14,6 @@ class GeneratedAppRoutes {
     final args = settings.arguments;
 
     switch (settings.name) {
-      case '/login':
-        return MaterialPageRoute(
-          builder: (_) => LoginScreen(),
-          settings: settings,
-        );
       case '/discover':
         if (args is int) {
           return MaterialPageRoute(
