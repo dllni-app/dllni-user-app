@@ -13,7 +13,7 @@ Future<void> main() async {
       app: App(navigatorKey: navigatorKey),
       configureDependencies: configureInjection,
       enableNotifications: true,
-      startLocale: const Locale('ar'),
+      startLocale: Locale('ar'),
       fallbackLocale: const Locale('ar'),
       supportedLocales: const <Locale>[Locale('en'), Locale('ar')],
       translationsAssetPath: 'assets/translations',

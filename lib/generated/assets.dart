@@ -20,11 +20,14 @@ class $AssetsTranslationsGen {
 class $AssetsImagesGen {
   const $AssetsImagesGen();
 
-  final AssetGenImage cleaningBanner = const AssetGenImage('assets/images/cleaning_banner.png');
-  final SvgGenImage mainHome = const SvgGenImage('assets/images/main_home.svg');
-  final AssetGenImage mainOrders = const AssetGenImage('assets/images/main_orders.png');
-  final SvgGenImage mainProfile = const SvgGenImage('assets/images/main_profile.svg');
+  final SvgGenImage rsDiscoverBottomNavBar = const SvgGenImage('assets/images/rs_discover_bottom_nav_bar.svg');
+  final SvgGenImage rsFavourite = const SvgGenImage('assets/images/rs_favourite.svg');
+  final SvgGenImage rsHomeBottomNavBar = const SvgGenImage('assets/images/rs_home_bottom_nav_bar.svg');
+  final SvgGenImage rsOffersBottomNavBar = const SvgGenImage('assets/images/rs_offers_bottom_nav_bar.svg');
+  final AssetGenImage rsOrdersBottomNavBar = const AssetGenImage('assets/images/rs_orders_bottom_nav_bar.png');
+  final SvgGenImage rsProfileBottomNavBar = const SvgGenImage('assets/images/rs_profile_bottom_nav_bar.svg');
   final SvgGenImage rsProfileCoupon = const SvgGenImage('assets/images/rs_profile_coupon.svg');
+  final AssetGenImage test = const AssetGenImage('assets/images/test.png');
 }
 
 class AssetGenImage {
