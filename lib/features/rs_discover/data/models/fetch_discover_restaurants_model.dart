@@ -282,6 +282,7 @@ class FetchDiscoverRestaurantsModelDataItem {
   bool? isActive;
   bool? isFeatured;
   bool? isTemporarilyClosed;
+  bool? isFavorited;
   dynamic suspensionUntil;
   String? primaryImage;
   String? image;
@@ -328,6 +329,7 @@ class FetchDiscoverRestaurantsModelDataItem {
     this.isActive,
     this.isFeatured,
     this.isTemporarilyClosed,
+    this.isFavorited,
     this.suspensionUntil,
     this.primaryImage,
     this.image,
@@ -376,6 +378,7 @@ class FetchDiscoverRestaurantsModelDataItem {
       isActive: _asBool(json['isActive']),
       isFeatured: _asBool(json['isFeatured']),
       isTemporarilyClosed: _asBool(json['isTemporarilyClosed']),
+      isFavorited: _asBool(json['isFavorited'] ?? json['is_favorited'] ?? json['isFavorite']),
       suspensionUntil: _asDynamic(json['suspensionUntil']),
       primaryImage: _asString(json['primaryImage']),
       image: _asString(json['image']),
@@ -431,6 +434,7 @@ class FetchDiscoverRestaurantsModelDataItem {
         'isActive': isActive,
         'isFeatured': isFeatured,
         'isTemporarilyClosed': isTemporarilyClosed,
+        'isFavorited': isFavorited,
         'suspensionUntil': suspensionUntil,
         'primaryImage': primaryImage,
         'image': image,

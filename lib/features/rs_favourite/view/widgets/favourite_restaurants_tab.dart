@@ -95,7 +95,17 @@ class FavouriteRestaurantsTab extends StatelessWidget {
                   );
                 }
                 final store = _mapFavouriteRestaurantToHomeCard(pagination.list[index]);
-                return StoreCard(store: store);
+                return StoreCard(
+                  store: store,
+                  onFavouriteChanged: (isFavorited) {
+                    if (isFavorited) return;
+                    final restaurantId = store.id;
+                    if (restaurantId == null || restaurantId <= 0) return;
+                    context.read<RsFavouriteBloc>().add(
+                      RemoveFavouriteRestaurantEvent(restaurantId: restaurantId),
+                    );
+                  },
+                );
               },
             ),
           ),

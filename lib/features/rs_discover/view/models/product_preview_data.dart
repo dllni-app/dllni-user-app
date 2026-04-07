@@ -11,6 +11,7 @@ class ProductPreviewData {
   final num? originalPrice;
   final String? currency;
   final String? imageUrl;
+  final bool isFavorited;
 
   const ProductPreviewData({
     required this.productId,
@@ -21,6 +22,7 @@ class ProductPreviewData {
     required this.originalPrice,
     this.currency,
     this.imageUrl,
+    this.isFavorited = false,
   });
 
   factory ProductPreviewData.fromSuggestedItem(
@@ -35,6 +37,7 @@ class ProductPreviewData {
       originalPrice: item.originalPrice,
       currency: item.currency,
       imageUrl: item.primaryImageUrl,
+      isFavorited: false,
     );
   }
 
@@ -50,6 +53,7 @@ class ProductPreviewData {
       originalPrice: item.originalPrice,
       currency: item.currency,
       imageUrl: item.primaryImageUrl,
+      isFavorited: false,
     );
   }
 
@@ -66,6 +70,7 @@ class ProductPreviewData {
       originalPrice: item.oldPriceValue,
       currency: item.currency,
       imageUrl: item.imageUrl,
+      isFavorited: item.isFavorited,
     );
   }
 }

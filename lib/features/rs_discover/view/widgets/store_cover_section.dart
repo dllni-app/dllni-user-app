@@ -3,12 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class StoreCoverSection extends StatelessWidget {
-  const StoreCoverSection({super.key, required this.title, required this.subtitle, this.coverImageUrl, this.logoImageUrl});
+  const StoreCoverSection({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    this.coverImageUrl,
+    this.logoImageUrl,
+    required this.isFavorited,
+    required this.onFavouriteTap,
+    this.cartCount = 0,
+    this.onCartTap,
+  });
 
   final String title;
   final String subtitle;
   final String? coverImageUrl;
   final String? logoImageUrl;
+  final bool isFavorited;
+  final VoidCallback onFavouriteTap;
+  final int cartCount;
+  final VoidCallback? onCartTap;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +67,16 @@ class StoreCoverSection extends StatelessWidget {
             left: 16,
             child: Row(
               children: [
-                _ActionButton(icon: FontAwesomeIcons.solidHeart, onTap: () {}),
+                _ActionButton(
+                  icon: isFavorited ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                  iconColor: isFavorited ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
+                  onTap: onFavouriteTap,
+                ),
+                SizedBox(width: 8),
+                _CartActionButton(
+                  cartCount: cartCount,
+                  onTap: onCartTap ?? () {},
+                ),
                 SizedBox(width: 8),
                 _ActionButton(icon: FontAwesomeIcons.shareNodes, onTap: () {}),
               ],
@@ -126,10 +149,15 @@ Widget _imagePlaceholder({double iconSize = 56}) {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.icon, required this.onTap});
+  const _ActionButton({
+    required this.icon,
+    required this.onTap,
+    this.iconColor = const Color(0xFF1F2937),
+  });
 
   final FaIconData icon;
   final void Function() onTap;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +176,56 @@ class _ActionButton extends StatelessWidget {
             BoxShadow(offset: Offset(0, 4), blurRadius: 6, spreadRadius: -1, color: Color(0x1A000000)),
           ],
         ),
-        child: FaIcon(icon, size: 18, color: Color(0xFF1F2937)),
+        child: FaIcon(icon, size: 18, color: iconColor),
+      ),
+    );
+  }
+}
+
+class _CartActionButton extends StatelessWidget {
+  const _CartActionButton({
+    required this.cartCount,
+    required this.onTap,
+  });
+
+  final int cartCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: context.onPrimary,
+              shape: BoxShape.circle,
+              boxShadow: const [
+                BoxShadow(offset: Offset(0, 2), blurRadius: 4, spreadRadius: -2, color: Color(0x1A000000)),
+                BoxShadow(offset: Offset(0, 4), blurRadius: 6, spreadRadius: -1, color: Color(0x1A000000)),
+              ],
+            ),
+            child: const FaIcon(FontAwesomeIcons.cartShopping, size: 16, color: Color(0xFF1F2937)),
+          ),
+          PositionedDirectional(
+            top: -2,
+            end: -2,
+            child: CircleAvatar(
+              radius: 8,
+              backgroundColor: const Color(0xFFFF7A00),
+              child: AppText(
+                '$cartCount',
+                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

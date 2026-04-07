@@ -1,8 +1,11 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../data/models/fetch_restaurant_details_model.dart';
+import '../../domain/usecases/add_restaurant_cart_item_use_case.dart';
 import '../../domain/usecases/fetch_restaurant_details_use_case.dart';
 import '../models/product_preview_data.dart';
 import '../models/store_product_item.dart';
@@ -173,10 +176,19 @@ class _SmStoreAllProductsScreenState extends State<SmStoreAllProductsScreen> {
   }
 }
 
-class _AllProductsCard extends StatelessWidget {
+class _AllProductsCard extends StatefulWidget {
   const _AllProductsCard({required this.product});
 
   final StoreProductItem product;
+
+  @override
+  State<_AllProductsCard> createState() => _AllProductsCardState();
+}
+
+class _AllProductsCardState extends State<_AllProductsCard> {
+  bool _isSubmittingAdd = false;
+
+  StoreProductItem get product => widget.product;
 
   @override
   Widget build(BuildContext context) {
@@ -269,14 +281,18 @@ class _AllProductsCard extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(color: context.primary, borderRadius: BorderRadius.circular(10)),
-                    child: AppText(
-                      '+ إضافة',
-                      style: TextStyle(color: context.onPrimary, fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
+                  InkWell(
+                    onTap: _isSubmittingAdd ? null : _onAddToCartPressed,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: double.infinity,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(color: context.primary, borderRadius: BorderRadius.circular(10)),
+                      child: AppText(
+                        _isSubmittingAdd ? 'جاري الإضافة...' : 'اضافة الى السلة',
+                        style: TextStyle(color: context.onPrimary, fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
+                      ),
                     ),
                   ),
                 ],
@@ -300,6 +316,59 @@ class _AllProductsCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _onAddToCartPressed() async {
+    if (_isSubmittingAdd) return;
+    final productId = product.id;
+    if (productId == null || productId <= 0) {
+      AppToast.showToast(
+        context: context,
+        message: 'تعذر تحديد المنتج',
+        type: ToastificationType.error,
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmittingAdd = true;
+    });
+
+    final res = await getIt<AddRestaurantCartItemUseCase>()(
+      AddRestaurantCartItemParams(
+        productId: productId,
+        quantity: 1,
+        modifierIds: const [],
+        substituteProductId: null,
+        specialInstructions: '',
+      ),
+    );
+
+    if (!mounted) return;
+
+    res.fold(
+      (failure) {
+        setState(() {
+          _isSubmittingAdd = false;
+        });
+        AppToast.showToast(
+          context: context,
+          message: failure.message,
+          type: ToastificationType.error,
+        );
+      },
+      (result) {
+        setState(() {
+          _isSubmittingAdd = false;
+        });
+        getIt<CartProductsCountCubit>().refreshAfterAdd();
+        AppToast.showToast(
+          context: context,
+          message: (result.message ?? '').trim().isNotEmpty ? result.message! : 'تمت إضافة المنتج إلى السلة',
+          type: ToastificationType.success,
+        );
+      },
     );
   }
 }

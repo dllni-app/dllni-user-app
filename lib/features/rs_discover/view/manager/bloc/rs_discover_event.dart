@@ -22,3 +22,9 @@ class DiscoverSearchQueryChangedEvent extends RsDiscoverEvent {
 
   DiscoverSearchQueryChangedEvent(this.query);
 }
+
+class FetchRestaurantProductDetailsEvent extends RsDiscoverEvent {
+  final int productId;
+
+  FetchRestaurantProductDetailsEvent({required this.productId});
+}

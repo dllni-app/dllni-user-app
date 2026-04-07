@@ -18,9 +18,10 @@ class FetchRsFavouritesUseCase implements UseCase<FetchRsFavouritesModel, FetchR
 
 class FetchRsFavouritesParams with Params {
   final int page;
+  final int perPage;
 
-  FetchRsFavouritesParams({required this.page});
+  FetchRsFavouritesParams({required this.page, this.perPage = 10});
 
   @override
-  QueryParams getParams() => {'page': page, 'perPage': 10};
+  QueryParams getParams() => {'page': page, 'per_page': perPage};
 }

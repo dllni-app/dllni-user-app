@@ -7,6 +7,7 @@ import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant_home_latest_ordered_products_use_case.dart';
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant_home_nearest_restaurants_use_case.dart';
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant_home_suggested_products_use_case.dart';
+import 'package:toastification/toastification.dart';
 
 import '../manager/bloc/rs_home_bloc.dart';
 import '../widgets/categories_bar.dart';
@@ -38,62 +39,72 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
         ..add(FetchRestaurantHomeNearestRestaurantsEvent(params: FetchRestaurantHomeNearestRestaurantsParams()))
         ..add(FetchRestaurantHomeSuggestedProductsEvent(params: FetchRestaurantHomeSuggestedProductsParams()))
         ..add(FetchRestaurantHomeLatestOrderedProductsEvent(params: FetchRestaurantHomeLatestOrderedProductsParams())),
-      child: Scaffold(
-        body: Column(
-          children: [
-            HomeAppBar(),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  BlocBuilder<RsHomeBloc, RsHomeState>(
-                    builder: (context, state) {
-                      if (state.restaurantCategoriesStatus == BlocStatus.loading ||
-                          state.restaurantCategoriesStatus == null ||
-                          state.restaurantCategoriesStatus == BlocStatus.init) {
-                        return const SizedBox(height: 96, child: Center(child: CircularProgressIndicator()));
-                      }
-                      if (state.restaurantCategoriesStatus == BlocStatus.failed) {
-                        return const SizedBox.shrink();
-                      }
-                      return CategoriesBar(
-                        selectedCategory: selectedCategory,
-                        categories: state.restaurantCategories?.categories ?? const [],
-                        onCategorySelected: (index) {
-                          selectedCategory = index;
-                          setState(() {});
-                          if (index < 0) return;
-                          final categories = state.restaurantCategories?.categories ?? const [];
-                          if (index >= categories.length) return;
-                          context.pushRoute(
-                            '/rshomecategoryproducts',
-                            arguments: RsHomeCategoryProductsScreenParams(categories: categories, initialCategoryIndex: index),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  SizedBox(height: 8),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Column(
-                        children: [
-                          ExclusiveOffersSection(),
-                          SizedBox(height: 24),
-                          SuggestedProductsSection(),
-                          SizedBox(height: 24),
-                          NearStoresSection(),
-                          SizedBox(height: 24),
-                          LatestOrderedProductsSection(),
-                        ],
+      child: BlocListener<RsHomeBloc, RsHomeState>(
+        listenWhen: (previous, current) => previous.restaurantReorderStatus != current.restaurantReorderStatus,
+        listener: (context, state) {
+          if (state.restaurantReorderStatus == BlocStatus.success) {
+            AppToast.showToast(context: context, message: 'تمت إعادة الطلب بنجاح', type: ToastificationType.success);
+          } else if (state.restaurantReorderStatus == BlocStatus.failed) {
+            AppToast.showToast(context: context, message: state.errorMessage ?? 'تعذر إعادة الطلب', type: ToastificationType.error);
+          }
+        },
+        child: Scaffold(
+          body: Column(
+            children: [
+              HomeAppBar(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BlocBuilder<RsHomeBloc, RsHomeState>(
+                      builder: (context, state) {
+                        if (state.restaurantCategoriesStatus == BlocStatus.loading ||
+                            state.restaurantCategoriesStatus == null ||
+                            state.restaurantCategoriesStatus == BlocStatus.init) {
+                          return const SizedBox(height: 96, child: Center(child: CircularProgressIndicator()));
+                        }
+                        if (state.restaurantCategoriesStatus == BlocStatus.failed) {
+                          return const SizedBox.shrink();
+                        }
+                        return CategoriesBar(
+                          selectedCategory: selectedCategory,
+                          categories: state.restaurantCategories?.categories ?? const [],
+                          onCategorySelected: (index) {
+                            selectedCategory = index;
+                            setState(() {});
+                            if (index < 0) return;
+                            final categories = state.restaurantCategories?.categories ?? const [];
+                            if (index >= categories.length) return;
+                            context.pushRoute(
+                              '/rshomecategoryproducts',
+                              arguments: RsHomeCategoryProductsScreenParams(categories: categories, initialCategoryIndex: index),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Column(
+                          children: [
+                            ExclusiveOffersSection(),
+                            SizedBox(height: 24),
+                            SuggestedProductsSection(),
+                            SizedBox(height: 24),
+                            NearStoresSection(),
+                            SizedBox(height: 24),
+                            LatestOrderedProductsSection(),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

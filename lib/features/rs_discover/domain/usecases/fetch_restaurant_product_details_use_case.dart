@@ -5,8 +5,7 @@ import '../../data/models/fetch_restaurant_product_details_model.dart';
 import '../repository/rs_discover_repo.dart';
 
 @lazySingleton
-class FetchRestaurantProductDetailsUseCase
-    implements UseCase<FetchRestaurantProductDetailsModel, FetchRestaurantProductDetailsParams> {
+class FetchRestaurantProductDetailsUseCase implements UseCase<FetchRestaurantProductDetailsModel, FetchRestaurantProductDetailsParams> {
   final RsDiscoverRepo rsDiscoverRepo;
 
   FetchRestaurantProductDetailsUseCase({required this.rsDiscoverRepo});

@@ -144,4 +144,14 @@ class RsHomeRemoteDataSource with HandlingApiManager {
       jsonConvert: fetchRestaurantHomeCategoryProductsModelFromJson,
     );
   }
+
+  Future<bool> reorderLatestOrderedProduct() {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/home/latest-ordered-products/reorder',
+        data: {},
+      ),
+      jsonConvert: (_) => true,
+    );
+  }
 }

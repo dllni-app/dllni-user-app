@@ -38,6 +38,8 @@ class FetchRestaurantHomeCategoryProductsEvent extends RsHomeEvent {
   FetchRestaurantHomeCategoryProductsEvent({required this.params});
 }
 
+class ReorderLatestOrderedProductEvent extends RsHomeEvent {}
+
 class FetchStoresEvent extends RsHomeEvent with EventWithReload {
   final FetchStoresParams params;
 

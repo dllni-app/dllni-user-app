@@ -37,12 +37,14 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
     required this.title,
     required this.onSearchChanged,
     this.onSearchTap,
+    this.onBackTap,
     this.searchHintText = "ابحث عن سوبر ماركت أو نوع منتج معين...",
   });
 
   final String title;
   final void Function(String value) onSearchChanged;
   final void Function()? onSearchTap;
+  final VoidCallback? onBackTap;
   final String searchHintText;
 
   @override
@@ -61,9 +63,32 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText(
-            title,
-            style: TextStyle(color: context.primary, fontSize: 24, fontWeight: FontWeight.w700, height: 32 / 24),
+          Row(
+            children: [
+              if (onBackTap != null) ...[
+                InkWell(
+                  onTap: onBackTap,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFF3F4F6)),
+                    ),
+                    child: Icon(Icons.arrow_back, size: 18, color: context.primary),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: AppText(
+                  title,
+                  textAlign: TextAlign.start,
+                  style: TextStyle(color: context.primary, fontSize: 24, fontWeight: FontWeight.w700, height: 32 / 24),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 16),
           Row(

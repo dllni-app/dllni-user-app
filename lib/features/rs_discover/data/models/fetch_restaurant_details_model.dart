@@ -90,6 +90,7 @@ class RestaurantDetailsRestaurant {
   final int? estimatedPreparationTime;
   final int? totalReviews;
   final bool? isTemporarilyClosed;
+  final bool? isFavorited;
   final double? distanceKm;
   final String? primaryImage;
   final String? image;
@@ -110,6 +111,7 @@ class RestaurantDetailsRestaurant {
     this.estimatedPreparationTime,
     this.totalReviews,
     this.isTemporarilyClosed,
+    this.isFavorited,
     this.distanceKm,
     this.primaryImage,
     this.image,
@@ -132,6 +134,7 @@ class RestaurantDetailsRestaurant {
       estimatedPreparationTime: _asInt(json['estimatedPreparationTime']),
       totalReviews: _asInt(json['totalReviews']),
       isTemporarilyClosed: _asBool(json['isTemporarilyClosed']),
+      isFavorited: _asBool(json['isFavorited'] ?? json['is_favorited'] ?? json['isFavorite']),
       distanceKm: _asDouble(json['distanceKm']),
       primaryImage: _asString(json['primaryImage']),
       image: _asString(json['image']),
@@ -276,13 +279,27 @@ class RestaurantDetailsOperatingHour {
 class RestaurantRatingSummary {
   final double average;
   final int total;
+  final Map<int, int> counts;
 
-  RestaurantRatingSummary({this.average = 0, this.total = 0});
+  RestaurantRatingSummary({
+    this.average = 0,
+    this.total = 0,
+    this.counts = const {},
+  });
 
   factory RestaurantRatingSummary.fromJson(Map<String, dynamic> json) {
+    final rawCounts = _asMap(json['counts']) ?? const <String, dynamic>{};
+    final parsedCounts = <int, int>{};
+    rawCounts.forEach((key, value) {
+      final star = _asInt(key);
+      if (star == null) return;
+      parsedCounts[star] = _asInt(value) ?? 0;
+    });
+
     return RestaurantRatingSummary(
       average: _asDouble(json['average']) ?? 0,
       total: _asInt(json['total']) ?? 0,
+      counts: parsedCounts,
     );
   }
 }

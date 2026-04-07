@@ -1,3 +1,5 @@
+import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_main/view/widgets/rs_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +22,7 @@ class _RsMainScreenState extends State<RsMainScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     controller = TabController(length: 4, vsync: this);
+    getIt<CartProductsCountCubit>().fetchCount();
   }
 
   static const List<Widget> _pages = <Widget>[RsHomeScreen(), RsDiscoverScreen(), RsOffersScreen(), RsFavouriteScreen()];

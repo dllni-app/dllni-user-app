@@ -3,12 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/fetch_restaurant_home_categories_model.dart';
 
 class CategoriesBar extends StatefulWidget {
-  const CategoriesBar({
-    super.key,
-    required this.selectedCategory,
-    required this.onCategorySelected,
-    required this.categories,
-  });
+  const CategoriesBar({super.key, required this.selectedCategory, required this.onCategorySelected, required this.categories});
 
   final int selectedCategory;
   final void Function(int index) onCategorySelected;
@@ -35,13 +30,8 @@ class _CategoriesBarState extends State<CategoriesBar> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            "ما هي مستلزماتك لليوم؟",
-            style: TextStyle(
-              color: Color(0xFF1A1A1A),
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              height: 24 / 16,
-            ),
+            "ماذا تشتهي اليوم؟",
+            style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
           ),
         ),
         SizedBox(height: 16),
@@ -52,7 +42,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
             scrollDirection: Axis.horizontal,
             itemBuilder: (_, index) => _CategoryItem(
               isSelected: _selectedCategory == index,
-              imagePath: categoryImages[index % categoryImages.length],
+              imagePath: widget.categories[index].image ?? Icons.image_outlined,
               title: widget.categories[index].name ?? '-',
               onTap: () {
                 _selectedCategory = index;
@@ -77,27 +67,13 @@ class _CategoriesBarState extends State<CategoriesBar> {
       ],
     );
   }
-
-  static const List<IconData> categoryImages = [
-    Icons.fastfood,
-    Icons.ramen_dining,
-    Icons.local_pizza,
-    Icons.set_meal,
-    Icons.lunch_dining,
-    Icons.restaurant_menu,
-  ];
 }
 
 class _CategoryItem extends StatelessWidget {
-  const _CategoryItem({
-    required this.isSelected,
-    required this.imagePath,
-    required this.title,
-    this.onTap,
-  });
+  const _CategoryItem({required this.isSelected, required this.imagePath, required this.title, this.onTap});
 
   final bool isSelected;
-  final IconData imagePath;
+  final dynamic imagePath;
   final String title;
   final void Function()? onTap;
 
@@ -115,24 +91,15 @@ class _CategoryItem extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected
-                    ? context.primaryContainer
-                    : Colors.transparent,
-                width: 2,
-              ),
+              border: Border.all(color: isSelected ? context.primaryContainer : Colors.transparent, width: 2),
+              color: Colors.white
             ),
-            child: Icon(imagePath),
+            child: (imagePath is String && imagePath != null) ? AppImage.network(imagePath, borderRadius: BorderRadius.circular(99),) : Icon(imagePath),
           ),
           SizedBox(height: 8),
           AppText(
             title,
-            style: TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              height: 16 / 12,
-            ),
+            style: TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500, height: 16 / 12),
           ),
         ],
       ),

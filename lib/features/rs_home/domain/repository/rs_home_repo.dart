@@ -56,4 +56,6 @@ abstract class RsHomeRepo {
   fetchRestaurantHomeCategoryProducts(
     FetchRestaurantHomeCategoryProductsParams params,
   );
+
+  DataResponse<bool> reorderLatestOrderedProduct();
 }

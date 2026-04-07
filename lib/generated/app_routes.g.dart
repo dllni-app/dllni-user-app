@@ -45,9 +45,9 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/store-all-reviews':
-        if (args is int) {
+        if (args is StoreAllReviewsScreenParams) {
           return MaterialPageRoute(
-            builder: (_) => SmStoreAllReviewsScreen(restaurantId: args),
+            builder: (_) => SmStoreAllReviewsScreen(params: args),
             settings: settings,
           );
         }

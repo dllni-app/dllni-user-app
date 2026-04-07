@@ -20,7 +20,9 @@ class App extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      home: SharedPreferencesHelper.getData(key: 'token') != null && SharedPreferencesHelper.getData(key: 'token') != ''
+      home:
+          SharedPreferencesHelper.getData(key: 'token') != null &&
+              SharedPreferencesHelper.getData(key: 'token') != ''
           ? const RsMainScreen()
           : const LoginScreen(),
       theme: ThemeData(

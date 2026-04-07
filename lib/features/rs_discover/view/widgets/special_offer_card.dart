@@ -30,11 +30,7 @@ class SpecialOfferCard extends StatelessWidget {
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(16)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-        ),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFEF4444), Color(0xFFDC2626)]),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -52,12 +48,7 @@ class SpecialOfferCard extends StatelessWidget {
                     color: Color(0x33FFFFFF),
                     child: Text(
                       _discountLabel,
-                      style: TextStyle(
-                        color: context.onPrimaryContainer,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        height: 16 / 12,
-                      ),
+                      style: TextStyle(color: context.onPrimaryContainer, fontSize: 12, fontWeight: FontWeight.w700, height: 16 / 12),
                     ),
                   ),
                 ),
@@ -69,46 +60,29 @@ class SpecialOfferCard extends StatelessWidget {
           AppText(
             _title,
             textAlign: TextAlign.start,
-            style: TextStyle(
-              color: context.onPrimaryContainer,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              height: 28 / 18,
-            ),
+            style: TextStyle(color: context.onPrimaryContainer, fontSize: 18, fontWeight: FontWeight.w700, height: 28 / 18),
           ),
           SizedBox(height: 8),
           AppText(
             'احصل على $_discountLabel على الطلبات المؤهلة في هذا المتجر',
             textAlign: TextAlign.start,
-            style: TextStyle(
-              color: Color(0xE5FFFFFF),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              height: 20 / 14,
-            ),
+            style: TextStyle(color: Color(0xE5FFFFFF), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
           ),
           SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              InkWell(
+              /*InkWell(
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: context.onPrimaryContainer,
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
+                  decoration: BoxDecoration(color: context.onPrimaryContainer, borderRadius: BorderRadius.all(Radius.circular(8))),
                   child: Text(
                     "استخدم الآن",
-                    style: TextStyle(
-                      color: Color(0xFFDC2626),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      height: 20 / 14,
-                    ),
+                    style: TextStyle(color: Color(0xFFDC2626), fontSize: 14, fontWeight: FontWeight.w700, height: 20 / 14),
                   ),
                 ),
-              ),
+              ),*/
+              SizedBox(),
               ClipRRect(
                 borderRadius: BorderRadius.all(Radius.circular(4)),
                 child: BackdropFilter(
@@ -118,11 +92,7 @@ class SpecialOfferCard extends StatelessWidget {
                     color: Color(0x33FFFFFF),
                     child: Text(
                       "عرض فعال الآن",
-                      style: TextStyle(
-                        color: context.onPrimaryContainer,
-                        fontSize: 12,
-                        height: 16 / 12,
-                      ),
+                      style: TextStyle(color: context.onPrimaryContainer, fontSize: 12, height: 16 / 12),
                     ),
                   ),
                 ),

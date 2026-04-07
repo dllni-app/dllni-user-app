@@ -1,4 +1,5 @@
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/features/rs_favourite/domain/usecases/fetch_favourite_products_use_case.dart';
 import 'package:dllni_user_app/features/rs_favourite/domain/usecases/fetch_rs_favourites_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,7 +14,9 @@ class RsFavouriteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<RsFavouriteBloc>(
       lazy: false,
-      create: (context) => getIt<RsFavouriteBloc>()..add(FetchRsFavouritesEvent(params: FetchRsFavouritesParams(page: 1), isReload: true)),
+      create: (context) => getIt<RsFavouriteBloc>()
+        ..add(FetchRsFavouritesEvent(params: FetchRsFavouritesParams(page: 1), isReload: true))
+        ..add(FetchFavouriteProductsEvent(params: FetchFavouriteProductsParams(page: 1), isReload: true)),
       child: const RsFavouriteView(),
     );
   }

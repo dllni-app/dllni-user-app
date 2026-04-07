@@ -14,6 +14,7 @@ class RsHomeState {
   restaurantLatestOrderedProducts;
   BlocStatus? restaurantCategoryProductsStatus;
   FetchRestaurantHomeCategoryProductsModel? restaurantCategoryProducts;
+  BlocStatus? restaurantReorderStatus;
   BlocStatus? featuredOffersStatus;
   FetchFeaturedOffersModel? featuredOffers;
   BlocStatus? nearByStoresStatus;
@@ -35,6 +36,7 @@ class RsHomeState {
     this.restaurantLatestOrderedProducts,
     this.restaurantCategoryProductsStatus,
     this.restaurantCategoryProducts,
+    this.restaurantReorderStatus,
     this.stores = const PaginationStateModel(perPage: 10),
     this.nearByStores,
     this.nearByStoresStatus,
@@ -57,6 +59,7 @@ class RsHomeState {
     restaurantLatestOrderedProducts,
     BlocStatus? restaurantCategoryProductsStatus,
     FetchRestaurantHomeCategoryProductsModel? restaurantCategoryProducts,
+    BlocStatus? restaurantReorderStatus,
     PaginationStateModel<FetchStoresModelDataItem>? stores,
     FetchNearByStoresModel? nearByStores,
     BlocStatus? nearByStoresStatus,
@@ -91,6 +94,8 @@ class RsHomeState {
         this.restaurantCategoryProductsStatus,
     restaurantCategoryProducts:
         restaurantCategoryProducts ?? this.restaurantCategoryProducts,
+    restaurantReorderStatus:
+        restaurantReorderStatus ?? this.restaurantReorderStatus,
     stores: stores ?? this.stores,
     nearByStores: nearByStores ?? this.nearByStores,
     nearByStoresStatus: nearByStoresStatus ?? this.nearByStoresStatus,

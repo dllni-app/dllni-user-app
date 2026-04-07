@@ -7,6 +7,8 @@ import 'package:common_package/helpers/droppable_helper.dart';
 import 'package:common_package/helpers/pagination_helper.dart';
 
 import '../../../data/models/fetch_discover_restaurants_model.dart';
+import '../../../data/models/fetch_restaurant_product_details_model.dart';
+import '../../../domain/usecases/fetch_restaurant_product_details_use_case.dart';
 import '../../../domain/discover_tab_query.dart';
 import '../../../domain/params/fetch_discover_restaurants_params.dart';
 import '../../../domain/usecases/fetch_discover_restaurants_use_case.dart';
@@ -17,11 +19,13 @@ part 'rs_discover_state.dart';
 @injectable
 class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
   final FetchDiscoverRestaurantsUseCase fetchDiscoverRestaurantsUseCase;
+  final FetchRestaurantProductDetailsUseCase fetchRestaurantProductDetailsUseCase;
 
-  RsDiscoverBloc(this.fetchDiscoverRestaurantsUseCase) : super(RsDiscoverState()) {
+  RsDiscoverBloc(this.fetchDiscoverRestaurantsUseCase, this.fetchRestaurantProductDetailsUseCase) : super(RsDiscoverState()) {
     on<FetchDiscoverRestaurantsEvent>(_onFetch, transformer: droppableProMax());
     on<DiscoverTabChangedEvent>(_onTabChanged);
     on<DiscoverSearchQueryChangedEvent>(_onSearchQueryChanged);
+    on<FetchRestaurantProductDetailsEvent>(_onFetchProductDetails);
   }
 
   Timer? _searchDebounce;
@@ -102,6 +106,36 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
         emit(state.copyWith(
           restaurants: next,
           totalCount: meta?.total ?? next.list.length,
+        ));
+      },
+    );
+  }
+
+  Future<void> _onFetchProductDetails(FetchRestaurantProductDetailsEvent event, Emitter<RsDiscoverState> emit) async {
+    if (event.productId <= 0) return;
+
+    emit(state.copyWith(
+      isLoadingProductDetails: true,
+      productDetailsErrorMessage: '',
+      clearProductDetails: true,
+    ));
+
+    final response = await fetchRestaurantProductDetailsUseCase(
+      FetchRestaurantProductDetailsParams(productId: event.productId),
+    );
+
+    response.fold(
+      (l) {
+        emit(state.copyWith(
+          isLoadingProductDetails: false,
+          productDetailsErrorMessage: l.message,
+        ));
+      },
+      (r) {
+        emit(state.copyWith(
+          productDetails: r,
+          isLoadingProductDetails: false,
+          productDetailsErrorMessage: '',
         ));
       },
     );

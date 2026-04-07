@@ -117,4 +117,11 @@ class RsHomeRepoImpl with HandlingException implements RsHomeRepo {
           rsHomeRemoteDataSource.fetchRestaurantHomeCategoryProducts(params),
     );
   }
+
+  @override
+  DataResponse<bool> reorderLatestOrderedProduct() {
+    return wrapHandlingException(
+      tryCall: () => rsHomeRemoteDataSource.reorderLatestOrderedProduct(),
+    );
+  }
 }

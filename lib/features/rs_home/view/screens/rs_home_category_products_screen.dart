@@ -6,7 +6,6 @@ import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_deta
 import 'package:dllni_user_app/features/rs_discover/view/widgets/discover_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../data/models/fetch_restaurant_home_categories_model.dart';
 import '../../data/models/fetch_restaurant_home_suggested_products_model.dart';
@@ -17,10 +16,7 @@ class RsHomeCategoryProductsScreenParams {
   final List<RestaurantHomeCategoryItem> categories;
   final int initialCategoryIndex;
 
-  RsHomeCategoryProductsScreenParams({
-    required this.categories,
-    required this.initialCategoryIndex,
-  });
+  RsHomeCategoryProductsScreenParams({required this.categories, required this.initialCategoryIndex});
 }
 
 @AutoRoutePage()
@@ -30,12 +26,10 @@ class RsHomeCategoryProductsScreen extends StatefulWidget {
   final RsHomeCategoryProductsScreenParams params;
 
   @override
-  State<RsHomeCategoryProductsScreen> createState() =>
-      _RsHomeCategoryProductsScreenState();
+  State<RsHomeCategoryProductsScreen> createState() => _RsHomeCategoryProductsScreenState();
 }
 
-class _RsHomeCategoryProductsScreenState
-    extends State<RsHomeCategoryProductsScreen> {
+class _RsHomeCategoryProductsScreenState extends State<RsHomeCategoryProductsScreen> {
   late final List<String> _tabTitles;
   int _selectedTabIndex = 0;
   String _searchQuery = '';
@@ -43,35 +37,21 @@ class _RsHomeCategoryProductsScreenState
   @override
   void initState() {
     super.initState();
-    final maxIndex = widget.params.categories.isEmpty
-        ? 0
-        : widget.params.categories.length - 1;
-    final safeInitial = widget.params.initialCategoryIndex.clamp(0, maxIndex);
-    final tabTitleSet = <String>{
-      'الكل',
-      ...widget.params.categories
-          .map((e) => (e.name ?? '').trim())
-          .where((e) => e.isNotEmpty),
-    };
+    final tabTitleSet = <String>{...widget.params.categories.map((e) => (e.name ?? '').trim()).where((e) => e.isNotEmpty)};
     _tabTitles = tabTitleSet.toList();
-    _selectedTabIndex = _tabTitles.length > 1 ? safeInitial + 1 : 0;
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<RsHomeBloc>()
-        ..add(
-          FetchRestaurantHomeSuggestedProductsEvent(
-            params: FetchRestaurantHomeSuggestedProductsParams(),
-          ),
-        ),
+      create: (_) => getIt<RsHomeBloc>()..add(FetchRestaurantHomeSuggestedProductsEvent(params: FetchRestaurantHomeSuggestedProductsParams())),
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FAFB),
         body: Column(
           children: [
             AppSimpleAppBarWithSearch(
-              title: "اكتشف",
+              title: "التصنيفات",
+              onBackTap: () => context.maybePop(),
               searchHintText: "ابحث عن منتج...",
               onSearchChanged: (value) {
                 setState(() {
@@ -80,20 +60,7 @@ class _RsHomeCategoryProductsScreenState
               },
             ),
             DiscoverTabBar(
-              items: _tabTitles
-                  .map(
-                    (title) => DiscoverTabBarItem(
-                      title: title,
-                      icon: title == 'الكل'
-                          ? const FaIcon(
-                              FontAwesomeIcons.shapes,
-                              size: 14,
-                              color: Color(0xFF9CA3AF),
-                            )
-                          : null,
-                    ),
-                  )
-                  .toList(),
+              items: _tabTitles.map((title) => DiscoverTabBarItem(title: title)).toList(),
               initialIndex: _selectedTabIndex,
               onChanged: (index) {
                 setState(() {
@@ -106,43 +73,26 @@ class _RsHomeCategoryProductsScreenState
               child: BlocBuilder<RsHomeBloc, RsHomeState>(
                 builder: (context, state) {
                   final status = state.restaurantSuggestedProductsStatus;
-                  final products =
-                      state.restaurantSuggestedProducts?.suggestedProducts ??
-                      const [];
-                  if (status == BlocStatus.loading ||
-                      status == null ||
-                      status == BlocStatus.init) {
+                  final products = state.restaurantSuggestedProducts?.suggestedProducts ?? const [];
+                  if (status == BlocStatus.loading || status == null || status == BlocStatus.init) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (status == BlocStatus.failed) {
                     return Center(
-                      child: AppText(
-                        state.errorMessage ?? 'حدث خطا ما',
-                        style: const TextStyle(color: Color(0xFF6B7280)),
-                      ),
+                      child: AppText(state.errorMessage ?? 'حدث خطا ما', style: const TextStyle(color: Color(0xFF6B7280))),
                     );
                   }
-
                   final selectedCategory = _tabTitles[_selectedTabIndex];
                   final visibleProducts = products.where((item) {
-                    final categoryMatches =
-                        selectedCategory == 'الكل' ||
-                        _matchesCategory(item, selectedCategory);
-                    final searchMatches =
-                        _searchQuery.isEmpty ||
-                        _matchesSearch(item, _searchQuery);
+                    final categoryMatches = selectedCategory == 'الكل' || _matchesCategory(item, selectedCategory);
+                    final searchMatches = _searchQuery.isEmpty || _matchesSearch(item, _searchQuery);
                     return categoryMatches && searchMatches;
                   }).toList();
-
                   if (visibleProducts.isEmpty) {
                     return Center(
-                      child: AppText(
-                        'لا توجد منتجات مطابقة',
-                        style: TextStyle(color: Color(0xFF6B7280)),
-                      ),
+                      child: AppText('لا توجد منتجات مطابقة', style: TextStyle(color: Color(0xFF6B7280))),
                     );
                   }
-
                   return ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: visibleProducts.length,
@@ -155,11 +105,7 @@ class _RsHomeCategoryProductsScreenState
                           if ((product.productId ?? 0) <= 0) return;
                           context.pushRoute(
                             '/product',
-                            arguments: ProductDetailsScreenParams(
-                              product: ProductPreviewData.fromSuggestedItem(
-                                product,
-                              ),
-                            ),
+                            arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromSuggestedItem(product)),
                           );
                         },
                         child: Container(
@@ -179,36 +125,22 @@ class _RsHomeCategoryProductsScreenState
                                   children: [
                                     AppText(
                                       product.name ?? '-',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF111827),
-                                      ),
+                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
                                     ),
                                     const SizedBox(height: 4),
                                     AppText(
                                       _descriptionText(product),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF6B7280),
-                                      ),
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                                     ),
                                   ],
                                 ),
                               ),
                               const SizedBox(width: 8),
                               AppText(
-                                _priceText(
-                                  product.displayPrice,
-                                  product.currency,
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF273C8F),
-                                ),
+                                _priceText(product.displayPrice, product.currency),
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF273C8F)),
                               ),
                             ],
                           ),
@@ -226,10 +158,7 @@ class _RsHomeCategoryProductsScreenState
   }
 }
 
-bool _matchesCategory(
-  RestaurantHomeSuggestedProductItem item,
-  String category,
-) {
+bool _matchesCategory(RestaurantHomeSuggestedProductItem item, String category) {
   final normalizedCategory = category.trim().toLowerCase();
   final tags = item.tags ?? const <String>[];
   for (final tag in tags) {
@@ -243,12 +172,7 @@ bool _matchesCategory(
 bool _matchesSearch(RestaurantHomeSuggestedProductItem item, String query) {
   final q = query.trim().toLowerCase();
   if (q.isEmpty) return true;
-  final candidates = <String>[
-    item.name ?? '',
-    item.restaurantName ?? '',
-    item.location ?? '',
-    ...(item.tags ?? const <String>[]),
-  ];
+  final candidates = <String>[item.name ?? '', item.restaurantName ?? '', item.location ?? '', ...(item.tags ?? const <String>[])];
   return candidates.any((value) => value.toLowerCase().contains(q));
 }
 
@@ -274,24 +198,14 @@ class _ImageThumb extends StatelessWidget {
     if (imageUrl.isEmpty) {
       return _placeholder();
     }
-    return AppImage.network(
-      imageUrl,
-      width: 72,
-      height: 72,
-      fit: BoxFit.cover,
-      borderRadius: BorderRadius.circular(12),
-      errorWidget: _placeholder(),
-    );
+    return AppImage.network(imageUrl, width: 72, height: 72, fit: BoxFit.cover, borderRadius: BorderRadius.circular(12), errorWidget: _placeholder());
   }
 
   Widget _placeholder() {
     return Container(
       width: 72,
       height: 72,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
       alignment: Alignment.center,
       child: const Icon(Icons.image_outlined, color: Color(0xFF9CA3AF)),
     );
