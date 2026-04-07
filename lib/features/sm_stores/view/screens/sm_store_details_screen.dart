@@ -1,13 +1,10 @@
-import 'dart:ui';
-
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/themes/app_colors.dart';
 import '../widgets/products_section.dart';
 import '../widgets/special_offers_section.dart';
 import '../widgets/store_cover_section.dart';
+import '../widgets/store_address_section.dart';
 import '../widgets/store_info_section.dart';
 import '../widgets/store_status_section.dart';
 
@@ -18,25 +15,52 @@ class SmStoreDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
       body: SingleChildScrollView(
         child: Column(
           children: [
             StoreCoverSection(),
-            SizedBox(height: 16),
             StoreStatusSection(),
-            SizedBox(height: 20),
-            Divider(height: 1, color: Color(0xFFF3F4F6)),
-            SizedBox(height: 28),
-            StoreInfoSection(),
+            StoreAddressSection(),
             SizedBox(height: 16),
-            Divider(height: 1, color: Color(0xFFF3F4F6)),
-            SizedBox(height: 44),
             SpecialOffersSection(),
-            SizedBox(height: 20),
-            Divider(height: 1, color: Color(0xFFF3F4F6)),
+            SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                spacing: 12,
+                children: [
+                  Expanded(
+                    child: Text(
+                      "منتجات المتجر",
+                      style: TextStyle(
+                        color: const Color(0xFF111827),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        height: 28 / 18,
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {},
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
+                    child: Text(
+                      " عرض الكل ",
+                      style: TextStyle(
+                        color: Color(0xFF4CAF50),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        height: 20 / 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
             ProductsSection(title: "مخبوزات"),
-            SizedBox(height: 350),
+            SizedBox(height: 40),
+            StoreInfoSection(),
+            SizedBox(height: 155),
           ],
         ),
       ),

@@ -1,0 +1,21 @@
+{
+  "id": 1,
+  "name": "Seller Supermarket",
+  "slug": "seller-supermarket-e7f6c011",
+  "cover": null,
+  "logo": null,
+  "rating": 4,
+  "categoryNames": [],
+  "categorySummary": "",
+  "distanceKm": null,
+  "distanceUnit": null,
+  "estimatedDeliveryMinutesMin": null,
+  "estimatedDeliveryMinutesMax": null,
+  "discountOfferBadge": null,
+  "isMostRequested": false,
+  "popularOrdersCount": 0,
+  "isFavorited": false,
+  "deliveryFee": null,
+  "isFreeDelivery": null,
+  "currency": "IQD"
+}

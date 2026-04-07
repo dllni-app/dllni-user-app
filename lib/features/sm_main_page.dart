@@ -11,8 +11,11 @@ import 'sm_profile/view/screens/sm_profile_screen.dart';
 
 @AutoRoutePage(path: "/")
 class SmMainPage extends StatefulWidget {
-  const SmMainPage({super.key, this.initialPage});
+  const SmMainPage({super.key, this.initialPage, this.expandSearch = false});
   final int? initialPage;
+
+  /// this property just for open [AppSimpleAppBarWithSearch] by default if it is [true]
+  final bool expandSearch;
   @override
   State<SmMainPage> createState() => _SmMainPageState();
 }
@@ -20,11 +23,14 @@ class SmMainPage extends StatefulWidget {
 class _SmMainPageState extends State<SmMainPage>
     with SingleTickerProviderStateMixin {
   int selectedTab = 0;
+  bool expandSearch = false;
+
   late TabController tabController;
   @override
   void initState() {
     super.initState();
     if (widget.initialPage != null) selectedTab = widget.initialPage!;
+    expandSearch = widget.expandSearch;
     tabController = TabController(
       length: 5,
       vsync: this,
@@ -40,7 +46,7 @@ class _SmMainPageState extends State<SmMainPage>
         controller: tabController,
         children: [
           SmHomeScreen(),
-          SmDiscoverScreen(),
+          SmDiscoverScreen(expandSearch: expandSearch),
           SmOffersScreen(),
           SmOrdersScreen(),
           SmProfileScreen(),
@@ -49,10 +55,7 @@ class _SmMainPageState extends State<SmMainPage>
       bottomNavigationBar: AppNavBar(
         items: [
           AppNavBarItem(title: "الرئيسية", icon: FontAwesomeIcons.solidHouse),
-          AppNavBarItem(
-            title: "تصفح المتاجر",
-            icon: FontAwesomeIcons.solidCompass,
-          ),
+          AppNavBarItem(title: "تصفح", icon: FontAwesomeIcons.solidCompass),
           AppNavBarItem(title: "العروض", icon: FontAwesomeIcons.tags),
           AppNavBarItem(title: "طلباتي", icon: FontAwesomeIcons.receipt),
           AppNavBarItem(title: "حسابي", icon: FontAwesomeIcons.user),
@@ -60,6 +63,9 @@ class _SmMainPageState extends State<SmMainPage>
         selectedIndex: selectedTab,
         onChanged: (index) {
           if (index != selectedTab) {
+            if (selectedTab == 1) {
+              expandSearch = false;
+            }
             selectedTab = index;
             setState(() {});
             tabController.animateTo(selectedTab);

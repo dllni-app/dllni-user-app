@@ -1,8 +1,13 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/utils/app_images.dart';
+import '../../../../core/widgets/failure_widget.dart';
+import '../../../../core/widgets/loading_list.dart';
+import '../../domain/usecases/get_nearby_stores_use_case.dart';
+import '../manager/bloc/sm_home_bloc.dart';
 import 'store_card.dart';
 
 class NearStoresSection extends StatelessWidget {
@@ -36,57 +41,37 @@ class NearStoresSection extends StatelessWidget {
             ],
           ),
           SizedBox(height: 16),
-          ...List.generate(stores.length * 2 - 1, (index) {
-            if (index.isOdd) return SizedBox(height: 16);
-            return StoreCard(store: stores[index ~/ 2]);
-            // return NearStoreCard(data: stores[index ~/ 2]);
-          }),
+          BlocBuilder<SmHomeBloc, SmHomeState>(
+            buildWhen: (previous, current) =>
+                previous.nearbyStoresStatus != current.nearbyStoresStatus,
+            builder: (context, state) {
+              if (state.nearbyStoresStatus == BlocStatus.loading) {
+                return LoadingList(heightCard: 279, borderRadius: 24);
+              } else if (state.nearbyStoresStatus == BlocStatus.failed) {
+                return FailureWidget(
+                  message: state.errorMessage.toString(),
+                  onRetry: () {
+                    context.read<SmHomeBloc>().add(
+                      GetNearbyStoresEvent(params: GetNearbyStoresParams()),
+                    );
+                  },
+                );
+              } else if (state.nearbyStoresStatus == BlocStatus.success) {
+                return ListView.separated(
+                  padding: EdgeInsets.zero,
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemBuilder: (_, index) =>
+                      StoreCard(store: state.nearbyStores!.stores![index]),
+                  separatorBuilder: (_, _) => SizedBox(height: 12),
+                  itemCount: state.nearbyStores!.stores!.length,
+                );
+              }
+              return SizedBox.shrink();
+            },
+          ),
         ],
       ),
     );
   }
 }
-
-final List<StoreData> stores = [
-  StoreData(
-    image: AppImages.store,
-    name: "سوبر ماركت الأطرش",
-    description: "مفرزات • معلبات • منظفات • تسالي",
-    rating: 4.5,
-    distance: 1.2,
-    deliveryPrice: "15 ل.س",
-    time: "20-30 دقيقة",
-    discount: 20,
-    isFavorite: true,
-  ),
-  StoreData(
-    image: AppImages.store,
-    name: "ماركت المدينة",
-    description: "خضار • فواكه • مواد غذائية",
-    rating: 4.2,
-    distance: 0.8,
-    deliveryPrice: "10 ل.س",
-    time: "15-25 دقيقة",
-    discount: 0,
-  ),
-  StoreData(
-    image: AppImages.store,
-    name: "هايبر الشام",
-    description: "عروض يومية • أسعار منافسة",
-    rating: 4.7,
-    distance: 2.3,
-    deliveryPrice: "20 ل.س",
-    time: "25-35 دقيقة",
-    discount: 30,
-  ),
-  StoreData(
-    image: AppImages.store,
-    name: "سوق الخير",
-    description: "مواد تنظيف • مستلزمات منزلية",
-    rating: 4.0,
-    distance: 3.1,
-    deliveryPrice: "12 ل.س",
-    time: "30-40 دقيقة",
-    discount: 10,
-  ),
-];

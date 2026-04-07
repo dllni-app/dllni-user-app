@@ -30,12 +30,26 @@ import '../../features/sm_discover/data/source/sm_discover_remote_data_source.da
     as _i949;
 import '../../features/sm_discover/domain/repository/sm_discover_repo.dart'
     as _i880;
+import '../../features/sm_discover/domain/usecases/browse_products_use_case.dart'
+    as _i321;
+import '../../features/sm_discover/domain/usecases/browse_stores_use_case.dart'
+    as _i84;
+import '../../features/sm_discover/domain/usecases/change_product_favorite_use_case.dart'
+    as _i871;
+import '../../features/sm_discover/domain/usecases/change_store_favorite_use_case.dart'
+    as _i327;
 import '../../features/sm_discover/view/manager/bloc/sm_discover_bloc.dart'
     as _i717;
 import '../../features/sm_home/data/repository/sm_home_repo_impl.dart' as _i991;
 import '../../features/sm_home/data/source/sm_home_remote_data_source.dart'
     as _i1025;
 import '../../features/sm_home/domain/repository/sm_home_repo.dart' as _i267;
+import '../../features/sm_home/domain/usecases/change_store_favorite_use_case.dart'
+    as _i583;
+import '../../features/sm_home/domain/usecases/get_featured_offers_use_case.dart'
+    as _i437;
+import '../../features/sm_home/domain/usecases/get_nearby_stores_use_case.dart'
+    as _i690;
 import '../../features/sm_home/view/manager/bloc/sm_home_bloc.dart' as _i626;
 import '../../features/sm_offers/data/repository/sm_offers_repo_impl.dart'
     as _i213;
@@ -80,8 +94,6 @@ _i174.GetIt $initGetIt(
   final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
   final injectableModule = _$InjectableModule();
   gh.factory<_i821.SmCartBloc>(() => _i821.SmCartBloc());
-  gh.factory<_i717.SmDiscoverBloc>(() => _i717.SmDiscoverBloc());
-  gh.factory<_i626.SmHomeBloc>(() => _i626.SmHomeBloc());
   gh.factory<_i709.SmOffersBloc>(() => _i709.SmOffersBloc());
   gh.factory<_i803.SmOrdersBloc>(() => _i803.SmOrdersBloc());
   gh.factory<_i602.SmProfileBloc>(() => _i602.SmProfileBloc());
@@ -89,12 +101,6 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i960.DioNetwork>(() => injectableModule.dio);
   gh.lazySingleton<_i369.SmCartRemoteDataSource>(
     () => _i369.SmCartRemoteDataSource(),
-  );
-  gh.lazySingleton<_i949.SmDiscoverRemoteDataSource>(
-    () => _i949.SmDiscoverRemoteDataSource(),
-  );
-  gh.lazySingleton<_i1025.SmHomeRemoteDataSource>(
-    () => _i1025.SmHomeRemoteDataSource(),
   );
   gh.lazySingleton<_i875.SmOffersRemoteDataSource>(
     () => _i875.SmOffersRemoteDataSource(),
@@ -109,22 +115,76 @@ _i174.GetIt $initGetIt(
     () => _i179.SmStoresRemoteDataSource(),
   );
   gh.lazySingleton<_i130.SmProfileRepo>(() => _i489.SmProfileRepoImpl());
-  gh.lazySingleton<_i267.SmHomeRepo>(() => _i991.SmHomeRepoImpl());
   gh.lazySingleton<_i359.SmStoresRepo>(() => _i580.SmStoresRepoImpl());
   gh.lazySingleton<_i579.SmCartRepo>(() => _i91.SmCartRepoImpl());
   gh.lazySingleton<_i777.AuthRemoteDataSource>(
     () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
   );
   gh.lazySingleton<_i446.SmOffersRepo>(() => _i213.SmOffersRepoImpl());
-  gh.lazySingleton<_i880.SmDiscoverRepo>(() => _i43.SmDiscoverRepoImpl());
   gh.lazySingleton<_i753.SmOrdersRepo>(() => _i290.SmOrdersRepoImpl());
   gh.lazySingleton<_i976.AuthRepo>(
     () => _i751.AuthRepoImpl(
       authRemoteDataSource: gh<_i777.AuthRemoteDataSource>(),
     ),
   );
+  gh.lazySingleton<_i949.SmDiscoverRemoteDataSource>(
+    () => _i949.SmDiscoverRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
+  gh.lazySingleton<_i1025.SmHomeRemoteDataSource>(
+    () => _i1025.SmHomeRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
+  gh.lazySingleton<_i267.SmHomeRepo>(
+    () => _i991.SmHomeRepoImpl(
+      smHomeRemoteDataSource: gh<_i1025.SmHomeRemoteDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i880.SmDiscoverRepo>(
+    () => _i43.SmDiscoverRepoImpl(
+      smDiscoverRemoteDataSource: gh<_i949.SmDiscoverRemoteDataSource>(),
+    ),
+  );
   gh.lazySingleton<_i37.LoginUseCase>(
     () => _i37.LoginUseCase(auth: gh<_i976.AuthRepo>()),
+  );
+  gh.lazySingleton<_i583.ChangeStoreFavoriteUseCase>(
+    () => _i583.ChangeStoreFavoriteUseCase(smHome: gh<_i267.SmHomeRepo>()),
+  );
+  gh.lazySingleton<_i437.GetFeaturedOffersUseCase>(
+    () => _i437.GetFeaturedOffersUseCase(smHome: gh<_i267.SmHomeRepo>()),
+  );
+  gh.lazySingleton<_i690.GetNearbyStoresUseCase>(
+    () => _i690.GetNearbyStoresUseCase(smHome: gh<_i267.SmHomeRepo>()),
+  );
+  gh.factory<_i626.SmHomeBloc>(
+    () => _i626.SmHomeBloc(
+      gh<_i437.GetFeaturedOffersUseCase>(),
+      gh<_i690.GetNearbyStoresUseCase>(),
+      gh<_i583.ChangeStoreFavoriteUseCase>(),
+    ),
+  );
+  gh.lazySingleton<_i321.BrowseProductsUseCase>(
+    () => _i321.BrowseProductsUseCase(smDiscover: gh<_i880.SmDiscoverRepo>()),
+  );
+  gh.lazySingleton<_i84.BrowseStoresUseCase>(
+    () => _i84.BrowseStoresUseCase(smDiscover: gh<_i880.SmDiscoverRepo>()),
+  );
+  gh.lazySingleton<_i871.ChangeProductFavoriteUseCase>(
+    () => _i871.ChangeProductFavoriteUseCase(
+      smDiscover: gh<_i880.SmDiscoverRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i327.ChangeStoreFavoriteUseCase>(
+    () => _i327.ChangeStoreFavoriteUseCase(
+      smDiscover: gh<_i880.SmDiscoverRepo>(),
+    ),
+  );
+  gh.factory<_i717.SmDiscoverBloc>(
+    () => _i717.SmDiscoverBloc(
+      gh<_i84.BrowseStoresUseCase>(),
+      gh<_i321.BrowseProductsUseCase>(),
+      gh<_i327.ChangeStoreFavoriteUseCase>(),
+      gh<_i871.ChangeProductFavoriteUseCase>(),
+    ),
   );
   gh.factory<_i958.AuthBloc>(() => _i958.AuthBloc(gh<_i37.LoginUseCase>()));
   return getIt;

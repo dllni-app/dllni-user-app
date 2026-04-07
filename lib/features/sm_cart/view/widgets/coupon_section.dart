@@ -10,32 +10,36 @@ class CouponSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          border: Border.all(color: Color(0xFFE5E7EB)),
+          boxShadow: [
+            BoxShadow(offset: Offset(0, 1), blurRadius: 2, color: Color(0x0D000000))
+          ]
         ),
         child: Column(
           children: [
             Row(
               children: [
                 FaIcon(
-                  FontAwesomeIcons.percent,
-                  size: 21,
+                  FontAwesomeIcons.ticket,
+                  size: 18,
                   color: AppColors.accent,
                 ),
-                SizedBox(width: 10),
+                SizedBox(width: 8),
                 Expanded(
                   child: AppText(
                     "هل لديك كود حسم ؟",
                     textAlign: TextAlign.start,
                     style: TextStyle(
                       color: Color(0xFF1F2937),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      height: 24 / 14,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      height: 24 / 16,
                     ),
                   ),
                 ),
@@ -45,7 +49,9 @@ class CouponSection extends StatelessWidget {
             Row(
               spacing: 8,
               children: [
-                Expanded(child: _CouponField(onChanged: (coupon) {})),
+                Expanded(child: CartField(
+                  hintText: "أدخل كود الخصم هنا",
+                  onChanged: (coupon) {})),
                 InkWell(
                   onTap: () {},
                   borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -60,7 +66,7 @@ class CouponSection extends StatelessWidget {
                       style: TextStyle(
                         color: AppColors.white,
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         height: 24 / 14,
                       ),
                     ),
@@ -103,13 +109,17 @@ class CouponSection extends StatelessWidget {
   }
 }
 
-class _CouponField extends StatelessWidget {
-  const _CouponField({required this.onChanged});
+class CartField extends StatelessWidget {
+  const CartField({super.key, required this.onChanged, this.maxLines = 1, this.hintText});
   final void Function(String coupon) onChanged;
+  final int maxLines;
+  final String? hintText;
+
   @override
   Widget build(BuildContext context) {
     return TextField(
       onChanged: onChanged,
+      maxLines: maxLines,
       style: TextStyle(
         color: Color(0xFF111827),
         fontSize: 14,
@@ -117,8 +127,8 @@ class _CouponField extends StatelessWidget {
         height: 26 / 14,
       ),
       decoration: InputDecoration(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical:2),
-        hintText: "أدخل كود الخصم هنا",
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        hintText: hintText,
         hintStyle: TextStyle(
           color: Color(0xFF9CA3AF),
           fontSize: 14,

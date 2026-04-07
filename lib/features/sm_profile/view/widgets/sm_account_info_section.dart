@@ -1,11 +1,12 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/app_text_fields.dart';
 import 'rs_filled_text_field.dart';
 
 /// Full name, phone row (country + digits + icon), optional verified banner.
-class RsAccountInfoSection extends StatelessWidget {
-  const RsAccountInfoSection({
+class SmAccountInfoSection extends StatelessWidget {
+  const SmAccountInfoSection({
     super.key,
     required this.nameController,
     required this.phoneLocalController,
@@ -33,13 +34,25 @@ class RsAccountInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RsFilledTextField(label: 'الاسم الكامل', controller: nameController, isRequired: true, validator: nameValidator),
-        const SizedBox(height: 14),
+        RsFilledTextField(
+          label: 'الاسم الكامل',
+          controller: nameController,
+          isRequired: true,
+          validator: nameValidator,
+        ),
+        const SizedBox(height: 24),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AppText.bodyMedium('رقم الهاتف الأساسي', fontWeight: FontWeight.w500),
-            AppText.bodyMedium('*', color: context.error, fontWeight: FontWeight.w500),
+            AppText.bodyMedium(
+              'رقم الهاتف الأساسي',
+              fontWeight: FontWeight.w500,
+            ),
+            AppText.bodyMedium(
+              '*',
+              color: context.error,
+              fontWeight: FontWeight.w500,
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -47,26 +60,54 @@ class RsAccountInfoSection extends StatelessWidget {
           controller: phoneLocalController,
           keyboardType: TextInputType.phone,
           validator: phoneValidator,
-          style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14, fontWeight: FontWeight.w400),
+          style: const TextStyle(
+            color: Color(0xff2F2B3D),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: const Color(0xffF9FAFB),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 12,
+            ),
             suffixIcon: Padding(
               padding: const EdgeInsetsDirectional.only(start: 8, end: 4),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
-                  value: dialCodes.contains(dialCode) ? dialCode : dialCodes.first,
+                  value: dialCodes.contains(dialCode)
+                      ? dialCode
+                      : dialCodes.first,
                   isDense: true,
-                  icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xff6B7280), size: 20),
-                  style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14),
-                  items: dialCodes.map((c) => DropdownMenuItem<String>(value: c, child: Text(c))).toList(),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Color(0xff6B7280),
+                    size: 20,
+                  ),
+                  style: const TextStyle(
+                    color: Color(0xff2F2B3D),
+                    fontSize: 14,
+                  ),
+                  items: dialCodes
+                      .map(
+                        (c) =>
+                            DropdownMenuItem<String>(value: c, child: Text(c)),
+                      )
+                      .toList(),
                   onChanged: onDialCodeChanged,
                 ),
               ),
             ),
-            suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-            prefixIcon: Icon(Icons.phone_rounded, color: _phoneIconGreen, size: 22),
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
+            prefixIcon: Icon(
+              Icons.phone_rounded,
+              color: _phoneIconGreen,
+              size: 22,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),

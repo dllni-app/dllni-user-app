@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/fetch_notifications_model.dart';
 import '../widgets/notification_feed_item.dart';
 
-@AutoRoutePage()
+@AutoRoutePage(path: "/sm_notification")
 class SmNotificationsScreen extends StatefulWidget {
   const SmNotificationsScreen({super.key});
 

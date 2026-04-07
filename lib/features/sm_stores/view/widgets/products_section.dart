@@ -1,9 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/themes/app_colors.dart';
-import '../../../../core/utils/app_images.dart';
+import 'product_card.dart';
 
 class ProductsSection extends StatelessWidget {
   const ProductsSection({super.key, required this.title});
@@ -25,98 +23,15 @@ class ProductsSection extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(
-          height: 180,
-          child: ListView.separated(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: 5,
-            separatorBuilder: (context, index) => SizedBox(width: 24),
-            itemBuilder: (context, index) => ProductCard(),
-          ),
+        ListView.separated(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          physics: NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          itemCount: 2,
+          separatorBuilder: (context, index) => SizedBox(height: 8),
+          itemBuilder: (context, index) => ProductCard(),
         ),
       ],
-    );
-  }
-}
-
-class ProductCard extends StatelessWidget {
-  const ProductCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        context.pushRoute("/product");
-      },
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      child: SizedBox(
-        width: 112,
-        height: 180,
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                AppImage.asset(
-                  AppImages.products,
-                  size: 112,
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  bottom: 6,
-                  right: 5,
-                  child: InkWell(
-                    onTap: () {},
-                    customBorder: CircleBorder(),
-                    child: Container(
-                      alignment: Alignment.center,
-                      width: 25,
-                      height: 25,
-                      decoration: ShapeDecoration(
-                        shape: CircleBorder(),
-                        color: AppColors.white,
-                        shadows: [
-                          BoxShadow(
-                            offset: Offset(0, 4),
-                            blurRadius: 4,
-                            color: Color(0x40000000),
-                          ),
-                        ],
-                      ),
-                      child: FaIcon(
-                        FontAwesomeIcons.plus,
-                        color: Color(0xFF4B5563),
-                        size: 10,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            AppText(
-              "هوى الشام لبنة كاملة الدسم",
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 16 / 12,
-              ),
-            ),
-            AppText(
-              "5000 ل.س",
-              style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 28 / 12,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

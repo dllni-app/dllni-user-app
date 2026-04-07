@@ -3,38 +3,105 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/themes/app_colors.dart';
 
-class OrdersSimpleAppBar extends StatelessWidget {
-  const OrdersSimpleAppBar({super.key});
+class SimpleAppBarWithTabBar extends StatefulWidget {
+  const SimpleAppBarWithTabBar({
+    super.key,
+    required this.title,
+    required this.onChanged,
+    required this.items,
+  });
+  final String title;
+  final void Function(int index) onChanged;
+  final List<String> items;
+
+  @override
+  State<SimpleAppBarWithTabBar> createState() => _SimpleAppBarWithTabBarState();
+}
+
+class _SimpleAppBarWithTabBarState extends State<SimpleAppBarWithTabBar> {
+  int selectedTab = 0;
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: context.width,
-      alignment: Alignment.center,
-      padding: EdgeInsets.only(
-        top: 32 + MediaQuery.paddingOf(context).top,
-        bottom: 24,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        border: Border.all(color: AppColors.accent),
-        boxShadow: [
-          BoxShadow(
-            offset: Offset(0, 4),
-            blurRadius: 4.6,
-            color: Color(0x1C000000),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: context.width,
+          alignment: Alignment.center,
+          padding: EdgeInsets.only(
+            top: 32 + MediaQuery.paddingOf(context).top,
+            bottom: 4,
           ),
-        ],
-      ),
-      child: AppText(
-        "طلباتي",
-        style: TextStyle(
-          color: AppColors.accent,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          height: 32 / 20,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            boxShadow: [
+              BoxShadow(
+                offset: Offset(0, 4),
+                blurRadius: 4.6,
+                color: Color(0x1C000000),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppText(
+                widget.title,
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  height: 32 / 20,
+                ),
+              ),
+              SizedBox(height: 25),
+              Row(
+                children: List.generate(
+                  widget.items.length,
+                  (index) => Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        if (selectedTab == index) return;
+                        selectedTab = index;
+                        setState(() {});
+                        widget.onChanged(selectedTab);
+                      },
+                      child: AppText(
+                        widget.items[index],
+                        style: TextStyle(
+                          color: selectedTab == index
+                              ? AppColors.primary
+                              : Color(0xFF64748B),
+                          fontSize: 14,
+                          fontWeight: selectedTab == index
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          height: 32 / 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        Row(
+          children: List.generate(
+            widget.items.length,
+            (index) => Expanded(
+              child: selectedTab == index
+                  ? Divider(height: 1, thickness: 1, color: AppColors.primary)
+                  : SizedBox.shrink(),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

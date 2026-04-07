@@ -1,30 +1,13 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/themes/app_colors.dart';
+import '../../data/models/get_featured_offers_model.dart';
 
-class OfferCardData {
-  final String imagePath;
-  final String name;
-  final String info;
-  final num distance;
-  final OfferType type;
-
-  OfferCardData({
-    required this.imagePath,
-    required this.name,
-    required this.info,
-    required this.distance,
-    required this.type,
-  });
-}
-
-enum OfferType { limited, almostFinished, daily }
 
 class OfferCard extends StatelessWidget {
-  const OfferCard({super.key, required this.data});
-  final OfferCardData data;
+  const OfferCard({super.key, required this.offer});
+  final GetFeaturedOffersModelOffersItem offer;
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +25,11 @@ class OfferCard extends StatelessWidget {
             padding: EdgeInsets.all(12),
             child: Row(
               children: [
-                AppImage.asset(
-                  data.imagePath,
+                AppImage.network(
+                  offer.store!.cover.toString(),
                   size: 80,
+                  errorWidget: Icon(Icons.error_outline),
+                  
                   borderRadius: BorderRadius.all(Radius.circular(16)),
                 ),
                 SizedBox(width: 12),
@@ -55,7 +40,7 @@ class OfferCard extends StatelessWidget {
                       Row(
                         children: [
                           AppText(
-                            data.name,
+                            offer.name.toString(),
                             style: TextStyle(
                               color: Color(0xFF1A1A1A),
                               fontSize: 12,
@@ -76,7 +61,7 @@ class OfferCard extends StatelessWidget {
                               ),
                             ),
                             child: AppText(
-                              "خصم 50%",
+                              "خصم ${offer.discountPercent != null ? "${offer.discountPercent}%" : "${offer.discountValue}ل.س"}",
                               style: TextStyle(
                                 color: AppColors.accent,
                                 fontSize: 12,
@@ -89,7 +74,7 @@ class OfferCard extends StatelessWidget {
                       ),
                       SizedBox(height: 4),
                       AppText(
-                        data.info,
+                        offer.description.toString(),
                         textAlign: TextAlign.start,
                         style: TextStyle(
                           color: Color(0xFF6B7280),
@@ -98,24 +83,24 @@ class OfferCard extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 8),
-                      Row(
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.locationDot,
-                            size: 10,
-                            color: Color(0xFF9CA3AF),
-                          ),
-                          SizedBox(width: 8),
-                          AppText(
-                            "${data.distance.toStringAsFixed(1)} كم",
-                            style: TextStyle(
-                              color: Color(0xFF9CA3AF),
-                              fontSize: 12,
-                              height: 16 / 12,
-                            ),
-                          ),
-                        ],
-                      ),
+                      // Row(
+                      //   children: [
+                      //     FaIcon(
+                      //       FontAwesomeIcons.locationDot,
+                      //       size: 10,
+                      //       color: Color(0xFF9CA3AF),
+                      //     ),
+                      //     SizedBox(width: 8),
+                      //     AppText(
+                      //       "${data.distance.toStringAsFixed(1)} كم",
+                      //       style: TextStyle(
+                      //         color: Color(0xFF9CA3AF),
+                      //         fontSize: 12,
+                      //         height: 16 / 12,
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
                     ],
                   ),
                 ),
@@ -135,11 +120,12 @@ class OfferCard extends StatelessWidget {
                 ),
               ),
               child: AppText(
-                data.type == OfferType.limited
-                    ? "لفترة محدودة"
-                    : data.type == OfferType.almostFinished
-                    ? "ينتهي قريباً"
-                    : "عرض اليوم",
+                "لفترة محدودة",
+                // offer.type == OfferType.limited
+                //     ? "لفترة محدودة"
+                //     : offer.type == OfferType.almostFinished
+                //     ? "ينتهي قريباً"
+                //     : "عرض اليوم",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 10,

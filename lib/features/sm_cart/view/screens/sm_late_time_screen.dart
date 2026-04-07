@@ -3,7 +3,7 @@ import 'package:dllni_user_app/features/sm_cart/view/widgets/cart_main_button.da
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/app_colors.dart';
-import '../widgets/cart_simple_app_bar.dart';
+import '../../../../core/widgets/app_app_bars.dart';
 
 @AutoRoutePage(path: "/late_time")
 class SmLateTimeScreen extends StatefulWidget {
@@ -20,7 +20,10 @@ class _SmLateTimeScreenState extends State<SmLateTimeScreen> {
     return Scaffold(
       body: Column(
         children: [
-          CartSimpleAppBar(title: "طلب لاحق"),
+          AppSimpleAppBar2(
+            title: "طلب مجدول",
+            arrowBackType: ArrowBackType.cupertino,
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 18),
@@ -172,6 +175,8 @@ class _SelectTimeState extends State<_SelectTime> {
                   widget.onChanged(widget.times[index]);
                 },
                 visualDensity: VisualDensity(horizontal: -4, vertical: -4),
+                fillColor: WidgetStatePropertyAll(Color(0xFF6B7280)),
+                activeColor: AppColors.primary,
               ),
               SizedBox(width: 12),
               Expanded(
@@ -213,7 +218,7 @@ class _DayChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.all(Radius.circular(8)),
         child: Container(
-          padding: EdgeInsets.fromLTRB(32, 16, 31, 18),
+          padding: EdgeInsets.fromLTRB(32, 15, 31, 17),
           decoration: BoxDecoration(
             color: AppColors.white,
             border: isSelected ? Border.all(color: AppColors.accent) : null,

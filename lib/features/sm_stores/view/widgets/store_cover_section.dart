@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -45,7 +47,11 @@ class StoreCoverSection extends StatelessWidget {
             left: 16,
             child: Row(
               children: [
-                _ActionButton(icon: FontAwesomeIcons.solidHeart, onTap: () {}),
+                _ActionButton(
+                  icon: FontAwesomeIcons.solidHeart,
+                  color: Color(0xFFCF0E0E),
+                  onTap: () {},
+                ),
                 SizedBox(width: 8),
                 _ActionButton(icon: FontAwesomeIcons.shareNodes, onTap: () {}),
               ],
@@ -99,6 +105,33 @@ class StoreCoverSection extends StatelessWidget {
               ],
             ),
           ),
+          Positioned(
+            left: 16,
+            bottom: 16,
+            child: GestureDetector(
+              onTap: () {},
+              child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Color(0xE5FFFFFF),
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    child: Icon(
+                      Icons.fullscreen,
+                      size: 22,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -106,8 +139,9 @@ class StoreCoverSection extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.icon, required this.onTap});
+  const _ActionButton({required this.icon, required this.onTap, this.color});
   final FaIconData icon;
+  final Color? color;
   final void Function() onTap;
 
   @override
@@ -137,7 +171,7 @@ class _ActionButton extends StatelessWidget {
             ),
           ],
         ),
-        child: FaIcon(icon, size: 18, color: Color(0xFF1F2937)),
+        child: FaIcon(icon, size: 18, color: color ?? Color(0xFF1F2937)),
       ),
     );
   }

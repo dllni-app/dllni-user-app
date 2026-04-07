@@ -6,12 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:toastification/toastification.dart';
 
-import '../widgets/rs_account_info_section.dart';
-import '../widgets/rs_change_password_section.dart';
-import '../widgets/rs_numbered_section_card.dart';
-import '../widgets/rs_personal_details_app_bar.dart';
-import '../widgets/rs_personal_details_footer.dart';
-import '../widgets/rs_profile_photo_section.dart';
+import '../../../../core/widgets/app_app_bars.dart';
+import '../../../../core/widgets/app_buttons.dart';
+import '../../../../core/widgets/step_details.dart';
+import '../widgets/sm_change_password_section.dart';
+import '../widgets/sm_account_info_section.dart';
+import '../widgets/sm_profile_photo_section.dart';
 
 class SmPersonalDetailsParams {
   const SmPersonalDetailsParams({
@@ -31,7 +31,7 @@ class SmPersonalDetailsParams {
   final String? email;
 }
 
-@AutoRoutePage()
+@AutoRoutePage(path: "/sm_personal_details")
 class SmPersonalDetailsScreen extends StatefulWidget {
   const SmPersonalDetailsScreen({super.key, required this.params});
 
@@ -141,97 +141,113 @@ class _SmPersonalDetailsScreenState extends State<SmPersonalDetailsScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xffF9FAFB),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const RsPersonalDetailsAppBar(title: 'التفاصيل الشخصية'),
-            const SizedBox(height: 24),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      RsNumberedSectionCard(
-                        sectionNumber: '1',
-                        title: 'الصورة الشخصية',
-                        child: RsProfilePhotoSection(
-                          accentColor: accent,
-                          localFile: _selectedImage,
-                          networkImageUrl: widget.params.avatarUrl,
-                          onPickGallery: () => _pickImage(ImageSource.gallery),
-                          onPickCamera: () => _pickImage(ImageSource.camera),
-                        ),
+      body: Column(
+        children: [
+          AppSimpleAppBar(title: "التفاصيل الشخصية"),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                20 + MediaQuery.paddingOf(context).bottom,
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    StepDetails(
+                      number: 1,
+                      title: 'الصورة الشخصية',
+                      child: SmProfilePhotoSection(
+                        accentColor: accent,
+                        localFile: _selectedImage,
+                        networkImageUrl: widget.params.avatarUrl,
+                        onPickGallery: () => _pickImage(ImageSource.gallery),
+                        onPickCamera: () => _pickImage(ImageSource.camera),
                       ),
-                      const SizedBox(height: 16),
-                      RsNumberedSectionCard(
-                        sectionNumber: '2',
-                        title: 'معلومات الحساب',
-                        child: RsAccountInfoSection(
-                          nameController: _nameController,
-                          phoneLocalController: _phoneLocalController,
-                          dialCode: _dialCode,
-                          dialCodes: _dialCodes,
-                          isPhoneVerified: widget.params.isPhoneVerified,
-                          onDialCodeChanged: (v) {
-                            if (v != null) setState(() => _dialCode = v);
-                          },
-                          nameValidator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'الرجاء إدخال الاسم';
-                            }
-                            return null;
-                          },
-                          phoneValidator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'الرجاء إدخال رقم الهاتف';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      RsNumberedSectionCard(
-                        sectionNumber: '3',
-                        title: 'تغيير كلمة المرور',
-                        child: RsChangePasswordSection(
-                          currentController: _currentPasswordController,
-                          newController: _newPasswordController,
-                          confirmController: _confirmPasswordController,
-                          obscureCurrent: _obscureCurrent,
-                          obscureNew: _obscureNew,
-                          obscureConfirm: _obscureConfirm,
-                          passwordMismatch: _passwordMismatch,
-                          onToggleCurrent: () => setState(
-                            () => _obscureCurrent = !_obscureCurrent,
-                          ),
-                          onToggleNew: () =>
-                              setState(() => _obscureNew = !_obscureNew),
-                          onToggleConfirm: () => setState(
-                            () => _obscureConfirm = !_obscureConfirm,
-                          ),
-                          onPasswordChanged: _syncPasswordMismatch,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      RsPersonalDetailsFooter(
-                        isSaving: isSaving,
-                        onSave: () {
-                          _syncPasswordMismatch();
-                          if (!_formKey.currentState!.validate()) return;
-                          if (!_validatePasswordSection()) return;
+                    ),
+                    const SizedBox(height: 16),
+                    StepDetails(
+                      number: 2,
+                      title: 'معلومات الحساب',
+                      child: SmAccountInfoSection(
+                        nameController: _nameController,
+                        phoneLocalController: _phoneLocalController,
+                        dialCode: _dialCode,
+                        dialCodes: _dialCodes,
+                        isPhoneVerified: widget.params.isPhoneVerified,
+                        onDialCodeChanged: (v) {
+                          if (v != null) setState(() => _dialCode = v);
                         },
-                        onCancel: () => context.pop(),
+                        nameValidator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'الرجاء إدخال الاسم';
+                          }
+                          return null;
+                        },
+                        phoneValidator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'الرجاء إدخال رقم الهاتف';
+                          }
+                          return null;
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    StepDetails(
+                      number: 3,
+                      title: 'تغيير كلمة المرور',
+                      child: SmChangePasswordSection(
+                        currentController: _currentPasswordController,
+                        newController: _newPasswordController,
+                        confirmController: _confirmPasswordController,
+                        obscureCurrent: _obscureCurrent,
+                        obscureNew: _obscureNew,
+                        obscureConfirm: _obscureConfirm,
+                        passwordMismatch: _passwordMismatch,
+                        onToggleCurrent: () =>
+                            setState(() => _obscureCurrent = !_obscureCurrent),
+                        onToggleNew: () =>
+                            setState(() => _obscureNew = !_obscureNew),
+                        onToggleConfirm: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                        onPasswordChanged: _syncPasswordMismatch,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      spacing: 16,
+                      children: [
+                        Expanded(
+                          child: AppButton(
+                            title: "حفظ التغييرات",
+                            onTap: () {},
+                          ),
+                        ),
+                        AppOutlinedButton(
+                          color: Color(0xFFFF4C51),
+                          title: "إلغاء",
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                    // RsPersonalDetailsFooter(
+                    //   isSaving: isSaving,
+                    //   onSave: () {
+                    //     _syncPasswordMismatch();
+                    //     if (!_formKey.currentState!.validate()) return;
+                    //     if (!_validatePasswordSection()) return;
+                    //   },
+                    //   onCancel: () => context.pop(),
+                    // ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

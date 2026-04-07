@@ -1,7 +1,9 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../widgets/rs_profile_app_bar.dart';
+import '../../../../core/themes/app_colors.dart';
+import '../../../../core/widgets/app_app_bars.dart';
 import '../widgets/rs_profile_summary_card.dart';
 import '../widgets/section_card.dart';
 import '../widgets/section_title.dart';
@@ -21,21 +23,20 @@ class SmProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
+    return Scaffold(
+      body: Column(
         children: [
-          RsProfileAppBar(),
-          SizedBox(height: 16),
+          AppSimpleAppBar(title: "حسابي", canPop: false),
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
+              padding: EdgeInsetsDirectional.all(16),
               child: Column(
                 children: [
                   RsProfileSummaryCard(
                     params: _personalDetailsParams,
                     onEditTap: () {
                       context.pushRoute(
-                        '/rspersonaldetails',
+                        '/sm_personal_details',
                         arguments: _personalDetailsParams,
                       );
                     },
@@ -45,14 +46,18 @@ class SmProfileScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      color: context.onPrimaryContainer,
-                      border: Border.all(color: Color(0xffF3F4F6), width: 1),
+                      borderRadius: BorderRadius.circular(16),
+                      color: AppColors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(6),
-                          offset: Offset(0, 2),
-                          blurRadius: 10,
+                          color: Color(0x0F000000),
+                          offset: Offset(0, 1),
+                          blurRadius: 2,
+                        ),
+                        BoxShadow(
+                          color: Color(0x1A000000),
+                          offset: Offset(0, 1),
+                          blurRadius: 3,
                         ),
                       ],
                     ),
@@ -60,35 +65,85 @@ class SmProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         SectionCard(
-                          containerColor: Color(0xff3B82F6).withAlpha(25),
-                          image: Icon(
-                            Icons.location_on,
+                          containerColor: Color(0xFFEFF6FF),
+                          image: FaIcon(
+                            FontAwesomeIcons.locationDot,
                             size: 18,
-                            color: Color(0xff3B82F6),
+                            color: Color(0xFF3B82F6),
                           ),
                           title: 'عناويني',
                           subtitle: 'إدارة عناوين التوصيل المحفوظة',
                           onTap: () {
-                            context.pushRoute('/rsmyaddresses');
+                            context.pushRoute('/sm_my_addresses');
                           },
                         ),
                         Padding(
                           padding: EdgeInsetsDirectional.symmetric(
                             vertical: 16,
                           ),
-                          child: Divider(color: context.surface, thickness: .5),
+                          child: Divider(
+                            color: Color(0xFFF9FAFB),
+                            thickness: 1,
+                            height: 1,
+                          ),
                         ),
                         SectionCard(
-                          containerColor: Color(0xffEF4444).withAlpha(25),
-                          image: Icon(
-                            Icons.favorite_outlined,
+                          containerColor: Color(0xFFFEFCE8),
+                          image: FaIcon(
+                            FontAwesomeIcons.tags,
                             size: 18,
-                            color: Color(0xffEF4444),
+                            color: Color(0xFFEAB308),
+                          ),
+                          title: 'الحسومات',
+                          subtitle: 'عرض الحسومات المتاحة',
+                          onTap: () {
+                            context.pushRoute('/sm_offers');
+                          },
+                        ),
+                        Padding(
+                          padding: EdgeInsetsDirectional.symmetric(
+                            vertical: 16,
+                          ),
+                          child: Divider(
+                            color: Color(0xFFF9FAFB),
+                            thickness: 1,
+                            height: 1,
+                          ),
+                        ),
+                        SectionCard(
+                          containerColor: Color(0x304CAF50),
+                          image: FaIcon(
+                            FontAwesomeIcons.cartShopping,
+                            size: 18,
+                            color: Color(0xFF4CAF50),
+                          ),
+                          title: 'قائمة التسوق',
+                          subtitle: 'يمكنك إضافة قائمة تسوق لسرعة وسهولة الطلب',
+                          onTap: () {
+                            context.pushRoute('/sm_shopping_list');
+                          },
+                        ),
+                        Padding(
+                          padding: EdgeInsetsDirectional.symmetric(
+                            vertical: 16,
+                          ),
+                          child: Divider(
+                            color: Color(0xFFF9FAFB),
+                            thickness: 1,
+                            height: 1,
+                          ),
+                        ),
+                        SectionCard(
+                          containerColor: Color(0xFFFEF2F2),
+                          image: FaIcon(
+                            FontAwesomeIcons.solidHeart,
+                            size: 18,
+                            color: Color(0xFFEF4444),
                           ),
                           title: 'المفضلة',
                           subtitle: 'المطاعم والوجبات المفضلة',
                           onTap: () {
-                            context.pushRoute('/workingtime');
+                            context.pushRoute('/sm_favorite');
                           },
                         ),
                         Padding(
@@ -98,50 +153,17 @@ class SmProfileScreen extends StatelessWidget {
                           child: Divider(color: context.surface, thickness: .5),
                         ),
                         SectionCard(
-                          containerColor: Color(0xffEAB308).withAlpha(25),
-                          image: SizedBox(),
-                          title: 'الكوبونات',
-                          subtitle: 'عرض الكوبونات المتاحة',
-                          onTap: () {
-                            context.pushRoute('/workingtime');
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(
-                            vertical: 16,
-                          ),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
-                          containerColor: Color(0xffA855F7).withAlpha(25),
-                          image: Icon(
-                            Icons.notifications,
+                          containerColor: Color(0xFFFAF5FF),
+                          image: FaIcon(
+                            FontAwesomeIcons.solidBell,
                             size: 18,
-                            color: Color(0xffA855F7),
+                            color: Color(0xFFA855F7),
                           ),
                           title: 'الإشعارات',
                           subtitle: 'إشعارات الطلبات والعروض',
+                          count: 3,
                           onTap: () {
-                            context.pushRoute('/rsnotifications');
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(
-                            vertical: 16,
-                          ),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
-                          containerColor: Color(0xffFF7A00).withAlpha(25),
-                          image: Icon(
-                            Icons.poll_outlined,
-                            size: 18,
-                            color: Color(0xffFF7A00),
-                          ),
-                          title: 'التصويت على الطلب',
-                          subtitle: 'أنشئ تصويتاً وشارك الاختيار',
-                          onTap: () {
-                            context.pushRoute('/rsordervoting');
+                            context.pushRoute('/sm_notification');
                           },
                         ),
                       ],
@@ -152,14 +174,18 @@ class SmProfileScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      color: context.onPrimaryContainer,
-                      border: Border.all(color: Color(0xffF3F4F6), width: 1),
+                      borderRadius: BorderRadius.circular(16),
+                      color: AppColors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(6),
-                          offset: Offset(0, 2),
-                          blurRadius: 10,
+                          color: Color(0x0F000000),
+                          offset: Offset(0, 1),
+                          blurRadius: 2,
+                        ),
+                        BoxShadow(
+                          color: Color(0x1A000000),
+                          offset: Offset(0, 1),
+                          blurRadius: 3,
                         ),
                       ],
                     ),
@@ -167,11 +193,11 @@ class SmProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         SectionCard(
-                          containerColor: Color(0xff6366F1).withAlpha(25),
-                          image: Icon(
-                            Icons.headphones,
+                          containerColor: Color(0xFFEEF2FF),
+                          image: FaIcon(
+                            FontAwesomeIcons.solidHeadphones,
                             size: 18,
-                            color: Color(0xff6366F1),
+                            color: Color(0xFF6366F1),
                           ),
                           title: 'الدعم والمساعدة',
                           subtitle: 'التواصل مع الدعم الفني',
@@ -197,26 +223,24 @@ class SmProfileScreen extends StatelessWidget {
                           color: Color(0xffEF4444).withAlpha(52),
                         ),
                       ),
-                      padding: EdgeInsetsDirectional.symmetric(vertical: 16),
+                      padding: EdgeInsetsDirectional.only(top: 20, bottom: 16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xffEF4444).withAlpha(25),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: EdgeInsetsDirectional.all(13),
-                            child: Icon(
-                              Icons.logout_rounded,
-                              color: Color(0xffEF4444),
-                            ),
+                          FaIcon(
+                            FontAwesomeIcons.arrowRightFromBracket,
+                            size: 16,
+                            color: Color(0xFFEF4444),
                           ),
                           SizedBox(width: 12),
-                          AppText.bodyMedium(
+                          AppText(
                             'تسجيل الخروج',
-                            color: Color(0xffEF4444),
-                            fontWeight: FontWeight.bold,
+                            style: TextStyle(
+                              color: Color(0xffEF4444),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              height: 24 / 16,
+                            ),
                           ),
                         ],
                       ),

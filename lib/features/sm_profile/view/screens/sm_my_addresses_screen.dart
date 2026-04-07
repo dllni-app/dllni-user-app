@@ -1,11 +1,12 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/app_colors.dart';
+import '../../../../core/widgets/app_app_bars.dart';
 import '../../data/models/sm_address_list_item.dart';
-import '../widgets/rs_address_card.dart';
-import '../widgets/rs_personal_details_app_bar.dart';
+import '../widgets/sm_address_card.dart';
 
-@AutoRoutePage()
+@AutoRoutePage(path: "/sm_my_addresses")
 class SmMyAddressesScreen extends StatefulWidget {
   const SmMyAddressesScreen({super.key});
 
@@ -55,56 +56,26 @@ class _SmMyAddressesScreenState extends State<SmMyAddressesScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const RsPersonalDetailsAppBar(title: 'عناويني'),
-            const SizedBox(height: 20),
+            const AppSimpleAppBar2(
+              title: "عناويني",
+              arrowBackType: ArrowBackType.cupertino,
+            ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 24),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  24,
+                  16,
+                  24 + MediaQuery.paddingOf(context).bottom,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ElevatedButton(
-                      onPressed: () =>
-                          _showSoonMessage('ميزة إضافة عنوان جديد قريباً'),
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        backgroundColor: context.primaryContainer,
-                        foregroundColor: context.onPrimaryContainer,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        padding: const EdgeInsetsDirectional.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AppText.labelLarge(
-                            'إضافة عنوان جديد',
-                            color: context.onPrimaryContainer,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          const SizedBox(width: 10),
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: context.onPrimaryContainer,
-                            child: Icon(
-                              Icons.add,
-                              size: 16,
-                              color: context.primaryContainer,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     ..._addresses.map((item) {
                       final isDefault = _defaultAddressId == item.id;
                       return Padding(
                         padding: const EdgeInsetsDirectional.only(bottom: 12),
-                        child: RsAddressCard(
+                        child: SmAddressCard(
                           item: item,
                           isDefault: isDefault,
                           onSetDefault: isDefault
@@ -119,6 +90,29 @@ class _SmMyAddressesScreenState extends State<SmMyAddressesScreen> {
                         ),
                       );
                     }),
+                    SizedBox(height: 24),
+                    GestureDetector(
+                      onTap: () {
+                        context.pushRoute("/sm_address_details");
+                      },
+                      child: Container(
+                        width: context.width,
+                        padding: EdgeInsets.only(top: 11, bottom: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        child: AppText(
+                          "إضافة عنوان جديد",
+                          style: TextStyle(
+                            color: Color(0xFFFFEEFF),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            height: 22 / 14,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

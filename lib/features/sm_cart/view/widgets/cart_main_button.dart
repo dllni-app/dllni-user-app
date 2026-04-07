@@ -37,9 +37,9 @@ class CartMainButton extends StatelessWidget {
           label,
           style: TextStyle(
             color: AppColors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            height: 32 / 15,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            height: 32 / 18,
           ),
         ),
       ),

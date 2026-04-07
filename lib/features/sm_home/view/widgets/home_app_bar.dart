@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/search_field_with_voice.dart';
+import '../../../sm_main_page.dart';
 
 class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
@@ -67,7 +68,19 @@ class HomeAppBar extends StatelessWidget {
             ],
           ),
           SizedBox(height: 16),
-          SearchFieldWithVoice(onSearch: (search) {}, onVoiceTap: () {}),
+          SearchFieldWithVoice(
+            onSearch: (search) {},
+            onVoiceTap: () {},
+            onTap: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      SmMainPage(initialPage: 1, expandSearch: true),
+                ),
+                (_) => false,
+              );
+            },
+          ),
         ],
       ),
     );

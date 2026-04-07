@@ -1,36 +1,32 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/features/sm_discover/view/screens/sm_discover_screen.dart';
+import 'package:dllni_user_app/features/sm_home/domain/usecases/change_store_favorite_use_case.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:toastification/toastification.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../data/models/get_nearby_stores_model.dart';
+import '../manager/bloc/sm_home_bloc.dart';
 
-class StoreData {
-  final String image;
-  final String name;
-  final String description;
-  final double rating;
-  final double distance;
-  final String deliveryPrice;
-  final String time;
-  final int discount;
-  final bool isFavorite;
+class StoreCard extends StatefulWidget {
+  const StoreCard({super.key, required this.store});
+  final GetNearbyStoresModelStoresItem store;
 
-  StoreData({
-    required this.image,
-    required this.name,
-    required this.description,
-    required this.rating,
-    required this.distance,
-    required this.deliveryPrice,
-    required this.time,
-    required this.discount,
-    this.isFavorite = false,
-  });
+  @override
+  State<StoreCard> createState() => _StoreCardState();
 }
 
-class StoreCard extends StatelessWidget {
-  const StoreCard({super.key, required this.store});
-  final StoreData store;
+class _StoreCardState extends State<StoreCard> {
+  late bool isFavorite;
+
+  @override
+  void initState() {
+    isFavorite = widget.store.isFavorited ?? false;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +47,9 @@ class StoreCard extends StatelessWidget {
             Stack(
               fit: StackFit.loose,
               children: [
-                AppImage.asset(
-                  store.image,
+                AppImage.network(
+                  widget.store.cover.toString(),
+                  errorWidget: Icon(Icons.error_outline),
                   height: 160,
                   width: context.width,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -61,24 +58,57 @@ class StoreCard extends StatelessWidget {
                 Positioned(
                   top: 12,
                   left: 12,
-                  child: InkWell(
-                    onTap: () {},
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppColors.white,
-                      child: FaIcon(
-                        store.isFavorite
-                            ? FontAwesomeIcons.solidHeart
-                            : FontAwesomeIcons.heart,
-                        size: 16,
-                        color: store.isFavorite
-                            ? Colors.red
-                            : const Color(0xFF6B7280),
+                  child: BlocProvider(
+                    create: (context) => getIt<SmHomeBloc>(),
+                    child: BlocListener<SmHomeBloc, SmHomeState>(
+                      listenWhen: (previous, current) =>
+                          previous.changeStoreFavoriteStatus !=
+                          current.changeStoreFavoriteStatus,
+                      listener: (context, state) {
+                        if (state.changeStoreFavoriteStatus ==
+                            BlocStatus.failed) {
+                          isFavorite = !isFavorite;
+                          setState(() {});
+                          AppToast.showToast(
+                            context: context,
+                            message: state.errorMessage.toString(),
+                            type: ToastificationType.error,
+                          );
+                        }
+                      },
+                      child: Builder(
+                        builder: (context) => InkWell(
+                          onTap: () {
+                            isFavorite = !isFavorite;
+                            setState(() {});
+                            context.read<SmHomeBloc>().add(
+                              ChangeStoreFavoriteEvent(
+                                params: ChangeStoreFavoriteParams(
+                                  storeId: widget.store.id ?? 0,
+                                  isFavorite: isFavorite,
+                                ),
+                              ),
+                            );
+                          },
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: AppColors.white,
+                            child: FaIcon(
+                              isFavorite
+                                  ? FontAwesomeIcons.solidHeart
+                                  : FontAwesomeIcons.heart,
+                              size: 16,
+                              color: isFavorite
+                                  ? Colors.red
+                                  : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-                if (store.discount > 0)
+                if (widget.store.discountOfferBadge != null)
                   Positioned(
                     bottom: 12,
                     left: 12,
@@ -98,7 +128,7 @@ class StoreCard extends StatelessWidget {
                           ),
                           SizedBox(width: 4),
                           AppText(
-                            "خصم ${store.discount}%",
+                            widget.store.discountOfferBadge.toString(),
                             style: TextStyle(
                               color: AppColors.white,
                               fontSize: 12,
@@ -123,7 +153,7 @@ class StoreCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         AppText(
-                          store.time,
+                          "${widget.store.estimatedDeliveryMinutesMin}-${widget.store.estimatedDeliveryMinutesMax} دقيقة",
                           style: TextStyle(
                             color: Color(0xFF1A1A1A),
                             fontSize: 12,
@@ -153,7 +183,7 @@ class StoreCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: AppText(
-                          store.name,
+                          widget.store.name.toString(),
                           textAlign: TextAlign.start,
                           style: TextStyle(
                             color: Color(0xFF1A1A1A),
@@ -177,7 +207,7 @@ class StoreCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             AppText(
-                              store.rating.toStringAsFixed(1),
+                              widget.store.rating?.toStringAsFixed(2) ?? "0",
                               style: TextStyle(
                                 color: Color(0xFF15803D),
                                 fontSize: 12,
@@ -198,7 +228,8 @@ class StoreCard extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   AppText(
-                    store.description,
+                    widget.store.categorySummary.toString(),
+                    textAlign: TextAlign.start,
                     style: TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: 12,
@@ -216,7 +247,7 @@ class StoreCard extends StatelessWidget {
                       ),
                       SizedBox(width: 8),
                       AppText(
-                        "${store.distance.toStringAsFixed(1)} كم",
+                        "${widget.store.distanceKm.toString()} ${_mapDistanceUnit(widget.store.distanceUnit)}",
                         style: TextStyle(
                           color: Color(0xFF6B7280),
                           fontSize: 12,
@@ -230,7 +261,9 @@ class StoreCard extends StatelessWidget {
                       ),
                       SizedBox(width: 8),
                       AppText(
-                        "توصيل ${store.deliveryPrice} ل.س",
+                        widget.store.isFreeDelivery == true
+                            ? "توصيل مجاني"
+                            : "توصيل ${widget.store.deliveryFee} ${_mapCurrency(widget.store.currency)}",
                         style: TextStyle(
                           color: Color(0xFF6B7280),
                           fontSize: 12,
@@ -246,5 +279,39 @@ class StoreCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+String _mapDistanceUnit(String? unit) {
+  switch (unit) {
+    case 'km':
+      return 'كم';
+    case 'm':
+      return 'م';
+    case 'mi':
+      return 'ميل';
+    default:
+      return unit ?? '';
+  }
+}
+
+String _mapCurrency(String? currency) {
+  switch (currency) {
+    case 'IQD':
+      return 'د.ع';
+    case 'USD':
+      return '\$';
+    case 'EUR':
+      return '€';
+    case 'SAR':
+      return 'ر.س';
+    case 'AED':
+      return 'د.إ';
+    case 'KWD':
+      return 'د.ك';
+    case 'SYP':
+      return 'ل.س';
+    default:
+      return currency ?? '';
   }
 }

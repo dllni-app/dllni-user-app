@@ -1,4 +1,3 @@
-
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -33,8 +32,12 @@ class _ProductsBottomNavBarState extends State<ProductsBottomNavBar> {
               IconButton(
                 icon: FaIcon(FontAwesomeIcons.minus, size: 24),
                 style: IconButton.styleFrom(
-                  padding: EdgeInsets.all(4),
-                  foregroundColor: Color(0xFF22C55E),
+                  padding: EdgeInsets.symmetric(vertical: 4, horizontal: 5.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  foregroundColor: Color(0xFF374151),
+                  backgroundColor: Color(0xFFF3F4F6),
                   fixedSize: Size(32, 32),
                 ),
                 onPressed: () {
@@ -50,17 +53,21 @@ class _ProductsBottomNavBarState extends State<ProductsBottomNavBar> {
                   quantity.toString(),
                   style: TextStyle(
                     color: Color(0xFF111827),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    height: 40 / 24,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w700,
+                    height: 40 / 36,
                   ),
                 ),
               ),
               IconButton(
                 icon: FaIcon(FontAwesomeIcons.plus, size: 24),
                 style: IconButton.styleFrom(
-                  padding: EdgeInsets.all(4),
-                  foregroundColor: Color(0xFF22C55E),
+                  padding: EdgeInsets.symmetric(vertical: 4, horizontal: 5.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  foregroundColor: AppColors.white,
+                  backgroundColor: AppColors.accent,
                   fixedSize: Size(32, 32),
                 ),
                 onPressed: () {
@@ -78,7 +85,7 @@ class _ProductsBottomNavBarState extends State<ProductsBottomNavBar> {
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
               decoration: BoxDecoration(
-                color: Color(0xFF4CAF50),
+                color: AppColors.accent,
                 borderRadius: BorderRadius.all(Radius.circular(12)),
                 boxShadow: [
                   BoxShadow(

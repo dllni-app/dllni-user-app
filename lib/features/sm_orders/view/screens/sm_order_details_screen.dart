@@ -5,9 +5,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/app_images.dart';
 import '../../../../core/widgets/app_app_bars.dart';
-import '../widgets/order_details_card.dart';
-import '../widgets/order_status_card.dart';
-import '../widgets/store_location_card.dart';
+import '../widgets/address_card.dart';
+import '../widgets/order_content.dart';
+import '../widgets/order_details_status_card.dart';
+import '../widgets/order_info_card.dart';
+import '../widgets/summary_request.dart';
 
 @AutoRoutePage(path: "/order_details")
 class SmOrderDetailsScreen extends StatelessWidget {
@@ -19,128 +21,40 @@ class SmOrderDetailsScreen extends StatelessWidget {
       backgroundColor: Color(0xFFF8FAFC),
       body: Column(
         children: [
-          AppSimpleAppBar(title: "تتبع الطلب"),
+          AppSimpleAppBar2(
+            title: "تفاصيل الطلب",
+            arrowBackType: ArrowBackType.cupertino,
+          ),
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: context.width,
-                    alignment: Alignment.center,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                      boxShadow: [
-                        BoxShadow(
-                          offset: Offset(0, 1),
-                          blurRadius: 2,
-                          color: Color(0x0D000000),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      "طلب #10425",
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        height: 25 / 20,
-                      ),
+                  OrderStatus(),
+                  SizedBox(height: 16),
+                  AppText(
+                    "معلومات الطلب",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      height: 28 / 16,
                     ),
                   ),
                   SizedBox(height: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                      boxShadow: [
-                        BoxShadow(
-                          offset: Offset(0, 1),
-                          blurRadius: 2,
-                          color: Color(0x0D000000),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: Color(0xFFEFF6FF),
-                          child: FaIcon(
-                            FontAwesomeIcons.solidClock,
-                            size: 30,
-                            color: Color(0xFF1E3A8A),
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              "الوقت المتوقع للوصول",
-                              style: TextStyle(
-                                color: Color(0xFF2F2B3DB2),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                height: 20 / 14,
-                              ),
-                            ),
-                            AppText(
-                              "20 دقيقة",
-                              style: TextStyle(
-                                color: Color(0xFF1E3A8A),
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                height: 28 / 20,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 24),
-                  StoreLocationCard(),
-                  SizedBox(height: 24),
-                  OrderStatusCard(),
-                  SizedBox(height: 24),
-                  StoreInfo(),
-                  SizedBox(height: 24),
-                  OrderDetailsCard(),
-                  SizedBox(height: 24),
-                  Container(
-                    width: context.width,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                      border: Border.all(color: Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        FaIcon(
-                          FontAwesomeIcons.message,
-                          size: 14,
-                          color: Color(0xFF1E293B),
-                        ),
-                        SizedBox(width: 8),
-                        AppText(
-                          "محادثة الدعم",
-                          style: TextStyle(
-                            color: Color(0xFF1E293B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            height: 20 / 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  OrderInfoCard(),
+                  SizedBox(height: 16),
+                  AddressCard(),
+                  SizedBox(height: 16),
+                  OrderContent(),
+                  SizedBox(height: 16),
+                  SummaryRequest(),
+                  SizedBox(height: 16),
+                  OrderButton(),
+                  SizedBox(height: 16),
+                  OrderOutlineButton(),
+                  SizedBox(height: 70),
                 ],
               ),
             ),
@@ -151,91 +65,72 @@ class SmOrderDetailsScreen extends StatelessWidget {
   }
 }
 
-class StoreInfo extends StatelessWidget {
-  const StoreInfo({super.key});
+class OrderOutlineButton extends StatelessWidget {
+  const OrderOutlineButton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.all( Radius.circular(16)),
-        boxShadow: [
-          BoxShadow(
-            offset: Offset(0, 1),
-            blurRadius: 2,
-            color: Color(0x0D000000),
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: context.width,
+        padding: EdgeInsets.only(top: 14, bottom: 13),
+        decoration: BoxDecoration(
+          color: Color(0xFFE2E4E6),
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          border: Border.all(color: Color(0xFF64748B)),
+          boxShadow: [
+            BoxShadow(
+              offset: Offset(0, 2),
+              blurRadius: 5.2,
+              color: Color(0x40000000),
+            ),
+          ],
+        ),
+        child: AppText(
+          "إلغاء الطلب",
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            height: 28 / 18,
           ),
-        ],
+        ),
       ),
-      child: Row(
-        children: [
-          AppImage.asset(
-            AppImages.store,
-            fit: BoxFit.cover,
-            size: 56,
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 4,
-              children: [
-                AppText(
-                  "متجر النور",
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    height: 20 / 14,
-                  ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FaIcon(
-                      FontAwesomeIcons.solidStar,
-                      size: 12,
-                      color: Color(0xFFFACC15),
-                    ),
-                    SizedBox(width: 4.5),
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: "4.8",
-                            style: TextStyle(color: AppColors.primary),
-                          ),
-                          TextSpan(text: " • غذائية منظفات"),
-                        ],
-                      ),
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 16 / 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    );
+  }
+}
+
+class OrderButton extends StatelessWidget {
+  const OrderButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: context.width,
+        padding: EdgeInsets.only(top: 14, bottom: 13),
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          boxShadow: [
+            BoxShadow(
+              offset: Offset(0, 2),
+              blurRadius: 5.2,
+              color: Color(0x40000000),
             ),
+          ],
+        ),
+        child: AppText(
+          "إعادة الطلب",
+          style: TextStyle(
+            color: AppColors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            height: 28 / 18,
           ),
-          InkWell(
-            onTap: () {},
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Color(0xFFF8FAFC),
-              child: FaIcon(
-                FontAwesomeIcons.phone,
-                size: 16,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

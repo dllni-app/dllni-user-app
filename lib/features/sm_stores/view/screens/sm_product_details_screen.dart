@@ -38,7 +38,7 @@ class SmProductDetailsScreen extends StatelessWidget {
                       children: [
                         _ActionButton(
                           icon: FontAwesomeIcons.arrowRight,
-                          onTap: () {},
+                          onTap: () => context.pop(),
                         ),
                         Expanded(
                           child: AppText(
@@ -65,7 +65,7 @@ class SmProductDetailsScreen extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    bottom: 12,
+                    bottom: 20,
                     right: 16,
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -104,10 +104,12 @@ class SmProductDetailsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 8),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              color: AppColors.white,
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                border: Border.all(color: Color(0xFFF3F4F6)),
+              ),
               child: Column(
                 children: [
                   SizedBox(height: 4),
@@ -191,6 +193,7 @@ class SmProductDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                           height: 28 / 18,
                           decoration: TextDecoration.lineThrough,
+                          decorationColor: Color(0xFF9CA3AF),
                         ),
                       ),
                     ],
@@ -198,16 +201,18 @@ class SmProductDetailsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 6),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              color: AppColors.white,
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                border: Border.all(color: Color(0xFFF3F4F6)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 4),
                   AppText(
-                    "ملاحظات إضافية",
+                    "إضافات ذكية",
                     textAlign: TextAlign.start,
                     style: TextStyle(
                       color: Color(0xFF111827),
@@ -216,8 +221,105 @@ class SmProductDetailsScreen extends StatelessWidget {
                       height: 28 / 18,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 4),
+                  AppText(
+                    "اختر ما يناسبك",
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 20 / 14,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  ListView.separated(
+                    physics: NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) => Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                        border: Border.all(color: Color(0xFFE5E7EB), width: 2),
+                      ),
+                      child: Row(
+                        spacing: 12,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppText(
+                                  "توست",
+                                  style: TextStyle(
+                                    color: Color(0xFF111827),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    height: 20 / 14,
+                                  ),
+                                ),
+                                AppText(
+                                  "6 قطع من الخبز المحمص ",
+                                  style: TextStyle(
+                                    color: Color(0xFF6B7280),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    height: 16 / 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          AppText(
+                            "+3 ل.س",
+                            style: TextStyle(
+                              color: Color(0xFF111827),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              height: 20 / 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    separatorBuilder: (_, _) => SizedBox(height: 12),
+                    itemCount: 3,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                border: Border.all(color: Color(0xFFF3F4F6)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 4),
+                  AppText(
+                    "ملاحظات خاصة",
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      height: 28 / 18,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  AppText(
+                    "أضف أي طلب خاص",
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 20 / 14,
+                    ),
+                  ),
+                  SizedBox(height: 4),
                   TextField(
+                    maxLines: 3,
                     style: TextStyle(
                       color: Color(0xFF111827),
                       fontSize: 14,
@@ -225,7 +327,8 @@ class SmProductDetailsScreen extends StatelessWidget {
                       height: 20 / 14,
                     ),
                     decoration: InputDecoration(
-                      hintText: "أخبرنا بها",
+                      hintText:
+                          "اكتب ملاحظة خاصة بالطلب (اختياري)\nمثل: يرجى اختيار ربطة خبز تازة",
                       hintStyle: TextStyle(
                         color: Color(0xFF9CA3AF),
                         fontSize: 14,
@@ -252,34 +355,7 @@ class SmProductDetailsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 12),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                children: [
-                  AppText(
-                    "اكتشفت مشكلة ؟ أخبرنا عنها ؟",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      height: 20 / 14,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  AppText(
-                    "ساعدنا لإبقاء القائمة دقيقة و حديثة",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
-                      height: 20 / 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 125),
+            SizedBox(height: 30),
           ],
         ),
       ),
