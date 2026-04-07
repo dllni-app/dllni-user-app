@@ -1,3 +1,4 @@
+import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_main/view/widgets/rs_bottom_nav_bar.dart';
@@ -8,6 +9,7 @@ import '../../rs_favourite/view/screens/rs_favourite_screen.dart';
 import '../../rs_home/view/screens/rs_home_screen.dart';
 import '../../rs_offers/view/rs_offers_screen.dart';
 
+@AutoRoutePage()
 class RsMainScreen extends StatefulWidget {
   const RsMainScreen({super.key});
 

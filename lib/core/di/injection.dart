@@ -7,7 +7,6 @@ import '../../features/rs_discover/domain/usecases/fetch_restaurant_cart_product
 
 import 'injection.config.dart';
 
-
 final GetIt getIt = GetIt.instance;
 
 @InjectableInit(initializerName: r'$initGetIt', preferRelativeImports: true, asExtension: false)
@@ -15,18 +14,10 @@ Future<GetIt> configureInjection() async {
   await SharedPreferencesHelper.init();
   $initGetIt(getIt);
   if (!getIt.isRegistered<FetchRestaurantCartProductsCountUseCase>()) {
-    getIt.registerLazySingleton<FetchRestaurantCartProductsCountUseCase>(
-      () => FetchRestaurantCartProductsCountUseCase(
-        rsDiscoverRepo: getIt(),
-      ),
-    );
+    getIt.registerLazySingleton<FetchRestaurantCartProductsCountUseCase>(() => FetchRestaurantCartProductsCountUseCase(rsDiscoverRepo: getIt()));
   }
   if (!getIt.isRegistered<CartProductsCountCubit>()) {
-    getIt.registerLazySingleton<CartProductsCountCubit>(
-      () => CartProductsCountCubit(
-        fetchRestaurantCartProductsCountUseCase: getIt(),
-      ),
-    );
+    getIt.registerLazySingleton<CartProductsCountCubit>(() => CartProductsCountCubit(fetchRestaurantCartProductsCountUseCase: getIt()));
   }
   return getIt;
 }
@@ -36,13 +27,6 @@ abstract class InjectableModule {
   @singleton
   DioNetwork get dio => DioNetwork(
     baseUrl: AppConfig.baseUrl,
-    interceptors: [
-      TokenInterceptor(
-        tokenKey: 'token',
-        fcmKey: 'fcm',
-        lang: '',
-        onRequestFunction: null,
-      ),
-    ],
+    interceptors: [TokenInterceptor(tokenKey: 'token', fcmKey: 'fcm', lang: '', onRequestFunction: null)],
   );
 }

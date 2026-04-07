@@ -20,9 +20,7 @@ class App extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
       home: const MainScreen(),
-      theme: ThemeData(
-        fontFamily: 'cairo'
-      ),
+      theme: ThemeData(fontFamily: 'cairo'),
     );
   }
 }

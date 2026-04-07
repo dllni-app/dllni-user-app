@@ -44,26 +44,38 @@ class HomeScreen extends StatelessWidget {
           AppText.bodyMedium('حدد نوع الخدمة التي تريدها', fontWeight: FontWeight.w500),
           Divider(color: Colors.black.withAlpha(51), thickness: 1),
           SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              image: DecorationImage(image: AssetImage(Assets.images.cleaningBanner.path)),
-            ),
-            width: context.width,
-            height: 200,
-            padding: EdgeInsetsDirectional.symmetric(vertical: 12, horizontal: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                  padding: EdgeInsetsDirectional.symmetric(vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [AppText.labelLarge('تنظيف', fontWeight: FontWeight.w600)],
+          Column(
+            spacing: 20,
+            children: List.generate(
+              2,
+              (i) => InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: (){
+                  context.pushRoute('/rsmain');
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    image: DecorationImage(image: AssetImage(Assets.images.cleaningBanner.path)),
+                  ),
+                  width: context.width,
+                  height: 200,
+                  padding: EdgeInsetsDirectional.symmetric(vertical: 12, horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                        padding: EdgeInsetsDirectional.symmetric(vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [AppText.labelLarge(i == 0 ? 'تنظيف' : 'مطاعم', fontWeight: FontWeight.w600)],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],

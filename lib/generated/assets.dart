@@ -20,6 +20,10 @@ class $AssetsTranslationsGen {
 class $AssetsImagesGen {
   const $AssetsImagesGen();
 
+  final AssetGenImage cleaningBanner = const AssetGenImage('assets/images/cleaning_banner.png');
+  final SvgGenImage mainHome = const SvgGenImage('assets/images/main_home.svg');
+  final AssetGenImage mainOrders = const AssetGenImage('assets/images/main_orders.png');
+  final SvgGenImage mainProfile = const SvgGenImage('assets/images/main_profile.svg');
   final SvgGenImage rsDiscoverBottomNavBar = const SvgGenImage('assets/images/rs_discover_bottom_nav_bar.svg');
   final SvgGenImage rsFavourite = const SvgGenImage('assets/images/rs_favourite.svg');
   final SvgGenImage rsHomeBottomNavBar = const SvgGenImage('assets/images/rs_home_bottom_nav_bar.svg');

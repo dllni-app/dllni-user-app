@@ -31,6 +31,7 @@ dependencies:
   toastification: ^3.0.3
   font_awesome_flutter: ^11.0.0
   mason: ^0.1.2
+  tab_indicator_styler: ^2.0.0
 
 dev_dependencies:
   flutter_test:
