@@ -9,11 +9,34 @@ import '../../../../core/themes/app_colors.dart';
 enum OfferType { offer, discount, familyOffer }
 
 class SpecialOfferCard extends StatelessWidget {
-  const SpecialOfferCard({super.key, required this.type});
+  const SpecialOfferCard({
+    super.key,
+    required this.type,
+    this.title,
+    this.subtitle,
+    this.validUntil,
+  });
+
   final OfferType type;
+  final String? title;
+  final String? subtitle;
+  final String? validUntil;
 
   @override
   Widget build(BuildContext context) {
+    final titleText =
+        title?.trim().isNotEmpty == true
+            ? title!.trim()
+            : "كغ رز + كغ برغل + كغ عدس ب 30 ل.س";
+    final subtitleText =
+        subtitle?.trim().isNotEmpty == true
+            ? subtitle!.trim()
+            : "4 وجبات برغر + 2 بطاطس كبيرة + 4 مشروبات";
+    final untilText =
+        validUntil?.trim().isNotEmpty == true
+            ? validUntil!.trim()
+            : "صالح حتى 31 ديسمبر";
+
     return Container(
       height: 192,
       width: 280,
@@ -61,8 +84,10 @@ class SpecialOfferCard extends StatelessWidget {
           ),
           SizedBox(height: 8),
           AppText(
-            "كغ رز + كغ برغل + كغ عدس ب 30 ل.س",
+            titleText,
             textAlign: TextAlign.start,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: AppColors.white,
               fontSize: 16,
@@ -74,8 +99,10 @@ class SpecialOfferCard extends StatelessWidget {
           Expanded(
             child: Center(
               child: AppText(
-                "4 وجبات برغر + 2 بطاطس كبيرة + 4 مشروبات",
+                subtitleText,
                 textAlign: TextAlign.start,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Color(0xE5FFFFFF),
                   fontSize: 14,
@@ -88,46 +115,50 @@ class SpecialOfferCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.all(Radius.circular(4)),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    color: Color(0x33FFFFFF),
-                    child: Text(
-                      "صالح حتى 31 ديسمبر",
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 12,
-                        height: 16 / 12,
+              Flexible(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.all(Radius.circular(4)),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      color: Color(0x33FFFFFF),
+                      child: Text(
+                        untilText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 12,
+                          height: 16 / 12,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-              InkWell(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
-                  child: Text(
-                    "استخدم الآن",
-                    style: TextStyle(
-                      color: type == OfferType.offer
-                          ? Color(0xFFDC2626)
-                          : type == OfferType.discount
-                          ? Color(0xFF4CAF50)
-                          : Color(0xFFEA580C),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      height: 20 / 14,
-                    ),
-                  ),
-                ),
-              ),
+              // InkWell(
+              //   child: Container(
+              //     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              //     decoration: BoxDecoration(
+              //       color: AppColors.white,
+              //       borderRadius: BorderRadius.all(Radius.circular(8)),
+              //     ),
+              //     child: Text(
+              //       "استخدم الآن",
+              //       style: TextStyle(
+              //         color: type == OfferType.offer
+              //             ? Color(0xFFDC2626)
+              //             : type == OfferType.discount
+              //             ? Color(0xFF4CAF50)
+              //             : Color(0xFFEA580C),
+              //         fontSize: 14,
+              //         fontWeight: FontWeight.w700,
+              //         height: 20 / 14,
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ],

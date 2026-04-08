@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/features/sm_discover/view/screens/sm_discover_screen.dart';
 import 'package:dllni_user_app/features/sm_home/domain/usecases/change_store_favorite_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +7,7 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../sm_stores/view/screens/sm_store_details_screen.dart';
 import '../../data/models/get_nearby_stores_model.dart';
 import '../manager/bloc/sm_home_bloc.dart';
 
@@ -31,8 +31,30 @@ class _StoreCardState extends State<StoreCard> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        context.pushRoute("/store");
+      onTap: () async {
+        final s = widget.store;
+        final result = await context.pushRoute(
+          "/store",
+          arguments: SmStoreDetailsScreenArgs(
+            storeId: s.id ?? 0,
+            starter: SmStarterStoreDetailsData(
+              name: s.name,
+              cover: s.cover,
+              logo: s.logo,
+              averageRating: s.rating?.toString(),
+              totalReviews: null,
+              distanceKm: s.distanceKm?.toDouble(),
+              description: s.categorySummary,
+              isFavorite: s.isFavorited,
+              isActive: null,
+            ),
+          ),
+        );
+        if (result != null && result is bool) {
+          isFavorite = result;
+          widget.store.isFavorited = isFavorite;
+          setState(() {});
+        }
       },
       borderRadius: BorderRadius.all(Radius.circular(24)),
       child: Container(

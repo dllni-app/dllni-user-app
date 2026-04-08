@@ -1,11 +1,19 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../data/models/get_supermarket_store_details_model.dart';
+
 class StoreInfoSection extends StatelessWidget {
-  const StoreInfoSection({super.key});
+  const StoreInfoSection({super.key, this.description, this.hours = const []});
+
+  final String? description;
+  final List<SupermarketStoreDetailsHour> hours;
 
   @override
   Widget build(BuildContext context) {
+    final desc = description?.trim();
+    final hourRows = supermarketStoreDetailsGroupedHourUiRows(hours);
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -34,7 +42,7 @@ class StoreInfoSection extends StatelessWidget {
           ),
           SizedBox(height: 8),
           AppText(
-            "متجر النور هو سلسلة من المتاجر يحوي كل ما تحتاجه العائلة من منتجات تغذية و منظفات لتسالي و أجود أنواع المكسرات. نفخر بتقديم الخدمة لكم بأسعار منافسة.",
+            desc != null && desc.isNotEmpty ? desc : "لا يوجد وصف لهذا المتجر.",
             textAlign: TextAlign.start,
             style: TextStyle(
               color: Color(0xFF4B5563),
@@ -45,7 +53,7 @@ class StoreInfoSection extends StatelessWidget {
           ),
           SizedBox(height: 20),
           AppText(
-            "معلومات المتجر",
+            "ساعات العمل",
             textAlign: TextAlign.start,
             style: TextStyle(
               color: Color(0xFF111827),
@@ -55,29 +63,47 @@ class StoreInfoSection extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AppText(
-                "السبت - الأربعاء",
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Color(0xFF4B5563),
-                  fontSize: 14,
-                  height: 20 / 14,
+          if (hourRows.isEmpty)
+            AppText(
+              "—",
+              style: TextStyle(
+                color: Color(0xFF4B5563),
+                fontSize: 14,
+                height: 20 / 14,
+              ),
+            )
+          else
+            ...hourRows.map(
+              (row) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AppText(
+                        row.dayLabel,
+                        textAlign: TextAlign.start,
+                        style: TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontSize: 14,
+                          height: 20 / 14,
+                        ),
+                      ),
+                    ),
+                    AppText(
+                      row.timeText.isEmpty ? '—' : row.timeText,
+                      style: TextStyle(
+                        color: Color(0xFF111827),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        height: 20 / 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              AppText(
-                "10:00 ص - 2:00 ص",
-                style: TextStyle(
-                  color: Color(0xFF111827),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  height: 20 / 14,
-                ),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );

@@ -5,8 +5,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_colors.dart';
 
 class ProductsBottomNavBar extends StatefulWidget {
-  const ProductsBottomNavBar({super.key, required this.onChanged});
-  final void Function(int quantity) onChanged;
+  const ProductsBottomNavBar({super.key, required this.onAddToCart});
+  final void Function(int quantity) onAddToCart;
 
   @override
   State<ProductsBottomNavBar> createState() => _ProductsBottomNavBarState();
@@ -44,7 +44,6 @@ class _ProductsBottomNavBarState extends State<ProductsBottomNavBar> {
                   if (quantity == 1) return;
                   quantity = quantity - 1;
                   setState(() {});
-                  widget.onChanged(quantity);
                 },
               ),
               SizedBox(
@@ -73,14 +72,13 @@ class _ProductsBottomNavBarState extends State<ProductsBottomNavBar> {
                 onPressed: () {
                   quantity = quantity + 1;
                   setState(() {});
-                  widget.onChanged(quantity);
                 },
               ),
             ],
           ),
           SizedBox(height: 16),
           InkWell(
-            onTap: () {},
+            onTap: () => widget.onAddToCart(quantity),
             borderRadius: BorderRadius.all(Radius.circular(12)),
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),

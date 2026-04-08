@@ -43,8 +43,8 @@ class _ProductCardState extends State<ProductCard> {
             child: Row(
               spacing: 12,
               children: [
-                AppImage.asset(
-                  AppImages.products,
+                AppImage.network(
+                  widget.product.imageUrl ?? '',
                   size: 80,
                   fit: BoxFit.cover,
                   borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -183,6 +183,8 @@ class _ProductCardState extends State<ProductCard> {
                 },
                 child: InkWell(
                   onTap: () {
+                    isFavorite = !isFavorite;
+                    setState(() {});
                     context.read<SmDiscoverBloc>().add(
                       ChangeProductFavoriteEvent(
                         params: ChangeProductFavoriteParams(

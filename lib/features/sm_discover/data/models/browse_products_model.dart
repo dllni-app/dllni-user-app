@@ -1,36 +1,60 @@
 import 'dart:convert';
 
-String? _asString(dynamic value) {
-  if (value == null) return null;
-  if (value is String) return value;
-  if (value is num || value is bool) return value.toString();
-  return null;
-}
+BrowseProductsModelDataItem browseProductsModelDataItemFromJson(str) =>
+    BrowseProductsModelDataItem.fromJson(str);
 
-int? _asInt(dynamic value) {
-  if (value == null) return null;
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  if (value is String) {
-    return int.tryParse(value) ?? double.tryParse(value)?.toInt();
-  }
-  return null;
-}
+BrowseProductsModelDataItemImage browseProductsModelDataItemImageFromJson(
+  str,
+) => BrowseProductsModelDataItemImage.fromJson(str);
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
+BrowseProductsModelDataItemImagesItem
+browseProductsModelDataItemImagesItemFromJson(str) =>
+    BrowseProductsModelDataItemImagesItem.fromJson(str);
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
+String browseProductsModelDataItemImagesItemToJson(
+  BrowseProductsModelDataItemImagesItem data,
+) => json.encode(data.toJson());
+
+String browseProductsModelDataItemImageToJson(
+  BrowseProductsModelDataItemImage data,
+) => json.encode(data.toJson());
+
+BrowseProductsModelDataItemStore browseProductsModelDataItemStoreFromJson(
+  str,
+) => BrowseProductsModelDataItemStore.fromJson(str);
+
+String browseProductsModelDataItemStoreToJson(
+  BrowseProductsModelDataItemStore data,
+) => json.encode(data.toJson());
+
+String browseProductsModelDataItemToJson(BrowseProductsModelDataItem data) =>
+    json.encode(data.toJson());
+
+BrowseProductsModel browseProductsModelFromJson(str) =>
+    BrowseProductsModel.fromJson(str);
+
+BrowseProductsModelLinks browseProductsModelLinksFromJson(str) =>
+    BrowseProductsModelLinks.fromJson(str);
+
+String browseProductsModelLinksToJson(BrowseProductsModelLinks data) =>
+    json.encode(data.toJson());
+
+BrowseProductsModelMeta browseProductsModelMetaFromJson(str) =>
+    BrowseProductsModelMeta.fromJson(str);
+
+BrowseProductsModelMetaLinksItem browseProductsModelMetaLinksItemFromJson(
+  str,
+) => BrowseProductsModelMetaLinksItem.fromJson(str);
+
+String browseProductsModelMetaLinksItemToJson(
+  BrowseProductsModelMetaLinksItem data,
+) => json.encode(data.toJson());
+
+String browseProductsModelMetaToJson(BrowseProductsModelMeta data) =>
+    json.encode(data.toJson());
+
+String browseProductsModelToJson(BrowseProductsModel data) =>
+    json.encode(data.toJson());
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -47,9 +71,12 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-List<dynamic>? _asDynamicList(dynamic value) {
-  if (value is! List) return null;
-  return value.map(_asDynamic).toList();
+double? _asDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }
 
 dynamic _asDynamic(dynamic value) {
@@ -70,62 +97,64 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-BrowseProductsModel browseProductsModelFromJson(str) => BrowseProductsModel.fromJson(str);
+List<dynamic>? _asDynamicList(dynamic value) {
+  if (value is! List) return null;
+  return value.map(_asDynamic).toList();
+}
 
-String browseProductsModelToJson(BrowseProductsModel data) => json.encode(data.toJson());
+int? _asInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) {
+    return int.tryParse(value) ?? double.tryParse(value)?.toInt();
+  }
+  return null;
+}
 
+num? _asNum(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value;
+  if (value is String) return num.tryParse(value);
+  return null;
+}
 
-BrowseProductsModelMeta browseProductsModelMetaFromJson(str) => BrowseProductsModelMeta.fromJson(str);
-
-String browseProductsModelMetaToJson(BrowseProductsModelMeta data) => json.encode(data.toJson());
-
-
-BrowseProductsModelMetaLinksItem browseProductsModelMetaLinksItemFromJson(str) => BrowseProductsModelMetaLinksItem.fromJson(str);
-
-String browseProductsModelMetaLinksItemToJson(BrowseProductsModelMetaLinksItem data) => json.encode(data.toJson());
-
-
-BrowseProductsModelLinks browseProductsModelLinksFromJson(str) => BrowseProductsModelLinks.fromJson(str);
-
-String browseProductsModelLinksToJson(BrowseProductsModelLinks data) => json.encode(data.toJson());
-
-
-BrowseProductsModelDataItem browseProductsModelDataItemFromJson(str) => BrowseProductsModelDataItem.fromJson(str);
-
-String browseProductsModelDataItemToJson(BrowseProductsModelDataItem data) => json.encode(data.toJson());
-
-
-BrowseProductsModelDataItemImagesItem browseProductsModelDataItemImagesItemFromJson(str) => BrowseProductsModelDataItemImagesItem.fromJson(str);
-
-String browseProductsModelDataItemImagesItemToJson(BrowseProductsModelDataItemImagesItem data) => json.encode(data.toJson());
-
-
-BrowseProductsModelDataItemImage browseProductsModelDataItemImageFromJson(str) => BrowseProductsModelDataItemImage.fromJson(str);
-
-String browseProductsModelDataItemImageToJson(BrowseProductsModelDataItemImage data) => json.encode(data.toJson());
-
-
-BrowseProductsModelDataItemStore browseProductsModelDataItemStoreFromJson(str) => BrowseProductsModelDataItemStore.fromJson(str);
-
-String browseProductsModelDataItemStoreToJson(BrowseProductsModelDataItemStore data) => json.encode(data.toJson());
-
+String? _asString(dynamic value) {
+  if (value == null) return null;
+  if (value is String) return value;
+  if (value is num || value is bool) return value.toString();
+  return null;
+}
 
 class BrowseProductsModel {
   List<BrowseProductsModelDataItem>? data;
   BrowseProductsModelLinks? links;
   BrowseProductsModelMeta? meta;
 
-  BrowseProductsModel({
-    this.data,
-    this.links,
-    this.meta,
-  });
+  BrowseProductsModel({this.data, this.links, this.meta});
 
   factory BrowseProductsModel.fromJson(Map<String, dynamic> json) {
     return BrowseProductsModel(
-      data: json['data'] is List ? (json['data'] as List).whereType<Map>().map((item) => BrowseProductsModelDataItem.fromJson(Map<String, dynamic>.from(item))).toList() : null,
-      links: json['links'] is Map ? BrowseProductsModelLinks.fromJson(Map<String, dynamic>.from(json['links'] as Map)) : null,
-      meta: json['meta'] is Map ? BrowseProductsModelMeta.fromJson(Map<String, dynamic>.from(json['meta'] as Map)) : null,
+      data: json['data'] is List
+          ? (json['data'] as List)
+                .whereType<Map>()
+                .map(
+                  (item) => BrowseProductsModelDataItem.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
+          : null,
+      links: json['links'] is Map
+          ? BrowseProductsModelLinks.fromJson(
+              Map<String, dynamic>.from(json['links'] as Map),
+            )
+          : null,
+      meta: json['meta'] is Map
+          ? BrowseProductsModelMeta.fromJson(
+              Map<String, dynamic>.from(json['meta'] as Map),
+            )
+          : null,
     );
   }
 
@@ -138,123 +167,12 @@ class BrowseProductsModel {
   }
 }
 
-class BrowseProductsModelMeta {
-  int? currentPage;
-  int? from;
-  int? lastPage;
-  List<BrowseProductsModelMetaLinksItem>? links;
-  String? path;
-  int? perPage;
-  int? to;
-  int? total;
-
-  BrowseProductsModelMeta({
-    this.currentPage,
-    this.from,
-    this.lastPage,
-    this.links,
-    this.path,
-    this.perPage,
-    this.to,
-    this.total,
-  });
-
-  factory BrowseProductsModelMeta.fromJson(Map<String, dynamic> json) {
-    return BrowseProductsModelMeta(
-      currentPage: _asInt(json['current_page']),
-      from: _asInt(json['from']),
-      lastPage: _asInt(json['last_page']),
-      links: json['links'] is List ? (json['links'] as List).whereType<Map>().map((item) => BrowseProductsModelMetaLinksItem.fromJson(Map<String, dynamic>.from(item))).toList() : null,
-      path: _asString(json['path']),
-      perPage: _asInt(json['per_page']),
-      to: _asInt(json['to']),
-      total: _asInt(json['total']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'current_page': currentPage,
-      'from': from,
-      'last_page': lastPage,
-      'links': links?.map((item) => item.toJson()).toList(),
-      'path': path,
-      'per_page': perPage,
-      'to': to,
-      'total': total,
-    };
-  }
-}
-
-class BrowseProductsModelMetaLinksItem {
-  String? url;
-  String? label;
-  int? page;
-  bool? active;
-
-  BrowseProductsModelMetaLinksItem({
-    this.url,
-    this.label,
-    this.page,
-    this.active,
-  });
-
-  factory BrowseProductsModelMetaLinksItem.fromJson(Map<String, dynamic> json) {
-    return BrowseProductsModelMetaLinksItem(
-      url: _asString(json['url']),
-      label: _asString(json['label']),
-      page: _asInt(json['page']),
-      active: _asBool(json['active']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'url': url,
-      'label': label,
-      'page': page,
-      'active': active,
-    };
-  }
-}
-
-class BrowseProductsModelLinks {
-  String? first;
-  String? last;
-  dynamic prev;
-  String? next;
-
-  BrowseProductsModelLinks({
-    this.first,
-    this.last,
-    this.prev,
-    this.next,
-  });
-
-  factory BrowseProductsModelLinks.fromJson(Map<String, dynamic> json) {
-    return BrowseProductsModelLinks(
-      first: _asString(json['first']),
-      last: _asString(json['last']),
-      prev: _asDynamic(json['prev']),
-      next: _asString(json['next']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'first': first,
-      'last': last,
-      'prev': prev,
-      'next': next,
-    };
-  }
-}
-
 class BrowseProductsModelDataItem {
   int? id;
   int? storeId;
   BrowseProductsModelDataItemStore? store;
   int? categoryId;
+  BrowseProductsModelDataItemCategory? category;
   int? masterProductId;
   String? name;
   String? barcode;
@@ -263,6 +181,7 @@ class BrowseProductsModelDataItem {
   String? price;
   dynamic discountedPrice;
   bool? isFavorite;
+  List<dynamic>? offers;
   BrowseProductsModelDataItemImage? image;
   String? imageUrl;
   List<BrowseProductsModelDataItemImagesItem>? images;
@@ -279,6 +198,7 @@ class BrowseProductsModelDataItem {
     this.storeId,
     this.store,
     this.categoryId,
+    this.category,
     this.masterProductId,
     this.name,
     this.barcode,
@@ -287,6 +207,7 @@ class BrowseProductsModelDataItem {
     this.price,
     this.discountedPrice,
     this.isFavorite,
+    this.offers,
     this.image,
     this.imageUrl,
     this.images,
@@ -303,8 +224,17 @@ class BrowseProductsModelDataItem {
     return BrowseProductsModelDataItem(
       id: _asInt(json['id']),
       storeId: _asInt(json['storeId']),
-      store: json['store'] is Map ? BrowseProductsModelDataItemStore.fromJson(Map<String, dynamic>.from(json['store'] as Map)) : null,
+      store: json['store'] is Map
+          ? BrowseProductsModelDataItemStore.fromJson(
+              Map<String, dynamic>.from(json['store'] as Map),
+            )
+          : null,
       categoryId: _asInt(json['categoryId']),
+      category: json['category'] is Map
+          ? BrowseProductsModelDataItemCategory.fromJson(
+              Map<String, dynamic>.from(json['category'] as Map),
+            )
+          : null,
       masterProductId: _asInt(json['masterProductId']),
       name: _asString(json['name']),
       barcode: _asString(json['barcode']),
@@ -313,10 +243,29 @@ class BrowseProductsModelDataItem {
       price: _asString(json['price']),
       discountedPrice: _asDynamic(json['discountedPrice']),
       isFavorite: _asBool(json['isFavorite']),
-      image: json['image'] is Map ? BrowseProductsModelDataItemImage.fromJson(Map<String, dynamic>.from(json['image'] as Map)) : null,
+      offers: _asDynamicList(json['offers']),
+      image: json['image'] is Map
+          ? BrowseProductsModelDataItemImage.fromJson(
+              Map<String, dynamic>.from(json['image'] as Map),
+            )
+          : null,
       imageUrl: _asString(json['imageUrl']),
-      images: json['images'] is List ? (json['images'] as List).whereType<Map>().map((item) => BrowseProductsModelDataItemImagesItem.fromJson(Map<String, dynamic>.from(item))).toList() : null,
-      imageUrls: json['imageUrls'] is List ? (json['imageUrls'] as List).map((item) => _asString(item)).whereType<String>().toList() : null,
+      images: json['images'] is List
+          ? (json['images'] as List)
+                .whereType<Map>()
+                .map(
+                  (item) => BrowseProductsModelDataItemImagesItem.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
+          : null,
+      imageUrls: json['imageUrls'] is List
+          ? (json['imageUrls'] as List)
+                .map((item) => _asString(item))
+                .whereType<String>()
+                .toList()
+          : null,
       stockQuantity: _asInt(json['stockQuantity']),
       lowStockThreshold: _asInt(json['lowStockThreshold']),
       expiresAt: _asDynamic(json['expiresAt']),
@@ -332,6 +281,7 @@ class BrowseProductsModelDataItem {
       'storeId': storeId,
       'store': store?.toJson(),
       'categoryId': categoryId,
+      'category': category?.toJson(),
       'masterProductId': masterProductId,
       'name': name,
       'barcode': barcode,
@@ -340,6 +290,7 @@ class BrowseProductsModelDataItem {
       'price': price,
       'discountedPrice': discountedPrice,
       'isFavorite': isFavorite,
+      'offers': offers,
       'image': image?.toJson(),
       'imageUrl': imageUrl,
       'images': images?.map((item) => item.toJson()).toList(),
@@ -354,62 +305,64 @@ class BrowseProductsModelDataItem {
   }
 }
 
-class BrowseProductsModelDataItemImagesItem {
+class BrowseProductsModelDataItemCategory {
   int? id;
+  int? storeId;
   String? name;
-  String? fileName;
-  String? collection;
-  String? url;
-  String? thumbnailUrl;
-  String? size;
-  String? extensionValue;
-  String? type;
-  String? caption;
+  String? slug;
+  dynamic description;
+  int? sortOrder;
+  String? imagePath;
+  bool? isActive;
+  int? productsCount;
   String? createdAt;
+  String? updatedAt;
 
-  BrowseProductsModelDataItemImagesItem({
+  BrowseProductsModelDataItemCategory({
     this.id,
+    this.storeId,
     this.name,
-    this.fileName,
-    this.collection,
-    this.url,
-    this.thumbnailUrl,
-    this.size,
-    this.extensionValue,
-    this.type,
-    this.caption,
+    this.slug,
+    this.description,
+    this.sortOrder,
+    this.imagePath,
+    this.isActive,
+    this.productsCount,
     this.createdAt,
+    this.updatedAt,
   });
 
-  factory BrowseProductsModelDataItemImagesItem.fromJson(Map<String, dynamic> json) {
-    return BrowseProductsModelDataItemImagesItem(
+  factory BrowseProductsModelDataItemCategory.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return BrowseProductsModelDataItemCategory(
       id: _asInt(json['id']),
+      storeId: _asInt(json['storeId']),
       name: _asString(json['name']),
-      fileName: _asString(json['fileName']),
-      collection: _asString(json['collection']),
-      url: _asString(json['url']),
-      thumbnailUrl: _asString(json['thumbnailUrl']),
-      size: _asString(json['size']),
-      extensionValue: _asString(json['extension']),
-      type: _asString(json['type']),
-      caption: _asString(json['caption']),
+      slug: _asString(json['slug']),
+      description: _asDynamic(json['description']),
+      sortOrder: _asInt(json['sortOrder']),
+      imagePath: _asString(json['imagePath']),
+      isActive: _asBool(json['isActive']),
+      productsCount: _asInt(json['productsCount']),
       createdAt: _asString(json['createdAt']),
+      updatedAt: _asString(json['updatedAt']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'storeId': storeId,
       'name': name,
-      'fileName': fileName,
-      'collection': collection,
-      'url': url,
-      'thumbnailUrl': thumbnailUrl,
-      'size': size,
-      'extension': extensionValue,
-      'type': type,
-      'caption': caption,
+      'slug': slug,
+      'description': description,
+      'sortOrder': sortOrder,
+      'imagePath': imagePath,
+      'isActive': isActive,
+      'productsCount': productsCount,
       'createdAt': createdAt,
+      'updatedAt': updatedAt,
     };
   }
 }
@@ -443,6 +396,68 @@ class BrowseProductsModelDataItemImage {
 
   factory BrowseProductsModelDataItemImage.fromJson(Map<String, dynamic> json) {
     return BrowseProductsModelDataItemImage(
+      id: _asInt(json['id']),
+      name: _asString(json['name']),
+      fileName: _asString(json['fileName']),
+      collection: _asString(json['collection']),
+      url: _asString(json['url']),
+      thumbnailUrl: _asString(json['thumbnailUrl']),
+      size: _asString(json['size']),
+      extensionValue: _asString(json['extension']),
+      type: _asString(json['type']),
+      caption: _asString(json['caption']),
+      createdAt: _asString(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'fileName': fileName,
+      'collection': collection,
+      'url': url,
+      'thumbnailUrl': thumbnailUrl,
+      'size': size,
+      'extension': extensionValue,
+      'type': type,
+      'caption': caption,
+      'createdAt': createdAt,
+    };
+  }
+}
+
+class BrowseProductsModelDataItemImagesItem {
+  int? id;
+  String? name;
+  String? fileName;
+  String? collection;
+  String? url;
+  String? thumbnailUrl;
+  String? size;
+  String? extensionValue;
+  String? type;
+  String? caption;
+  String? createdAt;
+
+  BrowseProductsModelDataItemImagesItem({
+    this.id,
+    this.name,
+    this.fileName,
+    this.collection,
+    this.url,
+    this.thumbnailUrl,
+    this.size,
+    this.extensionValue,
+    this.type,
+    this.caption,
+    this.createdAt,
+  });
+
+  factory BrowseProductsModelDataItemImagesItem.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return BrowseProductsModelDataItemImagesItem(
       id: _asInt(json['id']),
       name: _asString(json['name']),
       fileName: _asString(json['fileName']),
@@ -595,5 +610,111 @@ class BrowseProductsModelDataItemStore {
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
+  }
+}
+
+class BrowseProductsModelLinks {
+  String? first;
+  String? last;
+  dynamic prev;
+  String? next;
+
+  BrowseProductsModelLinks({this.first, this.last, this.prev, this.next});
+
+  factory BrowseProductsModelLinks.fromJson(Map<String, dynamic> json) {
+    return BrowseProductsModelLinks(
+      first: _asString(json['first']),
+      last: _asString(json['last']),
+      prev: _asDynamic(json['prev']),
+      next: _asString(json['next']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'first': first, 'last': last, 'prev': prev, 'next': next};
+  }
+}
+
+class BrowseProductsModelMeta {
+  int? currentPage;
+  int? from;
+  int? lastPage;
+  List<BrowseProductsModelMetaLinksItem>? links;
+  String? path;
+  int? perPage;
+  int? to;
+  int? total;
+
+  BrowseProductsModelMeta({
+    this.currentPage,
+    this.from,
+    this.lastPage,
+    this.links,
+    this.path,
+    this.perPage,
+    this.to,
+    this.total,
+  });
+
+  factory BrowseProductsModelMeta.fromJson(Map<String, dynamic> json) {
+    return BrowseProductsModelMeta(
+      currentPage: _asInt(json['current_page']),
+      from: _asInt(json['from']),
+      lastPage: _asInt(json['last_page']),
+      links: json['links'] is List
+          ? (json['links'] as List)
+                .whereType<Map>()
+                .map(
+                  (item) => BrowseProductsModelMetaLinksItem.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
+          : null,
+      path: _asString(json['path']),
+      perPage: _asInt(json['per_page']),
+      to: _asInt(json['to']),
+      total: _asInt(json['total']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'current_page': currentPage,
+      'from': from,
+      'last_page': lastPage,
+      'links': links?.map((item) => item.toJson()).toList(),
+      'path': path,
+      'per_page': perPage,
+      'to': to,
+      'total': total,
+    };
+  }
+}
+
+class BrowseProductsModelMetaLinksItem {
+  String? url;
+  String? label;
+  int? page;
+  bool? active;
+
+  BrowseProductsModelMetaLinksItem({
+    this.url,
+    this.label,
+    this.page,
+    this.active,
+  });
+
+  factory BrowseProductsModelMetaLinksItem.fromJson(Map<String, dynamic> json) {
+    return BrowseProductsModelMetaLinksItem(
+      url: _asString(json['url']),
+      label: _asString(json['label']),
+      page: _asInt(json['page']),
+      active: _asBool(json['active']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'url': url, 'label': label, 'page': page, 'active': active};
   }
 }

@@ -1,1 +1,10 @@
-{"bricks":{"app_bootstrap":{"path":"/home/mohammed/flutter_pro/dllni-user-app/common_package/bricks/apps/app_bootstrap"},"feature":{"path":"/home/mohammed/flutter_pro/dllni-user-app/common_package/bricks/features/feature"}}}
+{
+    "bricks": {
+        "app_bootstrap": {
+            "path": "D:/flutter_pro/dllni-user-app/common_package/bricks/apps/app_bootstrap"
+        },
+        "feature": {
+            "path": "D:/flutter_pro/dllni-user-app/common_package/bricks/features/feature"
+        }
+    }
+}

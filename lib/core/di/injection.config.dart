@@ -10,15 +10,9 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:common_package/common_package.dart' as _i960;
-import 'package:common_package/helpers/dio_network.dart' as _i497;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
-import '../../features/auth/data/repository/auth_repo_impl.dart' as _i751;
-import '../../features/auth/data/source/auth_remote_data_source.dart' as _i777;
-import '../../features/auth/domain/repository/auth_repo.dart' as _i976;
-import '../../features/auth/domain/usecases/login_use_case.dart' as _i37;
-import '../../features/auth/view/manager/bloc/auth_bloc.dart' as _i958;
 import '../../features/sm_cart/data/repository/sm_cart_repo_impl.dart' as _i91;
 import '../../features/sm_cart/data/source/sm_cart_remote_data_source.dart'
     as _i369;
@@ -40,6 +34,18 @@ import '../../features/sm_discover/domain/usecases/change_store_favorite_use_cas
     as _i327;
 import '../../features/sm_discover/view/manager/bloc/sm_discover_bloc.dart'
     as _i717;
+import '../../features/sm_favorite/data/repository/sm_favorite_repo_impl.dart'
+    as _i423;
+import '../../features/sm_favorite/data/source/sm_favorite_remote_data_source.dart'
+    as _i381;
+import '../../features/sm_favorite/domain/repository/sm_favorite_repo.dart'
+    as _i957;
+import '../../features/sm_favorite/domain/usecases/get_favorite_supermarket_products_use_case.dart'
+    as _i163;
+import '../../features/sm_favorite/domain/usecases/get_favorite_supermarket_stores_use_case.dart'
+    as _i1051;
+import '../../features/sm_favorite/view/manager/bloc/sm_favorite_bloc.dart'
+    as _i531;
 import '../../features/sm_home/data/repository/sm_home_repo_impl.dart' as _i991;
 import '../../features/sm_home/data/source/sm_home_remote_data_source.dart'
     as _i1025;
@@ -67,20 +73,18 @@ import '../../features/sm_orders/domain/repository/sm_orders_repo.dart'
     as _i753;
 import '../../features/sm_orders/view/manager/bloc/sm_orders_bloc.dart'
     as _i803;
-import '../../features/sm_profile/data/repository/sm_profile_repo_impl.dart'
-    as _i489;
-import '../../features/sm_profile/data/source/sm_profile_remote_data_source.dart'
-    as _i1065;
-import '../../features/sm_profile/domain/repository/sm_profile_repo.dart'
-    as _i130;
-import '../../features/sm_profile/view/manager/bloc/sm_profile_bloc.dart'
-    as _i602;
 import '../../features/sm_stores/data/repository/sm_stores_repo_impl.dart'
     as _i580;
 import '../../features/sm_stores/data/source/sm_stores_remote_data_source.dart'
     as _i179;
 import '../../features/sm_stores/domain/repository/sm_stores_repo.dart'
     as _i359;
+import '../../features/sm_stores/domain/usecases/get_compare_products_use_case.dart'
+    as _i802;
+import '../../features/sm_stores/domain/usecases/get_supermarket_product_details_use_case.dart'
+    as _i749;
+import '../../features/sm_stores/domain/usecases/get_supermarket_store_details_use_case.dart'
+    as _i151;
 import '../../features/sm_stores/view/manager/bloc/sm_stores_bloc.dart'
     as _i883;
 import 'injection.dart' as _i464;
@@ -96,8 +100,6 @@ _i174.GetIt $initGetIt(
   gh.factory<_i821.SmCartBloc>(() => _i821.SmCartBloc());
   gh.factory<_i709.SmOffersBloc>(() => _i709.SmOffersBloc());
   gh.factory<_i803.SmOrdersBloc>(() => _i803.SmOrdersBloc());
-  gh.factory<_i602.SmProfileBloc>(() => _i602.SmProfileBloc());
-  gh.factory<_i883.SmStoresBloc>(() => _i883.SmStoresBloc());
   gh.singleton<_i960.DioNetwork>(() => injectableModule.dio);
   gh.lazySingleton<_i369.SmCartRemoteDataSource>(
     () => _i369.SmCartRemoteDataSource(),
@@ -108,30 +110,20 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i400.SmOrdersRemoteDataSource>(
     () => _i400.SmOrdersRemoteDataSource(),
   );
-  gh.lazySingleton<_i1065.SmProfileRemoteDataSource>(
-    () => _i1065.SmProfileRemoteDataSource(),
-  );
-  gh.lazySingleton<_i179.SmStoresRemoteDataSource>(
-    () => _i179.SmStoresRemoteDataSource(),
-  );
-  gh.lazySingleton<_i130.SmProfileRepo>(() => _i489.SmProfileRepoImpl());
-  gh.lazySingleton<_i359.SmStoresRepo>(() => _i580.SmStoresRepoImpl());
   gh.lazySingleton<_i579.SmCartRepo>(() => _i91.SmCartRepoImpl());
-  gh.lazySingleton<_i777.AuthRemoteDataSource>(
-    () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
-  );
   gh.lazySingleton<_i446.SmOffersRepo>(() => _i213.SmOffersRepoImpl());
   gh.lazySingleton<_i753.SmOrdersRepo>(() => _i290.SmOrdersRepoImpl());
-  gh.lazySingleton<_i976.AuthRepo>(
-    () => _i751.AuthRepoImpl(
-      authRemoteDataSource: gh<_i777.AuthRemoteDataSource>(),
-    ),
-  );
   gh.lazySingleton<_i949.SmDiscoverRemoteDataSource>(
     () => _i949.SmDiscoverRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
+  gh.lazySingleton<_i381.SmFavoriteRemoteDataSource>(
+    () => _i381.SmFavoriteRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
   gh.lazySingleton<_i1025.SmHomeRemoteDataSource>(
     () => _i1025.SmHomeRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
+  gh.lazySingleton<_i179.SmStoresRemoteDataSource>(
+    () => _i179.SmStoresRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
   gh.lazySingleton<_i267.SmHomeRepo>(
     () => _i991.SmHomeRepoImpl(
@@ -143,8 +135,23 @@ _i174.GetIt $initGetIt(
       smDiscoverRemoteDataSource: gh<_i949.SmDiscoverRemoteDataSource>(),
     ),
   );
-  gh.lazySingleton<_i37.LoginUseCase>(
-    () => _i37.LoginUseCase(auth: gh<_i976.AuthRepo>()),
+  gh.lazySingleton<_i359.SmStoresRepo>(
+    () => _i580.SmStoresRepoImpl(
+      smStoresRemoteDataSource: gh<_i179.SmStoresRemoteDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i802.GetCompareProductsUseCase>(
+    () => _i802.GetCompareProductsUseCase(smStores: gh<_i359.SmStoresRepo>()),
+  );
+  gh.lazySingleton<_i749.GetSupermarketProductDetailsUseCase>(
+    () => _i749.GetSupermarketProductDetailsUseCase(
+      smStores: gh<_i359.SmStoresRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i151.GetSupermarketStoreDetailsUseCase>(
+    () => _i151.GetSupermarketStoreDetailsUseCase(
+      smStores: gh<_i359.SmStoresRepo>(),
+    ),
   );
   gh.lazySingleton<_i583.ChangeStoreFavoriteUseCase>(
     () => _i583.ChangeStoreFavoriteUseCase(smHome: gh<_i267.SmHomeRepo>()),
@@ -155,11 +162,26 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i690.GetNearbyStoresUseCase>(
     () => _i690.GetNearbyStoresUseCase(smHome: gh<_i267.SmHomeRepo>()),
   );
+  gh.lazySingleton<_i957.SmFavoriteRepo>(
+    () => _i423.SmFavoriteRepoImpl(
+      smFavoriteRemoteDataSource: gh<_i381.SmFavoriteRemoteDataSource>(),
+    ),
+  );
   gh.factory<_i626.SmHomeBloc>(
     () => _i626.SmHomeBloc(
       gh<_i437.GetFeaturedOffersUseCase>(),
       gh<_i690.GetNearbyStoresUseCase>(),
       gh<_i583.ChangeStoreFavoriteUseCase>(),
+    ),
+  );
+  gh.lazySingleton<_i163.GetFavoriteSupermarketProductsUseCase>(
+    () => _i163.GetFavoriteSupermarketProductsUseCase(
+      smFavorite: gh<_i957.SmFavoriteRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i1051.GetFavoriteSupermarketStoresUseCase>(
+    () => _i1051.GetFavoriteSupermarketStoresUseCase(
+      smFavorite: gh<_i957.SmFavoriteRepo>(),
     ),
   );
   gh.lazySingleton<_i321.BrowseProductsUseCase>(
@@ -186,7 +208,19 @@ _i174.GetIt $initGetIt(
       gh<_i871.ChangeProductFavoriteUseCase>(),
     ),
   );
-  gh.factory<_i958.AuthBloc>(() => _i958.AuthBloc(gh<_i37.LoginUseCase>()));
+  gh.factory<_i883.SmStoresBloc>(
+    () => _i883.SmStoresBloc(
+      gh<_i151.GetSupermarketStoreDetailsUseCase>(),
+      gh<_i749.GetSupermarketProductDetailsUseCase>(),
+      gh<_i802.GetCompareProductsUseCase>(),
+    ),
+  );
+  gh.factory<_i531.SmFavoriteBloc>(
+    () => _i531.SmFavoriteBloc(
+      gh<_i1051.GetFavoriteSupermarketStoresUseCase>(),
+      gh<_i163.GetFavoriteSupermarketProductsUseCase>(),
+    ),
+  );
   return getIt;
 }
 

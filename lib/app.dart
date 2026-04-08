@@ -22,11 +22,6 @@ class App extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute:
-          SharedPreferencesHelper.getData(key: 'token') != null &&
-              SharedPreferencesHelper.getData(key: 'token') != ""
-          ? "/"
-          : "/login",
     );
   }
 }

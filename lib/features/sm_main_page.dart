@@ -5,9 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../core/widgets/app_nav_bar.dart';
 import 'sm_discover/view/screens/sm_discover_screen.dart';
 import 'sm_home/view/screens/sm_home_screen.dart';
-import 'sm_offers/view/screens/sm_offers_screen.dart';
-import 'sm_orders/view/screens/sm_orders_screen.dart';
-import 'sm_profile/view/screens/sm_profile_screen.dart';
+import 'sm_favorite/view/screens/sm_favorite_screen.dart';
 
 @AutoRoutePage(path: "/")
 class SmMainPage extends StatefulWidget {
@@ -32,7 +30,7 @@ class _SmMainPageState extends State<SmMainPage>
     if (widget.initialPage != null) selectedTab = widget.initialPage!;
     expandSearch = widget.expandSearch;
     tabController = TabController(
-      length: 5,
+      length: 3,
       vsync: this,
       initialIndex: selectedTab,
     );
@@ -47,18 +45,18 @@ class _SmMainPageState extends State<SmMainPage>
         children: [
           SmHomeScreen(),
           SmDiscoverScreen(expandSearch: expandSearch),
-          SmOffersScreen(),
-          SmOrdersScreen(),
-          SmProfileScreen(),
+          SmFavoriteScreen(),
+          // SmOrdersScreen(),
+          // SmProfileScreen(),
         ],
       ),
       bottomNavigationBar: AppNavBar(
         items: [
           AppNavBarItem(title: "الرئيسية", icon: FontAwesomeIcons.solidHouse),
           AppNavBarItem(title: "تصفح", icon: FontAwesomeIcons.solidCompass),
-          AppNavBarItem(title: "العروض", icon: FontAwesomeIcons.tags),
-          AppNavBarItem(title: "طلباتي", icon: FontAwesomeIcons.receipt),
-          AppNavBarItem(title: "حسابي", icon: FontAwesomeIcons.user),
+          AppNavBarItem(title: "المفضلة", icon: FontAwesomeIcons.tags),
+          // AppNavBarItem(title: "طلباتي", icon: FontAwesomeIcons.receipt),
+          // AppNavBarItem(title: "حسابي", icon: FontAwesomeIcons.user),
         ],
         selectedIndex: selectedTab,
         onChanged: (index) {
