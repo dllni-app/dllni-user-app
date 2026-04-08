@@ -15,10 +15,17 @@ class ProfileState {
 
   final BlocStatus? createVoteStatus;
   final CreateVoteModel? createdVote;
+  final BlocStatus? voteSuggestionsStatus;
+  final VoteSuggestionsModel? voteSuggestions;
+  final BlocStatus? createAddressStatus;
+  final BlocStatus? updateAddressStatus;
+  final BlocStatus? deleteAddressStatus;
 
   final BlocStatus? voteDetailsStatus;
   final ShowVoteModel? voteDetails;
   final BlocStatus? endVoteStatus;
+  final BlocStatus? activeVotesStatus;
+  final List<VoteCreatedData> activeVotes;
 
   final String? errorMessage;
   final String? actionMessage;
@@ -35,9 +42,16 @@ class ProfileState {
     this.removeFavoriteRestaurantStatus,
     this.createVoteStatus,
     this.createdVote,
+    this.voteSuggestionsStatus,
+    this.voteSuggestions,
+    this.createAddressStatus,
+    this.updateAddressStatus,
+    this.deleteAddressStatus,
     this.voteDetailsStatus,
     this.voteDetails,
     this.endVoteStatus,
+    this.activeVotesStatus,
+    this.activeVotes = const <VoteCreatedData>[],
     this.errorMessage,
     this.actionMessage,
   });
@@ -54,9 +68,16 @@ class ProfileState {
     BlocStatus? removeFavoriteRestaurantStatus,
     BlocStatus? createVoteStatus,
     CreateVoteModel? createdVote,
+    BlocStatus? voteSuggestionsStatus,
+    VoteSuggestionsModel? voteSuggestions,
+    BlocStatus? createAddressStatus,
+    BlocStatus? updateAddressStatus,
+    BlocStatus? deleteAddressStatus,
     BlocStatus? voteDetailsStatus,
     ShowVoteModel? voteDetails,
     BlocStatus? endVoteStatus,
+    BlocStatus? activeVotesStatus,
+    List<VoteCreatedData>? activeVotes,
     String? errorMessage,
     String? actionMessage,
   }) => ProfileState(
@@ -74,9 +95,16 @@ class ProfileState {
         removeFavoriteRestaurantStatus ?? this.removeFavoriteRestaurantStatus,
     createVoteStatus: createVoteStatus ?? this.createVoteStatus,
     createdVote: createdVote ?? this.createdVote,
+    voteSuggestionsStatus: voteSuggestionsStatus ?? this.voteSuggestionsStatus,
+    voteSuggestions: voteSuggestions ?? this.voteSuggestions,
+    createAddressStatus: createAddressStatus ?? this.createAddressStatus,
+    updateAddressStatus: updateAddressStatus ?? this.updateAddressStatus,
+    deleteAddressStatus: deleteAddressStatus ?? this.deleteAddressStatus,
     voteDetailsStatus: voteDetailsStatus ?? this.voteDetailsStatus,
     voteDetails: voteDetails ?? this.voteDetails,
     endVoteStatus: endVoteStatus ?? this.endVoteStatus,
+    activeVotesStatus: activeVotesStatus ?? this.activeVotesStatus,
+    activeVotes: activeVotes ?? this.activeVotes,
     errorMessage: errorMessage ?? this.errorMessage,
     actionMessage: actionMessage ?? this.actionMessage,
   );

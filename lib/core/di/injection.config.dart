@@ -14,6 +14,11 @@ import 'package:common_package/helpers/dio_network.dart' as _i497;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
+import '../../features/auth/data/repository/auth_repo_impl.dart' as _i751;
+import '../../features/auth/data/source/auth_remote_data_source.dart' as _i777;
+import '../../features/auth/domain/repository/auth_repo.dart' as _i976;
+import '../../features/auth/domain/usecases/login_use_case.dart' as _i37;
+import '../../features/auth/view/manager/bloc/auth_bloc.dart' as _i958;
 import '../../features/home/data/repository/home_repo_impl.dart' as _i1013;
 import '../../features/home/data/source/home_remote_data_source.dart' as _i557;
 import '../../features/home/domain/repository/home_repo.dart' as _i396;
@@ -27,24 +32,48 @@ import '../../features/profile/data/repository/profile_repo_impl.dart' as _i265;
 import '../../features/profile/data/source/profile_remote_data_source.dart'
     as _i502;
 import '../../features/profile/domain/repository/profile_repo.dart' as _i275;
+import '../../features/profile/domain/services/user_location_service.dart'
+    as _i426;
 import '../../features/profile/domain/usecases/add_favorite_restaurant_use_case.dart'
     as _i761;
+import '../../features/profile/domain/usecases/create_address_use_case.dart'
+    as _i687;
 import '../../features/profile/domain/usecases/create_vote_use_case.dart'
     as _i679;
+import '../../features/profile/domain/usecases/delete_address_use_case.dart'
+    as _i39;
 import '../../features/profile/domain/usecases/end_vote_use_case.dart' as _i875;
 import '../../features/profile/domain/usecases/fetch_addresses_use_case.dart'
     as _i376;
+import '../../features/profile/domain/usecases/fetch_active_votes_use_case.dart'
+    as _i200;
+import '../../features/profile/domain/usecases/fetch_coupons_use_case.dart'
+    as _i879;
 import '../../features/profile/domain/usecases/fetch_favorite_restaurants_use_case.dart'
     as _i319;
+import '../../features/profile/domain/usecases/fetch_luck_box_options_use_case.dart'
+    as _i866;
 import '../../features/profile/domain/usecases/fetch_notifications_use_case.dart'
     as _i438;
+import '../../features/profile/domain/usecases/fetch_vote_suggestions_use_case.dart'
+    as _i381;
 import '../../features/profile/domain/usecases/remove_favorite_restaurant_use_case.dart'
     as _i999;
 import '../../features/profile/domain/usecases/set_default_address_use_case.dart'
     as _i262;
 import '../../features/profile/domain/usecases/show_vote_use_case.dart'
     as _i320;
+import '../../features/profile/domain/usecases/suggest_luck_box_use_case.dart'
+    as _i89;
+import '../../features/profile/domain/usecases/update_address_use_case.dart'
+    as _i983;
+import '../../features/profile/domain/usecases/update_account_use_case.dart'
+    as _i544;
+import '../../features/profile/domain/usecases/update_account_password_use_case.dart'
+    as _i545;
 import '../../features/profile/view/manager/bloc/profile_bloc.dart' as _i821;
+import '../../features/profile/view/manager/coupons_cubit.dart' as _i767;
+import '../../features/profile/view/manager/lucky_box_cubit.dart' as _i849;
 import '../../features/rs_discover/data/repository/rs_discover_repo_impl.dart'
     as _i992;
 import '../../features/rs_discover/data/source/rs_discover_remote_data_source.dart'
@@ -138,6 +167,9 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i702.OrdersRemoteDataSource>(
     () => _i702.OrdersRemoteDataSource(),
   );
+  gh.lazySingleton<_i426.UserLocationService>(
+    () => _i426.UserLocationService(),
+  );
   gh.lazySingleton<_i1070.RsMainRemoteDataSource>(
     () => _i1070.RsMainRemoteDataSource(),
   );
@@ -147,6 +179,9 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i396.HomeRepo>(() => _i1013.HomeRepoImpl());
   gh.lazySingleton<_i744.RsMainRepo>(() => _i427.RsMainRepoImpl());
+  gh.lazySingleton<_i777.AuthRemoteDataSource>(
+    () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
   gh.lazySingleton<_i502.ProfileRemoteDataSource>(
     () => _i502.ProfileRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
@@ -211,6 +246,11 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i365.ToggleRestaurantFavouriteUseCase>(
     () => _i365.ToggleRestaurantFavouriteUseCase(
       rsFavourite: gh<_i865.RsFavouriteRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i976.AuthRepo>(
+    () => _i751.AuthRepoImpl(
+      authRemoteDataSource: gh<_i777.AuthRemoteDataSource>(),
     ),
   );
   gh.factory<_i519.RsFavouriteBloc>(
@@ -298,8 +338,14 @@ _i174.GetIt $initGetIt(
       profileRepo: gh<_i275.ProfileRepo>(),
     ),
   );
+  gh.lazySingleton<_i687.CreateAddressUseCase>(
+    () => _i687.CreateAddressUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i679.CreateVoteUseCase>(
     () => _i679.CreateVoteUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i39.DeleteAddressUseCase>(
+    () => _i39.DeleteAddressUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
   gh.lazySingleton<_i875.EndVoteUseCase>(
     () => _i875.EndVoteUseCase(profileRepo: gh<_i275.ProfileRepo>()),
@@ -307,13 +353,27 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i376.FetchAddressesUseCase>(
     () => _i376.FetchAddressesUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
+  gh.lazySingleton<_i200.FetchActiveVotesUseCase>(
+    () => _i200.FetchActiveVotesUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i879.FetchCouponsUseCase>(
+    () => _i879.FetchCouponsUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i319.FetchFavoriteRestaurantsUseCase>(
     () => _i319.FetchFavoriteRestaurantsUseCase(
       profileRepo: gh<_i275.ProfileRepo>(),
     ),
   );
+  gh.lazySingleton<_i866.FetchLuckBoxOptionsUseCase>(
+    () =>
+        _i866.FetchLuckBoxOptionsUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i438.FetchNotificationsUseCase>(
     () => _i438.FetchNotificationsUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i381.FetchVoteSuggestionsUseCase>(
+    () =>
+        _i381.FetchVoteSuggestionsUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
   gh.lazySingleton<_i999.RemoveFavoriteRestaurantUseCase>(
     () => _i999.RemoveFavoriteRestaurantUseCase(
@@ -323,11 +383,28 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i320.ShowVoteUseCase>(
     () => _i320.ShowVoteUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
+  gh.lazySingleton<_i89.SuggestLuckBoxUseCase>(
+    () => _i89.SuggestLuckBoxUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i983.UpdateAddressUseCase>(
+    () => _i983.UpdateAddressUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i544.UpdateAccountUseCase>(
+    () => _i544.UpdateAccountUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i545.UpdateAccountPasswordUseCase>(
+    () => _i545.UpdateAccountPasswordUseCase(
+      profileRepo: gh<_i275.ProfileRepo>(),
+    ),
+  );
   gh.factory<_i589.RsDiscoverBloc>(
     () => _i589.RsDiscoverBloc(
       gh<_i303.FetchDiscoverRestaurantsUseCase>(),
       gh<_i1.FetchRestaurantProductDetailsUseCase>(),
     ),
+  );
+  gh.lazySingleton<_i37.LoginUseCase>(
+    () => _i37.LoginUseCase(authRepo: gh<_i976.AuthRepo>()),
   );
   gh.factory<_i821.ProfileBloc>(
     () => _i821.ProfileBloc(
@@ -337,8 +414,13 @@ _i174.GetIt $initGetIt(
       gh<_i319.FetchFavoriteRestaurantsUseCase>(),
       gh<_i999.RemoveFavoriteRestaurantUseCase>(),
       gh<_i679.CreateVoteUseCase>(),
+      gh<_i381.FetchVoteSuggestionsUseCase>(),
+      gh<_i687.CreateAddressUseCase>(),
+      gh<_i983.UpdateAddressUseCase>(),
+      gh<_i39.DeleteAddressUseCase>(),
       gh<_i320.ShowVoteUseCase>(),
       gh<_i875.EndVoteUseCase>(),
+      gh<_i200.FetchActiveVotesUseCase>(),
     ),
   );
   gh.factory<_i836.RsHomeBloc>(
@@ -354,6 +436,20 @@ _i174.GetIt $initGetIt(
       gh<_i373.ReorderLatestOrderedProductUseCase>(),
       gh<_i892.FetchRestaurantHomeCategoryProductsUseCase>(),
     ),
+  );
+  gh.factory<_i849.LuckyBoxCubit>(
+    () => _i849.LuckyBoxCubit(
+      fetchLuckBoxOptionsUseCase: gh<_i866.FetchLuckBoxOptionsUseCase>(),
+      suggestLuckBoxUseCase: gh<_i89.SuggestLuckBoxUseCase>(),
+    ),
+  );
+  gh.factory<_i767.CouponsCubit>(
+    () => _i767.CouponsCubit(
+      fetchCouponsUseCase: gh<_i879.FetchCouponsUseCase>(),
+    ),
+  );
+  gh.factory<_i958.AuthBloc>(
+    () => _i958.AuthBloc(loginUseCase: gh<_i37.LoginUseCase>()),
   );
   return getIt;
 }

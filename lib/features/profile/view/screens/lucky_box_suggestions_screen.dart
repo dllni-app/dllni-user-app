@@ -1,77 +1,102 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 
+import '../../data/models/luck_box_api_models.dart';
+import '../../domain/services/user_location_service.dart';
+import '../../domain/usecases/suggest_luck_box_use_case.dart';
+import 'lucky_box_suggestions_args.dart';
+export 'lucky_box_suggestions_args.dart';
 import '../widgets/expandable_numbered_section.dart';
 import '../widgets/filled_text_field.dart';
 import '../widgets/lucky_suggestion_card.dart';
 import '../widgets/personal_details_app_bar.dart';
-
 @AutoRoutePage()
 class LuckyBoxSuggestionsScreen extends StatefulWidget {
-  const LuckyBoxSuggestionsScreen({super.key});
+  const LuckyBoxSuggestionsScreen({super.key, required this.args});
+
+  final LuckyBoxSuggestionsArgs args;
 
   @override
-  State<LuckyBoxSuggestionsScreen> createState() =>
-      _LuckyBoxSuggestionsScreenState();
+  State<LuckyBoxSuggestionsScreen> createState() => _LuckyBoxSuggestionsScreenState();
 }
 
-class _LuckyBoxSuggestionsScreenState
-    extends State<LuckyBoxSuggestionsScreen> {
-  final TextEditingController _budgetController = TextEditingController(
-    text: '0.00',
-  );
-  final TextEditingController _rangeController = TextEditingController(
-    text: 'إضافة نطاق للبحث',
-  );
-  final TextEditingController _constraintsController = TextEditingController(
-    text: 'حدد القيود',
-  );
-  final TextEditingController _restaurantTypeController = TextEditingController(
-    text: 'حدد نوع المطاعم',
-  );
+class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
+  late LuckBoxSuggestResponseModel _response;
+  late final TextEditingController _budgetController;
+  late final TextEditingController _constraintsController;
+  late final TextEditingController _restaurantTypeController;
 
   bool _isSectionExpanded = false;
-  List<LuckySuggestionItem> _suggestions = const [
-    LuckySuggestionItem(
-      badge: 'الأوفر',
-      productsCount: 3,
-      title: 'بيتزا هت',
-      details: '2 بيتزا عائلي فصول أربعة، بيتزا وسط سيخ',
-      secondaryInfo: '2,000 ل.س',
-    ),
-    LuckySuggestionItem(
-      badge: 'الأسرع',
-      productsCount: 4,
-      title: 'برغرايزر',
-      details: '2 برغر دبل جبنة، 2 برغر سيخ',
-      secondaryInfo: '12 دقيقة',
-    ),
-    LuckySuggestionItem(
-      badge: 'المتوازن',
-      productsCount: 5,
-      title: 'الأسمر',
-      details: '1 وجبة عائلي، 3 ناجتس، 2 سلطة، 4 كولا',
-      secondaryInfo: '20 دقيقة - 4,000 ل.س',
-    ),
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _response = widget.args.initialResponse;
+    final b = _response.budget;
+    final per = b?.budgetPerPerson ?? widget.args.budgetPerPerson;
+    _budgetController = TextEditingController(text: '$per');
+    _constraintsController = TextEditingController(text: widget.args.constraintsSummaryText);
+    _restaurantTypeController = TextEditingController(text: widget.args.cuisineSummaryText);
+  }
 
   @override
   void dispose() {
     _budgetController.dispose();
-    _rangeController.dispose();
     _constraintsController.dispose();
     _restaurantTypeController.dispose();
     super.dispose();
   }
 
-  void _refreshSuggestions() {
-    setState(() {
-      _suggestions = [..._suggestions.skip(1), _suggestions.first];
-    });
+  List<LuckySuggestionItem> _mapBundles() {
+    return _response.bundles.map((bundle) {
+      final price = bundle.totalPrice;
+      final mins = bundle.estimatedMinutes;
+      final secondary = [
+        if (price != null) '$price ل.س',
+        if (mins != null) '$mins دقيقة',
+      ].join(' · ');
+      return LuckySuggestionItem(
+        badge: bundle.labelAr ?? bundle.label ?? '',
+        productsCount: bundle.totalProducts ?? 0,
+        title: bundle.restaurant?.name ?? '',
+        details: bundle.itemsDescription ?? '',
+        secondaryInfo: secondary,
+        imageUrl: bundle.restaurant?.primaryImageUrl,
+      );
+    }).toList();
+  }
+
+  Future<void> _refreshSuggestions() async {
+    Loading.show(context);
+    final loc = await getIt<UserLocationService>().getCurrentPosition();
+    final params = widget.args.toSuggestParams(
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+    );
+    final res = await getIt<SuggestLuckBoxUseCase>()(params);
+    if (!mounted) return;
+    Loading.close();
+    res.fold(
+      (f) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(f.message)),
+        );
+      },
+      (r) {
+        setState(() {
+          _response = r;
+          final per = r.budget?.budgetPerPerson ?? widget.args.budgetPerPerson;
+          _budgetController.text = '$per';
+        });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final items = _mapBundles();
+
     return Scaffold(
       backgroundColor: const Color(0xffF9FAFB),
       body: SafeArea(
@@ -112,37 +137,38 @@ class _LuckyBoxSuggestionsScreenState
                           ),
                           const SizedBox(height: 14),
                           FilledTextField(
-                            label: 'نطاق البحث',
-                            controller: _rangeController,
-                            readOnly: true,
-                            suffixIcon: const Icon(Icons.chevron_left),
-                          ),
-                          const SizedBox(height: 14),
-                          FilledTextField(
                             label: 'هل هناك قيود؟',
                             controller: _constraintsController,
                             readOnly: true,
-                            suffixIcon:
-                                const Icon(Icons.keyboard_arrow_down_rounded),
+                            suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
                           ),
                           const SizedBox(height: 14),
                           FilledTextField(
                             label: 'نوع المطاعم',
                             controller: _restaurantTypeController,
                             readOnly: true,
-                            suffixIcon:
-                                const Icon(Icons.keyboard_arrow_down_rounded),
+                            suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ..._suggestions.map(
-                      (item) => Padding(
-                        padding: const EdgeInsetsDirectional.only(bottom: 12),
-                        child: LuckySuggestionCard(item: item),
+                    if (items.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: AppText.bodyMedium(
+                          'لا توجد اقتراحات حالياً. جرّب تغيير المعايير أو التحديث.',
+                          textAlign: TextAlign.center,
+                          color: const Color(0xff6B7280),
+                        ),
+                      )
+                    else
+                      ...items.map(
+                        (item) => Padding(
+                          padding: const EdgeInsetsDirectional.only(bottom: 12),
+                          child: LuckySuggestionCard(item: item),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

@@ -14,11 +14,11 @@ class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProvider
 
   int selectedIndex = 0;
 
-  List<String> titles = ['الكل', 'المتاجر', 'المطاعم', 'التنظيفات'];
+  List<String> titles = ['المتاجر', 'المطاعم', 'التنظيفات'];
 
   @override
   void initState() {
-    _tabController1 = TabController(length: 4, vsync: this);
+    _tabController1 = TabController(length: titles.length, vsync: this);
     super.initState();
   }
 
@@ -44,7 +44,7 @@ class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProvider
       controller: _tabController1,
       labelPadding: EdgeInsetsDirectional.symmetric(vertical: 3, horizontal: 15),
       tabs: List.generate(
-        4,
+        titles.length,
         (i) => Padding(
           padding: EdgeInsetsDirectional.symmetric(horizontal: 10),
           child: AppText.labelLarge(

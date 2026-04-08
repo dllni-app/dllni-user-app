@@ -21,7 +21,14 @@ class NumberedSectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), offset: const Offset(0, 4), blurRadius: 18, spreadRadius: -2)],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            offset: const Offset(0, 4),
+            blurRadius: 18,
+            spreadRadius: -2,
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -32,10 +39,18 @@ class NumberedSectionCard extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: accent,
                 radius: 15,
-                child: AppText.labelLarge(sectionNumber, color: context.onPrimary, fontWeight: FontWeight.w700),
+                child: AppText.labelLarge(
+                  sectionNumber,
+                  color: context.onPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(width: 10),
-              AppText.titleMedium(title, color: accent, fontWeight: FontWeight.w700),
+              AppText.titleMedium(
+                title,
+                color: accent,
+                fontWeight: FontWeight.w700,
+              ),
             ],
           ),
           const SizedBox(height: 16),

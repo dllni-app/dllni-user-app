@@ -10,8 +10,9 @@ class FetchAddressesEvent extends ProfileEvent {
 
 class SetDefaultAddressEvent extends ProfileEvent {
   final int addressId;
+  final BuildContext context;
 
-  SetDefaultAddressEvent({required this.addressId});
+  SetDefaultAddressEvent({required this.addressId, required this.context});
 }
 
 class FetchNotificationsEvent extends ProfileEvent {
@@ -40,6 +41,31 @@ class CreateVoteEvent extends ProfileEvent {
   CreateVoteEvent({required this.params});
 }
 
+class FetchVoteSuggestionsEvent extends ProfileEvent {
+  final String searchQuery;
+
+  FetchVoteSuggestionsEvent({required this.searchQuery});
+}
+
+class CreateAddressEvent extends ProfileEvent {
+  final CreateAddressParams params;
+
+  CreateAddressEvent({required this.params});
+}
+
+class UpdateAddressEvent extends ProfileEvent {
+  final UpdateAddressParams params;
+
+  UpdateAddressEvent({required this.params});
+}
+
+class DeleteAddressEvent extends ProfileEvent {
+  final int addressId;
+  final BuildContext context;
+
+  DeleteAddressEvent({required this.addressId, required this.context});
+}
+
 class ShowVoteEvent extends ProfileEvent {
   final int voteId;
 
@@ -50,4 +76,10 @@ class EndVoteEvent extends ProfileEvent {
   final int voteId;
 
   EndVoteEvent({required this.voteId});
+}
+
+class FetchActiveVotesEvent extends ProfileEvent {
+  final FetchActiveVotesParams params;
+
+  FetchActiveVotesEvent({required this.params});
 }

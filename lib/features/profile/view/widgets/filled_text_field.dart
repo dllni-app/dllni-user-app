@@ -40,7 +40,12 @@ class FilledTextField extends StatelessWidget {
         Row(
           children: [
             AppText.bodyMedium(label, fontWeight: FontWeight.w500),
-            if (isRequired) AppText.bodyMedium('*', color: context.error, fontWeight: FontWeight.w500),
+            if (isRequired)
+              AppText.bodyMedium(
+                '*',
+                color: context.error,
+                fontWeight: FontWeight.w500,
+              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -52,24 +57,40 @@ class FilledTextField extends StatelessWidget {
           onTap: onTap,
           onChanged: onChanged,
           validator: validator,
-          style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14, fontWeight: FontWeight.w400),
+          style: const TextStyle(
+            color: Color(0xff2F2B3D),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: const Color(0xffF9FAFB),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             suffixIcon: suffixIcon,
             errorText: errorText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: errorBorder ? context.error : const Color(0xffE5E7EB), width: 1),
+              borderSide: BorderSide(
+                color: errorBorder ? context.error : const Color(0xffE5E7EB),
+                width: 1,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: errorBorder ? context.error : const Color(0xffE5E7EB), width: 1),
+              borderSide: BorderSide(
+                color: errorBorder ? context.error : const Color(0xffE5E7EB),
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: errorBorder ? context.error : context.primary, width: 1.2),
+              borderSide: BorderSide(
+                color: errorBorder ? context.error : context.primary,
+                width: 1.2,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),

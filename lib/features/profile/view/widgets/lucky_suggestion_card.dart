@@ -10,6 +10,7 @@ class LuckySuggestionItem {
     required this.title,
     required this.details,
     required this.secondaryInfo,
+    this.imageUrl,
   });
 
   final String badge;
@@ -17,6 +18,7 @@ class LuckySuggestionItem {
   final String title;
   final String details;
   final String secondaryInfo;
+  final String? imageUrl;
 }
 
 class LuckySuggestionCard extends StatelessWidget {
@@ -86,11 +88,23 @@ class LuckySuggestionCard extends StatelessWidget {
               const SizedBox(width: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: Assets.images.mainOrders.image(
-                  width: 88,
-                  height: 88,
-                  fit: BoxFit.cover,
-                ),
+                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        item.imageUrl!,
+                        width: 88,
+                        height: 88,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Assets.images.mainOrders.image(
+                          width: 88,
+                          height: 88,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Assets.images.mainOrders.image(
+                        width: 88,
+                        height: 88,
+                        fit: BoxFit.cover,
+                      ),
               ),
             ],
           ),

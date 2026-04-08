@@ -1,20 +1,43 @@
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
+import 'package:dartz/dartz.dart' hide State;
+import 'package:dio/dio.dart';
+import 'package:dllni_user_app/core/app_config.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/features/profile/domain/usecases/show_vote_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 
+import '../../data/models/profile_api_models.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/expandable_numbered_section.dart';
+import '../widgets/list_widgets_separated.dart';
 import '../widgets/personal_details_app_bar.dart';
+import '../widgets/vote_followup_end_vote_bar.dart';
+import '../widgets/vote_followup_option_card.dart';
+import '../widgets/vote_followup_option_data.dart';
+import '../widgets/vote_followup_timer_banner.dart';
+import '../widgets/vote_followup_voters_list.dart';
 import '../widgets/vote_winner_dialog.dart';
+
+/// Pusher Channels public key (must match backend). Never ship [PUSHER_APP_SECRET] in the app.
+const String _kVotePusherKey = 'e85e7756c1171baaa471';
+const String _kVotePusherCluster = 'eu';
+
+class VoteFollowupScreenParams {
+  final int voteId;
+  final VoteCreatedData? initialData;
+
+  const VoteFollowupScreenParams({required this.voteId, this.initialData});
+}
 
 @AutoRoutePage()
 class VoteFollowupScreen extends StatefulWidget {
-  const VoteFollowupScreen({super.key, this.voteId = 1});
+  const VoteFollowupScreen({super.key, required this.params});
 
-  final int voteId;
+  final VoteFollowupScreenParams params;
 
   @override
   State<VoteFollowupScreen> createState() => _VoteFollowupScreenState();
@@ -27,15 +50,18 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   bool _isOptionsExpanded = true;
   bool _isVotersExpanded = true;
 
-  static const List<_VotingOption> _options = [
-    _VotingOption(
+  final PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
+  String? _pusherVoteChannelName;
+
+  List<VoteFollowupOptionData> _options = const [
+    VoteFollowupOptionData(
       name: 'بيتزا مارغريتا',
       size: 'وسط',
       price: '450 ل.س',
       progress: 0.5,
       votes: 4,
     ),
-    _VotingOption(
+    VoteFollowupOptionData(
       name: 'بيتزا مارغريتا',
       size: 'وسط',
       price: '450 ل.س',
@@ -44,7 +70,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     ),
   ];
 
-  static const List<String> _voters = [
+  List<String> _voters = const [
     'خالد جمعاني',
     'مصطفى فارس',
     'أحمد البيطار',
@@ -58,6 +84,84 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   @override
   void initState() {
     super.initState();
+    _hydrateFromCreatedData(widget.params.initialData);
+    _startTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_connectVoteRealtime());
+    });
+  }
+
+  Future<void> _connectVoteRealtime() async {
+    if (!mounted) return;
+    final voteId = widget.params.voteId;
+    final channelName = 'private-vote.$voteId';
+    _pusherVoteChannelName = channelName;
+
+    try {
+      await _pusher.init(
+        apiKey: _kVotePusherKey,
+        cluster: _kVotePusherCluster,
+        authEndpoint: '${AppConfig.baseUrl}/broadcasting/auth',
+        onAuthorizer: (channelName_, socketId, dynamic options) async {
+          try {
+            final res = await DioNetwork.dio.post<Map<String, dynamic>>(
+              '/broadcasting/auth',
+              data: <String, dynamic>{
+                'channel_name': channelName_,
+                'socket_id': socketId,
+              },
+              options: Options(
+                contentType: Headers.formUrlEncodedContentType,
+                responseType: ResponseType.json,
+              ),
+            );
+            final body = res.data;
+            if (body == null || body['auth'] == null) {
+              throw StateError('Invalid broadcasting auth response');
+            }
+            return <String, dynamic>{
+              'auth': body['auth'],
+              if (body['channel_data'] != null) 'channel_data': body['channel_data'],
+            };
+          } catch (e, st) {
+            debugPrint('Vote Pusher auth error: $e\n$st');
+            rethrow;
+          }
+        },
+        onSubscriptionError: (message, e) {
+          debugPrint('Vote Pusher subscription error: $message $e');
+        },
+        onError: (message, code, e) {
+          debugPrint('Vote Pusher error: $message code=$code $e');
+        },
+        onEvent: (PusherEvent event) {
+          if (event.eventName != 'vote.updated' || event.channelName != channelName) {
+            return;
+          }
+          _refreshVoteFromPusher();
+        },
+      );
+      if (!mounted) return;
+      await _pusher.connect();
+      if (!mounted) return;
+      await _pusher.subscribe(channelName: channelName);
+    } catch (e, st) {
+      debugPrint('Vote Pusher connect failed: $e\n$st');
+    }
+  }
+
+  void _refreshVoteFromPusher() {
+    getIt<ShowVoteUseCase>()(ShowVoteParams(voteId: widget.params.voteId)).then((Either<Failure, ShowVoteModel> result) {
+      if (!mounted) return;
+      result.fold(
+        (Failure f) => debugPrint('Vote Pusher refresh failed: ${f.message}'),
+        _hydrateFromVoteDetails,
+      );
+    });
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
@@ -74,9 +178,113 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     });
   }
 
+  void _hydrateFromCreatedData(VoteCreatedData? createdData) {
+    if (createdData == null) return;
+    final seconds = createdData.vote?.secondsRemaining;
+    if (seconds != null && seconds > 0) {
+      _remaining = Duration(seconds: seconds);
+    }
+    if (createdData.options.isNotEmpty) {
+      _options = createdData.options.map(_mapVoteOption).toList();
+    }
+    if (createdData.voters.isNotEmpty) {
+      _voters = createdData.voters
+          .map((e) => e.name?.trim() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else {
+      _voters = const <String>[];
+    }
+  }
+
+  VoteFollowupOptionData _mapVoteOption(VoteOptionModel option) {
+    final percent = (option.percent ?? 0).clamp(0, 100).toDouble();
+    final unitPrice = option.unitPrice;
+    return VoteFollowupOptionData(
+      name: option.label ?? '-',
+      size: 'افتراضي',
+      price: unitPrice == null ? '-' : '$unitPrice \$',
+      progress: percent / 100,
+      votes: option.voteCount ?? 0,
+    );
+  }
+
+  void _hydrateFromVoteDetails(ShowVoteModel? voteDetails) {
+    final rawData = voteDetails?.rawData;
+    if (rawData == null) return;
+
+    Duration? nextRemaining;
+    final seconds = _toInt(rawData['secondsRemaining']);
+    if (seconds != null && seconds > 0) {
+      nextRemaining = Duration(seconds: seconds);
+    }
+
+    List<VoteFollowupOptionData>? nextOptions;
+    if (rawData['options'] is List) {
+      final mapped = (rawData['options'] as List)
+          .whereType<Map>()
+          .map((e) => VoteOptionModel.fromJson(Map<String, dynamic>.from(e)))
+          .map(_mapVoteOption)
+          .toList();
+      if (mapped.isNotEmpty) {
+        nextOptions = mapped;
+      }
+    }
+
+    List<String>? nextVoters;
+    if (rawData['voters'] is List) {
+      nextVoters = (rawData['voters'] as List)
+          .map((e) {
+            if (e is Map) {
+              final map = Map<String, dynamic>.from(e);
+              return _toStringValue(map['name']) ??
+                  _toStringValue(map['fullName']) ??
+                  _toStringValue(map['displayName']) ??
+                  '';
+            }
+            return _toStringValue(e) ?? '';
+          })
+          .where((e) => e.trim().isNotEmpty)
+          .toList();
+    }
+
+    if (nextRemaining == null && nextOptions == null && nextVoters == null) {
+      return;
+    }
+
+    setState(() {
+      if (nextRemaining != null) {
+        _remaining = nextRemaining;
+      }
+      if (nextOptions != null) {
+        _options = nextOptions;
+      }
+      if (nextVoters != null) {
+        _voters = nextVoters;
+      }
+    });
+  }
+
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse('$value');
+  }
+
+  String? _toStringValue(dynamic value) {
+    if (value == null) return null;
+    return '$value';
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
+    final channel = _pusherVoteChannelName;
+    if (channel != null) {
+      unawaited(_pusher.unsubscribe(channelName: channel).catchError((Object _) {}));
+    }
+    unawaited(_pusher.disconnect().catchError((Object _) {}));
     super.dispose();
   }
 
@@ -108,17 +316,24 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   Widget build(BuildContext context) {
     return BlocProvider<ProfileBloc>(
       lazy: false,
-      create: (_) =>
-          getIt<ProfileBloc>()..add(ShowVoteEvent(voteId: widget.voteId)),
+      create: (_) {
+        final bloc = getIt<ProfileBloc>();
+        if (widget.params.initialData == null) {
+          bloc.add(ShowVoteEvent(voteId: widget.params.voteId));
+        }
+        return bloc;
+      },
       child: BlocListener<ProfileBloc, ProfileState>(
         listenWhen: (previous, current) =>
             previous.endVoteStatus != current.endVoteStatus ||
-            (previous.voteDetailsStatus != current.voteDetailsStatus &&
-                current.voteDetailsStatus == BlocStatus.failed),
+            previous.voteDetailsStatus != current.voteDetailsStatus,
         listener: (context, state) {
           if (state.endVoteStatus == BlocStatus.success) {
             _showWinnerDialog(state.voteDetails?.winnerLabel);
             return;
+          }
+          if (state.voteDetailsStatus == BlocStatus.success) {
+            _hydrateFromVoteDetails(state.voteDetails);
           }
           if (state.errorMessage == null || state.errorMessage!.isEmpty) {
             return;
@@ -136,31 +351,15 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                 const SizedBox(height: 20),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      0,
+                      16,
+                      24,
+                    ),
                     child: Column(
                       children: [
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: context.onPrimary,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(10),
-                                blurRadius: 14,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: AppText.displayMedium(
-                            _formattedTime,
-                            textDirection: TextDirection.ltr,
-                            textAlign: TextAlign.center,
-                            color: context.primaryContainer,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        VoteFollowupTimerBanner(formattedTime: _formattedTime),
                         const SizedBox(height: 16),
                         ExpandableNumberedSection(
                           sectionNumber: '1',
@@ -173,7 +372,10 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                           },
                           child: Column(
                             children: _options
-                                .map((option) => _VotingOptionCard(option: option))
+                                .map(
+                                  (option) =>
+                                      VoteFollowupOptionCard(option: option),
+                                )
                                 .toList()
                                 .separatedBy(const SizedBox(height: 14)),
                           ),
@@ -188,215 +390,18 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                               _isVotersExpanded = !_isVotersExpanded;
                             });
                           },
-                          child: Column(
-                            children: _voters.asMap().entries.map((entry) {
-                              final index = entry.key + 1;
-                              final name = entry.value;
-                              return Padding(
-                                padding: const EdgeInsetsDirectional.only(
-                                  bottom: 6,
-                                ),
-                                child: Align(
-                                  alignment: AlignmentDirectional.centerStart,
-                                  child: AppText.bodyMedium(
-                                    '$index- $name',
-                                    color: const Color(0xff374151),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                          child: VoteFollowupVotersList(voterNames: _voters),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: BlocBuilder<ProfileBloc, ProfileState>(
-                        buildWhen: (previous, current) =>
-                            previous.endVoteStatus != current.endVoteStatus,
-                        builder: (context, state) {
-                          final isEnding = state.endVoteStatus == BlocStatus.loading;
-                          return ElevatedButton(
-                            onPressed: isEnding
-                                ? null
-                                : () => context.read<ProfileBloc>().add(
-                                      EndVoteEvent(voteId: widget.voteId),
-                                    ),
-                            style: ElevatedButton.styleFrom(
-                              elevation: 4,
-                              shadowColor: Colors.black.withAlpha(30),
-                              minimumSize: const Size.fromHeight(42),
-                              backgroundColor: context.primary,
-                              foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: isEnding
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : AppText.labelLarge(
-                                    'إنهاء التصويت الآن',
-                                    color: context.onPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
+                VoteFollowupEndVoteBar(voteId: widget.params.voteId),
               ],
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-class _VotingOption {
-  const _VotingOption({
-    required this.name,
-    required this.size,
-    required this.price,
-    required this.progress,
-    required this.votes,
-  });
-
-  final String name;
-  final String size;
-  final String price;
-  final double progress;
-  final int votes;
-}
-
-class _VotingOptionCard extends StatelessWidget {
-  const _VotingOptionCard({required this.option});
-
-  final _VotingOption option;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.onPrimary,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xffE5E7EB)),
-      ),
-      padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsetsDirectional.only(top: 16),
-            child: Icon(Icons.radio_button_unchecked, color: Color(0xffD1D5DB)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color: const Color(0xffF3F4F6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.local_pizza_outlined,
-                        color: Color(0xffD97706),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText.bodyLarge(
-                            option.name,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xff1F2937),
-                          ),
-                          AppText.bodySmall(
-                            'الحجم: ${option.size}',
-                            color: const Color(0xff6B7280),
-                          ),
-                          AppText.bodySmall(
-                            'السعر: ${option.price}',
-                            color: const Color(0xff6B7280),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    AppText.labelLarge(
-                      '(${option.votes})',
-                      color: const Color(0xff6B7280),
-                      fontWeight: FontWeight.w700,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          value: option.progress,
-                          minHeight: 8,
-                          backgroundColor: const Color(0xffFDEDD8),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            context.primaryContainer,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    AppText.labelLarge(
-                      '${(option.progress * 100).toInt()}%',
-                      color: context.primaryContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-extension _SeparatedWidgets on List<Widget> {
-  List<Widget> separatedBy(Widget separator) {
-    if (isEmpty) {
-      return [];
-    }
-    final result = <Widget>[];
-    for (var i = 0; i < length; i++) {
-      result.add(this[i]);
-      if (i < length - 1) {
-        result.add(separator);
-      }
-    }
-    return result;
   }
 }

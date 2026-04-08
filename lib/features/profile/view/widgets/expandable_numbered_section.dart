@@ -24,7 +24,14 @@ class ExpandableNumberedSection extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         color: context.onPrimary,
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), offset: const Offset(0, 4), blurRadius: 18, spreadRadius: -2)],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            offset: const Offset(0, 4),
+            blurRadius: 18,
+            spreadRadius: -2,
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -38,14 +45,26 @@ class ExpandableNumberedSection extends StatelessWidget {
                 CircleAvatar(
                   backgroundColor: accent,
                   radius: 15,
-                  child: AppText.labelLarge(sectionNumber, color: context.onPrimary, fontWeight: FontWeight.w700),
+                  child: AppText.labelLarge(
+                    sectionNumber,
+                    color: context.onPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: AppText.titleMedium(title, color: accent, fontWeight: FontWeight.w700, textAlign: TextAlign.start),
+                  child: AppText.titleMedium(
+                    title,
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                    textAlign: TextAlign.start,
+                  ),
                 ),
                 const SizedBox(width: 10),
-                Icon(isExpanded ? Icons.expand_less : Icons.expand_more, color: const Color(0xff9CA3AF)),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: const Color(0xff9CA3AF),
+                ),
               ],
             ),
           ),

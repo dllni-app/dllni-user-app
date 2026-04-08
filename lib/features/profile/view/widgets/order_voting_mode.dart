@@ -1,0 +1,1 @@
+enum OrderVotingMode { create, existingPolls }

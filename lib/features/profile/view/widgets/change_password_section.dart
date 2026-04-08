@@ -43,7 +43,12 @@ class ChangePasswordSection extends StatelessWidget {
           obscureText: obscureCurrent,
           onChanged: (_) => onPasswordChanged?.call(),
           suffixIcon: IconButton(
-            icon: Icon(obscureCurrent ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: const Color(0xff6B7280)),
+            icon: Icon(
+              obscureCurrent
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: const Color(0xff6B7280),
+            ),
             onPressed: onToggleCurrent,
           ),
         ),
@@ -55,7 +60,12 @@ class ChangePasswordSection extends StatelessWidget {
           hasError: mismatch,
           onChanged: (_) => onPasswordChanged?.call(),
           suffixIcon: IconButton(
-            icon: Icon(obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: const Color(0xff6B7280)),
+            icon: Icon(
+              obscureNew
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: const Color(0xff6B7280),
+            ),
             onPressed: onToggleNew,
           ),
         ),
@@ -67,7 +77,12 @@ class ChangePasswordSection extends StatelessWidget {
           hasError: mismatch,
           onChanged: (_) => onPasswordChanged?.call(),
           suffixIcon: IconButton(
-            icon: Icon(obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: const Color(0xff6B7280)),
+            icon: Icon(
+              obscureConfirm
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: const Color(0xff6B7280),
+            ),
             onPressed: onToggleConfirm,
           ),
         ),
@@ -77,7 +92,13 @@ class ChangePasswordSection extends StatelessWidget {
             children: [
               Icon(Icons.info_outline, size: 18, color: context.error),
               const SizedBox(width: 6),
-              Expanded(child: AppText.bodySmall('كلمة المرور غير متطابقة', color: context.error, fontWeight: FontWeight.w500)),
+              Expanded(
+                child: AppText.bodySmall(
+                  'كلمة المرور غير متطابقة',
+                  color: context.error,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ],

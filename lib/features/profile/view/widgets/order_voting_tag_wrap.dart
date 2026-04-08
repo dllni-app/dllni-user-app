@@ -1,14 +1,14 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-class LuckyBoxNameTagsWrap extends StatelessWidget {
-  const LuckyBoxNameTagsWrap({
+class OrderVotingTagWrap extends StatelessWidget {
+  const OrderVotingTagWrap({
     super.key,
-    required this.names,
+    required this.values,
     required this.onRemoveTap,
   });
 
-  final List<String> names;
+  final List<String> values;
   final ValueChanged<String> onRemoveTap;
 
   @override
@@ -18,30 +18,29 @@ class LuckyBoxNameTagsWrap extends StatelessWidget {
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
-        children: names.map((name) {
+        children: values.map((value) {
           return Container(
-            padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 8, 4),
             decoration: BoxDecoration(
-              color: const Color(0xffF3F4F6),
+              color: const Color(0xffFFEDD5),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xffE5E7EB)),
             ),
+            padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 8, 4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 GestureDetector(
-                  onTap: () => onRemoveTap(name),
-                  child: const Icon(
-                    Icons.close_rounded,
-                    size: 14,
-                    color: Color(0xff6B7280),
+                  onTap: () => onRemoveTap(value),
+                  child: const CircleAvatar(
+                    radius: 7,
+                    backgroundColor: Color(0xff92400E),
+                    child: Icon(Icons.close, size: 10, color: Colors.white),
                   ),
                 ),
                 const SizedBox(width: 6),
                 AppText.labelLarge(
-                  name,
-                  color: const Color(0xff374151),
-                  fontWeight: FontWeight.w600,
+                  value,
+                  color: const Color(0xffB45309),
+                  fontWeight: FontWeight.w700,
                 ),
               ],
             ),

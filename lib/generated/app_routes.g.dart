@@ -1,13 +1,19 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:flutter/material.dart';
+import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
+import 'package:dllni_user_app/features/auth/view/screens/register_screen.dart';
 import 'package:dllni_user_app/features/main/view/screens/main_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/add_address_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/coupons_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/my_addresses_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/notifications_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/order_voting_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/personal_details_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/shopping_list_details_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/shopping_list_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/vote_followup_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_discover_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_details_screen.dart';
@@ -23,6 +29,16 @@ class GeneratedAppRoutes {
     final args = settings.arguments;
 
     switch (settings.name) {
+      case '/login':
+        return MaterialPageRoute(
+          builder: (_) => LoginScreen(),
+          settings: settings,
+        );
+      case '/register':
+        return MaterialPageRoute(
+          builder: (_) => RegisterScreen(),
+          settings: settings,
+        );
       case '/main':
         if (args is int?) {
           return MaterialPageRoute(
@@ -31,16 +47,32 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
+      case '/addaddress':
+        if (args is MyAddressesScreenParams) {
+          return MaterialPageRoute(
+            builder: (_) => AddAddressScreen(params: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/coupons':
+        return MaterialPageRoute(
+          builder: (_) => CouponsScreen(),
+          settings: settings,
+        );
       case '/luckyboxsetup':
         return MaterialPageRoute(
           builder: (_) => LuckyBoxSetupScreen(),
           settings: settings,
         );
       case '/luckyboxsuggestions':
-        return MaterialPageRoute(
-          builder: (_) => LuckyBoxSuggestionsScreen(),
-          settings: settings,
-        );
+        if (args is LuckyBoxSuggestionsArgs) {
+          return MaterialPageRoute(
+            builder: (_) => LuckyBoxSuggestionsScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/myaddresses':
         if (args is bool) {
           return MaterialPageRoute(
@@ -67,10 +99,20 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
+      case '/shopping_list':
+        return MaterialPageRoute(
+          builder: (_) => ShoppingListScreen(),
+          settings: settings,
+        );
+      case '/shopping_list_details':
+        return MaterialPageRoute(
+          builder: (_) => ShoppingListDetailsScreen(),
+          settings: settings,
+        );
       case '/votefollowup':
-        if (args is int) {
+        if (args is VoteFollowupScreenParams) {
           return MaterialPageRoute(
-            builder: (_) => VoteFollowupScreen(voteId: args),
+            builder: (_) => VoteFollowupScreen(params: args),
             settings: settings,
           );
         }

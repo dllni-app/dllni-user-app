@@ -4,12 +4,20 @@ import 'package:injectable/injectable.dart';
 import '../../domain/usecases/fetch_addresses_use_case.dart';
 import '../../domain/usecases/fetch_favorite_restaurants_use_case.dart';
 import '../../domain/usecases/fetch_notifications_use_case.dart';
+import '../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../domain/usecases/create_vote_use_case.dart';
+import '../../domain/usecases/create_address_use_case.dart';
 import '../../domain/usecases/show_vote_use_case.dart';
 import '../../domain/usecases/end_vote_use_case.dart';
+import '../../domain/usecases/fetch_active_votes_use_case.dart';
 import '../../domain/usecases/add_favorite_restaurant_use_case.dart';
 import '../../domain/usecases/remove_favorite_restaurant_use_case.dart';
 import '../../domain/usecases/set_default_address_use_case.dart';
+import '../../domain/usecases/update_address_use_case.dart';
+import '../../domain/usecases/delete_address_use_case.dart';
+import '../../domain/usecases/update_account_use_case.dart';
+import '../../domain/usecases/update_account_password_use_case.dart';
+import '../models/luck_box_api_models.dart';
 import '../models/profile_api_models.dart';
 import '../source/profile_remote_data_source.dart';
 import '../../domain/models/personal_details_update_input.dart';
@@ -36,6 +44,13 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   ) {
     return wrapHandlingException(
       tryCall: () => profileRemoteDataSource.fetchAddresses(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchCouponsModel> fetchCoupons(NoParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.fetchCoupons(params),
     );
   }
 
@@ -83,6 +98,36 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   }
 
   @override
+  DataResponse<VoteSuggestionsModel> fetchVoteSuggestions(
+    FetchVoteSuggestionsParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.fetchVoteSuggestions(params),
+    );
+  }
+
+  @override
+  DataResponse<ActionResultModel> createAddress(CreateAddressParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.createAddress(params),
+    );
+  }
+
+  @override
+  DataResponse<ActionResultModel> updateAddress(UpdateAddressParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.updateAddress(params),
+    );
+  }
+
+  @override
+  DataResponse<ActionResultModel> deleteAddress(DeleteAddressParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.deleteAddress(params),
+    );
+  }
+
+  @override
   DataResponse<ShowVoteModel> showVote(ShowVoteParams params) {
     return wrapHandlingException(
       tryCall: () => profileRemoteDataSource.showVote(params),
@@ -93,6 +138,47 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   DataResponse<ActionResultModel> endVote(EndVoteParams params) {
     return wrapHandlingException(
       tryCall: () => profileRemoteDataSource.endVote(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchActiveVotesModel> fetchActiveVotes(
+    FetchActiveVotesParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.fetchActiveVotes(params),
+    );
+  }
+
+  @override
+  DataResponse<LuckBoxOptionsModel> fetchLuckBoxOptions() {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.fetchLuckBoxOptions(),
+    );
+  }
+
+  @override
+  DataResponse<LuckBoxSuggestResponseModel> suggestLuckBox(
+    SuggestLuckBoxParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.suggestLuckBox(params),
+    );
+  }
+
+  @override
+  DataResponse<UpdateAccountModel> updateAccount(UpdateAccountParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.updateAccount(params),
+    );
+  }
+
+  @override
+  DataResponse<ActionResultModel> updateAccountPassword(
+    UpdateAccountPasswordParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.updateAccountPassword(params),
     );
   }
 

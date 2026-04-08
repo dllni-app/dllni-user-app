@@ -39,6 +39,7 @@ class AssetGenImage {
 
   final String _assetName;
 
+
   final Size? size;
   final Set<String> flavors;
 
@@ -95,12 +96,25 @@ class AssetGenImage {
     );
   }
 
-  ImageProvider provider({AssetBundle? bundle, String? package}) {
-    return AssetImage(_assetName, bundle: bundle, package: package);
+  ImageProvider provider({
+    AssetBundle? bundle,
+    String? package,
+  }) {
+    return AssetImage(
+      _assetName,
+      bundle: bundle,
+      package: package,
+    );
   }
 
-  Widget custom({Key? key, required Widget Function(BuildContext context, String assetPath) builder}) {
-    return Builder(key: key, builder: (context) => builder(context, _assetName));
+  Widget custom({
+    Key? key,
+    required Widget Function(BuildContext context, String assetPath) builder,
+  }) {
+    return Builder(
+      key: key,
+      builder: (context) => builder(context, _assetName),
+    );
   }
 
   String get path => _assetName;
@@ -154,11 +168,18 @@ class SvgGenImage {
     );
   }
 
-  Widget custom({Key? key, required Widget Function(BuildContext context, String assetPath) builder}) {
-    return Builder(key: key, builder: (context) => builder(context, _assetName));
+  Widget custom({
+    Key? key,
+    required Widget Function(BuildContext context, String assetPath) builder,
+  }) {
+    return Builder(
+      key: key,
+      builder: (context) => builder(context, _assetName),
+    );
   }
 
   String get path => _assetName;
 
   String get keyName => _assetName;
 }
+

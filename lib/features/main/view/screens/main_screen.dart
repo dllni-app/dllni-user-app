@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/features/profile/view/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../../home/view/screens/home_screen.dart';
@@ -32,7 +33,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: TabBarView(controller: controller, physics: NeverScrollableScrollPhysics(), children: [HomeScreen(), OrdersScreen(), HomeScreen()]),
+        child: TabBarView(controller: controller, physics: NeverScrollableScrollPhysics(), children: [HomeScreen(), OrdersScreen(), ProfileScreen()]),
       ),
       bottomNavigationBar: BottomNavBar(controller: controller),
     );

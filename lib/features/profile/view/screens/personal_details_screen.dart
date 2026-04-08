@@ -2,6 +2,9 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/features/profile/domain/usecases/update_account_password_use_case.dart';
+import 'package:dllni_user_app/features/profile/domain/usecases/update_account_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:toastification/toastification.dart';
@@ -38,8 +41,7 @@ class PersonalDetailsScreen extends StatefulWidget {
   final PersonalDetailsParams params;
 
   @override
-  State<PersonalDetailsScreen> createState() =>
-      _PersonalDetailsScreenState();
+  State<PersonalDetailsScreen> createState() => _PersonalDetailsScreenState();
 }
 
 class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
@@ -135,6 +137,79 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     }
   }
 
+  bool get _hasPasswordChangeRequest {
+    return _currentPasswordController.text.trim().isNotEmpty ||
+        _newPasswordController.text.trim().isNotEmpty ||
+        _confirmPasswordController.text.trim().isNotEmpty;
+  }
+
+  Future<void> _saveChanges() async {
+    _syncPasswordMismatch();
+    if (!_formKey.currentState!.validate()) return;
+    if (!_validatePasswordSection()) return;
+
+    setState(() => isSaving = true);
+
+    String? failureMessage;
+    String? successMessage;
+
+    final accountRes = await getIt<UpdateAccountUseCase>()(
+      UpdateAccountParams(
+        name: _nameController.text.trim(),
+        phone: '$_dialCode${_phoneLocalController.text.trim()}',
+        primaryImage: _selectedImage,
+      ),
+    );
+
+    await accountRes.fold(
+      (failure) async {
+        failureMessage = failure.message;
+      },
+      (account) async {
+        successMessage = account.user?.name == null
+            ? 'تم تحديث البيانات الشخصية بنجاح'
+            : 'تم تحديث بيانات ${account.user!.name} بنجاح';
+      },
+    );
+
+    if (failureMessage == null && _hasPasswordChangeRequest) {
+      final passRes = await getIt<UpdateAccountPasswordUseCase>()(
+        UpdateAccountPasswordParams(
+          currentPassword: _currentPasswordController.text.trim(),
+          newPassword: _newPasswordController.text.trim(),
+          newPasswordConfirmation: _confirmPasswordController.text.trim(),
+        ),
+      );
+      await passRes.fold(
+        (failure) async {
+          failureMessage = failure.message;
+        },
+        (result) async {
+          successMessage = result.message ?? 'تم تحديث كلمة المرور بنجاح';
+        },
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => isSaving = false);
+
+    if (failureMessage != null && failureMessage!.isNotEmpty) {
+      AppToast.showToast(
+        context: context,
+        message: failureMessage!,
+        type: ToastificationType.error,
+      );
+      return;
+    }
+
+    AppToast.showToast(
+      context: context,
+      message: successMessage ?? 'تم حفظ التغييرات بنجاح',
+      type: ToastificationType.success,
+    );
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final accent = context.primaryContainer;
@@ -218,11 +293,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       const SizedBox(height: 32),
                       PersonalDetailsFooter(
                         isSaving: isSaving,
-                        onSave: () {
-                          _syncPasswordMismatch();
-                          if (!_formKey.currentState!.validate()) return;
-                          if (!_validatePasswordSection()) return;
-                        },
+                        onSave: _saveChanges,
                         onCancel: () => context.pop(),
                       ),
                     ],

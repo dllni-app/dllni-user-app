@@ -26,7 +26,10 @@ class SectionCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: containerColor),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: containerColor,
+            ),
             padding: EdgeInsetsDirectional.all(13),
             child: image,
           ),
@@ -36,7 +39,12 @@ class SectionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.bodyMedium(title, fontWeight: FontWeight.bold),
-                AppText.labelLarge(subtitle, fontWeight: FontWeight.w400, color: Color(0xff6B7280)),
+                AppText.labelLarge(
+                  subtitle,
+                  textAlign: TextAlign.start,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xff6B7280),
+                ),
               ],
             ),
           ),
