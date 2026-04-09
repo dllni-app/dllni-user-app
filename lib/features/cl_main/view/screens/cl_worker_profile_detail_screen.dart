@@ -15,7 +15,25 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = WorkerProfileMockData.getById(args.workerId);
+    final apiWorker = args.worker;
+    final profile = apiWorker == null
+        ? WorkerProfileMockData.getById(args.workerId)
+        : WorkerProfileData(
+            id: (apiWorker.id ?? 0).toString(),
+            name: apiWorker.name ?? 'عامل خدمة',
+            verified: (apiWorker.badges ?? const []).contains('verified'),
+            avatarColor: const Color(0xFFE2E8F0),
+            badgeValue: (apiWorker.rating ?? 0).toStringAsFixed(1),
+            completedTasksText:
+                'أكمل مقدم الخدمة ${apiWorker.completedJobs ?? 0} من أصل ${apiWorker.totalJobs ?? 0} مهمة',
+            aboutText: 'مقدم خدمة نظافة مع سجل خدمات سابقة وتقييمات إيجابية من العملاء.',
+            ratingSummary: WorkerRatingSummary(
+              average: apiWorker.rating ?? 0,
+              totalReviews: apiWorker.totalJobs ?? 0,
+              starCounts: const <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
+            ),
+            reviews: const [],
+          );
     final previewReviews = profile.reviews.take(10).toList();
 
     return Scaffold(

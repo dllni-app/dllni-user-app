@@ -1,18 +1,26 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../data/cl_main_route_args.dart';
+
 class ClPropertyTypeCardWidget extends StatelessWidget {
-  const ClPropertyTypeCardWidget({required this.title, required this.icon, super.key});
+  const ClPropertyTypeCardWidget({
+    required this.title,
+    required this.icon,
+    required this.args,
+    super.key,
+  });
 
   final String title;
   final String icon;
+  final ClMainHomeDescriptionArgs args;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: (){
-        context.pushRoute('/clmainhomedescription');
+        context.pushRoute('/clmainhomedescription', arguments: args);
       },
       child: Container(
         decoration: BoxDecoration(

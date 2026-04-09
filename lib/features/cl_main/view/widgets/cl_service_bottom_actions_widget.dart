@@ -9,7 +9,7 @@ class ClServiceBottomActionsWidget extends StatelessWidget {
   });
 
   final VoidCallback onBackPressed;
-  final VoidCallback onSubmitPressed;
+  final VoidCallback? onSubmitPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,9 @@ class ClServiceBottomActionsWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF11B9C8),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               child: AppText.headlineSmall(
@@ -43,7 +45,9 @@ class ClServiceBottomActionsWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFA8ABC9),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               child: AppText.headlineSmall(

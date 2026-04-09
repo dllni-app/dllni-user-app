@@ -8,7 +8,7 @@ class ClMainContinueButtonWidget extends StatelessWidget {
     super.key,
   });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String label;
 
   @override
@@ -24,7 +24,11 @@ class ClMainContinueButtonWidget extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           elevation: 0,
         ),
-        child: AppText.bodyMedium(label, fontWeight: FontWeight.w700, color: Colors.white),
+        child: AppText.bodyMedium(
+          label,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
       ),
     );
   }

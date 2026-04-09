@@ -2,7 +2,24 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class ClServiceOrderSummarySectionWidget extends StatelessWidget {
-  const ClServiceOrderSummarySectionWidget({super.key});
+  const ClServiceOrderSummarySectionWidget({
+    required this.basePrice,
+    required this.travelFee,
+    required this.addonsTotal,
+    required this.totalPrice,
+    required this.currency,
+    super.key,
+  });
+
+  final double basePrice;
+  final double travelFee;
+  final double addonsTotal;
+  final double totalPrice;
+  final String currency;
+
+  String _formatMoney(double amount) {
+    return '${amount.toStringAsFixed(0)} $currency';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,13 +36,15 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
         children: [
           AppText.bodyLarge('ملخص الطلب', color: const Color(0xFF1E2A78), fontWeight: FontWeight.w700, textAlign: TextAlign.right),
           const SizedBox(height: 14),
-          const _SummaryRowWidget(label: 'قيمة الخدمة', value: '1000 ل.س'),
+          _SummaryRowWidget(label: 'قيمة الخدمة', value: _formatMoney(basePrice)),
           const SizedBox(height: 8),
-          const _SummaryRowWidget(label: 'رسوم إضافية', value: '200 ل.س'),
+          _SummaryRowWidget(label: 'رسوم التنقل', value: _formatMoney(travelFee)),
+          const SizedBox(height: 8),
+          _SummaryRowWidget(label: 'الإضافات', value: _formatMoney(addonsTotal)),
           const SizedBox(height: 10),
           const Divider(color: Color(0xFFE5E7EB), thickness: 1),
           const SizedBox(height: 8),
-          const _SummaryRowWidget(label: 'الإجمالي', value: '1200 ل.س', isTotal: true),
+          _SummaryRowWidget(label: 'الإجمالي', value: _formatMoney(totalPrice), isTotal: true),
         ],
       ),
     );
