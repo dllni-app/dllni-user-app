@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/features/home/view/widgets/home_app_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../generated/assets.dart';
@@ -8,78 +9,80 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    List<String> titles = ['مطاعم', 'تنظيف', 'تسوق'];
+    List<String> screens = ['restaurants', 'cleaning', 'shopping'];
+
+    return Column(
+      children: [
+        HomeAppBar(),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsetsDirectional.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 24),
+                Row(
                   children: [
-                    AppText.labelLarge('مرحباً بعودتك 👋', color: Color(0xff6B7280), textAlign: TextAlign.start),
-                    AppText.titleMedium('أحمد محمد', color: Color(0xff1E2A78), textAlign: TextAlign.start, fontWeight: FontWeight.bold),
+                    SizedBox(
+                      height: 20,
+                      child: VerticalDivider(color: context.primaryContainer, thickness: 4, radius: BorderRadius.circular(9999)),
+                    ),
+                    SizedBox(width: 8),
+                    AppText.titleMedium('الخدمات', fontWeight: FontWeight.bold, color: Color(0xff212C7E)),
                   ],
                 ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Color(0xffF9FAFB),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: Color(0xffF3F4F6), width: 1),
-                ),
-                padding: EdgeInsetsDirectional.all(10),
-                child: Icon(Icons.notifications_outlined, color: Color(0xff1A1A1A)),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Divider(color: Colors.black.withAlpha(51), thickness: 1),
-          SizedBox(height: 70),
-          AppText.titleLarge('ما الذي يمكننا مساعدتك به اليوم ؟', color: Color(0xff1E2A7B), fontWeight: FontWeight.w600),
-          SizedBox(height: 8),
-          AppText.bodyMedium('حدد نوع الخدمة التي تريدها', fontWeight: FontWeight.w500),
-          Divider(color: Colors.black.withAlpha(51), thickness: 1),
-          SizedBox(height: 16),
-          Column(
-            spacing: 20,
-            children: List.generate(
-              2,
-              (i) => InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: (){
-                  context.pushRoute('/rsmain');
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    image: DecorationImage(image: AssetImage(Assets.images.cleaningBanner.path)),
+                SizedBox(height: 16),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: 14,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: .8,
                   ),
-                  width: context.width,
-                  height: 200,
-                  padding: EdgeInsetsDirectional.symmetric(vertical: 12, horizontal: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  itemBuilder: (context, index) => Column(
                     children: [
                       Container(
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                        padding: EdgeInsetsDirectional.symmetric(vertical: 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [AppText.labelLarge(i == 0 ? 'تنظيف' : 'مطاعم', fontWeight: FontWeight.w600)],
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: context.onPrimary,
+                          borderRadius: BorderRadius.circular(24),
+                          image: DecorationImage(image: AssetImage(Assets.images.test.path), fit: BoxFit.cover),
                         ),
                       ),
+                      SizedBox(height: 8),
+                      AppText.labelLarge(titles[index % 3], color: Color(0xff6B7280), fontWeight: FontWeight.w500),
                     ],
                   ),
                 ),
-              ),
+                SizedBox(height: 32),
+                Row(
+                  children: [
+                    SizedBox(
+                      height: 20,
+                      child: VerticalDivider(color: context.primaryContainer, thickness: 4, radius: BorderRadius.circular(9999)),
+                    ),
+                    SizedBox(width: 8),
+                    AppText.titleMedium('عروض مميزة لك', fontWeight: FontWeight.bold, color: Color(0xff212C7E)),
+                  ],
+                ),
+                SizedBox(height: 4),
+                AppText.bodyMedium(
+                  'اكتشف أفضل العروض والخدمات المختارة \nخصيصا لك، بتجربة سريعة وسهلة بضغطة واحدة',
+                  color: Color(0xff6B7280),
+                  textAlign: TextAlign.start,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: 16),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

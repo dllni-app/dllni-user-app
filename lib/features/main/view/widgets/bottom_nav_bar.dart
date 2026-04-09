@@ -26,7 +26,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
         boxShadow: [BoxShadow(color: Colors.black.withAlpha(27), offset: Offset(0, -2), blurRadius: 12, spreadRadius: 0)],
       ),
       width: context.width,
-      height: 65,
+      height: 70,
       child: Row(
         children: List.generate(
           titles.length,
