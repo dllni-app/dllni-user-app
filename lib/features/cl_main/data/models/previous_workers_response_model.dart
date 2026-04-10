@@ -22,18 +22,32 @@ class PreviousWorkersResponseModel {
   });
 
   factory PreviousWorkersResponseModel.fromJson(Map<String, dynamic> json) {
+    final payload = _extractPayload(json);
     return PreviousWorkersResponseModel(
-      data: (json['data'] as List?)
-          ?.whereType<Map<String, dynamic>>()
-          .map(PreviousWorkerModel.fromJson)
-          .toList(),
-      links: json['links'] is Map<String, dynamic>
-          ? PreviousWorkersLinksModel.fromJson(json['links'] as Map<String, dynamic>)
+      data: _extractWorkers(payload),
+      links: payload['links'] is Map<String, dynamic>
+          ? PreviousWorkersLinksModel.fromJson(payload['links'] as Map<String, dynamic>)
           : null,
-      meta: json['meta'] is Map<String, dynamic>
-          ? PreviousWorkersMetaModel.fromJson(json['meta'] as Map<String, dynamic>)
+      meta: payload['meta'] is Map<String, dynamic>
+          ? PreviousWorkersMetaModel.fromJson(payload['meta'] as Map<String, dynamic>)
           : null,
     );
+  }
+
+  static Map<String, dynamic> _extractPayload(Map<String, dynamic> json) {
+    final dataNode = json['data'];
+    if (dataNode is Map<String, dynamic>) {
+      return dataNode;
+    }
+    return json;
+  }
+
+  static List<PreviousWorkerModel>? _extractWorkers(Map<String, dynamic> payload) {
+    final dynamic workersNode = payload['data'] ?? payload['workers'] ?? payload['items'];
+    if (workersNode is List) {
+      return workersNode.whereType<Map<String, dynamic>>().map(PreviousWorkerModel.fromJson).toList();
+    }
+    return null;
   }
 }
 
@@ -65,14 +79,14 @@ class PreviousWorkerModel {
   factory PreviousWorkerModel.fromJson(Map<String, dynamic> json) {
     return PreviousWorkerModel(
       id: (json['id'] as num?)?.toInt(),
-      name: json['name'] as String?,
+      name: json['name'] as String? ?? json['full_name'] as String? ?? json['worker_name'] as String?,
       phone: json['phone'] as String?,
       rating: (json['rating'] as num?)?.toDouble(),
-      totalJobs: (json['totalJobs'] as num?)?.toInt(),
-      completedJobs: (json['completedJobs'] as num?)?.toInt(),
-      isFavorited: json['isFavorited'] as bool?,
-      lastServiceDate: json['lastServiceDate'] as String?,
-      profileImage: json['profileImage'] as String?,
+      totalJobs: (json['totalJobs'] as num?)?.toInt() ?? (json['total_jobs'] as num?)?.toInt(),
+      completedJobs: (json['completedJobs'] as num?)?.toInt() ?? (json['completed_jobs'] as num?)?.toInt(),
+      isFavorited: json['isFavorited'] as bool? ?? json['is_favorited'] as bool?,
+      lastServiceDate: json['lastServiceDate'] as String? ?? json['last_service_date'] as String?,
+      profileImage: json['profileImage'] as String? ?? json['profile_image'] as String?,
       badges: (json['badges'] as List?)?.whereType<String>().toList(),
     );
   }

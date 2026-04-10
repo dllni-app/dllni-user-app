@@ -22,12 +22,7 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
   final ValueChanged<PreviousWorkerModel> onOpenWorkerProfile;
 
   Color _avatarColor(int index) {
-    const colors = <Color>[
-      Color(0xFFF4D9E2),
-      Color(0xFFD8F3F2),
-      Color(0xFFD4EDEA),
-      Color(0xFFF6E8DE),
-    ];
+    const colors = <Color>[Color(0xFFF4D9E2), Color(0xFFD8F3F2), Color(0xFFD4EDEA), Color(0xFFF6E8DE)];
     return colors[index % colors.length];
   }
 
@@ -53,17 +48,9 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (errorMessage != null && errorMessage!.isNotEmpty)
-            AppText.bodySmall(
-              errorMessage!,
-              color: Colors.redAccent,
-              textAlign: TextAlign.right,
-            )
+            AppText.bodySmall(errorMessage!, color: Colors.redAccent, textAlign: TextAlign.right)
           else if (visibleWorkers.isEmpty)
-            AppText.bodySmall(
-              'لا يوجد عمال سابقون حالياً',
-              color: const Color(0xFF6B7280),
-              textAlign: TextAlign.right,
-            )
+            AppText.bodySmall('لا يوجد عمال سابقون حالياً', color: const Color(0xFF6B7280), textAlign: TextAlign.right)
           else
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -84,11 +71,8 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
                             CircleAvatar(
                               radius: 24,
                               backgroundColor: _avatarColor(entry.key),
-                              child: Icon(
-                                selectedWorkerId == entry.value.id ? Icons.check : Icons.person,
-                                size: 24,
-                                color: const Color(0xFF4B5563),
-                              ),
+                              backgroundImage: entry.value.profileImage == null ? null : NetworkImage(entry.value.profileImage!),
+                              child: entry.value.profileImage != null ? null :  Icon(selectedWorkerId == entry.value.id ? Icons.check : Icons.person, size: 24, color: const Color(0xFF4B5563)),
                             ),
                             const SizedBox(height: 6),
                             AppText.bodySmall(

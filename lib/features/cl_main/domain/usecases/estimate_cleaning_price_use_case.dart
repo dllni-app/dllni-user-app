@@ -40,12 +40,12 @@ class EstimateCleaningPriceParams with Params {
   @override
   BodyMap getBody() {
     return {
-      'propertyType': propertyType,
+      'propertyType': 'apartment',
       'propertyDetails': {
         'bedrooms': bedrooms,
         'rooms': rooms,
         'bathrooms': bathrooms,
-        'living_room_size': livingRoomSize,
+        'living_room_size': 'medium',
       },
       'addressLatitude': addressLatitude,
       'addressLongitude': addressLongitude,

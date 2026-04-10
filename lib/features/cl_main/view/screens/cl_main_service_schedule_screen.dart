@@ -23,12 +23,10 @@ class ClMainServiceScheduleScreen extends StatefulWidget {
   const ClMainServiceScheduleScreen({super.key});
 
   @override
-  State<ClMainServiceScheduleScreen> createState() =>
-      _ClMainServiceScheduleScreenState();
+  State<ClMainServiceScheduleScreen> createState() => _ClMainServiceScheduleScreenState();
 }
 
-class _ClMainServiceScheduleScreenState
-    extends State<ClMainServiceScheduleScreen> {
+class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScreen> {
   ClMainBloc? _bloc;
   late DateTime _selectedDate;
   late TextEditingController _fromTimeController;
@@ -54,11 +52,7 @@ class _ClMainServiceScheduleScreenState
       _routeArgs = args;
       _bloc = args.bloc;
     }
-    _bloc?.add(
-      GetPreviousCleaningWorkersEvent(
-        params: GetPreviousCleaningWorkersParams(page: 1),
-      ),
-    );
+    _bloc?.add(GetPreviousCleaningWorkersEvent(params: GetPreviousCleaningWorkersParams(page: 1)));
   }
 
   @override
@@ -96,23 +90,17 @@ class _ClMainServiceScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
       return;
     }
     if (bloc == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر تهيئة حالة الطلب')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تهيئة حالة الطلب')));
       return;
     }
 
     final quoteId = args.estimate.quote?.quoteId;
     if (quoteId == null || quoteId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر إرسال الطلب بدون رقم عرض السعر')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر إرسال الطلب بدون رقم عرض السعر')));
       return;
     }
 
@@ -156,28 +144,19 @@ class _ClMainServiceScheduleScreenState
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus ||
-            previous.previousWorkersStatus != current.previousWorkersStatus,
+            previous.createOrderStatus != current.createOrderStatus || previous.previousWorkersStatus != current.previousWorkersStatus,
         listener: (context, state) {
-          if (state.createOrderStatus == BlocStatus.loading ||
-              state.previousWorkersStatus == BlocStatus.loading) {
+          if (state.createOrderStatus == BlocStatus.loading || state.previousWorkersStatus == BlocStatus.loading) {
             Loading.show(context);
             return;
           }
-
           Loading.close();
-
           if (state.createOrderStatus == BlocStatus.success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الطلب بنجاح')));
             bloc.add(ResetCreateOrderStatusEvent());
-          } else if (state.createOrderStatus == BlocStatus.failed ||
-              state.previousWorkersStatus == BlocStatus.failed) {
-            ToastComponent.showToast(
-              context,
-              msg: state.errorMessage ?? 'فشل تنفيذ الطلب',
-            );
+            context.pushRoute('/clmain');
+          } else if (state.createOrderStatus == BlocStatus.failed || state.previousWorkersStatus == BlocStatus.failed) {
+            ToastComponent.showToast(context, msg: state.errorMessage ?? 'فشل تنفيذ الطلب');
           }
         },
         builder: (context, state) {
@@ -190,10 +169,7 @@ class _ClMainServiceScheduleScreenState
                   const SizedBox(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.only(
-                        start: 20,
-                        end: 20,
-                      ),
+                      padding: const EdgeInsetsDirectional.only(start: 20, end: 20),
                       child: Column(
                         children: [
                           ClServiceGradientInfoCardWidget(
@@ -216,24 +192,13 @@ class _ClMainServiceScheduleScreenState
                           ClServicePreviousWorkersSectionWidget(
                             workers: state.previousWorkers?.data ?? const [],
                             selectedWorkerId: state.selectedWorkerId,
-                            isLoading: false,
-                            errorMessage:
-                                state.previousWorkersStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
+                            isLoading: state.previousWorkersStatus == BlocStatus.loading,
+                            errorMessage: state.previousWorkersStatus == BlocStatus.failed ? state.errorMessage : null,
                             onSelectWorker: (workerId) {
-                              bloc.add(
-                                SetPreferredWorkerEvent(workerId: workerId),
-                              );
+                              bloc.add(SetPreferredWorkerEvent(workerId: workerId));
                             },
                             onOpenWorkerProfile: (worker) {
-                              context.pushRoute(
-                                '/clworkerprofiledetail',
-                                arguments:
-                                    WorkerProfileRouteArgs.fromPreviousWorker(
-                                      worker,
-                                    ),
-                              );
+                              context.pushRoute('/clworkerprofiledetail', arguments: WorkerProfileRouteArgs.fromPreviousWorker(worker));
                             },
                           ),
                           const SizedBox(height: 12),
@@ -250,14 +215,8 @@ class _ClMainServiceScheduleScreenState
                   ),
                   Container(
                     color: const Color(0xFFF2F2F2),
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 20,
-                      vertical: 20,
-                    ),
-                    child: ClServiceBottomActionsWidget(
-                      onBackPressed: () => context.pop(),
-                      onSubmitPressed: () => _onSubmitPressed(state),
-                    ),
+                    padding: const EdgeInsetsDirectional.symmetric(horizontal: 20, vertical: 20),
+                    child: ClServiceBottomActionsWidget(onBackPressed: () => context.pop(), onSubmitPressed: () => _onSubmitPressed(state)),
                   ),
                 ],
               ),
