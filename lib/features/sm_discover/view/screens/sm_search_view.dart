@@ -3,6 +3,8 @@ import 'package:dllni_user_app/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -30,6 +32,11 @@ class _SmSearchViewState extends State<SmSearchView> {
   late List<String> searchHistory;
   late TextEditingController searchController;
   bool isSearching = false;
+
+  late SpeechToText speechToText;
+  bool isListening = false;
+  String recognizedText = '';
+  double soundLevel = 0.0;
   @override
   void initState() {
     searchController = TextEditingController();
@@ -77,7 +84,8 @@ class _SmSearchViewState extends State<SmSearchView> {
                   hintText: widget.type == SearchType.product
                       ? "ابحث عن منتج..."
                       : "ابحث عن متجر...",
-                  onVoiceTap: () {},
+                  onVoiceTap: isListening ? _stopListening : _startListening,
+                  isListening: isListening,
                   onSearch: (search) {
                     if (search.trim().isEmpty) return;
                     search = search.trim();
@@ -313,6 +321,101 @@ class _SmSearchViewState extends State<SmSearchView> {
     }
     searchController.text = search;
     setState(() {});
+  }
+
+  void _startListening() async {
+    PermissionStatus status = await Permission.microphone.status;
+    print("status: $status");
+    if (status.isDenied) {
+      status = await Permission.microphone.request();
+    }
+    print("status: $status");
+
+    if (!status.isGranted) {
+      _showPermissionDialog();
+      return;
+    }
+    print("status: $status");
+    setState(() {
+      searchController.clear();
+      isListening = true;
+    });
+    print("status: $status");
+    bool available = await speechToText.initialize(
+      onStatus: (status) {
+        if (status == 'done') {
+          setState(() {
+            isListening = false;
+            soundLevel = 0.0;
+          });
+        }
+      },
+      onError: (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('لم يتم التقاط أي صوت، يرجى التحدث بوضوح.'),
+          ),
+        );
+      },
+    );
+    print("status: $status");
+    if (!available) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الميكروفون أو التعرف الصوتي غير متاح')),
+      );
+      return;
+    }
+    print("status: $status");
+    speechToText.listen(
+      onResult: (result) =>
+          setState(() => searchController.text = result.recognizedWords),
+      onSoundLevelChange: (level) => setState(() => soundLevel = level),
+      localeId: 'ar_SA',
+    );
+    print("status: $status");
+  }
+
+  void _stopListening() async {
+    await speechToText.stop();
+    setState(() {
+      isListening = false;
+      soundLevel = 0.0;
+    });
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey.shade900,
+          title: const Text(
+            "إذن الميكروفون مطلوب",
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            "يجب تفعيل إذن الميكروفون للتمكن من التسجيل الصوتي.",
+            style: TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("إلغاء", style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () {
+                openAppSettings();
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "فتح الإعدادات",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

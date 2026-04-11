@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../themes/app_colors.dart';
+
 class SearchFieldWithVoice extends StatelessWidget {
   const SearchFieldWithVoice({
     super.key,
@@ -10,6 +12,7 @@ class SearchFieldWithVoice extends StatelessWidget {
     this.controller,
     this.backgroundColor = const Color(0xFFF9FAFB),
     this.hintText,
+    this.isListening = false,
   });
   final void Function(String search) onSearch;
   final void Function() onVoiceTap;
@@ -17,7 +20,7 @@ class SearchFieldWithVoice extends StatelessWidget {
   final void Function()? onTap;
   final TextEditingController? controller;
   final String? hintText;
-
+  final bool isListening;
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -62,13 +65,15 @@ class SearchFieldWithVoice extends StatelessWidget {
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: Color(0x1A1E2A78),
+                color: isListening
+                    ? Colors.red.withValues(alpha: 0.1)
+                    : AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.all(Radius.circular(8)),
               ),
               child: FaIcon(
                 FontAwesomeIcons.microphone,
                 size: 14,
-                color: Color(0xFF1E2A78),
+                color: isListening ? Colors.red : AppColors.primary,
               ),
             ),
           ),
