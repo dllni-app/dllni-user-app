@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:tab_indicator_styler/tab_indicator_styler.dart';
 
 class CategoriesTabBar extends StatefulWidget {
-  const CategoriesTabBar({super.key});
+  const CategoriesTabBar({
+    super.key,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
 
   @override
   State<CategoriesTabBar> createState() => _CategoriesTabBarState();
@@ -12,14 +19,21 @@ class CategoriesTabBar extends StatefulWidget {
 class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProviderStateMixin {
   late TabController _tabController1;
 
-  int selectedIndex = 0;
-
   List<String> titles = ['المتاجر', 'المطاعم', 'التنظيفات'];
 
   @override
   void initState() {
     _tabController1 = TabController(length: titles.length, vsync: this);
+    _tabController1.index = widget.selectedIndex;
     super.initState();
+  }
+
+  @override
+  void didUpdateWidget(covariant CategoriesTabBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_tabController1.index != widget.selectedIndex) {
+      _tabController1.index = widget.selectedIndex;
+    }
   }
 
   @override
@@ -33,9 +47,7 @@ class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProvider
     return TabBar(
       isScrollable: true,
       onTap: (i) {
-        setState(() {
-          selectedIndex = i;
-        });
+        widget.onChanged(i);
       },
       physics: const BouncingScrollPhysics(),
       dividerHeight: .2,
@@ -54,7 +66,7 @@ class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProvider
             softWrap: true,
             overflow: TextOverflow.fade,
             textAlign: TextAlign.center,
-            color: i == selectedIndex ? Color(0xff1E2A78) : null,
+            color: i == widget.selectedIndex ? Color(0xff1E2A78) : null,
           ),
         ),
       ),

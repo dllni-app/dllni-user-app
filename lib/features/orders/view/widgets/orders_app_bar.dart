@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'orders_filter_tap_bar.dart';
 
 class OrdersAppBar extends StatelessWidget {
-  const OrdersAppBar({super.key});
+  const OrdersAppBar({super.key, required this.selectedIndex, required this.onChanged});
+
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +19,10 @@ class OrdersAppBar extends StatelessWidget {
       width: context.width,
       child: Column(
         children: [
-          SizedBox(height: 20,),
+          SizedBox(height: 20),
           AppText.titleLarge('طلباتي', fontWeight: FontWeight.bold, color: Color(0xff1E2A78)),
           SizedBox(height: 25),
-          CategoriesTabBar(),
+          CategoriesTabBar(selectedIndex: selectedIndex, onChanged: onChanged),
         ],
       ),
     );

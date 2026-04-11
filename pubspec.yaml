@@ -25,7 +25,6 @@ dependencies:
   firebase_messaging: ^16.1.1
   awesome_notifications: ^0.11.0
   flutter_svg: ^2.0.10
-  injectable_generator: ^2.12.1
   flutter_animate: ^4.5.2
   image_picker: ^1.2.1
   toastification: ^3.0.3
@@ -35,12 +34,13 @@ dependencies:
   pusher_channels_flutter: ^2.4.0
   dartz: ^0.10.1
   geolocator: ^13.0.2
+  flutter_cube_transition: ^1.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
   build_runner: ^2.7.1
   injectable_generator: ^2.12.1

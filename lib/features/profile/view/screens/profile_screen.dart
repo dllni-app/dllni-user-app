@@ -166,7 +166,7 @@ class ProfileScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: Color(0xffEF4444).withAlpha(52)),
                       ),
-                      padding: EdgeInsetsDirectional.symmetric(vertical: 16),
+                      padding: EdgeInsetsDirectional.symmetric(vertical: 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/register_screen.dart';
 import 'package:dllni_user_app/features/main/view/screens/main_screen.dart';
+import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_fulfillment_screen.dart';
+import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/add_address_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/coupons_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
@@ -43,6 +45,22 @@ class GeneratedAppRoutes {
         if (args is int?) {
           return MaterialPageRoute(
             builder: (_) => MainScreen(returnedIndex: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/restaurant-order-fulfillment':
+        if (args is RestaurantOrderFulfillmentArgs) {
+          return MaterialPageRoute(
+            builder: (_) => RestaurantOrderFulfillmentScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/restaurant-order-tracking':
+        if (args is RestaurantOrderTrackingArgs) {
+          return MaterialPageRoute(
+            builder: (_) => RestaurantOrderTrackingScreen(args: args),
             settings: settings,
           );
         }
@@ -99,14 +117,14 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
-      case '/shopping_list':
-        return MaterialPageRoute(
-          builder: (_) => ShoppingListScreen(),
-          settings: settings,
-        );
       case '/shopping_list_details':
         return MaterialPageRoute(
           builder: (_) => ShoppingListDetailsScreen(),
+          settings: settings,
+        );
+      case '/shopping_list':
+        return MaterialPageRoute(
+          builder: (_) => ShoppingListScreen(),
           settings: settings,
         );
       case '/votefollowup':
