@@ -19,15 +19,14 @@ class ClMainHomeDescriptionScreen extends StatefulWidget {
   const ClMainHomeDescriptionScreen({super.key});
 
   @override
-  State<ClMainHomeDescriptionScreen> createState() =>
-      _ClMainHomeDescriptionScreenState();
+  State<ClMainHomeDescriptionScreen> createState() => _ClMainHomeDescriptionScreenState();
 }
 
-class _ClMainHomeDescriptionScreenState
-    extends State<ClMainHomeDescriptionScreen> {
+class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScreen> {
   int bedroomsCount = 1;
   int bathroomsCount = 1;
-  int roomsCount = 2;
+  int roomsCount = 1;
+  int kitchenCount = 1;
 
   String selectedLivingRoomOption = '';
   String selectedHeadboardOption = '';
@@ -61,8 +60,7 @@ class _ClMainHomeDescriptionScreenState
     });
   }
 
-  Future<({double latitude, double longitude})?>
-  _resolveCurrentLocation() async {
+  Future<({double latitude, double longitude})?> _resolveCurrentLocation() async {
     final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!isServiceEnabled) {
       return null;
@@ -72,8 +70,7 @@ class _ClMainHomeDescriptionScreenState
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
       return null;
     }
 
@@ -83,18 +80,14 @@ class _ClMainHomeDescriptionScreenState
 
   Future<void> _onContinuePressed(ClMainBloc bloc) async {
     if (selectedLivingRoomOption.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار حجم الغرفة قبل المتابعة')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار حجم الغرفة قبل المتابعة')));
       return;
     }
 
     final location = await _resolveCurrentLocation();
     if (!mounted) return;
     if (location == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر الوصول إلى الموقع الحالي')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر الوصول إلى الموقع الحالي')));
       return;
     }
 
@@ -120,9 +113,9 @@ class _ClMainHomeDescriptionScreenState
   @override
   Widget build(BuildContext context) {
     const livingRoomOptions = <({String key, String title, String subtitle})>[
-      (key: 'small', title: 'صغيرة', subtitle: 'تجلس 5 - 6 أشخاص'),
-      (key: 'medium', title: 'كبيرة', subtitle: 'تجلس 8 - 10 أشخاص'),
-      (key: 'very_big', title: 'كبيرة جداً', subtitle: 'تضيف قيمة مع الديكور'),
+      (key: 'small', title: 'صغيرة', subtitle: 'يجلس 3 - 4 أشخاص'),
+      (key: 'medium', title: 'كبيرة', subtitle: 'يجلس 5 - 8 أشخاص'),
+      (key: 'large', title: 'كبيرة جداً', subtitle: 'يجلس 9 فما فوق'),
     ];
     const headboardOptions = <({String key, String title})>[
       (key: 'regular', title: 'لا يوحد تراس'),
@@ -134,13 +127,11 @@ class _ClMainHomeDescriptionScreenState
     return BlocProvider.value(
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
-        listenWhen: (previous, current) =>
-            previous.estimatePriceStatus != current.estimatePriceStatus,
+        listenWhen: (previous, current) => previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
           if (state.estimatePriceStatus == BlocStatus.loading) {
             Loading.show(context);
-          } else if (state.estimatePriceStatus == BlocStatus.success &&
-              state.estimatePrice != null) {
+          } else if (state.estimatePriceStatus == BlocStatus.success && state.estimatePrice != null) {
             Loading.close();
             context.pushRoute(
               '/clmainserviceschedule',
@@ -158,10 +149,7 @@ class _ClMainHomeDescriptionScreenState
             );
           } else {
             Loading.close();
-            ToastComponent.showToast(
-              context,
-              msg: state.errorMessage ?? 'حدث خطأ أثناء حساب التكلفة',
-            );
+            ToastComponent.showToast(context, msg: state.errorMessage ?? 'حدث خطأ أثناء حساب التكلفة');
           }
         },
         builder: (context, state) {
@@ -173,17 +161,13 @@ class _ClMainHomeDescriptionScreenState
                   HomeDetailsAppBar(),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.symmetric(
-                        horizontal: 16,
-                        vertical: 20,
-                      ),
+                      padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 20),
                       child: Column(
                         children: [
                           ClHomeDescriptionTitleCardWidget(
                             step: 1,
                             title: 'تحديد عدد الغرف',
-                            subtitle:
-                                'هذا سيساعدنا على تحديد المساحة التقريبية للعمل',
+                            subtitle: 'هذا سيساعدنا على تحديد المساحة التقريبية للعمل',
                             child: Column(
                               spacing: 12,
                               children: [
@@ -191,37 +175,29 @@ class _ClMainHomeDescriptionScreenState
                                   label: 'عدد الغرف',
                                   value: bedroomsCount,
                                   icon: Icons.meeting_room,
-                                  onIncrement: () =>
-                                      setState(() => bedroomsCount++),
-                                  onDecrement: () => setState(
-                                    () => bedroomsCount = (bedroomsCount > 1)
-                                        ? bedroomsCount - 1
-                                        : 1,
-                                  ),
+                                  onIncrement: () => setState(() => bedroomsCount++),
+                                  onDecrement: () => setState(() => bedroomsCount = (bedroomsCount > 1) ? bedroomsCount - 1 : 1),
                                 ),
                                 ClCounterRowWidget(
                                   label: 'عدد الحمامات',
                                   value: bathroomsCount,
                                   icon: Icons.bathtub_outlined,
-                                  onIncrement: () =>
-                                      setState(() => bathroomsCount++),
-                                  onDecrement: () => setState(
-                                    () => bathroomsCount = (bathroomsCount > 1)
-                                        ? bathroomsCount - 1
-                                        : 1,
-                                  ),
+                                  onIncrement: () => setState(() => bathroomsCount++),
+                                  onDecrement: () => setState(() => bathroomsCount = (bathroomsCount > 1) ? bathroomsCount - 1 : 1),
                                 ),
                                 ClCounterRowWidget(
-                                  label: 'عدد الغرف الكلي',
+                                  label: 'عدد غرف النوم',
                                   value: roomsCount,
                                   icon: Icons.home_work_outlined,
-                                  onIncrement: () =>
-                                      setState(() => roomsCount++),
-                                  onDecrement: () => setState(
-                                    () => roomsCount = (roomsCount > 1)
-                                        ? roomsCount - 1
-                                        : 1,
-                                  ),
+                                  onIncrement: () => setState(() => roomsCount++),
+                                  onDecrement: () => setState(() => roomsCount = (roomsCount > 1) ? roomsCount - 1 : 1),
+                                ),
+                                ClCounterRowWidget(
+                                  label: 'عدد المطابخ',
+                                  value: kitchenCount,
+                                  icon: Icons.home_work_outlined,
+                                  onIncrement: () => setState(() => kitchenCount++),
+                                  onDecrement: () => setState(() => kitchenCount = (kitchenCount > 1) ? kitchenCount - 1 : 1),
                                 ),
                               ],
                             ),
@@ -229,7 +205,7 @@ class _ClMainHomeDescriptionScreenState
                           const SizedBox(height: 10),
                           ClHomeDescriptionTitleCardWidget(
                             step: 2,
-                            title: 'وصف تقريبي لحجم الغرفة',
+                            title: 'وصف تقريبي لحجم الغرف',
                             subtitle: 'اختر نوع أقرب وصف لحجم الغرفة',
                             child: Column(
                               children: [
@@ -240,14 +216,8 @@ class _ClMainHomeDescriptionScreenState
                                     child: ClOptionTileWidget(
                                       title: option.title,
                                       subtitle: option.subtitle,
-                                      value:
-                                          selectedLivingRoomOption ==
-                                          option.key,
-                                      onChanged: (selected) =>
-                                          _selectLivingRoomOption(
-                                            option.key,
-                                            selected,
-                                          ),
+                                      value: selectedLivingRoomOption == option.key,
+                                      onChanged: (selected) => _selectLivingRoomOption(option.key, selected),
                                     ),
                                   ),
                                 ),
@@ -266,20 +236,11 @@ class _ClMainHomeDescriptionScreenState
                               itemBuilder: (context, index) {
                                 final option = headboardOptions[index];
                                 return Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: index == headboardOptions.length - 1
-                                        ? 0
-                                        : 8,
-                                  ),
+                                  padding: EdgeInsets.only(bottom: index == headboardOptions.length - 1 ? 0 : 8),
                                   child: ClOptionTileWidget(
                                     title: option.title,
-                                    value:
-                                        selectedHeadboardOption == option.key,
-                                    onChanged: (selected) =>
-                                        _selectHeadboardOption(
-                                          option.key,
-                                          selected,
-                                        ),
+                                    value: selectedHeadboardOption == option.key,
+                                    onChanged: (selected) => _selectHeadboardOption(option.key, selected),
                                   ),
                                 );
                               },

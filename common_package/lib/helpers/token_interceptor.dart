@@ -21,7 +21,7 @@ class TokenInterceptor extends Interceptor {
 
       if (tokenKey != null) {
         final token = SharedPreferencesHelper.getData(key: tokenKey!) ?? '';
-        options.headers['Authorization'] = 'Bearer 1|tUYkWcLtVMhv6yvbqIa4fKpBYV5cF0MiywvBZ9Ri78ab1885';
+        options.headers['Authorization'] = 'Bearer 6|S3c02zKawN2CnER03qG2nf9bXb11p3UPpAzXfBC1df7220ec';
         log('========================> token: $token');
       }
 

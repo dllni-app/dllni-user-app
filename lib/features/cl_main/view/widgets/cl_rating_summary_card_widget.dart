@@ -22,7 +22,7 @@ class ClRatingSummaryCardWidget extends StatelessWidget {
         children: [
           AppText(
             displayedScore,
-            style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 58, height: 1),
+            style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 48, height: 1),
           ),
           const SizedBox(height: 6),
           Row(
@@ -33,7 +33,7 @@ class ClRatingSummaryCardWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          AppText.bodyMedium('من ${summary.totalReviews} تقييم', color: const Color(0xFF4B5563), textAlign: TextAlign.start),
+          AppText.labelLarge('من ${summary.totalReviews} تقييم', color: const Color(0xFF4B5563), textAlign: TextAlign.start),
           const SizedBox(height: 16),
           ...List.generate(5, (index) {
             final star = 5 - index;

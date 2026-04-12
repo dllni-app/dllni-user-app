@@ -13,7 +13,7 @@ class WorkerProfileRouteArgs {
 
   factory WorkerProfileRouteArgs.fromPreviousWorker(PreviousWorkerModel worker) {
     return WorkerProfileRouteArgs(
-      workerId: (worker.id ?? 0).toString(),
+      workerId: worker.id?.toString() ?? '',
       worker: worker,
     );
   }

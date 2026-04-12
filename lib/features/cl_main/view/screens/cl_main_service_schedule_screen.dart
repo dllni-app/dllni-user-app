@@ -197,8 +197,15 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                             onSelectWorker: (workerId) {
                               bloc.add(SetPreferredWorkerEvent(workerId: workerId));
                             },
-                            onOpenWorkerProfile: (worker) {
-                              context.pushRoute('/clworkerprofiledetail', arguments: WorkerProfileRouteArgs.fromPreviousWorker(worker));
+                            onOpenWorkerProfile: (worker) async {
+                              final selectedWorkerId = await context.pushRoute(
+                                '/clworkerprofiledetail',
+                                arguments: WorkerProfileRouteArgs.fromPreviousWorker(worker),
+                              );
+                              if (!context.mounted) return;
+                              if (selectedWorkerId is int) {
+                                bloc.add(SetPreferredWorkerEvent(workerId: selectedWorkerId));
+                              }
                             },
                           ),
                           const SizedBox(height: 12),

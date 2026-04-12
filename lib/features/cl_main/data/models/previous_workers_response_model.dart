@@ -78,7 +78,7 @@ class PreviousWorkerModel {
 
   factory PreviousWorkerModel.fromJson(Map<String, dynamic> json) {
     return PreviousWorkerModel(
-      id: (json['id'] as num?)?.toInt(),
+      id: _extractWorkerId(json),
       name: json['name'] as String? ?? json['full_name'] as String? ?? json['worker_name'] as String?,
       phone: json['phone'] as String?,
       rating: (json['rating'] as num?)?.toDouble(),
@@ -89,6 +89,20 @@ class PreviousWorkerModel {
       profileImage: json['profileImage'] as String? ?? json['profile_image'] as String?,
       badges: (json['badges'] as List?)?.whereType<String>().toList(),
     );
+  }
+
+  static int? _extractWorkerId(Map<String, dynamic> json) {
+    final nestedWorker = json['worker'];
+    final dynamic rawId =
+        json['id'] ??
+        json['worker_id'] ??
+        json['workerId'] ??
+        json['provider_id'] ??
+        (nestedWorker is Map<String, dynamic> ? nestedWorker['id'] ?? nestedWorker['worker_id'] ?? nestedWorker['workerId'] : null);
+
+    if (rawId is num) return rawId.toInt();
+    if (rawId is String) return int.tryParse(rawId);
+    return null;
   }
 }
 

@@ -24,8 +24,7 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
             verified: (apiWorker.badges ?? const []).contains('verified'),
             avatarColor: const Color(0xFFE2E8F0),
             badgeValue: (apiWorker.rating ?? 0).toStringAsFixed(1),
-            completedTasksText:
-                'أكمل مقدم الخدمة ${apiWorker.completedJobs ?? 0} من أصل ${apiWorker.totalJobs ?? 0} مهمة',
+            completedTasksText: 'أكمل مقدم الخدمة ${apiWorker.completedJobs ?? 0} من أصل ${apiWorker.totalJobs ?? 0} مهمة',
             aboutText: 'مقدم خدمة نظافة مع سجل خدمات سابقة وتقييمات إيجابية من العملاء.',
             ratingSummary: WorkerRatingSummary(
               average: apiWorker.rating ?? 0,
@@ -52,9 +51,9 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
                       children: [
                         _TopInfoPillsWidget(profile: profile),
                         const SizedBox(height: 18),
-                        AppText.titleMedium('نبذة عن مقدم الخدمة', fontWeight: FontWeight.bold, textAlign: TextAlign.start),
+                        AppText.titleSmall('نبذة عن مقدم الخدمة', fontWeight: FontWeight.bold, textAlign: TextAlign.start),
                         const SizedBox(height: 8),
-                        AppText.bodyMedium(
+                        AppText.labelLarge(
                           profile.aboutText,
                           color: const Color(0xFF4B5563),
                           textAlign: TextAlign.start,
@@ -64,7 +63,7 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            AppText.titleMedium(
+                            AppText.titleSmall(
                               'تقييمات العملاء',
                               color: const Color(0xFF111827),
                               fontWeight: FontWeight.w900,
@@ -74,7 +73,7 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
                               onTap: () {
                                 context.pushRoute('/clworkerreviewsall', arguments: args);
                               },
-                              child: AppText.bodyMedium(
+                              child: AppText.labelLarge(
                                 'عرض الكل',
                                 color: const Color(0xFF4CAF50),
                                 fontWeight: FontWeight.w500,
@@ -121,7 +120,7 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          _ProfileActionsWidget(),
+          _ProfileActionsWidget(args: args),
         ],
       ),
     );
@@ -241,8 +240,17 @@ class _InfoPillWidget extends StatelessWidget {
 }
 
 class _ProfileActionsWidget extends StatelessWidget {
+  const _ProfileActionsWidget({required this.args});
+
+  final WorkerProfileRouteArgs args;
+
+  int? _resolveWorkerId() {
+    return args.worker?.id ?? int.tryParse(args.workerId);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final workerId = _resolveWorkerId();
     return Container(
       color: const Color(0xFFF2F2F2),
       padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 18),
@@ -252,7 +260,7 @@ class _ProfileActionsWidget extends StatelessWidget {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => context.pop(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF9FA8C8),
                   foregroundColor: Colors.white,
@@ -265,7 +273,13 @@ class _ProfileActionsWidget extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  if (workerId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تحديد مقدم الخدمة')));
+                    return;
+                  }
+                  context.pop(workerId);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF08BFCF),
                   foregroundColor: Colors.white,

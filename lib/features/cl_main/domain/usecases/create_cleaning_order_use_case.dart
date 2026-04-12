@@ -52,14 +52,14 @@ class CreateCleaningOrderParams with Params {
   @override
   BodyMap getBody() {
     return {
-      'propertyType': 'apartment',
+      'propertyType': propertyType,
       'propertyDetails': {
         'address': address,
         'location_name': locationName,
         'bedrooms': bedrooms,
         'rooms': rooms,
         'bathrooms': bathrooms,
-        'living_room_size': 'medium',
+        'living_room_size': livingRoomSize,
       },
       'scheduledDate': scheduledDate,
       'scheduledTime': scheduledTime,

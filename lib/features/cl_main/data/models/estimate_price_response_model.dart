@@ -95,9 +95,9 @@ class EstimateQuoteModel {
 
   factory EstimateQuoteModel.fromJson(Map<String, dynamic> json) {
     return EstimateQuoteModel(
-      quoteId: json['quoteId'] as String?,
-      expiresAt: json['expiresAt'] as String?,
-      algorithmVersion: json['algorithmVersion'] as String?,
+      quoteId: (json['quoteId'] ?? json['quote_id']) as String?,
+      expiresAt: (json['expiresAt'] ?? json['expires_at']) as String?,
+      algorithmVersion: (json['algorithmVersion'] ?? json['algorithm_version']) as String?,
     );
   }
 }
