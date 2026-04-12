@@ -40,6 +40,9 @@ dependencies:
   speech_to_text: ^7.3.0
   smooth_page_indicator: ^2.0.1
   shimmer: ^3.0.0
+  url_launcher: ^6.3.2
+  intl: ^0.20.2
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -50,6 +53,11 @@ dev_dependencies:
   build_runner: ^2.7.1
   injectable_generator: ^2.12.1
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/app_logo.png"
 
 flutter:
 

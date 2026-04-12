@@ -55,10 +55,12 @@ class _OrdersListTabState extends State<OrdersListTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          OrdersAppBar(selectedIndex: widget.state.selectedTabIndex, onChanged: widget.onSectionChanged),
+    final isCleaningSection = widget.state.selectedTabIndex == 2;
+    final effectiveSegmentIndex = isCleaningSection ? OrdersCartOrdersSegmentBar.ordersIndex : segmentIndex;
+    return Column(
+      children: [
+        OrdersAppBar(selectedIndex: widget.state.selectedTabIndex, onChanged: widget.onSectionChanged),
+        if (!isCleaningSection) ...[
           const SizedBox(height: 14),
           OrdersScreenSegmentSection(
             selectedIndex: segmentIndex,
@@ -69,21 +71,21 @@ class _OrdersListTabState extends State<OrdersListTab> {
               }
             },
           ),
-          Expanded(
-            child: IndexedStack(
-              index: segmentIndex,
-              sizing: StackFit.expand,
-              children: [
-                OrdersShoppingListTab(state: widget.state, onRefresh: widget.onRefreshCart),
-                RefreshIndicator(
-                  onRefresh: widget.onRefresh,
-                  child: OrdersListBody(state: widget.state, scrollController: widget.scrollController),
-                ),
-              ],
-            ),
-          ),
         ],
-      ),
+        Expanded(
+          child: IndexedStack(
+            index: effectiveSegmentIndex,
+            sizing: StackFit.expand,
+            children: [
+              OrdersShoppingListTab(state: widget.state, onRefresh: widget.onRefreshCart),
+              RefreshIndicator(
+                onRefresh: widget.onRefresh,
+                child: OrdersListBody(state: widget.state, scrollController: widget.scrollController),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -3,6 +3,7 @@ part of 'orders_bloc.dart';
 class OrdersState {
   final BlocStatus? status;
   final List<OrderResourceModel> orders;
+  final List<CleaningOrderModel> cleaningOrders;
   final int selectedTabIndex;
   final int perPage;
   final int currentPage;
@@ -27,6 +28,8 @@ class OrdersState {
   final String? placeOrderErrorMessage;
   final BlocStatus? placeStoreOrderStatus;
   final String? placeStoreOrderErrorMessage;
+  final BlocStatus? cancelCleaningStatus;
+  final String? cancelCleaningErrorMessage;
   final String cartNote;
   final String? selectedFulfillmentType;
   final String storeReceiveMode;
@@ -36,6 +39,7 @@ class OrdersState {
   OrdersState({
     this.status,
     this.orders = const <OrderResourceModel>[],
+    this.cleaningOrders = const <CleaningOrderModel>[],
     this.selectedTabIndex = 0,
     this.perPage = 10,
     this.currentPage = 1,
@@ -60,6 +64,8 @@ class OrdersState {
     this.placeOrderErrorMessage,
     this.placeStoreOrderStatus,
     this.placeStoreOrderErrorMessage,
+    this.cancelCleaningStatus,
+    this.cancelCleaningErrorMessage,
     this.cartNote = '',
     this.selectedFulfillmentType = 'delivery',
     this.storeReceiveMode = 'immediate',
@@ -70,6 +76,7 @@ class OrdersState {
   OrdersState copyWith({
     BlocStatus? status,
     List<OrderResourceModel>? orders,
+    List<CleaningOrderModel>? cleaningOrders,
     int? selectedTabIndex,
     int? perPage,
     int? currentPage,
@@ -105,6 +112,9 @@ class OrdersState {
     BlocStatus? placeStoreOrderStatus,
     String? placeStoreOrderErrorMessage,
     bool clearPlaceStoreOrderError = false,
+    BlocStatus? cancelCleaningStatus,
+    String? cancelCleaningErrorMessage,
+    bool clearCancelCleaningError = false,
     String? cartNote,
     String? selectedFulfillmentType,
     String? storeReceiveMode,
@@ -116,6 +126,7 @@ class OrdersState {
     return OrdersState(
       status: status ?? this.status,
       orders: orders ?? this.orders,
+      cleaningOrders: cleaningOrders ?? this.cleaningOrders,
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
       perPage: perPage ?? this.perPage,
       currentPage: currentPage ?? this.currentPage,
@@ -140,6 +151,8 @@ class OrdersState {
       placeOrderErrorMessage: clearPlaceOrderError ? null : (placeOrderErrorMessage ?? this.placeOrderErrorMessage),
       placeStoreOrderStatus: placeStoreOrderStatus ?? this.placeStoreOrderStatus,
       placeStoreOrderErrorMessage: clearPlaceStoreOrderError ? null : (placeStoreOrderErrorMessage ?? this.placeStoreOrderErrorMessage),
+      cancelCleaningStatus: cancelCleaningStatus ?? this.cancelCleaningStatus,
+      cancelCleaningErrorMessage: clearCancelCleaningError ? null : (cancelCleaningErrorMessage ?? this.cancelCleaningErrorMessage),
       cartNote: cartNote ?? this.cartNote,
       selectedFulfillmentType: selectedFulfillmentType ?? this.selectedFulfillmentType,
       storeReceiveMode: storeReceiveMode ?? this.storeReceiveMode,

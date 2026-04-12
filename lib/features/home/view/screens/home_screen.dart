@@ -16,7 +16,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<String> titles = ['مطاعم', 'تنظيف', 'تسوق'];
-    List<String> screens = ['/rsmain', '', '/smmain'];
+    List<String> screens = ['/rsmain', '/clmain', '/smmain'];
 
     return BlocProvider(
       create: (_) => getIt<HomeBloc>()..add(FetchUserOffersEvent(params: FetchUserOffersParams())),

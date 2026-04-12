@@ -2,15 +2,11 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../../generated/assets.dart';
+
 /// Shared background, title, card container, and footer for auth screens.
 class AuthScreenChrome extends StatelessWidget {
-  const AuthScreenChrome({
-    super.key,
-    required this.title,
-    required this.cardChild,
-    required this.primaryButton,
-    this.belowPrimary,
-  });
+  const AuthScreenChrome({super.key, required this.title, required this.cardChild, required this.primaryButton, this.belowPrimary});
 
   final String title;
   final Widget cardChild;
@@ -35,16 +31,12 @@ class AuthScreenChrome extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 8),
+                    AppImage.asset(Assets.images.appLogo.path, width: 160, height: 145),
+                    const SizedBox(height: 32),
                     AppText(
                       title,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: context.primary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        height: 1.25,
-                      ),
+                      style: TextStyle(color: context.primary, fontSize: 22, fontWeight: FontWeight.w800, height: 1.25),
                     ),
                     const SizedBox(height: 24),
                     Material(
@@ -52,111 +44,13 @@ class AuthScreenChrome extends StatelessWidget {
                       shadowColor: Colors.black26,
                       borderRadius: BorderRadius.circular(16),
                       color: Colors.white,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                        child: cardChild,
-                      ),
+                      child: Padding(padding: const EdgeInsets.fromLTRB(20, 24, 20, 24), child: cardChild),
                     ),
                     const SizedBox(height: 20),
                     primaryButton,
-                    if (belowPrimary != null) ...[
-                      const SizedBox(height: 20),
-                      belowPrimary!,
-                    ],
+                    if (belowPrimary != null) ...[const SizedBox(height: 20), belowPrimary!],
                   ],
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-              child: Column(
-                children: [
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 4,
-                    children: [
-                      AppText.bodySmall(
-                        'هل تواجه مشكلة في تسجيل الدخول؟',
-                        color: _muted,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          AppToast.showToast(
-                            context: context,
-                            message: 'سيتم تفعيل التواصل مع الدعم قريباً',
-                            type: ToastificationType.info,
-                          );
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.headset_mic_outlined, size: 16, color: _linkBlue),
-                            const SizedBox(width: 4),
-                            AppText.bodySmall(
-                              'تواصل مع الدعم الفني',
-                              color: _linkBlue,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  AppText.bodySmall(
-                    'جميع الحقوق محفوظة © 2026 تطبيق دللني',
-                    textAlign: TextAlign.center,
-                    color: _muted,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          AppToast.showToast(
-                            context: context,
-                            message: 'سيتم عرض الشروط والأحكام قريباً',
-                            type: ToastificationType.info,
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: AppText.bodySmall(
-                          'الشروط والأحكام',
-                          color: _linkBlue,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                      AppText.bodySmall(' ▪ ', color: _muted, style: const TextStyle(fontSize: 12)),
-                      TextButton(
-                        onPressed: () {
-                          AppToast.showToast(
-                            context: context,
-                            message: 'سيتم عرض سياسة الخصوصية قريباً',
-                            type: ToastificationType.info,
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: AppText.bodySmall(
-                          'سياسة الخصوصية',
-                          color: _linkBlue,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ),
             ),
           ],
@@ -166,13 +60,84 @@ class AuthScreenChrome extends StatelessWidget {
   }
 }
 
+class AuthTrailing extends StatelessWidget {
+  const AuthTrailing({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            children: [
+              AppText.bodySmall('هل تواجه مشكلة في تسجيل الدخول؟', color: Color(0xff9CA3AF), style: const TextStyle(fontSize: 12)),
+              GestureDetector(
+                onTap: () {
+                  AppToast.showToast(context: context, message: 'سيتم تفعيل التواصل مع الدعم قريباً', type: ToastificationType.info);
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.headset_mic_outlined, size: 16, color: context.secondary),
+                    const SizedBox(width: 4),
+                    AppText.bodySmall(
+                      'تواصل مع الدعم الفني',
+                      color: context.secondary,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          AppText.bodySmall(
+            'جميع الحقوق محفوظة © 2026 تطبيق دللني',
+            textAlign: TextAlign.center,
+            color: Color(0xff9CA3AF),
+            style: const TextStyle(fontSize: 11),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  AppToast.showToast(context: context, message: 'سيتم عرض الشروط والأحكام قريباً', type: ToastificationType.info);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: AppText.bodySmall('الشروط والأحكام', color: context.secondary, style: const TextStyle(fontSize: 12)),
+              ),
+              AppText.bodySmall(' ▪ ', color: Color(0xff9CA3AF), style: const TextStyle(fontSize: 12)),
+              TextButton(
+                onPressed: () {
+                  AppToast.showToast(context: context, message: 'سيتم عرض سياسة الخصوصية قريباً', type: ToastificationType.info);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: AppText.bodySmall('سياسة الخصوصية', color: context.secondary, style: const TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class AuthGradientButton extends StatelessWidget {
-  const AuthGradientButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.icon = Icons.arrow_back_ios_new_rounded,
-  });
+  const AuthGradientButton({super.key, required this.label, required this.onPressed, this.icon = Icons.arrow_forward_ios_rounded});
 
   final String label;
   final VoidCallback? onPressed;
@@ -186,24 +151,14 @@ class AuthGradientButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         child: Ink(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF5B6478), Color(0xFFB4A3E8)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
+          decoration: BoxDecoration(color: context.primary),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                AppText.labelLarge(
-                  label,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-                const SizedBox(width: 8),
+                AppText.labelLarge(label, color: Colors.white, fontWeight: FontWeight.w700),
+                const SizedBox(width: 12),
                 Icon(icon, color: Colors.white, size: 18),
               ],
             ),
@@ -214,13 +169,7 @@ class AuthGradientButton extends StatelessWidget {
   }
 }
 
-InputDecoration authFieldDecoration(
-  BuildContext context, {
-  required bool hasError,
-  String? hintText,
-  Widget? prefixIcon,
-  Widget? suffixIcon,
-}) {
+InputDecoration authFieldDecoration(BuildContext context, {required bool hasError, String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
   const borderColor = Color(0xffE5E7EB);
   return InputDecoration(
     hintText: hintText,
@@ -232,24 +181,15 @@ InputDecoration authFieldDecoration(
     suffixIcon: suffixIcon,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(
-        color: hasError ? context.error : borderColor,
-        width: 1,
-      ),
+      borderSide: BorderSide(color: hasError ? context.error : borderColor, width: 1),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(
-        color: hasError ? context.error : borderColor,
-        width: 1,
-      ),
+      borderSide: BorderSide(color: hasError ? context.error : borderColor, width: 1),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(
-        color: hasError ? context.error : context.primary,
-        width: 1.2,
-      ),
+      borderSide: BorderSide(color: hasError ? context.error : context.primary, width: 1.2),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
@@ -274,6 +214,7 @@ class AuthLabeledField extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.isRequired = false,
+    this.enabled = true,
   });
 
   final String label;
@@ -285,6 +226,7 @@ class AuthLabeledField extends StatelessWidget {
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final bool isRequired;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -294,12 +236,7 @@ class AuthLabeledField extends StatelessWidget {
         Row(
           children: [
             AppText.bodyMedium(label, fontWeight: FontWeight.w500),
-            if (isRequired)
-              AppText.bodyMedium(
-                '*',
-                color: context.error,
-                fontWeight: FontWeight.w500,
-              ),
+            if (isRequired) AppText.bodyMedium('*', color: context.error, fontWeight: FontWeight.w500),
           ],
         ),
         const SizedBox(height: 8),
@@ -307,19 +244,10 @@ class AuthLabeledField extends StatelessWidget {
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
+          enabled: enabled,
           validator: validator,
-          style: const TextStyle(
-            color: Color(0xff2F2B3D),
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
-          decoration: authFieldDecoration(
-            context,
-            hasError: false,
-            hintText: hintText,
-            prefixIcon: prefixIcon,
-            suffixIcon: suffixIcon,
-          ),
+          style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14, fontWeight: FontWeight.w400),
+          decoration: authFieldDecoration(context, hasError: false, hintText: hintText, prefixIcon: prefixIcon, suffixIcon: suffixIcon),
         ),
       ],
     );

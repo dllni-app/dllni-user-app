@@ -2,15 +2,24 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class PersonalDetailsAppBar extends StatelessWidget {
-  const PersonalDetailsAppBar({super.key, required this.title});
+  const PersonalDetailsAppBar({
+    super.key,
+    required this.title,
+    this.backgroundColor,
+    this.foregroundColor,
+  });
 
   final String title;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedBackgroundColor = backgroundColor ?? context.onPrimary;
+    final resolvedForegroundColor = foregroundColor ?? context.primary;
     return Container(
       decoration: BoxDecoration(
-        color: context.onPrimary,
+        color: resolvedBackgroundColor,
         border: Border(
           bottom: BorderSide(color: context.primaryContainer, width: 3),
         ),
@@ -43,14 +52,14 @@ class PersonalDetailsAppBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xffE5E7EB)),
               ),
-              child: Icon(Icons.arrow_back, color: context.primary),
+              child: Icon(Icons.arrow_back, color: resolvedForegroundColor),
             ),
           ),
           SizedBox(width: 9),
           Expanded(
             child: AppText.headlineMedium(
               title,
-              color: context.primary,
+              color: resolvedForegroundColor,
               fontWeight: FontWeight.bold,
               textAlign: TextAlign.start,
             ),

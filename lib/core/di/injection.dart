@@ -4,6 +4,7 @@ import 'package:dllni_user_app/core/session/session_expired_handler.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import '../app_config.dart';
+import '../session/session_expired_handler.dart';
 import '../../features/rs_discover/domain/usecases/fetch_restaurant_cart_products_count_use_case.dart';
 
 import 'injection.config.dart';
@@ -32,7 +33,9 @@ abstract class InjectableModule {
       TokenInterceptor(tokenKey: 'token', fcmKey: 'fcm', lang: '', onRequestFunction: null),
       UnauthorizedInterceptor(
         onUnauthorized: SessionExpiredHandler.handle,
-        excludedPathSuffixes: const ['/api/v1/user/login'],
+        excludedPathSuffixes: const <String>[
+          '/api/v1/user/login',
+        ],
       ),
     ],
   );
