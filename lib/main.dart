@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'core/di/injection.dart';
+import 'core/session/session_expired_handler.dart';
 
 Future<void> main() async {
   final navigatorKey = GlobalKey<NavigatorState>();
+  SessionExpiredHandler.navigatorKey = navigatorKey;
 
   await bootstrapApp(
     AppBootstrapConfig(

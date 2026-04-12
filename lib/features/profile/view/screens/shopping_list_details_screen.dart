@@ -16,7 +16,8 @@ class ShoppingListDetailsScreen extends StatefulWidget {
   final ShoppingListDetailsArgs args;
 
   @override
-  State<ShoppingListDetailsScreen> createState() => _ShoppingListDetailsScreenState();
+  State<ShoppingListDetailsScreen> createState() =>
+      _ShoppingListDetailsScreenState();
 }
 
 class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
@@ -30,148 +31,10 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
   }
 
   Future<void> _refresh() async {
-    await _shoppingListDetailCubit.loadShoppingList(widget.args.shoppingListId, showLoader: false);
-  }
-
-  Future<void> _showStoreIdSheet() async {
-    final controller = TextEditingController();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (sheetContext) {
-        return BlocProvider.value(
-          value: _shoppingListDetailCubit,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'أدخل رقم المتجر',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: 'Store ID',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final storeId = int.tryParse(controller.text.trim());
-                      if (storeId == null) {
-                        ScaffoldMessenger.of(sheetContext).showSnackBar(
-                          const SnackBar(content: Text('رقم المتجر غير صالح')),
-                        );
-                        return;
-                      }
-                      await _shoppingListDetailCubit.reorderToCart(storeId: storeId);
-                      if (!mounted) return;
-                      Navigator.of(sheetContext).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7A00),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('إعادة الطلب'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    await _shoppingListDetailCubit.loadShoppingList(
+      widget.args.shoppingListId,
+      showLoader: false,
     );
-    controller.dispose();
-  }
-
-  Future<void> _showEditSheet(ShoppingListDetailModel shoppingList) async {
-    final nameController = TextEditingController(text: shoppingList.name);
-    final descriptionController = TextEditingController(text: shoppingList.description ?? '');
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'تعديل بيانات القائمة',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  hintText: 'اسم القائمة',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descriptionController,
-                minLines: 2,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'الوصف',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    if (name.isEmpty) {
-                      ScaffoldMessenger.of(sheetContext).showSnackBar(
-                        const SnackBar(content: Text('الاسم مطلوب')),
-                      );
-                      return;
-                    }
-                    await _shoppingListDetailCubit.updateShoppingList(
-                      name: name,
-                      description: descriptionController.text.trim(),
-                    );
-                    if (!mounted) return;
-                    Navigator.of(sheetContext).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('حفظ التعديل'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    nameController.dispose();
-    descriptionController.dispose();
   }
 
   Future<void> _confirmDeleteList() async {
@@ -204,23 +67,33 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
     return BlocProvider<ShoppingListDetailCubit>.value(
       value: _shoppingListDetailCubit,
       child: BlocListener<ShoppingListDetailCubit, ShoppingListDetailState>(
-        listenWhen: (p, c) => p.errorMessage != c.errorMessage && (c.errorMessage?.isNotEmpty == true),
+        listenWhen: (p, c) =>
+            p.errorMessage != c.errorMessage &&
+            (c.errorMessage?.isNotEmpty == true),
         listener: (context, state) {
           final message = state.errorMessage;
           if (message == null || message.isEmpty) return;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
         },
         child: Scaffold(
           backgroundColor: const Color(0xFFF3F4F6),
           body: BlocBuilder<ShoppingListDetailCubit, ShoppingListDetailState>(
             builder: (context, state) {
               final shoppingList = state.shoppingList;
-              final headerTitle = shoppingList?.name ?? widget.args.title ?? "قائمة التسوق الذكي";
-              if (state.status == BlocStatus.loading || state.status == BlocStatus.init) {
+              final headerTitle =
+                  shoppingList?.name ??
+                  widget.args.title ??
+                  "قائمة التسوق الذكي";
+              if (state.status == BlocStatus.loading ||
+                  state.status == BlocStatus.init) {
                 return Column(
                   children: [
                     _ShoppingListDetailsHeader(title: headerTitle),
-                    const Expanded(child: Center(child: CircularProgressIndicator())),
+                    const Expanded(
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
                   ],
                 );
               }
@@ -251,7 +124,10 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                       onRefresh: _refresh,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 24,
+                        ),
                         child: Column(
                           spacing: 16,
                           children: [
@@ -260,16 +136,22 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                               padding: EdgeInsets.zero,
                               physics: const NeverScrollableScrollPhysics(),
                               shrinkWrap: true,
-                              separatorBuilder: (_, _) => const SizedBox(height: 16),
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 16),
                               itemBuilder: (_, index) {
                                 final item = shoppingList.items[index];
-                                final isUpdating = state.updatingItemIds.contains(item.id);
+                                final isUpdating = state.updatingItemIds
+                                    .contains(item.id);
                                 return Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: const BorderRadius.all(Radius.circular(16)),
-                                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                                    borderRadius: const BorderRadius.all(
+                                      Radius.circular(16),
+                                    ),
+                                    border: Border.all(
+                                      color: const Color(0xFFE5E7EB),
+                                    ),
                                     boxShadow: const [
                                       BoxShadow(
                                         offset: Offset(0, 1),
@@ -315,17 +197,25 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                           ),
                                           CupertinoSwitch(
                                             value: item.isIncluded,
-                                            activeColor: const Color(0xFF43B654),
+                                            activeColor: const Color(
+                                              0xFF43B654,
+                                            ),
                                             onChanged: (value) {
                                               context
-                                                  .read<ShoppingListDetailCubit>()
-                                                  .toggleItemIncluded(itemId: item.id, isIncluded: value);
+                                                  .read<
+                                                    ShoppingListDetailCubit
+                                                  >()
+                                                  .toggleItemIncluded(
+                                                    itemId: item.id,
+                                                    isIncluded: value,
+                                                  );
                                             },
                                           ),
                                         ],
                                       ),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         spacing: 32,
                                         children: [
                                           SizedBox(
@@ -335,15 +225,21 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                               onTap: isUpdating
                                                   ? null
                                                   : () {
-                                                      final updated = (item.quantity - 1).clamp(1, 9999).toDouble();
+                                                      final updated =
+                                                          (item.quantity - 1)
+                                                              .clamp(1, 9999)
+                                                              .toDouble();
                                                       context
-                                                          .read<ShoppingListDetailCubit>()
+                                                          .read<
+                                                            ShoppingListDetailCubit
+                                                          >()
                                                           .updateItemQuantityOptimistic(
                                                             itemId: item.id,
                                                             quantity: updated,
                                                           );
                                                     },
-                                              customBorder: const CircleBorder(),
+                                              customBorder:
+                                                  const CircleBorder(),
                                               child: const Center(
                                                 child: FaIcon(
                                                   FontAwesomeIcons.minus,
@@ -360,17 +256,25 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                                     child: SizedBox(
                                                       width: 20,
                                                       height: 20,
-                                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                          ),
                                                     ),
                                                   )
                                                 : AppText(
                                                     item.quantity.toStringAsFixed(
-                                                      item.quantity.truncateToDouble() == item.quantity ? 0 : 1,
+                                                      item.quantity
+                                                                  .truncateToDouble() ==
+                                                              item.quantity
+                                                          ? 0
+                                                          : 1,
                                                     ),
                                                     style: const TextStyle(
                                                       color: Color(0xFF111827),
                                                       fontSize: 36,
-                                                      fontWeight: FontWeight.w600,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                       height: 40 / 36,
                                                     ),
                                                   ),
@@ -383,13 +287,19 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                                   ? null
                                                   : () {
                                                       context
-                                                          .read<ShoppingListDetailCubit>()
+                                                          .read<
+                                                            ShoppingListDetailCubit
+                                                          >()
                                                           .updateItemQuantityOptimistic(
                                                             itemId: item.id,
-                                                            quantity: (item.quantity + 1).toDouble(),
+                                                            quantity:
+                                                                (item.quantity +
+                                                                        1)
+                                                                    .toDouble(),
                                                           );
                                                     },
-                                              customBorder: const CircleBorder(),
+                                              customBorder:
+                                                  const CircleBorder(),
                                               child: const Center(
                                                 child: FaIcon(
                                                   FontAwesomeIcons.plus,
@@ -403,17 +313,25 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                       ),
                                       GestureDetector(
                                         onTap: () {
-                                          context.read<ShoppingListDetailCubit>().deleteItem(item.id);
+                                          context
+                                              .read<ShoppingListDetailCubit>()
+                                              .deleteItem(item.id);
                                         },
                                         child: Container(
                                           width: context.width,
-                                          padding: const EdgeInsets.only(top: 14, bottom: 13),
+                                          padding: const EdgeInsets.only(
+                                            top: 14,
+                                            bottom: 13,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: const Color(0x1464748B),
-                                            borderRadius: const BorderRadius.all(
-                                              Radius.circular(8),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                  Radius.circular(8),
+                                                ),
+                                            border: Border.all(
+                                              color: const Color(0xFF94A3B8),
                                             ),
-                                            border: Border.all(color: const Color(0xFF94A3B8)),
                                           ),
                                           child: AppText(
                                             "حذف المنتج من القائمة",
@@ -431,25 +349,47 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                 );
                               },
                             ),
-                            GestureDetector(
-                              onTap: _showStoreIdSheet,
-                              child: Container(
-                                width: context.width,
-                                padding: const EdgeInsets.only(top: 14, bottom: 13),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFF7A00),
-                                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                                ),
-                                child: AppText(
-                                  "إعادة طلب هذه  القائمة",
-                                  style: TextStyle(
-                                    color: Color(0xFFFFEEFF),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    height: 16 / 14,
+                            Builder(
+                              builder: (context) {
+                                return GestureDetector(
+                                  onTap: () async {
+                                    await showModalBottomSheet<void>(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.white,
+                                      builder: (_) {
+                                        return BlocProvider.value(
+                                          value: context
+                                              .read<ShoppingListDetailCubit>(),
+                                          child: StoreIdSheet(),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: Container(
+                                    width: context.width,
+                                    padding: const EdgeInsets.only(
+                                      top: 14,
+                                      bottom: 13,
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFFF7A00),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(12),
+                                      ),
+                                    ),
+                                    child: AppText(
+                                      "إعادة طلب هذه  القائمة",
+                                      style: TextStyle(
+                                        color: Color(0xFFFFEEFF),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        height: 16 / 14,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             ),
                             Row(
                               spacing: 22,
@@ -462,18 +402,44 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                         arguments: SmDiscoverScreenParams(
                                           selectedView: 1,
                                           expandSearch: true,
-                                          shoppingListId: widget.args.shoppingListId,
+                                          shoppingListId:
+                                              widget.args.shoppingListId,
                                         ),
                                       );
                                       if (!mounted) return;
                                       await _refresh();
                                     },
-                                    onLongPress: () => _showEditSheet(shoppingList),
+                                    onLongPress: () async {
+                                      await showModalBottomSheet<void>(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.white,
+                                        builder: (sheetContext) {
+                                          return BlocProvider.value(
+                                            value: context
+                                                .read<
+                                                  ShoppingListDetailCubit
+                                                >(),
+                                            child: EditSheet(
+                                              initialName: shoppingList.name,
+                                              initialDescription:
+                                                  shoppingList.description ??
+                                                  '',
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
                                     child: Container(
-                                      padding: const EdgeInsets.only(top: 13, bottom: 12),
+                                      padding: const EdgeInsets.only(
+                                        top: 13,
+                                        bottom: 12,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        border: Border.all(color: const Color(0xFF1E3A8A)),
+                                        border: Border.all(
+                                          color: const Color(0xFF1E3A8A),
+                                        ),
                                         borderRadius: const BorderRadius.all(
                                           Radius.circular(12),
                                         ),
@@ -494,10 +460,15 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                   child: GestureDetector(
                                     onTap: _confirmDeleteList,
                                     child: Container(
-                                      padding: const EdgeInsets.only(top: 13, bottom: 12),
+                                      padding: const EdgeInsets.only(
+                                        top: 13,
+                                        bottom: 12,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        border: Border.all(color: const Color(0xFFDC2626)),
+                                        border: Border.all(
+                                          color: const Color(0xFFDC2626),
+                                        ),
                                         borderRadius: const BorderRadius.all(
                                           Radius.circular(12),
                                         ),
@@ -517,7 +488,24 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                               ],
                             ),
                             GestureDetector(
-                              onTap: () => _showEditSheet(shoppingList),
+                              onTap: () async {
+                                await showModalBottomSheet<void>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.white,
+                                  builder: (sheetContext) {
+                                    return BlocProvider.value(
+                                      value: context
+                                          .read<ShoppingListDetailCubit>(),
+                                      child: EditSheet(
+                                        initialName: shoppingList.name,
+                                        initialDescription:
+                                            shoppingList.description ?? '',
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
                               child: AppText(
                                 'تعديل بيانات القائمة',
                                 style: TextStyle(
@@ -542,6 +530,415 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
   }
 }
 
+class EditSheet extends StatefulWidget {
+  const EditSheet({
+    super.key,
+    required this.initialName,
+    required this.initialDescription,
+  });
+
+  final String initialName;
+  final String initialDescription;
+
+  @override
+  State<EditSheet> createState() => _EditSheetState();
+}
+
+class _EditSheetState extends State<EditSheet> {
+  static const Color _fieldFill = Color(0xFFF9FAFB);
+  static const Color _borderIdle = Color(0xFFE5E7EB);
+  static const Color _brandOrange = Color(0xFFFF7A00);
+  static const Color _accentBlue = Color(0xFF1E3A8A);
+  static const Color _textPrimary = Color(0xFF2F2B3D);
+  static const Color _hintColor = Color(0xFF9CA3AF);
+
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _descriptionController = TextEditingController(
+      text: widget.initialDescription,
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _fieldDecoration({
+    required String hintText,
+    Widget? prefixIcon,
+    EdgeInsetsGeometry contentPadding = const EdgeInsets.symmetric(
+      horizontal: 14,
+      vertical: 14,
+    ),
+  }) {
+    OutlineInputBorder border(Color color, [double width = 1]) {
+      return OutlineInputBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
+        borderSide: BorderSide(color: color, width: width),
+      );
+    }
+
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        color: _hintColor,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        height: 1.35,
+      ),
+      filled: true,
+      fillColor: _fieldFill,
+      isDense: true,
+      contentPadding: contentPadding,
+      prefixIcon: prefixIcon,
+      prefixIconConstraints: prefixIcon != null
+          ? const BoxConstraints(minWidth: 52, minHeight: 48)
+          : null,
+      border: border(_borderIdle),
+      enabledBorder: border(_borderIdle),
+      focusedBorder: border(_brandOrange, 1.5),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const fieldTextStyle = TextStyle(
+      color: _textPrimary,
+      fontSize: 15,
+      fontWeight: FontWeight.w500,
+      height: 1.4,
+    );
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8EEF9),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFC7D2FE)),
+                ),
+                child: const FaIcon(
+                  FontAwesomeIcons.penToSquare,
+                  size: 19,
+                  color: _accentBlue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppText(
+                  'تعديل بيانات القائمة',
+                  style: const TextStyle(
+                    color: Color(0xFF111827),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          AppText.bodyMedium(
+            'اسم القائمة',
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF374151),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _nameController,
+            cursorColor: _brandOrange,
+            style: fieldTextStyle,
+            textInputAction: TextInputAction.next,
+            decoration: _fieldDecoration(
+              hintText: 'مثال: تسوق نهاية الأسبوع',
+              prefixIcon: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: const FaIcon(
+                    FontAwesomeIcons.pen,
+                    size: 14,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              AppText.bodyMedium(
+                'الوصف',
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF374151),
+              ),
+              const SizedBox(width: 6),
+              AppText.bodySmall(
+                '(اختياري)',
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF9CA3AF),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _descriptionController,
+            cursorColor: _brandOrange,
+            style: fieldTextStyle,
+            textAlignVertical: TextAlignVertical.top,
+            minLines: 3,
+            maxLines: 5,
+            decoration: _fieldDecoration(
+              hintText: 'ملاحظات أو تفاصيل عن هذه القائمة…',
+              contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                final name = _nameController.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('الاسم مطلوب')));
+                  return;
+                }
+                await context
+                    .read<ShoppingListDetailCubit>()
+                    .updateShoppingList(
+                      name: name,
+                      description: _descriptionController.text.trim(),
+                    );
+                if (!context.mounted) return;
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accentBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('حفظ التعديل'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StoreIdSheet extends StatefulWidget {
+  const StoreIdSheet({super.key});
+
+  @override
+  State<StoreIdSheet> createState() => _StoreIdSheetState();
+}
+
+class _StoreIdSheetState extends State<StoreIdSheet> {
+  static const Color _fieldFill = Color(0xFFF9FAFB);
+  static const Color _borderIdle = Color(0xFFE5E7EB);
+  static const Color _brandOrange = Color(0xFFFF7A00);
+  static const Color _textPrimary = Color(0xFF2F2B3D);
+  static const Color _hintColor = Color(0xFF9CA3AF);
+
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _fieldDecoration({
+    required String hintText,
+    Widget? prefixIcon,
+  }) {
+    OutlineInputBorder border(Color color, [double width = 1]) {
+      return OutlineInputBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
+        borderSide: BorderSide(color: color, width: width),
+      );
+    }
+
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        color: _hintColor,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        height: 1.35,
+      ),
+      filled: true,
+      fillColor: _fieldFill,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      prefixIcon: prefixIcon,
+      prefixIconConstraints: prefixIcon != null
+          ? const BoxConstraints(minWidth: 52, minHeight: 48)
+          : null,
+      border: border(_borderIdle),
+      enabledBorder: border(_borderIdle),
+      focusedBorder: border(_brandOrange, 1.5),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const fieldTextStyle = TextStyle(
+      color: _textPrimary,
+      fontSize: 15,
+      fontWeight: FontWeight.w500,
+      height: 1.4,
+    );
+
+    return BlocProvider.value(
+      value: context.read<ShoppingListDetailCubit>(),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4ED),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFE0CC)),
+                  ),
+                  child: const FaIcon(
+                    FontAwesomeIcons.store,
+                    size: 20,
+                    color: _brandOrange,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppText(
+                    'أدخل رقم المتجر',
+                    style: const TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            AppText.bodyMedium(
+              'رقم المتجر',
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF374151),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _controller,
+              cursorColor: _brandOrange,
+              style: fieldTextStyle,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              decoration: _fieldDecoration(
+                hintText: 'مثال: 101',
+                prefixIcon: Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: const FaIcon(
+                      FontAwesomeIcons.hashtag,
+                      size: 14,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final storeId = int.tryParse(_controller.text.trim());
+                  if (storeId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('رقم المتجر غير صالح')),
+                    );
+                    return;
+                  }
+                  await context.read<ShoppingListDetailCubit>().reorderToCart(
+                    storeId: storeId,
+                  );
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF7A00),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('إعادة الطلب'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ShoppingListDetailsHeader extends StatelessWidget {
   const _ShoppingListDetailsHeader({required this.title});
 
@@ -551,12 +948,25 @@ class _ShoppingListDetailsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: context.width,
-      padding: EdgeInsets.fromLTRB(16, 16 + MediaQuery.paddingOf(context).top, 16, 18),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16 + MediaQuery.paddingOf(context).top,
+        16,
+        18,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: const Border(bottom: BorderSide(color: Color(0xFF1E3A8A), width: 2)),
+        border: const Border(
+          bottom: BorderSide(color: Color(0xFF1E3A8A), width: 2),
+        ),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: const [BoxShadow(offset: Offset(0, 1), blurRadius: 2, color: Color(0x0D000000))],
+        boxShadow: const [
+          BoxShadow(
+            offset: Offset(0, 1),
+            blurRadius: 2,
+            color: Color(0x0D000000),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -567,13 +977,22 @@ class _ShoppingListDetailsHeader extends StatelessWidget {
               width: 40,
               height: 40,
               alignment: Alignment.center,
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: Color(0xFF64748B)),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+                color: Color(0xFF64748B),
+              ),
             ),
           ),
           Expanded(
             child: AppText(
               title,
-              style: const TextStyle(color: Color(0xFF1E3A8A), fontSize: 22, fontWeight: FontWeight.w700, height: 30 / 22),
+              style: const TextStyle(
+                color: Color(0xFF1E3A8A),
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                height: 30 / 22,
+              ),
             ),
           ),
           const SizedBox(width: 40),

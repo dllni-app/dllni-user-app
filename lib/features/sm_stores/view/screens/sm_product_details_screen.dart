@@ -12,6 +12,7 @@ import '../../data/models/get_supermarket_product_details_model.dart';
 import '../../domain/usecases/get_compare_products_use_case.dart';
 import '../manager/bloc/sm_stores_bloc.dart';
 import '../widgets/dialogs/related_products_dialog.dart';
+import '../widgets/dialogs/shopping_lists_dialog.dart';
 import '../widgets/products_bottom_nav_bar.dart';
 import 'package:toastification/toastification.dart';
 
@@ -214,7 +215,8 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                     children: [
                                       _ActionButton(
                                         icon: FontAwesomeIcons.arrowRight,
-                                        onTap: () => context.pop<bool>(_favoriteLocal),
+                                        onTap: () =>
+                                            context.pop<bool>(_favoriteLocal),
                                       ),
                                       Expanded(
                                         child: AppText(
@@ -235,7 +237,8 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                       >(
                                         bloc: _bloc,
                                         listener: (context, state) {
-                                          if (state.changeProductFavoriteStatus ==
+                                          if (state
+                                                  .changeProductFavoriteStatus ==
                                               BlocStatus.failed) {
                                             setState(() {
                                               _favoriteLocal = !_favoriteLocal;
@@ -262,7 +265,8 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                                     ChangeProductFavoriteParams(
                                                       productId:
                                                           widget.args.productId,
-                                                      isFavorite: _favoriteLocal,
+                                                      isFavorite:
+                                                          _favoriteLocal,
                                                     ),
                                               ),
                                             );
@@ -275,6 +279,42 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                         onTap: () {},
                                       ),
                                     ],
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 24,
+                                  left: 24,
+                                  child: _ActionButton(
+                                    icon: FontAwesomeIcons.add,
+                                    onTap: () {
+                                      final masterId = context
+                                          .read<SmStoresBloc>()
+                                          .state
+                                          .productDetails
+                                          ?.masterProductId;
+                                      if (masterId == null || masterId <= 0) {
+                                        AppToast.showToast(
+                                          context: context,
+                                          message: 'تعذر تحديد المنتج',
+                                          type: ToastificationType.error,
+                                        );
+                                        return;
+                                      }
+                                      context.read<SmStoresBloc>().add(
+                                        LoadShoppingListsEvent(),
+                                      );
+                                      showDialog<void>(
+                                        context: context,
+                                        builder: (_) =>
+                                            BlocProvider.value(
+                                              value: context
+                                                  .read<SmStoresBloc>(),
+                                              child: ShoppingListsDialog(
+                                                masterProductId: masterId,
+                                              ),
+                                            ),
+                                      );
+                                    },
                                   ),
                                 ),
                                 if (state.productDetailsStatus ==
@@ -352,13 +392,13 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                     InkWell(
                                       onTap: () {
                                         context.read<SmStoresBloc>().add(
-                                              GetCompareProductsEvent(
-                                                isReload: true,
-                                                params: GetCompareProductsParams(
-                                                  productId: widget.args.productId,
-                                                ),
-                                              ),
-                                            );
+                                          GetCompareProductsEvent(
+                                            isReload: true,
+                                            params: GetCompareProductsParams(
+                                              productId: widget.args.productId,
+                                            ),
+                                          ),
+                                        );
                                         showDialog(
                                           context: context,
                                           builder: (_) => BlocProvider.value(
@@ -432,7 +472,8 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                           fontSize: 18,
                                           fontWeight: FontWeight.w500,
                                           height: 28 / 18,
-                                          decoration: TextDecoration.lineThrough,
+                                          decoration:
+                                              TextDecoration.lineThrough,
                                           decorationColor: Color(0xFF9CA3AF),
                                         ),
                                       ),
@@ -441,7 +482,9 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                               ],
                             ),
                           ),
-                          if (failedProduct && product == null && starter != null)
+                          if (failedProduct &&
+                              product == null &&
+                              starter != null)
                             Padding(
                               padding: const EdgeInsets.all(24),
                               child: FailureWidget(
@@ -538,11 +581,11 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                 isSubmitting: state.addToCartStatus == BlocStatus.loading,
                 onAddToCart: (quantity) {
                   context.read<SmStoresBloc>().add(
-                        AddSupermarketCartItemEvent(
-                          productId: widget.args.productId,
-                          quantity: quantity,
-                        ),
-                      );
+                    AddSupermarketCartItemEvent(
+                      productId: widget.args.productId,
+                      quantity: quantity,
+                    ),
+                  );
                 },
               ),
             ),

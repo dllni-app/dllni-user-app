@@ -1,9 +1,15 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-class RestaurantCartEmptyView extends StatelessWidget {
-  const RestaurantCartEmptyView({super.key, required this.onRefresh});
+import '../../../sm_main_page.dart';
 
+class RestaurantCartEmptyView extends StatelessWidget {
+  const RestaurantCartEmptyView({
+    super.key,
+    required this.onRefresh,
+    required this.isStore,
+  });
+  final bool isStore;
   final Future<void> Function() onRefresh;
 
   @override
@@ -14,7 +20,11 @@ class RestaurantCartEmptyView extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(height: MediaQuery.sizeOf(context).height * .12),
-          Icon(Icons.shopping_cart_outlined, size: 72, color: Colors.grey.shade400),
+          Icon(
+            Icons.shopping_cart_outlined,
+            size: 72,
+            color: Colors.grey.shade400,
+          ),
           const SizedBox(height: 20),
           AppText.titleMedium(
             'قائمة المشتريات',
@@ -33,14 +43,25 @@ class RestaurantCartEmptyView extends StatelessWidget {
             child: FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF1E2A78),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              onPressed: () => context.pushRoute('/rsmain'),
+              onPressed: () => isStore
+                  ? context.pushRoute(
+                      '/smmain',
+                      arguments: SmMainScreenParams(
+                        initialPage: 0,
+                        expandSearch: false,
+                      ),
+                    )
+                  : context.pushRoute('/rsmain'),
               child: AppText.labelLarge(
-                'تصفح المطاعم',
+                'تصفح ${isStore ? "المتاجر" : "المطاعم"}',
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),

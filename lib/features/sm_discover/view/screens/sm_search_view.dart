@@ -35,27 +35,41 @@ class _SmSearchViewState extends State<SmSearchView> {
 
   late SpeechToText speechToText;
   bool isListening = false;
-  String recognizedText = '';
   double soundLevel = 0.0;
+
   @override
   void initState() {
+    super.initState();
     searchController = TextEditingController();
     searchHistory =
         SharedPreferencesHelper.sharedPreferences!.getStringList(
           Constants.searchKey,
         ) ??
         [];
-    super.initState();
+    speechToText = SpeechToText();
   }
 
   @override
   void didUpdateWidget(covariant SmSearchView oldWidget) {
-    if (isSearching == true) {
+    if (isSearching == true && !isListening) {
       searchController.clear();
       isSearching = false;
       setState(() {});
     }
     super.didUpdateWidget(oldWidget);
+  }
+
+  /// Picks a device-supported Arabic locale, else system default, else null.
+  Future<String?> _pickSpeechLocale() async {
+    final locales = await speechToText.locales();
+    for (final locale in locales) {
+      if (locale.localeId.toLowerCase().startsWith('ar')) {
+        return locale.localeId;
+      }
+    }
+    final system = await speechToText.systemLocale();
+    // return system?.localeId;
+    return "ar_SA";
   }
 
   @override
@@ -324,27 +338,25 @@ class _SmSearchViewState extends State<SmSearchView> {
     setState(() {});
   }
 
-  void _startListening() async {
-    PermissionStatus status = await Permission.microphone.status;
-    print("status: $status");
-    if (status.isDenied) {
+  Future<void> _startListening() async {
+    var status = await Permission.microphone.status;
+    if (status.isPermanentlyDenied) {
+      _showPermissionDialog();
+      return;
+    }
+    if (status.isDenied || status.isRestricted) {
       status = await Permission.microphone.request();
     }
-    print("status: $status");
-
     if (!status.isGranted) {
       _showPermissionDialog();
       return;
     }
-    print("status: $status");
-    setState(() {
-      searchController.clear();
-      isListening = true;
-    });
-    print("status: $status");
-    bool available = await speechToText.initialize(
-      onStatus: (status) {
-        if (status == 'done') {
+
+    final available = await speechToText.initialize(
+      onStatus: (pluginStatus) {
+        if (pluginStatus == SpeechToText.doneStatus ||
+            pluginStatus == SpeechToText.notListeningStatus) {
+          if (!mounted) return;
           setState(() {
             isListening = false;
             soundLevel = 0.0;
@@ -352,6 +364,7 @@ class _SmSearchViewState extends State<SmSearchView> {
         }
       },
       onError: (_) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('لم يتم التقاط أي صوت، يرجى التحدث بوضوح.'),
@@ -359,21 +372,54 @@ class _SmSearchViewState extends State<SmSearchView> {
         );
       },
     );
-    print("status: $status");
     if (!available) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('الميكروفون أو التعرف الصوتي غير متاح')),
       );
       return;
     }
-    print("status: $status");
-    speechToText.listen(
-      onResult: (result) =>
-          setState(() => searchController.text = result.recognizedWords),
-      onSoundLevelChange: (level) => setState(() => soundLevel = level),
-      localeId: 'ar_SA',
-    );
-    print("status: $status");
+
+    final localeId = await _pickSpeechLocale();
+
+    if (!mounted) return;
+    setState(() {
+      searchController.clear();
+      isListening = true;
+    });
+
+    try {
+      await speechToText.listen(
+        onResult: (result) {
+          if (!mounted) return;
+          final text = result.recognizedWords;
+          setState(() {
+            searchController.text = text;
+            searchController.selection = TextSelection.collapsed(
+              offset: text.length,
+            );
+          });
+        },
+        onSoundLevelChange: (level) {
+          if (mounted) setState(() => soundLevel = level);
+        },
+        localeId: localeId,
+        listenOptions: SpeechListenOptions(
+          listenMode: ListenMode.search,
+          partialResults: true,
+          cancelOnError: true,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        isListening = false;
+        soundLevel = 0.0;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذّر بدء الاستماع. حاول مرة أخرى.')),
+      );
+    }
   }
 
   void _stopListening() async {

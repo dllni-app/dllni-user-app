@@ -95,7 +95,7 @@ class _SupermarketCartCheckoutBodyState extends State<SupermarketCartCheckoutBod
           );
         }
         if (!hasCart) {
-          return RestaurantCartEmptyView(onRefresh: widget.onRefresh);
+          return RestaurantCartEmptyView(onRefresh: widget.onRefresh, isStore: true,);
         }
 
         final data = cart;

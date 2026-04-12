@@ -148,7 +148,7 @@ class OrdersRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/orders/stores/${params.orderId}/tracking',
+        endPoint: '/api/v1/user/orders/supermarket/${params.orderId}/tracking',
       ),
       jsonConvert: fetchRestaurantOrderTrackingModelFromJson,
     );

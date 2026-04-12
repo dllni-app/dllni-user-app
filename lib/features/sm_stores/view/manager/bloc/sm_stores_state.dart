@@ -13,6 +13,10 @@ class SmStoresState {
 
   final String? errorMessage;
 
+  final BlocStatus shoppingListsStatus;
+  final List<ShoppingListSummaryModel> shoppingLists;
+  final String? shoppingListsErrorMessage;
+
   SmStoresState({
     this.storeDetailsStatus = BlocStatus.init,
     this.store,
@@ -23,6 +27,9 @@ class SmStoresState {
     this.addToCartErrorMessage,
     this.errorMessage,
     this.compareProducts = const PaginationStateModel(perPage: 10),
+    this.shoppingListsStatus = BlocStatus.init,
+    this.shoppingLists = const <ShoppingListSummaryModel>[],
+    this.shoppingListsErrorMessage,
   });
 
   /// Clears product details and sets loading (copyWith cannot null [productDetails]).
@@ -36,6 +43,10 @@ class SmStoresState {
       addToCartMessage: addToCartMessage,
       addToCartErrorMessage: addToCartErrorMessage,
       errorMessage: null,
+      compareProducts: compareProducts,
+      shoppingListsStatus: shoppingListsStatus,
+      shoppingLists: shoppingLists,
+      shoppingListsErrorMessage: shoppingListsErrorMessage,
     );
   }
 
@@ -51,6 +62,10 @@ class SmStoresState {
     bool clearAddToCartError = false,
     String? errorMessage,
     PaginationStateModel<GetCompareProductsModelDataItem>? compareProducts,
+    BlocStatus? shoppingListsStatus,
+    List<ShoppingListSummaryModel>? shoppingLists,
+    String? shoppingListsErrorMessage,
+    bool clearShoppingListsError = false,
   }) {
     return SmStoresState(
       storeDetailsStatus: storeDetailsStatus ?? this.storeDetailsStatus,
@@ -64,6 +79,12 @@ class SmStoresState {
           ? null
           : (addToCartErrorMessage ?? this.addToCartErrorMessage),
       errorMessage: errorMessage ?? this.errorMessage,
-        compareProducts: compareProducts ?? this.compareProducts,);
+      compareProducts: compareProducts ?? this.compareProducts,
+      shoppingListsStatus: shoppingListsStatus ?? this.shoppingListsStatus,
+      shoppingLists: shoppingLists ?? this.shoppingLists,
+      shoppingListsErrorMessage: clearShoppingListsError
+          ? null
+          : (shoppingListsErrorMessage ?? this.shoppingListsErrorMessage),
+    );
   }
 }

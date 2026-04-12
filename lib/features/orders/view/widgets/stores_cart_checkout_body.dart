@@ -85,7 +85,7 @@ class _StoresCartCheckoutBodyState extends State<StoresCartCheckoutBody> {
           );
         }
         if (!hasCart) {
-          return RestaurantCartEmptyView(onRefresh: widget.onRefresh);
+          return RestaurantCartEmptyView(onRefresh: widget.onRefresh, isStore: true,);
         }
 
         final data = cart;

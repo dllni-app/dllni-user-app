@@ -32,3 +32,5 @@ class AddSupermarketCartItemEvent extends SmStoresEvent {
     required this.quantity,
   });
 }
+
+class LoadShoppingListsEvent extends SmStoresEvent {}

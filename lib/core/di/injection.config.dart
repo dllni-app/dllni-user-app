@@ -407,14 +407,6 @@ _i174.GetIt $initGetIt(
       shoppingListsRemoteDataSource: gh<_i1007.ShoppingListsRemoteDataSource>(),
     ),
   );
-  gh.factory<_i883.SmStoresBloc>(
-    () => _i883.SmStoresBloc(
-      gh<_i151.GetSupermarketStoreDetailsUseCase>(),
-      gh<_i749.GetSupermarketProductDetailsUseCase>(),
-      gh<_i802.GetCompareProductsUseCase>(),
-      gh<_i431.AddSupermarketCartItemUseCase>(),
-    ),
-  );
   gh.lazySingleton<_i117.RsHomeRepo>(
     () => _i500.RsHomeRepoImpl(
       rsHomeRemoteDataSource: gh<_i165.RsHomeRemoteDataSource>(),
@@ -781,6 +773,15 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i983.UpdateAddressUseCase>(
     () => _i983.UpdateAddressUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.factory<_i883.SmStoresBloc>(
+    () => _i883.SmStoresBloc(
+      gh<_i151.GetSupermarketStoreDetailsUseCase>(),
+      gh<_i749.GetSupermarketProductDetailsUseCase>(),
+      gh<_i802.GetCompareProductsUseCase>(),
+      gh<_i431.AddSupermarketCartItemUseCase>(),
+      gh<_i524.FetchShoppingListsUseCase>(),
+    ),
   );
   gh.factory<_i1049.RestaurantOrderCheckoutCubit>(
     () => _i1049.RestaurantOrderCheckoutCubit(

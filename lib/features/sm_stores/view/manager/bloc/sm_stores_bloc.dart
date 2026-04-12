@@ -12,6 +12,8 @@ import '../../../domain/usecases/get_supermarket_store_details_use_case.dart';
 import 'package:common_package/helpers/droppable_helper.dart';
 import '../../../domain/usecases/get_compare_products_use_case.dart';
 import '../../../data/models/get_compare_products_model.dart';
+import '../../../../profile/data/models/shopping_lists_api_models.dart';
+import '../../../../profile/domain/usecases/fetch_shopping_lists_use_case.dart';
 
 part 'sm_stores_event.dart';
 part 'sm_stores_state.dart';
@@ -22,18 +24,21 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
   final GetSupermarketStoreDetailsUseCase getSupermarketStoreDetailsUseCase;
   final GetSupermarketProductDetailsUseCase getSupermarketProductDetailsUseCase;
   final AddSupermarketCartItemUseCase addSupermarketCartItemUseCase;
+  final FetchShoppingListsUseCase fetchShoppingListsUseCase;
 
   SmStoresBloc(
     this.getSupermarketStoreDetailsUseCase,
     this.getSupermarketProductDetailsUseCase,
     this.getCompareProductsUseCase,
     this.addSupermarketCartItemUseCase,
+    this.fetchShoppingListsUseCase,
   ) : super(SmStoresState()) {
     on<LoadSupermarketStoreDetailsEvent>(_loadSupermarketStoreDetails);
     on<LoadSupermarketProductDetailsEvent>(_loadSupermarketProductDetails);
 
     on<GetCompareProductsEvent>(_getCompareProducts, transformer: droppableProMax());
     on<AddSupermarketCartItemEvent>(_addSupermarketCartItem);
+    on<LoadShoppingListsEvent>(_loadShoppingLists);
   }
 
   FutureOr<void> _loadSupermarketStoreDetails(
@@ -101,6 +106,38 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
     );
   }
 
+  FutureOr<void> _loadShoppingLists(
+    LoadShoppingListsEvent event,
+    Emitter<SmStoresState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        shoppingListsStatus: BlocStatus.loading,
+        clearShoppingListsError: true,
+      ),
+    );
+    final res = await fetchShoppingListsUseCase(FetchShoppingListsParams());
+    res.fold(
+      (l) {
+        emit(
+          state.copyWith(
+            shoppingListsStatus: BlocStatus.failed,
+            shoppingLists: const <ShoppingListSummaryModel>[],
+            shoppingListsErrorMessage: l.message,
+          ),
+        );
+      },
+      (r) {
+        emit(
+          state.copyWith(
+            shoppingListsStatus: BlocStatus.success,
+            shoppingLists: r.data,
+            shoppingListsErrorMessage: null,
+          ),
+        );
+      },
+    );
+  }
 
   EventTransformer<T> droppableProMax<T extends EventWithReload>() {
     return (events, mapper) {

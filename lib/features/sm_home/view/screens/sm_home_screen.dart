@@ -98,55 +98,65 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
                         if (state.featuredOffersStatus == BlocStatus.success) {
                           lengthOfOffers =
                               state.featuredOffers?.offers?.length ?? 0;
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                height: 130,
-                                child: PageView.builder(
-                                  controller: _pageController,
-                                  itemCount:
-                                      state.featuredOffers?.offers?.length ?? 0,
-                                  itemBuilder: (_, index) => OfferCard(
-                                    offer: state.featuredOffers!.offers![index],
-                                  ),
-                                ),
-                                // child: PageView(
-                                //   controller: _pageController,
-                                //   children: List.generate(
-                                //     state.featuredOffers?.offers?.length ?? 0,
-                                //     (index) => OfferCard(
-                                //       offer:
-                                //           state.featuredOffers!.offers![index],
-                                //     ),
-                                //   ),
-                                // ),
-                              ),
-                              SizedBox(height: 8),
-                              SizedBox(
-                                height: 4,
-                                child: Center(
-                                  child: SmoothPageIndicator(
-                                    controller: _pageController,
-                                    count:
-                                        state.featuredOffers?.offers?.length ??
-                                        0,
-                                    effect: ExpandingDotsEffect(
-                                      expansionFactor: 1.01,
-                                      dotHeight: 4,
-                                      dotWidth: 18,
-                                      spacing: 4,
-                                      dotColor: AppColors.primary.withValues(
-                                        alpha: .34,
+                          return lengthOfOffers > 0
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      height: 130,
+                                      child: PageView.builder(
+                                        controller: _pageController,
+                                        itemCount:
+                                            state
+                                                .featuredOffers
+                                                ?.offers
+                                                ?.length ??
+                                            0,
+                                        itemBuilder: (_, index) => OfferCard(
+                                          offer: state
+                                              .featuredOffers!
+                                              .offers![index],
+                                        ),
                                       ),
-                                      activeDotColor: AppColors.primary,
+                                      // child: PageView(
+                                      //   controller: _pageController,
+                                      //   children: List.generate(
+                                      //     state.featuredOffers?.offers?.length ?? 0,
+                                      //     (index) => OfferCard(
+                                      //       offer:
+                                      //           state.featuredOffers!.offers![index],
+                                      //     ),
+                                      //   ),
+                                      // ),
                                     ),
-                                    onDotClicked: (index) {},
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
+                                    SizedBox(height: 8),
+                                    SizedBox(
+                                      height: 4,
+                                      child: Center(
+                                        child: SmoothPageIndicator(
+                                          controller: _pageController,
+                                          count:
+                                              state
+                                                  .featuredOffers
+                                                  ?.offers
+                                                  ?.length ??
+                                              0,
+                                          effect: ExpandingDotsEffect(
+                                            expansionFactor: 1.01,
+                                            dotHeight: 4,
+                                            dotWidth: 18,
+                                            spacing: 4,
+                                            dotColor: AppColors.primary
+                                                .withValues(alpha: .34),
+                                            activeDotColor: AppColors.primary,
+                                          ),
+                                          onDotClicked: (index) {},
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : SizedBox.shrink();
                         }
                         return SizedBox();
                       },

@@ -30,7 +30,9 @@ class ShoppingListsState {
       status: status ?? this.status,
       createStatus: createStatus ?? this.createStatus,
       lists: lists ?? this.lists,
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -50,6 +52,7 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
       emit(state.copyWith(status: BlocStatus.loading, clearErrorMessage: true));
     }
     final res = await fetchShoppingListsUseCase(FetchShoppingListsParams());
+    if (isClosed) return;
     res.fold(
       (failure) => emit(
         state.copyWith(
@@ -71,13 +74,18 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
     required String name,
     String? description,
   }) async {
-    emit(state.copyWith(createStatus: BlocStatus.loading, clearErrorMessage: true));
+    emit(
+      state.copyWith(createStatus: BlocStatus.loading, clearErrorMessage: true),
+    );
     final res = await createShoppingListUseCase(
       CreateShoppingListParams(
         name: name,
-        description: description?.trim().isEmpty == true ? null : description?.trim(),
+        description: description?.trim().isEmpty == true
+            ? null
+            : description?.trim(),
       ),
     );
+    if(isClosed) return;
     res.fold(
       (failure) => emit(
         state.copyWith(
@@ -86,7 +94,12 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
         ),
       ),
       (_) async {
-        emit(state.copyWith(createStatus: BlocStatus.success, clearErrorMessage: true));
+        emit(
+          state.copyWith(
+            createStatus: BlocStatus.success,
+            clearErrorMessage: true,
+          ),
+        );
         await loadShoppingLists(showLoader: false);
       },
     );
