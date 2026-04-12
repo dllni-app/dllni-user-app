@@ -11,7 +11,7 @@ import '../models/product_preview_data.dart';
 import '../models/store_product_item.dart';
 import 'rs_product_details_screen.dart';
 
-@AutoRoutePage(path: "/store-all-products")
+@AutoRoutePage(path: "/rs_store-all-products")
 class SmStoreAllProductsScreen extends StatefulWidget {
   const SmStoreAllProductsScreen({super.key, required this.restaurantId});
 

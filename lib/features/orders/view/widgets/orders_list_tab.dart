@@ -12,6 +12,7 @@ class OrdersListTab extends StatefulWidget {
   const OrdersListTab({
     super.key,
     required this.state,
+    this.initialSegmentIndex = OrdersCartOrdersSegmentBar.ordersIndex,
     required this.scrollController,
     required this.onRefresh,
     required this.onRefreshCart,
@@ -19,6 +20,7 @@ class OrdersListTab extends StatefulWidget {
   });
 
   final OrdersState state;
+  final int initialSegmentIndex;
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onRefreshCart;
@@ -29,8 +31,27 @@ class OrdersListTab extends StatefulWidget {
 }
 
 class _OrdersListTabState extends State<OrdersListTab> {
+  late int segmentIndex;
 
-  int segmentIndex = OrdersCartOrdersSegmentBar.ordersIndex;
+  @override
+  void initState() {
+    super.initState();
+    segmentIndex = widget.initialSegmentIndex;
+    if (segmentIndex == OrdersCartOrdersSegmentBar.cartIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<OrdersBloc>().add(FetchCartForActiveSectionEvent());
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant OrdersListTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state.selectedTabIndex != widget.state.selectedTabIndex && segmentIndex == OrdersCartOrdersSegmentBar.cartIndex) {
+      context.read<OrdersBloc>().add(FetchCartForActiveSectionEvent());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +64,7 @@ class _OrdersListTabState extends State<OrdersListTab> {
           onChanged: (index) {
             setState(() => segmentIndex = index);
             if (index == OrdersCartOrdersSegmentBar.cartIndex) {
-              context.read<OrdersBloc>().add(FetchRestaurantCartEvent());
+              context.read<OrdersBloc>().add(FetchCartForActiveSectionEvent());
             }
           },
         ),
@@ -52,9 +73,7 @@ class _OrdersListTabState extends State<OrdersListTab> {
             index: segmentIndex,
             sizing: StackFit.expand,
             children: [
-              OrdersShoppingListTab(
-                onRefresh: widget.onRefreshCart,
-              ),
+              OrdersShoppingListTab(state: widget.state, onRefresh: widget.onRefreshCart),
               RefreshIndicator(
                 onRefresh: widget.onRefresh,
                 child: OrdersListBody(state: widget.state, scrollController: widget.scrollController),

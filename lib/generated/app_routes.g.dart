@@ -22,9 +22,24 @@ import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_deta
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_store_all_products_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_store_all_reviews_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_store_details_screen.dart';
+import 'package:dllni_user_app/features/rs_favourite/view/screens/rs_favourite_screen.dart';
 import 'package:dllni_user_app/features/rs_home/view/screens/rs_home_category_products_screen.dart';
 import 'package:dllni_user_app/features/rs_home/view/screens/rs_home_screen.dart';
 import 'package:dllni_user_app/features/rs_main/view/rs_main_screen.dart';
+import 'package:dllni_user_app/features/sm_cart/view/screens/sm_cart_details_screen.dart';
+import 'package:dllni_user_app/features/sm_cart/view/screens/sm_cart_screen.dart';
+import 'package:dllni_user_app/features/sm_cart/view/screens/sm_late_time_screen.dart';
+import 'package:dllni_user_app/features/sm_discover/view/screens/sm_discover_screen.dart';
+import 'package:dllni_user_app/features/sm_favorite/view/screens/sm_favorite_screen.dart';
+import 'package:dllni_user_app/features/sm_home/view/screens/sm_home_screen.dart';
+import 'package:dllni_user_app/features/sm_main_page.dart';
+import 'package:dllni_user_app/features/sm_offers/view/screens/sm_offers_screen.dart';
+import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_details_screen.dart';
+import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_tracking_screen.dart';
+import 'package:dllni_user_app/features/sm_stores/view/screens/sm_product_details_screen.dart';
+import 'package:dllni_user_app/features/sm_stores/view/screens/sm_store_details_screen.dart';
+
+import '../features/profile/data/models/shopping_lists_api_models.dart';
 
 class GeneratedAppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
@@ -118,10 +133,13 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/shopping_list_details':
-        return MaterialPageRoute(
-          builder: (_) => ShoppingListDetailsScreen(),
-          settings: settings,
-        );
+        if (args is ShoppingListDetailsArgs) {
+          return MaterialPageRoute(
+            builder: (_) => ShoppingListDetailsScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/shopping_list':
         return MaterialPageRoute(
           builder: (_) => ShoppingListScreen(),
@@ -135,7 +153,7 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
-      case '/discover':
+      case '/rs_discover':
         if (args is int) {
           return MaterialPageRoute(
             builder: (_) => RsDiscoverScreen(selectedView: args),
@@ -143,15 +161,15 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
-      case '/product':
+      case '/rs_product':
         if (args is ProductDetailsScreenParams) {
           return MaterialPageRoute(
-            builder: (_) => SmProductDetailsScreen(params: args),
+            builder: (_) => RsProductDetailsScreen(params: args),
             settings: settings,
           );
         }
         return _errorRoute(settings);
-      case '/store-all-products':
+      case '/rs_store-all-products':
         if (args is int) {
           return MaterialPageRoute(
             builder: (_) => SmStoreAllProductsScreen(restaurantId: args),
@@ -159,7 +177,7 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
-      case '/store-all-reviews':
+      case '/rs_store-all-reviews':
         if (args is StoreAllReviewsScreenParams) {
           return MaterialPageRoute(
             builder: (_) => SmStoreAllReviewsScreen(params: args),
@@ -167,14 +185,19 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
-      case '/store':
+      case '/rs_store':
         if (args is StoreDetailsScreenParams) {
           return MaterialPageRoute(
-            builder: (_) => SmStoreDetailsScreen(params: args),
+            builder: (_) => RsStoreDetailsScreen(params: args),
             settings: settings,
           );
         }
         return _errorRoute(settings);
+      case '/rsfavourite':
+        return MaterialPageRoute(
+          builder: (_) => RsFavouriteScreen(),
+          settings: settings,
+        );
       case '/rshomecategoryproducts':
         if (args is RsHomeCategoryProductsScreenParams) {
           return MaterialPageRoute(
@@ -193,6 +216,81 @@ class GeneratedAppRoutes {
           builder: (_) => RsMainScreen(),
           settings: settings,
         );
+      case '/cart_details':
+        return MaterialPageRoute(
+          builder: (_) => SmCartDetailsScreen(),
+          settings: settings,
+        );
+      case '/cart':
+        return MaterialPageRoute(
+          builder: (_) => SmCartScreen(),
+          settings: settings,
+        );
+      case '/late_time':
+        return MaterialPageRoute(
+          builder: (_) => SmLateTimeScreen(),
+          settings: settings,
+        );
+      case '/sm_discover':
+        if (args is SmDiscoverScreenParams) {
+          return MaterialPageRoute(
+            builder: (_) => SmDiscoverScreen(params: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/sm_favorite':
+        return MaterialPageRoute(
+          builder: (_) => SmFavoriteScreen(),
+          settings: settings,
+        );
+      case '/sm_home':
+        return MaterialPageRoute(
+          builder: (_) => SmHomeScreen(),
+          settings: settings,
+        );
+      case '/smmain':
+        if (args is SmMainScreenParams) {
+          return MaterialPageRoute(
+            builder: (_) => SmMainPage(params: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/sm_offers':
+        return MaterialPageRoute(
+          builder: (_) => SmOffersScreen(),
+          settings: settings,
+        );
+      case '/order_details':
+        if (args is SmOrderDetailsScreenArgs) {
+          return MaterialPageRoute(
+            builder: (_) => SmOrderDetailsScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/order_tracking':
+        return MaterialPageRoute(
+          builder: (_) => SmOrderTrackingScreen(),
+          settings: settings,
+        );
+      case '/product':
+        if (args is SmProductDetailsScreenArgs) {
+          return MaterialPageRoute(
+            builder: (_) => SmProductDetailsScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/store':
+        if (args is SmStoreDetailsScreenArgs?) {
+          return MaterialPageRoute(
+            builder: (_) => SmStoreDetailsScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
 
     }
 

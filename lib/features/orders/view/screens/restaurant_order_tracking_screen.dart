@@ -2,15 +2,20 @@ import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/fetch_store_order_tracking_use_case.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/orders_api_models.dart';
 import '../widgets/restaurant_order_tracking_view.dart';
 
 class RestaurantOrderTrackingArgs {
-  RestaurantOrderTrackingArgs({required this.order});
+  RestaurantOrderTrackingArgs({
+    required this.order,
+    this.section = 'restaurant',
+  });
 
   final OrderResourceModel order;
+  final String section;
 }
 
 @AutoRoutePage(path: '/restaurant-order-tracking')
@@ -50,7 +55,13 @@ class _RestaurantOrderTrackingScreenState extends State<RestaurantOrderTrackingS
     });
 
     final Either<Failure, FetchRestaurantOrderTrackingModel> result =
-        await getIt<FetchRestaurantOrderTrackingUseCase>()(FetchRestaurantOrderTrackingParams(orderId: id));
+        widget.args.section == 'supermarket'
+            ? await getIt<FetchStoreOrderTrackingUseCase>()(
+                FetchRestaurantOrderTrackingParams(orderId: id),
+              )
+            : await getIt<FetchRestaurantOrderTrackingUseCase>()(
+                FetchRestaurantOrderTrackingParams(orderId: id),
+              );
 
     if (!mounted) return;
 

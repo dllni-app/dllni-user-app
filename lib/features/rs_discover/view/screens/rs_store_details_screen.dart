@@ -21,17 +21,17 @@ class StoreDetailsScreenParams {
   const StoreDetailsScreenParams({required this.restaurantId, required this.preview});
 }
 
-@AutoRoutePage(path: "/store")
-class SmStoreDetailsScreen extends StatefulWidget {
-  const SmStoreDetailsScreen({super.key, required this.params});
+@AutoRoutePage(path: "/rs_store")
+class RsStoreDetailsScreen extends StatefulWidget {
+  const RsStoreDetailsScreen({super.key, required this.params});
 
   final StoreDetailsScreenParams params;
 
   @override
-  State<SmStoreDetailsScreen> createState() => _SmStoreDetailsScreenState();
+  State<RsStoreDetailsScreen> createState() => _RsStoreDetailsScreenState();
 }
 
-class _SmStoreDetailsScreenState extends State<SmStoreDetailsScreen> {
+class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
   int _selectedFilterIndex = 0;
   late final Future<FetchRestaurantDetailsModel?> _detailsFuture;
   late bool _isFavorited;

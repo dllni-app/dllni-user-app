@@ -6,12 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class FavouriteProductPlaceholderCard extends StatefulWidget {
-  const FavouriteProductPlaceholderCard({
-    super.key,
-    required this.product,
-    this.onAddToCart,
-    this.onFavouriteChanged,
-  });
+  const FavouriteProductPlaceholderCard({super.key, required this.product, this.onAddToCart, this.onFavouriteChanged});
 
   final StoreProductItem product;
   final Future<void> Function()? onAddToCart;
@@ -79,12 +74,7 @@ class _FavouriteProductPlaceholderCardState extends State<FavouriteProductPlaceh
     final hasValidProductId = (product.id ?? 0) > 0;
     return InkWell(
       onTap: hasValidProductId
-          ? () => context.pushRoute(
-                '/product',
-                arguments: ProductDetailsScreenParams(
-                  product: ProductPreviewData.fromStoreProduct(product),
-                ),
-              )
+          ? () => context.pushRoute('/product', arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(product)))
           : null,
       borderRadius: BorderRadius.circular(24),
       child: Container(

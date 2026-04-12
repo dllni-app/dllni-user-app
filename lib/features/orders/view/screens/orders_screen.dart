@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../manager/bloc/orders_bloc.dart';
+import '../widgets/orders_cart_orders_segment_bar.dart';
 import '../widgets/orders_list_tab.dart';
 
 class OrdersScreen extends StatefulWidget {
-  const OrdersScreen({super.key});
+  const OrdersScreen({super.key, this.initialSectionIndex = 0, this.initialSegmentIndex = OrdersCartOrdersSegmentBar.ordersIndex});
+
+  final int initialSectionIndex;
+  final int initialSegmentIndex;
 
   @override
   State<OrdersScreen> createState() => _OrdersScreenState();
@@ -24,8 +28,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Future<void> _refreshCart(BuildContext context) async {
     final bloc = context.read<OrdersBloc>();
-    bloc.add(FetchRestaurantCartEvent());
-    await bloc.stream.firstWhere((state) => state.restaurantCartStatus != BlocStatus.loading);
+    final waitingForStores = bloc.state.isStoresSection();
+    bloc.add(FetchCartForActiveSectionEvent());
+    await bloc.stream.firstWhere((state) {
+      final status = waitingForStores ? state.storeCartStatus : state.restaurantCartStatus;
+      return status != BlocStatus.loading;
+    });
   }
 
   @override
@@ -51,13 +59,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<OrdersBloc>()
-        ..add(FetchOrdersEvent(isReload: true))
-        ..add(FetchRestaurantCartEvent()),
+      create: (_) => getIt<OrdersBloc>()..add(OrdersSectionChangedEvent(widget.initialSectionIndex)),
       child: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
           return OrdersListTab(
             state: state,
+            initialSegmentIndex: widget.initialSegmentIndex,
             scrollController: _scrollController,
             onRefresh: () => _refreshOrders(context),
             onRefreshCart: () => _refreshCart(context),

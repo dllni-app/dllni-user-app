@@ -19,12 +19,16 @@ class CheckRestaurantCouponUseCase
 
 class CheckRestaurantCouponParams with Params {
   final String couponCode;
+  final String section;
 
-  CheckRestaurantCouponParams({required this.couponCode});
+  CheckRestaurantCouponParams({
+    required this.couponCode,
+    this.section = 'restaurants',
+  });
 
   @override
   BodyMap getBody() => {
-        'section': 'restaurants',
+        'section': section,
         'couponCode': couponCode,
       };
 }

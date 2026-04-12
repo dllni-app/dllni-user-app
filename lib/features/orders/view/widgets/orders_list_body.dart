@@ -1,6 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../sm_orders/view/screens/sm_order_details_screen.dart';
+import '../../../sm_orders/view/widgets/order_card.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../screens/restaurant_order_tracking_screen.dart';
 import 'restaurant_order_card.dart';
@@ -13,6 +15,7 @@ class OrdersListBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isStoresSection = state.selectedTabIndex == 0;
     if (state.status == BlocStatus.loading && state.orders.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -44,12 +47,27 @@ class OrdersListBody extends StatelessWidget {
               );
             }
             final order = state.orders[index];
+            if (isStoresSection) {
+              return OrderCard(
+                order: order,
+                onTap: () {
+                  context.pushRoute(
+                    '/order_details',
+                    arguments: SmOrderDetailsScreenArgs(order: order),
+                  );
+                },
+              );
+            }
             return RestaurantOrderCard(
               order: order,
+              merchantLabel: 'المطعم:',
               onTap: () {
                 context.pushRoute(
                   '/restaurant-order-tracking',
-                  arguments: RestaurantOrderTrackingArgs(order: order),
+                  arguments: RestaurantOrderTrackingArgs(
+                    order: order,
+                    section: 'restaurant',
+                  ),
                 );
               },
             );

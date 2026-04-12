@@ -86,7 +86,7 @@ class RsHomeBloc extends Bloc<RsHomeEvent, RsHomeState> {
           );
         },
         (r) {
-          emit(state.copyWith(stores: state.stores!.setSuccess(data: r.data!)));
+          emit(state.copyWith(stores: state.stores!.setSuccess(data: r.data!, total: r.meta!.total!)));
         },
       );
     }

@@ -8,6 +8,7 @@ import '../../domain/usecases/fetch_order_details_use_case.dart';
 import '../../domain/usecases/fetch_orders_use_case.dart';
 import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/place_restaurant_order_use_case.dart';
+import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/orders_api_models.dart';
 import '../source/orders_remote_data_source.dart';
@@ -68,6 +69,13 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   }
 
   @override
+  DataResponse<FetchRestaurantCartModel> fetchStoreCart() {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.fetchStoreCart(),
+    );
+  }
+
+  @override
   DataResponse<PlaceRestaurantOrderModel> placeRestaurantOrder(
     PlaceRestaurantOrderParams params,
   ) {
@@ -77,11 +85,45 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   }
 
   @override
+  DataResponse<PlaceRestaurantOrderModel> placeStoreOrder(
+    PlaceStoreOrderParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.placeStoreOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<OrdersActionResultModel> updateStoreCartItemQuantity(
+    UpdateCartItemQuantityParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.updateStoreCartItemQuantity(params),
+    );
+  }
+
+  @override
+  DataResponse<OrdersActionResultModel> deleteStoreCartItem(DeleteCartItemParams params) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.deleteStoreCartItem(params),
+    );
+  }
+
+  @override
   DataResponse<FetchRestaurantOrderTrackingModel> fetchRestaurantOrderTracking(
     FetchRestaurantOrderTrackingParams params,
   ) {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.fetchRestaurantOrderTracking(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchRestaurantOrderTrackingModel> fetchStoreOrderTracking(
+    FetchRestaurantOrderTrackingParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.fetchStoreOrderTracking(params),
     );
   }
 }

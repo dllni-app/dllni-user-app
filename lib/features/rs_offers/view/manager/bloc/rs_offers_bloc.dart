@@ -9,6 +9,7 @@ import '../../../data/models/fetch_rs_offers_products_model.dart';
 import '../../../domain/usecases/fetch_rs_offers_products_use_case.dart';
 
 part 'rs_offers_event.dart';
+
 part 'rs_offers_state.dart';
 
 @injectable
@@ -16,10 +17,7 @@ class RsOffersBloc extends Bloc<RsOffersEvent, RsOffersState> {
   final FetchRsOffersProductsUseCase fetchRsOffersProductsUseCase;
 
   RsOffersBloc(this.fetchRsOffersProductsUseCase) : super(RsOffersState()) {
-    on<FetchRsOffersProductsEvent>(
-      _onFetchRsOffersProducts,
-      transformer: droppableProMax(),
-    );
+    on<FetchRsOffersProductsEvent>(_onFetchRsOffersProducts, transformer: droppableProMax());
   }
 
   EventTransformer<T> droppableProMax<T extends EventWithReload>() {
@@ -28,10 +26,7 @@ class RsOffersBloc extends Bloc<RsOffersEvent, RsOffersState> {
     };
   }
 
-  FutureOr<void> _onFetchRsOffersProducts(
-    FetchRsOffersProductsEvent event,
-    Emitter<RsOffersState> emit,
-  ) async {
+  FutureOr<void> _onFetchRsOffersProducts(FetchRsOffersProductsEvent event, Emitter<RsOffersState> emit) async {
     final perPage = state.products.perPage;
     final isLoadMore = event.loadMore && !event.isReload;
 
@@ -39,25 +34,13 @@ class RsOffersBloc extends Bloc<RsOffersEvent, RsOffersState> {
       if (state.products.isEndPage || state.products.status == BlocStatus.loading) {
         return;
       }
-      emit(
-        state.copyWith(
-          products: state.products.setLoading(isReload: false),
-        ),
-      );
+      emit(state.copyWith(products: state.products.setLoading(isReload: false)));
     } else {
-      emit(
-        state.copyWith(
-          products: state.products.setLoading(
-            isReload: event.isReload || state.products.list.isEmpty,
-          ),
-        ),
-      );
+      emit(state.copyWith(products: state.products.setLoading(isReload: event.isReload || state.products.list.isEmpty)));
     }
 
     final page = isLoadMore ? state.products.pageNumber : 1;
-    final res = await fetchRsOffersProductsUseCase(
-      FetchRsOffersProductsParams(page: page, perPage: perPage),
-    );
+    final res = await fetchRsOffersProductsUseCase(FetchRsOffersProductsParams(page: page, perPage: perPage));
 
     res.fold(
       (l) {
@@ -78,18 +61,10 @@ class RsOffersBloc extends Bloc<RsOffersEvent, RsOffersState> {
         final atLastPage = currentPage >= lastPage;
         final endReached = atLastPage || shortPage;
 
-        var next = state.products.setSuccess(
-          data: items,
-          perPage: metaPerPage,
-        );
+        var next = state.products.setSuccess(data: items, perPage: metaPerPage, total: meta!.total!);
         next = next.copyWith(isEndPage: endReached);
 
-        emit(
-          state.copyWith(
-            products: next,
-            errorMessage: null,
-          ),
-        );
+        emit(state.copyWith(products: next, errorMessage: null));
       },
     );
   }

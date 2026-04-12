@@ -8,6 +8,7 @@ import '../../domain/usecases/fetch_order_details_use_case.dart';
 import '../../domain/usecases/fetch_orders_use_case.dart';
 import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/place_restaurant_order_use_case.dart';
+import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/orders_api_models.dart';
 
@@ -77,6 +78,15 @@ class OrdersRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<FetchRestaurantCartModel> fetchStoreCart() {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/supermarket/cart',
+      ),
+      jsonConvert: fetchRestaurantCartModelFromJson,
+    );
+  }
+
   Future<PlaceRestaurantOrderModel> placeRestaurantOrder(
     PlaceRestaurantOrderParams params,
   ) {
@@ -89,12 +99,56 @@ class OrdersRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<PlaceRestaurantOrderModel> placeStoreOrder(
+    PlaceStoreOrderParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/supermarket/orders',
+        data: params.getBody(),
+      ),
+      jsonConvert: placeRestaurantOrderModelFromJson,
+    );
+  }
+
+  Future<OrdersActionResultModel> updateStoreCartItemQuantity(
+    UpdateCartItemQuantityParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.patchData(
+        endPoint: '/api/v1/user/supermarket/cart/items/${params.itemId}',
+        data: params.getBody(),
+      ),
+      jsonConvert: ordersActionResultModelFromJson,
+    );
+  }
+
+  Future<OrdersActionResultModel> deleteStoreCartItem(DeleteCartItemParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.deleteData(
+        endPoint: '/api/v1/user/supermarket/cart/items/${params.itemId}',
+      ),
+      jsonConvert: ordersActionResultModelFromJson,
+    );
+  }
+
   Future<FetchRestaurantOrderTrackingModel> fetchRestaurantOrderTracking(
     FetchRestaurantOrderTrackingParams params,
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
         endPoint: '/api/v1/user/orders/restaurant/${params.orderId}/tracking',
+      ),
+      jsonConvert: fetchRestaurantOrderTrackingModelFromJson,
+    );
+  }
+
+  Future<FetchRestaurantOrderTrackingModel> fetchStoreOrderTracking(
+    FetchRestaurantOrderTrackingParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/orders/stores/${params.orderId}/tracking',
       ),
       jsonConvert: fetchRestaurantOrderTrackingModelFromJson,
     );

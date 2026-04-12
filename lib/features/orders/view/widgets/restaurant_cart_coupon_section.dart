@@ -15,6 +15,10 @@ class RestaurantCartCouponSection extends StatelessWidget {
     required this.discount,
     required this.money,
     required this.couponUnavailableMessage,
+    this.applyEventBuilder,
+    this.couponStatusSelector,
+    this.couponDataSelector,
+    this.couponErrorSelector,
   });
 
   final TextEditingController couponController;
@@ -22,9 +26,19 @@ class RestaurantCartCouponSection extends StatelessWidget {
   final double discount;
   final String Function(double) money;
   final String Function(CouponCheckDataModel?) couponUnavailableMessage;
+  final OrdersEvent Function(String couponCode)? applyEventBuilder;
+  final BlocStatus? Function(OrdersState state)? couponStatusSelector;
+  final CouponCheckDataModel? Function(OrdersState state)? couponDataSelector;
+  final String? Function(OrdersState state)? couponErrorSelector;
 
   @override
   Widget build(BuildContext context) {
+    final couponStatus = couponStatusSelector?.call(state) ?? state.couponStatus;
+    final couponData = couponDataSelector?.call(state) ?? state.couponData;
+    final couponErrorMessage =
+        couponErrorSelector?.call(state) ?? state.couponErrorMessage;
+    final eventBuilder = applyEventBuilder ?? (code) => ApplyRestaurantCouponEvent(couponCode: code);
+
     return RestaurantCartCardWrapper(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -55,12 +69,12 @@ class RestaurantCartCouponSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: state.couponStatus == BlocStatus.loading
+                onPressed: couponStatus == BlocStatus.loading
                     ? null
                     : () {
                         final code = couponController.text.trim();
                         if (code.isEmpty) return;
-                        context.read<OrdersBloc>().add(ApplyRestaurantCouponEvent(couponCode: code));
+                        context.read<OrdersBloc>().add(eventBuilder(code));
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xff1E2A78),
@@ -68,13 +82,13 @@ class RestaurantCartCouponSection extends StatelessWidget {
                   padding: const EdgeInsetsDirectional.symmetric(vertical: 12, horizontal: 20),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: state.couponStatus == BlocStatus.loading
+                child: couponStatus == BlocStatus.loading
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : AppText.labelLarge('تطبيق', color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          if (state.couponData?.isAvailable == true) ...[
+          if (couponData?.isAvailable == true) ...[
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
@@ -94,8 +108,8 @@ class RestaurantCartCouponSection extends StatelessWidget {
                 ],
               ),
             ),
-          ] else if (state.couponStatus == BlocStatus.success &&
-              state.couponData?.isAvailable == false) ...[
+          ] else if (couponStatus == BlocStatus.success &&
+              couponData?.isAvailable == false) ...[
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
@@ -106,7 +120,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText.labelLarge(
-                      couponUnavailableMessage(state.couponData),
+                      couponUnavailableMessage(couponData),
                       color: const Color(0xffB91C1C),
                       textAlign: TextAlign.start,
                       fontWeight: FontWeight.w600,
@@ -115,7 +129,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
                 ],
               ),
             ),
-          ] else if (state.couponStatus == BlocStatus.failed) ...[
+          ] else if (couponStatus == BlocStatus.failed) ...[
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
@@ -126,7 +140,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText.labelLarge(
-                      state.couponErrorMessage ?? 'تعذر التحقق من الكوبون حالياً.',
+                      couponErrorMessage ?? 'تعذر التحقق من الكوبون حالياً.',
                       color: const Color(0xffB91C1C),
                       fontWeight: FontWeight.w600,
                     ),

@@ -3,17 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../themes/app_colors.dart';
+import 'search_with_type_dropdown.dart';
+
 class AppSimpleAppBar extends StatelessWidget {
-  const AppSimpleAppBar({super.key, required this.title});
+  const AppSimpleAppBar({super.key, required this.title, this.canPop = true});
 
   final String title;
+  final bool canPop;
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light, statusBarBrightness: Brightness.dark));
+    final width = MediaQuery.sizeOf(context).width;
     return Container(
-      width: context.width,
-      decoration: BoxDecoration(
-        color: context.primary,
+      width: width,
+      padding: EdgeInsets.fromLTRB(16, 16 + MediaQuery.paddingOf(context).top, 16, 32),
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         boxShadow: [BoxShadow(offset: Offset(0, 4), blurRadius: 7.3, color: Color(0x40000000))],
       ),
@@ -21,9 +28,10 @@ class AppSimpleAppBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: 4,
         children: [
+          if (canPop) const ArrowBackButton(),
           AppText(
             title,
-            style: TextStyle(color: context.onPrimary, fontWeight: FontWeight.w500, fontSize: 20),
+            style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w500, fontSize: 20),
           ),
         ],
       ),
@@ -31,8 +39,80 @@ class AppSimpleAppBar extends StatelessWidget {
   }
 }
 
-class AppSimpleAppBarWithSearch extends StatelessWidget {
-  const AppSimpleAppBarWithSearch({
+enum ArrowBackType { material, cupertino }
+
+class AppSimpleAppBar2 extends StatelessWidget {
+  const AppSimpleAppBar2({super.key, required this.title, this.arrowBackType = ArrowBackType.material, this.canPop = true});
+
+  final String title;
+  final bool canPop;
+  final ArrowBackType arrowBackType;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Ink(
+          width: context.width,
+          padding: EdgeInsets.fromLTRB(16, 16 + MediaQuery.paddingOf(context).top, 16, 20),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+            border: Border(bottom: BorderSide(color: AppColors.primary, width: 2)),
+            boxShadow: [BoxShadow(offset: Offset(0, 1), blurRadius: 2, color: Color(0x0D000000))],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (arrowBackType == ArrowBackType.material && canPop)
+                InkWell(
+                  onTap: () => context.pop(),
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  child: Ink(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: .16)),
+                    ),
+                    child: FaIcon(FontAwesomeIcons.arrowRight, size: 16, color: Colors.black),
+                  ),
+                ),
+              if (arrowBackType == ArrowBackType.cupertino && canPop)
+                InkWell(
+                  onTap: () => context.pop(),
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  child: Ink(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                    child: Icon(Icons.arrow_back_ios_rounded, size: 22, color: Colors.black),
+                  ),
+                ),
+              SizedBox(width: 16),
+              Expanded(
+                child: AppText(
+                  title,
+                  textAlign: TextAlign.start,
+                  style: TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.w700, height: 32 / 24),
+                ),
+              ),
+              Ink(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  border: Border.all(color: Colors.transparent),
+                ),
+                child: FaIcon(FontAwesomeIcons.arrowRight, size: 12, color: Colors.transparent),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class RsAppSimpleAppBarWithSearch extends StatelessWidget {
+  const RsAppSimpleAppBarWithSearch({
     super.key,
     required this.title,
     required this.onSearchChanged,
@@ -104,6 +184,41 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
   }
 }
 
+class AppSimpleAppBarWithSearch extends StatelessWidget {
+  const AppSimpleAppBarWithSearch({super.key, required this.title, this.isSearchExpand = false, required this.onTypeSelected});
+
+  final String title;
+  final bool isSearchExpand;
+  final void Function(SearchType type) onTypeSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light, statusBarBrightness: Brightness.dark));
+    return Container(
+      width: context.width,
+      padding: EdgeInsets.fromLTRB(16, 16 + MediaQuery.paddingOf(context).top, 16, 20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+        boxShadow: [BoxShadow(offset: Offset(0, 1), blurRadius: 2, color: Color(0x0D000000))],
+        border: Border(bottom: BorderSide(color: AppColors.primary, width: 2)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppText(
+            title,
+            style: TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.w700, height: 32 / 24),
+          ),
+          SizedBox(height: 16),
+          SearchWithTypeDropdown(onTypeSelected: onTypeSelected, isExpanded: isSearchExpand),
+        ],
+      ),
+    );
+  }
+}
+
 class _SearchField extends StatelessWidget {
   const _SearchField({required this.onChanged, this.onTap, required this.hintText});
 
@@ -116,31 +231,55 @@ class _SearchField extends StatelessWidget {
     return Theme(
       data: Theme.of(context).copyWith(
         textSelectionTheme: TextSelectionThemeData(
-          cursorColor: context.primary,
-          selectionColor: context.primary.withValues(alpha: 0.3),
-          selectionHandleColor: context.primary,
+          cursorColor: AppColors.primary,
+          selectionColor: AppColors.primary.withValues(alpha: 0.3),
+          selectionHandleColor: AppColors.primary,
         ),
       ),
       child: TextField(
-        style: TextStyle(fontSize: 15, color: Color(0xff9CA3AF)),
+        style: TextStyle(fontSize: 15, color: AppColors.white),
         onTap: onTap,
         onTapOutside: (_) => FocusScope.of(context).unfocus(),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(fontFamily: "Cairo", fontWeight: FontWeight.w500, fontSize: 12, color: Color(0xff9CA3AF)),
+          hintStyle: TextStyle(fontFamily: "Cairo", fontWeight: FontWeight.w500, fontSize: 12, color: AppColors.white),
           filled: true,
-          fillColor: context.surface,
+          fillColor: AppColors.filledInputBackgroundColor,
           contentPadding: EdgeInsets.fromLTRB(16, 14, 44, 13),
           prefixIconConstraints: BoxConstraints(maxWidth: 44),
           prefixIcon: Padding(
-            padding: EdgeInsets.only(right: 16, left: 8),
-            child: FaIcon(FontAwesomeIcons.magnifyingGlass, size: 16, color: Color(0xff9CA3AF)),
+            padding: EdgeInsets.only(right: 16, left: 12),
+            child: FaIcon(FontAwesomeIcons.magnifyingGlass, size: 16, color: AppColors.white),
           ),
+          // prefixIcon: Icon(Icons.search, size: 32),
           border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
           enabledBorder: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
           focusedBorder: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
         ),
         onSubmitted: onChanged,
+      ),
+    );
+  }
+}
+
+class ArrowBackButton extends StatelessWidget {
+  const ArrowBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.pop(),
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      child: Container(
+        alignment: Alignment.center,
+        padding: EdgeInsets.all(12),
+        // decoration: BoxDecoration(
+        //   color: Color(0xFFF9FAFB),
+        //   borderRadius: BorderRadius.all(Radius.circular(12)),
+        //   border: Border.all(color: Color(0x291E2A78)),
+        // ),
+        child: Icon(Icons.arrow_back_ios, size: 16, color: AppColors.white),
+        //AppImage.asset(AppSvgs.arrow, size: 16, color: AppColors.white),
       ),
     );
   }

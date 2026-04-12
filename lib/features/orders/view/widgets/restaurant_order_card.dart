@@ -4,10 +4,16 @@ import 'package:flutter/material.dart';
 import '../../data/models/orders_api_models.dart';
 
 class RestaurantOrderCard extends StatelessWidget {
-  const RestaurantOrderCard({super.key, required this.order, required this.onTap});
+  const RestaurantOrderCard({
+    super.key,
+    required this.order,
+    required this.onTap,
+    this.merchantLabel = 'المطعم:',
+  });
 
   final OrderResourceModel order;
   final VoidCallback onTap;
+  final String merchantLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +42,7 @@ class RestaurantOrderCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.labelLarge('المطعم:', color: const Color(0xff1F2937), fontWeight: FontWeight.w500),
+                AppText.labelLarge(merchantLabel, color: const Color(0xff1F2937), fontWeight: FontWeight.w500),
                 Expanded(
                   child: AppText.labelLarge(
                     order.merchant?.name ?? '-',

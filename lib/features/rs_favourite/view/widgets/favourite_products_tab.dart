@@ -49,12 +49,7 @@ class FavouriteProductsTab extends StatelessWidget {
             itemCount: 4,
             separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (_, __) => FavouriteProductPlaceholderCard(
-              product: StoreProductItem(
-                name: '...',
-                description: '...',
-                priceText: '...',
-                category: '...',
-              ),
+              product: StoreProductItem(name: '...', description: '...', priceText: '...', category: '...'),
             ),
           );
         }
@@ -114,9 +109,7 @@ class FavouriteProductsTab extends StatelessWidget {
                     if (isFavorited) return;
                     final productId = item.id;
                     if (productId == null || productId <= 0) return;
-                    context.read<RsFavouriteBloc>().add(
-                      RemoveFavouriteProductEvent(productId: productId),
-                    );
+                    context.read<RsFavouriteBloc>().add(RemoveFavouriteProductEvent(productId: productId));
                   },
                 );
               },
@@ -127,48 +120,26 @@ class FavouriteProductsTab extends StatelessWidget {
     );
   }
 
-  Future<void> _addToCart({
-    required BuildContext context,
-    required StoreProductItem item,
-  }) async {
+  Future<void> _addToCart({required BuildContext context, required StoreProductItem item}) async {
     final productId = item.id;
     if (productId == null || productId <= 0) {
-      AppToast.showToast(
-        context: context,
-        message: 'تعذر تحديد المنتج',
-        type: ToastificationType.error,
-      );
+      AppToast.showToast(context: context, message: 'تعذر تحديد المنتج', type: ToastificationType.error);
       return;
     }
 
     final res = await getIt<AddRestaurantCartItemUseCase>()(
-      AddRestaurantCartItemParams(
-        productId: productId,
-        quantity: 1,
-        modifierIds: const [],
-        substituteProductId: null,
-        specialInstructions: '',
-      ),
+      AddRestaurantCartItemParams(productId: productId, quantity: 1, modifierIds: const [], substituteProductId: null, specialInstructions: ''),
     );
 
     if (!context.mounted) return;
-    res.fold(
-      (failure) => AppToast.showToast(
+    res.fold((failure) => AppToast.showToast(context: context, message: failure.message, type: ToastificationType.error), (result) {
+      getIt<CartProductsCountCubit>().refreshAfterAdd();
+      AppToast.showToast(
         context: context,
-        message: failure.message,
-        type: ToastificationType.error,
-      ),
-      (result) {
-        getIt<CartProductsCountCubit>().refreshAfterAdd();
-        AppToast.showToast(
-          context: context,
-          message: (result.message ?? '').trim().isNotEmpty
-              ? result.message!
-              : 'تمت إضافة المنتج إلى السلة',
-          type: ToastificationType.success,
-        );
-      },
-    );
+        message: (result.message ?? '').trim().isNotEmpty ? result.message! : 'تمت إضافة المنتج إلى السلة',
+        type: ToastificationType.success,
+      );
+    });
   }
 }
 

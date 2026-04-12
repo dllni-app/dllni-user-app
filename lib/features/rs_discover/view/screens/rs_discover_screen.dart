@@ -10,7 +10,7 @@ import '../manager/bloc/rs_discover_bloc.dart';
 import '../widgets/discover_tab_bar.dart';
 import '../widgets/store_card.dart';
 
-@AutoRoutePage(path: "/discover")
+@AutoRoutePage(path: "/rs_discover")
 class RsDiscoverScreen extends StatefulWidget {
   const RsDiscoverScreen({super.key, this.selectedView = 0});
 
@@ -69,7 +69,7 @@ class _MainDiscoverView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AppSimpleAppBarWithSearch(
+        RsAppSimpleAppBarWithSearch(
           title: "اكتشف",
           onSearchTap: onSearchTap,
           onSearchChanged: (value) {

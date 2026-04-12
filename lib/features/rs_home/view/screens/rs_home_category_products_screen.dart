@@ -49,7 +49,7 @@ class _RsHomeCategoryProductsScreenState extends State<RsHomeCategoryProductsScr
         backgroundColor: const Color(0xFFF9FAFB),
         body: Column(
           children: [
-            AppSimpleAppBarWithSearch(
+            RsAppSimpleAppBarWithSearch(
               title: "التصنيفات",
               onBackTap: () => context.maybePop(),
               searchHintText: "ابحث عن منتج...",

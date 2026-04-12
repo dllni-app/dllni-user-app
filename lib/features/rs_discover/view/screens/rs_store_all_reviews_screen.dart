@@ -8,16 +8,13 @@ import '../../domain/usecases/fetch_restaurant_details_use_case.dart';
 import '../widgets/store_details_sub_widgets.dart';
 
 class StoreAllReviewsScreenParams {
-  const StoreAllReviewsScreenParams({
-    required this.restaurantId,
-    required this.reviewsPerPage,
-  });
+  const StoreAllReviewsScreenParams({required this.restaurantId, required this.reviewsPerPage});
 
   final int restaurantId;
   final int reviewsPerPage;
 }
 
-@AutoRoutePage(path: "/store-all-reviews")
+@AutoRoutePage(path: "/rs_store-all-reviews")
 class SmStoreAllReviewsScreen extends StatefulWidget {
   const SmStoreAllReviewsScreen({super.key, required this.params});
 
@@ -39,12 +36,7 @@ class _SmStoreAllReviewsScreenState extends State<SmStoreAllReviewsScreen> {
   Future<FetchRestaurantDetailsModel?> _load() async {
     final useCase = getIt<FetchRestaurantDetailsUseCase>();
     final safeReviewsPerPage = widget.params.reviewsPerPage > 0 ? widget.params.reviewsPerPage : 10;
-    final res = await useCase(
-      FetchRestaurantDetailsParams(
-        restaurantId: widget.params.restaurantId,
-        reviewsPerPage: safeReviewsPerPage,
-      ),
-    );
+    final res = await useCase(FetchRestaurantDetailsParams(restaurantId: widget.params.restaurantId, reviewsPerPage: safeReviewsPerPage));
     return res.fold((_) => null, (r) => r);
   }
 
@@ -60,13 +52,7 @@ class _SmStoreAllReviewsScreenState extends State<SmStoreAllReviewsScreen> {
   Map<int, int> _resolveCounts(FetchRestaurantDetailsModel? details, List<RestaurantDetailsReview> reviews) {
     final summaryCounts = details?.ratingSummary?.counts ?? const {};
     if (summaryCounts.isNotEmpty) {
-      return {
-        5: summaryCounts[5] ?? 0,
-        4: summaryCounts[4] ?? 0,
-        3: summaryCounts[3] ?? 0,
-        2: summaryCounts[2] ?? 0,
-        1: summaryCounts[1] ?? 0,
-      };
+      return {5: summaryCounts[5] ?? 0, 4: summaryCounts[4] ?? 0, 3: summaryCounts[3] ?? 0, 2: summaryCounts[2] ?? 0, 1: summaryCounts[1] ?? 0};
     }
     return _countsFromReviews(reviews);
   }
@@ -86,16 +72,10 @@ class _SmStoreAllReviewsScreenState extends State<SmStoreAllReviewsScreen> {
               centerTitle: true,
               title: AppText(
                 'كل التقييمات',
-                style: TextStyle(
-                  color: Color(0xFF111827),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(color: Color(0xFF111827), fontSize: 18, fontWeight: FontWeight.w700),
               ),
             ),
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -114,29 +94,23 @@ class _SmStoreAllReviewsScreenState extends State<SmStoreAllReviewsScreen> {
             centerTitle: true,
             title: AppText(
               'كل التقييمات',
-              style: TextStyle(
-                color: Color(0xFF111827),
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(color: Color(0xFF111827), fontSize: 18, fontWeight: FontWeight.w700),
             ),
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
-              StoreRatingSection(
-                ratingAverage: ratingAverage,
-                ratingTotal: ratingTotal,
-                ratingCounts: ratingCounts,
-              ),
+              StoreRatingSection(ratingAverage: ratingAverage, ratingTotal: ratingTotal, ratingCounts: ratingCounts),
               SizedBox(height: 14),
               if (reviews.isEmpty)
                 _EmptyReviewsCard()
               else
-                ...reviews.map((review) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _ReviewTile(review: review),
-                )),
+                ...reviews.map(
+                  (review) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _ReviewTile(review: review),
+                  ),
+                ),
             ],
           ),
         );
@@ -208,21 +182,13 @@ class _ReviewTile extends StatelessWidget {
                   child: AppText(
                     review.reviewerName ?? 'مستخدم',
                     textAlign: TextAlign.start,
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(color: Color(0xFF111827), fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
               AppText(
                 _formatReviewDate(review.createdAt),
-                style: TextStyle(
-                  color: Color(0xFF9CA3AF),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -232,23 +198,14 @@ class _ReviewTile extends StatelessWidget {
               review.rating == 0 ? 1 : review.rating,
               (_) => Padding(
                 padding: const EdgeInsets.only(left: 2),
-                child: FaIcon(
-                  FontAwesomeIcons.solidStar,
-                  size: 12,
-                  color: Color(0xFFFBBF24),
-                ),
+                child: FaIcon(FontAwesomeIcons.solidStar, size: 12, color: Color(0xFFFBBF24)),
               ),
             ),
           ),
           SizedBox(height: 8),
           AppText(
             review.comment ?? 'بدون تعليق',
-            style: TextStyle(
-              color: Color(0xFF4B5563),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              height: 18 / 12,
-            ),
+            style: TextStyle(color: Color(0xFF4B5563), fontSize: 12, fontWeight: FontWeight.w500, height: 18 / 12),
           ),
         ],
       ),

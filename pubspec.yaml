@@ -35,6 +35,11 @@ dependencies:
   dartz: ^0.10.1
   geolocator: ^13.0.2
   flutter_cube_transition: ^1.0.2
+  dotted_border: ^3.1.0
+  permission_handler: ^12.0.1
+  speech_to_text: ^7.3.0
+  smooth_page_indicator: ^2.0.1
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -55,10 +60,10 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
 
-  fonts:
-    - family: cairo
-      fonts:
-        - asset: assets/fonts/cairo.ttf
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro
@@ -69,3 +74,20 @@ flutter:
   assets:
     - assets/translations/
     - assets/images/
+    - assets/images/svgs/
+
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Black.ttf
+          weight: 800
+        - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Cairo-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Cairo-Light.ttf
+          weight: 300

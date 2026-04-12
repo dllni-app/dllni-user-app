@@ -14,6 +14,7 @@ import '../../../domain/params/fetch_discover_restaurants_params.dart';
 import '../../../domain/usecases/fetch_discover_restaurants_use_case.dart';
 
 part 'rs_discover_event.dart';
+
 part 'rs_discover_state.dart';
 
 @injectable
@@ -86,9 +87,7 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
     final res = await fetchDiscoverRestaurantsUseCase(params);
     res.fold(
       (l) {
-        emit(state.copyWith(
-          restaurants: state.restaurants.setFaild(errorMessage: l.message),
-        ));
+        emit(state.copyWith(restaurants: state.restaurants.setFaild(errorMessage: l.message)));
       },
       (r) {
         final items = r.data ?? [];
@@ -100,13 +99,10 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
         final atLastPage = currentPage >= lastPage;
         final endReached = atLastPage || shortPage;
 
-        var next = state.restaurants.setSuccess(data: items, perPage: metaPerPage);
-        next = next.copyWith(isEndPage: endReached);
+        var next = state.restaurants.setSuccess(data: items, perPage: metaPerPage, total: meta!.total!);
+        next = next.copyWith(isEndPage: endReached, total: meta!.total!);
 
-        emit(state.copyWith(
-          restaurants: next,
-          totalCount: meta?.total ?? next.list.length,
-        ));
+        emit(state.copyWith(restaurants: next, totalCount: meta?.total ?? next.list.length));
       },
     );
   }
@@ -114,29 +110,16 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
   Future<void> _onFetchProductDetails(FetchRestaurantProductDetailsEvent event, Emitter<RsDiscoverState> emit) async {
     if (event.productId <= 0) return;
 
-    emit(state.copyWith(
-      isLoadingProductDetails: true,
-      productDetailsErrorMessage: '',
-      clearProductDetails: true,
-    ));
+    emit(state.copyWith(isLoadingProductDetails: true, productDetailsErrorMessage: '', clearProductDetails: true));
 
-    final response = await fetchRestaurantProductDetailsUseCase(
-      FetchRestaurantProductDetailsParams(productId: event.productId),
-    );
+    final response = await fetchRestaurantProductDetailsUseCase(FetchRestaurantProductDetailsParams(productId: event.productId));
 
     response.fold(
       (l) {
-        emit(state.copyWith(
-          isLoadingProductDetails: false,
-          productDetailsErrorMessage: l.message,
-        ));
+        emit(state.copyWith(isLoadingProductDetails: false, productDetailsErrorMessage: l.message));
       },
       (r) {
-        emit(state.copyWith(
-          productDetails: r,
-          isLoadingProductDetails: false,
-          productDetailsErrorMessage: '',
-        ));
+        emit(state.copyWith(productDetails: r, isLoadingProductDetails: false, productDetailsErrorMessage: ''));
       },
     );
   }

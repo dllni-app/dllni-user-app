@@ -3,6 +3,7 @@ import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_use_case.dart';
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
 import 'package:dllni_user_app/features/home/view/widgets/home_app_bar.dart';
+import 'package:dllni_user_app/features/sm_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,7 +16,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<String> titles = ['مطاعم', 'تنظيف', 'تسوق'];
-    List<String> screens = ['/rsmain', '', ''];
+    List<String> screens = ['/rsmain', '', '/smmain'];
 
     return BlocProvider(
       create: (_) => getIt<HomeBloc>()..add(FetchUserOffersEvent(params: FetchUserOffersParams())),
@@ -54,7 +55,7 @@ class HomeScreen extends StatelessWidget {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () {
-                        context.pushRoute(screens[index]);
+                        context.pushRoute(screens[index], arguments: index == 2 ? SmMainScreenParams(initialPage: 0, expandSearch: false) : null);
                       },
                       child: Column(
                         children: [
@@ -113,7 +114,7 @@ class HomeScreen extends StatelessWidget {
                       return HomeCube(offers: state.userOffers?.data ?? []);
                     },
                   ),
-                  SizedBox(height: 20,),
+                  SizedBox(height: 20),
                 ],
               ),
             ),

@@ -14,8 +14,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final token = SharedPreferencesHelper.getData(key: 'token');
-    final hasAuthToken =
-        token != null && token.toString().trim().isNotEmpty;
+    final hasAuthToken = token != null && token.toString().trim().isNotEmpty;
 
     return MaterialApp(
       navigatorKey: navigatorKey,

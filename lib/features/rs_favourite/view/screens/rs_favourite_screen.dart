@@ -1,3 +1,4 @@
+import 'package:common_package/annotations/auto_route_page.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_favourite/domain/usecases/fetch_favourite_products_use_case.dart';
 import 'package:dllni_user_app/features/rs_favourite/domain/usecases/fetch_rs_favourites_use_case.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../manager/bloc/rs_favourite_bloc.dart';
 import '../widgets/rs_favourite_view.dart';
 
+@AutoRoutePage()
 class RsFavouriteScreen extends StatelessWidget {
   const RsFavouriteScreen({super.key});
 

@@ -8,12 +8,28 @@ class PaginationStateModel<T> {
   final String errorMessage;
   final int perPage;
   final BlocStatus status;
+  final int total;
   final List<T> list;
 
-  const PaginationStateModel({this.isEndPage = false, this.errorMessage = "", this.perPage = 1, this.status = BlocStatus.init, this.list = const []});
+  const PaginationStateModel({
+    this.total = 0,
+    this.isEndPage = false,
+    this.errorMessage = "",
+    this.perPage = 1,
+    this.status = BlocStatus.init,
+    this.list = const [],
+  });
 
-  PaginationStateModel<T> copyWith({bool? isEndPage, String? errorMessage, int? perPage, BlocStatus? status, List<T>? list}) {
+  PaginationStateModel<T> copyWith({
+    int? total,
+    bool? isEndPage,
+    String? errorMessage,
+    int? perPage,
+    BlocStatus? status,
+    List<T>? list,
+  }) {
     return PaginationStateModel<T>(
+      total: total ?? this.total,
       isEndPage: isEndPage ?? this.isEndPage,
       errorMessage: errorMessage ?? this.errorMessage,
       perPage: perPage ?? this.perPage,
@@ -22,7 +38,9 @@ class PaginationStateModel<T> {
     );
   }
 
-  bool get isLoading => (status == BlocStatus.loading || status == BlocStatus.init) && list.isEmpty;
+  bool get isLoading =>
+      (status == BlocStatus.loading || status == BlocStatus.init) &&
+      list.isEmpty;
 
   bool get isFailed => status == BlocStatus.failed && list.isEmpty;
 
@@ -36,17 +54,48 @@ class PaginationStateModel<T> {
 
   int listLength(int over) => list.length + (isEndPage ? 0 : over);
 
-  PaginationStateModel<T> setLoading({required bool isReload}) => copyWith(list: isReload ? [] : list, status: BlocStatus.loading);
+  PaginationStateModel<T> setLoading({required bool isReload}) => copyWith(
+    total: 0,
+    list: isReload ? [] : list,
+    status: BlocStatus.loading,
+  );
 
-  PaginationStateModel<T> setFaild({required String errorMessage}) => copyWith(status: BlocStatus.failed, errorMessage: errorMessage);
+  PaginationStateModel<T> setFaild({required String errorMessage}) =>
+      copyWith(total: 0, status: BlocStatus.failed, errorMessage: errorMessage);
 
-  PaginationStateModel<T> setSuccess({required List<T> data, int? perPage, bool? addToStart = false}) =>
-      copyWith(list: List.of(list)..addAll(data), perPage: perPage, isEndPage: data.length < (perPage ?? this.perPage), status: BlocStatus.success);
+  PaginationStateModel<T> setSuccess({
+    required List<T> data,
+    int? perPage,
+    bool? addToStart = false,
+    required int total,
+  }) => copyWith(
+    total: total,
+    list: List.of(list)..addAll(data),
+    perPage: perPage,
+    isEndPage: data.length < (perPage ?? this.perPage),
+    status: BlocStatus.success,
+  );
 
-  PaginationStateModel<T> setSuccessReverse({required List<T> data, int? perPage}) =>
-      copyWith(list: List.of(data)..addAll(list), perPage: perPage, isEndPage: data.length < (perPage ?? this.perPage), status: BlocStatus.success);
+  PaginationStateModel<T> setSuccessReverse({
+    required List<T> data,
+    int? perPage,
+    required int total,
+  }) => copyWith(
+    list: List.of(data)..addAll(list),
+    perPage: perPage,
+    isEndPage: data.length < (perPage ?? this.perPage),
+    status: BlocStatus.success,
+    total: total,
+  );
 
-  PaginationStateModel<T> resetData() => PaginationStateModel<T>(isEndPage: false, errorMessage: "", perPage: 1, status: BlocStatus.init, list: []);
+  PaginationStateModel<T> resetData() => PaginationStateModel<T>(
+    total: 0,
+    isEndPage: false,
+    errorMessage: "",
+    perPage: 1,
+    status: BlocStatus.init,
+    list: [],
+  );
 
   Widget builder({
     required Widget loadingWidget,
@@ -56,7 +105,9 @@ class PaginationStateModel<T> {
     required Widget Function() successWidget,
   }) {
     if (failedWidget == null && onTapRetry == null) {
-      throw ArgumentError('Either failed widget or onTapRetry must be provided.');
+      throw ArgumentError(
+        'Either failed widget or onTapRetry must be provided.',
+      );
     }
 
     if (isSuccess) {
@@ -92,6 +143,10 @@ class PaginationStateModel<T> {
 
   @override
   int get hashCode {
-    return isEndPage.hashCode ^ errorMessage.hashCode ^ perPage.hashCode ^ status.hashCode ^ list.hashCode;
+    return isEndPage.hashCode ^
+        errorMessage.hashCode ^
+        perPage.hashCode ^
+        status.hashCode ^
+        list.hashCode;
   }
 }

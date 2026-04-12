@@ -19,17 +19,17 @@ class ProductDetailsScreenParams {
   ProductDetailsScreenParams({required this.product});
 }
 
-@AutoRoutePage(path: "/product")
-class SmProductDetailsScreen extends StatefulWidget {
-  const SmProductDetailsScreen({super.key, required this.params});
+@AutoRoutePage(path: "/rs_product")
+class RsProductDetailsScreen extends StatefulWidget {
+  const RsProductDetailsScreen({super.key, required this.params});
 
   final ProductDetailsScreenParams params;
 
   @override
-  State<SmProductDetailsScreen> createState() => _SmProductDetailsScreenState();
+  State<RsProductDetailsScreen> createState() => _RsProductDetailsScreenState();
 }
 
-class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
+class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
   final TextEditingController notesController = TextEditingController();
   late final RsDiscoverBloc _discoverBloc;
   final PageController _imagePageController = PageController();

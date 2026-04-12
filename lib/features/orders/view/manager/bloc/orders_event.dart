@@ -16,7 +16,10 @@ class FetchOrdersEvent extends OrdersEvent {
 
 class LoadMoreOrdersEvent extends OrdersEvent {}
 
+class FetchCartForActiveSectionEvent extends OrdersEvent {}
+
 class FetchRestaurantCartEvent extends OrdersEvent {}
+class FetchStoreCartEvent extends OrdersEvent {}
 
 class UpdateRestaurantCartItemEvent extends OrdersEvent {
   final int itemId;
@@ -34,10 +37,32 @@ class DeleteRestaurantCartItemEvent extends OrdersEvent {
   DeleteRestaurantCartItemEvent({required this.itemId});
 }
 
+class UpdateStoreCartItemEvent extends OrdersEvent {
+  final int itemId;
+  final int quantity;
+
+  UpdateStoreCartItemEvent({
+    required this.itemId,
+    required this.quantity,
+  });
+}
+
+class DeleteStoreCartItemEvent extends OrdersEvent {
+  final int itemId;
+
+  DeleteStoreCartItemEvent({required this.itemId});
+}
+
 class ApplyRestaurantCouponEvent extends OrdersEvent {
   final String couponCode;
 
   ApplyRestaurantCouponEvent({required this.couponCode});
+}
+
+class ApplyStoreCouponEvent extends OrdersEvent {
+  final String couponCode;
+
+  ApplyStoreCouponEvent({required this.couponCode});
 }
 
 class CartNoteChangedEvent extends OrdersEvent {
@@ -52,6 +77,18 @@ class CartFulfillmentTypeChangedEvent extends OrdersEvent {
   CartFulfillmentTypeChangedEvent({required this.fulfillmentType});
 }
 
+class StoreReceiveModeChangedEvent extends OrdersEvent {
+  final String receiveMode;
+
+  StoreReceiveModeChangedEvent({required this.receiveMode});
+}
+
+class StoreScheduledAtChangedEvent extends OrdersEvent {
+  final String? scheduledAt;
+
+  StoreScheduledAtChangedEvent({this.scheduledAt});
+}
+
 class CartSelectedAddressChangedEvent extends OrdersEvent {
   final AddressListItem? address;
 
@@ -59,3 +96,4 @@ class CartSelectedAddressChangedEvent extends OrdersEvent {
 }
 
 class PlaceRestaurantOrderEvent extends OrdersEvent {}
+class PlaceStoreOrderEvent extends OrdersEvent {}
