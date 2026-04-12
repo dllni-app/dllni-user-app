@@ -2,8 +2,9 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:toastification/toastification.dart';
 
-import '../../../../core/widgets/toast_component.dart';
+import '../../../profile/domain/models/address_list_item.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
@@ -23,16 +24,19 @@ class ClMainServiceScheduleScreen extends StatefulWidget {
   const ClMainServiceScheduleScreen({super.key});
 
   @override
-  State<ClMainServiceScheduleScreen> createState() => _ClMainServiceScheduleScreenState();
+  State<ClMainServiceScheduleScreen> createState() =>
+      _ClMainServiceScheduleScreenState();
 }
 
-class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScreen> {
+class _ClMainServiceScheduleScreenState
+    extends State<ClMainServiceScheduleScreen> {
   ClMainBloc? _bloc;
   late DateTime _selectedDate;
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
   ClMainScheduleArgs? _routeArgs;
   bool _didReadArgs = false;
+  AddressListItem? _selectedAddress;
 
   @override
   void initState() {
@@ -52,7 +56,11 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
       _routeArgs = args;
       _bloc = args.bloc;
     }
-    _bloc?.add(GetPreviousCleaningWorkersEvent(params: GetPreviousCleaningWorkersParams(page: 1)));
+    _bloc?.add(
+      GetPreviousCleaningWorkersEvent(
+        params: GetPreviousCleaningWorkersParams(page: 1),
+      ),
+    );
   }
 
   @override
@@ -86,23 +94,44 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
     });
   }
 
+  Future<void> _selectAddress() async {
+    final selectedAddress = await context.pushRoute(
+      '/myaddresses',
+      arguments: true,
+    );
+    if (!mounted) return;
+    if (selectedAddress is AddressListItem) {
+      setState(() {
+        _selectedAddress = selectedAddress;
+      });
+    }
+  }
+
   void _onSubmitPressed(ClMainState state) {
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
       return;
     }
     if (bloc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تهيئة حالة الطلب')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر تهيئة حالة الطلب')));
       return;
     }
 
     final quoteId = args.estimate.quote?.quoteId;
     if (quoteId == null || quoteId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر إرسال الطلب بدون رقم عرض السعر')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر إرسال الطلب بدون رقم عرض السعر')),
+      );
       return;
     }
+
+    final selectedAddress = _selectedAddress;
 
     bloc.add(
       CreateCleaningOrderEvent(
@@ -112,8 +141,10 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
           rooms: args.rooms,
           bathrooms: args.bathrooms,
           livingRoomSize: args.livingRoomSize,
-          address: 'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
-          locationName: 'المنزل',
+          address:
+              selectedAddress?.line1 ??
+              'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
+          locationName: selectedAddress?.label ?? 'المنزل',
           scheduledDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
           scheduledTime: _fromTimeController.text,
           addressLatitude: args.addressLatitude,
@@ -144,19 +175,29 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus || previous.previousWorkersStatus != current.previousWorkersStatus,
+            previous.createOrderStatus != current.createOrderStatus ||
+            previous.previousWorkersStatus != current.previousWorkersStatus,
         listener: (context, state) {
-          if (state.createOrderStatus == BlocStatus.loading || state.previousWorkersStatus == BlocStatus.loading) {
+          if (state.createOrderStatus == BlocStatus.loading ||
+              state.previousWorkersStatus == BlocStatus.loading) {
             Loading.show(context);
             return;
           }
           Loading.close();
           if (state.createOrderStatus == BlocStatus.success) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الطلب بنجاح')));
-            bloc.add(ResetCreateOrderStatusEvent());
+            AppToast.showToast(
+              context: context,
+              message: 'تم إرسال الطلب بنجاح',
+              type: ToastificationType.success,
+            );
             context.pushRoute('/clmain');
-          } else if (state.createOrderStatus == BlocStatus.failed || state.previousWorkersStatus == BlocStatus.failed) {
-            ToastComponent.showToast(context, msg: state.errorMessage ?? 'فشل تنفيذ الطلب');
+          } else if (state.createOrderStatus == BlocStatus.failed ||
+              state.previousWorkersStatus == BlocStatus.failed) {
+            AppToast.showToast(
+              context: context,
+              message: state.errorMessage ?? 'فشل تنفيذ الطلب',
+              type: ToastificationType.error,
+            );
           }
         },
         builder: (context, state) {
@@ -169,7 +210,10 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                   const SizedBox(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.only(start: 20, end: 20),
+                      padding: const EdgeInsetsDirectional.only(
+                        start: 20,
+                        end: 20,
+                      ),
                       child: Column(
                         children: [
                           ClServiceGradientInfoCardWidget(
@@ -187,24 +231,44 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                             onPickToTime: _pickToTime,
                           ),
                           const SizedBox(height: 10),
-                          const ClServiceAddressSectionWidget(),
+                          ClServiceAddressSectionWidget(
+                            locationName: _selectedAddress?.label ?? 'المنزل',
+                            address:
+                                _selectedAddress?.line1 ??
+                                'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
+                            onChangeTap: _selectAddress,
+                          ),
                           const SizedBox(height: 16),
                           ClServicePreviousWorkersSectionWidget(
                             workers: state.previousWorkers?.data ?? const [],
                             selectedWorkerId: state.selectedWorkerId,
-                            isLoading: state.previousWorkersStatus == BlocStatus.loading,
-                            errorMessage: state.previousWorkersStatus == BlocStatus.failed ? state.errorMessage : null,
+                            isLoading:
+                                state.previousWorkersStatus ==
+                                BlocStatus.loading,
+                            errorMessage:
+                                state.previousWorkersStatus == BlocStatus.failed
+                                ? state.errorMessage
+                                : null,
                             onSelectWorker: (workerId) {
-                              bloc.add(SetPreferredWorkerEvent(workerId: workerId));
+                              bloc.add(
+                                SetPreferredWorkerEvent(workerId: workerId),
+                              );
                             },
                             onOpenWorkerProfile: (worker) async {
                               final selectedWorkerId = await context.pushRoute(
                                 '/clworkerprofiledetail',
-                                arguments: WorkerProfileRouteArgs.fromPreviousWorker(worker),
+                                arguments:
+                                    WorkerProfileRouteArgs.fromPreviousWorker(
+                                      worker,
+                                    ),
                               );
                               if (!context.mounted) return;
                               if (selectedWorkerId is int) {
-                                bloc.add(SetPreferredWorkerEvent(workerId: selectedWorkerId));
+                                bloc.add(
+                                  SetPreferredWorkerEvent(
+                                    workerId: selectedWorkerId,
+                                  ),
+                                );
                               }
                             },
                           ),
@@ -222,8 +286,14 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                   ),
                   Container(
                     color: const Color(0xFFF2F2F2),
-                    padding: const EdgeInsetsDirectional.symmetric(horizontal: 20, vertical: 20),
-                    child: ClServiceBottomActionsWidget(onBackPressed: () => context.pop(), onSubmitPressed: () => _onSubmitPressed(state)),
+                    padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: 20,
+                      vertical: 20,
+                    ),
+                    child: ClServiceBottomActionsWidget(
+                      onBackPressed: () => context.pop(),
+                      onSubmitPressed: () => _onSubmitPressed(state),
+                    ),
                   ),
                 ],
               ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:common_package/helpers/pagination_helper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -33,10 +34,12 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
   }
 
   FutureOr<void> _estimateCleaningPrice(EstimateCleaningPriceEvent event, Emitter<ClMainState> emit) async {
+    debugPrint('ClMainBloc estimate request -> ${event.params.getBody()}');
     emit(state.copyWith(estimatePriceStatus: BlocStatus.loading, clearErrorMessage: true));
     final response = await estimateCleaningPriceUseCase(event.params);
     response.fold(
       (failure) {
+        debugPrint('ClMainBloc estimate failed -> ${failure.message}');
         emit(
           state.copyWith(
             estimatePriceStatus: BlocStatus.failed,
@@ -45,6 +48,14 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         );
       },
       (result) {
+        debugPrint(
+          'ClMainBloc estimate success -> '
+          'basePrice=${result.pricing?.basePrice}, '
+          'travelFee=${result.pricing?.travelFee}, '
+          'addonsTotal=${result.pricing?.addonsTotal}, '
+          'totalPrice=${result.pricing?.totalPrice}, '
+          'currency=${result.pricing?.currency}',
+        );
         emit(
           state.copyWith(
             estimatePriceStatus: BlocStatus.success,

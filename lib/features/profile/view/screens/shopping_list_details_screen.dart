@@ -9,6 +9,8 @@ import '../../data/models/shopping_lists_api_models.dart';
 import '../manager/shopping_list_detail_cubit.dart';
 import '../../../sm_discover/view/screens/sm_discover_screen.dart';
 
+export '../../data/models/shopping_lists_api_models.dart' show ShoppingListDetailsArgs;
+
 @AutoRoutePage(path: "/shopping_list_details")
 class ShoppingListDetailsScreen extends StatefulWidget {
   const ShoppingListDetailsScreen({super.key, required this.args});

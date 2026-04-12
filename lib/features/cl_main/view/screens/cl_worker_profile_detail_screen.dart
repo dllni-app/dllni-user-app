@@ -16,6 +16,10 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final apiWorker = args.worker;
+    final workerDescription = apiWorker?.description?.trim();
+    final averageRating = apiWorker?.ratings?.average ?? apiWorker?.rating ?? 0;
+    final ratingsCount = apiWorker?.ratings?.count ?? apiWorker?.totalJobs ?? 0;
+    final profileImageUrl = apiWorker?.profileImage?.trim();
     final profile = apiWorker == null
         ? WorkerProfileMockData.getById(args.workerId)
         : WorkerProfileData(
@@ -23,15 +27,18 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
             name: apiWorker.name ?? 'عامل خدمة',
             verified: (apiWorker.badges ?? const []).contains('verified'),
             avatarColor: const Color(0xFFE2E8F0),
-            badgeValue: (apiWorker.rating ?? 0).toStringAsFixed(1),
+            badgeValue: averageRating.toStringAsFixed(1),
             completedTasksText: 'أكمل مقدم الخدمة ${apiWorker.completedJobs ?? 0} من أصل ${apiWorker.totalJobs ?? 0} مهمة',
-            aboutText: 'مقدم خدمة نظافة مع سجل خدمات سابقة وتقييمات إيجابية من العملاء.',
+            aboutText: workerDescription == null || workerDescription.isEmpty
+                ? 'مقدم خدمة نظافة مع سجل خدمات سابقة وتقييمات إيجابية من العملاء.'
+                : workerDescription,
             ratingSummary: WorkerRatingSummary(
-              average: apiWorker.rating ?? 0,
-              totalReviews: apiWorker.totalJobs ?? 0,
+              average: averageRating,
+              totalReviews: ratingsCount,
               starCounts: const <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
             ),
             reviews: const [],
+            profileImageUrl: profileImageUrl == null || profileImageUrl.isEmpty ? null : profileImageUrl,
           );
     final previewReviews = profile.reviews.take(10).toList();
 
@@ -171,7 +178,8 @@ class _ProfileHeaderWidget extends StatelessWidget {
               CircleAvatar(
                 radius: 54,
                 backgroundColor: profile.avatarColor,
-                child: const Icon(Icons.person, size: 62, color: Color(0xFF334155)),
+                backgroundImage: profile.profileImageUrl == null ? null : NetworkImage(profile.profileImageUrl!),
+                child: profile.profileImageUrl == null ? const Icon(Icons.person, size: 62, color: Color(0xFF334155)) : null,
               ),
               const SizedBox(height: 10),
               Row(

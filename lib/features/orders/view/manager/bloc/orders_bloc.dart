@@ -3,10 +3,13 @@ import 'package:injectable/injectable.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 
+import '../../../data/models/cleaning_orders_api_models.dart';
 import '../../../data/models/orders_api_models.dart';
+import '../../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../../domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../domain/usecases/delete_cart_item_use_case.dart';
 import '../../../domain/usecases/delete_store_cart_item_use_case.dart';
+import '../../../domain/usecases/fetch_cleaning_orders_use_case.dart';
 import '../../../domain/usecases/fetch_orders_use_case.dart';
 import '../../../domain/usecases/fetch_restaurant_cart_use_case.dart';
 import '../../../domain/usecases/fetch_store_cart_use_case.dart';
@@ -22,6 +25,8 @@ part 'orders_state.dart';
 @injectable
 class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
   final FetchOrdersUseCase fetchOrdersUseCase;
+  final FetchCleaningOrdersUseCase fetchCleaningOrdersUseCase;
+  final CancelCleaningOrderUseCase cancelCleaningOrderUseCase;
   final FetchRestaurantCartUseCase fetchRestaurantCartUseCase;
   final FetchStoreCartUseCase fetchStoreCartUseCase;
   final UpdateCartItemQuantityUseCase updateCartItemQuantityUseCase;
@@ -34,6 +39,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
 
   OrdersBloc(
     this.fetchOrdersUseCase,
+    this.fetchCleaningOrdersUseCase,
+    this.cancelCleaningOrderUseCase,
     this.fetchRestaurantCartUseCase,
     this.fetchStoreCartUseCase,
     this.updateCartItemQuantityUseCase,
@@ -61,6 +68,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<StoreReceiveModeChangedEvent>(_onStoreReceiveModeChanged);
     on<StoreScheduledAtChangedEvent>(_onStoreScheduledAtChanged);
     on<CartSelectedAddressChangedEvent>(_onCartSelectedAddressChanged);
+    on<CancelCleaningOrderEvent>(_onCancelCleaningOrder);
     on<PlaceRestaurantOrderEvent>(_onPlaceRestaurantOrder);
     on<PlaceStoreOrderEvent>(_onPlaceStoreOrder);
   }
@@ -77,6 +85,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
   }
 
   bool _isStoresSection() => _sectionByIndex(state.selectedTabIndex) == 'supermarket';
+  bool _isCleaningSection() => _sectionByIndex(state.selectedTabIndex) == 'cleaning';
 
   Future<void> _onSectionChanged(OrdersSectionChangedEvent event, Emitter<OrdersState> emit) async {
     emit(
@@ -84,6 +93,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
         selectedTabIndex: event.tabIndex,
         status: BlocStatus.init,
         orders: const <OrderResourceModel>[],
+        cleaningOrders: const <CleaningOrderModel>[],
         currentPage: 1,
         lastPage: 1,
         clearError: true,
@@ -102,6 +112,27 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
 
   Future<void> _onFetchOrders(FetchOrdersEvent event, Emitter<OrdersState> emit) async {
     emit(state.copyWith(status: BlocStatus.loading, clearError: true));
+    if (_isCleaningSection()) {
+      final response = await fetchCleaningOrdersUseCase(
+        FetchCleaningOrdersParams(
+          perPage: state.perPage,
+          page: 1,
+        ),
+      );
+      response.fold(
+        (failure) => emit(state.copyWith(status: BlocStatus.failed, errorMessage: failure.message)),
+        (result) => emit(
+          state.copyWith(
+            status: BlocStatus.success,
+            cleaningOrders: result.data,
+            currentPage: result.meta?.currentPage ?? 1,
+            lastPage: result.meta?.lastPage ?? 1,
+            clearError: true,
+          ),
+        ),
+      );
+      return;
+    }
     final response = await fetchOrdersUseCase(FetchOrdersParams(section: _sectionByIndex(state.selectedTabIndex), perPage: state.perPage, page: 1));
     response.fold(
       (failure) => emit(state.copyWith(status: BlocStatus.failed, errorMessage: failure.message)),
@@ -122,6 +153,26 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     if (state.currentPage >= state.lastPage) return;
     emit(state.copyWith(isLoadingMore: true));
     final nextPage = state.currentPage + 1;
+    if (_isCleaningSection()) {
+      final response = await fetchCleaningOrdersUseCase(
+        FetchCleaningOrdersParams(
+          perPage: state.perPage,
+          page: nextPage,
+        ),
+      );
+      response.fold(
+        (_) => emit(state.copyWith(isLoadingMore: false)),
+        (result) => emit(
+          state.copyWith(
+            isLoadingMore: false,
+            cleaningOrders: <CleaningOrderModel>[...state.cleaningOrders, ...result.data],
+            currentPage: result.meta?.currentPage ?? nextPage,
+            lastPage: result.meta?.lastPage ?? state.lastPage,
+          ),
+        ),
+      );
+      return;
+    }
     final response = await fetchOrdersUseCase(
       FetchOrdersParams(section: _sectionByIndex(state.selectedTabIndex), perPage: state.perPage, page: nextPage),
     );
@@ -248,6 +299,38 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
 
   void _onCartSelectedAddressChanged(CartSelectedAddressChangedEvent event, Emitter<OrdersState> emit) {
     emit(state.copyWith(selectedAddress: event.address, replaceSelectedAddress: true));
+  }
+
+  Future<void> _onCancelCleaningOrder(CancelCleaningOrderEvent event, Emitter<OrdersState> emit) async {
+    emit(
+      state.copyWith(
+        cancelCleaningStatus: BlocStatus.loading,
+        clearCancelCleaningError: true,
+      ),
+    );
+    final response = await cancelCleaningOrderUseCase(
+      CancelCleaningOrderParams(
+        cleaningOrderId: event.orderId,
+        reason: event.reason,
+      ),
+    );
+    response.fold(
+      (failure) => emit(
+        state.copyWith(
+          cancelCleaningStatus: BlocStatus.failed,
+          cancelCleaningErrorMessage: failure.message,
+        ),
+      ),
+      (_) {
+        emit(
+          state.copyWith(
+            cancelCleaningStatus: BlocStatus.success,
+            clearCancelCleaningError: true,
+          ),
+        );
+        add(FetchOrdersEvent(isReload: true));
+      },
+    );
   }
 
   Future<void> _onPlaceRestaurantOrder(PlaceRestaurantOrderEvent event, Emitter<OrdersState> emit) async {

@@ -66,7 +66,6 @@ class CreateCleaningOrderParams with Params {
       'addressLatitude': addressLatitude,
       'addressLongitude': addressLongitude,
       'preferredWorkerId': preferredWorkerId,
-      'quoteId': quoteId,
       'termsAccepted': termsAccepted,
     };
   }

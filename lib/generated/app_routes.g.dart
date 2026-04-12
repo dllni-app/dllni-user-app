@@ -3,7 +3,16 @@
 import 'package:flutter/material.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/register_screen.dart';
+import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_home_description_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_service_schedule_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_profile_detail_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_reviews_all_screen.dart';
 import 'package:dllni_user_app/features/main/view/screens/main_screen.dart';
+import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_details_screen.dart';
+import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_problem_report_screen.dart';
+import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_reschedule_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_fulfillment_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/add_address_screen.dart';
@@ -39,8 +48,6 @@ import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_tracking
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_product_details_screen.dart';
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_store_details_screen.dart';
 
-import '../features/profile/data/models/shopping_lists_api_models.dart';
-
 class GeneratedAppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -56,10 +63,73 @@ class GeneratedAppRoutes {
           builder: (_) => RegisterScreen(),
           settings: settings,
         );
+      case '/verify-account':
+        if (args is VerifyAccountRouteArgs) {
+          return MaterialPageRoute(
+            builder: (_) => VerifyAccountScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/clmainhomedescription':
+        return MaterialPageRoute(
+          builder: (_) => ClMainHomeDescriptionScreen(),
+          settings: settings,
+        );
+      case '/clmain':
+        return MaterialPageRoute(
+          builder: (_) => ClMainScreen(),
+          settings: settings,
+        );
+      case '/clmainserviceschedule':
+        return MaterialPageRoute(
+          builder: (_) => ClMainServiceScheduleScreen(),
+          settings: settings,
+        );
+      case '/clworkerprofiledetail':
+        if (args is WorkerProfileRouteArgs) {
+          return MaterialPageRoute(
+            builder: (_) => ClWorkerProfileDetailScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/clworkerreviewsall':
+        if (args is WorkerProfileRouteArgs) {
+          return MaterialPageRoute(
+            builder: (_) => ClWorkerReviewsAllScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/main':
         if (args is int?) {
           return MaterialPageRoute(
             builder: (_) => MainScreen(returnedIndex: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/cleaning-order-details':
+        if (args is CleaningOrderDetailsArgs) {
+          return MaterialPageRoute(
+            builder: (_) => CleaningOrderDetailsScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/cleaning-order-problem':
+        if (args is CleaningOrderProblemReportArgs) {
+          return MaterialPageRoute(
+            builder: (_) => CleaningOrderProblemReportScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/cleaning-order-reschedule':
+        if (args is CleaningOrderRescheduleArgs) {
+          return MaterialPageRoute(
+            builder: (_) => CleaningOrderRescheduleScreen(args: args),
             settings: settings,
           );
         }

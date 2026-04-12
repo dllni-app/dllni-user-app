@@ -55,22 +55,26 @@ class _OrdersListTabState extends State<OrdersListTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isCleaningSection = widget.state.selectedTabIndex == 2;
+    final effectiveSegmentIndex = isCleaningSection ? OrdersCartOrdersSegmentBar.ordersIndex : segmentIndex;
     return Column(
       children: [
         OrdersAppBar(selectedIndex: widget.state.selectedTabIndex, onChanged: widget.onSectionChanged),
-        const SizedBox(height: 14),
-        OrdersScreenSegmentSection(
-          selectedIndex: segmentIndex,
-          onChanged: (index) {
-            setState(() => segmentIndex = index);
-            if (index == OrdersCartOrdersSegmentBar.cartIndex) {
-              context.read<OrdersBloc>().add(FetchCartForActiveSectionEvent());
-            }
-          },
-        ),
+        if (!isCleaningSection) ...[
+          const SizedBox(height: 14),
+          OrdersScreenSegmentSection(
+            selectedIndex: segmentIndex,
+            onChanged: (index) {
+              setState(() => segmentIndex = index);
+              if (index == OrdersCartOrdersSegmentBar.cartIndex) {
+                context.read<OrdersBloc>().add(FetchCartForActiveSectionEvent());
+              }
+            },
+          ),
+        ],
         Expanded(
           child: IndexedStack(
-            index: segmentIndex,
+            index: effectiveSegmentIndex,
             sizing: StackFit.expand,
             children: [
               OrdersShoppingListTab(state: widget.state, onRefresh: widget.onRefreshCart),

@@ -28,7 +28,7 @@ class ClServiceBottomActionsWidget extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: AppText.headlineSmall(
+              child: AppText.bodyLarge(
                 'أرسل الطلب',
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -50,7 +50,7 @@ class ClServiceBottomActionsWidget extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: AppText.headlineSmall(
+              child: AppText.bodyLarge(
                 'تراجع',
                 color: Colors.white,
                 fontWeight: FontWeight.w700,

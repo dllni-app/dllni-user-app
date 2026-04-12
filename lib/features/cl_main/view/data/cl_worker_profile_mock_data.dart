@@ -58,6 +58,7 @@ class WorkerProfileData {
     required this.aboutText,
     required this.ratingSummary,
     required this.reviews,
+    this.profileImageUrl,
   });
 
   final String id;
@@ -69,6 +70,7 @@ class WorkerProfileData {
   final String aboutText;
   final WorkerRatingSummary ratingSummary;
   final List<WorkerReview> reviews;
+  final String? profileImageUrl;
 }
 
 class WorkerProfileMockData {

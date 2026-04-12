@@ -47,6 +47,10 @@ class ErrorHandler implements Exception {
         return DataSource.noInternetConnection.getFailure();
       case DioExceptionType.badResponse:
         switch (error.response?.statusCode) {
+          case ResponseCode.unAuthorized:
+            return UnauthenticatedFailure(
+              message: error.response?.data["message"].toString() ?? error.response?.data["errors"]?.toString() ?? '',
+            );
           case ResponseCode.internalServerError:
             return DataSource.internetServerError.getFailure();
           case ResponseCode.notFound:

@@ -95,5 +95,15 @@ class CartSelectedAddressChangedEvent extends OrdersEvent {
   CartSelectedAddressChangedEvent({this.address});
 }
 
+class CancelCleaningOrderEvent extends OrdersEvent {
+  final int orderId;
+  final String reason;
+
+  CancelCleaningOrderEvent({
+    required this.orderId,
+    required this.reason,
+  });
+}
+
 class PlaceRestaurantOrderEvent extends OrdersEvent {}
 class PlaceStoreOrderEvent extends OrdersEvent {}

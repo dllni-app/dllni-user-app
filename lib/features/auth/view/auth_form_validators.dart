@@ -1,6 +1,14 @@
 class AuthFormValidators {
   AuthFormValidators._();
 
+  static String? email(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'أدخل البريد الإلكتروني';
+    final emailRegex = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
+    if (!emailRegex.hasMatch(v)) return 'البريد الإلكتروني غير صالح';
+    return null;
+  }
+
   static String? fullName(String? value) {
     final v = value?.trim() ?? '';
     if (v.isEmpty) return 'أدخل الاسم الكامل';

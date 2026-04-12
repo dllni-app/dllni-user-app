@@ -62,6 +62,8 @@ class PreviousWorkerModel {
   final String? lastServiceDate;
   final String? profileImage;
   final List<String>? badges;
+  final String? description;
+  final PreviousWorkerRatingsModel? ratings;
 
   const PreviousWorkerModel({
     this.id,
@@ -74,6 +76,8 @@ class PreviousWorkerModel {
     this.lastServiceDate,
     this.profileImage,
     this.badges,
+    this.description,
+    this.ratings,
   });
 
   factory PreviousWorkerModel.fromJson(Map<String, dynamic> json) {
@@ -88,6 +92,10 @@ class PreviousWorkerModel {
       lastServiceDate: json['lastServiceDate'] as String? ?? json['last_service_date'] as String?,
       profileImage: json['profileImage'] as String? ?? json['profile_image'] as String?,
       badges: (json['badges'] as List?)?.whereType<String>().toList(),
+      description: json['description'] as String?,
+      ratings: json['ratings'] is Map<String, dynamic>
+          ? PreviousWorkerRatingsModel.fromJson(json['ratings'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -103,6 +111,23 @@ class PreviousWorkerModel {
     if (rawId is num) return rawId.toInt();
     if (rawId is String) return int.tryParse(rawId);
     return null;
+  }
+}
+
+class PreviousWorkerRatingsModel {
+  final double? average;
+  final int? count;
+
+  const PreviousWorkerRatingsModel({
+    this.average,
+    this.count,
+  });
+
+  factory PreviousWorkerRatingsModel.fromJson(Map<String, dynamic> json) {
+    return PreviousWorkerRatingsModel(
+      average: (json['average'] as num?)?.toDouble(),
+      count: (json['count'] as num?)?.toInt(),
+    );
   }
 }
 

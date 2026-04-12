@@ -24,13 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _dialCode = '+963';
   bool _obscurePassword = true;
 
-  static const List<String> _dialCodes = [
-    '+963',
-    '+966',
-    '+971',
-    '+962',
-    '+20',
-  ];
+  static const List<String> _dialCodes = ['+963'];
 
   static const Color _iconGray = Color(0xff6B7280);
 
@@ -46,9 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final local = _phoneController.text.trim().replaceAll(' ', '');
     final phone = '$_dialCode$local';
-    bloc.add(
-          LoginSubmittedEvent(phone: phone, password: _passwordController.text),
-        );
+    bloc.add(LoginSubmittedEvent(phone: phone, password: _passwordController.text));
   }
 
   @override
@@ -56,15 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocProvider(
       create: (_) => getIt<AuthBloc>(),
       child: BlocListener<AuthBloc, AuthState>(
-        listenWhen: (prev, curr) =>
-            curr.loginStatus == BlocStatus.failed || curr.loginStatus == BlocStatus.success,
+        listenWhen: (prev, curr) => curr.loginStatus == BlocStatus.failed || curr.loginStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.loginStatus == BlocStatus.failed) {
-            AppToast.showToast(
-              context: context,
-              message: state.errorMessage ?? 'فشل تسجيل الدخول',
-              type: ToastificationType.error,
-            );
+            AppToast.showToast(context: context, message: state.errorMessage ?? 'فشل تسجيل الدخول', type: ToastificationType.error);
             return;
           }
           if (state.loginStatus == BlocStatus.success) {
@@ -75,11 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 context.pushRouteAndRemoveUntil('/main');
               }
             } else {
-              AppToast.showToast(
-                context: context,
-                message: 'لم يتم استلام رمز الدخول',
-                type: ToastificationType.error,
-              );
+              AppToast.showToast(context: context, message: 'لم يتم استلام رمز الدخول', type: ToastificationType.error);
             }
           }
         },
@@ -106,11 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.phone,
                       enabled: !loading,
                       validator: AuthFormValidators.phoneLocal,
-                      style: const TextStyle(
-                        color: Color(0xff2F2B3D),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14, fontWeight: FontWeight.w400),
                       decoration: authFieldDecoration(
                         context,
                         hasError: false,
@@ -124,9 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               isDense: true,
                               icon: const Icon(Icons.keyboard_arrow_down, color: _iconGray, size: 20),
                               style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14),
-                              items: _dialCodes
-                                  .map((c) => DropdownMenuItem<String>(value: c, child: Text(c)))
-                                  .toList(),
+                              items: _dialCodes.map((c) => DropdownMenuItem<String>(value: c, child: Text(c))).toList(),
                               onChanged: loading
                                   ? null
                                   : (v) {
@@ -153,25 +130,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (v == null || v.isEmpty) return 'أدخل كلمة المرور';
                         return null;
                       },
-                      style: const TextStyle(
-                        color: Color(0xff2F2B3D),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14, fontWeight: FontWeight.w400),
                       decoration: authFieldDecoration(
                         context,
                         hasError: false,
                         hintText: 'أدخل كلمة المرور',
                         prefixIcon: const Icon(Icons.lock_outline_rounded, color: _iconGray, size: 22),
                         suffixIcon: IconButton(
-                          onPressed: loading
-                              ? null
-                              : () => setState(() => _obscurePassword = !_obscurePassword),
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: _iconGray,
-                            size: 22,
-                          ),
+                          onPressed: loading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
+                          icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: _iconGray, size: 22),
                         ),
                       ),
                     ),
@@ -180,31 +147,33 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               primaryButton: AuthGradientButton(
                 label: loading ? 'جاري التحميل...' : 'تسجيل الدخول',
-                onPressed: loading ? null : (){
-                  _submit(context.read<AuthBloc>());
-                },
+                onPressed: loading
+                    ? null
+                    : () {
+                        _submit(context.read<AuthBloc>());
+                      },
               ),
               belowPrimary: Column(
                 children: [
                   Divider(height: 1, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
-                  AppText.bodySmall(
-                    'ليس لديك حساب؟',
-                    color: _iconGray,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  AppText.bodySmall('ليس لديك حساب؟', color: _iconGray, style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 10),
-                  OutlinedButton(
-                    onPressed: loading ? null : () => context.pushRoute('/register'),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: context.secondary.withAlpha(220)),
-                      backgroundColor: context.secondary.withAlpha(20),
-                      foregroundColor: context.secondary,
+                  InkWell(
+                    onTap: loading ? null : () => context.pushRoute('/register'),
+                    child: Container(
+                      width: context.width,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: context.secondary.withAlpha(25),
+                        border: Border.all(color: context.secondary.withAlpha(220), width: 1),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: AppText.labelLarge('إنشاء حساب جديد', fontWeight: FontWeight.w700, color: context.secondary),
                     ),
-                    child: AppText.labelLarge('إنشاء حساب جديد', fontWeight: FontWeight.w700),
                   ),
+                  SizedBox(height: 32,),
+                  AuthTrailing(),
                 ],
               ),
             );

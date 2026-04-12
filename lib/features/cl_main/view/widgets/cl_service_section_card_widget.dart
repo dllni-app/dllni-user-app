@@ -7,6 +7,7 @@ class ClServiceSectionCardWidget extends StatelessWidget {
     required this.step,
     required this.child,
     this.subtitle,
+    this.showStepBadge = true,
     super.key,
   });
 
@@ -14,6 +15,7 @@ class ClServiceSectionCardWidget extends StatelessWidget {
   final String? subtitle;
   final int step;
   final Widget child;
+  final bool showStepBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -28,25 +30,27 @@ class ClServiceSectionCardWidget extends StatelessWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFF11B9C8),
-                child: AppText.bodyMedium(
-                  '$step',
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
+              if (showStepBadge) ...[
+                CircleAvatar(
+                  radius: 15,
+                  backgroundColor: const Color(0xFF11B9C8),
+                  child: AppText.bodyMedium(
+                    '$step',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText.headlineSmall(
                       title,
                       color: const Color(0xFF11B9C8),
                       fontWeight: FontWeight.w700,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
                       const SizedBox(height: 2),
