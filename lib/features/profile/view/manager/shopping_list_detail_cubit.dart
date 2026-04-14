@@ -18,6 +18,7 @@ class ShoppingListDetailState {
   final ShoppingListDetailModel? shoppingList;
   final String? errorMessage;
   final Set<int> updatingItemIds;
+  final bool isReorderToCartLoading;
 
   const ShoppingListDetailState({
     this.status = BlocStatus.init,
@@ -25,6 +26,7 @@ class ShoppingListDetailState {
     this.shoppingList,
     this.errorMessage,
     this.updatingItemIds = const <int>{},
+    this.isReorderToCartLoading = false,
   });
 
   ShoppingListDetailState copyWith({
@@ -35,6 +37,7 @@ class ShoppingListDetailState {
     String? errorMessage,
     bool clearErrorMessage = false,
     Set<int>? updatingItemIds,
+    bool? isReorderToCartLoading,
   }) {
     return ShoppingListDetailState(
       status: status ?? this.status,
@@ -42,6 +45,7 @@ class ShoppingListDetailState {
       shoppingList: replaceShoppingList ? shoppingList : (shoppingList ?? this.shoppingList),
       errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       updatingItemIds: updatingItemIds ?? this.updatingItemIds,
+      isReorderToCartLoading: isReorderToCartLoading ?? this.isReorderToCartLoading,
     );
   }
 }
@@ -290,7 +294,14 @@ class ShoppingListDetailCubit extends Cubit<ShoppingListDetailState> {
   Future<void> reorderToCart({required int storeId}) async {
     final shoppingListId = _shoppingListId;
     if (shoppingListId == null) return;
-    emit(state.copyWith(mutationStatus: BlocStatus.loading, clearErrorMessage: true));
+    if (state.isReorderToCartLoading) return;
+    emit(
+      state.copyWith(
+        mutationStatus: BlocStatus.loading,
+        isReorderToCartLoading: true,
+        clearErrorMessage: true,
+      ),
+    );
     final res = await addShoppingListToCartUseCase(
       AddShoppingListToCartParams(shoppingListId: shoppingListId, storeId: storeId),
     );
@@ -299,11 +310,13 @@ class ShoppingListDetailCubit extends Cubit<ShoppingListDetailState> {
         state.copyWith(
           mutationStatus: BlocStatus.failed,
           errorMessage: failure.message,
+          isReorderToCartLoading: false,
         ),
       ),
       (_) async {
         emit(state.copyWith(mutationStatus: BlocStatus.success, clearErrorMessage: true));
         await refetchAll();
+        emit(state.copyWith(isReorderToCartLoading: false));
       },
     );
   }

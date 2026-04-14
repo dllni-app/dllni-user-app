@@ -9,7 +9,8 @@ import '../../data/models/shopping_lists_api_models.dart';
 import '../manager/shopping_list_detail_cubit.dart';
 import '../../../sm_discover/view/screens/sm_discover_screen.dart';
 
-export '../../data/models/shopping_lists_api_models.dart' show ShoppingListDetailsArgs;
+export '../../data/models/shopping_lists_api_models.dart'
+    show ShoppingListDetailsArgs;
 
 @AutoRoutePage(path: "/shopping_list_details")
 class ShoppingListDetailsScreen extends StatefulWidget {
@@ -351,47 +352,51 @@ class _ShoppingListDetailsScreenState extends State<ShoppingListDetailsScreen> {
                                 );
                               },
                             ),
-                            Builder(
-                              builder: (context) {
-                                return GestureDetector(
-                                  onTap: () async {
-                                    await showModalBottomSheet<void>(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.white,
-                                      builder: (_) {
-                                        return BlocProvider.value(
-                                          value: context
-                                              .read<ShoppingListDetailCubit>(),
-                                          child: StoreIdSheet(),
-                                        );
-                                      },
-                                    );
-                                  },
-                                  child: Container(
-                                    width: context.width,
-                                    padding: const EdgeInsets.only(
-                                      top: 14,
-                                      bottom: 13,
-                                    ),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFFF7A00),
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(12),
-                                      ),
-                                    ),
-                                    child: AppText(
-                                      "إعادة طلب هذه  القائمة",
-                                      style: TextStyle(
-                                        color: Color(0xFFFFEEFF),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        height: 16 / 14,
-                                      ),
+                            IgnorePointer(
+                              ignoring: state.isReorderToCartLoading,
+                              child: GestureDetector(
+                                onTap: () {
+                                  context
+                                      .read<ShoppingListDetailCubit>()
+                                      .reorderToCart(storeId: 2);
+                                },
+                                child: Container(
+                                  width: context.width,
+                                  padding: const EdgeInsets.only(
+                                    top: 14,
+                                    bottom: 13,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFF7A00),
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(12),
                                     ),
                                   ),
-                                );
-                              },
+                                  child: state.isReorderToCartLoading
+                                      ? const SizedBox(
+                                          height: 20,
+                                          child: Center(
+                                            child: SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Color(0xFFFFEEFF),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : AppText(
+                                          "إعادة طلب هذه  القائمة",
+                                          style: TextStyle(
+                                            color: Color(0xFFFFEEFF),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            height: 16 / 14,
+                                          ),
+                                        ),
+                                ),
+                              ),
                             ),
                             Row(
                               spacing: 22,
@@ -759,187 +764,185 @@ class _EditSheetState extends State<EditSheet> {
   }
 }
 
-class StoreIdSheet extends StatefulWidget {
-  const StoreIdSheet({super.key});
+// class StoreIdSheet extends StatefulWidget {
+//   const StoreIdSheet({super.key});
 
-  @override
-  State<StoreIdSheet> createState() => _StoreIdSheetState();
-}
+//   @override
+//   State<StoreIdSheet> createState() => _StoreIdSheetState();
+// }
 
-class _StoreIdSheetState extends State<StoreIdSheet> {
-  static const Color _fieldFill = Color(0xFFF9FAFB);
-  static const Color _borderIdle = Color(0xFFE5E7EB);
-  static const Color _brandOrange = Color(0xFFFF7A00);
-  static const Color _textPrimary = Color(0xFF2F2B3D);
-  static const Color _hintColor = Color(0xFF9CA3AF);
+// class _StoreIdSheetState extends State<StoreIdSheet> {
+//   static const Color _fieldFill = Color(0xFFF9FAFB);
+//   static const Color _borderIdle = Color(0xFFE5E7EB);
+//   static const Color _brandOrange = Color(0xFFFF7A00);
+//   static const Color _textPrimary = Color(0xFF2F2B3D);
+//   static const Color _hintColor = Color(0xFF9CA3AF);
 
-  late final TextEditingController _controller;
+//   late final TextEditingController _controller;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     _controller = TextEditingController();
+//   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+//   @override
+//   void dispose() {
+//     _controller.dispose();
+//     super.dispose();
+//   }
 
-  InputDecoration _fieldDecoration({
-    required String hintText,
-    Widget? prefixIcon,
-  }) {
-    OutlineInputBorder border(Color color, [double width = 1]) {
-      return OutlineInputBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(14)),
-        borderSide: BorderSide(color: color, width: width),
-      );
-    }
+//   InputDecoration _fieldDecoration({
+//     required String hintText,
+//     Widget? prefixIcon,
+//   }) {
+//     OutlineInputBorder border(Color color, [double width = 1]) {
+//       return OutlineInputBorder(
+//         borderRadius: const BorderRadius.all(Radius.circular(14)),
+//         borderSide: BorderSide(color: color, width: width),
+//       );
+//     }
 
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: const TextStyle(
-        color: _hintColor,
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: 1.35,
-      ),
-      filled: true,
-      fillColor: _fieldFill,
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      prefixIcon: prefixIcon,
-      prefixIconConstraints: prefixIcon != null
-          ? const BoxConstraints(minWidth: 52, minHeight: 48)
-          : null,
-      border: border(_borderIdle),
-      enabledBorder: border(_borderIdle),
-      focusedBorder: border(_brandOrange, 1.5),
-    );
-  }
+//     return InputDecoration(
+//       hintText: hintText,
+//       hintStyle: const TextStyle(
+//         color: _hintColor,
+//         fontSize: 14,
+//         fontWeight: FontWeight.w400,
+//         height: 1.35,
+//       ),
+//       filled: true,
+//       fillColor: _fieldFill,
+//       isDense: true,
+//       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+//       prefixIcon: prefixIcon,
+//       prefixIconConstraints: prefixIcon != null
+//           ? const BoxConstraints(minWidth: 52, minHeight: 48)
+//           : null,
+//       border: border(_borderIdle),
+//       enabledBorder: border(_borderIdle),
+//       focusedBorder: border(_brandOrange, 1.5),
+//     );
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    const fieldTextStyle = TextStyle(
-      color: _textPrimary,
-      fontSize: 15,
-      fontWeight: FontWeight.w500,
-      height: 1.4,
-    );
+//   @override
+//   Widget build(BuildContext context) {
+//     const fieldTextStyle = TextStyle(
+//       color: _textPrimary,
+//       fontSize: 15,
+//       fontWeight: FontWeight.w500,
+//       height: 1.4,
+//     );
 
-    return BlocProvider.value(
-      value: context.read<ShoppingListDetailCubit>(),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF4ED),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFFE0CC)),
-                  ),
-                  child: const FaIcon(
-                    FontAwesomeIcons.store,
-                    size: 20,
-                    color: _brandOrange,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppText(
-                    'أدخل رقم المتجر',
-                    style: const TextStyle(
-                      color: Color(0xFF111827),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      height: 1.25,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            AppText.bodyMedium(
-              'رقم المتجر',
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF374151),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller,
-              cursorColor: _brandOrange,
-              style: fieldTextStyle,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              decoration: _fieldDecoration(
-                hintText: 'مثال: 101',
-                prefixIcon: Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: const FaIcon(
-                      FontAwesomeIcons.hashtag,
-                      size: 14,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final storeId = int.tryParse(_controller.text.trim());
-                  if (storeId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('رقم المتجر غير صالح')),
-                    );
-                    return;
-                  }
-                  await context.read<ShoppingListDetailCubit>().reorderToCart(
-                    storeId: storeId,
-                  );
-                  if (!context.mounted) return;
-                  Navigator.of(context).pop();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF7A00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text('إعادة الطلب'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//     return BlocProvider.value(
+//       value: context.read<ShoppingListDetailCubit>(),
+//       child: Padding(
+//         padding: EdgeInsets.fromLTRB(
+//           16,
+//           16,
+//           16,
+//           MediaQuery.of(context).viewInsets.bottom + 24,
+//         ),
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Row(
+//               children: [
+//                 Container(
+//                   width: 44,
+//                   height: 44,
+//                   alignment: Alignment.center,
+//                   decoration: BoxDecoration(
+//                     color: const Color(0xFFFFF4ED),
+//                     borderRadius: BorderRadius.circular(14),
+//                     border: Border.all(color: const Color(0xFFFFE0CC)),
+//                   ),
+//                   child: const FaIcon(
+//                     FontAwesomeIcons.store,
+//                     size: 20,
+//                     color: _brandOrange,
+//                   ),
+//                 ),
+//                 const SizedBox(width: 12),
+//                 Expanded(
+//                   child: AppText(
+//                     'أدخل رقم المتجر',
+//                     style: const TextStyle(
+//                       color: Color(0xFF111827),
+//                       fontSize: 18,
+//                       fontWeight: FontWeight.w700,
+//                       height: 1.25,
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             const SizedBox(height: 20),
+//             AppText.bodyMedium(
+//               'رقم المتجر',
+//               fontWeight: FontWeight.w600,
+//               color: const Color(0xFF374151),
+//             ),
+//             const SizedBox(height: 8),
+//             TextField(
+//               controller: _controller,
+//               cursorColor: _brandOrange,
+//               style: fieldTextStyle,
+//               keyboardType: TextInputType.number,
+//               textInputAction: TextInputAction.done,
+//               decoration: _fieldDecoration(
+//                 hintText: 'مثال: 101',
+//                 prefixIcon: Padding(
+//                   padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
+//                   child: Container(
+//                     width: 36,
+//                     height: 36,
+//                     alignment: Alignment.center,
+//                     decoration: BoxDecoration(
+//                       color: Colors.white,
+//                       borderRadius: BorderRadius.circular(10),
+//                       border: Border.all(color: const Color(0xFFE5E7EB)),
+//                     ),
+//                     child: const FaIcon(
+//                       FontAwesomeIcons.hashtag,
+//                       size: 14,
+//                       color: Color(0xFF64748B),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(height: 16),
+//             SizedBox(
+//               width: double.infinity,
+//               child: ElevatedButton(
+//                 onPressed: () async {
+//                   final storeId = int.tryParse(_controller.text.trim());
+//                   if (storeId == null) {
+//                     ScaffoldMessenger.of(context).showSnackBar(
+//                       const SnackBar(content: Text('رقم المتجر غير صالح')),
+//                     );
+//                     return;
+//                   }
+
+//                   if (!context.mounted) return;
+//                   Navigator.of(context).pop();
+//                 },
+//                 style: ElevatedButton.styleFrom(
+//                   backgroundColor: const Color(0xFFFF7A00),
+//                   foregroundColor: Colors.white,
+//                   padding: const EdgeInsets.symmetric(vertical: 14),
+//                 ),
+//                 child: const Text('إعادة الطلب'),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class _ShoppingListDetailsHeader extends StatelessWidget {
   const _ShoppingListDetailsHeader({required this.title});

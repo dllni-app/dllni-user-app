@@ -37,6 +37,14 @@ class _SmSearchViewState extends State<SmSearchView> {
   bool isListening = false;
   double soundLevel = 0.0;
 
+  /// True while the user expects voice input until they tap the mic again.
+  bool _voiceSessionActive = false;
+  bool _speechInitialized = false;
+  String? _cachedSpeechLocaleId;
+
+  static const Duration _voiceListenFor = Duration(minutes: 5);
+  static const Duration _voicePauseFor = Duration(seconds: 60);
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +55,14 @@ class _SmSearchViewState extends State<SmSearchView> {
         ) ??
         [];
     speechToText = SpeechToText();
+  }
+
+  @override
+  void dispose() {
+    _voiceSessionActive = false;
+    speechToText.stop();
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -68,7 +84,7 @@ class _SmSearchViewState extends State<SmSearchView> {
       }
     }
     final system = await speechToText.systemLocale();
-    // return system?.localeId;
+    // return system?.localeId ?? "ar_SA";
     return "ar_SA";
   }
 
@@ -338,32 +354,39 @@ class _SmSearchViewState extends State<SmSearchView> {
     setState(() {});
   }
 
-  Future<void> _startListening() async {
-    var status = await Permission.microphone.status;
-    if (status.isPermanentlyDenied) {
-      _showPermissionDialog();
+  void _onSpeechStatus(String pluginStatus) {
+    if (pluginStatus != SpeechToText.doneStatus &&
+        pluginStatus != SpeechToText.notListeningStatus) {
       return;
     }
-    if (status.isDenied || status.isRestricted) {
-      status = await Permission.microphone.request();
-    }
-    if (!status.isGranted) {
-      _showPermissionDialog();
+    if (!mounted) return;
+    if (_voiceSessionActive) {
+      _scheduleListenRestart();
       return;
     }
+    setState(() {
+      isListening = false;
+      soundLevel = 0.0;
+    });
+  }
 
+  void _scheduleListenRestart() {
+    if (!mounted || !_voiceSessionActive) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !_voiceSessionActive) return;
+      if (speechToText.isListening) return;
+      await _beginListenSession();
+    });
+  }
+
+  Future<void> _ensureSpeechInitialized() async {
+    if (_speechInitialized) return;
     final available = await speechToText.initialize(
-      onStatus: (pluginStatus) {
-        if (pluginStatus == SpeechToText.doneStatus ||
-            pluginStatus == SpeechToText.notListeningStatus) {
-          if (!mounted) return;
-          setState(() {
-            isListening = false;
-            soundLevel = 0.0;
-          });
+      onStatus: _onSpeechStatus,
+      onError: (error) {
+        if (_voiceSessionActive && error.errorMsg == 'error_no_match') {
+          return;
         }
-      },
-      onError: (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -373,20 +396,15 @@ class _SmSearchViewState extends State<SmSearchView> {
       },
     );
     if (!available) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الميكروفون أو التعرف الصوتي غير متاح')),
-      );
       return;
     }
+    _speechInitialized = true;
+  }
 
-    final localeId = await _pickSpeechLocale();
-
-    if (!mounted) return;
-    setState(() {
-      searchController.clear();
-      isListening = true;
-    });
+  Future<void> _beginListenSession() async {
+    final localeId = _cachedSpeechLocaleId;
+    if (localeId == null || !_voiceSessionActive || !mounted) return;
+    if (speechToText.isListening) return;
 
     try {
       await speechToText.listen(
@@ -404,14 +422,17 @@ class _SmSearchViewState extends State<SmSearchView> {
           if (mounted) setState(() => soundLevel = level);
         },
         localeId: localeId,
+        listenFor: _voiceListenFor,
+        pauseFor: _voicePauseFor,
         listenOptions: SpeechListenOptions(
-          listenMode: ListenMode.search,
+          listenMode: ListenMode.dictation,
           partialResults: true,
-          cancelOnError: true,
+          cancelOnError: false,
         ),
       );
     } catch (_) {
       if (!mounted) return;
+      _voiceSessionActive = false;
       setState(() {
         isListening = false;
         soundLevel = 0.0;
@@ -422,8 +443,45 @@ class _SmSearchViewState extends State<SmSearchView> {
     }
   }
 
-  void _stopListening() async {
+  Future<void> _startListening() async {
+    var status = await Permission.microphone.status;
+    if (status.isPermanentlyDenied) {
+      _showPermissionDialog();
+      return;
+    }
+    if (status.isDenied || status.isRestricted) {
+      status = await Permission.microphone.request();
+    }
+    if (!status.isGranted) {
+      _showPermissionDialog();
+      return;
+    }
+
+    await _ensureSpeechInitialized();
+    if (!_speechInitialized) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الميكروفون أو التعرف الصوتي غير متاح')),
+      );
+      return;
+    }
+
+    _cachedSpeechLocaleId = await _pickSpeechLocale();
+
+    if (!mounted) return;
+    _voiceSessionActive = true;
+    setState(() {
+      searchController.clear();
+      isListening = true;
+    });
+
+    await _beginListenSession();
+  }
+
+  Future<void> _stopListening() async {
+    _voiceSessionActive = false;
     await speechToText.stop();
+    if (!mounted) return;
     setState(() {
       isListening = false;
       soundLevel = 0.0;

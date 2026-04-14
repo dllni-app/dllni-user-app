@@ -292,6 +292,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                           .state
                                           .productDetails
                                           ?.masterProductId;
+                                      print('masterId: $masterId');
                                       if (masterId == null || masterId <= 0) {
                                         AppToast.showToast(
                                           context: context,
@@ -305,14 +306,12 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                       );
                                       showDialog<void>(
                                         context: context,
-                                        builder: (_) =>
-                                            BlocProvider.value(
-                                              value: context
-                                                  .read<SmStoresBloc>(),
-                                              child: ShoppingListsDialog(
-                                                masterProductId: masterId,
-                                              ),
-                                            ),
+                                        builder: (_) => BlocProvider.value(
+                                          value: context.read<SmStoresBloc>(),
+                                          child: ShoppingListsDialog(
+                                            masterProductId: masterId,
+                                          ),
+                                        ),
                                       );
                                     },
                                   ),

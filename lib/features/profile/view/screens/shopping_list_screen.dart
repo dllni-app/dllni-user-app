@@ -65,9 +65,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     }
                     return RefreshIndicator(
                       onRefresh: () async {
-                        await context
-                            .read<ShoppingListsCubit>()
-                            .loadShoppingLists();
+                        await context.read<ShoppingListsCubit>().loadShoppingLists();
+                        if (!context.mounted) return;
                       },
                       child: ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -138,7 +137,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     ),
                   ),
                 );
-              }
+              },
             ),
           ),
         ),

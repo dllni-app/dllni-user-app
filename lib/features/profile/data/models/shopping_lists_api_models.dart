@@ -63,11 +63,15 @@ FetchRestaurantCartModel addShoppingListToCartModelFromJson(dynamic json) =>
 class FetchShoppingListsModel {
   final List<ShoppingListSummaryModel> data;
 
-  const FetchShoppingListsModel({this.data = const <ShoppingListSummaryModel>[]});
+  const FetchShoppingListsModel({
+    this.data = const <ShoppingListSummaryModel>[],
+  });
 
   factory FetchShoppingListsModel.fromJson(Map<String, dynamic> json) {
     return FetchShoppingListsModel(
-      data: _asMapList(json['data']).map(ShoppingListSummaryModel.fromJson).toList(),
+      data: _asMapList(
+        json['data'],
+      ).map(ShoppingListSummaryModel.fromJson).toList(),
     );
   }
 }
@@ -112,7 +116,9 @@ class ShoppingListDetailResponseModel {
   factory ShoppingListDetailResponseModel.fromJson(Map<String, dynamic> json) {
     final payload = json['data'];
     return ShoppingListDetailResponseModel(
-      data: payload is Map ? ShoppingListDetailModel.fromJson(_asMap(payload)) : null,
+      data: payload is Map
+          ? ShoppingListDetailModel.fromJson(_asMap(payload))
+          : null,
     );
   }
 }
@@ -142,7 +148,9 @@ class ShoppingListDetailModel {
       name: _asString(_readKey(json, 'name')) ?? '',
       description: _asString(_readKey(json, 'description')),
       isActive: _asBool(_readKey(json, 'isActive', 'is_active')),
-      items: _asMapList(json['items']).map(ShoppingListItemModel.fromJson).toList(),
+      items: _asMapList(
+        json['items'],
+      ).map(ShoppingListItemModel.fromJson).toList(),
       createdAt: _asString(_readKey(json, 'createdAt', 'created_at')),
       updatedAt: _asString(_readKey(json, 'updatedAt', 'updated_at')),
     );
@@ -158,7 +166,9 @@ class ShoppingListDetailModel {
     return ShoppingListDetailModel(
       id: id,
       name: name ?? this.name,
-      description: keepDescription ? (description ?? this.description) : description,
+      description: keepDescription
+          ? (description ?? this.description)
+          : description,
       isActive: isActive ?? this.isActive,
       items: items ?? this.items,
       createdAt: createdAt,
@@ -168,17 +178,17 @@ class ShoppingListDetailModel {
 }
 
 class ShoppingListItemModel {
-  final int id;
-  final int masterProductId;
-  final String name;
-  final double quantity;
-  final String? unit;
-  final int sortOrder;
-  final bool isIncluded;
-  final String? createdAt;
-  final String? updatedAt;
+  int id;
+  int masterProductId;
+  String name;
+  double quantity;
+  String? unit;
+  int sortOrder;
+  bool isIncluded;
+  String? createdAt;
+  String? updatedAt;
 
-  const ShoppingListItemModel({
+  ShoppingListItemModel({
     this.id = 0,
     this.masterProductId = 0,
     this.name = '',
@@ -193,7 +203,8 @@ class ShoppingListItemModel {
   factory ShoppingListItemModel.fromJson(Map<String, dynamic> json) {
     return ShoppingListItemModel(
       id: _asInt(_readKey(json, 'id')) ?? 0,
-      masterProductId: _asInt(_readKey(json, 'masterProductId', 'master_product_id')) ?? 0,
+      masterProductId:
+          _asInt(_readKey(json, 'masterProductId', 'master_product_id')) ?? 0,
       name: _asString(_readKey(json, 'name')) ?? '',
       quantity: _asDouble(_readKey(json, 'quantity')) ?? 1,
       unit: _asString(_readKey(json, 'unit')),

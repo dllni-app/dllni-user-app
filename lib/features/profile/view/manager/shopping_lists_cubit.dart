@@ -48,7 +48,7 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
   }) : super(const ShoppingListsState());
 
   Future<void> loadShoppingLists({bool showLoader = true}) async {
-    if (showLoader) {
+    if (showLoader && !isClosed) {
       emit(state.copyWith(status: BlocStatus.loading, clearErrorMessage: true));
     }
     final res = await fetchShoppingListsUseCase(FetchShoppingListsParams());
@@ -74,6 +74,7 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
     required String name,
     String? description,
   }) async {
+    if (isClosed) return;
     emit(
       state.copyWith(createStatus: BlocStatus.loading, clearErrorMessage: true),
     );
@@ -85,7 +86,7 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
             : description?.trim(),
       ),
     );
-    if(isClosed) return;
+    if (isClosed) return;
     res.fold(
       (failure) => emit(
         state.copyWith(
