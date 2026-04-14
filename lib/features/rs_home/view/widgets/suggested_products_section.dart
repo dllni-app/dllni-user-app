@@ -101,7 +101,7 @@ class _SuggestedProductCard extends StatelessWidget {
           ? null
           : () {
               context.pushRoute(
-                '/product',
+                '/rs_product',
                 arguments: ProductDetailsScreenParams(
                   product: ProductPreviewData.fromSuggestedItem(item),
                 ),

@@ -43,7 +43,7 @@ class StoreProductsPreviewSection extends StatelessWidget {
               ),
               Spacer(),
               InkWell(
-                onTap: () => context.pushRoute('/store-all-products', arguments: restaurantId),
+                onTap: () => context.pushRoute('/rs_store-all-products', arguments: restaurantId),
                 borderRadius: BorderRadius.all(Radius.circular(6)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -342,7 +342,7 @@ class StoreReviewsPreviewSection extends StatelessWidget {
             SizedBox(height: 4),
             InkWell(
               onTap: () => context.pushRoute(
-                '/store-all-reviews',
+                '/rs_store-all-reviews',
                 arguments: StoreAllReviewsScreenParams(restaurantId: restaurantId, reviewsPerPage: ratingTotal > 0 ? ratingTotal : 10),
               ),
               borderRadius: BorderRadius.circular(10),

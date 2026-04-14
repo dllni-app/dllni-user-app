@@ -169,7 +169,7 @@ class OfferCard extends StatelessWidget {
         restaurant,
       );
       context.pushRoute(
-        '/store',
+        '/rs_store',
         arguments: StoreDetailsScreenParams(
           restaurantId: restaurant.id!,
           preview: preview,

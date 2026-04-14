@@ -1,0 +1,7 @@
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep class * extends io.flutter.app.FlutterApplication { *; }
+-keep class * extends io.flutter.embedding.android.FlutterActivity { *; }
+-keep class * extends io.flutter.embedding.engine.FlutterEngine { *; }
+-keep class com.google.** { *; }
+-dontwarn com.google.**
