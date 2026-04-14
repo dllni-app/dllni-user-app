@@ -46,12 +46,7 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
 
   Future<FetchRestaurantDetailsModel?> _loadDetails() async {
     final useCase = getIt<FetchRestaurantDetailsUseCase>();
-    final res = await useCase(
-      FetchRestaurantDetailsParams(
-        restaurantId: widget.params.restaurantId,
-        reviewsPerPage: 10,
-      ),
-    );
+    final res = await useCase(FetchRestaurantDetailsParams(restaurantId: widget.params.restaurantId, reviewsPerPage: 10));
     return res.fold((_) => null, (r) {
       final remoteFavourite = r.restaurant?.isFavorited;
       if (remoteFavourite != null && mounted) {
@@ -161,13 +156,7 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
   Map<int, int> _resolveCounts(FetchRestaurantDetailsModel? details, List<RestaurantDetailsReview> reviews) {
     final summaryCounts = details?.ratingSummary?.counts ?? const {};
     if (summaryCounts.isNotEmpty) {
-      return {
-        5: summaryCounts[5] ?? 0,
-        4: summaryCounts[4] ?? 0,
-        3: summaryCounts[3] ?? 0,
-        2: summaryCounts[2] ?? 0,
-        1: summaryCounts[1] ?? 0,
-      };
+      return {5: summaryCounts[5] ?? 0, 4: summaryCounts[4] ?? 0, 3: summaryCounts[3] ?? 0, 2: summaryCounts[2] ?? 0, 1: summaryCounts[1] ?? 0};
     }
     return _countsFromReviews(reviews);
   }
@@ -300,11 +289,7 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
                   SizedBox(height: 20),
                   Divider(height: 1, color: Color(0xFFF3F4F6)),
                   SizedBox(height: 28),
-                  StoreRestaurantInfoCard(
-                    description: restaurantDescription,
-                    address: address,
-                    workingHoursLines: _workingHoursLines(restaurant),
-                  ),
+                  StoreRestaurantInfoCard(description: restaurantDescription, address: address, workingHoursLines: _workingHoursLines(restaurant)),
                   SizedBox(height: 16),
                   Divider(height: 1, color: Color(0xFFF3F4F6)),
                   SizedBox(height: 44),

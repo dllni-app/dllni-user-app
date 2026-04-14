@@ -41,7 +41,7 @@ class _StoreCardState extends State<StoreCard> {
         final id = store.id;
         if (id == null) return;
         context.pushRoute(
-          '/store',
+          '/rs_store',
           arguments: StoreDetailsScreenParams(
             restaurantId: id,
             preview: RestaurantPreviewData.fromHomeNearest(store).copyWith(isFavorited: _isFavorited),

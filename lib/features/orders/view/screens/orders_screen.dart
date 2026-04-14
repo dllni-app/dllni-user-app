@@ -62,15 +62,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
       create: (_) => getIt<OrdersBloc>()..add(OrdersSectionChangedEvent(widget.initialSectionIndex)),
       child: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
-          return OrdersListTab(
-            state: state,
-            initialSegmentIndex: widget.initialSegmentIndex,
-            scrollController: _scrollController,
-            onRefresh: () => _refreshOrders(context),
-            onRefreshCart: () => _refreshCart(context),
-            onSectionChanged: (index) {
-              context.read<OrdersBloc>().add(OrdersSectionChangedEvent(index));
-            },
+          return Scaffold(
+            body: OrdersListTab(
+              state: state,
+              initialSegmentIndex: widget.initialSegmentIndex,
+              scrollController: _scrollController,
+              onRefresh: () => _refreshOrders(context),
+              onRefreshCart: () => _refreshCart(context),
+              onSectionChanged: (index) {
+                context.read<OrdersBloc>().add(OrdersSectionChangedEvent(index));
+              },
+            ),
           );
         },
       ),
