@@ -12,7 +12,12 @@ class HomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 16, 20, 16),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 16,
+        20,
+        16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Color(0xFFF3F4F6)),
@@ -28,11 +33,21 @@ class HomeAppBar extends StatelessWidget {
                   children: [
                     Text(
                       "مرحباً بعودتك 👋",
-                      style: TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500, height: 16 / 12),
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 16 / 12,
+                      ),
                     ),
                     Text(
                       "أحمد محمد",
-                      style: TextStyle(color: Color(0xFF1E2A78), fontSize: 18, fontWeight: FontWeight.w700, height: 28 / 18),
+                      style: TextStyle(
+                        color: Color(0xFF1E2A78),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        height: 28 / 18,
+                      ),
                     ),
                   ],
                 ),
@@ -45,7 +60,13 @@ class HomeAppBar extends StatelessWidget {
                 },
               ),
               SizedBox(width: 12),
-              _AppBarAction(hasNew: true, icon: FontAwesomeIcons.bell, onTap: () {}),
+              _AppBarAction(
+                hasNew: true,
+                icon: FontAwesomeIcons.bell,
+                onTap: () {
+                  context.pushRoute("/notifications");
+                },
+              ),
             ],
           ),
           SizedBox(height: 16),
@@ -53,7 +74,13 @@ class HomeAppBar extends StatelessWidget {
             onSearch: (search) {},
             onVoiceTap: () {},
             onTap: () {
-              context.pushRoute('/smmain', arguments: SmMainScreenParams(initialPage: 1, expandSearch: true));
+              context.pushRoute(
+                '/smmain',
+                arguments: SmMainScreenParams(
+                  initialPage: 1,
+                  expandSearch: true,
+                ),
+              );
             },
           ),
         ],
@@ -63,7 +90,11 @@ class HomeAppBar extends StatelessWidget {
 }
 
 class _AppBarAction extends StatelessWidget {
-  const _AppBarAction({this.hasNew = false, required this.icon, required this.onTap});
+  const _AppBarAction({
+    this.hasNew = false,
+    required this.icon,
+    required this.onTap,
+  });
 
   final bool hasNew;
   final FaIconData icon;

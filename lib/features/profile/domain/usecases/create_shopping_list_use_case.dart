@@ -17,19 +17,50 @@ class CreateShoppingListUseCase
   }
 }
 
+/// API: `once` | `weekly` | `monthly`
+enum ShoppingListFrequencyType {
+  once('once'),
+  weekly('weekly'),
+  monthly('monthly');
+
+  const ShoppingListFrequencyType(this.apiValue);
+  final String apiValue;
+}
+
+/// `dayOfWeek`: 1 = Sunday … 7 = Saturday (API range).
+class ShoppingListScheduleParams {
+  final ShoppingListFrequencyType frequencyType;
+  final int dayOfWeek;
+
+  const ShoppingListScheduleParams({
+    required this.frequencyType,
+    required this.dayOfWeek,
+  });
+}
+
 class CreateShoppingListParams with Params {
   final String name;
   final String? description;
-  final bool? isActive;
+  final bool isActive;
+  final ShoppingListScheduleParams schedule;
 
-  CreateShoppingListParams({required this.name, this.description, this.isActive});
+  CreateShoppingListParams({
+    required this.name,
+    this.description,
+    this.isActive = true,
+    required this.schedule,
+  });
 
   @override
   BodyMap getBody() {
     return <String, dynamic>{
       'name': name,
-      if (description != null) 'description': description,
-      if (isActive != null) 'isActive': isActive,
+      'description': description,
+      'isActive': isActive,
+      'schedule': <String, dynamic>{
+        'frequencyType': schedule.frequencyType.apiValue,
+        'dayOfWeek': schedule.dayOfWeek,
+      },
     };
   }
 }

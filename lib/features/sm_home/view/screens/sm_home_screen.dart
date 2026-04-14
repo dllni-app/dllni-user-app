@@ -16,6 +16,99 @@ import '../manager/bloc/sm_home_bloc.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/near_stores_section.dart';
 
+class LoadingPageView extends StatefulWidget {
+  const LoadingPageView({super.key});
+
+  @override
+  State<LoadingPageView> createState() => _LoadingPageViewState();
+}
+
+class OfferCard extends StatelessWidget {
+  final GetFeaturedOffersModelOffersItem offer;
+  const OfferCard({super.key, required this.offer});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 130,
+      width: context.width,
+      clipBehavior: Clip.antiAliasWithSaveLayer,
+      margin: EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+      ),
+      child: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(100, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  offer.name ?? "",
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 20 / 16,
+                  ),
+                ),
+                SizedBox(height: 12),
+                AppText(
+                  offer.description ?? "",
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    height: 24 / 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            left: -36,
+            top: 16,
+            child: CircleAvatar(
+              backgroundColor: AppColors.white,
+              radius: 68,
+              child: AppImage.network(
+                offer.imageUrl ?? "",
+                fit: BoxFit.cover,
+                size: 136,
+                errorWidget: Icon(Icons.error_outline, color: Colors.black),
+                borderRadius: BorderRadius.all(Radius.circular(68)),
+              ),
+            ),
+            // AppImage.network(
+            //   offer.imageUrl ?? "",
+            //   size: 135,
+            //   errorWidget: CircleAvatar(
+            //     radius: 65,
+            //     backgroundColor: AppColors.white,
+            //     child: Icon(Icons.error_outline, color: Colors.black),
+            //   ),
+            //   loadingBuilder: (_) => CircleAvatar(
+            //     radius: 65,
+            //     backgroundColor: AppColors.white,
+            //     child: SizedBox(
+            //       width: 30,
+            //       height: 30,
+            //       child: CircularProgressIndicator(),
+            //     ),
+            //   ),
+            //   borderRadius: BorderRadius.all(Radius.circular(120)),
+            // ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 @AutoRoutePage(path: "/sm_home")
 class SmHomeScreen extends StatefulWidget {
   const SmHomeScreen({super.key});
@@ -24,31 +117,58 @@ class SmHomeScreen extends StatefulWidget {
   State<SmHomeScreen> createState() => _SmHomeScreenState();
 }
 
-class _SmHomeScreenState extends State<SmHomeScreen> {
-  int selectedCategory = -1;
-  late PageController _pageController;
-  int lengthOfOffers = 0;
+class _LoadingPageViewState extends State<LoadingPageView> {
   late Timer timer;
+  late PageController _pageController;
   @override
-  void initState() {
-    _pageController = PageController();
-    timer = Timer.periodic(const Duration(milliseconds: 3000), (_) {
-      if (_pageController.hasClients &&
-          (_pageController.page ?? 0).round() < lengthOfOffers - 1) {
-        _pageController.nextPage(
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      } else if (_pageController.hasClients) {
-        _pageController.animateToPage(
-          0,
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
-
-    super.initState();
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 130,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: 3,
+            itemBuilder: (_, _) => Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                height: 130,
+                width: context.width,
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                margin: EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 8),
+        SizedBox(
+          height: 4,
+          child: Center(
+            child: SmoothPageIndicator(
+              controller: _pageController,
+              count: 3,
+              effect: ExpandingDotsEffect(
+                expansionFactor: 1.01,
+                dotHeight: 4,
+                dotWidth: 18,
+                spacing: 4,
+                dotColor: AppColors.primary.withValues(alpha: .34),
+                activeDotColor: AppColors.primary,
+              ),
+              onDotClicked: (index) {},
+            ),
+          ),
+        ),
+        SizedBox(height: 24),
+        NearStoresSection(),
+      ],
+    );
   }
 
   @override
@@ -58,6 +178,32 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    _pageController = PageController();
+    timer = Timer.periodic(const Duration(milliseconds: 3000), (_) {
+      if (_pageController.hasClients && (_pageController.page ?? 0) < 1.9) {
+        _pageController.nextPage(
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _pageController.animateToPage(
+          0,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+    super.initState();
+  }
+}
+
+class _SmHomeScreenState extends State<SmHomeScreen> {
+  int selectedCategory = -1;
+  late PageController _pageController;
+  int lengthOfOffers = 0;
+  late Timer timer;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,112 +318,6 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
       ),
     );
   }
-}
-
-class OfferCard extends StatelessWidget {
-  const OfferCard({super.key, required this.offer});
-  final GetFeaturedOffersModelOffersItem offer;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 130,
-      width: context.width,
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      margin: EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(100, 16, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  offer.name ?? "",
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    height: 20 / 16,
-                  ),
-                ),
-                SizedBox(height: 12),
-                AppText(
-                  offer.description ?? "",
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 24 / 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            left: -36,
-            top: 16,
-            child: AppImage.network(
-              offer.imageUrl ?? "",
-              size: 135,
-              errorWidget: CircleAvatar(
-                radius: 65,
-                backgroundColor: AppColors.white,
-                child: Icon(Icons.error_outline, color: Colors.black),
-              ),
-              loadingBuilder: (_) => CircleAvatar(
-                radius: 65,
-                backgroundColor: AppColors.white,
-                child: SizedBox(
-                  width: 30,
-                  height: 30,
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-              borderRadius: BorderRadius.all(Radius.circular(120)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class LoadingPageView extends StatefulWidget {
-  const LoadingPageView({super.key});
-
-  @override
-  State<LoadingPageView> createState() => _LoadingPageViewState();
-}
-
-class _LoadingPageViewState extends State<LoadingPageView> {
-  late Timer timer;
-  late PageController _pageController;
-  @override
-  void initState() {
-    _pageController = PageController();
-    timer = Timer.periodic(const Duration(milliseconds: 3000), (_) {
-      if (_pageController.hasClients && (_pageController.page ?? 0) < 1.9) {
-        _pageController.nextPage(
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      } else {
-        _pageController.animateToPage(
-          0,
-          duration: Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -287,54 +327,25 @@ class _LoadingPageViewState extends State<LoadingPageView> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 130,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: 3,
-            itemBuilder: (_, _) => Shimmer.fromColors(
-              baseColor: Colors.grey.shade300,
-              highlightColor: Colors.grey.shade100,
-              child: Container(
-                height: 130,
-                width: context.width,
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                margin: EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                ),
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 8),
-        SizedBox(
-          height: 4,
-          child: Center(
-            child: SmoothPageIndicator(
-              controller: _pageController,
-              count: 3,
-              effect: ExpandingDotsEffect(
-                expansionFactor: 1.01,
-                dotHeight: 4,
-                dotWidth: 18,
-                spacing: 4,
-                dotColor: AppColors.primary.withValues(alpha: .34),
-                activeDotColor: AppColors.primary,
-              ),
-              onDotClicked: (index) {},
-            ),
-          ),
-        ),
-        SizedBox(height: 24),
-        NearStoresSection(),
-      ],
-    );
+  void initState() {
+    _pageController = PageController();
+    timer = Timer.periodic(const Duration(milliseconds: 3000), (_) {
+      if (_pageController.hasClients &&
+          (_pageController.page ?? 0).round() < lengthOfOffers - 1) {
+        _pageController.nextPage(
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      } else if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          0,
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+
+    super.initState();
   }
 }
 

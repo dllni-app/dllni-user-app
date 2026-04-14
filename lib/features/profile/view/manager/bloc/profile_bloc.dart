@@ -14,6 +14,7 @@ import '../../../domain/usecases/end_vote_use_case.dart';
 import '../../../domain/usecases/fetch_addresses_use_case.dart';
 import '../../../domain/usecases/fetch_favorite_restaurants_use_case.dart';
 import '../../../domain/usecases/fetch_notifications_use_case.dart';
+import '../../../domain/usecases/mark_all_notifications_read_use_case.dart';
 import '../../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../../domain/usecases/fetch_active_votes_use_case.dart';
 import '../../../domain/usecases/remove_favorite_restaurant_use_case.dart';
@@ -30,6 +31,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final FetchAddressesUseCase fetchAddressesUseCase;
   final SetDefaultAddressUseCase setDefaultAddressUseCase;
   final FetchNotificationsUseCase fetchNotificationsUseCase;
+  final MarkAllNotificationsReadUseCase markAllNotificationsReadUseCase;
   final FetchFavoriteRestaurantsUseCase fetchFavoriteRestaurantsUseCase;
   final RemoveFavoriteRestaurantUseCase removeFavoriteRestaurantUseCase;
   final CreateVoteUseCase createVoteUseCase;
@@ -45,6 +47,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     this.fetchAddressesUseCase,
     this.setDefaultAddressUseCase,
     this.fetchNotificationsUseCase,
+    this.markAllNotificationsReadUseCase,
     this.fetchFavoriteRestaurantsUseCase,
     this.removeFavoriteRestaurantUseCase,
     this.createVoteUseCase,
@@ -170,22 +173,30 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             notifications: mapped,
           ),
         );
+        add(MarkAllNotificationsReadEvent());
       },
     );
   }
 
-  void _markAllNotificationsRead(
+  Future<void> _markAllNotificationsRead(
     MarkAllNotificationsReadEvent event,
     Emitter<ProfileState> emit,
-  ) {
-    emit(
-      state.copyWith(
-        notifications: state.notifications
-            .map(
-              (item) => item.copyWith(isRead: true, showTrailingAccent: false),
-            )
-            .toList(),
-      ),
+  ) async {
+    final response = await markAllNotificationsReadUseCase(NoParams());
+    response.fold(
+      (_) {},
+      (_) {
+        emit(
+          state.copyWith(
+            notifications: state.notifications
+                .map(
+                  (item) =>
+                      item.copyWith(isRead: true, showTrailingAccent: false),
+                )
+                .toList(),
+          ),
+        );
+      },
     );
   }
 

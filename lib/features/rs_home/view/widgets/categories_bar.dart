@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import '../../data/models/fetch_restaurant_home_categories_model.dart';
 
 class CategoriesBar extends StatefulWidget {
-  const CategoriesBar({super.key, required this.selectedCategory, required this.onCategorySelected, required this.categories});
+  const CategoriesBar({
+    super.key,
+    required this.selectedCategory,
+    required this.onCategorySelected,
+    required this.categories,
+  });
 
   final int selectedCategory;
   final void Function(int index) onCategorySelected;
@@ -31,7 +36,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             "ماذا تشتهي اليوم؟",
-            style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
+            style: TextStyle(
+              color: Color(0xFF1A1A1A),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              height: 24 / 16,
+            ),
           ),
         ),
         SizedBox(height: 16),
@@ -70,7 +80,12 @@ class _CategoriesBarState extends State<CategoriesBar> {
 }
 
 class _CategoryItem extends StatelessWidget {
-  const _CategoryItem({required this.isSelected, required this.imagePath, required this.title, this.onTap});
+  const _CategoryItem({
+    required this.isSelected,
+    required this.imagePath,
+    required this.title,
+    this.onTap,
+  });
 
   final bool isSelected;
   final dynamic imagePath;
@@ -91,15 +106,31 @@ class _CategoryItem extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: isSelected ? context.primaryContainer : Colors.transparent, width: 2),
-              color: Colors.white
+              border: Border.all(
+                color: isSelected
+                    ? context.primaryContainer
+                    : Colors.transparent,
+                width: 2,
+              ),
+              color: Colors.white,
             ),
-            child: (imagePath is String && imagePath != null) ? AppImage.network(imagePath, borderRadius: BorderRadius.circular(99),) : Icon(imagePath),
+            child: (imagePath is String && imagePath != null)
+                ? AppImage.network(
+                    imagePath.toString(),
+                    fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(99),
+                  )
+                : Icon(imagePath),
           ),
           SizedBox(height: 8),
           AppText(
             title,
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500, height: 16 / 12),
+            style: TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              height: 16 / 12,
+            ),
           ),
         ],
       ),

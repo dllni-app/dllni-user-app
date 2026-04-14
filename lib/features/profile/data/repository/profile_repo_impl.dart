@@ -64,6 +64,13 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   }
 
   @override
+  DataResponse<ActionResultModel> markAllNotificationsRead(NoParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.markAllNotificationsRead(params),
+    );
+  }
+
+  @override
   DataResponse<ActionResultModel> removeFavoriteRestaurant(
     RemoveFavoriteRestaurantParams params,
   ) {

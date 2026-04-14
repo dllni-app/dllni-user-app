@@ -57,15 +57,26 @@ class NearStoresSection extends StatelessWidget {
                   },
                 );
               } else if (state.nearbyStoresStatus == BlocStatus.success) {
-                return ListView.separated(
-                  padding: EdgeInsets.zero,
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemBuilder: (_, index) =>
-                      StoreCard(store: state.nearbyStores!.stores![index]),
-                  separatorBuilder: (_, _) => SizedBox(height: 12),
-                  itemCount: state.nearbyStores!.stores!.length,
-                );
+                return state.nearbyStores!.stores!.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: EdgeInsets.zero,
+                          child: AppText.labelMedium(
+                            'لا يوجد متاجر قريبة منك',
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: EdgeInsets.zero,
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemBuilder: (_, index) => StoreCard(
+                          store: state.nearbyStores!.stores![index],
+                        ),
+                        separatorBuilder: (_, _) => SizedBox(height: 12),
+                        itemCount: state.nearbyStores!.stores!.length,
+                      );
               }
               return SizedBox.shrink();
             },

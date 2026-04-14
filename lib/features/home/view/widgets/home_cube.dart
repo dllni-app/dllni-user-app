@@ -73,7 +73,7 @@ class _HomeCubeState extends State<HomeCube> {
         padding: EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 10),
         child: SizedBox(
           width: context.width * .8,
-          height: context.width * .55,
+          height: context.width * .42,
           child: Center(child: AppText.bodyMedium('لا توجد عروض حالياً', color: Color(0xff6B7280))),
         ),
       );
@@ -81,16 +81,19 @@ class _HomeCubeState extends State<HomeCube> {
 
     final padded = List<UserOfferItem>.generate(_faceOrder.length, (i) => offers[i % offers.length]);
 
+    final cubeSize = (context.width * 0.52).clamp(180.0, 230.0);
+
     return Padding(
       padding: EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 10),
       child: FlutterCubeTransition(
+        size: cubeSize,
         animationDuration: Duration(milliseconds: 400),
         animationCurve: Curves.easeOut,
         enableHapticFeedback: true,
         perspectiveStrength: 0.002,
         showControls: false,
         borderVisible: false,
-        margin: EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         textAlign: Alignment.topLeft,
         borderRadius: BorderRadius.circular(16),
         dragSensitivity: 0.006,

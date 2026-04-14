@@ -35,8 +35,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return 'الأقدم';
   }
 
-  Map<String, List<FetchNotificationsModelDataItem>> _groupNotifications(List<FetchNotificationsModelDataItem> notifications) {
-    final grouped = <String, List<FetchNotificationsModelDataItem>>{'اليوم': [], 'أمس': [], 'الأسبوع الماضي': [], 'الأقدم': []};
+  Map<String, List<FetchNotificationsModelDataItem>> _groupNotifications(
+    List<FetchNotificationsModelDataItem> notifications,
+  ) {
+    final grouped = <String, List<FetchNotificationsModelDataItem>>{
+      'اليوم': [],
+      'أمس': [],
+      'الأسبوع الماضي': [],
+      'الأقدم': [],
+    };
 
     for (final item in notifications) {
       final parsed = DateTime.tryParse(item.createdAt ?? '');
@@ -47,39 +54,49 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return grouped;
   }
 
-  void _markAllRead() => context.read<ProfileBloc>().add(MarkAllNotificationsReadEvent());
-
-  Future<void> _refreshNotifications() async {
-    final bloc = context.read<ProfileBloc>();
-    bloc.add(FetchNotificationsEvent(params: FetchNotificationsParams()));
-    await bloc.stream.firstWhere((state) => state.notificationsStatus != BlocStatus.loading);
+  Future<void> _refreshNotifications(BuildContext context) async {
+    context.read<ProfileBloc>().add(
+      FetchNotificationsEvent(params: FetchNotificationsParams()),
+    );
+    await context.read<ProfileBloc>().stream.firstWhere(
+      (state) => state.notificationsStatus != BlocStatus.loading,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<ProfileBloc>(
       lazy: false,
-      create: (_) => getIt<ProfileBloc>()..add(FetchNotificationsEvent(params: FetchNotificationsParams())),
+      create: (_) => getIt<ProfileBloc>()
+        ..add(FetchNotificationsEvent(params: FetchNotificationsParams())),
       child: BlocListener<ProfileBloc, ProfileState>(
         listenWhen: (previous, current) =>
-            previous.notificationsStatus != current.notificationsStatus && current.notificationsStatus == BlocStatus.failed,
+            previous.notificationsStatus != current.notificationsStatus &&
+            current.notificationsStatus == BlocStatus.failed,
         listener: (context, state) {
           if (state.errorMessage == null || state.errorMessage!.isEmpty) {
             return;
           }
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         },
         child: Scaffold(
           backgroundColor: const Color(0xffF9FAFB),
           body: SafeArea(
             child: Column(
               children: [
-                _NotificationsAppBar(onReadAll: _markAllRead),
+                _NotificationsAppBar(),
                 Expanded(
                   child: BlocBuilder<ProfileBloc, ProfileState>(
                     builder: (context, state) {
                       final groups = _groupNotifications(state.notifications);
-                      const sections = ['اليوم', 'أمس', 'الأسبوع الماضي', 'الأقدم'];
+                      const sections = [
+                        'اليوم',
+                        'أمس',
+                        'الأسبوع الماضي',
+                        'الأقدم',
+                      ];
                       if (state.notificationsStatus == null ||
                           state.notificationsStatus == BlocStatus.loading ||
                           state.notificationsStatus == BlocStatus.init) {
@@ -89,14 +106,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         return const Center(child: Text('لا توجد إشعارات'));
                       }
                       return RefreshIndicator(
-                        onRefresh: _refreshNotifications,
+                        onRefresh: () async =>
+                            await _refreshNotifications(context),
                         child: ListView(
-                          padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
+                          padding: const EdgeInsetsDirectional.only(
+                            top: 8,
+                            bottom: 16,
+                          ),
                           children: [
                             for (final section in sections)
                               if (groups[section]!.isNotEmpty) ...[
                                 Padding(
-                                  padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 8),
+                                  padding: const EdgeInsetsDirectional.fromSTEB(
+                                    16,
+                                    10,
+                                    16,
+                                    8,
+                                  ),
                                   child: AppText.labelLarge(
                                     section,
                                     color: const Color(0xff9CA3AF),
@@ -108,9 +134,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   color: context.onPrimary,
                                   child: Column(
                                     children: [
-                                      for (var i = 0; i < groups[section]!.length; i++) ...[
-                                        NotificationFeedItem(notification: groups[section]![i]),
-                                        if (i != groups[section]!.length - 1) const Divider(height: 1, thickness: 1, color: Color(0xffF3F4F6)),
+                                      for (
+                                        var i = 0;
+                                        i < groups[section]!.length;
+                                        i++
+                                      ) ...[
+                                        NotificationFeedItem(
+                                          notification: groups[section]![i],
+                                        ),
+                                        if (i != groups[section]!.length - 1)
+                                          const Divider(
+                                            height: 1,
+                                            thickness: 1,
+                                            color: Color(0xffF3F4F6),
+                                          ),
                                       ],
                                     ],
                                   ),
@@ -132,9 +169,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 class _NotificationsAppBar extends StatelessWidget {
-  const _NotificationsAppBar({required this.onReadAll});
+  const _NotificationsAppBar();
 
-  final VoidCallback onReadAll;
 
   @override
   Widget build(BuildContext context) {
@@ -143,9 +179,20 @@ class _NotificationsAppBar extends StatelessWidget {
       width: context.width,
       decoration: BoxDecoration(
         color: context.onPrimary,
-        border: Border(bottom: BorderSide(color: context.primaryContainer, width: 2)),
-        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(20), bottomLeft: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(14), offset: const Offset(0, 3), blurRadius: 8)],
+        border: Border(
+          bottom: BorderSide(color: context.primaryContainer, width: 2),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(14),
+            offset: const Offset(0, 3),
+            blurRadius: 8,
+          ),
+        ],
       ),
       padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
       child: Row(
@@ -165,7 +212,11 @@ class _NotificationsAppBar extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12),
-          AppText.headlineMedium('الإشعارات', color: context.primary, fontWeight: FontWeight.w700),
+          AppText.headlineMedium(
+            'الإشعارات',
+            color: context.primary,
+            fontWeight: FontWeight.w700,
+          ),
         ],
       ),
     );

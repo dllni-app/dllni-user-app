@@ -32,9 +32,13 @@ class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<RsDiscoverBloc>()..add(FetchDiscoverRestaurantsEvent(isReload: true)),
+      create: (_) =>
+          getIt<RsDiscoverBloc>()
+            ..add(FetchDiscoverRestaurantsEvent(isReload: true)),
       child: Scaffold(
-        backgroundColor: _selectedView == 0 ? Color(0xFFF9FAFB) : Color(0xFFEFEFEF),
+        backgroundColor: _selectedView == 0
+            ? Color(0xFFF9FAFB)
+            : Color(0xFFEFEFEF),
         body: PopScope(
           canPop: _selectedView == 0,
           onPopInvokedWithResult: (didPop, result) {
@@ -68,12 +72,15 @@ class _MainDiscoverView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RsAppSimpleAppBarWithSearch(
           title: "اكتشف",
           onSearchTap: onSearchTap,
           onSearchChanged: (value) {
-            context.read<RsDiscoverBloc>().add(DiscoverSearchQueryChangedEvent(value));
+            context.read<RsDiscoverBloc>().add(
+              DiscoverSearchQueryChangedEvent(value),
+            );
           },
         ),
         SizedBox(height: 16),
@@ -87,27 +94,18 @@ class _MainDiscoverView extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: BlocBuilder<RsDiscoverBloc, RsDiscoverState>(
-            buildWhen: (p, c) => p.totalCount != c.totalCount || p.selectedTabIndex != c.selectedTabIndex,
+            buildWhen: (p, c) =>
+                p.totalCount != c.totalCount ||
+                p.selectedTabIndex != c.selectedTabIndex,
             builder: (context, state) {
-              return Row(
-                children: [
-                  AppText(
-                    "${state.totalCount} متجر متاح",
-                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
-                  ),
-                  Spacer(),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppText(
-                        "ترتيب حسب: ${DiscoverTabQuery.sortLabelAr(state.selectedTabIndex)}",
-                        style: TextStyle(color: Color(0xFF4CAF50), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
-                      ),
-                      SizedBox(width: 4),
-                      FaIcon(FontAwesomeIcons.angleDown, size: 12, color: Color(0xFF4CAF50)),
-                    ],
-                  ),
-                ],
+              return AppText(
+                "${state.totalCount} متجر متاح",
+                style: TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 20 / 14,
+                ),
               );
             },
           ),
@@ -128,7 +126,9 @@ class _MainDiscoverView extends StatelessWidget {
                         SizedBox(height: 12),
                         TextButton(
                           onPressed: () {
-                            context.read<RsDiscoverBloc>().add(FetchDiscoverRestaurantsEvent(isReload: true));
+                            context.read<RsDiscoverBloc>().add(
+                              FetchDiscoverRestaurantsEvent(isReload: true),
+                            );
                           },
                           child: AppText('إعادة المحاولة'),
                         ),
@@ -142,10 +142,16 @@ class _MainDiscoverView extends StatelessWidget {
               }
               if (p.isEmpty) {
                 return Center(
-                  child: AppText('لا توجد مطاعم', style: TextStyle(color: Color(0xFF6B7280), fontSize: 16)),
+                  child: AppText(
+                    'لا توجد مطاعم',
+                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 16),
+                  ),
                 );
               }
-              final showFooter = !p.isEndPage && p.status == BlocStatus.loading && p.list.isNotEmpty;
+              final showFooter =
+                  !p.isEndPage &&
+                  p.status == BlocStatus.loading &&
+                  p.list.isNotEmpty;
               return NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
                   if (notification is ScrollUpdateNotification) {
@@ -168,7 +174,13 @@ class _MainDiscoverView extends StatelessWidget {
                     if (index >= p.list.length) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+                        child: Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
                       );
                     }
                     return StoreCard(store: p.list[index]);
@@ -202,7 +214,11 @@ class _SearchView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(width: 20),
-            FaIcon(FontAwesomeIcons.locationDot, size: 18, color: context.primary),
+            FaIcon(
+              FontAwesomeIcons.locationDot,
+              size: 18,
+              color: context.primary,
+            ),
             SizedBox(width: 8),
             InkWell(
               onTap: () {},
@@ -213,10 +229,20 @@ class _SearchView extends StatelessWidget {
                   SizedBox(width: 2),
                   AppText(
                     "المنزل",
-                    style: TextStyle(color: context.primaryContainer, fontSize: 15, fontWeight: FontWeight.w500, height: 16 / 15),
+                    style: TextStyle(
+                      color: context.primaryContainer,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      height: 16 / 15,
+                    ),
                   ),
                   SizedBox(width: 9),
-                  FaIcon(FontAwesomeIcons.angleDown, size: 16, color: Color(0xFF9CA3AF), weight: 1.5),
+                  FaIcon(
+                    FontAwesomeIcons.angleDown,
+                    size: 16,
+                    color: Color(0xFF9CA3AF),
+                    weight: 1.5,
+                  ),
                   SizedBox(width: 2),
                 ],
               ),
@@ -228,7 +254,14 @@ class _SearchView extends StatelessWidget {
         SizedBox(height: 16),
         SearchesGroup(
           title: "الأكثر بحثاً من قبل المستخدمين",
-          searches: ["لبن المراعي", "أندومي", "حليب مكثف", "حليب هوى الشام", "طحين كاتو", "رز كبسة"],
+          searches: [
+            "لبن المراعي",
+            "أندومي",
+            "حليب مكثف",
+            "حليب هوى الشام",
+            "طحين كاتو",
+            "رز كبسة",
+          ],
           onSearchTap: (search) {
             print(search);
           },
@@ -238,7 +271,14 @@ class _SearchView extends StatelessWidget {
         SizedBox(height: 16),
         SearchesGroup(
           title: "تاريخ البحث",
-          searches: ["لبن المراعي", "أندومي", "حليب مكثف", "حليب هوى الشام", "طحين كاتو", "رز كبسة"],
+          searches: [
+            "لبن المراعي",
+            "أندومي",
+            "حليب مكثف",
+            "حليب هوى الشام",
+            "طحين كاتو",
+            "رز كبسة",
+          ],
           onSearchTap: (search) {
             print(search);
           },
@@ -250,7 +290,13 @@ class _SearchView extends StatelessWidget {
 }
 
 class SearchesGroup extends StatelessWidget {
-  const SearchesGroup({super.key, required this.searches, required this.title, this.onDeleteAllTap, required this.onSearchTap});
+  const SearchesGroup({
+    super.key,
+    required this.searches,
+    required this.title,
+    this.onDeleteAllTap,
+    required this.onSearchTap,
+  });
 
   final List<String> searches;
   final String title;
@@ -269,7 +315,11 @@ class SearchesGroup extends StatelessWidget {
             children: [
               AppText(
                 title,
-                style: TextStyle(color: Colors.black, fontSize: 14, height: 16 / 14),
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  height: 16 / 14,
+                ),
               ),
               if (onDeleteAllTap != null)
                 InkWell(
@@ -277,7 +327,12 @@ class SearchesGroup extends StatelessWidget {
                   borderRadius: BorderRadius.all(Radius.circular(4)),
                   child: AppText(
                     " مسح الكل ",
-                    style: TextStyle(color: context.primaryContainer, fontSize: 10, fontWeight: FontWeight.w300, height: 19 / 10),
+                    style: TextStyle(
+                      color: context.primaryContainer,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w300,
+                      height: 19 / 10,
+                    ),
                   ),
                 ),
             ],
@@ -316,15 +371,27 @@ class _SearchChip extends StatelessWidget {
       borderRadius: BorderRadius.all(Radius.circular(22)),
       child: Container(
         padding: EdgeInsets.fromLTRB(12, 4, 8, 5),
-        decoration: BoxDecoration(color: Color(0xFFDADCEA), borderRadius: BorderRadius.all(Radius.circular(22))),
+        decoration: BoxDecoration(
+          color: Color(0xFFDADCEA),
+          borderRadius: BorderRadius.all(Radius.circular(22)),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.magnifyingGlass, size: 12, color: context.primary),
+            FaIcon(
+              FontAwesomeIcons.magnifyingGlass,
+              size: 12,
+              color: context.primary,
+            ),
             SizedBox(width: 4),
             AppText(
               label,
-              style: TextStyle(color: context.primary, fontSize: 10, fontWeight: FontWeight.w300, height: 19 / 10),
+              style: TextStyle(
+                color: context.primary,
+                fontSize: 10,
+                fontWeight: FontWeight.w300,
+                height: 19 / 10,
+              ),
             ),
           ],
         ),
@@ -337,22 +404,42 @@ final List<DiscoverTabBarItem> discoverTabs = [
   DiscoverTabBarItem(title: "الكل"),
   DiscoverTabBarItem(
     title: "الأقرب",
-    icon: const FaIcon(FontAwesomeIcons.locationDot, size: 14, color: Color(0xFF9CA3AF)),
+    icon: const FaIcon(
+      FontAwesomeIcons.locationDot,
+      size: 14,
+      color: Color(0xFF9CA3AF),
+    ),
   ),
   DiscoverTabBarItem(
     title: "الأعلى تقييماً",
-    icon: const FaIcon(FontAwesomeIcons.solidStar, size: 15, color: Color(0xFFFACC15)),
+    icon: const FaIcon(
+      FontAwesomeIcons.solidStar,
+      size: 15,
+      color: Color(0xFFFACC15),
+    ),
   ),
   DiscoverTabBarItem(
     title: "الأسرع توصيلاً",
-    icon: const FaIcon(FontAwesomeIcons.bolt, size: 14, color: Color(0xFF4CAF50)),
+    icon: const FaIcon(
+      FontAwesomeIcons.bolt,
+      size: 14,
+      color: Color(0xFF4CAF50),
+    ),
   ),
   DiscoverTabBarItem(
     title: "يوجد عروض",
-    icon: const FaIcon(FontAwesomeIcons.tag, size: 12, color: Color(0xFFEF4444)),
+    icon: const FaIcon(
+      FontAwesomeIcons.tag,
+      size: 12,
+      color: Color(0xFFEF4444),
+    ),
   ),
   DiscoverTabBarItem(
     title: "مفتوح الآن",
-    icon: const FaIcon(FontAwesomeIcons.solidClock, size: 14, color: Color(0xFF22C55E)),
+    icon: const FaIcon(
+      FontAwesomeIcons.solidClock,
+      size: 14,
+      color: Color(0xFF22C55E),
+    ),
   ),
 ];

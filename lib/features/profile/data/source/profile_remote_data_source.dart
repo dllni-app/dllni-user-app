@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:common_package/common_package.dart';
+import 'package:common_package/helpers/typedef.dart';
 
 import '../../domain/usecases/fetch_addresses_use_case.dart';
 import '../../domain/usecases/fetch_favorite_restaurants_use_case.dart';
@@ -71,6 +72,16 @@ class ProfileRemoteDataSource with HandlingApiManager {
         data: params.getBody().isEmpty ? null : params.getBody(),
       ),
       jsonConvert: fetchNotificationsPageModelFromJson,
+    );
+  }
+
+  Future<ActionResultModel> markAllNotificationsRead(NoParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.patchData(
+        endPoint: '/api/v1/user/notifications/read-all',
+        data: params.getBody().isEmpty ? {} : params.getBody(),
+      ),
+      jsonConvert: actionResultModelFromJson,
     );
   }
 

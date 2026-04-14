@@ -6,13 +6,21 @@ import '../../../orders/view/widgets/orders_cart_orders_segment_bar.dart';
 
 @AutoRoutePage(path: "/cart")
 class SmCartScreen extends StatelessWidget {
-  const SmCartScreen({super.key});
+  const SmCartScreen({super.key, required this.params});
+
+  final SmCartScreenParams? params;
 
   @override
   Widget build(BuildContext context) {
-    return const OrdersScreen(
-      initialSectionIndex: 0,
+    return OrdersScreen(
+      initialSectionIndex: params?.initialSectionIndex ?? 0,
       initialSegmentIndex: OrdersCartOrdersSegmentBar.cartIndex,
     );
   }
+}
+
+class SmCartScreenParams {
+  final int initialSectionIndex;
+
+  SmCartScreenParams({this.initialSectionIndex = 0});
 }

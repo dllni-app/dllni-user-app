@@ -127,6 +127,8 @@ import '../../features/profile/domain/usecases/fetch_shopping_lists_use_case.dar
     as _i524;
 import '../../features/profile/domain/usecases/fetch_vote_suggestions_use_case.dart'
     as _i381;
+import '../../features/profile/domain/usecases/mark_all_notifications_read_use_case.dart'
+    as _i10;
 import '../../features/profile/domain/usecases/remove_favorite_restaurant_use_case.dart'
     as _i999;
 import '../../features/profile/domain/usecases/set_default_address_use_case.dart'
@@ -822,6 +824,11 @@ _i174.GetIt $initGetIt(
     () =>
         _i381.FetchVoteSuggestionsUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
+  gh.lazySingleton<_i10.MarkAllNotificationsReadUseCase>(
+    () => _i10.MarkAllNotificationsReadUseCase(
+      profileRepo: gh<_i275.ProfileRepo>(),
+    ),
+  );
   gh.lazySingleton<_i999.RemoveFavoriteRestaurantUseCase>(
     () => _i999.RemoveFavoriteRestaurantUseCase(
       profileRepo: gh<_i275.ProfileRepo>(),
@@ -867,6 +874,24 @@ _i174.GetIt $initGetIt(
       gh<_i1.FetchRestaurantProductDetailsUseCase>(),
     ),
   );
+  gh.factory<_i821.ProfileBloc>(
+    () => _i821.ProfileBloc(
+      gh<_i376.FetchAddressesUseCase>(),
+      gh<_i262.SetDefaultAddressUseCase>(),
+      gh<_i438.FetchNotificationsUseCase>(),
+      gh<_i10.MarkAllNotificationsReadUseCase>(),
+      gh<_i319.FetchFavoriteRestaurantsUseCase>(),
+      gh<_i999.RemoveFavoriteRestaurantUseCase>(),
+      gh<_i679.CreateVoteUseCase>(),
+      gh<_i381.FetchVoteSuggestionsUseCase>(),
+      gh<_i687.CreateAddressUseCase>(),
+      gh<_i983.UpdateAddressUseCase>(),
+      gh<_i39.DeleteAddressUseCase>(),
+      gh<_i320.ShowVoteUseCase>(),
+      gh<_i875.EndVoteUseCase>(),
+      gh<_i808.FetchActiveVotesUseCase>(),
+    ),
+  );
   gh.factory<_i362.ClMainBloc>(
     () => _i362.ClMainBloc(
       estimateCleaningPriceUseCase: gh<_i762.EstimateCleaningPriceUseCase>(),
@@ -899,23 +924,6 @@ _i174.GetIt $initGetIt(
     () => _i849.LuckyBoxCubit(
       fetchLuckBoxOptionsUseCase: gh<_i866.FetchLuckBoxOptionsUseCase>(),
       suggestLuckBoxUseCase: gh<_i89.SuggestLuckBoxUseCase>(),
-    ),
-  );
-  gh.factory<_i821.ProfileBloc>(
-    () => _i821.ProfileBloc(
-      gh<_i376.FetchAddressesUseCase>(),
-      gh<_i262.SetDefaultAddressUseCase>(),
-      gh<_i438.FetchNotificationsUseCase>(),
-      gh<_i319.FetchFavoriteRestaurantsUseCase>(),
-      gh<_i999.RemoveFavoriteRestaurantUseCase>(),
-      gh<_i679.CreateVoteUseCase>(),
-      gh<_i381.FetchVoteSuggestionsUseCase>(),
-      gh<_i687.CreateAddressUseCase>(),
-      gh<_i983.UpdateAddressUseCase>(),
-      gh<_i39.DeleteAddressUseCase>(),
-      gh<_i320.ShowVoteUseCase>(),
-      gh<_i875.EndVoteUseCase>(),
-      gh<_i808.FetchActiveVotesUseCase>(),
     ),
   );
   gh.factory<_i767.CouponsCubit>(

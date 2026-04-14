@@ -4,13 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../data/models/fetch_restaurant_product_details_model.dart';
 
-Widget productPlaceholder() {
-  return Container(
-    color: const Color(0xFFF5F5F5),
-    alignment: Alignment.center,
-    child: const Icon(Icons.image_outlined, size: 56, color: Color(0xFF9CA3AF)),
-  );
-}
 
 class ProductActionButton extends StatelessWidget {
   const ProductActionButton({

@@ -73,6 +73,8 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
   Future<void> createShoppingList({
     required String name,
     String? description,
+    bool isActive = true,
+    required ShoppingListScheduleParams schedule,
   }) async {
     if (isClosed) return;
     emit(
@@ -84,6 +86,8 @@ class ShoppingListsCubit extends Cubit<ShoppingListsState> {
         description: description?.trim().isEmpty == true
             ? null
             : description?.trim(),
+        isActive: isActive,
+        schedule: schedule,
       ),
     );
     if (isClosed) return;

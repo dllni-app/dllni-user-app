@@ -1,10 +1,12 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/features/sm_stores/data/models/get_supermarket_store_details_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../data/models/shopping_lists_api_models.dart';
+import '../../domain/usecases/create_shopping_list_use_case.dart';
 import '../manager/shopping_lists_cubit.dart';
 
 @AutoRoutePage(path: "/shopping_list")
@@ -164,6 +166,10 @@ class _CreateShoppingListSheetState extends State<CreateShoppingListSheet> {
   late final TextEditingController nameController;
   late final TextEditingController descriptionController;
 
+  /// Defaults: weekly, Saturday (`dayOfWeek` 7 in 1–7 range).
+  ShoppingListFrequencyType _frequency = ShoppingListFrequencyType.weekly;
+  int _dayOfWeek = 7;
+
   @override
   void initState() {
     super.initState();
@@ -215,6 +221,25 @@ class _CreateShoppingListSheetState extends State<CreateShoppingListSheet> {
     );
   }
 
+  BoxDecoration _dropdownShellDecoration() {
+    return BoxDecoration(
+      color: _fieldFill,
+      borderRadius: const BorderRadius.all(Radius.circular(14)),
+      border: Border.all(color: _borderIdle),
+    );
+  }
+
+  String _frequencyLabelAr(ShoppingListFrequencyType type) {
+    switch (type) {
+      case ShoppingListFrequencyType.once:
+        return 'مرة واحدة';
+      case ShoppingListFrequencyType.weekly:
+        return 'أسبوعي';
+      case ShoppingListFrequencyType.monthly:
+        return 'شهري';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const fieldTextStyle = TextStyle(
@@ -231,155 +256,221 @@ class _CreateShoppingListSheetState extends State<CreateShoppingListSheet> {
         16,
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4ED),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFFFE0CC)),
-                ),
-                child: const FaIcon(
-                  FontAwesomeIcons.bagShopping,
-                  size: 20,
-                  color: _brandOrange,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppText(
-                  'إضافة قائمة تسوق جديدة',
-                  style: const TextStyle(
-                    color: Color(0xFF111827),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    height: 1.25,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          AppText.bodyMedium(
-            'اسم القائمة',
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: nameController,
-            cursorColor: _brandOrange,
-            style: fieldTextStyle,
-            textInputAction: TextInputAction.next,
-            decoration: _fieldDecoration(
-              hintText: 'مثال: تسوق نهاية الأسبوع',
-              prefixIcon: Padding(
-                padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
-                child: Container(
-                  width: 36,
-                  height: 36,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    color: const Color(0xFFFFF4ED),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFE0CC)),
                   ),
                   child: const FaIcon(
-                    FontAwesomeIcons.pen,
-                    size: 14,
-                    color: Color(0xFF64748B),
+                    FontAwesomeIcons.bagShopping,
+                    size: 20,
+                    color: _brandOrange,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppText(
+                    'إضافة قائمة تسوق جديدة',
+                    style: const TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            AppText.bodyMedium(
+              'اسم القائمة',
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF374151),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: nameController,
+              cursorColor: _brandOrange,
+              style: fieldTextStyle,
+              textInputAction: TextInputAction.next,
+              decoration: _fieldDecoration(
+                hintText: 'مثال: تسوق نهاية الأسبوع',
+                prefixIcon: Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: const FaIcon(
+                      FontAwesomeIcons.pen,
+                      size: 14,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              AppText.bodyMedium(
-                'الوصف',
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF374151),
-              ),
-              const SizedBox(width: 6),
-              AppText.bodySmall(
-                '(اختياري)',
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF9CA3AF),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: descriptionController,
-            cursorColor: _brandOrange,
-            style: fieldTextStyle,
-            textAlignVertical: TextAlignVertical.top,
-            minLines: 3,
-            maxLines: 5,
-            decoration: _fieldDecoration(
-              hintText: 'ملاحظات أو تفاصيل عن هذه القائمة…',
-              contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                AppText.bodyMedium(
+                  'الوصف',
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF374151),
+                ),
+                const SizedBox(width: 6),
+                AppText.bodySmall(
+                  '(اختياري)',
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF9CA3AF),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: BlocBuilder<ShoppingListsCubit, ShoppingListsState>(
-              buildWhen: (p, c) => p.createStatus != c.createStatus,
-              builder: (context, state) {
-                final isLoading = state.createStatus == BlocStatus.loading;
-                return ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          final name = nameController.text.trim();
-                          if (name.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('يرجى إدخال اسم القائمة'),
-                              ),
-                            );
-                            return;
-                          }
-                          await context
-                              .read<ShoppingListsCubit>()
-                              .createShoppingList(
-                                name: name,
-                                description: descriptionController.text,
+            const SizedBox(height: 8),
+            TextField(
+              controller: descriptionController,
+              cursorColor: _brandOrange,
+              style: fieldTextStyle,
+              textAlignVertical: TextAlignVertical.top,
+              minLines: 3,
+              maxLines: 5,
+              decoration: _fieldDecoration(
+                hintText: 'ملاحظات أو تفاصيل عن هذه القائمة…',
+                contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppText.bodyMedium(
+              'تكرار القائمة',
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF374151),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: _dropdownShellDecoration(),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<ShoppingListFrequencyType>(
+                  isExpanded: true,
+                  value: _frequency,
+                  borderRadius: BorderRadius.circular(14),
+                  style: fieldTextStyle,
+                  items: ShoppingListFrequencyType.values
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(_frequencyLabelAr(e)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _frequency = v);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppText.bodyMedium(
+              'اليوم',
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF374151),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: _dropdownShellDecoration(),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  isExpanded: true,
+                  value: _dayOfWeek,
+                  borderRadius: BorderRadius.circular(14),
+                  style: fieldTextStyle,
+                  items: List.generate(7, (i) {
+                    final day = i + 1;
+                    return DropdownMenuItem(
+                      value: day,
+                      child: Text(supermarketStoreDetailsHourDayLabelAr(day - 1)),
+                    );
+                  }),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _dayOfWeek = v);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: BlocBuilder<ShoppingListsCubit, ShoppingListsState>(
+                buildWhen: (p, c) => p.createStatus != c.createStatus,
+                builder: (context, state) {
+                  final isLoading = state.createStatus == BlocStatus.loading;
+                  return ElevatedButton(
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final name = nameController.text.trim();
+                            if (name.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('يرجى إدخال اسم القائمة'),
+                                ),
                               );
-                          if (!context.mounted) return;
-                          final current = context
-                              .read<ShoppingListsCubit>()
-                              .state;
-                          if (current.createStatus == BlocStatus.success) {
-                            context.pop();
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7A00),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('إضافة'),
-                );
-              },
+                              return;
+                            }
+                            await context.read<ShoppingListsCubit>().createShoppingList(
+                                  name: name,
+                                  description: descriptionController.text,
+                                  isActive: true,
+                                  schedule: ShoppingListScheduleParams(
+                                    frequencyType: _frequency,
+                                    dayOfWeek: _dayOfWeek,
+                                  ),
+                                );
+                            if (!context.mounted) return;
+                            final current = context
+                                .read<ShoppingListsCubit>()
+                                .state;
+                            if (current.createStatus == BlocStatus.success) {
+                              context.pop();
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF7A00),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('إضافة'),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -292,10 +292,13 @@ class GeneratedAppRoutes {
           settings: settings,
         );
       case '/cart':
-        return MaterialPageRoute(
-          builder: (_) => SmCartScreen(),
-          settings: settings,
-        );
+        if (args is SmCartScreenParams?) {
+          return MaterialPageRoute(
+            builder: (_) => SmCartScreen(params: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/late_time':
         return MaterialPageRoute(
           builder: (_) => SmLateTimeScreen(),

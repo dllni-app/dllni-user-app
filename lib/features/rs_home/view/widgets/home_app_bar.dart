@@ -5,13 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../sm_cart/view/screens/sm_cart_screen.dart';
+
 class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 16, 20, 16),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 16,
+        20,
+        16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Color(0xFFF3F4F6)),
@@ -27,11 +34,21 @@ class HomeAppBar extends StatelessWidget {
                   children: [
                     Text(
                       "مرحباً بعودتك 👋",
-                      style: TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500, height: 16 / 12),
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 16 / 12,
+                      ),
                     ),
                     Text(
                       "أحمد محمد",
-                      style: TextStyle(color: Color(0xFF1E2A78), fontSize: 18, fontWeight: FontWeight.w700, height: 28 / 18),
+                      style: TextStyle(
+                        color: Color(0xFF1E2A78),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        height: 28 / 18,
+                      ),
                     ),
                   ],
                 ),
@@ -43,13 +60,22 @@ class HomeAppBar extends StatelessWidget {
                     badgeCount: cartCount,
                     icon: FontAwesomeIcons.cartShopping,
                     onTap: () {
-                      context.pushRoute("/cart");
+                      context.pushRoute(
+                        "/cart",
+                        arguments: SmCartScreenParams(initialSectionIndex: 1),
+                      );
                     },
                   );
                 },
               ),
               SizedBox(width: 12),
-              _AppBarAction(hasNew: true, icon: FontAwesomeIcons.bell, onTap: () {}),
+              _AppBarAction(
+                hasNew: true,
+                icon: FontAwesomeIcons.bell,
+                onTap: () {
+                  context.pushRoute("/notifications");
+                },
+              ),
             ],
           ),
           SizedBox(height: 16),
@@ -61,7 +87,12 @@ class HomeAppBar extends StatelessWidget {
 }
 
 class _AppBarAction extends StatelessWidget {
-  const _AppBarAction({this.hasNew = false, this.badgeCount, required this.icon, required this.onTap});
+  const _AppBarAction({
+    this.hasNew = false,
+    this.badgeCount,
+    required this.icon,
+    required this.onTap,
+  });
 
   final bool hasNew;
   final int? badgeCount;
@@ -96,7 +127,11 @@ class _AppBarAction extends StatelessWidget {
                 backgroundColor: const Color(0xFFFF7A00),
                 child: Text(
                   '$badgeCount',
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             )
@@ -110,7 +145,10 @@ class _AppBarAction extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: context.primaryContainer,
                   shape: BoxShape.circle,
-                  border: Border.all(color: context.onPrimaryContainer, width: 2),
+                  border: Border.all(
+                    color: context.onPrimaryContainer,
+                    width: 2,
+                  ),
                 ),
               ),
             ),

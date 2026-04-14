@@ -33,6 +33,8 @@ abstract class ProfileRepo {
     FetchNotificationsParams params,
   );
 
+  DataResponse<ActionResultModel> markAllNotificationsRead(NoParams params);
+
   DataResponse<ActionResultModel> removeFavoriteRestaurant(
     RemoveFavoriteRestaurantParams params,
   );
