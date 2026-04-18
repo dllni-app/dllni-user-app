@@ -8,6 +8,7 @@ import '../../../sm_discover/view/widgets/product_card.dart';
 import '../../../../core/widgets/download_more.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../core/widgets/loading_list.dart';
+import '../../../sm_stores/view/screens/sm_product_details_screen.dart';
 import '../../domain/usecases/get_favorite_supermarket_products_use_case.dart';
 import '../manager/bloc/sm_favorite_bloc.dart';
 

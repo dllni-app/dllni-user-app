@@ -8,7 +8,8 @@ import '../../../../../core/di/injection.dart';
 import '../../../../../core/widgets/failure_widget.dart';
 import '../../../../profile/data/models/shopping_lists_api_models.dart';
 import '../../../../profile/domain/usecases/add_shopping_list_item_use_case.dart';
-import '../../../../profile/view/manager/shopping_lists_cubit.dart';
+import '../../../../profile/domain/usecases/get_shopping_list_use_case.dart';
+import '../../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../manager/bloc/sm_stores_bloc.dart';
 
 class ShoppingListsDialog extends StatefulWidget {
@@ -49,7 +50,9 @@ class _ShoppingListsDialogState extends State<ShoppingListsDialog> {
       (_) async {
         setState(() => _addingToListId = null);
         context.read<SmStoresBloc>().add(LoadShoppingListsEvent());
-        await getIt<ShoppingListsCubit>().loadShoppingLists(showLoader: false);
+        getIt<ProfileBloc>().add(
+          GetShoppingListEvent(params: GetShoppingListParams()),
+        );
         if (!mounted) return;
         AppToast.showToast(
           context: context,

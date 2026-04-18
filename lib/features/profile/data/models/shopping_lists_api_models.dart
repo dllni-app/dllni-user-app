@@ -123,11 +123,82 @@ class ShoppingListDetailResponseModel {
   }
 }
 
+class ShoppingListDetailScheduleModel {
+  final String? frequencyType;
+  final List<int> weekDays;
+  final List<dynamic> monthDays;
+  final List<ShoppingListSchedulePeriodModel> periods;
+  final bool isActive;
+  final String? nextRunAt;
+  final dynamic lastRunAt;
+
+  const ShoppingListDetailScheduleModel({
+    this.frequencyType,
+    this.weekDays = const <int>[],
+    this.monthDays = const <dynamic>[],
+    this.periods = const <ShoppingListSchedulePeriodModel>[],
+    this.isActive = true,
+    this.nextRunAt,
+    this.lastRunAt,
+  });
+
+  factory ShoppingListDetailScheduleModel.fromJson(Map<String, dynamic> json) {
+    final weekRaw = json['weekDays'];
+    final monthRaw = json['monthDays'];
+    final periodsRaw = json['periods'];
+    return ShoppingListDetailScheduleModel(
+      frequencyType: _asString(
+        _readKey(json, 'frequencyType', 'frequency_type'),
+      ),
+      weekDays: weekRaw is List
+          ? weekRaw.map((e) => _asInt(e)).whereType<int>().toList()
+          : const <int>[],
+      monthDays: monthRaw is List ? monthRaw : const <dynamic>[],
+      periods: periodsRaw is List
+          ? periodsRaw
+                .whereType<Map>()
+                .map(
+                  (e) => ShoppingListSchedulePeriodModel.fromJson(
+                    _asMap(e),
+                  ),
+                )
+                .toList()
+          : const <ShoppingListSchedulePeriodModel>[],
+      isActive: _asBool(_readKey(json, 'isActive', 'is_active')),
+      nextRunAt: _asString(_readKey(json, 'nextRunAt', 'next_run_at')),
+      lastRunAt: json.containsKey('lastRunAt')
+          ? json['lastRunAt']
+          : json['last_run_at'],
+    );
+  }
+}
+
+class ShoppingListSchedulePeriodModel {
+  final String? label;
+  final String? fromTime;
+  final String? toTime;
+
+  const ShoppingListSchedulePeriodModel({
+    this.label,
+    this.fromTime,
+    this.toTime,
+  });
+
+  factory ShoppingListSchedulePeriodModel.fromJson(Map<String, dynamic> json) {
+    return ShoppingListSchedulePeriodModel(
+      label: _asString(_readKey(json, 'label')),
+      fromTime: _asString(_readKey(json, 'fromTime', 'from_time')),
+      toTime: _asString(_readKey(json, 'toTime', 'to_time')),
+    );
+  }
+}
+
 class ShoppingListDetailModel {
   final int id;
   final String name;
   final String? description;
   final bool isActive;
+  final ShoppingListDetailScheduleModel? schedule;
   final List<ShoppingListItemModel> items;
   final String? createdAt;
   final String? updatedAt;
@@ -137,17 +208,22 @@ class ShoppingListDetailModel {
     this.name = '',
     this.description,
     this.isActive = true,
+    this.schedule,
     this.items = const <ShoppingListItemModel>[],
     this.createdAt,
     this.updatedAt,
   });
 
   factory ShoppingListDetailModel.fromJson(Map<String, dynamic> json) {
+    final schedulePayload = _readKey(json, 'schedule');
     return ShoppingListDetailModel(
       id: _asInt(_readKey(json, 'id')) ?? 0,
       name: _asString(_readKey(json, 'name')) ?? '',
       description: _asString(_readKey(json, 'description')),
       isActive: _asBool(_readKey(json, 'isActive', 'is_active')),
+      schedule: schedulePayload is Map
+          ? ShoppingListDetailScheduleModel.fromJson(_asMap(schedulePayload))
+          : null,
       items: _asMapList(
         json['items'],
       ).map(ShoppingListItemModel.fromJson).toList(),
@@ -160,6 +236,7 @@ class ShoppingListDetailModel {
     String? name,
     String? description,
     bool? isActive,
+    ShoppingListDetailScheduleModel? schedule,
     List<ShoppingListItemModel>? items,
     bool keepDescription = true,
   }) {
@@ -170,6 +247,7 @@ class ShoppingListDetailModel {
           ? (description ?? this.description)
           : description,
       isActive: isActive ?? this.isActive,
+      schedule: schedule ?? this.schedule,
       items: items ?? this.items,
       createdAt: createdAt,
       updatedAt: updatedAt,

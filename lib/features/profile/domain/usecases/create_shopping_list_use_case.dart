@@ -6,13 +6,16 @@ import '../repository/shopping_lists_repo.dart';
 
 @lazySingleton
 class CreateShoppingListUseCase
-    implements UseCase<ShoppingListDetailResponseModel, CreateShoppingListParams> {
+    implements
+        UseCase<ShoppingListDetailResponseModel, CreateShoppingListParams> {
   final ShoppingListsRepo shoppingListsRepo;
 
   CreateShoppingListUseCase({required this.shoppingListsRepo});
 
   @override
-  DataResponse<ShoppingListDetailResponseModel> call(CreateShoppingListParams params) {
+  DataResponse<ShoppingListDetailResponseModel> call(
+    CreateShoppingListParams params,
+  ) {
     return shoppingListsRepo.createShoppingList(params);
   }
 }
@@ -27,28 +30,43 @@ enum ShoppingListFrequencyType {
   final String apiValue;
 }
 
-/// `dayOfWeek`: 1 = Sunday … 7 = Saturday (API range).
-class ShoppingListScheduleParams {
-  final ShoppingListFrequencyType frequencyType;
-  final int dayOfWeek;
+class ShoppingListPeriodParam {
+  final String label;
+  final String fromTime;
+  final String toTime;
 
-  const ShoppingListScheduleParams({
-    required this.frequencyType,
-    required this.dayOfWeek,
+  const ShoppingListPeriodParam({
+    required this.label,
+    required this.fromTime,
+    required this.toTime,
   });
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'label': label,
+    'fromTime': fromTime,
+    'toTime': toTime,
+  };
 }
 
 class CreateShoppingListParams with Params {
   final String name;
   final String? description;
   final bool isActive;
-  final ShoppingListScheduleParams schedule;
+  final ShoppingListFrequencyType frequencyType;
+  final List<int> weekDays;
+  final List<int> monthDays;
+  final List<ShoppingListPeriodParam> periods;
+  final bool scheduleIsActive;
 
   CreateShoppingListParams({
     required this.name,
     this.description,
     this.isActive = true,
-    required this.schedule,
+    required this.frequencyType,
+    this.weekDays = const <int>[],
+    this.monthDays = const <int>[],
+    required this.periods,
+    this.scheduleIsActive = true,
   });
 
   @override
@@ -58,8 +76,11 @@ class CreateShoppingListParams with Params {
       'description': description,
       'isActive': isActive,
       'schedule': <String, dynamic>{
-        'frequencyType': schedule.frequencyType.apiValue,
-        'dayOfWeek': schedule.dayOfWeek,
+        'frequencyType': frequencyType.apiValue,
+        if (weekDays.isNotEmpty) 'weekDays': weekDays,
+        if (monthDays.isNotEmpty) 'monthDays': monthDays,
+        'periods': periods.map((e) => e.toJson()).toList(),
+        'isActive': scheduleIsActive,
       },
     };
   }

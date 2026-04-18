@@ -127,6 +127,8 @@ import '../../features/profile/domain/usecases/fetch_shopping_lists_use_case.dar
     as _i524;
 import '../../features/profile/domain/usecases/fetch_vote_suggestions_use_case.dart'
     as _i381;
+import '../../features/profile/domain/usecases/get_shopping_list_use_case.dart'
+    as _i877;
 import '../../features/profile/domain/usecases/mark_all_notifications_read_use_case.dart'
     as _i10;
 import '../../features/profile/domain/usecases/remove_favorite_restaurant_use_case.dart'
@@ -150,9 +152,6 @@ import '../../features/profile/domain/usecases/update_shopping_list_use_case.dar
 import '../../features/profile/view/manager/bloc/profile_bloc.dart' as _i821;
 import '../../features/profile/view/manager/coupons_cubit.dart' as _i767;
 import '../../features/profile/view/manager/lucky_box_cubit.dart' as _i849;
-import '../../features/profile/view/manager/shopping_list_detail_cubit.dart'
-    as _i954;
-import '../../features/profile/view/manager/shopping_lists_cubit.dart' as _i693;
 import '../../features/rs_discover/data/repository/rs_discover_repo_impl.dart'
     as _i992;
 import '../../features/rs_discover/data/source/rs_discover_remote_data_source.dart'
@@ -500,6 +499,9 @@ _i174.GetIt $initGetIt(
       gh<_i583.ChangeStoreFavoriteUseCase>(),
     ),
   );
+  gh.lazySingleton<_i877.GetShoppingListUseCase>(
+    () => _i877.GetShoppingListUseCase(profile: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i906.AddShoppingListItemUseCase>(
     () => _i906.AddShoppingListItemUseCase(
       shoppingListsRepo: gh<_i326.ShoppingListsRepo>(),
@@ -637,12 +639,6 @@ _i174.GetIt $initGetIt(
       smDiscover: gh<_i880.SmDiscoverRepo>(),
     ),
   );
-  gh.lazySingleton<_i693.ShoppingListsCubit>(
-    () => _i693.ShoppingListsCubit(
-      fetchShoppingListsUseCase: gh<_i524.FetchShoppingListsUseCase>(),
-      createShoppingListUseCase: gh<_i614.CreateShoppingListUseCase>(),
-    ),
-  );
   gh.factory<_i648.HomeBloc>(
     () => _i648.HomeBloc(
       fetchUserOffersUseCase: gh<_i487.FetchUserOffersUseCase>(),
@@ -715,18 +711,6 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i491.GetPreviousCleaningWorkersUseCase>(
     () => _i491.GetPreviousCleaningWorkersUseCase(
       clMainRepo: gh<_i342.ClMainRepo>(),
-    ),
-  );
-  gh.factory<_i954.ShoppingListDetailCubit>(
-    () => _i954.ShoppingListDetailCubit(
-      fetchShoppingListDetailUseCase: gh<_i11.FetchShoppingListDetailUseCase>(),
-      updateShoppingListUseCase: gh<_i901.UpdateShoppingListUseCase>(),
-      deleteShoppingListUseCase: gh<_i98.DeleteShoppingListUseCase>(),
-      addShoppingListItemUseCase: gh<_i906.AddShoppingListItemUseCase>(),
-      updateShoppingListItemUseCase: gh<_i170.UpdateShoppingListItemUseCase>(),
-      deleteShoppingListItemUseCase: gh<_i12.DeleteShoppingListItemUseCase>(),
-      addShoppingListToCartUseCase: gh<_i992.AddShoppingListToCartUseCase>(),
-      shoppingListsCubit: gh<_i693.ShoppingListsCubit>(),
     ),
   );
   gh.factory<_i531.SmFavoriteBloc>(
@@ -860,20 +844,6 @@ _i174.GetIt $initGetIt(
       gh<_i524.FetchShoppingListsUseCase>(),
     ),
   );
-  gh.factory<_i1049.RestaurantOrderCheckoutCubit>(
-    () => _i1049.RestaurantOrderCheckoutCubit(
-      gh<_i438.FetchOrderDetailsUseCase>(),
-      gh<_i925.UpdateCartItemQuantityUseCase>(),
-      gh<_i242.DeleteCartItemUseCase>(),
-      gh<_i576.CheckRestaurantCouponUseCase>(),
-    ),
-  );
-  gh.factory<_i589.RsDiscoverBloc>(
-    () => _i589.RsDiscoverBloc(
-      gh<_i303.FetchDiscoverRestaurantsUseCase>(),
-      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
-    ),
-  );
   gh.factory<_i821.ProfileBloc>(
     () => _i821.ProfileBloc(
       gh<_i376.FetchAddressesUseCase>(),
@@ -890,6 +860,27 @@ _i174.GetIt $initGetIt(
       gh<_i320.ShowVoteUseCase>(),
       gh<_i875.EndVoteUseCase>(),
       gh<_i808.FetchActiveVotesUseCase>(),
+      gh<_i877.GetShoppingListUseCase>(),
+      gh<_i614.CreateShoppingListUseCase>(),
+      gh<_i901.UpdateShoppingListUseCase>(),
+      gh<_i11.FetchShoppingListDetailUseCase>(),
+      gh<_i170.UpdateShoppingListItemUseCase>(),
+      gh<_i12.DeleteShoppingListItemUseCase>(),
+      gh<_i992.AddShoppingListToCartUseCase>(),
+    ),
+  );
+  gh.factory<_i1049.RestaurantOrderCheckoutCubit>(
+    () => _i1049.RestaurantOrderCheckoutCubit(
+      gh<_i438.FetchOrderDetailsUseCase>(),
+      gh<_i925.UpdateCartItemQuantityUseCase>(),
+      gh<_i242.DeleteCartItemUseCase>(),
+      gh<_i576.CheckRestaurantCouponUseCase>(),
+    ),
+  );
+  gh.factory<_i589.RsDiscoverBloc>(
+    () => _i589.RsDiscoverBloc(
+      gh<_i303.FetchDiscoverRestaurantsUseCase>(),
+      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
     ),
   );
   gh.factory<_i362.ClMainBloc>(

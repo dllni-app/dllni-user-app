@@ -16,6 +16,7 @@ import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_resch
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_fulfillment_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/add_address_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/add_edit_shopping_list_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/coupons_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_screen.dart';
@@ -158,6 +159,14 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
+      case '/add_edit_shopping_list':
+        if (args is AddEditShoppingListScreenArgs) {
+          return MaterialPageRoute(
+            builder: (_) => AddEditShoppingListScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/coupons':
         return MaterialPageRoute(
           builder: (_) => CouponsScreen(),
@@ -203,7 +212,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/shopping_list_details':
-        if (args is ShoppingListDetailsArgs) {
+        if (args is ShoppingListDetailsScreenArgs) {
           return MaterialPageRoute(
             builder: (_) => ShoppingListDetailsScreen(args: args),
             settings: settings,
