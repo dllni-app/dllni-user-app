@@ -1,6 +1,16 @@
 part of 'profile_bloc.dart';
 
 class ProfileState {
+  BlocStatus? addShoppingListToCartStatus;
+  AddShoppingListToCartModel? addShoppingListToCart;
+  BlocStatus? shoppingListStatus;
+  BlocStatus? createShoppingListStatus;
+  BlocStatus? updateShoppingListStatus;
+  GetShoppingListModel? shoppingList;
+  BlocStatus? shoppingListDetailStatus;
+  ShoppingListDetailModel? shoppingListDetail;
+  /// Transient error for item quantity PATCH (toast in UI; do not use as full-screen error).
+  String? quantityPatchError;
   final BlocStatus? addressesStatus;
   final List<AddressListItem> addresses;
   final String? defaultAddressId;
@@ -54,6 +64,15 @@ class ProfileState {
     this.activeVotes = const <VoteCreatedData>[],
     this.errorMessage,
     this.actionMessage,
+    this.shoppingList,
+    this.shoppingListStatus,
+    this.createShoppingListStatus,
+    this.updateShoppingListStatus,
+    this.shoppingListDetail,
+    this.shoppingListDetailStatus,
+    this.quantityPatchError,
+    this.addShoppingListToCart,
+    this.addShoppingListToCartStatus,
   });
 
   ProfileState copyWith({
@@ -80,6 +99,16 @@ class ProfileState {
     List<VoteCreatedData>? activeVotes,
     String? errorMessage,
     String? actionMessage,
+    GetShoppingListModel? shoppingList,
+    BlocStatus? shoppingListStatus,
+    BlocStatus? createShoppingListStatus,
+    BlocStatus? updateShoppingListStatus,
+    ShoppingListDetailModel? shoppingListDetail,
+    BlocStatus? shoppingListDetailStatus,
+    String? quantityPatchError,
+    bool clearQuantityPatchError = false,
+    AddShoppingListToCartModel? addShoppingListToCart,
+    BlocStatus? addShoppingListToCartStatus,
   }) => ProfileState(
     addressesStatus: addressesStatus ?? this.addressesStatus,
     addresses: addresses ?? this.addresses,
@@ -107,5 +136,20 @@ class ProfileState {
     activeVotes: activeVotes ?? this.activeVotes,
     errorMessage: errorMessage ?? this.errorMessage,
     actionMessage: actionMessage ?? this.actionMessage,
+    shoppingList: shoppingList ?? this.shoppingList,
+    shoppingListStatus: shoppingListStatus ?? this.shoppingListStatus,
+    createShoppingListStatus:
+        createShoppingListStatus ?? this.createShoppingListStatus,
+    updateShoppingListStatus:
+        updateShoppingListStatus ?? this.updateShoppingListStatus,
+    shoppingListDetail: shoppingListDetail ?? this.shoppingListDetail,
+    shoppingListDetailStatus:
+        shoppingListDetailStatus ?? this.shoppingListDetailStatus,
+    quantityPatchError: clearQuantityPatchError
+        ? null
+        : (quantityPatchError ?? this.quantityPatchError),
+    addShoppingListToCart: addShoppingListToCart ?? this.addShoppingListToCart,
+    addShoppingListToCartStatus:
+        addShoppingListToCartStatus ?? this.addShoppingListToCartStatus,
   );
 }

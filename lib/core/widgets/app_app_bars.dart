@@ -61,12 +61,13 @@ class AppSimpleAppBar extends StatelessWidget {
 
 class AppSimpleAppBar2 extends StatelessWidget {
   final String title;
-
+  final bool centerTitle;
   final bool canPop;
   final ArrowBackType arrowBackType;
   const AppSimpleAppBar2({
     super.key,
     required this.title,
+    this.centerTitle = false,
     this.arrowBackType = ArrowBackType.material,
     this.canPop = true,
   });
@@ -137,7 +138,8 @@ class AppSimpleAppBar2 extends StatelessWidget {
               Expanded(
                 child: AppText(
                   title,
-                  textAlign: TextAlign.start,
+                  textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: AppColors.primary,
                     fontSize: 24,

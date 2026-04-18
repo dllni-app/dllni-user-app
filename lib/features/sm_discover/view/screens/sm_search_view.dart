@@ -13,6 +13,7 @@ import '../../../../core/widgets/failure_widget.dart';
 import '../../../../core/widgets/loading_list.dart';
 import '../../../../core/widgets/search_field_with_voice.dart';
 import '../../../../core/widgets/search_with_type_dropdown.dart';
+import '../../../sm_stores/view/screens/sm_product_details_screen.dart';
 import '../../domain/usecases/browse_products_use_case.dart';
 import '../../domain/usecases/browse_stores_use_case.dart';
 import '../manager/bloc/sm_discover_bloc.dart';
@@ -196,7 +197,6 @@ class _SmSearchViewState extends State<SmSearchView> {
                                       }
                                       return ProductCard(
                                         product: state.browseProducts![index],
-                                        shoppingListId: widget.shoppingListId,
                                       );
                                     },
                                     separatorBuilder: (context, index) =>

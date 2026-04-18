@@ -2,10 +2,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class AppPickers {
-  static Future<String> showAppTimePicker({required BuildContext context}) async {
+  static Future<String> showAppTimePicker({
+    required BuildContext context,
+    TimeOfDay? initialTime,
+  }) async {
     final TimeOfDay? res = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: initialTime ?? TimeOfDay.now(),
       builder: (context, child) => Theme(
         data: ThemeData.light().copyWith(
           colorScheme: ColorScheme.light(primary: Theme.of(context).primaryColor, onSurface: Colors.black),

@@ -19,6 +19,10 @@ import '../usecases/update_address_use_case.dart';
 import '../usecases/delete_address_use_case.dart';
 import '../usecases/update_account_use_case.dart';
 import '../usecases/update_account_password_use_case.dart';
+import '../usecases/get_shopping_list_use_case.dart';
+import '../../data/models/get_shopping_list_model.dart';
+import '../usecases/add_shopping_list_to_cart_use_case.dart';
+import '../../data/models/add_shopping_list_to_cart_model.dart';
 
 abstract class ProfileRepo {
   DataResponse<FetchFavoriteRestaurantsModel> fetchFavoriteRestaurants(
@@ -80,4 +84,8 @@ abstract class ProfileRepo {
   );
 
   Future<void> updatePersonalDetails(PersonalDetailsUpdateInput input);
+
+  DataResponse<GetShoppingListModel> getShoppingList(GetShoppingListParams params);
+
+  DataResponse<AddShoppingListToCartModel> addShoppingListToCart(AddShoppingListToCartParams params);
 }

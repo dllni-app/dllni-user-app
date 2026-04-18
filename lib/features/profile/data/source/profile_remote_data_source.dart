@@ -20,6 +20,10 @@ import '../../domain/usecases/update_account_use_case.dart';
 import '../../domain/usecases/update_account_password_use_case.dart';
 import '../models/luck_box_api_models.dart';
 import '../models/profile_api_models.dart';
+import '../models/get_shopping_list_model.dart';
+import '../../domain/usecases/get_shopping_list_use_case.dart';
+import '../models/add_shopping_list_to_cart_model.dart';
+import '../../domain/usecases/add_shopping_list_to_cart_use_case.dart';
 
 @lazySingleton
 class ProfileRemoteDataSource with HandlingApiManager {
@@ -243,4 +247,18 @@ class ProfileRemoteDataSource with HandlingApiManager {
       jsonConvert: luckBoxSuggestResponseModelFromJson,
     );
   }
-}
+
+
+  Future<GetShoppingListModel> getShoppingList(GetShoppingListParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(endPoint: '/api/v1/user/supermarket/shopping-lists', params: params.getParams(), data: params.getBody().isEmpty ? null : params.getBody()),
+      jsonConvert: getShoppingListModelFromJson,
+    );
+  }
+
+  Future<AddShoppingListToCartModel> addShoppingListToCart(AddShoppingListToCartParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(endPoint: '/api/v1/user/supermarket/shopping-lists/{{smShoppingListId}}/add-to-cart', data: params.getBody(), params: params.getParams()),
+      jsonConvert: addShoppingListToCartModelFromJson,
+    );
+  }}

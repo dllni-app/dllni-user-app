@@ -28,6 +28,8 @@ Then run:
 mason get
 ```
 
+If `mason get` fails with a path under an old machine or folder (for example a previous clone location), delete `.mason/bricks.json` in the app root and run `mason get` again so brick paths resolve from the current `mason.yaml`.
+
 ## 2. Generate a feature
 
 Run:
@@ -44,6 +46,25 @@ You will be asked:
 4. For each usecase: `HTTP method for <UsecaseName> (GET, POST, PUT, PATCH, DELETE)`
 5. For each usecase: `Endpoint for <UsecaseName>`
 6. For each usecase: `Response type for <UsecaseName> (paginated or normal)`
+
+### 2.1 Non-interactive brick variables (`--config-path`)
+
+Mason does **not** support `--name` or `--usecases` as CLI flags. Pass brick variables with a JSON file and `-c` / `--config-path`. Keys must match [`brick.yaml`](../bricks/features/feature/brick.yaml) (`name`, `usecases`).
+
+Example file (e.g. `tool/mason_feature_config.example.json`):
+
+```json
+{
+  "name": "profile",
+  "usecases": "GetShoppingList"
+}
+```
+
+```bash
+mason make feature -c tool/mason_feature_config.example.json --on-conflict skip
+```
+
+When `usecases` is non-empty, the `post_gen` hook still prompts for model, HTTP method, endpoint, and response type for each use case, so run this in an **interactive** terminal. To only re-run the template step without hook work, pass an empty `usecases` string (`""`) or use `mason make feature ... --no-hooks` (skips `post_gen` entirely).
 
 ## 3. Per-usecase inputs
 
@@ -191,16 +212,30 @@ brick again with:
 2. only new usecase names
 3. `--on-conflict skip`
 
-Single usecase example:
+Single usecase example (create `mason_add_usecase.json` with the variables below):
+
+```json
+{
+  "name": "auth",
+  "usecases": "ResetPassword"
+}
+```
 
 ```bash
-mason make feature --name auth --usecases ResetPassword --on-conflict skip
+mason make feature -c mason_add_usecase.json --on-conflict skip
 ```
 
 Multiple usecases example:
 
+```json
+{
+  "name": "auth",
+  "usecases": "ResetPassword,RefreshToken"
+}
+```
+
 ```bash
-mason make feature --name auth --usecases ResetPassword,RefreshToken --on-conflict skip
+mason make feature -c mason_add_usecase.json --on-conflict skip
 ```
 
 For each new usecase, answer:
@@ -238,6 +273,6 @@ feature files while still allowing hooks to append/update methods and imports.
 
 ### 8.4 Assumptions and defaults
 
-1. Pass only new usecase names in `--usecases`.
+1. Pass only new usecase names in the config file `usecases` field (comma-separated), or enter them when prompted; there is no `--usecases` CLI flag.
 2. Endpoint is used exactly as entered.
 3. Default endpoint prompt is `/<feature>/<usecase_snake>`.

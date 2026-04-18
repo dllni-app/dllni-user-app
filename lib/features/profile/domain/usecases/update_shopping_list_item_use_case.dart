@@ -4,22 +4,6 @@ import 'package:injectable/injectable.dart';
 import '../../data/models/shopping_lists_api_models.dart';
 import '../repository/shopping_lists_repo.dart';
 
-@lazySingleton
-class UpdateShoppingListItemUseCase
-    implements
-        UseCase<ShoppingListDetailResponseModel, UpdateShoppingListItemParams> {
-  final ShoppingListsRepo shoppingListsRepo;
-
-  UpdateShoppingListItemUseCase({required this.shoppingListsRepo});
-
-  @override
-  DataResponse<ShoppingListDetailResponseModel> call(
-    UpdateShoppingListItemParams params,
-  ) {
-    return shoppingListsRepo.updateShoppingListItem(params);
-  }
-}
-
 class UpdateShoppingListItemParams with Params {
   final int shoppingListId;
   final int itemId;
@@ -42,5 +26,21 @@ class UpdateShoppingListItemParams with Params {
       if (sortOrder != null) 'sortOrder': sortOrder,
       if (isIncluded != null) 'isIncluded': isIncluded,
     };
+  }
+}
+
+@lazySingleton
+class UpdateShoppingListItemUseCase
+    implements
+        UseCase<ShoppingListDetailResponseModel, UpdateShoppingListItemParams> {
+  final ShoppingListsRepo shoppingListsRepo;
+
+  UpdateShoppingListItemUseCase({required this.shoppingListsRepo});
+
+  @override
+  DataResponse<ShoppingListDetailResponseModel> call(
+    UpdateShoppingListItemParams params,
+  ) {
+    return shoppingListsRepo.updateShoppingListItem(params);
   }
 }

@@ -22,6 +22,11 @@ import '../models/profile_api_models.dart';
 import '../source/profile_remote_data_source.dart';
 import '../../domain/models/personal_details_update_input.dart';
 import '../../domain/repository/profile_repo.dart';
+import 'package:common_package/helpers/typedef.dart';
+import '../../domain/usecases/get_shopping_list_use_case.dart';
+import '../models/get_shopping_list_model.dart';
+import '../../domain/usecases/add_shopping_list_to_cart_use_case.dart';
+import '../models/add_shopping_list_to_cart_model.dart';
 
 @LazySingleton(as: ProfileRepo)
 class ProfileRepoImpl with HandlingException implements ProfileRepo {
@@ -193,4 +198,18 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   Future<void> updatePersonalDetails(PersonalDetailsUpdateInput input) async {
     await Future<void>.delayed(const Duration(milliseconds: 600));
   }
-}
+
+
+  @override
+  DataResponse<GetShoppingListModel> getShoppingList(GetShoppingListParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.getShoppingList(params),
+    );
+  }
+
+  @override
+  DataResponse<AddShoppingListToCartModel> addShoppingListToCart(AddShoppingListToCartParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.addShoppingListToCart(params),
+    );
+  }}

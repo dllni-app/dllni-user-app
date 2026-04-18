@@ -2,10 +2,4 @@ bricks:
   app_bootstrap:
     path: common_package/bricks/apps/app_bootstrap
   feature:
-<<<<<<< HEAD
     path: common_package/bricks/features/feature
-=======
-    path: common_package/bricks/features/feature
-  app_bootstrap:
-    path: common_package/bricks/apps/app_bootstrap
->>>>>>> origin/sm

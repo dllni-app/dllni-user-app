@@ -16,7 +16,8 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+class _MainScreenState extends State<MainScreen>
+    with SingleTickerProviderStateMixin {
   late TabController controller;
 
   @override
@@ -33,7 +34,11 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: TabBarView(controller: controller, physics: NeverScrollableScrollPhysics(), children: [HomeScreen(), OrdersScreen(), ProfileScreen()]),
+        child: TabBarView(
+          controller: controller,
+          physics: NeverScrollableScrollPhysics(),
+          children: [HomeScreen(), OrdersScreen(), ProfileScreen()],
+        ),
       ),
       bottomNavigationBar: BottomNavBar(controller: controller),
     );
