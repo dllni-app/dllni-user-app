@@ -61,9 +61,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   ) : super(ProfileState()) {
     on<FetchAddressesEvent>(_fetchAddresses);
     on<SetDefaultAddressEvent>(_setDefaultAddress);
-    on<FetchNotificationsEvent>(_fetchNotifications);
+    on<FetchNotificationsEvent>(_fetchNotifications, transformer: paginationEventTransformer());
     on<MarkAllNotificationsReadEvent>(_markAllNotificationsRead);
-    on<FetchFavoriteRestaurantsEvent>(_fetchFavoriteRestaurants);
+    on<FetchFavoriteRestaurantsEvent>(_fetchFavoriteRestaurants, transformer: paginationEventTransformer());
     on<RemoveFavoriteRestaurantEvent>(_removeFavoriteRestaurant);
     on<CreateVoteEvent>(_createVote);
     on<FetchVoteSuggestionsEvent>(_fetchVoteSuggestions);
@@ -154,12 +154,21 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     FetchNotificationsEvent event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(state.copyWith(notificationsStatus: BlocStatus.loading));
-    final response = await fetchNotificationsUseCase(event.params);
+    final pagination = state.notificationsPagination;
+    final isLoadMore = event.loadMore && !event.isReload;
+    if (isLoadMore && pagination.isEndPage) return;
+
+    emit(state.copyWith(notificationsPagination: pagination.setLoading(isReload: event.isReload)));
+
+    final page = isLoadMore ? pagination.pageNumber : 1;
+    final perPage = pagination.perPage;
+    final response = await fetchNotificationsUseCase(
+      FetchNotificationsParams(page: page, perPage: perPage, unreadOnly: event.params.unreadOnly),
+    );
     response.fold(
       (failure) => emit(
         state.copyWith(
-          notificationsStatus: BlocStatus.failed,
+          notificationsPagination: pagination.setFaild(errorMessage: failure.message),
           errorMessage: failure.message,
         ),
       ),
@@ -169,8 +178,11 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             .toList();
         emit(
           state.copyWith(
-            notificationsStatus: BlocStatus.success,
-            notifications: mapped,
+            notificationsPagination: pagination.setSuccess(
+              data: mapped,
+              total: result.meta?.total ?? pagination.total,
+              perPage: result.meta?.perPage ?? perPage,
+            ),
           ),
         );
         add(MarkAllNotificationsReadEvent());
@@ -186,14 +198,17 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     response.fold(
       (_) {},
       (_) {
+        final updatedNotifications = state.notifications
+            .map(
+              (item) =>
+                  item.copyWith(isRead: true, showTrailingAccent: false),
+            )
+            .toList();
         emit(
           state.copyWith(
-            notifications: state.notifications
-                .map(
-                  (item) =>
-                      item.copyWith(isRead: true, showTrailingAccent: false),
-                )
-                .toList(),
+            notificationsPagination: state.notificationsPagination.copyWith(
+              list: updatedNotifications,
+            ),
           ),
         );
       },
@@ -204,21 +219,37 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     FetchFavoriteRestaurantsEvent event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(state.copyWith(favoriteRestaurantsStatus: BlocStatus.loading));
-    final response = await fetchFavoriteRestaurantsUseCase(event.params);
+    final pagination = state.favoriteRestaurantsPagination;
+    final isLoadMore = event.loadMore && !event.isReload;
+    if (isLoadMore && pagination.isEndPage) return;
+
+    emit(state.copyWith(favoriteRestaurantsPagination: pagination.setLoading(isReload: event.isReload)));
+
+    final page = isLoadMore ? pagination.pageNumber : 1;
+    final perPage = pagination.perPage;
+    final response = await fetchFavoriteRestaurantsUseCase(
+      FetchFavoriteRestaurantsParams(page: page, perPage: perPage),
+    );
     response.fold(
       (failure) => emit(
         state.copyWith(
-          favoriteRestaurantsStatus: BlocStatus.failed,
+          favoriteRestaurantsPagination: pagination.setFaild(errorMessage: failure.message),
           errorMessage: failure.message,
         ),
       ),
-      (result) => emit(
-        state.copyWith(
-          favoriteRestaurantsStatus: BlocStatus.success,
-          favoriteRestaurants: result.data ?? const <FavoriteRestaurantModel>[],
-        ),
-      ),
+      (result) {
+        final items = result.data ?? const <FavoriteRestaurantModel>[];
+        final total = isLoadMore ? pagination.total + items.length : items.length;
+        emit(
+          state.copyWith(
+            favoriteRestaurantsPagination: pagination.setSuccess(
+              data: items,
+              total: total,
+              perPage: perPage,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -249,6 +280,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         add(
           FetchFavoriteRestaurantsEvent(
             params: FetchFavoriteRestaurantsParams(),
+            isReload: true,
           ),
         );
       },

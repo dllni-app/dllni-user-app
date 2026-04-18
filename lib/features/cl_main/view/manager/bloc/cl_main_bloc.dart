@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:common_package/helpers/pagination_helper.dart';
+import 'package:common_package/helpers/droppable_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -27,7 +28,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     required this.createCleaningOrderUseCase,
   }) : super(ClMainState()) {
     on<EstimateCleaningPriceEvent>(_estimateCleaningPrice);
-    on<GetPreviousCleaningWorkersEvent>(_getPreviousCleaningWorkers);
+    on<GetPreviousCleaningWorkersEvent>(_getPreviousCleaningWorkers, transformer: paginationEventTransformer());
     on<SetPreferredWorkerEvent>(_setPreferredWorker);
     on<CreateCleaningOrderEvent>(_createCleaningOrder);
     on<ResetCreateOrderStatusEvent>(_resetCreateOrderStatus);
@@ -67,22 +68,38 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
   }
 
   FutureOr<void> _getPreviousCleaningWorkers(GetPreviousCleaningWorkersEvent event, Emitter<ClMainState> emit) async {
-    emit(state.copyWith(previousWorkersStatus: BlocStatus.loading, clearErrorMessage: true));
-    final response = await getPreviousCleaningWorkersUseCase(event.params);
+    final pagination = state.previousWorkers;
+    final isLoadMore = event.loadMore && !event.isReload;
+    if (isLoadMore && pagination.isEndPage) return;
+
+    emit(state.copyWith(previousWorkers: pagination.setLoading(isReload: event.isReload), clearErrorMessage: true));
+
+    final page = isLoadMore ? pagination.pageNumber : 1;
+    final perPage = pagination.perPage;
+    final response = await getPreviousCleaningWorkersUseCase(
+      GetPreviousCleaningWorkersParams(
+        page: page,
+        perPage: perPage,
+      ),
+    );
     response.fold(
       (failure) {
         emit(
           state.copyWith(
-            previousWorkersStatus: BlocStatus.failed,
+            previousWorkers: pagination.setFaild(errorMessage: failure.message),
             errorMessage: failure.message,
           ),
         );
       },
       (result) {
+        final workers = result.data ?? const <PreviousWorkerModel>[];
         emit(
           state.copyWith(
-            previousWorkersStatus: BlocStatus.success,
-            previousWorkers: result,
+            previousWorkers: pagination.setSuccess(
+              data: workers,
+              total: result.meta?.total ?? pagination.total,
+              perPage: result.meta?.perPage ?? perPage,
+            ),
           ),
         );
       },

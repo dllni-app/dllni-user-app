@@ -23,7 +23,7 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
   final FetchRestaurantProductDetailsUseCase fetchRestaurantProductDetailsUseCase;
 
   RsDiscoverBloc(this.fetchDiscoverRestaurantsUseCase, this.fetchRestaurantProductDetailsUseCase) : super(RsDiscoverState()) {
-    on<FetchDiscoverRestaurantsEvent>(_onFetch, transformer: droppableProMax());
+    on<FetchDiscoverRestaurantsEvent>(_onFetch, transformer: paginationEventTransformer());
     on<DiscoverTabChangedEvent>(_onTabChanged);
     on<DiscoverSearchQueryChangedEvent>(_onSearchQueryChanged);
     on<FetchRestaurantProductDetailsEvent>(_onFetchProductDetails);
@@ -35,12 +35,6 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
   Future<void> close() {
     _searchDebounce?.cancel();
     return super.close();
-  }
-
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
   }
 
   void _onTabChanged(DiscoverTabChangedEvent event, Emitter<RsDiscoverState> emit) {
@@ -92,15 +86,16 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
       (r) {
         final items = r.data ?? [];
         final meta = r.meta;
-        final metaPerPage = meta?.perPage ?? perPage;
-        final currentPage = meta?.currentPage ?? page;
-        final lastPage = meta?.lastPage ?? currentPage;
-        final shortPage = items.length < metaPerPage;
-        final atLastPage = currentPage >= lastPage;
-        final endReached = atLastPage || shortPage;
-
-        var next = state.restaurants.setSuccess(data: items, perPage: metaPerPage, total: meta!.total!);
-        next = next.copyWith(isEndPage: endReached, total: meta!.total!);
+        final next = setPaginatedSuccessFromMeta(
+          current: state.restaurants,
+          data: items,
+          total: meta?.total ?? state.restaurants.total,
+          requestedPage: page,
+          fallbackPerPage: perPage,
+          metaCurrentPage: meta?.currentPage,
+          metaLastPage: meta?.lastPage,
+          metaPerPage: meta?.perPage,
+        );
 
         emit(state.copyWith(restaurants: next, totalCount: meta?.total ?? next.list.length));
       },

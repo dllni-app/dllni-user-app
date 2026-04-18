@@ -6,11 +6,9 @@ class ProfileState {
   final String? defaultAddressId;
   final BlocStatus? setDefaultAddressStatus;
 
-  final BlocStatus? notificationsStatus;
-  final List<FetchNotificationsModelDataItem> notifications;
+  final PaginationStateModel<FetchNotificationsModelDataItem> notificationsPagination;
 
-  final BlocStatus? favoriteRestaurantsStatus;
-  final List<FavoriteRestaurantModel> favoriteRestaurants;
+  final PaginationStateModel<FavoriteRestaurantModel> favoriteRestaurantsPagination;
   final BlocStatus? removeFavoriteRestaurantStatus;
 
   final BlocStatus? createVoteStatus;
@@ -35,10 +33,8 @@ class ProfileState {
     this.addresses = const <AddressListItem>[],
     this.defaultAddressId,
     this.setDefaultAddressStatus,
-    this.notificationsStatus,
-    this.notifications = const <FetchNotificationsModelDataItem>[],
-    this.favoriteRestaurantsStatus,
-    this.favoriteRestaurants = const <FavoriteRestaurantModel>[],
+    this.notificationsPagination = const PaginationStateModel<FetchNotificationsModelDataItem>(perPage: 10),
+    this.favoriteRestaurantsPagination = const PaginationStateModel<FavoriteRestaurantModel>(perPage: 20),
     this.removeFavoriteRestaurantStatus,
     this.createVoteStatus,
     this.createdVote,
@@ -61,10 +57,8 @@ class ProfileState {
     List<AddressListItem>? addresses,
     String? defaultAddressId,
     BlocStatus? setDefaultAddressStatus,
-    BlocStatus? notificationsStatus,
-    List<FetchNotificationsModelDataItem>? notifications,
-    BlocStatus? favoriteRestaurantsStatus,
-    List<FavoriteRestaurantModel>? favoriteRestaurants,
+    PaginationStateModel<FetchNotificationsModelDataItem>? notificationsPagination,
+    PaginationStateModel<FavoriteRestaurantModel>? favoriteRestaurantsPagination,
     BlocStatus? removeFavoriteRestaurantStatus,
     BlocStatus? createVoteStatus,
     CreateVoteModel? createdVote,
@@ -86,11 +80,8 @@ class ProfileState {
     defaultAddressId: defaultAddressId ?? this.defaultAddressId,
     setDefaultAddressStatus:
         setDefaultAddressStatus ?? this.setDefaultAddressStatus,
-    notificationsStatus: notificationsStatus ?? this.notificationsStatus,
-    notifications: notifications ?? this.notifications,
-    favoriteRestaurantsStatus:
-        favoriteRestaurantsStatus ?? this.favoriteRestaurantsStatus,
-    favoriteRestaurants: favoriteRestaurants ?? this.favoriteRestaurants,
+    notificationsPagination: notificationsPagination ?? this.notificationsPagination,
+    favoriteRestaurantsPagination: favoriteRestaurantsPagination ?? this.favoriteRestaurantsPagination,
     removeFavoriteRestaurantStatus:
         removeFavoriteRestaurantStatus ?? this.removeFavoriteRestaurantStatus,
     createVoteStatus: createVoteStatus ?? this.createVoteStatus,
@@ -108,4 +99,9 @@ class ProfileState {
     errorMessage: errorMessage ?? this.errorMessage,
     actionMessage: actionMessage ?? this.actionMessage,
   );
+
+  BlocStatus get notificationsStatus => notificationsPagination.status;
+  List<FetchNotificationsModelDataItem> get notifications => notificationsPagination.list;
+  BlocStatus get favoriteRestaurantsStatus => favoriteRestaurantsPagination.status;
+  List<FavoriteRestaurantModel> get favoriteRestaurants => favoriteRestaurantsPagination.list;
 }

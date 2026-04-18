@@ -8,13 +8,12 @@ class OrdersSectionChangedEvent extends OrdersEvent {
   OrdersSectionChangedEvent(this.tabIndex);
 }
 
-class FetchOrdersEvent extends OrdersEvent {
+class FetchOrdersEvent extends OrdersEvent with EventWithReload {
+  final bool loadMore;
   final bool isReload;
 
-  FetchOrdersEvent({this.isReload = false});
+  FetchOrdersEvent({this.loadMore = false, this.isReload = false});
 }
-
-class LoadMoreOrdersEvent extends OrdersEvent {}
 
 class FetchCartForActiveSectionEvent extends OrdersEvent {}
 

@@ -21,7 +21,7 @@ class HomeScreen extends StatelessWidget {
     return BlocProvider(
       create: (_) =>
           getIt<HomeBloc>()
-            ..add(FetchUserOffersEvent(params: FetchUserOffersParams())),
+            ..add(FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true)),
       child: Column(
         children: [
           HomeAppBar(),
@@ -85,9 +85,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         );
                       }
-                      return Center(
-                        child: HomeCube(offers: state.userOffers?.data ?? []),
-                      );
+                      return Center(child: HomeCube(offers: state.userOffers.list));
                     },
                   ),
                   SizedBox(height: 20),

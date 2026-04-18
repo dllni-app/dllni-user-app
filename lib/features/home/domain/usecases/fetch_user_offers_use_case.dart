@@ -17,4 +17,20 @@ class FetchUserOffersUseCase
   }
 }
 
-class FetchUserOffersParams with Params {}
+class FetchUserOffersParams with Params {
+  final int page;
+  final int perPage;
+
+  const FetchUserOffersParams({
+    this.page = 1,
+    this.perPage = 10,
+  });
+
+  @override
+  QueryParams getParams() {
+    return {
+      'page': page,
+      'per_page': perPage,
+    };
+  }
+}

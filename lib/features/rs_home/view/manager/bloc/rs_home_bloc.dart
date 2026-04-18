@@ -54,7 +54,7 @@ class RsHomeBloc extends Bloc<RsHomeEvent, RsHomeState> {
     this.reorderLatestOrderedProductUseCase,
     this.fetchRestaurantHomeCategoryProductsUseCase,
   ) : super(RsHomeState()) {
-    on<FetchStoresEvent>(_fetchStores, transformer: droppableProMax());
+    on<FetchStoresEvent>(_fetchStores, transformer: paginationEventTransformer());
     on<FetchNearByStoresEvent>(_fetchNearByStores);
     on<FetchFeaturedOffersEvent>(_fetchFeaturedOffers);
     on<FetchRestaurantHomeCategoriesEvent>(_fetchRestaurantHomeCategories);
@@ -66,30 +66,40 @@ class RsHomeBloc extends Bloc<RsHomeEvent, RsHomeState> {
     on<FetchRestaurantHomeCategoryProductsEvent>(_fetchRestaurantHomeCategoryProducts);
   }
 
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
-  }
-
   FutureOr<void> _fetchStores(FetchStoresEvent event, Emitter<RsHomeState> emit) async {
-    if (!state.stores!.isEndPage || event.isReload) {
-      emit(state.copyWith(stores: state.stores!.setLoading(isReload: event.isReload)));
-      final res = await fetchStoresUseCase(event.params);
-      res.fold(
-        (l) {
-          emit(
-            state.copyWith(
-              stores: state.stores!.setFaild(errorMessage: l.message),
-              errorMessage: l.message,
+    final stores = state.stores!;
+    final isLoadMore = event.loadMore && !event.isReload;
+    if (isLoadMore && stores.isEndPage) return;
+
+    emit(state.copyWith(stores: stores.setLoading(isReload: event.isReload)));
+
+    final page = isLoadMore ? stores.pageNumber : 1;
+    final perPage = event.params.perPage;
+    final params = FetchStoresParams(page: page, perPage: perPage);
+    final res = await fetchStoresUseCase(params);
+    res.fold(
+      (l) {
+        emit(
+          state.copyWith(
+            stores: stores.setFaild(errorMessage: l.message),
+            errorMessage: l.message,
+          ),
+        );
+      },
+      (r) {
+        final data = r.data ?? <FetchStoresModelDataItem>[];
+        final meta = r.meta;
+        emit(
+          state.copyWith(
+            stores: stores.setSuccess(
+              data: data,
+              total: meta?.total ?? stores.total,
+              perPage: meta?.perPage ?? perPage,
             ),
-          );
-        },
-        (r) {
-          emit(state.copyWith(stores: state.stores!.setSuccess(data: r.data!, total: r.meta!.total!)));
-        },
-      );
-    }
+          ),
+        );
+      },
+    );
   }
 
   FutureOr<void> _fetchNearByStores(FetchNearByStoresEvent event, Emitter<RsHomeState> emit) async {

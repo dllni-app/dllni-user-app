@@ -7,6 +7,7 @@ import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant_home_latest_ordered_products_use_case.dart';
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant_home_nearest_restaurants_use_case.dart';
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant_home_suggested_products_use_case.dart';
+import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_stores_use_case.dart';
 import 'package:toastification/toastification.dart';
 
 import '../manager/bloc/rs_home_bloc.dart';
@@ -34,6 +35,7 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
     return BlocProvider<RsHomeBloc>(
       lazy: false,
       create: (context) => getIt<RsHomeBloc>()
+        ..add(FetchStoresEvent(params: const FetchStoresParams(), isReload: true))
         ..add(FetchRestaurantHomeCategoriesEvent(params: FetchRestaurantHomeCategoriesParams()))
         ..add(FetchRestaurantHomeExclusiveOffersEvent(params: FetchRestaurantHomeExclusiveOffersParams()))
         ..add(FetchRestaurantHomeNearestRestaurantsEvent(params: FetchRestaurantHomeNearestRestaurantsParams()))

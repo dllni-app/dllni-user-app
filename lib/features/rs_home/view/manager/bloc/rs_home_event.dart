@@ -42,11 +42,16 @@ class ReorderLatestOrderedProductEvent extends RsHomeEvent {}
 
 class FetchStoresEvent extends RsHomeEvent with EventWithReload {
   final FetchStoresParams params;
+  final bool loadMore;
 
   @override
   final bool isReload;
 
-  FetchStoresEvent({required this.params, this.isReload = false});
+  FetchStoresEvent({
+    required this.params,
+    this.loadMore = false,
+    this.isReload = false,
+  });
 }
 
 class FetchNearByStoresEvent extends RsHomeEvent {

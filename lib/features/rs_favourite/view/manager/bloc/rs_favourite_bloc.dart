@@ -29,16 +29,10 @@ class RsFavouriteBloc extends Bloc<RsFavouriteEvent, RsFavouriteState> {
     this.toggleRestaurantFavouriteUseCase,
     this.toggleProductFavouriteUseCase,
   ) : super(RsFavouriteState()) {
-    on<FetchRsFavouritesEvent>(_fetchRsFavourites, transformer: droppableProMax());
-    on<FetchFavouriteProductsEvent>(_fetchFavouriteProducts, transformer: droppableProMax());
+    on<FetchRsFavouritesEvent>(_fetchRsFavourites, transformer: paginationEventTransformer());
+    on<FetchFavouriteProductsEvent>(_fetchFavouriteProducts, transformer: paginationEventTransformer());
     on<RemoveFavouriteRestaurantEvent>(_removeFavouriteRestaurant);
     on<RemoveFavouriteProductEvent>(_removeFavouriteProduct);
-  }
-
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
   }
 
   FutureOr<void> _fetchRsFavourites(FetchRsFavouritesEvent event, Emitter<RsFavouriteState> emit) async {
@@ -69,15 +63,16 @@ class RsFavouriteBloc extends Bloc<RsFavouriteEvent, RsFavouriteState> {
       (r) {
         final items = r.data ?? [];
         final meta = r.meta;
-        final metaPerPage = meta?.perPage ?? perPage;
-        final currentPage = meta?.currentPage ?? page;
-        final lastPage = meta?.lastPage ?? currentPage;
-        final shortPage = items.length < metaPerPage;
-        final atLastPage = currentPage >= lastPage;
-        final endReached = atLastPage || shortPage;
-
-        var next = state.rsFavourites.setSuccess(data: items, perPage: metaPerPage, total: meta!.total!);
-        next = next.copyWith(isEndPage: endReached, total: meta!.total!);
+        final next = setPaginatedSuccessFromMeta(
+          current: state.rsFavourites,
+          data: items,
+          total: meta?.total ?? state.rsFavourites.total,
+          requestedPage: page,
+          fallbackPerPage: perPage,
+          metaCurrentPage: meta?.currentPage,
+          metaLastPage: meta?.lastPage,
+          metaPerPage: meta?.perPage,
+        );
 
         emit(state.copyWith(rsFavourites: next));
       },
@@ -112,15 +107,16 @@ class RsFavouriteBloc extends Bloc<RsFavouriteEvent, RsFavouriteState> {
       (r) {
         final items = r.data;
         final meta = r.meta;
-        final metaPerPage = meta?.perPage ?? perPage;
-        final currentPage = meta?.currentPage ?? page;
-        final lastPage = meta?.lastPage ?? currentPage;
-        final shortPage = items.length < metaPerPage;
-        final atLastPage = currentPage >= lastPage;
-        final endReached = atLastPage || shortPage;
-
-        var next = state.productFavourites.setSuccess(data: items, perPage: metaPerPage, total: meta!.total!);
-        next = next.copyWith(isEndPage: endReached, total: meta!.total!);
+        final next = setPaginatedSuccessFromMeta(
+          current: state.productFavourites,
+          data: items,
+          total: meta?.total ?? state.productFavourites.total,
+          requestedPage: page,
+          fallbackPerPage: perPage,
+          metaCurrentPage: meta?.currentPage,
+          metaLastPage: meta?.lastPage,
+          metaPerPage: meta?.perPage,
+        );
 
         emit(state.copyWith(productFavourites: next));
       },

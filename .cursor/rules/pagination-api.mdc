@@ -1,0 +1,50 @@
+---
+description: Paginated REST lists with Params, Bloc, and infinite-scroll UI
+globs:
+  - lib/features/**/*.dart
+  - common_package/**/*.dart
+alwaysApply: false
+---
+
+# Pagination API Request Pattern
+
+Use this checklist when implementing paginated API requests in feature code.
+
+## common_package (Use These)
+
+- Prefer `import 'package:common_package/common_package.dart';` (or targeted imports from `package:common_package/helpers/...`) for pagination/network helpers.
+- Use `PaginationStateModel<T>` from `common_package/lib/helpers/pagination_helper.dart`; do not reimplement pagination state models inside features.
+- Use `EventWithReload` and `ExhaustMapStreamTransformer` from `common_package/lib/helpers/droppable_helper.dart` for scroll-triggered fetch concurrency.
+- Keep generated feature pagination code aligned with package helpers used by the brick hook (`common_package/bricks/features/feature/hooks/post_gen.dart`).
+
+## Logic (Data -> Domain -> Bloc)
+
+- Create a params class that includes `page` and optional filters, and map them in `getParams()`.
+- Keep `page` explicit in remote data source methods and pass params into `dioNetwork.getData(...)`.
+- Parse list data in the response model, and parse `meta` when available (`current_page`, `last_page`, `per_page`, `total`).
+- In repository methods, preserve the existing error-handling wrappers (`wrapHandlingException` / `wrapHandlingApi`).
+- In state, store paginated lists as `PaginationStateModel<ItemType>` and set a correct `perPage`.
+- In bloc fetch handlers, guard with `if (!state.list!.isEndPage || event.isReload)`.
+- Emit loading with `setLoading(isReload: event.isReload)` so reload clears old data and load-more appends.
+- On success, call `setSuccess(data: items, total: ..., perPage: ...)`; `total` is required and should come from response meta (e.g. `meta.total`) when available.
+- Use `EventWithReload` + `ExhaustMapStreamTransformer` (droppable/exhaust behavior) for scroll-triggered fetch events to avoid duplicate concurrent requests.
+
+## UI (Refresh + Infinite Scroll)
+
+- Build list UIs with `state.list!.builder(...)` (or your pagination model instance `.builder(...)`) for loading, empty, error, and success branches.
+- Use `itemCount: state.list!.listLength(1)` when you need one extra footer slot for load-more shimmer.
+- In `itemBuilder`, when `index >= list.length`, render a footer loader and dispatch exactly one next-page event at `index == list.length`.
+- Use `RefreshIndicator` to trigger page 1 with `isReload: true`.
+- Keep `buildWhen` broad enough for pagination updates (status transitions, and if needed, length/list identity updates).
+
+## End-of-list Strategy
+
+- Default strategy: mark end page when fetched item count is less than `perPage`.
+- If backend pagination metadata is reliable, you may derive end page from `current_page >= last_page`.
+- Keep one strategy per endpoint and document the decision near the model/bloc code.
+
+## Project Convention Notes
+
+- Reuse an existing feature that already follows this stack (params + `dioNetwork.getData`, `PaginationStateModel` in state, bloc reload/load-more) — e.g. `rs_home` (stores), `rs_discover` (restaurants), or `rs_offers` (products) — as the baseline implementation style.
+- Treat those features as examples of consuming `common_package` helpers, not as a separate pagination implementation style.
+- Avoid introducing new pagination abstractions unless a repeated limitation is proven across multiple features.

@@ -36,7 +36,7 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
     on<LoadSupermarketStoreDetailsEvent>(_loadSupermarketStoreDetails);
     on<LoadSupermarketProductDetailsEvent>(_loadSupermarketProductDetails);
 
-    on<GetCompareProductsEvent>(_getCompareProducts, transformer: droppableProMax());
+    on<GetCompareProductsEvent>(_getCompareProducts, transformer: paginationEventTransformer());
     on<AddSupermarketCartItemEvent>(_addSupermarketCartItem);
     on<LoadShoppingListsEvent>(_loadShoppingLists);
   }
@@ -137,12 +137,6 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
         );
       },
     );
-  }
-
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
   }
 
   FutureOr<void> _getCompareProducts(GetCompareProductsEvent event, Emitter<SmStoresState> emit) async {

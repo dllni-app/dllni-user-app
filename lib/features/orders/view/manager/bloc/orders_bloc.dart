@@ -52,8 +52,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     this.placeStoreOrderUseCase,
   ) : super(OrdersState()) {
     on<OrdersSectionChangedEvent>(_onSectionChanged);
-    on<FetchOrdersEvent>(_onFetchOrders);
-    on<LoadMoreOrdersEvent>(_onLoadMoreOrders);
+    on<FetchOrdersEvent>(_onFetchOrders, transformer: paginationEventTransformer());
     on<FetchCartForActiveSectionEvent>(_onFetchCartForActiveSection);
     on<FetchRestaurantCartEvent>(_onFetchRestaurantCart);
     on<FetchStoreCartEvent>(_onFetchStoreCart);
@@ -91,11 +90,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     emit(
       state.copyWith(
         selectedTabIndex: event.tabIndex,
-        status: BlocStatus.init,
-        orders: const <OrderResourceModel>[],
-        cleaningOrders: const <CleaningOrderModel>[],
-        currentPage: 1,
-        lastPage: 1,
+        orders: const PaginationStateModel<OrderResourceModel>(perPage: 10),
+        cleaningOrders: const PaginationStateModel<CleaningOrderModel>(perPage: 10),
         clearError: true,
       ),
     );
@@ -111,81 +107,79 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
   }
 
   Future<void> _onFetchOrders(FetchOrdersEvent event, Emitter<OrdersState> emit) async {
-    emit(state.copyWith(status: BlocStatus.loading, clearError: true));
-    if (_isCleaningSection()) {
-      final response = await fetchCleaningOrdersUseCase(
-        FetchCleaningOrdersParams(
-          perPage: state.perPage,
-          page: 1,
-        ),
-      );
-      response.fold(
-        (failure) => emit(state.copyWith(status: BlocStatus.failed, errorMessage: failure.message)),
-        (result) => emit(
-          state.copyWith(
-            status: BlocStatus.success,
-            cleaningOrders: result.data,
-            currentPage: result.meta?.currentPage ?? 1,
-            lastPage: result.meta?.lastPage ?? 1,
-            clearError: true,
-          ),
-        ),
-      );
-      return;
-    }
-    final response = await fetchOrdersUseCase(FetchOrdersParams(section: _sectionByIndex(state.selectedTabIndex), perPage: state.perPage, page: 1));
-    response.fold(
-      (failure) => emit(state.copyWith(status: BlocStatus.failed, errorMessage: failure.message)),
-      (result) => emit(
+    final isCleaning = _isCleaningSection();
+    final isLoadMore = event.loadMore && !event.isReload;
+    if (isCleaning) {
+      final pagination = state.cleaningOrders;
+      if (isLoadMore && pagination.isEndPage) return;
+      emit(
         state.copyWith(
-          status: BlocStatus.success,
-          orders: result.data,
-          currentPage: result.meta?.currentPage ?? 1,
-          lastPage: result.meta?.lastPage ?? 1,
+          cleaningOrders: pagination.setLoading(isReload: event.isReload),
           clearError: true,
         ),
-      ),
-    );
-  }
-
-  Future<void> _onLoadMoreOrders(LoadMoreOrdersEvent event, Emitter<OrdersState> emit) async {
-    if (state.isLoadingMore) return;
-    if (state.currentPage >= state.lastPage) return;
-    emit(state.copyWith(isLoadingMore: true));
-    final nextPage = state.currentPage + 1;
-    if (_isCleaningSection()) {
+      );
+      final page = isLoadMore ? pagination.pageNumber : 1;
+      final perPage = pagination.perPage;
       final response = await fetchCleaningOrdersUseCase(
         FetchCleaningOrdersParams(
-          perPage: state.perPage,
-          page: nextPage,
+          perPage: perPage,
+          page: page,
         ),
       );
       response.fold(
-        (_) => emit(state.copyWith(isLoadingMore: false)),
-        (result) => emit(
+        (failure) => emit(
           state.copyWith(
-            isLoadingMore: false,
-            cleaningOrders: <CleaningOrderModel>[...state.cleaningOrders, ...result.data],
-            currentPage: result.meta?.currentPage ?? nextPage,
-            lastPage: result.meta?.lastPage ?? state.lastPage,
+            cleaningOrders: pagination.setFaild(errorMessage: failure.message),
+            errorMessage: failure.message,
           ),
         ),
+        (result) {
+          emit(
+            state.copyWith(
+              cleaningOrders: pagination.setSuccess(
+                data: result.data,
+                total: result.meta?.total ?? pagination.total,
+                perPage: result.meta?.perPage ?? perPage,
+              ),
+              clearError: true,
+            ),
+          );
+        },
       );
       return;
     }
-    final response = await fetchOrdersUseCase(
-      FetchOrdersParams(section: _sectionByIndex(state.selectedTabIndex), perPage: state.perPage, page: nextPage),
+
+    final pagination = state.orders;
+    if (isLoadMore && pagination.isEndPage) return;
+    emit(
+      state.copyWith(
+        orders: pagination.setLoading(isReload: event.isReload),
+        clearError: true,
+      ),
     );
+    final page = isLoadMore ? pagination.pageNumber : 1;
+    final perPage = pagination.perPage;
+
+    final response = await fetchOrdersUseCase(FetchOrdersParams(section: _sectionByIndex(state.selectedTabIndex), perPage: perPage, page: page));
     response.fold(
-      (_) => emit(state.copyWith(isLoadingMore: false)),
-      (result) => emit(
+      (failure) => emit(
         state.copyWith(
-          isLoadingMore: false,
-          orders: <OrderResourceModel>[...state.orders, ...result.data],
-          currentPage: result.meta?.currentPage ?? nextPage,
-          lastPage: result.meta?.lastPage ?? state.lastPage,
+          orders: pagination.setFaild(errorMessage: failure.message),
+          errorMessage: failure.message,
         ),
       ),
+      (result) {
+        emit(
+          state.copyWith(
+            orders: pagination.setSuccess(
+              data: result.data,
+              total: result.meta?.total ?? pagination.total,
+              perPage: result.meta?.perPage ?? perPage,
+            ),
+            clearError: true,
+          ),
+        );
+      },
     );
   }
 

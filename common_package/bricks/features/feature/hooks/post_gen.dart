@@ -1776,13 +1776,6 @@ void _updateBlocFile({
     specs: specs,
   );
 
-  if (hasPaginatedUsecases) {
-    content = _ensureDroppableHelperMethod(
-      content: content,
-      blocClassName: blocClassName,
-    );
-  }
-
   for (final spec in specs) {
     final handlerSignature = 'FutureOr<void> ${spec.handlerMethodName}(';
     if (content.contains(handlerSignature)) {
@@ -1916,7 +1909,7 @@ $registrations
 
 String _buildBlocOnRegistrationLine(_UsecaseSpec spec) {
   if (spec.responseKind == _ResponseKind.paginated) {
-    return 'on<${spec.eventClassName}>(${spec.handlerMethodName}, transformer: droppableProMax());';
+    return 'on<${spec.eventClassName}>(${spec.handlerMethodName}, transformer: paginationEventTransformer());';
   }
   return 'on<${spec.eventClassName}>(${spec.handlerMethodName});';
 }
@@ -1965,29 +1958,6 @@ String _insertPositionalParameter({
   }
   final trailingComma = trimmed.endsWith(',') ? '' : ',';
   return '$trimmed$trailingComma\n    $parameterLine';
-}
-
-String _ensureDroppableHelperMethod({
-  required String content,
-  required String blocClassName,
-}) {
-  const signature =
-      'EventTransformer<T> droppableProMax<T extends EventWithReload>()';
-  if (content.contains(signature)) {
-    return content;
-  }
-
-  return _insertClassMemberBeforeClosingBrace(
-    content: content,
-    className: blocClassName,
-    memberContent: '''
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
-  }''',
-    withBlankLine: true,
-  );
 }
 
 String _buildBlocHandlerTemplate({

@@ -48,3 +48,9 @@ class ExhaustMapStreamTransformer<T extends EventWithReload> extends StreamTrans
     return controller.stream;
   }
 }
+
+EventTransformer<T> paginationEventTransformer<T extends EventWithReload>() {
+  return (events, mapper) {
+    return events.transform(ExhaustMapStreamTransformer(mapper));
+  };
+}

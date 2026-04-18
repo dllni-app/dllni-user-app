@@ -15,18 +15,32 @@ class SetDefaultAddressEvent extends ProfileEvent {
   SetDefaultAddressEvent({required this.addressId, required this.context});
 }
 
-class FetchNotificationsEvent extends ProfileEvent {
+class FetchNotificationsEvent extends ProfileEvent with EventWithReload {
   final FetchNotificationsParams params;
+  final bool loadMore;
+  @override
+  final bool isReload;
 
-  FetchNotificationsEvent({required this.params});
+  FetchNotificationsEvent({
+    required this.params,
+    this.loadMore = false,
+    this.isReload = false,
+  });
 }
 
 class MarkAllNotificationsReadEvent extends ProfileEvent {}
 
-class FetchFavoriteRestaurantsEvent extends ProfileEvent {
+class FetchFavoriteRestaurantsEvent extends ProfileEvent with EventWithReload {
   final FetchFavoriteRestaurantsParams params;
+  final bool loadMore;
+  @override
+  final bool isReload;
 
-  FetchFavoriteRestaurantsEvent({required this.params});
+  FetchFavoriteRestaurantsEvent({
+    required this.params,
+    this.loadMore = false,
+    this.isReload = false,
+  });
 }
 
 class RemoveFavoriteRestaurantEvent extends ProfileEvent {

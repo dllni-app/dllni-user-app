@@ -14,27 +14,40 @@ part 'home_state.dart';
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final FetchUserOffersUseCase fetchUserOffersUseCase;
 
-  HomeBloc({required this.fetchUserOffersUseCase}) : super(HomeState(userOffersStatus: BlocStatus.init)) {
-    on<FetchUserOffersEvent>(_onFetchUserOffers);
+  HomeBloc({required this.fetchUserOffersUseCase}) : super(HomeState()) {
+    on<FetchUserOffersEvent>(_onFetchUserOffers, transformer: paginationEventTransformer());
   }
 
   FutureOr<void> _onFetchUserOffers(FetchUserOffersEvent event, Emitter<HomeState> emit) async {
-    emit(state.copyWith(userOffersStatus: BlocStatus.loading));
-    final res = await fetchUserOffersUseCase(event.params);
+    final pagination = state.userOffers;
+    final isLoadMore = event.loadMore && !event.isReload;
+    if (isLoadMore && pagination.isEndPage) return;
+
+    emit(state.copyWith(userOffers: pagination.setLoading(isReload: event.isReload)));
+
+    final page = isLoadMore ? pagination.pageNumber : 1;
+    final perPage = pagination.perPage;
+    final res = await fetchUserOffersUseCase(
+      FetchUserOffersParams(page: page, perPage: perPage),
+    );
     res.fold(
       (l) {
         emit(
           state.copyWith(
-            userOffersStatus: BlocStatus.failed,
+            userOffers: pagination.setFaild(errorMessage: l.message),
             errorMessage: l.message,
           ),
         );
       },
       (r) {
+        final items = r.data;
         emit(
           state.copyWith(
-            userOffersStatus: BlocStatus.success,
-            userOffers: r,
+            userOffers: pagination.setSuccess(
+              data: items,
+              total: r.meta?.total ?? pagination.total,
+              perPage: r.meta?.perPage ?? perPage,
+            ),
           ),
         );
       },

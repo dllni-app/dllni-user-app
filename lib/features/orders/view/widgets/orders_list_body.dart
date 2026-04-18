@@ -27,13 +27,14 @@ class OrdersListBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final isStoresSection = state.selectedTabIndex == 0;
     final isCleaningSection = state.selectedTabIndex == 2;
-    final listLength = isCleaningSection
-        ? state.cleaningOrders.length
-        : state.orders.length;
-    if (state.status == BlocStatus.loading && listLength == 0) {
+    final cleaningOrders = state.cleaningOrders.list;
+    final orders = state.orders.list;
+    final pagination = isCleaningSection ? state.cleaningOrders : state.orders;
+    final listLength = isCleaningSection ? cleaningOrders.length : orders.length;
+    if (pagination.status == BlocStatus.loading && listLength == 0) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (state.status == BlocStatus.failed && listLength == 0) {
+    if (pagination.status == BlocStatus.failed && listLength == 0) {
       return ListView(
         children: [
           SizedBox(height: context.height * .2),
@@ -59,7 +60,10 @@ class OrdersListBody extends StatelessWidget {
           controller: scrollController,
           padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 24),
           itemBuilder: (context, index) {
-            if (index == listLength) {
+            if (index >= listLength) {
+              if (index == listLength) {
+                context.read<OrdersBloc>().add(FetchOrdersEvent(loadMore: true));
+              }
               return const Center(
                 child: Padding(
                   padding: EdgeInsets.all(12),
@@ -68,7 +72,7 @@ class OrdersListBody extends StatelessWidget {
               );
             }
             if (isCleaningSection) {
-              final cleaningOrder = state.cleaningOrders[index];
+              final cleaningOrder = cleaningOrders[index];
               return BlocBuilder<OrdersBloc, OrdersState>(
                 builder: (context, state) {
                   return CleaningOrderCard(
@@ -150,7 +154,7 @@ class OrdersListBody extends StatelessWidget {
                 },
               );
             }
-            final order = state.orders[index];
+            final order = orders[index];
             if (isStoresSection) {
               return OrderCard(
                 order: order,
@@ -177,9 +181,9 @@ class OrdersListBody extends StatelessWidget {
             );
           },
           separatorBuilder: (context, index) => const SizedBox(height: 14),
-          itemCount: listLength + (state.isLoadingMore ? 1 : 0),
+          itemCount: pagination.listLength(1),
         ),
-        if (state.status == BlocStatus.loading)
+        if (pagination.status == BlocStatus.loading && listLength > 0)
           const Positioned(
             top: 0,
             left: 0,

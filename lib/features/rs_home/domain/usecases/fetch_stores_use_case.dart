@@ -17,4 +17,20 @@ class FetchStoresUseCase implements UseCase<FetchStoresModel, FetchStoresParams>
   }
 }
 
-class FetchStoresParams with Params{}
+class FetchStoresParams with Params {
+  final int page;
+  final int perPage;
+
+  const FetchStoresParams({
+    this.page = 1,
+    this.perPage = 10,
+  });
+
+  @override
+  QueryParams getParams() {
+    return {
+      'page': page,
+      'per_page': perPage,
+    };
+  }
+}

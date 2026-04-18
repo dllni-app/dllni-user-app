@@ -150,3 +150,32 @@ class PaginationStateModel<T> {
         list.hashCode;
   }
 }
+
+PaginationStateModel<T> setPaginatedSuccessFromMeta<T>({
+  required PaginationStateModel<T> current,
+  required List<T> data,
+  required int total,
+  required int requestedPage,
+  required int fallbackPerPage,
+  int? metaCurrentPage,
+  int? metaLastPage,
+  int? metaPerPage,
+}) {
+  final resolvedPerPage = metaPerPage ?? fallbackPerPage;
+  final currentPage = metaCurrentPage ?? requestedPage;
+  final lastPage = metaLastPage ?? currentPage;
+  final shortPage = data.length < resolvedPerPage;
+  final atLastPage = currentPage >= lastPage;
+  final endReached = atLastPage || shortPage;
+
+  return current
+      .setSuccess(
+        data: data,
+        perPage: resolvedPerPage,
+        total: total,
+      )
+      .copyWith(
+        isEndPage: endReached,
+        total: total,
+      );
+}

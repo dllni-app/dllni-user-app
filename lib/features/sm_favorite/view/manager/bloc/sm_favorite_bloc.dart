@@ -25,18 +25,12 @@ class SmFavoriteBloc extends Bloc<SmFavoriteEvent, SmFavoriteState> {
   ) : super(SmFavoriteState()) {
     on<FetchFavoriteSupermarketStoresEvent>(
       _fetchFavoriteSupermarketStores,
-      transformer: droppableProMax(),
+      transformer: paginationEventTransformer(),
     );
     on<FetchFavoriteSupermarketProductsEvent>(
       _fetchFavoriteSupermarketProducts,
-      transformer: droppableProMax(),
+      transformer: paginationEventTransformer(),
     );
-  }
-
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
   }
 
   FutureOr<void> _fetchFavoriteSupermarketStores(

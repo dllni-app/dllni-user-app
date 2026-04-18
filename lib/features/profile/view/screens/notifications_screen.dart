@@ -56,7 +56,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _refreshNotifications(BuildContext context) async {
     context.read<ProfileBloc>().add(
-      FetchNotificationsEvent(params: FetchNotificationsParams()),
+      FetchNotificationsEvent(
+        params: FetchNotificationsParams(),
+        isReload: true,
+      ),
     );
     await context.read<ProfileBloc>().stream.firstWhere(
       (state) => state.notificationsStatus != BlocStatus.loading,
@@ -68,7 +71,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return BlocProvider<ProfileBloc>(
       lazy: false,
       create: (_) => getIt<ProfileBloc>()
-        ..add(FetchNotificationsEvent(params: FetchNotificationsParams())),
+        ..add(
+          FetchNotificationsEvent(
+            params: FetchNotificationsParams(),
+            isReload: true,
+          ),
+        ),
       child: BlocListener<ProfileBloc, ProfileState>(
         listenWhen: (previous, current) =>
             previous.notificationsStatus != current.notificationsStatus &&
@@ -90,6 +98,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Expanded(
                   child: BlocBuilder<ProfileBloc, ProfileState>(
                     builder: (context, state) {
+                      final notifications = state.notifications;
+                      final pagination = state.notificationsPagination;
                       final groups = _groupNotifications(state.notifications);
                       const sections = [
                         'اليوم',
@@ -97,63 +107,91 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         'الأسبوع الماضي',
                         'الأقدم',
                       ];
-                      if (state.notificationsStatus == null ||
-                          state.notificationsStatus == BlocStatus.loading ||
-                          state.notificationsStatus == BlocStatus.init) {
+                      if (state.notificationsStatus == BlocStatus.loading &&
+                          notifications.isEmpty) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      if (state.notifications.isEmpty) {
+                      if (notifications.isEmpty) {
                         return const Center(child: Text('لا توجد إشعارات'));
                       }
                       return RefreshIndicator(
                         onRefresh: () async =>
                             await _refreshNotifications(context),
-                        child: ListView(
-                          padding: const EdgeInsetsDirectional.only(
-                            top: 8,
-                            bottom: 16,
-                          ),
-                          children: [
-                            for (final section in sections)
-                              if (groups[section]!.isNotEmpty) ...[
-                                Padding(
-                                  padding: const EdgeInsetsDirectional.fromSTEB(
-                                    16,
-                                    10,
-                                    16,
-                                    8,
-                                  ),
-                                  child: AppText.labelLarge(
-                                    section,
-                                    color: const Color(0xff9CA3AF),
-                                    fontWeight: FontWeight.w700,
-                                    textAlign: TextAlign.start,
-                                  ),
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (notification.metrics.pixels <
+                                notification.metrics.maxScrollExtent - 180) {
+                              return false;
+                            }
+                            if (pagination.isEndPage ||
+                                pagination.status == BlocStatus.loading) {
+                              return false;
+                            }
+                            context.read<ProfileBloc>().add(
+                              FetchNotificationsEvent(
+                                params: FetchNotificationsParams(
+                                  perPage: pagination.perPage,
                                 ),
-                                Container(
-                                  color: context.onPrimary,
-                                  child: Column(
-                                    children: [
-                                      for (
-                                        var i = 0;
-                                        i < groups[section]!.length;
-                                        i++
-                                      ) ...[
-                                        NotificationFeedItem(
-                                          notification: groups[section]![i],
-                                        ),
-                                        if (i != groups[section]!.length - 1)
-                                          const Divider(
-                                            height: 1,
-                                            thickness: 1,
-                                            color: Color(0xffF3F4F6),
+                                loadMore: true,
+                              ),
+                            );
+                            return false;
+                          },
+                          child: ListView(
+                            padding: const EdgeInsetsDirectional.only(
+                              top: 8,
+                              bottom: 16,
+                            ),
+                            children: [
+                              for (final section in sections)
+                                if (groups[section]!.isNotEmpty) ...[
+                                  Padding(
+                                    padding: const EdgeInsetsDirectional.fromSTEB(
+                                      16,
+                                      10,
+                                      16,
+                                      8,
+                                    ),
+                                    child: AppText.labelLarge(
+                                      section,
+                                      color: const Color(0xff9CA3AF),
+                                      fontWeight: FontWeight.w700,
+                                      textAlign: TextAlign.start,
+                                    ),
+                                  ),
+                                  Container(
+                                    color: context.onPrimary,
+                                    child: Column(
+                                      children: [
+                                        for (
+                                          var i = 0;
+                                          i < groups[section]!.length;
+                                          i++
+                                        ) ...[
+                                          NotificationFeedItem(
+                                            notification: groups[section]![i],
                                           ),
+                                          if (i != groups[section]!.length - 1)
+                                            const Divider(
+                                              height: 1,
+                                              thickness: 1,
+                                              color: Color(0xffF3F4F6),
+                                            ),
+                                        ],
                                       ],
-                                    ],
+                                    ),
+                                  ),
+                                ],
+                              if (!pagination.isEndPage &&
+                                  pagination.status == BlocStatus.loading)
+                                const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
                                   ),
                                 ),
-                              ],
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },
