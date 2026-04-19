@@ -182,12 +182,6 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
-    );
     return Container(
       width: context.width,
       padding: EdgeInsets.fromLTRB(

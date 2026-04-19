@@ -12,6 +12,8 @@ import '../../domain/usecases/change_store_favorite_use_case.dart';
 import '../models/change_store_favorite_model.dart';
 import '../../domain/usecases/change_product_favorite_use_case.dart';
 import '../models/change_product_favorite_model.dart';
+import '../../domain/usecases/normalize_product_text_use_case.dart';
+import '../models/normalize_product_text_model.dart';
 
 @LazySingleton(as: SmDiscoverRepo)
 class SmDiscoverRepoImpl with HandlingException implements SmDiscoverRepo {
@@ -45,5 +47,13 @@ class SmDiscoverRepoImpl with HandlingException implements SmDiscoverRepo {
     return wrapHandlingException(
       tryCall: () => smDiscoverRemoteDataSource.changeProductFavorite(params),
     );
-  }}
+  }
+
+  @override
+  DataResponse<NormalizeProductTextModel> normalizeProductText(NormalizeProductTextParams params) {
+    return wrapHandlingException(
+      tryCall: () => smDiscoverRemoteDataSource.normalizeProductText(params),
+    );
+  }
+}
 

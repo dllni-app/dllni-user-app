@@ -35,12 +35,17 @@ class ProductsSection extends StatelessWidget {
             ),
           ),
         ),
-        ListView.separated(
+        GridView.builder(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           physics: NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           itemCount: products.length,
-          separatorBuilder: (context, index) => SizedBox(height: 8),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisExtent: 253,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 8,
+          ),
           itemBuilder: (context, index) =>
               ProductCard(product: products[index]),
         ),

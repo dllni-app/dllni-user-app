@@ -51,6 +51,7 @@ String _smStoresTrim(dynamic value) =>
 }
 
 class SmStarterProductDetailsData {
+  final int? masterId;
   final String? name;
   final String? storeName;
   final String? imageUrl;
@@ -59,6 +60,7 @@ class SmStarterProductDetailsData {
   final bool? isFavorite;
 
   const SmStarterProductDetailsData({
+    required this.masterId,
     this.name,
     this.storeName,
     this.imageUrl,
@@ -287,12 +289,13 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                   child: _ActionButton(
                                     icon: FontAwesomeIcons.add,
                                     onTap: () {
-                                      final masterId = context
-                                          .read<SmStoresBloc>()
-                                          .state
-                                          .productDetails
-                                          ?.masterProductId;
-                                      print('masterId: $masterId');
+                                      final masterId =
+                                          widget.args.starter?.masterId ??
+                                          context
+                                              .read<SmStoresBloc>()
+                                              .state
+                                              .productDetails
+                                              ?.masterProductId;
                                       if (masterId == null || masterId <= 0) {
                                         AppToast.showToast(
                                           context: context,
