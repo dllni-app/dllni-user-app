@@ -36,20 +36,31 @@ class RsOffersProductsListWidget extends StatelessWidget {
         onRefresh: () async {
           context.read<RsOffersBloc>().add(FetchRsOffersProductsEvent(isReload: true));
         },
-        child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          itemCount: products.list.length + (showFooter ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index >= products.list.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 4))),
-              );
-            }
-
-            return RsOffersProductCardWidget(product: products.list[index]);
-          },
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.65,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => RsOffersProductCardWidget(product: products.list[index]),
+                  childCount: products.list.length,
+                ),
+              ),
+            ),
+            if (showFooter)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 20),
+                  child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 4))),
+                ),
+              ),
+          ],
         ),
       ),
     );

@@ -1,4 +1,3 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,7 +5,6 @@ import '../manager/bloc/rs_offers_bloc.dart';
 import 'rs_offers_app_bar.dart';
 import 'rs_offers_empty_widget.dart';
 import 'rs_offers_error_widget.dart';
-import 'rs_offers_loading_widget.dart';
 import 'rs_offers_products_list_widget.dart';
 
 class RsOffersView extends StatelessWidget {
@@ -24,7 +22,6 @@ class RsOffersView extends StatelessWidget {
             child: BlocBuilder<RsOffersBloc, RsOffersState>(
               builder: (context, state) {
                 final pagination = state.products;
-
                 if (pagination.isFailed) {
                   return RsOffersErrorWidget(
                     message: pagination.errorMessage,
@@ -33,15 +30,12 @@ class RsOffersView extends StatelessWidget {
                     },
                   );
                 }
-
                 if (pagination.isLoading) {
-                  return const RsOffersLoadingWidget();
+                  return const Center(child: CircularProgressIndicator());
                 }
-
                 if (pagination.isEmpty) {
                   return const RsOffersEmptyWidget();
                 }
-
                 return RsOffersProductsListWidget(products: pagination);
               },
             ),

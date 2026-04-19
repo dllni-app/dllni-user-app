@@ -1,12 +1,10 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
-import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:toastification/toastification.dart';
 
 import '../../data/models/fetch_restaurant_details_model.dart';
-import '../../domain/usecases/add_restaurant_cart_item_use_case.dart';
+import '../../data/models/fetch_restaurant_products_search_model.dart';
 import '../models/product_preview_data.dart';
 import '../models/store_product_item.dart';
 import '../screens/rs_product_details_screen.dart';
@@ -16,6 +14,7 @@ class StoreProductsPreviewSection extends StatelessWidget {
   const StoreProductsPreviewSection({
     super.key,
     required this.restaurantId,
+    required this.restaurantName,
     required this.selectedFilterIndex,
     required this.onFilterChanged,
     required this.filters,
@@ -23,6 +22,7 @@ class StoreProductsPreviewSection extends StatelessWidget {
   });
 
   final int restaurantId;
+  final String restaurantName;
   final int selectedFilterIndex;
   final void Function(int index) onFilterChanged;
   final List<String> filters;
@@ -63,7 +63,7 @@ class StoreProductsPreviewSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
             itemCount: filters.length,
-            separatorBuilder: (_, __) => SizedBox(width: 8),
+            separatorBuilder: (_, index) => SizedBox(width: 8),
             itemBuilder: (_, index) {
               final isSelected = selectedFilterIndex == index;
               return InkWell(
@@ -96,13 +96,18 @@ class StoreProductsPreviewSection extends StatelessWidget {
             ),
           )
         else
-          ListView.separated(
+          GridView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: products.length > 5 ? 5 : products.length,
-            separatorBuilder: (_, __) => SizedBox(height: 12),
-            itemBuilder: (_, index) => StoreProductCard(product: products[index]),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.65,
+            ),
+            itemBuilder: (_, index) => StoreProductCard(product: products[index], restaurantName: restaurantName),
           ),
       ],
     );
@@ -110,184 +115,44 @@ class StoreProductsPreviewSection extends StatelessWidget {
 }
 
 class StoreProductCard extends StatefulWidget {
-  const StoreProductCard({super.key, required this.product});
+  const StoreProductCard({super.key, required this.product, required this.restaurantName});
 
   final StoreProductItem product;
+  final String restaurantName;
 
   @override
   State<StoreProductCard> createState() => _StoreProductCardState();
 }
 
 class _StoreProductCardState extends State<StoreProductCard> {
-  bool _isSubmittingAdd = false;
-
   StoreProductItem get product => widget.product;
+
+  String get restaurantName => widget.restaurantName;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => context.pushRoute('/product', arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(product))),
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.onPrimary,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Color(0xFFF3F4F6)),
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(14, 18, 14, 14),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      (product.imageUrl ?? '').trim().isEmpty
-                          ? Container(
-                              width: 112,
-                              height: 112,
-                              decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.image_outlined, color: Color(0xFF9CA3AF)),
-                            )
-                          : AppImage.network(
-                              product.imageUrl!,
-                              width: 112,
-                              height: 112,
-                              fit: BoxFit.cover,
-                              borderRadius: BorderRadius.circular(12),
-                              errorWidget: Container(
-                                width: 112,
-                                height: 112,
-                                decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
-                                alignment: Alignment.center,
-                                child: const Icon(Icons.image_outlined, color: Color(0xFF9CA3AF)),
-                              ),
-                            ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppText(
-                                product.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: Color(0xFF1F2937), fontSize: 34 / 2, fontWeight: FontWeight.w700, height: 24 / 17),
-                              ),
-                              SizedBox(height: 8),
-                              AppText(
-                                product.description,
-                                maxLines: 2,
-                                textAlign: TextAlign.start,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
-                              ),
-                              SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  AppText(
-                                    product.priceText,
-                                    style: TextStyle(color: Color(0xFF111827), fontSize: 36 / 2, fontWeight: FontWeight.w700, height: 28 / 18),
-                                  ),
-                                  SizedBox(width: 8),
-                                  if (product.oldPriceText != null)
-                                    AppText(
-                                      product.oldPriceText!,
-                                      style: TextStyle(
-                                        color: Color(0xFF9CA3AF),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        height: 24 / 16,
-                                        decoration: TextDecoration.lineThrough,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  InkWell(
-                    onTap: _isSubmittingAdd ? null : _onAddToCartPressed,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: double.infinity,
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(color: context.primary, borderRadius: BorderRadius.circular(10)),
-                      child: AppText(
-                        _isSubmittingAdd ? 'جاري الإضافة...' : 'اضافة الى السلة',
-                        style: TextStyle(color: context.onPrimary, fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            PositionedDirectional(
-              top: 0,
-              end: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Color(0xFFFF7A00),
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(24), bottomRight: Radius.circular(16)),
-                ),
-                child: AppText(
-                  'عرض اليوم',
-                  style: TextStyle(color: context.onPrimary, fontSize: 11, fontWeight: FontWeight.w700, height: 16 / 11),
-                ),
-              ),
-            ),
-          ],
-        ),
+    final safeImage = (product.imageUrl ?? '').trim();
+    final safeRestaurant = restaurantName.trim().isNotEmpty ? restaurantName.trim() : 'مطعم';
+    final safeOffer = ((product.offerBadgeText ?? product.offer ?? '').trim()).isNotEmpty
+        ? (product.offerBadgeText ?? product.offer ?? '').trim()
+        : 'عرض';
+
+    return RsAppProductCard(
+      image: safeImage,
+      productId: product.id!,
+      title: product.name,
+      restaurant: safeRestaurant,
+      price: product.priceText,
+      offer: FetchRestaurantProductsSearchModelActiveOffer(
+        badgeText: product.offerBadgeText,
+        discountType: product.offerDiscountType,
+        discountValue: product.offerDiscountValue,
+        title: product.offerUrgencyTag,
       ),
-    );
-  }
-
-  Future<void> _onAddToCartPressed() async {
-    if (_isSubmittingAdd) return;
-    final productId = product.id;
-    if (productId == null || productId <= 0) {
-      AppToast.showToast(context: context, message: 'تعذر تحديد المنتج', type: ToastificationType.error);
-      return;
-    }
-
-    setState(() {
-      _isSubmittingAdd = true;
-    });
-
-    final res = await getIt<AddRestaurantCartItemUseCase>()(
-      AddRestaurantCartItemParams(productId: productId, quantity: 1, modifierIds: const [], substituteProductId: null, specialInstructions: ''),
-    );
-
-    if (!mounted) return;
-
-    res.fold(
-      (failure) {
-        setState(() {
-          _isSubmittingAdd = false;
-        });
-        AppToast.showToast(context: context, message: failure.message, type: ToastificationType.error);
-      },
-      (result) {
-        setState(() {
-          _isSubmittingAdd = false;
-        });
-        getIt<CartProductsCountCubit>().refreshAfterAdd();
-        AppToast.showToast(
-          context: context,
-          message: (result.message ?? '').trim().isNotEmpty ? result.message! : 'تمت إضافة المنتج إلى السلة',
-          type: ToastificationType.success,
-        );
-      },
+      onTap: () => context.pushRoute(
+        '/rs_product',
+        arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(product, fallbackRestaurantName: safeRestaurant)),
+      ),
     );
   }
 }
@@ -546,7 +411,7 @@ class _StoreInfoRow extends StatelessWidget {
               AppText(
                 value,
                 textAlign: TextAlign.start,
-                style: TextStyle(color: Color(0xFF111827), fontSize: 13, fontWeight: FontWeight.w600, height: 20 / 13, ),
+                style: TextStyle(color: Color(0xFF111827), fontSize: 13, fontWeight: FontWeight.w600, height: 20 / 13),
               ),
             ],
           ),

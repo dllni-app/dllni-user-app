@@ -17,13 +17,7 @@ class RsOffersBloc extends Bloc<RsOffersEvent, RsOffersState> {
   final FetchRsOffersProductsUseCase fetchRsOffersProductsUseCase;
 
   RsOffersBloc(this.fetchRsOffersProductsUseCase) : super(RsOffersState()) {
-    on<FetchRsOffersProductsEvent>(_onFetchRsOffersProducts, transformer: droppableProMax());
-  }
-
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
+    on<FetchRsOffersProductsEvent>(_onFetchRsOffersProducts, transformer: paginationEventTransformer());
   }
 
   FutureOr<void> _onFetchRsOffersProducts(FetchRsOffersProductsEvent event, Emitter<RsOffersState> emit) async {
@@ -54,15 +48,16 @@ class RsOffersBloc extends Bloc<RsOffersEvent, RsOffersState> {
       (r) {
         final items = r.data ?? <FetchRsOffersProductsModelDataItem>[];
         final meta = r.meta;
-        final metaPerPage = meta?.perPage ?? perPage;
-        final currentPage = meta?.currentPage ?? page;
-        final lastPage = meta?.lastPage ?? currentPage;
-        final shortPage = items.length < metaPerPage;
-        final atLastPage = currentPage >= lastPage;
-        final endReached = atLastPage || shortPage;
-
-        var next = state.products.setSuccess(data: items, perPage: metaPerPage, total: meta!.total!);
-        next = next.copyWith(isEndPage: endReached);
+        final next = setPaginatedSuccessFromMeta(
+          current: state.products,
+          data: items,
+          total: meta?.total ?? state.products.total,
+          requestedPage: page,
+          fallbackPerPage: perPage,
+          metaCurrentPage: meta?.currentPage,
+          metaLastPage: meta?.lastPage,
+          metaPerPage: meta?.perPage,
+        );
 
         emit(state.copyWith(products: next, errorMessage: null));
       },

@@ -13,10 +13,12 @@ class StoreCard extends StatefulWidget {
     super.key,
     required this.store,
     this.onFavouriteChanged,
+    this.expandToFit = false,
   });
 
   final RestaurantHomeNearestRestaurantItem store;
   final void Function(bool isFavorited)? onFavouriteChanged;
+  final bool expandToFit;
 
   @override
   State<StoreCard> createState() => _StoreCardState();
@@ -44,7 +46,9 @@ class _StoreCardState extends State<StoreCard> {
           '/rs_store',
           arguments: StoreDetailsScreenParams(
             restaurantId: id,
-            preview: RestaurantPreviewData.fromHomeNearest(store).copyWith(isFavorited: _isFavorited),
+            preview: RestaurantPreviewData.fromHomeNearest(
+              store,
+            ).copyWith(isFavorited: _isFavorited),
           ),
         );
       },
@@ -55,7 +59,7 @@ class _StoreCardState extends State<StoreCard> {
           borderRadius: BorderRadius.all(Radius.circular(24)),
           border: Border.all(color: Color(0xFFF3F4F6)),
         ),
-        height: 280,
+        width: widget.expandToFit ? double.infinity : 204,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -71,6 +75,7 @@ class _StoreCardState extends State<StoreCard> {
                             store.primaryImageUrl!.isEmpty
                         ? Container(
                             width: double.infinity,
+                            height: 120,
                             color: const Color(0xFFF5F5F5),
                             child: const Center(
                               child: Icon(
@@ -83,6 +88,7 @@ class _StoreCardState extends State<StoreCard> {
                             store.primaryImageUrl!,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            height: 120,
                             errorWidget: Container(
                               width: double.infinity,
                               color: const Color(0xFFF5F5F5),
@@ -104,83 +110,13 @@ class _StoreCardState extends State<StoreCard> {
                         radius: 18,
                         backgroundColor: context.onPrimaryContainer,
                         child: FaIcon(
-                          _isFavorited ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                          _isFavorited
+                              ? FontAwesomeIcons.solidHeart
+                              : FontAwesomeIcons.heart,
                           size: 16,
-                          color: _isFavorited ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if ((store.discountOfferBadge ?? '').isNotEmpty)
-                    Positioned(
-                      bottom: 12,
-                      left: 12,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.primaryContainer,
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FaIcon(
-                              FontAwesomeIcons.tag,
-                              size: 10,
-                              color: context.onPrimaryContainer,
-                            ),
-                            SizedBox(width: 4),
-                            AppText(
-                              store.discountOfferBadge!,
-                              style: TextStyle(
-                                color: context.onPrimaryContainer,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                height: 16 / 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    bottom: 12,
-                    right: 12,
-                    child: Visibility(
-                      visible:
-                          store.estimatedDeliveryMinutesMin != null ||
-                          store.estimatedDeliveryMinutesMax != null,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.onPrimaryContainer,
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AppText(
-                              _deliveryTimeText(store),
-                              style: TextStyle(
-                                color: Color(0xFF1A1A1A),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                height: 16 / 12,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            FaIcon(
-                              FontAwesomeIcons.motorcycle,
-                              size: 15,
-                              color: Color(0xFF6C63FF),
-                            ),
-                          ],
+                          color: _isFavorited
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                     ),
@@ -188,26 +124,48 @@ class _StoreCardState extends State<StoreCard> {
                 ],
               ),
             ),
+            SizedBox(height: 4),
             Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: AppText(
-                          store.name ?? '-',
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                            color: Color(0xFF1A1A1A),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            height: 24 / 16,
+                      if ((store.discountOfferBadge ?? '').isNotEmpty)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.primaryContainer,
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(8),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FaIcon(
+                                FontAwesomeIcons.tag,
+                                size: 10,
+                                color: context.onPrimaryContainer,
+                              ),
+                              SizedBox(width: 4),
+                              AppText(
+                                store.discountOfferBadge!,
+                                style: TextStyle(
+                                  color: context.onPrimaryContainer,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  height: 16 / 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
                       SizedBox(width: 16),
                       Container(
                         padding: EdgeInsets.symmetric(
@@ -243,6 +201,18 @@ class _StoreCardState extends State<StoreCard> {
                   ),
                   SizedBox(height: 4),
                   AppText(
+                    store.name ?? ' - ',
+                    textAlign: TextAlign.start,
+                    maxLines: 1,
+                    scrollText: true,
+                    style: TextStyle(
+                      color: Color(0xFF1A1A1A),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      height: 24 / 16,
+                    ),
+                  ),
+                  AppText(
                     store.cuisineSummary ?? '-',
                     style: TextStyle(
                       color: Color(0xFF6B7280),
@@ -251,42 +221,7 @@ class _StoreCardState extends State<StoreCard> {
                       height: 16 / 12,
                     ),
                   ),
-                  SizedBox(height: 25),
-                  Wrap(
-                    spacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      if (store.distanceKm != null) ...[
-                        FaIcon(
-                          FontAwesomeIcons.locationArrow,
-                          size: 12,
-                          color: Color(0xB26C63FF),
-                        ),
-                        AppText(
-                          '${store.distanceKm!.toStringAsFixed(1)} كم',
-                          style: TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 12,
-                            height: 16 / 12,
-                          ),
-                        ),
-                      ],
-                      if (store.distanceKm != null && store.deliveryFee != null)
-                        CircleAvatar(
-                          radius: 2,
-                          backgroundColor: Color(0xFFD1D5DB),
-                        ),
-                      if (store.deliveryFee != null)
-                        AppText(
-                          '${store.deliveryFee} ${store.currency ?? ''}'.trim(),
-                          style: TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 12,
-                            height: 16 / 12,
-                          ),
-                        ),
-                    ],
-                  ),
+                  SizedBox(height: 4),
                 ],
               ),
             ),
@@ -339,13 +274,4 @@ class _StoreCardState extends State<StoreCard> {
       },
     );
   }
-}
-
-String _deliveryTimeText(RestaurantHomeNearestRestaurantItem store) {
-  final min = store.estimatedDeliveryMinutesMin;
-  final max = store.estimatedDeliveryMinutesMax;
-  if (min != null && max != null) return '$min-$max دقيقة';
-  if (max != null) return '$max دقيقة';
-  if (min != null) return '$min دقيقة';
-  return '';
 }

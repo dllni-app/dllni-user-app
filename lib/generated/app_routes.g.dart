@@ -18,6 +18,8 @@ import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_tra
 import 'package:dllni_user_app/features/profile/view/screens/add_address_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/add_edit_shopping_list_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/coupons_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/group_order_followup_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/group_order_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/my_addresses_screen.dart';
@@ -170,6 +172,19 @@ class GeneratedAppRoutes {
       case '/coupons':
         return MaterialPageRoute(
           builder: (_) => CouponsScreen(),
+          settings: settings,
+        );
+      case '/group-order/followup':
+        if (args is GroupOrderFollowupScreenParams) {
+          return MaterialPageRoute(
+            builder: (_) => GroupOrderFollowupScreen(params: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/group-order/create':
+        return MaterialPageRoute(
+          builder: (_) => GroupOrderSetupScreen(),
           settings: settings,
         );
       case '/luckyboxsetup':

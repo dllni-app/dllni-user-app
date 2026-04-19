@@ -8,6 +8,7 @@ import '../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../domain/usecases/create_vote_use_case.dart';
 import '../../domain/usecases/create_address_use_case.dart';
 import '../../domain/usecases/show_vote_use_case.dart';
+import '../../domain/usecases/submit_vote_ballot_use_case.dart';
 import '../../domain/usecases/end_vote_use_case.dart';
 import '../../domain/usecases/fetch_active_votes_use_case.dart';
 import '../../domain/usecases/add_favorite_restaurant_use_case.dart';
@@ -17,12 +18,24 @@ import '../../domain/usecases/update_address_use_case.dart';
 import '../../domain/usecases/delete_address_use_case.dart';
 import '../../domain/usecases/update_account_use_case.dart';
 import '../../domain/usecases/update_account_password_use_case.dart';
+import '../../domain/usecases/create_group_order_use_case.dart';
+import '../../domain/usecases/join_group_order_use_case.dart';
+import '../../domain/usecases/fetch_active_group_orders_use_case.dart';
+import '../../domain/usecases/fetch_group_order_menu_sections_use_case.dart';
+import '../../domain/usecases/show_group_order_use_case.dart';
+import '../../domain/usecases/add_group_order_item_use_case.dart';
+import '../../domain/usecases/update_group_order_item_use_case.dart';
+import '../../domain/usecases/delete_group_order_item_use_case.dart';
+import '../../domain/usecases/submit_group_order_use_case.dart';
+import '../../domain/usecases/unsubmit_group_order_use_case.dart';
+import '../../domain/usecases/cancel_group_order_use_case.dart';
+import '../../domain/usecases/place_group_order_use_case.dart';
 import '../models/luck_box_api_models.dart';
 import '../models/profile_api_models.dart';
+import '../models/group_order_api_models.dart';
 import '../source/profile_remote_data_source.dart';
 import '../../domain/models/personal_details_update_input.dart';
 import '../../domain/repository/profile_repo.dart';
-import 'package:common_package/helpers/typedef.dart';
 import '../../domain/usecases/get_shopping_list_use_case.dart';
 import '../models/get_shopping_list_model.dart';
 import '../../domain/usecases/add_shopping_list_to_cart_use_case.dart';
@@ -147,6 +160,15 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   }
 
   @override
+  DataResponse<ActionResultModel> submitVoteBallot(
+    SubmitVoteBallotParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.submitVoteBallot(params),
+    );
+  }
+
+  @override
   DataResponse<ActionResultModel> endVote(EndVoteParams params) {
     return wrapHandlingException(
       tryCall: () => profileRemoteDataSource.endVote(params),
@@ -212,4 +234,101 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
     return wrapHandlingException(
       tryCall: () => profileRemoteDataSource.addShoppingListToCart(params),
     );
-  }}
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> createGroupOrder(CreateGroupOrderParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.createGroupOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> joinGroupOrder(JoinGroupOrderParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.joinGroupOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActiveListModel> fetchActiveGroupOrders(
+    FetchActiveGroupOrdersParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.fetchActiveGroupOrders(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderDetailsModel> showGroupOrder(ShowGroupOrderParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.showGroupOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderMenuSectionsResponseModel> fetchGroupOrderMenuSections(
+    FetchGroupOrderMenuSectionsParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.fetchGroupOrderMenuSections(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> addGroupOrderItem(
+    AddGroupOrderItemParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.addGroupOrderItem(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> updateGroupOrderItem(
+    UpdateGroupOrderItemParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.updateGroupOrderItem(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> deleteGroupOrderItem(
+    DeleteGroupOrderItemParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.deleteGroupOrderItem(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> submitGroupOrder(SubmitGroupOrderParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.submitGroupOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> unsubmitGroupOrder(
+    UnsubmitGroupOrderParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.unsubmitGroupOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> cancelGroupOrder(CancelGroupOrderParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.cancelGroupOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<GroupOrderActionModel> placeGroupOrder(PlaceGroupOrderParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.placeGroupOrder(params),
+    );
+  }
+}

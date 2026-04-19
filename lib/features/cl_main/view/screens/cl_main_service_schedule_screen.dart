@@ -59,6 +59,7 @@ class _ClMainServiceScheduleScreenState
     _bloc?.add(
       GetPreviousCleaningWorkersEvent(
         params: GetPreviousCleaningWorkersParams(page: 1),
+        isReload: true,
       ),
     );
   }
@@ -240,7 +241,7 @@ class _ClMainServiceScheduleScreenState
                           ),
                           const SizedBox(height: 16),
                           ClServicePreviousWorkersSectionWidget(
-                            workers: state.previousWorkers?.data ?? const [],
+                            workers: state.previousWorkers.list,
                             selectedWorkerId: state.selectedWorkerId,
                             isLoading:
                                 state.previousWorkersStatus ==

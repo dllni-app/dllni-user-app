@@ -9,18 +9,15 @@ class ProfileState {
   GetShoppingListModel? shoppingList;
   BlocStatus? shoppingListDetailStatus;
   ShoppingListDetailModel? shoppingListDetail;
-  /// Transient error for item quantity PATCH (toast in UI; do not use as full-screen error).
   String? quantityPatchError;
   final BlocStatus? addressesStatus;
   final List<AddressListItem> addresses;
   final String? defaultAddressId;
   final BlocStatus? setDefaultAddressStatus;
 
-  final BlocStatus? notificationsStatus;
-  final List<FetchNotificationsModelDataItem> notifications;
+  final PaginationStateModel<FetchNotificationsModelDataItem> notificationsPagination;
 
-  final BlocStatus? favoriteRestaurantsStatus;
-  final List<FavoriteRestaurantModel> favoriteRestaurants;
+  final PaginationStateModel<FavoriteRestaurantModel> favoriteRestaurantsPagination;
   final BlocStatus? removeFavoriteRestaurantStatus;
 
   final BlocStatus? createVoteStatus;
@@ -33,9 +30,26 @@ class ProfileState {
 
   final BlocStatus? voteDetailsStatus;
   final ShowVoteModel? voteDetails;
+  final BlocStatus? voteBallotStatus;
   final BlocStatus? endVoteStatus;
   final BlocStatus? activeVotesStatus;
   final List<VoteCreatedData> activeVotes;
+  final BlocStatus? groupOrderRestaurantsStatus;
+  final List<FetchDiscoverRestaurantsModelDataItem> groupOrderRestaurants;
+  final FetchDiscoverRestaurantsModelDataItem? selectedGroupOrderRestaurant;
+  final BlocStatus? createGroupOrderStatus;
+  final GroupOrderActionModel? createGroupOrderResult;
+  final BlocStatus? joinGroupOrderStatus;
+  final GroupOrderActionModel? joinGroupOrderResult;
+  final BlocStatus? activeGroupOrdersStatus;
+  final List<GroupOrderDetailsModel> activeGroupOrders;
+  final BlocStatus? groupOrderDetailsStatus;
+  final GroupOrderDetailsModel? groupOrderDetails;
+  final BlocStatus? groupOrderMenuStatus;
+  final List<GroupOrderMenuSectionModel> groupOrderMenuSections;
+  final List<GroupOrderMenuSectionItemModel> groupOrderMenuProducts;
+  final BlocStatus? groupOrderActionStatus;
+  final GroupOrderActionModel? groupOrderActionResult;
 
   final String? errorMessage;
   final String? actionMessage;
@@ -45,10 +59,8 @@ class ProfileState {
     this.addresses = const <AddressListItem>[],
     this.defaultAddressId,
     this.setDefaultAddressStatus,
-    this.notificationsStatus,
-    this.notifications = const <FetchNotificationsModelDataItem>[],
-    this.favoriteRestaurantsStatus,
-    this.favoriteRestaurants = const <FavoriteRestaurantModel>[],
+    this.notificationsPagination = const PaginationStateModel<FetchNotificationsModelDataItem>(perPage: 10),
+    this.favoriteRestaurantsPagination = const PaginationStateModel<FavoriteRestaurantModel>(perPage: 20),
     this.removeFavoriteRestaurantStatus,
     this.createVoteStatus,
     this.createdVote,
@@ -59,9 +71,26 @@ class ProfileState {
     this.deleteAddressStatus,
     this.voteDetailsStatus,
     this.voteDetails,
+    this.voteBallotStatus,
     this.endVoteStatus,
     this.activeVotesStatus,
     this.activeVotes = const <VoteCreatedData>[],
+    this.groupOrderRestaurantsStatus,
+    this.groupOrderRestaurants = const <FetchDiscoverRestaurantsModelDataItem>[],
+    this.selectedGroupOrderRestaurant,
+    this.createGroupOrderStatus,
+    this.createGroupOrderResult,
+    this.joinGroupOrderStatus,
+    this.joinGroupOrderResult,
+    this.activeGroupOrdersStatus,
+    this.activeGroupOrders = const <GroupOrderDetailsModel>[],
+    this.groupOrderDetailsStatus,
+    this.groupOrderDetails,
+    this.groupOrderMenuStatus,
+    this.groupOrderMenuSections = const <GroupOrderMenuSectionModel>[],
+    this.groupOrderMenuProducts = const <GroupOrderMenuSectionItemModel>[],
+    this.groupOrderActionStatus,
+    this.groupOrderActionResult,
     this.errorMessage,
     this.actionMessage,
     this.shoppingList,
@@ -80,10 +109,8 @@ class ProfileState {
     List<AddressListItem>? addresses,
     String? defaultAddressId,
     BlocStatus? setDefaultAddressStatus,
-    BlocStatus? notificationsStatus,
-    List<FetchNotificationsModelDataItem>? notifications,
-    BlocStatus? favoriteRestaurantsStatus,
-    List<FavoriteRestaurantModel>? favoriteRestaurants,
+    PaginationStateModel<FetchNotificationsModelDataItem>? notificationsPagination,
+    PaginationStateModel<FavoriteRestaurantModel>? favoriteRestaurantsPagination,
     BlocStatus? removeFavoriteRestaurantStatus,
     BlocStatus? createVoteStatus,
     CreateVoteModel? createdVote,
@@ -94,9 +121,27 @@ class ProfileState {
     BlocStatus? deleteAddressStatus,
     BlocStatus? voteDetailsStatus,
     ShowVoteModel? voteDetails,
+    BlocStatus? voteBallotStatus,
     BlocStatus? endVoteStatus,
     BlocStatus? activeVotesStatus,
     List<VoteCreatedData>? activeVotes,
+    BlocStatus? groupOrderRestaurantsStatus,
+    List<FetchDiscoverRestaurantsModelDataItem>? groupOrderRestaurants,
+    FetchDiscoverRestaurantsModelDataItem? selectedGroupOrderRestaurant,
+    bool clearSelectedGroupOrderRestaurant = false,
+    BlocStatus? createGroupOrderStatus,
+    GroupOrderActionModel? createGroupOrderResult,
+    BlocStatus? joinGroupOrderStatus,
+    GroupOrderActionModel? joinGroupOrderResult,
+    BlocStatus? activeGroupOrdersStatus,
+    List<GroupOrderDetailsModel>? activeGroupOrders,
+    BlocStatus? groupOrderDetailsStatus,
+    GroupOrderDetailsModel? groupOrderDetails,
+    BlocStatus? groupOrderMenuStatus,
+    List<GroupOrderMenuSectionModel>? groupOrderMenuSections,
+    List<GroupOrderMenuSectionItemModel>? groupOrderMenuProducts,
+    BlocStatus? groupOrderActionStatus,
+    GroupOrderActionModel? groupOrderActionResult,
     String? errorMessage,
     String? actionMessage,
     GetShoppingListModel? shoppingList,
@@ -113,15 +158,10 @@ class ProfileState {
     addressesStatus: addressesStatus ?? this.addressesStatus,
     addresses: addresses ?? this.addresses,
     defaultAddressId: defaultAddressId ?? this.defaultAddressId,
-    setDefaultAddressStatus:
-        setDefaultAddressStatus ?? this.setDefaultAddressStatus,
-    notificationsStatus: notificationsStatus ?? this.notificationsStatus,
-    notifications: notifications ?? this.notifications,
-    favoriteRestaurantsStatus:
-        favoriteRestaurantsStatus ?? this.favoriteRestaurantsStatus,
-    favoriteRestaurants: favoriteRestaurants ?? this.favoriteRestaurants,
-    removeFavoriteRestaurantStatus:
-        removeFavoriteRestaurantStatus ?? this.removeFavoriteRestaurantStatus,
+    setDefaultAddressStatus: setDefaultAddressStatus ?? this.setDefaultAddressStatus,
+    notificationsPagination: notificationsPagination ?? this.notificationsPagination,
+    favoriteRestaurantsPagination: favoriteRestaurantsPagination ?? this.favoriteRestaurantsPagination,
+    removeFavoriteRestaurantStatus: removeFavoriteRestaurantStatus ?? this.removeFavoriteRestaurantStatus,
     createVoteStatus: createVoteStatus ?? this.createVoteStatus,
     createdVote: createdVote ?? this.createdVote,
     voteSuggestionsStatus: voteSuggestionsStatus ?? this.voteSuggestionsStatus,
@@ -131,25 +171,46 @@ class ProfileState {
     deleteAddressStatus: deleteAddressStatus ?? this.deleteAddressStatus,
     voteDetailsStatus: voteDetailsStatus ?? this.voteDetailsStatus,
     voteDetails: voteDetails ?? this.voteDetails,
+    voteBallotStatus: voteBallotStatus ?? this.voteBallotStatus,
     endVoteStatus: endVoteStatus ?? this.endVoteStatus,
     activeVotesStatus: activeVotesStatus ?? this.activeVotesStatus,
     activeVotes: activeVotes ?? this.activeVotes,
+    groupOrderRestaurantsStatus: groupOrderRestaurantsStatus ?? this.groupOrderRestaurantsStatus,
+    groupOrderRestaurants: groupOrderRestaurants ?? this.groupOrderRestaurants,
+    selectedGroupOrderRestaurant: clearSelectedGroupOrderRestaurant
+        ? null
+        : (selectedGroupOrderRestaurant ?? this.selectedGroupOrderRestaurant),
+    createGroupOrderStatus: createGroupOrderStatus ?? this.createGroupOrderStatus,
+    createGroupOrderResult: createGroupOrderResult ?? this.createGroupOrderResult,
+    joinGroupOrderStatus: joinGroupOrderStatus ?? this.joinGroupOrderStatus,
+    joinGroupOrderResult: joinGroupOrderResult ?? this.joinGroupOrderResult,
+    activeGroupOrdersStatus: activeGroupOrdersStatus ?? this.activeGroupOrdersStatus,
+    activeGroupOrders: activeGroupOrders ?? this.activeGroupOrders,
+    groupOrderDetailsStatus: groupOrderDetailsStatus ?? this.groupOrderDetailsStatus,
+    groupOrderDetails: groupOrderDetails ?? this.groupOrderDetails,
+    groupOrderMenuStatus: groupOrderMenuStatus ?? this.groupOrderMenuStatus,
+    groupOrderMenuSections: groupOrderMenuSections ?? this.groupOrderMenuSections,
+    groupOrderMenuProducts: groupOrderMenuProducts ?? this.groupOrderMenuProducts,
+    groupOrderActionStatus: groupOrderActionStatus ?? this.groupOrderActionStatus,
+    groupOrderActionResult: groupOrderActionResult ?? this.groupOrderActionResult,
     errorMessage: errorMessage ?? this.errorMessage,
     actionMessage: actionMessage ?? this.actionMessage,
     shoppingList: shoppingList ?? this.shoppingList,
     shoppingListStatus: shoppingListStatus ?? this.shoppingListStatus,
-    createShoppingListStatus:
-        createShoppingListStatus ?? this.createShoppingListStatus,
-    updateShoppingListStatus:
-        updateShoppingListStatus ?? this.updateShoppingListStatus,
+    createShoppingListStatus: createShoppingListStatus ?? this.createShoppingListStatus,
+    updateShoppingListStatus: updateShoppingListStatus ?? this.updateShoppingListStatus,
     shoppingListDetail: shoppingListDetail ?? this.shoppingListDetail,
-    shoppingListDetailStatus:
-        shoppingListDetailStatus ?? this.shoppingListDetailStatus,
-    quantityPatchError: clearQuantityPatchError
-        ? null
-        : (quantityPatchError ?? this.quantityPatchError),
+    shoppingListDetailStatus: shoppingListDetailStatus ?? this.shoppingListDetailStatus,
+    quantityPatchError: clearQuantityPatchError ? null : (quantityPatchError ?? this.quantityPatchError),
     addShoppingListToCart: addShoppingListToCart ?? this.addShoppingListToCart,
-    addShoppingListToCartStatus:
-        addShoppingListToCartStatus ?? this.addShoppingListToCartStatus,
+    addShoppingListToCartStatus: addShoppingListToCartStatus ?? this.addShoppingListToCartStatus,
   );
+
+  BlocStatus get notificationsStatus => notificationsPagination.status;
+
+  List<FetchNotificationsModelDataItem> get notifications => notificationsPagination.list;
+
+  BlocStatus get favoriteRestaurantsStatus => favoriteRestaurantsPagination.status;
+
+  List<FavoriteRestaurantModel> get favoriteRestaurants => favoriteRestaurantsPagination.list;
 }

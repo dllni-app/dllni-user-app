@@ -23,7 +23,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Future<void> _refreshOrders(BuildContext context) async {
     final bloc = context.read<OrdersBloc>();
     bloc.add(FetchOrdersEvent(isReload: true));
-    await bloc.stream.firstWhere((state) => state.status != BlocStatus.loading);
+    await bloc.stream.firstWhere((state) {
+      final pagination = state.selectedTabIndex == 2 ? state.cleaningOrders : state.orders;
+      return pagination.status != BlocStatus.loading;
+    });
   }
 
   Future<void> _refreshCart(BuildContext context) async {
@@ -39,15 +42,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final threshold = _scrollController.position.maxScrollExtent - 200;
-    if (_scrollController.position.pixels >= threshold) {
-      context.read<OrdersBloc>().add(LoadMoreOrdersEvent());
-    }
   }
 
   @override

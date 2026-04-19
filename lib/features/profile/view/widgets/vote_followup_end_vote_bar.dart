@@ -5,12 +5,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../manager/bloc/profile_bloc.dart';
 
 class VoteFollowupEndVoteBar extends StatelessWidget {
-  const VoteFollowupEndVoteBar({super.key, required this.voteId});
+  const VoteFollowupEndVoteBar({
+    super.key,
+    required this.voteId,
+    this.canEndVote = true,
+  });
 
   final int voteId;
+  final bool canEndVote;
 
   @override
   Widget build(BuildContext context) {
+    if (!canEndVote) {
+      return const SizedBox.shrink();
+    }
     return SafeArea(
       top: false,
       child: Padding(

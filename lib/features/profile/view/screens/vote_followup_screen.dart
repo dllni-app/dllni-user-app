@@ -49,37 +49,16 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   Duration _remaining = _initialDuration;
   bool _isOptionsExpanded = true;
   bool _isVotersExpanded = true;
+  bool _canEndVote = true;
+  bool _pendingWinnerDialog = false;
+  int? _submittingOptionId;
 
   final PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
   String? _pusherVoteChannelName;
 
-  List<VoteFollowupOptionData> _options = const [
-    VoteFollowupOptionData(
-      name: 'بيتزا مارغريتا',
-      size: 'وسط',
-      price: '450 ل.س',
-      progress: 0.5,
-      votes: 4,
-    ),
-    VoteFollowupOptionData(
-      name: 'بيتزا مارغريتا',
-      size: 'وسط',
-      price: '450 ل.س',
-      progress: 0.5,
-      votes: 4,
-    ),
-  ];
+  List<VoteFollowupOptionData> _options = const <VoteFollowupOptionData>[];
 
-  List<String> _voters = const [
-    'خالد جمعاني',
-    'مصطفى فارس',
-    'أحمد البيطار',
-    'حسام تحسين بيك',
-    'فؤاد خيرات بيك',
-    'أحمد محمد',
-    'أبو مصطفى الحلبي',
-    'أحمد سنبل',
-  ];
+  List<String> _voters = const <String>[];
 
   @override
   void initState() {
@@ -104,13 +83,12 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
         authEndpoint: '${AppConfig.baseUrl}/broadcasting/auth',
         onAuthorizer: (channelName_, socketId, dynamic options) async {
           try {
+            final token = (SharedPreferencesHelper.getData(key: 'token') ?? '').toString();
             final res = await DioNetwork.dio.post<Map<String, dynamic>>(
               '/broadcasting/auth',
-              data: <String, dynamic>{
-                'channel_name': channelName_,
-                'socket_id': socketId,
-              },
+              data: <String, dynamic>{'channel_name': channelName_, 'socket_id': socketId},
               options: Options(
+                headers: <String, dynamic>{'Accept': 'application/json', if (token.isNotEmpty) 'Authorization': 'Bearer $token'},
                 contentType: Headers.formUrlEncodedContentType,
                 responseType: ResponseType.json,
               ),
@@ -119,10 +97,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
             if (body == null || body['auth'] == null) {
               throw StateError('Invalid broadcasting auth response');
             }
-            return <String, dynamic>{
-              'auth': body['auth'],
-              if (body['channel_data'] != null) 'channel_data': body['channel_data'],
-            };
+            return <String, dynamic>{'auth': body['auth'], if (body['channel_data'] != null) 'channel_data': body['channel_data']};
           } catch (e, st) {
             debugPrint('Vote Pusher auth error: $e\n$st');
             rethrow;
@@ -153,14 +128,16 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   void _refreshVoteFromPusher() {
     getIt<ShowVoteUseCase>()(ShowVoteParams(voteId: widget.params.voteId)).then((Either<Failure, ShowVoteModel> result) {
       if (!mounted) return;
-      result.fold(
-        (Failure f) => debugPrint('Vote Pusher refresh failed: ${f.message}'),
-        _hydrateFromVoteDetails,
-      );
+      result.fold((Failure f) => debugPrint('Vote Pusher refresh failed: ${f.message}'), _hydrateFromVoteDetails);
     });
   }
 
   void _startTimer() {
+    if (_remaining.inSeconds <= 0) {
+      _timer?.cancel();
+      _timer = null;
+      return;
+    }
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
@@ -180,18 +157,11 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
 
   void _hydrateFromCreatedData(VoteCreatedData? createdData) {
     if (createdData == null) return;
-    final seconds = createdData.vote?.secondsRemaining;
-    if (seconds != null && seconds > 0) {
-      _remaining = Duration(seconds: seconds);
-    }
-    if (createdData.options.isNotEmpty) {
-      _options = createdData.options.map(_mapVoteOption).toList();
-    }
+    _syncRemainingFromSeconds(createdData.vote?.secondsRemaining);
+    _canEndVote = createdData.vote?.isCreator ?? _canEndVote;
+    _options = createdData.options.map(_mapVoteOption).toList();
     if (createdData.voters.isNotEmpty) {
-      _voters = createdData.voters
-          .map((e) => e.name?.trim() ?? '')
-          .where((e) => e.isNotEmpty)
-          .toList();
+      _voters = createdData.voters.map((e) => e.name?.trim() ?? '').where((e) => e.isNotEmpty).toList();
     } else {
       _voters = const <String>[];
     }
@@ -201,6 +171,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     final percent = (option.percent ?? 0).clamp(0, 100).toDouble();
     final unitPrice = option.unitPrice;
     return VoteFollowupOptionData(
+      optionId: option.id,
       name: option.label ?? '-',
       size: 'افتراضي',
       price: unitPrice == null ? '-' : '$unitPrice \$',
@@ -213,22 +184,21 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     final rawData = voteDetails?.rawData;
     if (rawData == null) return;
 
-    Duration? nextRemaining;
-    final seconds = _toInt(rawData['secondsRemaining']);
-    if (seconds != null && seconds > 0) {
-      nextRemaining = Duration(seconds: seconds);
-    }
+    final voteMap = rawData['vote'] is Map
+        ? Map<String, dynamic>.from(rawData['vote'] as Map)
+        : rawData;
+    final seconds =
+        _toInt(voteMap['secondsRemaining']) ?? _toInt(rawData['secondsRemaining']);
+    final isCreator =
+        _toBool(voteMap['isCreator']) ?? _toBool(rawData['isCreator']);
 
     List<VoteFollowupOptionData>? nextOptions;
     if (rawData['options'] is List) {
-      final mapped = (rawData['options'] as List)
+      nextOptions = (rawData['options'] as List)
           .whereType<Map>()
           .map((e) => VoteOptionModel.fromJson(Map<String, dynamic>.from(e)))
           .map(_mapVoteOption)
           .toList();
-      if (mapped.isNotEmpty) {
-        nextOptions = mapped;
-      }
     }
 
     List<String>? nextVoters;
@@ -237,10 +207,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           .map((e) {
             if (e is Map) {
               final map = Map<String, dynamic>.from(e);
-              return _toStringValue(map['name']) ??
-                  _toStringValue(map['fullName']) ??
-                  _toStringValue(map['displayName']) ??
-                  '';
+              return _toStringValue(map['name']) ?? _toStringValue(map['fullName']) ?? _toStringValue(map['displayName']) ?? '';
             }
             return _toStringValue(e) ?? '';
           })
@@ -248,19 +215,23 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           .toList();
     }
 
-    if (nextRemaining == null && nextOptions == null && nextVoters == null) {
+    if (seconds == null &&
+        nextOptions == null &&
+        nextVoters == null &&
+        isCreator == null) {
       return;
     }
 
     setState(() {
-      if (nextRemaining != null) {
-        _remaining = nextRemaining;
-      }
+      _syncRemainingFromSeconds(seconds);
       if (nextOptions != null) {
         _options = nextOptions;
       }
       if (nextVoters != null) {
         _voters = nextVoters;
+      }
+      if (isCreator != null) {
+        _canEndVote = isCreator;
       }
     });
   }
@@ -275,6 +246,47 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   String? _toStringValue(dynamic value) {
     if (value == null) return null;
     return '$value';
+  }
+
+  bool? _toBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final normalized = '$value'.trim().toLowerCase();
+    if (normalized == 'true' || normalized == '1') {
+      return true;
+    }
+    if (normalized == 'false' || normalized == '0') {
+      return false;
+    }
+    return null;
+  }
+
+  void _syncRemainingFromSeconds(int? secondsRemaining) {
+    if (secondsRemaining == null) return;
+    final safeSeconds = secondsRemaining < 0 ? 0 : secondsRemaining;
+    _remaining = Duration(seconds: safeSeconds);
+    if (safeSeconds > 0) {
+      if (_timer == null || !_timer!.isActive) {
+        _startTimer();
+      }
+    } else {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+
+  void _submitBallot(int optionId) {
+    if (_submittingOptionId != null) return;
+    setState(() {
+      _submittingOptionId = optionId;
+    });
+    context.read<ProfileBloc>().add(
+          SubmitVoteBallotEvent(
+            voteId: widget.params.voteId,
+            optionId: optionId,
+          ),
+        );
   }
 
   @override
@@ -296,9 +308,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           winnerName: winnerLabel ?? 'بيتزا مارغريتا',
           onShowBestOfferTap: () {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')));
           },
         );
       },
@@ -326,21 +336,29 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       child: BlocListener<ProfileBloc, ProfileState>(
         listenWhen: (previous, current) =>
             previous.endVoteStatus != current.endVoteStatus ||
-            previous.voteDetailsStatus != current.voteDetailsStatus,
+            previous.voteDetailsStatus != current.voteDetailsStatus ||
+            previous.voteBallotStatus != current.voteBallotStatus,
         listener: (context, state) {
+          if (state.voteBallotStatus == BlocStatus.failed ||
+              state.voteBallotStatus == BlocStatus.success) {
+            setState(() {
+              _submittingOptionId = null;
+            });
+          }
           if (state.endVoteStatus == BlocStatus.success) {
-            _showWinnerDialog(state.voteDetails?.winnerLabel);
-            return;
+            _pendingWinnerDialog = true;
           }
           if (state.voteDetailsStatus == BlocStatus.success) {
             _hydrateFromVoteDetails(state.voteDetails);
+            if (_pendingWinnerDialog) {
+              _pendingWinnerDialog = false;
+              _showWinnerDialog(state.voteDetails?.winnerLabel);
+            }
           }
           if (state.errorMessage == null || state.errorMessage!.isEmpty) {
             return;
           }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         },
         child: Scaffold(
           backgroundColor: const Color(0xffF9FAFB),
@@ -351,12 +369,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                 const SizedBox(height: 20),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      16,
-                      0,
-                      16,
-                      24,
-                    ),
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
                     child: Column(
                       children: [
                         VoteFollowupTimerBanner(formattedTime: _formattedTime),
@@ -370,14 +383,35 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                               _isOptionsExpanded = !_isOptionsExpanded;
                             });
                           },
-                          child: Column(
-                            children: _options
-                                .map(
-                                  (option) =>
-                                      VoteFollowupOptionCard(option: option),
-                                )
-                                .toList()
-                                .separatedBy(const SizedBox(height: 14)),
+                          child: BlocBuilder<ProfileBloc, ProfileState>(
+                            buildWhen: (previous, current) =>
+                                previous.voteBallotStatus != current.voteBallotStatus,
+                            builder: (context, state) {
+                              final isSubmittingBallot =
+                                  state.voteBallotStatus == BlocStatus.loading;
+                              return Column(
+                                children: _options
+                                    .map(
+                                      (option) => VoteFollowupOptionCard(
+                                        option: option,
+                                        onTap: option.optionId == null ||
+                                                isSubmittingBallot
+                                            ? null
+                                            : () =>
+                                                _submitBallot(option.optionId!),
+                                        isSubmitting: isSubmittingBallot &&
+                                            _submittingOptionId ==
+                                                option.optionId,
+                                        isDisabled: option.optionId == null ||
+                                            (isSubmittingBallot &&
+                                                _submittingOptionId !=
+                                                    option.optionId),
+                                      ),
+                                    )
+                                    .toList()
+                                    .separatedBy(const SizedBox(height: 14)),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -396,7 +430,10 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                     ),
                   ),
                 ),
-                VoteFollowupEndVoteBar(voteId: widget.params.voteId),
+                VoteFollowupEndVoteBar(
+                  voteId: widget.params.voteId,
+                  canEndVote: _canEndVote,
+                ),
               ],
             ),
           ),

@@ -32,23 +32,19 @@ class _CategoriesBarState extends State<CategoriesBar> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
-            "ماذا تشتهي اليوم؟",
-            style: TextStyle(
-              color: Color(0xFF1A1A1A),
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              height: 24 / 16,
-            ),
+        Text(
+          "ماذا تشتهي اليوم؟",
+          style: TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            height: 24 / 16,
           ),
         ),
         SizedBox(height: 16),
         SizedBox(
           height: 80,
           child: ListView.separated(
-            padding: EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
             itemBuilder: (_, index) => _CategoryItem(
               isSelected: _selectedCategory == index,
@@ -60,16 +56,6 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 setState(() {});
               },
             ),
-            // [
-            //   _CategoryItem(imagePath: AppImages.chocolate, title: "شوكولا"),
-            //   _CategoryItem(imagePath: AppImages.vegetables, title: "حواضر"),
-            //   _CategoryItem(imagePath: AppImages.meats, title: "لحوم و دجاج"),
-            //   _CategoryItem(imagePath: AppImages.jam, title: "مربيات"),
-            //   _CategoryItem(imagePath: AppImages.juices, title: "عصائر"),
-            //   _CategoryItem(imagePath: AppImages.pastries, title: "معجنات"),
-            //   _CategoryItem(imagePath: AppImages.detergents, title: "منظفات"),
-            //   _CategoryItem(imagePath: AppImages.legumes, title: "بقوليات"),
-            // ][index],
             separatorBuilder: (_, _) => SizedBox(width: 16),
             itemCount: widget.categories.length,
           ),

@@ -1,14 +1,9 @@
 part of 'orders_bloc.dart';
 
 class OrdersState {
-  final BlocStatus? status;
-  final List<OrderResourceModel> orders;
-  final List<CleaningOrderModel> cleaningOrders;
+  final PaginationStateModel<OrderResourceModel> orders;
+  final PaginationStateModel<CleaningOrderModel> cleaningOrders;
   final int selectedTabIndex;
-  final int perPage;
-  final int currentPage;
-  final int lastPage;
-  final bool isLoadingMore;
   final String? errorMessage;
   final BlocStatus? restaurantCartStatus;
   final RestaurantCartDataModel? restaurantCart;
@@ -37,14 +32,9 @@ class OrdersState {
   final AddressListItem? selectedAddress;
 
   OrdersState({
-    this.status,
-    this.orders = const <OrderResourceModel>[],
-    this.cleaningOrders = const <CleaningOrderModel>[],
+    this.orders = const PaginationStateModel<OrderResourceModel>(perPage: 10),
+    this.cleaningOrders = const PaginationStateModel<CleaningOrderModel>(perPage: 10),
     this.selectedTabIndex = 0,
-    this.perPage = 10,
-    this.currentPage = 1,
-    this.lastPage = 1,
-    this.isLoadingMore = false,
     this.errorMessage,
     this.restaurantCartStatus,
     this.restaurantCart,
@@ -74,14 +64,9 @@ class OrdersState {
   });
 
   OrdersState copyWith({
-    BlocStatus? status,
-    List<OrderResourceModel>? orders,
-    List<CleaningOrderModel>? cleaningOrders,
+    PaginationStateModel<OrderResourceModel>? orders,
+    PaginationStateModel<CleaningOrderModel>? cleaningOrders,
     int? selectedTabIndex,
-    int? perPage,
-    int? currentPage,
-    int? lastPage,
-    bool? isLoadingMore,
     String? errorMessage,
     bool clearError = false,
     BlocStatus? restaurantCartStatus,
@@ -124,14 +109,9 @@ class OrdersState {
     bool replaceSelectedAddress = false,
   }) {
     return OrdersState(
-      status: status ?? this.status,
       orders: orders ?? this.orders,
       cleaningOrders: cleaningOrders ?? this.cleaningOrders,
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
-      perPage: perPage ?? this.perPage,
-      currentPage: currentPage ?? this.currentPage,
-      lastPage: lastPage ?? this.lastPage,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       restaurantCartStatus: restaurantCartStatus ?? this.restaurantCartStatus,
       restaurantCart: clearRestaurantCart ? null : (replaceRestaurantCart ? restaurantCart : (restaurantCart ?? this.restaurantCart)),

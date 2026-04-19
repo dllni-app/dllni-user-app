@@ -8,10 +8,17 @@ class EstimateCleaningPriceEvent extends ClMainEvent {
   EstimateCleaningPriceEvent({required this.params});
 }
 
-class GetPreviousCleaningWorkersEvent extends ClMainEvent {
+class GetPreviousCleaningWorkersEvent extends ClMainEvent with EventWithReload {
   final GetPreviousCleaningWorkersParams params;
+  final bool loadMore;
+  @override
+  final bool isReload;
 
-  GetPreviousCleaningWorkersEvent({required this.params});
+  GetPreviousCleaningWorkersEvent({
+    required this.params,
+    this.loadMore = false,
+    this.isReload = false,
+  });
 }
 
 class SetPreferredWorkerEvent extends ClMainEvent {

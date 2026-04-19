@@ -2,6 +2,8 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../core/widgets/rs_app_product_card.dart';
+import '../../../rs_discover/data/models/fetch_restaurant_products_search_model.dart';
 import '../../../rs_discover/view/models/product_preview_data.dart';
 import '../../../rs_discover/view/screens/rs_product_details_screen.dart';
 
@@ -13,73 +15,59 @@ class SuggestedProductsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: BlocBuilder<RsHomeBloc, RsHomeState>(
-        builder: (context, state) {
-          final status = state.restaurantSuggestedProductsStatus;
-          final list =
-              state.restaurantSuggestedProducts?.suggestedProducts ?? const [];
-          if (status == BlocStatus.loading ||
-              status == null ||
-              status == BlocStatus.init) {
-            return const SizedBox(
-              height: 140,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-          if (status == BlocStatus.failed) {
-            return const SizedBox.shrink();
-          }
-          if (list.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  AppText(
-                    "مقترح لك",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF273C8F),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  FaIcon(
-                    FontAwesomeIcons.wandMagicSparkles,
-                    size: 16,
-                    color: context.primaryContainer,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              AppText(
-                "اخترنا لك أفضل الأطباق بناءً على ذوقك",
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF6B7280),
-                  height: 22 / 15,
+    return BlocBuilder<RsHomeBloc, RsHomeState>(
+      builder: (context, state) {
+        final status = state.restaurantSuggestedProductsStatus;
+        final list = state.restaurantSuggestedProducts?.suggestedProducts ?? const [];
+        if (status == BlocStatus.loading || status == null || status == BlocStatus.init) {
+          return const SizedBox(height: 140, child: Center(child: CircularProgressIndicator()));
+        }
+        if (status == BlocStatus.failed) {
+          return const SizedBox.shrink();
+        }
+        if (list.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                AppText(
+                  "مقترح لك",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF273C8F)),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 240,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: list.length,
-                  itemBuilder: (_, index) =>
-                      _SuggestedProductCard(item: list[index]),
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.wandMagicSparkles, size: 16, color: context.primaryContainer),
+              ],
+            ),
+            const SizedBox(height: 6),
+            AppText(
+              "اخترنا لك أفضل الأطباق بناءً على ذوقك",
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: Color(0xFF6B7280), height: 22 / 15),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 270,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: list.length,
+                itemBuilder: (_, index) => RsAppProductCard(
+                  onTap: () {},
+                  productId: state.restaurantSuggestedProducts!.suggestedProducts![index].productId!,
+                  title: state.restaurantSuggestedProducts!.suggestedProducts![index].name!,
+                  image: state.restaurantSuggestedProducts!.suggestedProducts![index].primaryImageUrl!,
+                  offer: null,
+                  price:
+                      '${state.restaurantSuggestedProducts!.suggestedProducts![index].displayPrice} ${state.restaurantSuggestedProducts!.suggestedProducts![index].currency}',
+                  restaurant: state.restaurantSuggestedProducts!.suggestedProducts![index].restaurantName ?? 'restaurant',
                 ),
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -100,12 +88,7 @@ class _SuggestedProductCard extends StatelessWidget {
       onTap: productId == null
           ? null
           : () {
-              context.pushRoute(
-                '/rs_product',
-                arguments: ProductDetailsScreenParams(
-                  product: ProductPreviewData.fromSuggestedItem(item),
-                ),
-              );
+              context.pushRoute('/rs_product', arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromSuggestedItem(item)));
             },
       child: Container(
         width: 260,
@@ -120,21 +103,12 @@ class _SuggestedProductCard extends StatelessWidget {
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(24),
-                    ),
-                    child:
-                        item.primaryImageUrl == null ||
-                            item.primaryImageUrl!.isEmpty
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    child: item.primaryImageUrl == null || item.primaryImageUrl!.isEmpty
                         ? Container(
                             width: double.infinity,
                             color: const Color(0xFFF5F5F5),
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_outlined,
-                                color: Color(0xFF9CA3AF),
-                              ),
-                            ),
+                            child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
                           )
                         : AppImage.network(
                             item.primaryImageUrl!,
@@ -143,12 +117,7 @@ class _SuggestedProductCard extends StatelessWidget {
                             errorWidget: Container(
                               width: double.infinity,
                               color: const Color(0xFFF5F5F5),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.image_outlined,
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                              ),
+                              child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
                             ),
                           ),
                   ),
@@ -156,32 +125,17 @@ class _SuggestedProductCard extends StatelessWidget {
                     top: 12,
                     end: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(12))),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             (item.rating ?? 0).toStringAsFixed(1),
-                            style: const TextStyle(
-                              color: Color(0xFF273C8F),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              height: 20 / 14,
-                            ),
+                            style: const TextStyle(color: Color(0xFF273C8F), fontSize: 14, fontWeight: FontWeight.w700, height: 20 / 14),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(
-                            Icons.star,
-                            color: Color(0xFFFBBC05),
-                            size: 18,
-                          ),
+                          const Icon(Icons.star, color: Color(0xFFFBBC05), size: 18),
                         ],
                       ),
                     ),
@@ -203,23 +157,13 @@ class _SuggestedProductCard extends StatelessWidget {
                             item.name ?? '-',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF1A1A1A),
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              height: 28 / 20,
-                            ),
+                            style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.w700, height: 28 / 20),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           _priceText(item.displayPrice, item.currency),
-                          style: const TextStyle(
-                            color: Color(0xFF273C8F),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            height: 26 / 18,
-                          ),
+                          style: const TextStyle(color: Color(0xFF273C8F), fontSize: 18, fontWeight: FontWeight.w700, height: 26 / 18),
                         ),
                       ],
                     ),
@@ -230,12 +174,7 @@ class _SuggestedProductCard extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        height: 20 / 14,
-                      ),
+                      style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
                     ),
                   ],
                   if (tags.isNotEmpty) ...[
@@ -247,22 +186,11 @@ class _SuggestedProductCard extends StatelessWidget {
                           .where((tag) => tag.trim().isNotEmpty)
                           .map(
                             (tag) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(999)),
                               child: Text(
                                 tag,
-                                style: const TextStyle(
-                                  color: Color(0xFF6B7280),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  height: 16 / 12,
-                                ),
+                                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500, height: 16 / 12),
                               ),
                             ),
                           )
@@ -281,9 +209,7 @@ class _SuggestedProductCard extends StatelessWidget {
 
 String _priceText(num? price, String? currency) {
   if (price == null) return '-';
-  final cleanedPrice = price % 1 == 0
-      ? price.toInt().toString()
-      : price.toString();
+  final cleanedPrice = price % 1 == 0 ? price.toInt().toString() : price.toString();
   final cleanedCurrency = (currency ?? '').trim();
   if (cleanedCurrency.isEmpty) return cleanedPrice;
   return '$cleanedPrice $cleanedCurrency';

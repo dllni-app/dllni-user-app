@@ -25,18 +25,12 @@ class SmDiscoverBloc extends Bloc<SmDiscoverEvent, SmDiscoverState> {
     this.changeStoreFavoriteUseCase,
     this.changeProductFavoriteUseCase,)
     : super(SmDiscoverState()) {
-    on<BrowseStoresEvent>(_browseStores, transformer: droppableProMax());
+    on<BrowseStoresEvent>(_browseStores, transformer: paginationEventTransformer());
 
-    on<BrowseProductsEvent>(_browseProducts, transformer: droppableProMax());
+    on<BrowseProductsEvent>(_browseProducts, transformer: paginationEventTransformer());
   
     on<ChangeStoreFavoriteEvent>(_changeStoreFavorite);
     on<ChangeProductFavoriteEvent>(_changeProductFavorite);}
-
-  EventTransformer<T> droppableProMax<T extends EventWithReload>() {
-    return (events, mapper) {
-      return events.transform(ExhaustMapStreamTransformer(mapper));
-    };
-  }
 
   FutureOr<void> _browseStores(
     BrowseStoresEvent event,

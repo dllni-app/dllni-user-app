@@ -18,11 +18,12 @@ class GetPreviousCleaningWorkersUseCase implements UseCase<PreviousWorkersRespon
 
 class GetPreviousCleaningWorkersParams with Params {
   final int page;
+  final int perPage;
 
-  GetPreviousCleaningWorkersParams({this.page = 1});
+  GetPreviousCleaningWorkersParams({this.page = 1, this.perPage = 10});
 
   @override
   QueryParams getParams() {
-    return {'page': page};
+    return {'page': page, 'per_page': perPage};
   }
 }

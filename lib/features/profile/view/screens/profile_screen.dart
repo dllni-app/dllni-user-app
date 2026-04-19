@@ -91,32 +91,6 @@ class ProfileScreen extends StatelessWidget {
                           child: Divider(color: context.surface, thickness: .5),
                         ),
                         SectionCard(
-                          containerColor: Color(0xff14B8A6).withAlpha(25),
-                          image: Icon(Icons.casino_outlined, size: 18, color: Color(0xff14B8A6)),
-                          title: 'صندوق الحظ',
-                          subtitle: 'خصص البحث واحصل على اقتراحات جاهزة',
-                          onTap: () {
-                            context.pushRoute('/luckyboxsetup');
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(vertical: 16),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
-                          containerColor: Color(0xffFF7A00).withAlpha(25),
-                          image: Icon(Icons.poll_outlined, size: 18, color: Color(0xffFF7A00)),
-                          title: 'التصويت على الطلب',
-                          subtitle: 'أنشئ تصويتاً وشارك الاختيار',
-                          onTap: () {
-                            context.pushRoute('/ordervoting');
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(vertical: 16),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
                           containerColor: Color(0xFF22C55E).withAlpha(35),
                           image: FaIcon(FontAwesomeIcons.basketShopping, size: 16, color: Color(0xFF22C55E)),
                           title: 'قائمة التسوق',
@@ -146,9 +120,7 @@ class ProfileScreen extends StatelessWidget {
                           image: Icon(Icons.headphones, size: 18, color: Color(0xff6366F1)),
                           title: 'الدعم والمساعدة',
                           subtitle: 'التواصل مع الدعم الفني',
-                          onTap: () {
-                            context.pushRoute('/offersmanagement');
-                          },
+                          onTap: () {},
                         ),
                       ],
                     ),

@@ -1,6 +1,5 @@
 import 'package:injectable/injectable.dart';
 import 'package:common_package/common_package.dart';
-import 'package:common_package/helpers/typedef.dart';
 
 import '../../domain/usecases/fetch_addresses_use_case.dart';
 import '../../domain/usecases/fetch_favorite_restaurants_use_case.dart';
@@ -9,6 +8,7 @@ import '../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../domain/usecases/create_vote_use_case.dart';
 import '../../domain/usecases/create_address_use_case.dart';
 import '../../domain/usecases/show_vote_use_case.dart';
+import '../../domain/usecases/submit_vote_ballot_use_case.dart';
 import '../../domain/usecases/end_vote_use_case.dart';
 import '../../domain/usecases/fetch_active_votes_use_case.dart';
 import '../../domain/usecases/add_favorite_restaurant_use_case.dart';
@@ -18,8 +18,21 @@ import '../../domain/usecases/update_address_use_case.dart';
 import '../../domain/usecases/delete_address_use_case.dart';
 import '../../domain/usecases/update_account_use_case.dart';
 import '../../domain/usecases/update_account_password_use_case.dart';
+import '../../domain/usecases/create_group_order_use_case.dart';
+import '../../domain/usecases/join_group_order_use_case.dart';
+import '../../domain/usecases/fetch_active_group_orders_use_case.dart';
+import '../../domain/usecases/fetch_group_order_menu_sections_use_case.dart';
+import '../../domain/usecases/show_group_order_use_case.dart';
+import '../../domain/usecases/add_group_order_item_use_case.dart';
+import '../../domain/usecases/update_group_order_item_use_case.dart';
+import '../../domain/usecases/delete_group_order_item_use_case.dart';
+import '../../domain/usecases/submit_group_order_use_case.dart';
+import '../../domain/usecases/unsubmit_group_order_use_case.dart';
+import '../../domain/usecases/cancel_group_order_use_case.dart';
+import '../../domain/usecases/place_group_order_use_case.dart';
 import '../models/luck_box_api_models.dart';
 import '../models/profile_api_models.dart';
+import '../models/group_order_api_models.dart';
 import '../models/get_shopping_list_model.dart';
 import '../../domain/usecases/get_shopping_list_use_case.dart';
 import '../models/add_shopping_list_to_cart_model.dart';
@@ -192,6 +205,16 @@ class ProfileRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<ActionResultModel> submitVoteBallot(SubmitVoteBallotParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/votes/${params.voteId}/ballots',
+        data: params.getBody().isEmpty ? {} : params.getBody(),
+      ),
+      jsonConvert: actionResultModelFromJson,
+    );
+  }
+
   Future<FetchActiveVotesModel> fetchActiveVotes(
     FetchActiveVotesParams params,
   ) {
@@ -261,4 +284,135 @@ class ProfileRemoteDataSource with HandlingApiManager {
       tryCall: () => dioNetwork.postData(endPoint: '/api/v1/user/supermarket/shopping-lists/{{smShoppingListId}}/add-to-cart', data: params.getBody(), params: params.getParams()),
       jsonConvert: addShoppingListToCartModelFromJson,
     );
-  }}
+  }
+
+  Future<GroupOrderActionModel> createGroupOrder(CreateGroupOrderParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/group-orders',
+        data: params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> joinGroupOrder(JoinGroupOrderParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/group-orders/join',
+        data: params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActiveListModel> fetchActiveGroupOrders(
+    FetchActiveGroupOrdersParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/restaurants/group-orders/active',
+        params: params.getParams(),
+        data: params.getBody().isEmpty ? null : params.getBody(),
+      ),
+      jsonConvert: groupOrderActiveListModelFromJson,
+    );
+  }
+
+  Future<GroupOrderDetailsModel> showGroupOrder(ShowGroupOrderParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}',
+      ),
+      jsonConvert: groupOrderDetailsModelFromJson,
+    );
+  }
+
+  Future<GroupOrderMenuSectionsResponseModel> fetchGroupOrderMenuSections(
+    FetchGroupOrderMenuSectionsParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint:
+            '/api/v1/user/restaurants/${params.restaurantId}/menu-sections',
+        params: params.getParams(),
+      ),
+      jsonConvert: groupOrderMenuSectionsResponseModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> addGroupOrderItem(AddGroupOrderItemParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}/items',
+        data: params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> updateGroupOrderItem(
+    UpdateGroupOrderItemParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.patchData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}/items/${params.itemId}',
+        data: params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> deleteGroupOrderItem(
+    DeleteGroupOrderItemParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.deleteData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}/items/${params.itemId}',
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> submitGroupOrder(SubmitGroupOrderParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}/submit',
+        data: params.getBody().isEmpty ? {} : params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> unsubmitGroupOrder(
+    UnsubmitGroupOrderParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}/unsubmit',
+        data: params.getBody().isEmpty ? {} : params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> cancelGroupOrder(CancelGroupOrderParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}/cancel',
+        data: params.getBody().isEmpty ? {} : params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+
+  Future<GroupOrderActionModel> placeGroupOrder(PlaceGroupOrderParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/restaurants/group-orders/${params.groupOrderId}/place',
+        data: params.getBody().isEmpty ? {} : params.getBody(),
+      ),
+      jsonConvert: groupOrderActionModelFromJson,
+    );
+  }
+}
