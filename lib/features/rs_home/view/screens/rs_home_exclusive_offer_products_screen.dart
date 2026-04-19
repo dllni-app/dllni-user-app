@@ -7,7 +7,11 @@ import '../../../rs_offers/view/widget/rs_offers_product_card_widget.dart';
 import '../../data/models/fetch_restaurant_home_exclusive_offers_model.dart';
 
 class RsHomeExclusiveOfferProductsScreen extends StatelessWidget {
-  const RsHomeExclusiveOfferProductsScreen({super.key, required this.title, required this.products});
+  const RsHomeExclusiveOfferProductsScreen({
+    super.key,
+    required this.title,
+    required this.products,
+  });
 
   final String title;
   final List<RestaurantHomeExclusiveOfferProduct> products;
@@ -25,13 +29,21 @@ class RsHomeExclusiveOfferProductsScreen extends StatelessWidget {
           Expanded(
             child: mappedProducts.isEmpty
                 ? const RsOffersEmptyWidget()
-                : ListView.separated(
+                : GridView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                     itemCount: mappedProducts.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.65,
+                        ),
                     itemBuilder: (context, index) {
-                      return RsOffersProductCardWidget(product: mappedProducts[index]);
+                      return RsOffersProductCardWidget(
+                        product: mappedProducts[index],
+                      );
                     },
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                   ),
           ),
         ],
@@ -40,7 +52,9 @@ class RsHomeExclusiveOfferProductsScreen extends StatelessWidget {
   }
 }
 
-FetchRsOffersProductsModelDataItem _mapProduct(RestaurantHomeExclusiveOfferProduct product) {
+FetchRsOffersProductsModelDataItem _mapProduct(
+  RestaurantHomeExclusiveOfferProduct product,
+) {
   return FetchRsOffersProductsModelDataItem(
     id: product.id,
     name: product.name,

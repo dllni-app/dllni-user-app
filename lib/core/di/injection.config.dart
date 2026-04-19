@@ -92,23 +92,33 @@ import '../../features/profile/domain/services/user_location_service.dart'
     as _i426;
 import '../../features/profile/domain/usecases/add_favorite_restaurant_use_case.dart'
     as _i761;
+import '../../features/profile/domain/usecases/add_group_order_item_use_case.dart'
+    as _i1062;
 import '../../features/profile/domain/usecases/add_shopping_list_item_use_case.dart'
     as _i906;
 import '../../features/profile/domain/usecases/add_shopping_list_to_cart_use_case.dart'
     as _i992;
+import '../../features/profile/domain/usecases/cancel_group_order_use_case.dart'
+    as _i592;
 import '../../features/profile/domain/usecases/create_address_use_case.dart'
     as _i687;
+import '../../features/profile/domain/usecases/create_group_order_use_case.dart'
+    as _i77;
 import '../../features/profile/domain/usecases/create_shopping_list_use_case.dart'
     as _i614;
 import '../../features/profile/domain/usecases/create_vote_use_case.dart'
     as _i679;
 import '../../features/profile/domain/usecases/delete_address_use_case.dart'
     as _i39;
+import '../../features/profile/domain/usecases/delete_group_order_item_use_case.dart'
+    as _i617;
 import '../../features/profile/domain/usecases/delete_shopping_list_item_use_case.dart'
     as _i12;
 import '../../features/profile/domain/usecases/delete_shopping_list_use_case.dart'
     as _i98;
 import '../../features/profile/domain/usecases/end_vote_use_case.dart' as _i875;
+import '../../features/profile/domain/usecases/fetch_active_group_orders_use_case.dart'
+    as _i194;
 import '../../features/profile/domain/usecases/fetch_active_votes_use_case.dart'
     as _i808;
 import '../../features/profile/domain/usecases/fetch_addresses_use_case.dart'
@@ -117,6 +127,8 @@ import '../../features/profile/domain/usecases/fetch_coupons_use_case.dart'
     as _i879;
 import '../../features/profile/domain/usecases/fetch_favorite_restaurants_use_case.dart'
     as _i319;
+import '../../features/profile/domain/usecases/fetch_group_order_menu_sections_use_case.dart'
+    as _i666;
 import '../../features/profile/domain/usecases/fetch_luck_box_options_use_case.dart'
     as _i866;
 import '../../features/profile/domain/usecases/fetch_notifications_use_case.dart'
@@ -129,22 +141,36 @@ import '../../features/profile/domain/usecases/fetch_vote_suggestions_use_case.d
     as _i381;
 import '../../features/profile/domain/usecases/get_shopping_list_use_case.dart'
     as _i877;
+import '../../features/profile/domain/usecases/join_group_order_use_case.dart'
+    as _i461;
 import '../../features/profile/domain/usecases/mark_all_notifications_read_use_case.dart'
     as _i10;
+import '../../features/profile/domain/usecases/place_group_order_use_case.dart'
+    as _i342;
 import '../../features/profile/domain/usecases/remove_favorite_restaurant_use_case.dart'
     as _i999;
 import '../../features/profile/domain/usecases/set_default_address_use_case.dart'
     as _i262;
+import '../../features/profile/domain/usecases/show_group_order_use_case.dart'
+    as _i662;
 import '../../features/profile/domain/usecases/show_vote_use_case.dart'
     as _i320;
+import '../../features/profile/domain/usecases/submit_group_order_use_case.dart'
+    as _i467;
+import '../../features/profile/domain/usecases/submit_vote_ballot_use_case.dart'
+    as _i529;
 import '../../features/profile/domain/usecases/suggest_luck_box_use_case.dart'
     as _i89;
+import '../../features/profile/domain/usecases/unsubmit_group_order_use_case.dart'
+    as _i567;
 import '../../features/profile/domain/usecases/update_account_password_use_case.dart'
     as _i591;
 import '../../features/profile/domain/usecases/update_account_use_case.dart'
     as _i178;
 import '../../features/profile/domain/usecases/update_address_use_case.dart'
     as _i983;
+import '../../features/profile/domain/usecases/update_group_order_item_use_case.dart'
+    as _i1008;
 import '../../features/profile/domain/usecases/update_shopping_list_item_use_case.dart'
     as _i170;
 import '../../features/profile/domain/usecases/update_shopping_list_use_case.dart'
@@ -771,8 +797,17 @@ _i174.GetIt $initGetIt(
       profileRepo: gh<_i275.ProfileRepo>(),
     ),
   );
+  gh.lazySingleton<_i1062.AddGroupOrderItemUseCase>(
+    () => _i1062.AddGroupOrderItemUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i592.CancelGroupOrderUseCase>(
+    () => _i592.CancelGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i687.CreateAddressUseCase>(
     () => _i687.CreateAddressUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i77.CreateGroupOrderUseCase>(
+    () => _i77.CreateGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
   gh.lazySingleton<_i679.CreateVoteUseCase>(
     () => _i679.CreateVoteUseCase(profileRepo: gh<_i275.ProfileRepo>()),
@@ -780,8 +815,17 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i39.DeleteAddressUseCase>(
     () => _i39.DeleteAddressUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
+  gh.lazySingleton<_i617.DeleteGroupOrderItemUseCase>(
+    () =>
+        _i617.DeleteGroupOrderItemUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i875.EndVoteUseCase>(
     () => _i875.EndVoteUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i194.FetchActiveGroupOrdersUseCase>(
+    () => _i194.FetchActiveGroupOrdersUseCase(
+      profileRepo: gh<_i275.ProfileRepo>(),
+    ),
   );
   gh.lazySingleton<_i808.FetchActiveVotesUseCase>(
     () => _i808.FetchActiveVotesUseCase(profileRepo: gh<_i275.ProfileRepo>()),
@@ -797,6 +841,11 @@ _i174.GetIt $initGetIt(
       profileRepo: gh<_i275.ProfileRepo>(),
     ),
   );
+  gh.lazySingleton<_i666.FetchGroupOrderMenuSectionsUseCase>(
+    () => _i666.FetchGroupOrderMenuSectionsUseCase(
+      profileRepo: gh<_i275.ProfileRepo>(),
+    ),
+  );
   gh.lazySingleton<_i866.FetchLuckBoxOptionsUseCase>(
     () =>
         _i866.FetchLuckBoxOptionsUseCase(profileRepo: gh<_i275.ProfileRepo>()),
@@ -808,21 +857,39 @@ _i174.GetIt $initGetIt(
     () =>
         _i381.FetchVoteSuggestionsUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
+  gh.lazySingleton<_i461.JoinGroupOrderUseCase>(
+    () => _i461.JoinGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i10.MarkAllNotificationsReadUseCase>(
     () => _i10.MarkAllNotificationsReadUseCase(
       profileRepo: gh<_i275.ProfileRepo>(),
     ),
+  );
+  gh.lazySingleton<_i342.PlaceGroupOrderUseCase>(
+    () => _i342.PlaceGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
   gh.lazySingleton<_i999.RemoveFavoriteRestaurantUseCase>(
     () => _i999.RemoveFavoriteRestaurantUseCase(
       profileRepo: gh<_i275.ProfileRepo>(),
     ),
   );
+  gh.lazySingleton<_i662.ShowGroupOrderUseCase>(
+    () => _i662.ShowGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i320.ShowVoteUseCase>(
     () => _i320.ShowVoteUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
+  gh.lazySingleton<_i467.SubmitGroupOrderUseCase>(
+    () => _i467.SubmitGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i529.SubmitVoteBallotUseCase>(
+    () => _i529.SubmitVoteBallotUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i89.SuggestLuckBoxUseCase>(
     () => _i89.SuggestLuckBoxUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
+  gh.lazySingleton<_i567.UnsubmitGroupOrderUseCase>(
+    () => _i567.UnsubmitGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
   gh.lazySingleton<_i591.UpdateAccountPasswordUseCase>(
     () => _i591.UpdateAccountPasswordUseCase(
@@ -835,6 +902,11 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i983.UpdateAddressUseCase>(
     () => _i983.UpdateAddressUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
+  gh.lazySingleton<_i1008.UpdateGroupOrderItemUseCase>(
+    () => _i1008.UpdateGroupOrderItemUseCase(
+      profileRepo: gh<_i275.ProfileRepo>(),
+    ),
+  );
   gh.factory<_i883.SmStoresBloc>(
     () => _i883.SmStoresBloc(
       gh<_i151.GetSupermarketStoreDetailsUseCase>(),
@@ -842,6 +914,20 @@ _i174.GetIt $initGetIt(
       gh<_i802.GetCompareProductsUseCase>(),
       gh<_i431.AddSupermarketCartItemUseCase>(),
       gh<_i524.FetchShoppingListsUseCase>(),
+    ),
+  );
+  gh.factory<_i1049.RestaurantOrderCheckoutCubit>(
+    () => _i1049.RestaurantOrderCheckoutCubit(
+      gh<_i438.FetchOrderDetailsUseCase>(),
+      gh<_i925.UpdateCartItemQuantityUseCase>(),
+      gh<_i242.DeleteCartItemUseCase>(),
+      gh<_i576.CheckRestaurantCouponUseCase>(),
+    ),
+  );
+  gh.factory<_i589.RsDiscoverBloc>(
+    () => _i589.RsDiscoverBloc(
+      gh<_i303.FetchDiscoverRestaurantsUseCase>(),
+      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
     ),
   );
   gh.factory<_i821.ProfileBloc>(
@@ -858,29 +944,22 @@ _i174.GetIt $initGetIt(
       gh<_i983.UpdateAddressUseCase>(),
       gh<_i39.DeleteAddressUseCase>(),
       gh<_i320.ShowVoteUseCase>(),
+      gh<_i529.SubmitVoteBallotUseCase>(),
       gh<_i875.EndVoteUseCase>(),
       gh<_i808.FetchActiveVotesUseCase>(),
-      gh<_i877.GetShoppingListUseCase>(),
-      gh<_i614.CreateShoppingListUseCase>(),
-      gh<_i901.UpdateShoppingListUseCase>(),
-      gh<_i11.FetchShoppingListDetailUseCase>(),
-      gh<_i170.UpdateShoppingListItemUseCase>(),
-      gh<_i12.DeleteShoppingListItemUseCase>(),
-      gh<_i992.AddShoppingListToCartUseCase>(),
-    ),
-  );
-  gh.factory<_i1049.RestaurantOrderCheckoutCubit>(
-    () => _i1049.RestaurantOrderCheckoutCubit(
-      gh<_i438.FetchOrderDetailsUseCase>(),
-      gh<_i925.UpdateCartItemQuantityUseCase>(),
-      gh<_i242.DeleteCartItemUseCase>(),
-      gh<_i576.CheckRestaurantCouponUseCase>(),
-    ),
-  );
-  gh.factory<_i589.RsDiscoverBloc>(
-    () => _i589.RsDiscoverBloc(
       gh<_i303.FetchDiscoverRestaurantsUseCase>(),
-      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
+      gh<_i666.FetchGroupOrderMenuSectionsUseCase>(),
+      gh<_i77.CreateGroupOrderUseCase>(),
+      gh<_i461.JoinGroupOrderUseCase>(),
+      gh<_i194.FetchActiveGroupOrdersUseCase>(),
+      gh<_i662.ShowGroupOrderUseCase>(),
+      gh<_i1062.AddGroupOrderItemUseCase>(),
+      gh<_i1008.UpdateGroupOrderItemUseCase>(),
+      gh<_i617.DeleteGroupOrderItemUseCase>(),
+      gh<_i467.SubmitGroupOrderUseCase>(),
+      gh<_i567.UnsubmitGroupOrderUseCase>(),
+      gh<_i592.CancelGroupOrderUseCase>(),
+      gh<_i342.PlaceGroupOrderUseCase>(),
     ),
   );
   gh.factory<_i362.ClMainBloc>(

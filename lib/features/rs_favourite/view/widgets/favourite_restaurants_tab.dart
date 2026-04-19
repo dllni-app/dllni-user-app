@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'favourite_empty_state.dart';
-import 'favourite_restaurant_card_shimmer.dart';
 
 class FavouriteRestaurantsTab extends StatelessWidget {
   const FavouriteRestaurantsTab({super.key});
@@ -30,7 +29,12 @@ class FavouriteRestaurantsTab extends StatelessWidget {
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () {
-                      context.read<RsFavouriteBloc>().add(FetchRsFavouritesEvent(params: FetchRsFavouritesParams(page: 1), isReload: true));
+                      context.read<RsFavouriteBloc>().add(
+                        FetchRsFavouritesEvent(
+                          params: FetchRsFavouritesParams(page: 1),
+                          isReload: true,
+                        ),
+                      );
                     },
                     child: AppText('إعادة المحاولة'),
                   ),
@@ -40,12 +44,7 @@ class FavouriteRestaurantsTab extends StatelessWidget {
           );
         }
         if (pagination.isLoading && pagination.list.isEmpty) {
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: 6,
-            separatorBuilder: (_, _) => const SizedBox(height: 16),
-            itemBuilder: (_, _) => const FavouriteRestaurantCardShimmer(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (pagination.isEmpty) {
@@ -53,26 +52,42 @@ class FavouriteRestaurantsTab extends StatelessWidget {
             color: context.primary,
             backgroundColor: context.onPrimary,
             onRefresh: () async {
-              context.read<RsFavouriteBloc>().add(FetchRsFavouritesEvent(params: FetchRsFavouritesParams(page: 1), isReload: true));
+              context.read<RsFavouriteBloc>().add(
+                FetchRsFavouritesEvent(
+                  params: FetchRsFavouritesParams(page: 1),
+                  isReload: true,
+                ),
+              );
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: const [
                 SizedBox(height: 120),
-                FavouriteEmptyState(title: 'لا توجد مطاعم مفضلة حالياً', subtitle: 'أضف مطاعمك المفضلة لتظهر هنا.'),
+                FavouriteEmptyState(
+                  title: 'لا توجد مطاعم مفضلة حالياً',
+                  subtitle: 'أضف مطاعمك المفضلة لتظهر هنا.',
+                ),
               ],
             ),
           );
         }
 
-        final showFooter = !pagination.isEndPage && pagination.status == BlocStatus.loading && pagination.list.isNotEmpty;
+        final showFooter =
+            !pagination.isEndPage &&
+            pagination.status == BlocStatus.loading &&
+            pagination.list.isNotEmpty;
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) {
             if (notification is ScrollUpdateNotification) {
               final metrics = notification.metrics;
               if (metrics.pixels >= metrics.maxScrollExtent - 240) {
-                context.read<RsFavouriteBloc>().add(FetchRsFavouritesEvent(params: FetchRsFavouritesParams(page: 1), loadMore: true));
+                context.read<RsFavouriteBloc>().add(
+                  FetchRsFavouritesEvent(
+                    params: FetchRsFavouritesParams(page: 1),
+                    loadMore: true,
+                  ),
+                );
               }
             }
             return false;
@@ -81,32 +96,60 @@ class FavouriteRestaurantsTab extends StatelessWidget {
             color: context.primary,
             backgroundColor: context.onPrimary,
             onRefresh: () async {
-              context.read<RsFavouriteBloc>().add(FetchRsFavouritesEvent(params: FetchRsFavouritesParams(page: 1), isReload: true));
+              context.read<RsFavouriteBloc>().add(
+                FetchRsFavouritesEvent(
+                  params: FetchRsFavouritesParams(page: 1),
+                  isReload: true,
+                ),
+              );
             },
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              itemCount: pagination.list.length + (showFooter ? 1 : 0),
-              separatorBuilder: (_, _) => const SizedBox(height: 16),
-              itemBuilder: (_, index) {
-                if (index >= pagination.list.length) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
-                  );
-                }
-                final store = _mapFavouriteRestaurantToHomeCard(pagination.list[index]);
-                return StoreCard(
-                  store: store,
-                  onFavouriteChanged: (isFavorited) {
-                    if (isFavorited) return;
-                    final restaurantId = store.id;
-                    if (restaurantId == null || restaurantId <= 0) return;
-                    context.read<RsFavouriteBloc>().add(
-                      RemoveFavouriteRestaurantEvent(restaurantId: restaurantId),
-                    );
-                  },
-                );
-              },
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.8,
+                        ),
+                    delegate: SliverChildBuilderDelegate((_, index) {
+                      final store = _mapFavouriteRestaurantToHomeCard(
+                        pagination.list[index],
+                      );
+                      return StoreCard(
+                        expandToFit: true,
+                        store: store,
+                        onFavouriteChanged: (isFavorited) {
+                          if (isFavorited) return;
+                          final restaurantId = store.id;
+                          if (restaurantId == null || restaurantId <= 0) return;
+                          context.read<RsFavouriteBloc>().add(
+                            RemoveFavouriteRestaurantEvent(
+                              restaurantId: restaurantId,
+                            ),
+                          );
+                        },
+                      );
+                    }, childCount: pagination.list.length),
+                  ),
+                ),
+                if (showFooter)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         );
@@ -115,11 +158,18 @@ class FavouriteRestaurantsTab extends StatelessWidget {
   }
 }
 
-RestaurantHomeNearestRestaurantItem _mapFavouriteRestaurantToHomeCard(FetchRsFavouritesModelDataItem item) {
-  final cuisineNames = item.cuisineTypes?.map((c) => (c.name ?? '').trim()).where((name) => name.isNotEmpty).toList();
+RestaurantHomeNearestRestaurantItem _mapFavouriteRestaurantToHomeCard(
+  FetchRsFavouritesModelDataItem item,
+) {
+  final cuisineNames = item.cuisineTypes
+      ?.map((c) => (c.name ?? '').trim())
+      .where((name) => name.isNotEmpty)
+      .toList();
 
   final estimatedMax = item.estimatedPreparationTime;
-  final int? estimatedMin = estimatedMax == null ? null : (estimatedMax - 10).clamp(1, estimatedMax).toInt();
+  final int? estimatedMin = estimatedMax == null
+      ? null
+      : (estimatedMax - 10).clamp(1, estimatedMax).toInt();
 
   return RestaurantHomeNearestRestaurantItem(
     id: item.id,

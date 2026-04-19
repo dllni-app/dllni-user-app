@@ -1,51 +1,58 @@
-import 'dart:async';
-
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
+import 'package:common_package/common_package.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../data/models/add_shopping_list_to_cart_model.dart';
 import '../../../data/models/fetch_notifications_model.dart';
 import '../../../data/models/get_shopping_list_model.dart';
 import '../../../data/models/profile_api_models.dart';
+import '../../../data/models/group_order_api_models.dart';
 import '../../../data/models/shopping_lists_api_models.dart';
+import '../../../../rs_discover/data/models/fetch_discover_restaurants_model.dart';
 import '../../../domain/models/address_list_item.dart';
 import '../../../domain/usecases/add_shopping_list_to_cart_use_case.dart';
-import '../../../domain/usecases/create_address_use_case.dart';
+import '../../../domain/usecases/add_group_order_item_use_case.dart';
+import '../../../domain/usecases/cancel_group_order_use_case.dart';
+import '../../../domain/usecases/create_group_order_use_case.dart';
 import '../../../domain/usecases/create_shopping_list_use_case.dart';
 import '../../../domain/usecases/create_vote_use_case.dart';
+import '../../../domain/usecases/create_address_use_case.dart';
+import '../../../domain/usecases/delete_group_order_item_use_case.dart';
 import '../../../domain/usecases/delete_address_use_case.dart';
-import '../../../domain/usecases/delete_shopping_list_item_use_case.dart';
 import '../../../domain/usecases/end_vote_use_case.dart';
-import '../../../domain/usecases/fetch_active_votes_use_case.dart';
+import '../../../domain/usecases/fetch_active_group_orders_use_case.dart';
+import '../../../domain/usecases/fetch_group_order_menu_sections_use_case.dart';
 import '../../../domain/usecases/fetch_addresses_use_case.dart';
 import '../../../domain/usecases/fetch_favorite_restaurants_use_case.dart';
 import '../../../domain/usecases/fetch_notifications_use_case.dart';
 import '../../../domain/usecases/fetch_shopping_list_detail_use_case.dart';
-import '../../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../../domain/usecases/get_shopping_list_use_case.dart';
+import '../../../domain/usecases/join_group_order_use_case.dart';
 import '../../../domain/usecases/mark_all_notifications_read_use_case.dart';
+import '../../../domain/usecases/fetch_vote_suggestions_use_case.dart';
+import '../../../domain/usecases/fetch_active_votes_use_case.dart';
+import '../../../domain/usecases/place_group_order_use_case.dart';
 import '../../../domain/usecases/remove_favorite_restaurant_use_case.dart';
 import '../../../domain/usecases/set_default_address_use_case.dart';
+import '../../../domain/usecases/show_group_order_use_case.dart';
 import '../../../domain/usecases/show_vote_use_case.dart';
+import '../../../domain/usecases/submit_group_order_use_case.dart';
+import '../../../domain/usecases/submit_vote_ballot_use_case.dart';
+import '../../../domain/usecases/unsubmit_group_order_use_case.dart';
 import '../../../domain/usecases/update_address_use_case.dart';
-import '../../../domain/usecases/update_shopping_list_item_use_case.dart';
+import '../../../domain/usecases/update_group_order_item_use_case.dart';
 import '../../../domain/usecases/update_shopping_list_use_case.dart';
+import '../../../../rs_discover/domain/params/fetch_discover_restaurants_params.dart';
+import '../../../../rs_discover/domain/usecases/fetch_discover_restaurants_use_case.dart';
 
 part 'profile_event.dart';
+
 part 'profile_state.dart';
 
 @injectable
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
-  final AddShoppingListToCartUseCase addShoppingListToCartUseCase;
-  final GetShoppingListUseCase getShoppingListUseCase;
-  final CreateShoppingListUseCase createShoppingListUseCase;
-  final UpdateShoppingListUseCase updateShoppingListUseCase;
-  final FetchShoppingListDetailUseCase fetchShoppingListDetailUseCase;
-  final UpdateShoppingListItemUseCase updateShoppingListItemUseCase;
-  final DeleteShoppingListItemUseCase deleteShoppingListItemUseCase;
   final FetchAddressesUseCase fetchAddressesUseCase;
   final SetDefaultAddressUseCase setDefaultAddressUseCase;
   final FetchNotificationsUseCase fetchNotificationsUseCase;
@@ -58,8 +65,22 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final UpdateAddressUseCase updateAddressUseCase;
   final DeleteAddressUseCase deleteAddressUseCase;
   final ShowVoteUseCase showVoteUseCase;
+  final SubmitVoteBallotUseCase submitVoteBallotUseCase;
   final EndVoteUseCase endVoteUseCase;
   final FetchActiveVotesUseCase fetchActiveVotesUseCase;
+  final FetchDiscoverRestaurantsUseCase fetchDiscoverRestaurantsUseCase;
+  final FetchGroupOrderMenuSectionsUseCase fetchGroupOrderMenuSectionsUseCase;
+  final CreateGroupOrderUseCase createGroupOrderUseCase;
+  final JoinGroupOrderUseCase joinGroupOrderUseCase;
+  final FetchActiveGroupOrdersUseCase fetchActiveGroupOrdersUseCase;
+  final ShowGroupOrderUseCase showGroupOrderUseCase;
+  final AddGroupOrderItemUseCase addGroupOrderItemUseCase;
+  final UpdateGroupOrderItemUseCase updateGroupOrderItemUseCase;
+  final DeleteGroupOrderItemUseCase deleteGroupOrderItemUseCase;
+  final SubmitGroupOrderUseCase submitGroupOrderUseCase;
+  final UnsubmitGroupOrderUseCase unsubmitGroupOrderUseCase;
+  final CancelGroupOrderUseCase cancelGroupOrderUseCase;
+  final PlaceGroupOrderUseCase placeGroupOrderUseCase;
 
   ProfileBloc(
     this.fetchAddressesUseCase,
@@ -74,15 +95,22 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     this.updateAddressUseCase,
     this.deleteAddressUseCase,
     this.showVoteUseCase,
+    this.submitVoteBallotUseCase,
     this.endVoteUseCase,
     this.fetchActiveVotesUseCase,
-    this.getShoppingListUseCase,
-    this.createShoppingListUseCase,
-    this.updateShoppingListUseCase,
-    this.fetchShoppingListDetailUseCase,
-    this.updateShoppingListItemUseCase,
-    this.deleteShoppingListItemUseCase,
-    this.addShoppingListToCartUseCase,
+    this.fetchDiscoverRestaurantsUseCase,
+    this.fetchGroupOrderMenuSectionsUseCase,
+    this.createGroupOrderUseCase,
+    this.joinGroupOrderUseCase,
+    this.fetchActiveGroupOrdersUseCase,
+    this.showGroupOrderUseCase,
+    this.addGroupOrderItemUseCase,
+    this.updateGroupOrderItemUseCase,
+    this.deleteGroupOrderItemUseCase,
+    this.submitGroupOrderUseCase,
+    this.unsubmitGroupOrderUseCase,
+    this.cancelGroupOrderUseCase,
+    this.placeGroupOrderUseCase,
   ) : super(ProfileState()) {
     on<FetchAddressesEvent>(_fetchAddresses);
     on<SetDefaultAddressEvent>(_setDefaultAddress);
@@ -96,78 +124,60 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<UpdateAddressEvent>(_updateAddress);
     on<DeleteAddressEvent>(_deleteAddress);
     on<ShowVoteEvent>(_showVote);
+    on<SubmitVoteBallotEvent>(_submitVoteBallot);
     on<EndVoteEvent>(_endVote);
     on<FetchActiveVotesEvent>(_fetchActiveVotes);
-
-    on<GetShoppingListEvent>(_getShoppingList);
-    on<CreateShoppingListEvent>(_createShoppingList);
-    on<UpdateShoppingListEvent>(_updateShoppingList);
-    on<GetShoppingListDetailEvent>(_getShoppingListDetail);
-    on<PatchShoppingListItemQuantityEvent>(_patchShoppingListItemQuantity);
-    on<ClearShoppingListQuantityPatchErrorEvent>(
-      _clearShoppingListQuantityPatchError,
-    );
-    on<DeleteShoppingListItemEvent>(_deleteShoppingListItem);
-    on<AddShoppingListToCartEvent>(_addShoppingListToCart);
+    on<FetchGroupOrderRestaurantsEvent>(_fetchGroupOrderRestaurants);
+    on<SelectGroupOrderRestaurantEvent>(_selectGroupOrderRestaurant);
+    on<CreateGroupOrderEvent>(_createGroupOrder);
+    on<JoinGroupOrderEvent>(_joinGroupOrder);
+    on<FetchActiveGroupOrdersEvent>(_fetchActiveGroupOrders);
+    on<ShowGroupOrderEvent>(_showGroupOrder);
+    on<AddGroupOrderItemEvent>(_addGroupOrderItem);
+    on<UpdateGroupOrderItemEvent>(_updateGroupOrderItem);
+    on<DeleteGroupOrderItemEvent>(_deleteGroupOrderItem);
+    on<SubmitGroupOrderEvent>(_submitGroupOrder);
+    on<UnsubmitGroupOrderEvent>(_unsubmitGroupOrder);
+    on<CancelGroupOrderEvent>(_cancelGroupOrder);
+    on<PlaceGroupOrderEvent>(_placeGroupOrder);
   }
 
-  FutureOr<void> _addShoppingListToCart(
-    AddShoppingListToCartEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(addShoppingListToCartStatus: BlocStatus.loading));
-    final res = await addShoppingListToCartUseCase(event.params);
-    res.fold(
-      (l) {
-        emit(
-          state.copyWith(
-            addShoppingListToCartStatus: BlocStatus.failed,
-            errorMessage: l.message,
-          ),
-        );
+  Future<void> _fetchAddresses(FetchAddressesEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(addressesStatus: BlocStatus.loading));
+    final response = await fetchAddressesUseCase(event.params);
+    response.fold((failure) => emit(state.copyWith(addressesStatus: BlocStatus.failed, errorMessage: failure.message)), (result) {
+      final addresses = (result.addresses ?? const <AddressResourceModel>[]).map(_toAddressItem).toList();
+      AddressListItem? defaultAddress;
+      for (final item in addresses) {
+        if (item.isDefault) {
+          defaultAddress = item;
+          break;
+        }
+      }
+      final fallbackDefault = addresses.isNotEmpty ? addresses.first.id : null;
+      emit(state.copyWith(addressesStatus: BlocStatus.success, addresses: addresses, defaultAddressId: defaultAddress?.id ?? fallbackDefault));
+    });
+  }
+
+  Future<void> _setDefaultAddress(SetDefaultAddressEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(setDefaultAddressStatus: BlocStatus.loading));
+    Loading.show(event.context);
+    final response = await setDefaultAddressUseCase(SetDefaultAddressParams(addressId: event.addressId));
+    await response.fold(
+      (failure) async {
+        Loading.close();
+        AppToast.showToast(context: event.context, message: failure.message, type: ToastificationType.error);
+        emit(state.copyWith(setDefaultAddressStatus: BlocStatus.failed, errorMessage: failure.message));
       },
-      (r) {
-        emit(
-          state.copyWith(
-            addShoppingListToCartStatus: BlocStatus.success,
-            addShoppingListToCart: AddShoppingListToCartModel(),
-          ),
-        );
-      },
-    );
-  }
-
-  void _clearShoppingListQuantityPatchError(
-    ClearShoppingListQuantityPatchErrorEvent event,
-    Emitter<ProfileState> emit,
-  ) {
-    emit(state.copyWith(clearQuantityPatchError: true));
-  }
-
-  Future<void> _createAddress(
-    CreateAddressEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(createAddressStatus: BlocStatus.loading));
-    final response = await createAddressUseCase(event.params);
-    response.fold(
-      (failure) => emit(
-        state.copyWith(
-          createAddressStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (result) {
+      (_) async {
+        Loading.close();
+        emit(state.copyWith(setDefaultAddressStatus: BlocStatus.success, actionMessage: 'تم تحديث العنوان الافتراضي'));
         add(FetchAddressesEvent(params: FetchAddressesParams()));
-<<<<<<< HEAD
       },
     );
   }
 
-  Future<void> _fetchNotifications(
-    FetchNotificationsEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _fetchNotifications(FetchNotificationsEvent event, Emitter<ProfileState> emit) async {
     final pagination = state.notificationsPagination;
     final isLoadMore = event.loadMore && !event.isReload;
     if (isLoadMore && pagination.isEndPage) return;
@@ -176,9 +186,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
     final page = isLoadMore ? pagination.pageNumber : 1;
     final perPage = pagination.perPage;
-    final response = await fetchNotificationsUseCase(
-      FetchNotificationsParams(page: page, perPage: perPage, unreadOnly: event.params.unreadOnly),
-    );
+    final response = await fetchNotificationsUseCase(FetchNotificationsParams(page: page, perPage: perPage, unreadOnly: event.params.unreadOnly));
     response.fold(
       (failure) => emit(
         state.copyWith(
@@ -187,9 +195,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         ),
       ),
       (result) {
-        final mapped = (result.data ?? const <NotificationResourceModel>[])
-            .map(_toNotificationItem)
-            .toList();
+        final mapped = (result.data ?? const <NotificationResourceModel>[]).map(_toNotificationItem).toList();
         emit(
           state.copyWith(
             notificationsPagination: pagination.setSuccess(
@@ -204,35 +210,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     );
   }
 
-  Future<void> _markAllNotificationsRead(
-    MarkAllNotificationsReadEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _markAllNotificationsRead(MarkAllNotificationsReadEvent event, Emitter<ProfileState> emit) async {
     final response = await markAllNotificationsReadUseCase(NoParams());
-    response.fold(
-      (_) {},
-      (_) {
-        final updatedNotifications = state.notifications
-            .map(
-              (item) =>
-                  item.copyWith(isRead: true, showTrailingAccent: false),
-            )
-            .toList();
-        emit(
-          state.copyWith(
-            notificationsPagination: state.notificationsPagination.copyWith(
-              list: updatedNotifications,
-            ),
-          ),
-        );
-      },
-    );
+    response.fold((_) {}, (_) {
+      final updatedNotifications = state.notifications.map((item) => item.copyWith(isRead: true, showTrailingAccent: false)).toList();
+      emit(state.copyWith(notificationsPagination: state.notificationsPagination.copyWith(list: updatedNotifications)));
+    });
   }
 
-  Future<void> _fetchFavoriteRestaurants(
-    FetchFavoriteRestaurantsEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _fetchFavoriteRestaurants(FetchFavoriteRestaurantsEvent event, Emitter<ProfileState> emit) async {
     final pagination = state.favoriteRestaurantsPagination;
     final isLoadMore = event.loadMore && !event.isReload;
     if (isLoadMore && pagination.isEndPage) return;
@@ -241,9 +227,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
 
     final page = isLoadMore ? pagination.pageNumber : 1;
     final perPage = pagination.perPage;
-    final response = await fetchFavoriteRestaurantsUseCase(
-      FetchFavoriteRestaurantsParams(page: page, perPage: perPage),
-    );
+    final response = await fetchFavoriteRestaurantsUseCase(FetchFavoriteRestaurantsParams(page: page, perPage: perPage));
     response.fold(
       (failure) => emit(
         state.copyWith(
@@ -256,475 +240,267 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         final total = isLoadMore ? pagination.total + items.length : items.length;
         emit(
           state.copyWith(
-            favoriteRestaurantsPagination: pagination.setSuccess(
-              data: items,
-              total: total,
-              perPage: perPage,
-            ),
+            favoriteRestaurantsPagination: pagination.setSuccess(data: items, total: total, perPage: perPage),
           ),
         );
       },
     );
   }
 
-  Future<void> _removeFavoriteRestaurant(
-    RemoveFavoriteRestaurantEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _removeFavoriteRestaurant(RemoveFavoriteRestaurantEvent event, Emitter<ProfileState> emit) async {
     emit(state.copyWith(removeFavoriteRestaurantStatus: BlocStatus.loading));
-    final response = await removeFavoriteRestaurantUseCase(
-      RemoveFavoriteRestaurantParams(restaurantId: event.restaurantId),
-    );
+    final response = await removeFavoriteRestaurantUseCase(RemoveFavoriteRestaurantParams(restaurantId: event.restaurantId));
     await response.fold(
       (failure) async {
-        emit(
-          state.copyWith(
-            removeFavoriteRestaurantStatus: BlocStatus.failed,
-            errorMessage: failure.message,
-          ),
-        );
+        emit(state.copyWith(removeFavoriteRestaurantStatus: BlocStatus.failed, errorMessage: failure.message));
       },
       (_) async {
-        emit(
-          state.copyWith(
-            removeFavoriteRestaurantStatus: BlocStatus.success,
-            actionMessage: 'تمت إزالة المطعم من المفضلة',
-          ),
-        );
-        add(
-          FetchFavoriteRestaurantsEvent(
-            params: FetchFavoriteRestaurantsParams(),
-            isReload: true,
-=======
-        emit(
-          state.copyWith(
-            createAddressStatus: BlocStatus.success,
-            actionMessage: result.message ?? 'تمت إضافة العنوان بنجاح',
->>>>>>> f8cce1fce2daedde0405e4795c01e5e21ae74b0c
-          ),
-        );
+        emit(state.copyWith(removeFavoriteRestaurantStatus: BlocStatus.success, actionMessage: 'تمت إزالة المطعم من المفضلة'));
+        add(FetchFavoriteRestaurantsEvent(params: FetchFavoriteRestaurantsParams(), isReload: true));
       },
     );
   }
 
-  Future<void> _createVote(
-    CreateVoteEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _createVote(CreateVoteEvent event, Emitter<ProfileState> emit) async {
     emit(state.copyWith(createVoteStatus: BlocStatus.loading));
     final response = await createVoteUseCase(event.params);
     response.fold(
-      (failure) => emit(
-        state.copyWith(
-          createVoteStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (result) => emit(
-        state.copyWith(
-          createVoteStatus: BlocStatus.success,
-          createdVote: result,
-        ),
-      ),
+      (failure) => emit(state.copyWith(createVoteStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(createVoteStatus: BlocStatus.success, createdVote: result)),
     );
   }
 
-  Future<void> _deleteShoppingListItem(
-    DeleteShoppingListItemEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    Loading.show(event.context);
-    final response = await deleteShoppingListItemUseCase(
-      DeleteShoppingListItemParams(
-        shoppingListId: event.shoppingListId,
-        itemId: event.itemId,
-      ),
-    );
-    await response.fold(
-      (failure) async {
-        Loading.close();
-        AppToast.showToast(
-          context: event.context,
-          message: failure.message,
-          type: ToastificationType.error,
-        );
-      },
-      (_) async {
-        Loading.close();
-        final detail = state.shoppingListDetail;
-        if (detail != null) {
-          emit(
-            state.copyWith(
-              shoppingListDetail: detail.copyWith(
-                items: detail.items
-                    .where((i) => i.id != event.itemId)
-                    .toList(),
-              ),
-            ),
-          );
-        }
-        AppToast.showToast(
-          context: event.context,
-          message: 'تم حذف المنتج بنجاح',
-          type: ToastificationType.success,
-        );
-      },
+  Future<void> _fetchVoteSuggestions(FetchVoteSuggestionsEvent event, Emitter<ProfileState> emit) async {
+    final query = event.searchQuery.trim();
+    if (query.isEmpty) {
+      emit(state.copyWith(voteSuggestionsStatus: BlocStatus.success, voteSuggestions: const VoteSuggestionsModel()));
+      return;
+    }
+    emit(state.copyWith(voteSuggestionsStatus: BlocStatus.loading));
+    final response = await fetchVoteSuggestionsUseCase(FetchVoteSuggestionsParams(search: query));
+    response.fold(
+      (failure) => emit(state.copyWith(voteSuggestionsStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(voteSuggestionsStatus: BlocStatus.success, voteSuggestions: result)),
     );
   }
 
-  Future<void> _deleteAddress(
-    DeleteAddressEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _createAddress(CreateAddressEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(createAddressStatus: BlocStatus.loading));
+    final response = await createAddressUseCase(event.params);
+    response.fold((failure) => emit(state.copyWith(createAddressStatus: BlocStatus.failed, errorMessage: failure.message)), (result) {
+      add(FetchAddressesEvent(params: FetchAddressesParams()));
+      emit(state.copyWith(createAddressStatus: BlocStatus.success, actionMessage: result.message ?? 'تمت إضافة العنوان بنجاح'));
+    });
+  }
+
+  Future<void> _updateAddress(UpdateAddressEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(updateAddressStatus: BlocStatus.loading));
+    final response = await updateAddressUseCase(event.params);
+    response.fold((failure) => emit(state.copyWith(updateAddressStatus: BlocStatus.failed, errorMessage: failure.message)), (result) {
+      add(FetchAddressesEvent(params: FetchAddressesParams()));
+      emit(state.copyWith(updateAddressStatus: BlocStatus.success, actionMessage: result.message ?? 'تم تحديث العنوان بنجاح'));
+    });
+  }
+
+  Future<void> _deleteAddress(DeleteAddressEvent event, Emitter<ProfileState> emit) async {
     emit(state.copyWith(deleteAddressStatus: BlocStatus.loading));
     Loading.show(event.context);
-    final response = await deleteAddressUseCase(
-      DeleteAddressParams(addressId: event.addressId),
-    );
+    final response = await deleteAddressUseCase(DeleteAddressParams(addressId: event.addressId));
     await response.fold(
       (failure) async {
         Loading.close();
-        AppToast.showToast(
-          context: event.context,
-          message: failure.message,
-          type: ToastificationType.error,
-        );
-        emit(
-          state.copyWith(
-            deleteAddressStatus: BlocStatus.failed,
-            errorMessage: failure.message,
-          ),
-        );
+        AppToast.showToast(context: event.context, message: failure.message, type: ToastificationType.error);
+        emit(state.copyWith(deleteAddressStatus: BlocStatus.failed, errorMessage: failure.message));
       },
       (_) async {
         Loading.close();
-        emit(
-          state.copyWith(
-            deleteAddressStatus: BlocStatus.success,
-            actionMessage: 'تم حذف العنوان بنجاح',
-          ),
-        );
+        emit(state.copyWith(deleteAddressStatus: BlocStatus.success, actionMessage: 'تم حذف العنوان بنجاح'));
         add(FetchAddressesEvent(params: FetchAddressesParams()));
       },
+    );
+  }
+
+  Future<void> _showVote(ShowVoteEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(voteDetailsStatus: BlocStatus.loading));
+    final response = await showVoteUseCase(ShowVoteParams(voteId: event.voteId));
+    response.fold(
+      (failure) => emit(state.copyWith(voteDetailsStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(voteDetailsStatus: BlocStatus.success, voteDetails: result)),
     );
   }
 
   Future<void> _endVote(EndVoteEvent event, Emitter<ProfileState> emit) async {
     emit(state.copyWith(endVoteStatus: BlocStatus.loading));
     final response = await endVoteUseCase(EndVoteParams(voteId: event.voteId));
-    response.fold(
-      (failure) => emit(
-        state.copyWith(
-          endVoteStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (_) => emit(
-        state.copyWith(
-          endVoteStatus: BlocStatus.success,
-          actionMessage: 'تم إنهاء التصويت بنجاح',
-        ),
-      ),
-    );
+    response.fold((failure) => emit(state.copyWith(endVoteStatus: BlocStatus.failed, errorMessage: failure.message)), (_) {
+      add(ShowVoteEvent(voteId: event.voteId));
+      emit(state.copyWith(endVoteStatus: BlocStatus.success, actionMessage: 'تم إنهاء التصويت بنجاح'));
+    });
   }
 
-  Future<void> _fetchActiveVotes(
-    FetchActiveVotesEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
+  Future<void> _submitVoteBallot(SubmitVoteBallotEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(voteBallotStatus: BlocStatus.loading));
+    final response = await submitVoteBallotUseCase(SubmitVoteBallotParams(voteId: event.voteId, optionId: event.optionId));
+    response.fold((failure) => emit(state.copyWith(voteBallotStatus: BlocStatus.failed, errorMessage: failure.message)), (_) {
+      add(ShowVoteEvent(voteId: event.voteId));
+      emit(state.copyWith(voteBallotStatus: BlocStatus.success));
+    });
+  }
+
+  Future<void> _fetchActiveVotes(FetchActiveVotesEvent event, Emitter<ProfileState> emit) async {
     emit(state.copyWith(activeVotesStatus: BlocStatus.loading));
     final response = await fetchActiveVotesUseCase(event.params);
     response.fold(
-      (failure) => emit(
-        state.copyWith(
-          activeVotesStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
+      (failure) => emit(state.copyWith(activeVotesStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(activeVotesStatus: BlocStatus.success, activeVotes: result.data)),
+    );
+  }
+
+  Future<void> _fetchGroupOrderRestaurants(FetchGroupOrderRestaurantsEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(groupOrderRestaurantsStatus: BlocStatus.loading, errorMessage: null));
+    final response = await fetchDiscoverRestaurantsUseCase(
+      FetchDiscoverRestaurantsParams(page: 1, perPage: 20, search: event.searchQuery.trim().isEmpty ? null : event.searchQuery.trim()),
+    );
+    response.fold(
+      (failure) => emit(state.copyWith(groupOrderRestaurantsStatus: BlocStatus.failed, errorMessage: failure.message)),
       (result) => emit(
         state.copyWith(
-          activeVotesStatus: BlocStatus.success,
-          activeVotes: result.data,
+          groupOrderRestaurantsStatus: BlocStatus.success,
+          groupOrderRestaurants: result.data ?? const <FetchDiscoverRestaurantsModelDataItem>[],
         ),
       ),
     );
   }
 
-  Future<void> _fetchAddresses(
-    FetchAddressesEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(addressesStatus: BlocStatus.loading));
-    final response = await fetchAddressesUseCase(event.params);
+  void _selectGroupOrderRestaurant(SelectGroupOrderRestaurantEvent event, Emitter<ProfileState> emit) {
+    emit(state.copyWith(selectedGroupOrderRestaurant: event.restaurant));
+  }
+
+  Future<void> _createGroupOrder(CreateGroupOrderEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(createGroupOrderStatus: BlocStatus.loading));
+    final response = await createGroupOrderUseCase(event.params);
+    response.fold(
+      (failure) => emit(state.copyWith(createGroupOrderStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(createGroupOrderStatus: BlocStatus.success, createGroupOrderResult: result, actionMessage: result.message)),
+    );
+  }
+
+  Future<void> _joinGroupOrder(JoinGroupOrderEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(joinGroupOrderStatus: BlocStatus.loading));
+    final response = await joinGroupOrderUseCase(event.params);
+    response.fold(
+      (failure) => emit(state.copyWith(joinGroupOrderStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(joinGroupOrderStatus: BlocStatus.success, joinGroupOrderResult: result, actionMessage: result.message)),
+    );
+  }
+
+  Future<void> _fetchActiveGroupOrders(FetchActiveGroupOrdersEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(activeGroupOrdersStatus: BlocStatus.loading));
+    final response = await fetchActiveGroupOrdersUseCase(event.params);
+    response.fold(
+      (failure) => emit(state.copyWith(activeGroupOrdersStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(activeGroupOrdersStatus: BlocStatus.success, activeGroupOrders: result.data)),
+    );
+  }
+
+  Future<void> _showGroupOrder(ShowGroupOrderEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(groupOrderDetailsStatus: BlocStatus.loading));
+    final response = await showGroupOrderUseCase(event.params);
+    await response.fold((failure) async => emit(state.copyWith(groupOrderDetailsStatus: BlocStatus.failed, errorMessage: failure.message)), (
+      details,
+    ) async {
+      emit(state.copyWith(groupOrderDetailsStatus: BlocStatus.success, groupOrderDetails: details));
+      if (!event.skipMenuFetch) {
+        await _loadGroupOrderMenu(details, emit);
+      }
+    });
+  }
+
+  Future<void> _addGroupOrderItem(AddGroupOrderItemEvent event, Emitter<ProfileState> emit) async {
+    await _performGroupOrderAction(emit: emit, action: () => addGroupOrderItemUseCase(event.params), groupOrderId: event.params.groupOrderId);
+  }
+
+  Future<void> _updateGroupOrderItem(UpdateGroupOrderItemEvent event, Emitter<ProfileState> emit) async {
+    await _performGroupOrderAction(emit: emit, action: () => updateGroupOrderItemUseCase(event.params), groupOrderId: event.params.groupOrderId);
+  }
+
+  Future<void> _deleteGroupOrderItem(DeleteGroupOrderItemEvent event, Emitter<ProfileState> emit) async {
+    await _performGroupOrderAction(emit: emit, action: () => deleteGroupOrderItemUseCase(event.params), groupOrderId: event.params.groupOrderId);
+  }
+
+  Future<void> _submitGroupOrder(SubmitGroupOrderEvent event, Emitter<ProfileState> emit) async {
+    await _performGroupOrderAction(emit: emit, action: () => submitGroupOrderUseCase(event.params), groupOrderId: event.params.groupOrderId);
+  }
+
+  Future<void> _unsubmitGroupOrder(UnsubmitGroupOrderEvent event, Emitter<ProfileState> emit) async {
+    await _performGroupOrderAction(emit: emit, action: () => unsubmitGroupOrderUseCase(event.params), groupOrderId: event.params.groupOrderId);
+  }
+
+  Future<void> _cancelGroupOrder(CancelGroupOrderEvent event, Emitter<ProfileState> emit) async {
+    await _performGroupOrderAction(emit: emit, action: () => cancelGroupOrderUseCase(event.params), groupOrderId: event.params.groupOrderId);
+  }
+
+  Future<void> _placeGroupOrder(PlaceGroupOrderEvent event, Emitter<ProfileState> emit) async {
+    await _performGroupOrderAction(emit: emit, action: () => placeGroupOrderUseCase(event.params), groupOrderId: event.params.groupOrderId);
+  }
+
+  Future<void> _performGroupOrderAction({
+    required Emitter<ProfileState> emit,
+    required DataResponse<GroupOrderActionModel> Function() action,
+    required int groupOrderId,
+  }) async {
+    emit(state.copyWith(groupOrderActionStatus: BlocStatus.loading));
+    final response = await action();
+    await response.fold((failure) async => emit(state.copyWith(groupOrderActionStatus: BlocStatus.failed, errorMessage: failure.message)), (
+      result,
+    ) async {
+      emit(state.copyWith(groupOrderActionStatus: BlocStatus.success, groupOrderActionResult: result, actionMessage: result.message));
+      add(ShowGroupOrderEvent(params: ShowGroupOrderParams(groupOrderId: groupOrderId)));
+    });
+  }
+
+  Future<void> _loadGroupOrderMenu(GroupOrderDetailsModel details, Emitter<ProfileState> emit) async {
+    final restaurantId = details.groupOrder?.restaurantId;
+    if (restaurantId == null || restaurantId <= 0) return;
+    emit(state.copyWith(groupOrderMenuStatus: BlocStatus.loading));
+    final response = await fetchGroupOrderMenuSectionsUseCase(
+      FetchGroupOrderMenuSectionsParams(
+        restaurantId: restaurantId,
+        itemsPerSection: 30,
+      ),
+    );
     response.fold(
       (failure) => emit(
         state.copyWith(
-          addressesStatus: BlocStatus.failed,
+          groupOrderMenuStatus: BlocStatus.failed,
           errorMessage: failure.message,
         ),
       ),
       (result) {
-        final addresses = (result.addresses ?? const <AddressResourceModel>[])
-            .map(_toAddressItem)
-            .toList();
-        AddressListItem? defaultAddress;
-        for (final item in addresses) {
-          if (item.isDefault) {
-            defaultAddress = item;
-            break;
+        final sections = <GroupOrderMenuSectionModel>[
+          ...result.sections,
+        ]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        final products = <GroupOrderMenuSectionItemModel>[];
+        final uniqueByProductId = <int, GroupOrderMenuSectionItemModel>{};
+        for (final section in sections) {
+          for (final item in section.items) {
+            final id = item.id;
+            if (id == null || id <= 0) continue;
+            uniqueByProductId[id] = item.withSection(
+              sectionName: section.name,
+              sectionId: section.id,
+            );
           }
         }
-        final fallbackDefault = addresses.isNotEmpty
-            ? addresses.first.id
-            : null;
+        products.addAll(uniqueByProductId.values);
         emit(
           state.copyWith(
-            addressesStatus: BlocStatus.success,
-            addresses: addresses,
-            defaultAddressId: defaultAddress?.id ?? fallbackDefault,
+            groupOrderMenuStatus: BlocStatus.success,
+            groupOrderMenuSections: sections,
+            groupOrderMenuProducts: products,
           ),
         );
       },
-    );
-  }
-
-  Future<void> _fetchFavoriteRestaurants(
-    FetchFavoriteRestaurantsEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(favoriteRestaurantsStatus: BlocStatus.loading));
-    final response = await fetchFavoriteRestaurantsUseCase(event.params);
-    response.fold(
-      (failure) => emit(
-        state.copyWith(
-          favoriteRestaurantsStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (result) => emit(
-        state.copyWith(
-          favoriteRestaurantsStatus: BlocStatus.success,
-          favoriteRestaurants: result.data ?? const <FavoriteRestaurantModel>[],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _fetchNotifications(
-    FetchNotificationsEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(notificationsStatus: BlocStatus.loading));
-    final response = await fetchNotificationsUseCase(event.params);
-    response.fold(
-      (failure) => emit(
-        state.copyWith(
-          notificationsStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (result) {
-        final mapped = (result.data ?? const <NotificationResourceModel>[])
-            .map(_toNotificationItem)
-            .toList();
-        emit(
-          state.copyWith(
-            notificationsStatus: BlocStatus.success,
-            notifications: mapped,
-          ),
-        );
-        add(MarkAllNotificationsReadEvent());
-      },
-    );
-  }
-
-  Future<void> _fetchVoteSuggestions(
-    FetchVoteSuggestionsEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    final query = event.searchQuery.trim();
-    if (query.isEmpty) {
-      emit(
-        state.copyWith(
-          voteSuggestionsStatus: BlocStatus.success,
-          voteSuggestions: const VoteSuggestionsModel(),
-        ),
-      );
-      return;
-    }
-    emit(state.copyWith(voteSuggestionsStatus: BlocStatus.loading));
-    final response = await fetchVoteSuggestionsUseCase(
-      FetchVoteSuggestionsParams(search: query),
-    );
-    response.fold(
-      (failure) => emit(
-        state.copyWith(
-          voteSuggestionsStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (result) => emit(
-        state.copyWith(
-          voteSuggestionsStatus: BlocStatus.success,
-          voteSuggestions: result,
-        ),
-      ),
-    );
-  }
-
-  FutureOr<void> _getShoppingList(
-    GetShoppingListEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(shoppingListStatus: BlocStatus.loading));
-    final res = await getShoppingListUseCase(event.params);
-    res.fold(
-      (l) {
-        emit(
-          state.copyWith(
-            shoppingListStatus: BlocStatus.failed,
-            errorMessage: l.message,
-          ),
-        );
-      },
-      (r) {
-        emit(
-          state.copyWith(
-            shoppingListStatus: BlocStatus.success,
-            shoppingList: r,
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _createShoppingList(
-    CreateShoppingListEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(createShoppingListStatus: BlocStatus.loading));
-    final res = await createShoppingListUseCase(event.params);
-    res.fold(
-      (failure) => emit(
-        state.copyWith(
-          createShoppingListStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (r) {
-        final detail = r.data;
-        if (detail == null) {
-          emit(
-            state.copyWith(
-              createShoppingListStatus: BlocStatus.failed,
-              errorMessage: 'Invalid response',
-            ),
-          );
-          return;
-        }
-        final newItem = _shoppingListDetailToListItem(detail);
-        final existing = state.shoppingList?.data ?? <GetShoppingListModelDataItem>[];
-        emit(
-          state.copyWith(
-            createShoppingListStatus: BlocStatus.success,
-            shoppingListStatus: BlocStatus.success,
-            shoppingList: GetShoppingListModel(
-              data: <GetShoppingListModelDataItem>[newItem, ...existing],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _updateShoppingList(
-    UpdateShoppingListEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(updateShoppingListStatus: BlocStatus.loading));
-    final res = await updateShoppingListUseCase(event.params);
-    res.fold(
-      (failure) => emit(
-        state.copyWith(
-          updateShoppingListStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (r) {
-        final detail = r.data;
-        if (detail == null) {
-          emit(
-            state.copyWith(
-              updateShoppingListStatus: BlocStatus.failed,
-              errorMessage: 'Invalid response',
-            ),
-          );
-          return;
-        }
-        emit(
-          state.copyWith(
-            updateShoppingListStatus: BlocStatus.success,
-            shoppingListDetail: detail,
-            shoppingListDetailStatus: BlocStatus.success,
-          ),
-        );
-      },
-    );
-  }
-
-  GetShoppingListModelDataItem _shoppingListDetailToListItem(
-    ShoppingListDetailModel d,
-  ) {
-    final s = d.schedule;
-    return GetShoppingListModelDataItem(
-      id: d.id,
-      name: d.name,
-      description: d.description,
-      isActive: d.isActive,
-      itemsCount: d.items.length,
-      createdAt: d.createdAt,
-      updatedAt: d.updatedAt,
-      schedule: s == null
-          ? null
-          : GetShoppingListModelDataItemSchedule(
-              frequencyType: s.frequencyType,
-              weekDays: s.weekDays,
-              monthDays: s.monthDays,
-              periods: s.periods
-                  .map(
-                    (p) => GetShoppingListModelDataItemSchedulePeriodsItem(
-                      label: p.label,
-                      fromTime: p.fromTime,
-                      toTime: p.toTime,
-                    ),
-                  )
-                  .toList(),
-              isActive: s.isActive,
-              nextRunAt: s.nextRunAt,
-              lastRunAt: s.lastRunAt,
-            ),
-    );
-  }
-
-  FutureOr<void> _getShoppingListDetail(
-    GetShoppingListDetailEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(shoppingListDetailStatus: BlocStatus.loading));
-    final res = await fetchShoppingListDetailUseCase(event.params);
-    res.fold(
-      (l) => emit(
-        state.copyWith(
-          shoppingListDetailStatus: BlocStatus.failed,
-          errorMessage: l.message,
-        ),
-      ),
-      (r) => emit(
-        state.copyWith(
-          shoppingListDetailStatus: BlocStatus.success,
-          shoppingListDetail: r.data,
-        ),
-      ),
     );
   }
 
@@ -739,161 +515,17 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     return AddressType.home;
   }
 
-  Future<void> _markAllNotificationsRead(
-    MarkAllNotificationsReadEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    final response = await markAllNotificationsReadUseCase(NoParams());
-    response.fold((_) {}, (_) {
-      emit(
-        state.copyWith(
-          notifications: state.notifications
-              .map(
-                (item) =>
-                    item.copyWith(isRead: true, showTrailingAccent: false),
-              )
-              .toList(),
-        ),
-      );
-    });
-  }
-
-  FutureOr<void> _patchShoppingListItemQuantity(
-    PatchShoppingListItemQuantityEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    final res = await updateShoppingListItemUseCase(
-      UpdateShoppingListItemParams(
-        shoppingListId: event.shoppingListId,
-        itemId: event.itemId,
-        quantity: event.quantity,
-      ),
-    );
-    res.fold(
-      (l) => emit(state.copyWith(quantityPatchError: l.message)),
-      (r) => emit(
-        state.copyWith(
-          shoppingListDetail: r.data ?? state.shoppingListDetail,
-          shoppingListDetailStatus: BlocStatus.success,
-          clearQuantityPatchError: true,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _removeFavoriteRestaurant(
-    RemoveFavoriteRestaurantEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(removeFavoriteRestaurantStatus: BlocStatus.loading));
-    final response = await removeFavoriteRestaurantUseCase(
-      RemoveFavoriteRestaurantParams(restaurantId: event.restaurantId),
-    );
-    await response.fold(
-      (failure) async {
-        emit(
-          state.copyWith(
-            removeFavoriteRestaurantStatus: BlocStatus.failed,
-            errorMessage: failure.message,
-          ),
-        );
-      },
-      (_) async {
-        emit(
-          state.copyWith(
-            removeFavoriteRestaurantStatus: BlocStatus.success,
-            actionMessage: 'تمت إزالة المطعم من المفضلة',
-          ),
-        );
-        add(
-          FetchFavoriteRestaurantsEvent(
-            params: FetchFavoriteRestaurantsParams(),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _setDefaultAddress(
-    SetDefaultAddressEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(setDefaultAddressStatus: BlocStatus.loading));
-    Loading.show(event.context);
-    final response = await setDefaultAddressUseCase(
-      SetDefaultAddressParams(addressId: event.addressId),
-    );
-    await response.fold(
-      (failure) async {
-        Loading.close();
-        AppToast.showToast(
-          context: event.context,
-          message: failure.message,
-          type: ToastificationType.error,
-        );
-        emit(
-          state.copyWith(
-            setDefaultAddressStatus: BlocStatus.failed,
-            errorMessage: failure.message,
-          ),
-        );
-      },
-      (_) async {
-        Loading.close();
-        emit(
-          state.copyWith(
-            setDefaultAddressStatus: BlocStatus.success,
-            actionMessage: 'تم تحديث العنوان الافتراضي',
-          ),
-        );
-        add(FetchAddressesEvent(params: FetchAddressesParams()));
-      },
-    );
-  }
-
-  Future<void> _showVote(
-    ShowVoteEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(voteDetailsStatus: BlocStatus.loading));
-    final response = await showVoteUseCase(
-      ShowVoteParams(voteId: event.voteId),
-    );
-    response.fold(
-      (failure) => emit(
-        state.copyWith(
-          voteDetailsStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (result) => emit(
-        state.copyWith(
-          voteDetailsStatus: BlocStatus.success,
-          voteDetails: result,
-        ),
-      ),
-    );
-  }
-
   AddressListItem _toAddressItem(AddressResourceModel model) {
-    final label = (model.label ?? '').trim().isNotEmpty
-        ? model.label!
-        : 'العنوان';
-    final lineParts =
-        [
-              model.city,
-              model.neighborhood,
-              model.street,
-              if ((model.building ?? '').isNotEmpty) 'بناء ${model.building}',
-              if ((model.floor ?? '').isNotEmpty) 'طابق ${model.floor}',
-            ]
-            .where((part) => (part ?? '').trim().isNotEmpty)
-            .map((part) => part!.trim())
-            .toList();
+    final label = (model.label ?? '').trim().isNotEmpty ? model.label! : 'العنوان';
+    final lineParts = [
+      model.city,
+      model.neighborhood,
+      model.street,
+      if ((model.building ?? '').isNotEmpty) 'بناء ${model.building}',
+      if ((model.floor ?? '').isNotEmpty) 'طابق ${model.floor}',
+    ].where((part) => (part ?? '').trim().isNotEmpty).map((part) => part!.trim()).toList();
     return AddressListItem(
-      id:
-          model.id?.toString() ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
+      id: model.id?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
       label: label,
       line1: lineParts.isEmpty ? '-' : lineParts.join(' - '),
       mobile: model.mobile,
@@ -909,9 +541,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     );
   }
 
-  FetchNotificationsModelDataItem _toNotificationItem(
-    NotificationResourceModel item,
-  ) {
+  FetchNotificationsModelDataItem _toNotificationItem(NotificationResourceModel item) {
     return FetchNotificationsModelDataItem(
       type: item.type ?? 'system',
       title: item.title,
@@ -919,31 +549,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       createdAt: item.createdAt,
       isRead: item.readAt != null,
       showTrailingAccent: item.readAt == null,
-    );
-  }
-
-  Future<void> _updateAddress(
-    UpdateAddressEvent event,
-    Emitter<ProfileState> emit,
-  ) async {
-    emit(state.copyWith(updateAddressStatus: BlocStatus.loading));
-    final response = await updateAddressUseCase(event.params);
-    response.fold(
-      (failure) => emit(
-        state.copyWith(
-          updateAddressStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-        ),
-      ),
-      (result) {
-        add(FetchAddressesEvent(params: FetchAddressesParams()));
-        emit(
-          state.copyWith(
-            updateAddressStatus: BlocStatus.success,
-            actionMessage: result.message ?? 'تم تحديث العنوان بنجاح',
-          ),
-        );
-      },
     );
   }
 }

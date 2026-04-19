@@ -1,5 +1,6 @@
 class VoteFollowupOptionData {
   const VoteFollowupOptionData({
+    required this.optionId,
     required this.name,
     required this.size,
     required this.price,
@@ -7,6 +8,7 @@ class VoteFollowupOptionData {
     required this.votes,
   });
 
+  final int? optionId;
   final String name;
   final String size;
   final String price;

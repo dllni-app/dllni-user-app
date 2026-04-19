@@ -1,0 +1,4 @@
+enum GroupOrderMode {
+  create,
+  existingGroups,
+}

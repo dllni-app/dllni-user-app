@@ -6,7 +6,6 @@ class AddShoppingListToCartEvent extends ProfileEvent {
   AddShoppingListToCartEvent({required this.params});
 }
 
-<<<<<<< HEAD
 class SetDefaultAddressEvent extends ProfileEvent {
   final int addressId;
   final BuildContext context;
@@ -59,9 +58,8 @@ class FetchVoteSuggestionsEvent extends ProfileEvent {
 
   FetchVoteSuggestionsEvent({required this.searchQuery});
 }
-=======
+
 class ClearShoppingListQuantityPatchErrorEvent extends ProfileEvent {}
->>>>>>> f8cce1fce2daedde0405e4795c01e5e21ae74b0c
 
 class CreateAddressEvent extends ProfileEvent {
   final CreateAddressParams params;
@@ -79,12 +77,6 @@ class UpdateShoppingListEvent extends ProfileEvent {
   final UpdateShoppingListParams params;
 
   UpdateShoppingListEvent({required this.params});
-}
-
-class CreateVoteEvent extends ProfileEvent {
-  final CreateVoteParams params;
-
-  CreateVoteEvent({required this.params});
 }
 
 class DeleteAddressEvent extends ProfileEvent {
@@ -112,6 +104,13 @@ class EndVoteEvent extends ProfileEvent {
   EndVoteEvent({required this.voteId});
 }
 
+class SubmitVoteBallotEvent extends ProfileEvent {
+  final int voteId;
+  final int optionId;
+
+  SubmitVoteBallotEvent({required this.voteId, required this.optionId});
+}
+
 class FetchActiveVotesEvent extends ProfileEvent {
   final FetchActiveVotesParams params;
 
@@ -122,24 +121,6 @@ class FetchAddressesEvent extends ProfileEvent {
   final FetchAddressesParams params;
 
   FetchAddressesEvent({required this.params});
-}
-
-class FetchFavoriteRestaurantsEvent extends ProfileEvent {
-  final FetchFavoriteRestaurantsParams params;
-
-  FetchFavoriteRestaurantsEvent({required this.params});
-}
-
-class FetchNotificationsEvent extends ProfileEvent {
-  final FetchNotificationsParams params;
-
-  FetchNotificationsEvent({required this.params});
-}
-
-class FetchVoteSuggestionsEvent extends ProfileEvent {
-  final String searchQuery;
-
-  FetchVoteSuggestionsEvent({required this.searchQuery});
 }
 
 class GetShoppingListDetailEvent extends ProfileEvent {
@@ -154,7 +135,6 @@ class GetShoppingListEvent extends ProfileEvent {
   GetShoppingListEvent({required this.params});
 }
 
-class MarkAllNotificationsReadEvent extends ProfileEvent {}
 
 class PatchShoppingListItemQuantityEvent extends ProfileEvent {
   final int shoppingListId;
@@ -170,19 +150,6 @@ class PatchShoppingListItemQuantityEvent extends ProfileEvent {
 
 abstract class ProfileEvent {}
 
-class RemoveFavoriteRestaurantEvent extends ProfileEvent {
-  final int restaurantId;
-
-  RemoveFavoriteRestaurantEvent({required this.restaurantId});
-}
-
-class SetDefaultAddressEvent extends ProfileEvent {
-  final int addressId;
-  final BuildContext context;
-
-  SetDefaultAddressEvent({required this.addressId, required this.context});
-}
-
 class ShowVoteEvent extends ProfileEvent {
   final int voteId;
 
@@ -193,4 +160,86 @@ class UpdateAddressEvent extends ProfileEvent {
   final UpdateAddressParams params;
 
   UpdateAddressEvent({required this.params});
+}
+
+class FetchGroupOrderRestaurantsEvent extends ProfileEvent {
+  final String searchQuery;
+
+  FetchGroupOrderRestaurantsEvent({this.searchQuery = ''});
+}
+
+class SelectGroupOrderRestaurantEvent extends ProfileEvent {
+  final FetchDiscoverRestaurantsModelDataItem restaurant;
+
+  SelectGroupOrderRestaurantEvent({required this.restaurant});
+}
+
+class CreateGroupOrderEvent extends ProfileEvent {
+  final CreateGroupOrderParams params;
+
+  CreateGroupOrderEvent({required this.params});
+}
+
+class JoinGroupOrderEvent extends ProfileEvent {
+  final JoinGroupOrderParams params;
+
+  JoinGroupOrderEvent({required this.params});
+}
+
+class FetchActiveGroupOrdersEvent extends ProfileEvent {
+  final FetchActiveGroupOrdersParams params;
+
+  FetchActiveGroupOrdersEvent({required this.params});
+}
+
+class ShowGroupOrderEvent extends ProfileEvent {
+  final ShowGroupOrderParams params;
+  final bool skipMenuFetch;
+
+  ShowGroupOrderEvent({
+    required this.params,
+    this.skipMenuFetch = false,
+  });
+}
+
+class AddGroupOrderItemEvent extends ProfileEvent {
+  final AddGroupOrderItemParams params;
+
+  AddGroupOrderItemEvent({required this.params});
+}
+
+class UpdateGroupOrderItemEvent extends ProfileEvent {
+  final UpdateGroupOrderItemParams params;
+
+  UpdateGroupOrderItemEvent({required this.params});
+}
+
+class DeleteGroupOrderItemEvent extends ProfileEvent {
+  final DeleteGroupOrderItemParams params;
+
+  DeleteGroupOrderItemEvent({required this.params});
+}
+
+class SubmitGroupOrderEvent extends ProfileEvent {
+  final SubmitGroupOrderParams params;
+
+  SubmitGroupOrderEvent({required this.params});
+}
+
+class UnsubmitGroupOrderEvent extends ProfileEvent {
+  final UnsubmitGroupOrderParams params;
+
+  UnsubmitGroupOrderEvent({required this.params});
+}
+
+class CancelGroupOrderEvent extends ProfileEvent {
+  final CancelGroupOrderParams params;
+
+  CancelGroupOrderEvent({required this.params});
+}
+
+class PlaceGroupOrderEvent extends ProfileEvent {
+  final PlaceGroupOrderParams params;
+
+  PlaceGroupOrderEvent({required this.params});
 }

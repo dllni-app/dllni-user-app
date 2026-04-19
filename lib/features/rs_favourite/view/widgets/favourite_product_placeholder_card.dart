@@ -74,7 +74,7 @@ class _FavouriteProductPlaceholderCardState extends State<FavouriteProductPlaceh
     final hasValidProductId = (product.id ?? 0) > 0;
     return InkWell(
       onTap: hasValidProductId
-          ? () => context.pushRoute('/product', arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(product)))
+          ? () => context.pushRoute('/rs_product', arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(product)))
           : null,
       borderRadius: BorderRadius.circular(24),
       child: Container(

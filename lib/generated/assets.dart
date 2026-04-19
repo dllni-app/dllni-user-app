@@ -31,6 +31,7 @@ class $AssetsImagesGen {
   final AssetGenImage detergents = const AssetGenImage('assets/images/detergents.png');
   final AssetGenImage facebook = const AssetGenImage('assets/images/facebook.png');
   final AssetGenImage filter = const AssetGenImage('assets/images/filter.png');
+  final AssetGenImage giftImage = const AssetGenImage('assets/images/gift_image.png');
   final AssetGenImage homeImage = const AssetGenImage('assets/images/home_image.png');
   final AssetGenImage image1 = const AssetGenImage('assets/images/image1.png');
   final AssetGenImage instagram = const AssetGenImage('assets/images/instagram.png');
@@ -52,9 +53,11 @@ class $AssetsImagesGen {
   final SvgGenImage rsProfileBottomNavBar = const SvgGenImage('assets/images/rs_profile_bottom_nav_bar.svg');
   final SvgGenImage rsProfileCoupon = const SvgGenImage('assets/images/rs_profile_coupon.svg');
   final AssetGenImage search = const AssetGenImage('assets/images/search.png');
+  final AssetGenImage socialImage = const AssetGenImage('assets/images/social_image.png');
   final AssetGenImage store = const AssetGenImage('assets/images/store.png');
   final AssetGenImage studioImage = const AssetGenImage('assets/images/studio_image.png');
   final AssetGenImage test = const AssetGenImage('assets/images/test.png');
+  final AssetGenImage threeStarsImage = const AssetGenImage('assets/images/three_stars_image.png');
   final AssetGenImage vegetables = const AssetGenImage('assets/images/vegetables.png');
   final AssetGenImage villaImage = const AssetGenImage('assets/images/villa_image.png');
   final AssetGenImage whatsapp = const AssetGenImage('assets/images/whatsapp.png');

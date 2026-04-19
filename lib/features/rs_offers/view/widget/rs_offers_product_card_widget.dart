@@ -1,12 +1,11 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
-import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dllni_user_app/features/rs_discover/domain/usecases/add_restaurant_cart_item_use_case.dart';
+import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
+import 'package:dllni_user_app/features/rs_discover/view/models/product_preview_data.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/store_product_item.dart';
-import 'package:dllni_user_app/features/rs_favourite/view/widgets/favourite_product_placeholder_card.dart';
+import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_details_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:toastification/toastification.dart';
 
+import '../../../rs_discover/data/models/fetch_restaurant_products_search_model.dart';
 import '../../data/models/fetch_rs_offers_products_model.dart';
 
 class RsOffersProductCardWidget extends StatelessWidget {
@@ -17,46 +16,25 @@ class RsOffersProductCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mapped = _toStoreProductItem(product);
-    return FavouriteProductPlaceholderCard(
-      product: mapped,
-      onAddToCart: () async {
-        final productId = mapped.id;
-        if (productId == null || productId <= 0) {
-          AppToast.showToast(
-            context: context,
-            message: 'تعذر تحديد المنتج',
-            type: ToastificationType.error,
-          );
-          return;
-        }
-
-        final res = await getIt<AddRestaurantCartItemUseCase>()(
-          AddRestaurantCartItemParams(
-            productId: productId,
-            quantity: 1,
-            modifierIds: const [],
-            substituteProductId: null,
-            specialInstructions: '',
-          ),
-        );
-
-        if (!context.mounted) return;
-        res.fold(
-          (failure) => AppToast.showToast(
-            context: context,
-            message: failure.message,
-            type: ToastificationType.error,
-          ),
-          (result) {
-            getIt<CartProductsCountCubit>().refreshAfterAdd();
-            AppToast.showToast(
-              context: context,
-              message: (result.message ?? '').trim().isNotEmpty
-                  ? result.message!
-                  : 'تمت إضافة المنتج إلى السلة',
-              type: ToastificationType.success,
-            );
-          },
+    final productId = mapped.id ?? 0;
+    final offerText = (mapped.offerBadgeText ?? mapped.offer ?? '').trim();
+    return RsAppProductCard(
+      productId: productId,
+      image: (mapped.imageUrl ?? '').trim(),
+      title: mapped.name,
+      restaurant: (mapped.restaurantName ?? '').trim().isEmpty ? 'مطعم' : mapped.restaurantName!.trim(),
+      price: mapped.priceText,
+      offer: FetchRestaurantProductsSearchModelActiveOffer(
+        badgeText: mapped.offerBadgeText,
+        discountType: mapped.offerDiscountType,
+        discountValue: mapped.offerDiscountValue,
+        title: mapped.offerUrgencyTag,
+      ),
+      onTap: () {
+        if (productId <= 0) return;
+        context.pushRoute(
+          '/rs_product',
+          arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(mapped, fallbackRestaurantName: mapped.restaurantName)),
         );
       },
     );

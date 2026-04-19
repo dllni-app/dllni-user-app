@@ -1,17 +1,17 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
-import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
 import 'package:dllni_user_app/features/rs_favourite/data/models/fetch_favourite_products_model.dart';
 import 'package:dllni_user_app/features/rs_favourite/domain/usecases/fetch_favourite_products_use_case.dart';
 import 'package:dllni_user_app/features/rs_favourite/view/manager/bloc/rs_favourite_bloc.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/store_product_item.dart';
-import 'package:dllni_user_app/features/rs_discover/domain/usecases/add_restaurant_cart_item_use_case.dart';
+import 'package:dllni_user_app/features/rs_discover/view/models/product_preview_data.dart';
+import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:toastification/toastification.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../rs_discover/data/models/fetch_restaurant_products_search_model.dart';
 import 'favourite_empty_state.dart';
-import 'favourite_product_placeholder_card.dart';
 
 class FavouriteProductsTab extends StatelessWidget {
   const FavouriteProductsTab({super.key});
@@ -44,14 +44,7 @@ class FavouriteProductsTab extends StatelessWidget {
         }
 
         if (pagination.isLoading && pagination.list.isEmpty) {
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: 4,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (_, __) => FavouriteProductPlaceholderCard(
-              product: StoreProductItem(name: '...', description: '...', priceText: '...', category: '...'),
-            ),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (pagination.isEmpty) {
@@ -89,62 +82,84 @@ class FavouriteProductsTab extends StatelessWidget {
             onRefresh: () async {
               context.read<RsFavouriteBloc>().add(FetchFavouriteProductsEvent(params: FetchFavouriteProductsParams(page: 1), isReload: true));
             },
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              itemCount: pagination.list.length + (showFooter ? 1 : 0),
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (_, index) {
-                if (index >= pagination.list.length) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
-                  );
-                }
-
-                final item = _mapFavouriteProductToStoreItem(pagination.list[index]);
-                return FavouriteProductPlaceholderCard(
-                  product: item,
-                  onAddToCart: () => _addToCart(context: context, item: item),
-                  onFavouriteChanged: (isFavorited) {
-                    if (isFavorited) return;
-                    final productId = item.id;
-                    if (productId == null || productId <= 0) return;
-                    context.read<RsFavouriteBloc>().add(RemoveFavouriteProductEvent(productId: productId));
-                  },
-                );
-              },
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.65,
+                    ),
+                    delegate: SliverChildBuilderDelegate((_, index) {
+                      final item = _mapFavouriteProductToStoreItem(pagination.list[index]);
+                      return Stack(
+                        children: [
+                          RsAppProductCard(
+                            productId: item.id!,
+                            image: (item.imageUrl ?? '').trim(),
+                            title: item.name,
+                            restaurant: (item.restaurantName ?? '').trim().isEmpty ? 'مطعم' : item.restaurantName!.trim(),
+                            price: item.priceText,
+                            offer: FetchRestaurantProductsSearchModelActiveOffer(
+                              badgeText: item.offerBadgeText,
+                              discountType: item.offerDiscountType,
+                              discountValue: item.offerDiscountValue,
+                              title: item.offerUrgencyTag,
+                            ),
+                            onTap: () {
+                              final productId = item.id ?? 0;
+                              if (productId <= 0) return;
+                              context.pushRoute(
+                                '/rs_product',
+                                arguments: ProductDetailsScreenParams(
+                                  product: ProductPreviewData.fromStoreProduct(item, fallbackRestaurantName: item.restaurantName),
+                                ),
+                              );
+                            },
+                          ),
+                          PositionedDirectional(
+                            top: 8,
+                            start: 8,
+                            child: InkWell(
+                              onTap: () {
+                                final productId = item.id;
+                                if (productId == null || productId <= 0) return;
+                                context.read<RsFavouriteBloc>().add(RemoveFavouriteProductEvent(productId: productId));
+                              },
+                              customBorder: const CircleBorder(),
+                              child: CircleAvatar(
+                                radius: 16,
+                                backgroundColor: context.onPrimary,
+                                child: const FaIcon(FontAwesomeIcons.solidHeart, size: 14, color: Color(0xFFEF4444)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }, childCount: pagination.list.length),
+                  ),
+                ),
+                if (showFooter)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+                    ),
+                  ),
+              ],
             ),
           ),
         );
       },
     );
   }
-
-  Future<void> _addToCart({required BuildContext context, required StoreProductItem item}) async {
-    final productId = item.id;
-    if (productId == null || productId <= 0) {
-      AppToast.showToast(context: context, message: 'تعذر تحديد المنتج', type: ToastificationType.error);
-      return;
-    }
-
-    final res = await getIt<AddRestaurantCartItemUseCase>()(
-      AddRestaurantCartItemParams(productId: productId, quantity: 1, modifierIds: const [], substituteProductId: null, specialInstructions: ''),
-    );
-
-    if (!context.mounted) return;
-    res.fold((failure) => AppToast.showToast(context: context, message: failure.message, type: ToastificationType.error), (result) {
-      getIt<CartProductsCountCubit>().refreshAfterAdd();
-      AppToast.showToast(
-        context: context,
-        message: (result.message ?? '').trim().isNotEmpty ? result.message! : 'تمت إضافة المنتج إلى السلة',
-        type: ToastificationType.success,
-      );
-    });
-  }
 }
 
 StoreProductItem _mapFavouriteProductToStoreItem(FetchFavouriteProductsModelDataItem item) {
-  String _priceText(num? value, String? currency) {
+  String priceText(num? value, String? currency) {
     if (value == null) return '-';
     final clean = value % 1 == 0 ? value.toInt().toString() : value.toString();
     return (currency ?? '').trim().isEmpty ? clean : '$clean ${currency!.trim()}';
@@ -158,8 +173,8 @@ StoreProductItem _mapFavouriteProductToStoreItem(FetchFavouriteProductsModelData
     id: item.id,
     name: item.name ?? 'منتج',
     description: item.description ?? 'بدون وصف',
-    priceText: _priceText(item.displayPrice, item.currency),
-    oldPriceText: item.originalPrice != null ? _priceText(item.originalPrice, item.currency) : null,
+    priceText: priceText(item.displayPrice, item.currency),
+    oldPriceText: item.originalPrice != null ? priceText(item.originalPrice, item.currency) : null,
     displayPriceValue: item.displayPrice,
     oldPriceValue: item.originalPrice,
     currency: item.currency,

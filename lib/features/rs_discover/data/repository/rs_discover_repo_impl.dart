@@ -12,6 +12,8 @@ import '../../domain/usecases/fetch_restaurant_details_use_case.dart';
 import '../models/fetch_restaurant_details_model.dart';
 import '../../domain/usecases/fetch_restaurant_product_details_use_case.dart';
 import '../models/fetch_restaurant_product_details_model.dart';
+import '../../domain/usecases/fetch_restaurant_products_search_use_case.dart';
+import '../models/fetch_restaurant_products_search_model.dart';
 import '../source/rs_discover_remote_data_source.dart';
 
 @LazySingleton(as: RsDiscoverRepo)
@@ -21,38 +23,57 @@ class RsDiscoverRepoImpl with HandlingException implements RsDiscoverRepo {
   RsDiscoverRepoImpl({required this.rsDiscoverRemoteDataSource});
 
   @override
-  DataResponse<FetchDiscoverRestaurantsModel> fetchDiscoverRestaurants(FetchDiscoverRestaurantsParams params) {
+  DataResponse<FetchDiscoverRestaurantsModel> fetchDiscoverRestaurants(
+    FetchDiscoverRestaurantsParams params,
+  ) {
     return wrapHandlingException(
-      tryCall: () => rsDiscoverRemoteDataSource.fetchDiscoverRestaurants(params),
+      tryCall: () =>
+          rsDiscoverRemoteDataSource.fetchDiscoverRestaurants(params),
     );
   }
 
   @override
-  DataResponse<FetchRestaurantDetailsModel> fetchRestaurantDetails(FetchRestaurantDetailsParams params) {
+  DataResponse<FetchRestaurantDetailsModel> fetchRestaurantDetails(
+    FetchRestaurantDetailsParams params,
+  ) {
     return wrapHandlingException(
       tryCall: () => rsDiscoverRemoteDataSource.fetchRestaurantDetails(params),
     );
   }
 
   @override
-  DataResponse<FetchRestaurantProductDetailsModel> fetchRestaurantProductDetails(FetchRestaurantProductDetailsParams params) {
+  DataResponse<FetchRestaurantProductDetailsModel>
+  fetchRestaurantProductDetails(FetchRestaurantProductDetailsParams params) {
     return wrapHandlingException(
-      tryCall: () => rsDiscoverRemoteDataSource.fetchRestaurantProductDetails(params),
+      tryCall: () =>
+          rsDiscoverRemoteDataSource.fetchRestaurantProductDetails(params),
     );
   }
 
   @override
-  DataResponse<AddRestaurantCartItemModel> addRestaurantCartItem(AddRestaurantCartItemParams params) {
+  DataResponse<FetchRestaurantProductsSearchModel>
+  fetchRestaurantProductsSearch(FetchRestaurantProductsSearchParams params) {
+    return wrapHandlingException(
+      tryCall: () =>
+          rsDiscoverRemoteDataSource.fetchRestaurantProductsSearch(params),
+    );
+  }
+
+  @override
+  DataResponse<AddRestaurantCartItemModel> addRestaurantCartItem(
+    AddRestaurantCartItemParams params,
+  ) {
     return wrapHandlingException(
       tryCall: () => rsDiscoverRemoteDataSource.addRestaurantCartItem(params),
     );
   }
 
   @override
-  DataResponse<FetchRestaurantCartProductsCountModel> fetchRestaurantCartProductsCount() {
+  DataResponse<FetchRestaurantCartProductsCountModel>
+  fetchRestaurantCartProductsCount() {
     return wrapHandlingException(
-      tryCall: () => rsDiscoverRemoteDataSource.fetchRestaurantCartProductsCount(),
+      tryCall: () =>
+          rsDiscoverRemoteDataSource.fetchRestaurantCartProductsCount(),
     );
   }
 }
-

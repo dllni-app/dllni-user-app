@@ -11,55 +11,45 @@ class NearStoresSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FaIcon(
-                FontAwesomeIcons.locationDot,
-                color: Color(0xFF6C63FF),
-                size: 15,
-              ),
-              SizedBox(width: 8),
-              AppText(
-                "مطاعم قريبة منك",
-                style: TextStyle(
-                  color: Color(0xFF1A1A1A),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  height: 24 / 16,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          BlocBuilder<RsHomeBloc, RsHomeState>(
-            builder: (context, state) {
-              if (state.restaurantNearestRestaurantsStatus == BlocStatus.loading ||
-                  state.restaurantNearestRestaurantsStatus == BlocStatus.init ||
-                  state.restaurantNearestRestaurantsStatus == null) {
-                return Center(child: CircularProgressIndicator());
-              } else if (state.restaurantNearestRestaurantsStatus == BlocStatus.failed) {
-                return Center(child: AppText.labelLarge(state.errorMessage ?? 'حدث خطا ما'));
-              } else {
-                final list = state.restaurantNearestRestaurants?.nearestRestaurants ?? const [];
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FaIcon(FontAwesomeIcons.locationDot, color: Color(0xFF6C63FF), size: 15),
+            SizedBox(width: 8),
+            AppText(
+              "مطاعم قريبة منك",
+              style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        BlocBuilder<RsHomeBloc, RsHomeState>(
+          builder: (context, state) {
+            if (state.restaurantNearestRestaurantsStatus == BlocStatus.loading ||
+                state.restaurantNearestRestaurantsStatus == BlocStatus.init ||
+                state.restaurantNearestRestaurantsStatus == null) {
+              return Center(child: CircularProgressIndicator());
+            } else if (state.restaurantNearestRestaurantsStatus == BlocStatus.failed) {
+              return Center(child: AppText.labelLarge(state.errorMessage ?? 'حدث خطا ما'));
+            } else {
+              final list = state.restaurantNearestRestaurants?.nearestRestaurants ?? const [];
+              return SizedBox(
+                height: 220,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
                   padding: EdgeInsetsDirectional.symmetric(vertical: 10),
                   itemBuilder: (context, index) => StoreCard(store: list[index]),
-                  separatorBuilder: (context, index) => SizedBox(height: 10),
+                  separatorBuilder: (context, index) => SizedBox(width: 10),
                   itemCount: list.length,
-                );
-              }
-            },
-          ),
-        ],
-      ),
+                ),
+              );
+            }
+          },
+        ),
+      ],
     );
   }
 }

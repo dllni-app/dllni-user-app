@@ -25,9 +25,16 @@ class FavouriteRestaurantCardShimmer extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Container(height: 14, width: 180, color: const Color(0xFFF3F4F6)),
+          Container(
+            height: 14,
+            width: double.infinity,
+            color: const Color(0xFFF3F4F6),
+          ),
           const SizedBox(height: 10),
-          Container(height: 12, width: 120, color: const Color(0xFFF3F4F6)),
+          FractionallySizedBox(
+            widthFactor: 0.65,
+            child: Container(height: 12, color: const Color(0xFFF3F4F6)),
+          ),
         ],
       ),
     );

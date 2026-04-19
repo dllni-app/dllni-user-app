@@ -18,7 +18,10 @@ class StoreDetailsScreenParams {
   final int restaurantId;
   final RestaurantPreviewData preview;
 
-  const StoreDetailsScreenParams({required this.restaurantId, required this.preview});
+  const StoreDetailsScreenParams({
+    required this.restaurantId,
+    required this.preview,
+  });
 }
 
 @AutoRoutePage(path: "/rs_store")
@@ -46,7 +49,12 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
 
   Future<FetchRestaurantDetailsModel?> _loadDetails() async {
     final useCase = getIt<FetchRestaurantDetailsUseCase>();
-    final res = await useCase(FetchRestaurantDetailsParams(restaurantId: widget.params.restaurantId, reviewsPerPage: 10));
+    final res = await useCase(
+      FetchRestaurantDetailsParams(
+        restaurantId: widget.params.restaurantId,
+        reviewsPerPage: 10,
+      ),
+    );
     return res.fold((_) => null, (r) {
       final remoteFavourite = r.restaurant?.isFavorited;
       if (remoteFavourite != null && mounted) {
@@ -69,7 +77,12 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
       _isUpdatingFavourite = true;
     });
 
-    final res = await getIt<ToggleRestaurantFavouriteUseCase>()(ToggleRestaurantFavouriteParams(restaurantId: restaurantId, isFavorited: next));
+    final res = await getIt<ToggleRestaurantFavouriteUseCase>()(
+      ToggleRestaurantFavouriteParams(
+        restaurantId: restaurantId,
+        isFavorited: next,
+      ),
+    );
 
     if (!mounted) return;
 
@@ -153,16 +166,35 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
     return counts;
   }
 
-  Map<int, int> _resolveCounts(FetchRestaurantDetailsModel? details, List<RestaurantDetailsReview> reviews) {
+  Map<int, int> _resolveCounts(
+    FetchRestaurantDetailsModel? details,
+    List<RestaurantDetailsReview> reviews,
+  ) {
     final summaryCounts = details?.ratingSummary?.counts ?? const {};
     if (summaryCounts.isNotEmpty) {
-      return {5: summaryCounts[5] ?? 0, 4: summaryCounts[4] ?? 0, 3: summaryCounts[3] ?? 0, 2: summaryCounts[2] ?? 0, 1: summaryCounts[1] ?? 0};
+      return {
+        5: summaryCounts[5] ?? 0,
+        4: summaryCounts[4] ?? 0,
+        3: summaryCounts[3] ?? 0,
+        2: summaryCounts[2] ?? 0,
+        1: summaryCounts[1] ?? 0,
+      };
     }
     return _countsFromReviews(reviews);
   }
 
   List<StoreProductItem> _buildProducts(FetchRestaurantDetailsModel? details) {
-    final byCategories = details?.categories.expand((c) => c.products.map((p) => (product: p, category: c.name))).toList() ?? const [];
+    final resolvedRestaurantName = _pickFirstNotEmpty([
+      details?.restaurant?.name,
+      widget.params.preview.name,
+    ], fallback: 'مطعم');
+    final byCategories =
+        details?.categories
+            .expand(
+              (c) => c.products.map((p) => (product: p, category: c.name)),
+            )
+            .toList() ??
+        const [];
     if (byCategories.isNotEmpty) {
       return byCategories.map((entry) {
         final p = entry.product;
@@ -171,10 +203,13 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
           name: p.name ?? 'منتج',
           description: p.description ?? 'بدون وصف',
           priceText: _formatPrice(p.discountedPrice ?? p.price),
-          oldPriceText: p.discountedPrice != null ? _formatPrice(p.price) : null,
+          oldPriceText: p.discountedPrice != null
+              ? _formatPrice(p.price)
+              : null,
           displayPriceValue: p.discountedPrice ?? p.price,
           oldPriceValue: p.discountedPrice != null ? p.price : null,
           imageUrl: p.imageUrl ?? p.primaryImage ?? p.image,
+          restaurantName: resolvedRestaurantName,
           category: entry.category ?? p.categoryName ?? 'أخرى',
           isTop: p.isFeatured ?? false,
         );
@@ -191,6 +226,7 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
         displayPriceValue: p.discountedPrice ?? p.price,
         oldPriceValue: p.discountedPrice != null ? p.price : null,
         imageUrl: p.imageUrl ?? p.primaryImage ?? p.image,
+        restaurantName: resolvedRestaurantName,
         category: p.categoryName ?? 'الأكثر طلباً',
         isTop: p.isFeatured ?? true,
       );
@@ -202,14 +238,25 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
     return <String>['الكل', 'الأكثر طلباً', ...categories];
   }
 
-  List<StoreProductItem> _visibleProducts(List<StoreProductItem> products, List<String> filters) {
+  List<StoreProductItem> _visibleProducts(
+    List<StoreProductItem> products,
+    List<String> filters,
+  ) {
     if (filters.isEmpty) return products;
-    final safeIndex = _selectedFilterIndex >= filters.length ? 0 : _selectedFilterIndex;
+    final safeIndex = _selectedFilterIndex >= filters.length
+        ? 0
+        : _selectedFilterIndex;
     final selectedFilter = filters[safeIndex];
     if (selectedFilter == 'الكل') {
       return products;
     }
-    return products.where((product) => product.category == selectedFilter || (selectedFilter == 'الأكثر طلباً' && product.isTop)).toList();
+    return products
+        .where(
+          (product) =>
+              product.category == selectedFilter ||
+              (selectedFilter == 'الأكثر طلباً' && product.isTop),
+        )
+        .toList();
   }
 
   @override
@@ -224,7 +271,9 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
 
         final products = _buildProducts(details);
         final filters = _buildFilters(products);
-        final safeIndex = _selectedFilterIndex >= filters.length ? 0 : _selectedFilterIndex;
+        final safeIndex = _selectedFilterIndex >= filters.length
+            ? 0
+            : _selectedFilterIndex;
         if (safeIndex != _selectedFilterIndex) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -237,16 +286,43 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
 
         final visibleProducts = _visibleProducts(products, filters);
         final reviews = details?.reviews ?? const <RestaurantDetailsReview>[];
-        final ratingAverage = details?.ratingSummary?.average ?? restaurant?.averageRating ?? preview.rating ?? 0;
-        final ratingTotal = details?.ratingSummary?.total ?? restaurant?.totalReviews ?? preview.totalReviews ?? 0;
+        final ratingAverage =
+            details?.ratingSummary?.average ??
+            restaurant?.averageRating ??
+            preview.rating ??
+            0;
+        final ratingTotal =
+            details?.ratingSummary?.total ??
+            restaurant?.totalReviews ??
+            preview.totalReviews ??
+            0;
         final ratingCounts = _resolveCounts(details, reviews);
-        final restaurantName = _pickFirstNotEmpty([restaurant?.name, preview.name], fallback: 'المطعم');
-        final restaurantDescription = _pickFirstNotEmpty([restaurant?.description, preview.description]);
+        final restaurantName = _pickFirstNotEmpty([
+          restaurant?.name,
+          preview.name,
+        ], fallback: 'المطعم');
+        final restaurantDescription = _pickFirstNotEmpty([
+          restaurant?.description,
+          preview.description,
+        ]);
         final cuisineSummary =
-            restaurant?.cuisineTypes.map((e) => e.name).whereType<String>().where((e) => e.isNotEmpty).join(' • ') ?? (preview.cuisineSummary ?? '');
-        final address = _pickFirstNotEmpty([restaurant?.address, preview.address], fallback: 'غير متاح');
-        final prepMinutes = restaurant?.estimatedPreparationTime ?? preview.estimatedPreparationTime ?? 0;
-        final preparationLabel = prepMinutes > 0 ? '$prepMinutes دقيقة' : 'غير متاح';
+            restaurant?.cuisineTypes
+                .map((e) => e.name)
+                .whereType<String>()
+                .where((e) => e.isNotEmpty)
+                .join(' • ') ??
+            (preview.cuisineSummary ?? '');
+        final address = _pickFirstNotEmpty([
+          restaurant?.address,
+          preview.address,
+        ], fallback: 'غير متاح');
+        final prepMinutes =
+            restaurant?.estimatedPreparationTime ??
+            preview.estimatedPreparationTime ??
+            0;
+        final preparationLabel = prepMinutes > 0
+            ? '$prepMinutes دقيقة'
+            : 'غير متاح';
         final isOpenNow = !(restaurant?.isTemporarilyClosed ?? false);
         final coverImage = _pickFirstNotEmpty([
           restaurant?.imageUrl,
@@ -289,14 +365,23 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
                   SizedBox(height: 20),
                   Divider(height: 1, color: Color(0xFFF3F4F6)),
                   SizedBox(height: 28),
-                  StoreRestaurantInfoCard(description: restaurantDescription, address: address, workingHoursLines: _workingHoursLines(restaurant)),
+                  StoreRestaurantInfoCard(
+                    description: restaurantDescription,
+                    address: address,
+                    workingHoursLines: _workingHoursLines(restaurant),
+                  ),
                   SizedBox(height: 16),
                   Divider(height: 1, color: Color(0xFFF3F4F6)),
                   SizedBox(height: 44),
                   SpecialOffersSection(offers: offers),
-                  if (offers.isNotEmpty) ...[SizedBox(height: 20), Divider(height: 1, color: Color(0xFFF3F4F6)), SizedBox(height: 20)],
+                  if (offers.isNotEmpty) ...[
+                    SizedBox(height: 20),
+                    Divider(height: 1, color: Color(0xFFF3F4F6)),
+                    SizedBox(height: 20),
+                  ],
                   StoreProductsPreviewSection(
                     restaurantId: widget.params.restaurantId,
+                    restaurantName: restaurantName,
                     selectedFilterIndex: _selectedFilterIndex,
                     onFilterChanged: (index) {
                       setState(() {
