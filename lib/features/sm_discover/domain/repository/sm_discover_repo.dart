@@ -7,6 +7,8 @@ import '../usecases/change_store_favorite_use_case.dart';
 import '../../data/models/change_store_favorite_model.dart';
 import '../usecases/change_product_favorite_use_case.dart';
 import '../../data/models/change_product_favorite_model.dart';
+import '../usecases/normalize_product_text_use_case.dart';
+import '../../data/models/normalize_product_text_model.dart';
 abstract class SmDiscoverRepo {
   DataResponse<BrowseStoresModel> browseStores(BrowseStoresParams params);
 
@@ -15,4 +17,6 @@ abstract class SmDiscoverRepo {
   DataResponse<ChangeStoreFavoriteModel> changeStoreFavorite(ChangeStoreFavoriteParams params);
 
   DataResponse<ChangeProductFavoriteModel> changeProductFavorite(ChangeProductFavoriteParams params);
+
+  DataResponse<NormalizeProductTextModel> normalizeProductText(NormalizeProductTextParams params);
 }

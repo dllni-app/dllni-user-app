@@ -268,6 +268,8 @@ import '../../features/sm_discover/domain/usecases/change_product_favorite_use_c
     as _i871;
 import '../../features/sm_discover/domain/usecases/change_store_favorite_use_case.dart'
     as _i327;
+import '../../features/sm_discover/domain/usecases/normalize_product_text_use_case.dart'
+    as _i248;
 import '../../features/sm_discover/view/manager/bloc/sm_discover_bloc.dart'
     as _i717;
 import '../../features/sm_favorite/data/repository/sm_favorite_repo_impl.dart'
@@ -672,6 +674,11 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i327.ChangeStoreFavoriteUseCase>(
     () => _i327.ChangeStoreFavoriteUseCase(
+      smDiscover: gh<_i880.SmDiscoverRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i248.NormalizeProductTextUseCase>(
+    () => _i248.NormalizeProductTextUseCase(
       smDiscover: gh<_i880.SmDiscoverRepo>(),
     ),
   );

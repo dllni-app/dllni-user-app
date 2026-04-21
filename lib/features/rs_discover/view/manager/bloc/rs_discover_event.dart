@@ -27,7 +27,11 @@ class DiscoverSearchQueryChangedEvent extends RsDiscoverEvent {
 class DiscoverProductSearchQueryChangedEvent extends RsDiscoverEvent {
   final String query;
 
-  DiscoverProductSearchQueryChangedEvent(this.query);
+  /// When set (e.g. smart search), keeps [RsDiscoverState.activeSearchMode] in sync;
+  /// otherwise defaults to meal search.
+  final RsDiscoverSearchMode? resultingMode;
+
+  DiscoverProductSearchQueryChangedEvent(this.query, {this.resultingMode});
 }
 
 class DiscoverSearchModeChangedEvent extends RsDiscoverEvent {

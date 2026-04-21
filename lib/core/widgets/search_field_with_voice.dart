@@ -8,14 +8,14 @@ class SearchFieldWithVoice extends StatelessWidget {
     super.key,
     this.onTap,
     required this.onSearch,
-    required this.onVoiceTap,
+    this.onVoiceTap,
     this.controller,
     this.backgroundColor = const Color(0xFFF9FAFB),
     this.hintText,
     this.isListening = false,
   });
   final void Function(String search) onSearch;
-  final void Function() onVoiceTap;
+  final void Function()? onVoiceTap;
   final Color backgroundColor;
   final void Function()? onTap;
   final TextEditingController? controller;
@@ -55,29 +55,31 @@ class SearchFieldWithVoice extends StatelessWidget {
           ),
         ),
         suffixIconConstraints: BoxConstraints(maxWidth: 44),
-        suffixIcon: Padding(
-          padding: EdgeInsets.only(left: 16),
-          child: InkWell(
-            onTap: onVoiceTap,
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-            child: Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isListening
-                    ? Colors.red.withValues(alpha: 0.1)
-                    : AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+        suffixIcon: onVoiceTap == null
+            ? null
+            : Padding(
+                padding: EdgeInsets.only(left: 16),
+                child: InkWell(
+                  onTap: onVoiceTap,
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isListening
+                          ? Colors.red.withValues(alpha: 0.1)
+                          : AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                    ),
+                    child: FaIcon(
+                      FontAwesomeIcons.microphone,
+                      size: 14,
+                      color: isListening ? Colors.red : AppColors.primary,
+                    ),
+                  ),
+                ),
               ),
-              child: FaIcon(
-                FontAwesomeIcons.microphone,
-                size: 14,
-                color: isListening ? Colors.red : AppColors.primary,
-              ),
-            ),
-          ),
-        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(24)),
           borderSide: BorderSide(color: const Color(0xFFE5E7EB)),

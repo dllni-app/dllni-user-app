@@ -8,6 +8,8 @@ import '../models/change_store_favorite_model.dart';
 import '../../domain/usecases/change_store_favorite_use_case.dart';
 import '../models/change_product_favorite_model.dart';
 import '../../domain/usecases/change_product_favorite_use_case.dart';
+import '../models/normalize_product_text_model.dart';
+import '../../domain/usecases/normalize_product_text_use_case.dart';
 
 @lazySingleton
 class SmDiscoverRemoteDataSource with HandlingApiManager {
@@ -76,6 +78,19 @@ class SmDiscoverRemoteDataSource with HandlingApiManager {
               params: params.getParams(),
             ),
       jsonConvert: changeProductFavoriteModelFromJson,
+    );
+  }
+
+  Future<NormalizeProductTextModel> normalizeProductText(
+    NormalizeProductTextParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/products/normalize-text',
+        data: params.getBody(),
+        params: params.getParams(),
+      ),
+      jsonConvert: normalizeProductTextModelFromJson,
     );
   }
 }

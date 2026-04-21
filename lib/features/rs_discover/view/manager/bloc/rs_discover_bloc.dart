@@ -91,7 +91,7 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
   ) {
     emit(
       state.copyWith(
-        activeSearchMode: RsDiscoverSearchMode.meal,
+        activeSearchMode: event.resultingMode ?? RsDiscoverSearchMode.meal,
         productSearchQuery: event.query,
       ),
     );

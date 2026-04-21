@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/utils/app_images.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../core/widgets/loading_list.dart';
 import '../../domain/usecases/get_nearby_stores_use_case.dart';
@@ -46,7 +45,13 @@ class NearStoresSection extends StatelessWidget {
                 previous.nearbyStoresStatus != current.nearbyStoresStatus,
             builder: (context, state) {
               if (state.nearbyStoresStatus == BlocStatus.loading) {
-                return LoadingList(heightCard: 279, borderRadius: 24);
+                return LoadingGrid(
+                  heightCard: 180,
+                  borderRadius: 24,
+                  crossAxisSpacing: 11,
+                  mainAxisSpacing: 17,
+                  length: 6,
+                );
               } else if (state.nearbyStoresStatus == BlocStatus.failed) {
                 return FailureWidget(
                   message: state.errorMessage.toString(),
@@ -67,14 +72,20 @@ class NearStoresSection extends StatelessWidget {
                           ),
                         ),
                       )
-                    : ListView.separated(
+                    : GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 11,
+                          crossAxisSpacing: 17,
+                          mainAxisExtent: 180,
+                        ),
                         padding: EdgeInsets.zero,
                         physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
                         itemBuilder: (_, index) => StoreCard(
                           store: state.nearbyStores!.stores![index],
                         ),
-                        separatorBuilder: (_, _) => SizedBox(height: 12),
+                        // separatorBuilder: (_, _) => SizedBox(height: 12),
                         itemCount: state.nearbyStores!.stores!.length,
                       );
               }

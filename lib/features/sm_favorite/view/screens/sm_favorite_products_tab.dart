@@ -24,7 +24,13 @@ class SmFavoriteProductsTab extends StatelessWidget {
         return state.favoriteProducts!.builder(
           loadingWidget: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            child: LoadingList(heightCard: 240, borderRadius: 24, length: 5),
+            child: LoadingGrid(
+              heightCard: 232,
+              borderRadius: 24,
+              length: 10,
+              crossAxisSpacing: 7,
+              mainAxisSpacing: 12,
+            ),
           ),
           emptyWidget: Center(
             child: AppText.labelMedium(
@@ -33,8 +39,14 @@ class SmFavoriteProductsTab extends StatelessWidget {
             ),
           ),
           successWidget: () {
-            return ListView.separated(
-              padding: const EdgeInsets.all(20),
+            return GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 7,
+                mainAxisSpacing: 12,
+                mainAxisExtent: 232,
+              ),
+              padding: EdgeInsetsDirectional.all(20),
               itemBuilder: (context, index) {
                 if (state.favoriteProducts!.length <= index) {
                   if (state.favoriteProducts!.length == index) {
@@ -53,7 +65,6 @@ class SmFavoriteProductsTab extends StatelessWidget {
                   child: ProductCard(product: state.favoriteProducts![index]),
                 );
               },
-              separatorBuilder: (_, _) => const SizedBox(height: 16),
               itemCount: state.favoriteProducts!.listLength(1),
             );
           },

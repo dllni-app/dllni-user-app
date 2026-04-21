@@ -122,7 +122,6 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light, statusBarBrightness: Brightness.dark));
     return Container(
       width: context.width,
       padding: EdgeInsets.fromLTRB(16, 16 + MediaQuery.paddingOf(context).top, 16, 20),
@@ -181,6 +180,7 @@ class RsAppSimpleAppBarWithSearch extends StatelessWidget {
   final VoidCallback? onBackTap;
   final String searchHintText;
   final TextEditingController? searchController;
+  final bool searchReadOnly;
 
   const RsAppSimpleAppBarWithSearch({
     super.key,
@@ -190,6 +190,7 @@ class RsAppSimpleAppBarWithSearch extends StatelessWidget {
     this.onBackTap,
     this.searchHintText = "ابحث عن مطعم أو وجبة...",
     this.searchController,
+    this.searchReadOnly = false,
   });
 
   @override
@@ -238,7 +239,13 @@ class RsAppSimpleAppBarWithSearch extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _SearchField(hintText: searchHintText, onChanged: onSearchChanged, onTap: onSearchTap, controller: searchController),
+                child: _SearchField(
+                  hintText: searchHintText,
+                  onChanged: onSearchChanged,
+                  onTap: onSearchTap,
+                  controller: searchController,
+                  readOnly: searchReadOnly,
+                ),
               ),
             ],
           ),
@@ -254,13 +261,21 @@ class _SearchField extends StatelessWidget {
   final void Function()? onTap;
   final String hintText;
   final TextEditingController? controller;
+  final bool readOnly;
 
-  const _SearchField({required this.onChanged, this.onTap, required this.hintText, this.controller});
+  const _SearchField({
+    required this.onChanged,
+    this.onTap,
+    required this.hintText,
+    this.controller,
+    this.readOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      readOnly: readOnly,
       style: TextStyle(fontSize: 15, color: Colors.black),
       onTap: onTap,
       onTapOutside: (_) => FocusScope.of(context).unfocus(),

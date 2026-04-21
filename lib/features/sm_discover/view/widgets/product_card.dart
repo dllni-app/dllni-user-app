@@ -6,9 +6,6 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../../profile/domain/usecases/add_shopping_list_item_use_case.dart';
-import '../../../profile/domain/usecases/get_shopping_list_use_case.dart';
-import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../sm_stores/view/manager/bloc/sm_stores_bloc.dart';
 import '../../../sm_stores/view/screens/sm_product_details_screen.dart';
 import '../../data/models/browse_products_model.dart';
@@ -16,8 +13,8 @@ import '../../domain/usecases/change_product_favorite_use_case.dart';
 import '../manager/bloc/sm_discover_bloc.dart';
 
 class ProductCard extends StatefulWidget {
-  const ProductCard({super.key, required this.product});
   final BrowseProductsModelDataItem product;
+  const ProductCard({super.key, required this.product});
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -27,19 +24,6 @@ class _ProductCardState extends State<ProductCard> {
   late bool isFavorite;
   bool isAddingToShoppingList = false;
   late SmStoresBloc _smStoresBloc;
-
-  @override
-  void initState() {
-    isFavorite = widget.product.isFavorite ?? false;
-    _smStoresBloc = getIt<SmStoresBloc>();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _smStoresBloc.close();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +40,7 @@ class _ProductCardState extends State<ProductCard> {
             arguments: SmProductDetailsScreenArgs(
               productId: widget.product.id!,
               starter: SmStarterProductDetailsData(
+                masterId: widget.product.masterProductId,
                 name: widget.product.name,
                 imageUrl: navImageUrl.isNotEmpty ? navImageUrl : null,
                 price: widget.product.price,
@@ -80,22 +65,46 @@ class _ProductCardState extends State<ProductCard> {
           ),
           child: Stack(
             children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, 23, 11, 13),
-                child: Row(
-                  spacing: 12,
-                  children: [
-                    AppImage.network(
-                      widget.product.imageUrl ?? '',
-                      size: 80,
-                      fit: BoxFit.cover,
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
+              Column(
+                spacing: 12,
+                children: [
+                  AppImage.network(
+                    widget.product.imageUrl ?? '',
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(16),
                     ),
-                    Expanded(
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: 12),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: .08),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(50),
+                              ),
+                            ),
+                            child: AppText(
+                              widget.product.store?.name.toString() ?? "null",
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.accent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                height: 16 / 12,
+                              ),
+                            ),
+                          ),
                           AppText(
                             widget.product.name.toString(), //"ربطة خبز سياحي",
                             style: TextStyle(
@@ -117,62 +126,28 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                           SizedBox(height: 2),
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  if (widget.product.discountedPrice !=
-                                      null) ...[
-                                    AppText(
-                                      "${widget.product.price} ل.س",
-                                      style: TextStyle(
-                                        color: Color(0xFF9CA3AF),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        height: 16 / 12,
-                                        decoration: TextDecoration.lineThrough,
-                                        decorationColor: Color(0xFF9CA3AF),
-                                      ),
-                                    ),
-                                    SizedBox(width: 16),
-                                  ],
-                                  AppText(
-                                    "${widget.product.discountedPrice ?? widget.product.price} ل.س",
-                                    style: TextStyle(
-                                      color: AppColors.accent,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      height: 16 / 12,
-                                    ),
+                              if (widget.product.discountedPrice != null) ...[
+                                AppText(
+                                  "${widget.product.price} ل.س",
+                                  style: TextStyle(
+                                    color: Color(0xFF9CA3AF),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    height: 16 / 12,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: Color(0xFF9CA3AF),
                                   ),
-                                ],
-                              ),
-                              Flexible(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accent.withValues(
-                                      alpha: .08,
-                                    ),
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(50),
-                                    ),
-                                  ),
-                                  child: AppText(
-                                    widget.product.store?.name.toString() ??
-                                        "null",
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: AppColors.accent,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      height: 16 / 12,
-                                    ),
-                                  ),
+                                ),
+                                SizedBox(width: 16),
+                              ],
+                              AppText(
+                                "${widget.product.discountedPrice ?? widget.product.price} ل.س",
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  height: 16 / 12,
                                 ),
                               ),
                             ],
@@ -180,20 +155,20 @@ class _ProductCardState extends State<ProductCard> {
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               if (widget.product.discountedPrice != null)
                 Positioned(
                   top: 0,
-                  right: 0,
+                  left: 0,
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 11, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(24),
-                        bottomLeft: Radius.circular(24),
+                        topLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
                       ),
                     ),
                     child: AppText(
@@ -208,8 +183,8 @@ class _ProductCardState extends State<ProductCard> {
                   ),
                 ),
               Positioned(
-                top: 4,
-                left: 4,
+                top: 0,
+                right: 0,
                 child: BlocProvider(
                   create: (context) => getIt<SmDiscoverBloc>(),
                   child: BlocListener<SmDiscoverBloc, SmDiscoverState>(
@@ -244,41 +219,44 @@ class _ProductCardState extends State<ProductCard> {
                       customBorder: CircleBorder(),
                       child: Padding(
                         padding: EdgeInsets.all(10),
-                        child: FaIcon(
-                          isFavorite
-                              ? FontAwesomeIcons.solidHeart
-                              : FontAwesomeIcons.heart,
-                          size: 16,
-                          color: isFavorite
-                              ? Colors.red
-                              : const Color(0xFF6B7280),
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: AppColors.white.withValues(
+                            alpha: .9,
+                          ),
+                          child: FaIcon(
+                            isFavorite
+                                ? FontAwesomeIcons.solidHeart
+                                : FontAwesomeIcons.heart,
+                            size: 16,
+                            color: isFavorite
+                                ? Colors.red
+                                : const Color(0xFF6B7280),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-              if (isAddingToShoppingList)
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: .2),
-                      borderRadius: BorderRadius.all(Radius.circular(24)),
-                    ),
-                    child: Center(
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _smStoresBloc.close();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    isFavorite = widget.product.isFavorite ?? false;
+    _smStoresBloc = getIt<SmStoresBloc>();
+    super.initState();
   }
 
   // Future<void> _addProductToShoppingList() async {

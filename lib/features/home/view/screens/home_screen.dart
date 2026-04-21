@@ -47,7 +47,7 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.start,
                     fontWeight: FontWeight.w500,
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 32),
                   BlocBuilder<HomeBloc, HomeState>(
                     buildWhen: (prev, next) =>
                         prev.userOffersStatus != next.userOffersStatus ||
@@ -69,7 +69,6 @@ class HomeScreen extends StatelessWidget {
                       return Center(child: HomeCube(offers: state.userOffers.list));
                     },
                   ),
-                  SizedBox(height: 20),
                   SizedBox(height: 32),
                   Row(
                     children: [

@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/rs_app_product_card.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_nearest_restaurants_model.dart';
 import '../../../rs_home/view/widgets/store_card.dart';
+import '../../../sm_discover/view/widgets/smart_search_sheet.dart';
 import '../../data/models/fetch_discover_restaurants_model.dart';
 import '../../data/models/fetch_restaurant_products_search_model.dart';
 import '../manager/bloc/rs_discover_bloc.dart';
@@ -45,7 +46,9 @@ class _SearchViewState extends State<_SearchView> {
     super.initState();
     final state = context.read<RsDiscoverBloc>().state;
     _searchController = TextEditingController(
-      text: state.activeSearchMode == RsDiscoverSearchMode.meal ? state.productSearchQuery : state.searchQuery,
+      text: state.activeSearchMode == RsDiscoverSearchMode.restaurant
+          ? state.searchQuery
+          : state.productSearchQuery,
     );
   }
 
@@ -57,12 +60,38 @@ class _SearchViewState extends State<_SearchView> {
 
   void _dispatchSearchForMode(String value, RsDiscoverSearchMode mode) {
     final bloc = context.read<RsDiscoverBloc>();
-    if (mode == RsDiscoverSearchMode.smart) return;
     if (mode == RsDiscoverSearchMode.restaurant) {
       bloc.add(DiscoverSearchQueryChangedEvent(value));
       return;
     }
-    bloc.add(DiscoverProductSearchQueryChangedEvent(value));
+    bloc.add(
+      DiscoverProductSearchQueryChangedEvent(
+        value,
+        resultingMode: mode == RsDiscoverSearchMode.smart ? RsDiscoverSearchMode.smart : null,
+      ),
+    );
+  }
+
+  Future<void> _openSmartSearchSheet() async {
+    final words = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const SmartSearchSheet(),
+    );
+    if (!mounted || words == null || words.isEmpty) return;
+    final query = words.join(' , ');
+    setState(() {
+      _searchController.text = query;
+      _searchController.selection = TextSelection.collapsed(offset: query.length);
+    });
+    context.read<RsDiscoverBloc>().add(
+      DiscoverProductSearchQueryChangedEvent(
+        query,
+        resultingMode: RsDiscoverSearchMode.smart,
+      ),
+    );
   }
 
   void _onSearchSubmitted(String value) {
@@ -73,6 +102,12 @@ class _SearchViewState extends State<_SearchView> {
   void _onModeSelected(RsDiscoverSearchMode mode) {
     final bloc = context.read<RsDiscoverBloc>();
     bloc.add(DiscoverSearchModeChangedEvent(mode));
+    if (mode == RsDiscoverSearchMode.smart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openSmartSearchSheet();
+      });
+      return;
+    }
     _dispatchSearchForMode(_searchController.text, mode);
   }
 
@@ -81,11 +116,19 @@ class _SearchViewState extends State<_SearchView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RsAppSimpleAppBarWithSearch(
-          title: "اكتشف",
-          searchHintText: "حدد ما تود البحث عنه",
-          onSearchChanged: _onSearchSubmitted,
-          searchController: _searchController,
+        BlocBuilder<RsDiscoverBloc, RsDiscoverState>(
+          buildWhen: (p, c) => p.activeSearchMode != c.activeSearchMode,
+          builder: (context, state) {
+            final smart = state.activeSearchMode == RsDiscoverSearchMode.smart;
+            return RsAppSimpleAppBarWithSearch(
+              title: "اكتشف",
+              searchHintText: "حدد ما تود البحث عنه",
+              onSearchChanged: _onSearchSubmitted,
+              searchController: _searchController,
+              searchReadOnly: smart,
+              onSearchTap: smart ? _openSmartSearchSheet : null,
+            );
+          },
         ),
         const SizedBox(height: 12),
         BlocBuilder<RsDiscoverBloc, RsDiscoverState>(

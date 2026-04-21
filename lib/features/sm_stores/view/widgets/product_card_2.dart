@@ -63,6 +63,7 @@ class _ProductCard2State extends State<ProductCard2> {
           arguments: SmProductDetailsScreenArgs(
             productId: widget.item.id!,
             starter: SmStarterProductDetailsData(
+              masterId: widget.item.masterProductId,
               name: widget.item.name,
               imageUrl: navImageUrl.isNotEmpty ? navImageUrl : null,
               price: widget.item.price,

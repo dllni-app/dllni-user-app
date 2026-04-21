@@ -21,63 +21,75 @@ class SmFavoriteStoreTab extends StatelessWidget {
           previous.favoriteStores != current.favoriteStores,
       builder: (context, state) {
         return state.favoriteStores!.builder(
-            loadingWidget: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: LoadingList(heightCard: 279, borderRadius: 24, length: 5),
+          loadingWidget: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: LoadingGrid(
+              heightCard: 180,
+              borderRadius: 24,
+              length: 6,
+              crossAxisSpacing: 11,
+              mainAxisSpacing: 17,
             ),
-            emptyWidget: Center(
-              child: AppText.labelMedium(
-                'لا يوجد متاجر مفضلة',
-                fontWeight: FontWeight.w400,
+          ),
+          emptyWidget: Center(
+            child: AppText.labelMedium(
+              'لا يوجد متاجر مفضلة',
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          successWidget: () {
+            return GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 11,
+                mainAxisSpacing: 17,
+                mainAxisExtent: 180,
               ),
-            ),
-            successWidget: () {
-              return ListView.separated(
-                padding: const EdgeInsets.all(20),
-                itemBuilder: (context, index) {
-                  if (state.favoriteStores!.length <= index) {
-                    if (state.favoriteStores!.length == index) {
-                      context.read<SmFavoriteBloc>().add(
-                        FetchFavoriteSupermarketStoresEvent(
-                          params: GetFavoriteSupermarketStoresParams(
-                            page: state.favoriteStores!.pageNumber,
-                          ),
+              padding: const EdgeInsets.all(20),
+              itemBuilder: (context, index) {
+                if (state.favoriteStores!.length <= index) {
+                  if (state.favoriteStores!.length == index) {
+                    context.read<SmFavoriteBloc>().add(
+                      FetchFavoriteSupermarketStoresEvent(
+                        params: GetFavoriteSupermarketStoresParams(
+                          page: state.favoriteStores!.pageNumber,
                         ),
-                      );
-                    }
-                    return DownloadMore();
+                      ),
+                    );
                   }
-                  return BlocProvider(
-                    create: (context) => getIt<SmDiscoverBloc>(),
-                    child: StoreCard(store: state.favoriteStores![index]),
-                  );
-                },
-                separatorBuilder: (_, _) => const SizedBox(height: 16),
-                itemCount: state.favoriteStores!.listLength(1),
-              );
-            },
-            failedWidget: Center(
-              child: FailureWidget(
-                message: state.errorMessage.toString(),
-                onRetry: () {
-                  context.read<SmFavoriteBloc>().add(
-                    FetchFavoriteSupermarketStoresEvent(
-                      isReload: true,
-                      params: GetFavoriteSupermarketStoresParams(page: 1),
-                    ),
-                  );
-                },
-              ),
+                  return DownloadMore();
+                }
+                return BlocProvider(
+                  create: (context) => getIt<SmDiscoverBloc>(),
+                  child: StoreCard(store: state.favoriteStores![index]),
+                );
+              },
+              // separatorBuilder: (_, _) => const SizedBox(height: 16),
+              itemCount: state.favoriteStores!.listLength(1),
+            );
+          },
+          failedWidget: Center(
+            child: FailureWidget(
+              message: state.errorMessage.toString(),
+              onRetry: () {
+                context.read<SmFavoriteBloc>().add(
+                  FetchFavoriteSupermarketStoresEvent(
+                    isReload: true,
+                    params: GetFavoriteSupermarketStoresParams(page: 1),
+                  ),
+                );
+              },
             ),
-            onTapRetry: () {
-              context.read<SmFavoriteBloc>().add(
-                FetchFavoriteSupermarketStoresEvent(
-                  isReload: true,
-                  params: GetFavoriteSupermarketStoresParams(page: 1),
-                ),
-              );
-            },
-          );
+          ),
+          onTapRetry: () {
+            context.read<SmFavoriteBloc>().add(
+              FetchFavoriteSupermarketStoresEvent(
+                isReload: true,
+                params: GetFavoriteSupermarketStoresParams(page: 1),
+              ),
+            );
+          },
+        );
       },
     );
   }

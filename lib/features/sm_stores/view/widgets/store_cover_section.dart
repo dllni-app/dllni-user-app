@@ -192,7 +192,7 @@ class _StoreCoverSectionState extends State<StoreCoverSection> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(bottom: 4, left: 44 + 32),
+                      padding: EdgeInsets.only(bottom: 4, left: /*44 +*/ 32),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,33 +230,33 @@ class _StoreCoverSectionState extends State<StoreCoverSection> {
                 ],
               ),
             ),
-            Positioned(
-              left: 16,
-              bottom: 16,
-              child: GestureDetector(
-                onTap: () {},
-                child: ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Color(0xE5FFFFFF),
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                      child: Icon(
-                        Icons.fullscreen,
-                        size: 22,
-                        color: Color(0xFF1F2937),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Positioned(
+            //   left: 16,
+            //   bottom: 16,
+            //   child: GestureDetector(
+            //     onTap: () {},
+            //     child: ClipRRect(
+            //       borderRadius: BorderRadius.all(Radius.circular(12)),
+            //       child: BackdropFilter(
+            //         filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+            //         child: Container(
+            //           width: 44,
+            //           height: 44,
+            //           alignment: Alignment.center,
+            //           decoration: BoxDecoration(
+            //             color: Color(0xE5FFFFFF),
+            //             borderRadius: BorderRadius.all(Radius.circular(12)),
+            //           ),
+            //           child: Icon(
+            //             Icons.fullscreen,
+            //             size: 22,
+            //             color: Color(0xFF1F2937),
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
