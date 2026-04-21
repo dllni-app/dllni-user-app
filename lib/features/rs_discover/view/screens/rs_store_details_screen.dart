@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
@@ -350,6 +353,9 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
                         onFavouriteTap: _toggleFavourite,
                         cartCount: cartCount,
                         onCartTap: () => context.pushRoute('/cart'),
+                        onShareTap: () {
+                          unawaited(shareDeepLinkUrl(restaurantUrl(widget.params.restaurantId), context: context));
+                        },
                       );
                     },
                   ),

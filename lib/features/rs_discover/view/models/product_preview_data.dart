@@ -1,3 +1,4 @@
+import '../../../rs_home/data/models/fetch_restaurant_home_exclusive_offers_model.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_latest_ordered_products_model.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_suggested_products_model.dart';
 import 'store_product_item.dart';
@@ -71,6 +72,23 @@ class ProductPreviewData {
       currency: item.currency,
       imageUrl: item.imageUrl,
       isFavorited: item.isFavorited,
+    );
+  }
+
+  factory ProductPreviewData.fromExclusiveOfferProduct(
+    RestaurantHomeExclusiveOfferProduct product, {
+    required String fallbackRestaurantName,
+  }) {
+    return ProductPreviewData(
+      productId: product.id ?? 0,
+      name: product.name ?? '',
+      restaurantName: fallbackRestaurantName,
+      description: product.description ?? '',
+      displayPrice: product.discountedPrice ?? product.price,
+      originalPrice: product.discountedPrice != null ? product.price : null,
+      currency: 'د.أ',
+      imageUrl: product.primaryImage,
+      isFavorited: product.isFavorite ?? false,
     );
   }
 }

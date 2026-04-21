@@ -10,12 +10,18 @@ class VoteFollowupOptionCard extends StatelessWidget {
     this.onTap,
     this.isSubmitting = false,
     this.isDisabled = false,
+    this.isSelected = false,
   });
 
   final VoteFollowupOptionData option;
   final VoidCallback? onTap;
   final bool isSubmitting;
   final bool isDisabled;
+  final bool isSelected;
+
+  static const Color _selectedBorderColor = Color(0xffF97316);
+  static const Color _selectedBgColor = Color(0xffFFF7ED);
+  static const Color _unselectedBorderColor = Color(0xffE5E7EB);
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +33,12 @@ class VoteFollowupOptionCard extends StatelessWidget {
         opacity: isDisabled ? 0.6 : 1,
         child: Container(
           decoration: BoxDecoration(
-            color: context.onPrimary,
+            color: isSelected ? _selectedBgColor : context.onPrimary,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xffE5E7EB)),
+            border: Border.all(
+              color: isSelected ? _selectedBorderColor : _unselectedBorderColor,
+              width: isSelected ? 1.5 : 1,
+            ),
           ),
           padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 12),
           child: Row(
@@ -46,9 +55,9 @@ class VoteFollowupOptionCard extends StatelessWidget {
                           color: context.primaryContainer,
                         ),
                       )
-                    : const Icon(
-                        Icons.radio_button_unchecked,
-                        color: Color(0xffD1D5DB),
+                    : Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: isSelected ? _selectedBorderColor : const Color(0xffD1D5DB),
                       ),
               ),
               const SizedBox(width: 12),

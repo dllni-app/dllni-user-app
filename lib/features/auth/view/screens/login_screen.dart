@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/auth/view/auth_form_validators.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
@@ -59,7 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
             if (token != null && token.isNotEmpty) {
               await SharedPreferencesHelper.saveData(key: 'token', value: token);
               if (context.mounted) {
-                context.pushRouteAndRemoveUntil('/main');
+                final nav = context.pushRouteAndRemoveUntil('/main');
+                if (nav != null) await nav;
+                await getIt<DeepLinkService>().resumePendingIfAny();
               }
             } else {
               AppToast.showToast(context: context, message: 'لم يتم استلام رمز الدخول', type: ToastificationType.error);

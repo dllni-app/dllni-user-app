@@ -194,6 +194,8 @@ import '../../features/rs_discover/domain/usecases/fetch_restaurant_details_use_
     as _i112;
 import '../../features/rs_discover/domain/usecases/fetch_restaurant_product_details_use_case.dart'
     as _i1;
+import '../../features/rs_discover/domain/usecases/fetch_restaurant_products_search_use_case.dart'
+    as _i526;
 import '../../features/rs_discover/view/manager/bloc/rs_discover_bloc.dart'
     as _i589;
 import '../../features/rs_favourite/data/repository/rs_favourite_repo_impl.dart'
@@ -323,6 +325,8 @@ import '../../features/sm_stores/domain/usecases/get_supermarket_store_details_u
     as _i151;
 import '../../features/sm_stores/view/manager/bloc/sm_stores_bloc.dart'
     as _i883;
+import '../deeplink/deep_link_remote_data_source.dart' as _i229;
+import '../deeplink/deep_link_service.dart' as _i359;
 import 'injection.dart' as _i464;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -363,6 +367,9 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i446.SmOffersRepo>(() => _i213.SmOffersRepoImpl());
   gh.lazySingleton<_i753.SmOrdersRepo>(() => _i290.SmOrdersRepoImpl());
   gh.lazySingleton<_i744.RsMainRepo>(() => _i427.RsMainRepoImpl());
+  gh.lazySingleton<_i229.DeepLinkRemoteDataSource>(
+    () => _i229.DeepLinkRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
   gh.lazySingleton<_i777.AuthRemoteDataSource>(
     () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
@@ -419,6 +426,9 @@ _i174.GetIt $initGetIt(
     () => _i489.RsFavouriteRepoImpl(
       rsFavouriteRemoteDataSource: gh<_i206.RsFavouriteRemoteDataSource>(),
     ),
+  );
+  gh.lazySingleton<_i359.DeepLinkService>(
+    () => _i359.DeepLinkService(gh<_i229.DeepLinkRemoteDataSource>()),
   );
   gh.lazySingleton<_i359.SmStoresRepo>(
     () => _i580.SmStoresRepoImpl(
@@ -727,6 +737,14 @@ _i174.GetIt $initGetIt(
       rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
     ),
   );
+  gh.factory<_i589.RsDiscoverBloc>(
+    () => _i589.RsDiscoverBloc(
+      gh<_i303.FetchDiscoverRestaurantsUseCase>(),
+      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
+      fetchRestaurantProductsSearchUseCase:
+          gh<_i526.FetchRestaurantProductsSearchUseCase>(),
+    ),
+  );
   gh.lazySingleton<_i620.CreateCleaningOrderUseCase>(
     () => _i620.CreateCleaningOrderUseCase(clMainRepo: gh<_i342.ClMainRepo>()),
   );
@@ -922,12 +940,6 @@ _i174.GetIt $initGetIt(
       gh<_i925.UpdateCartItemQuantityUseCase>(),
       gh<_i242.DeleteCartItemUseCase>(),
       gh<_i576.CheckRestaurantCouponUseCase>(),
-    ),
-  );
-  gh.factory<_i589.RsDiscoverBloc>(
-    () => _i589.RsDiscoverBloc(
-      gh<_i303.FetchDiscoverRestaurantsUseCase>(),
-      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
     ),
   );
   gh.factory<_i821.ProfileBloc>(

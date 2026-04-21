@@ -1,9 +1,11 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../data/models/luck_box_api_models.dart';
 import '../../domain/services/user_location_service.dart';
+import 'package:dllni_user_app/features/rs_discover/domain/usecases/add_restaurant_cart_item_use_case.dart';
 import '../../domain/usecases/suggest_luck_box_use_case.dart';
 import 'lucky_box_suggestions_args.dart';
 export 'lucky_box_suggestions_args.dart';
@@ -93,6 +95,201 @@ class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
     );
   }
 
+  String _formatPrice(num? value) {
+    if (value == null) return '-';
+    final normalized = value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(2);
+    return '$normalized ل.س';
+  }
+
+  Future<void> _addLineItemToCart({
+    required int productId,
+  }) async {
+    final result = await getIt<AddRestaurantCartItemUseCase>()(
+      AddRestaurantCartItemParams(productId: productId, quantity: 1),
+    );
+
+    if (!mounted) return;
+    result.fold(
+      (failure) {
+        AppToast.showToast(
+          context: context,
+          message: failure.message,
+          type: ToastificationType.error,
+        );
+      },
+      (response) {
+        final message = (response.message ?? '').trim().isNotEmpty ? response.message! : 'تمت إضافة المنتج إلى السلة';
+        AppToast.showToast(
+          context: context,
+          message: message,
+          type: ToastificationType.success,
+        );
+      },
+    );
+  }
+
+  Future<void> _openSuggestionProductsSheet(LuckBoxBundleModel bundle) async {
+    final items = bundle.lineItems;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.onPrimary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        final addingProductIds = <int>{};
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              top: false,
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.78,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xffD1D5DB),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      AppText.titleMedium(
+                        bundle.restaurant?.name ?? 'منتجات المطعم',
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xff111827),
+                      ),
+                      const SizedBox(height: 6),
+                      AppText.labelLarge(
+                        '${items.length} منتج · ${_formatPrice(bundle.totalPrice)}',
+                        color: const Color(0xff6B7280),
+                      ),
+                      const SizedBox(height: 14),
+                      Expanded(
+                        child: items.isEmpty
+                            ? Center(
+                                child: AppText.bodyMedium(
+                                  'لا توجد منتجات متاحة لهذا الاقتراح',
+                                  color: const Color(0xff6B7280),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: items.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                                itemBuilder: (context, index) {
+                                  final item = items[index];
+                                  final productId = item.productId;
+                                  final isAdding = productId != null && addingProductIds.contains(productId);
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(color: const Color(0xffE5E7EB)),
+                                    ),
+                                    padding: const EdgeInsetsDirectional.all(10),
+                                    child: Row(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: (item.imageUrl ?? '').trim().isNotEmpty
+                                              ? Image.network(
+                                                  item.imageUrl!,
+                                                  width: 54,
+                                                  height: 54,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) => const ColoredBox(
+                                                    color: Color(0xffF3F4F6),
+                                                    child: SizedBox(width: 54, height: 54),
+                                                  ),
+                                                )
+                                              : const ColoredBox(
+                                                  color: Color(0xffF3F4F6),
+                                                  child: SizedBox(width: 54, height: 54),
+                                                ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              AppText.bodyMedium(
+                                                item.name?.trim().isNotEmpty == true ? item.name! : 'منتج',
+                                                fontWeight: FontWeight.w700,
+                                                color: const Color(0xff111827),
+                                                maxLines: 1,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              AppText.labelLarge(
+                                                _formatPrice(item.unitPrice ?? item.lineTotal),
+                                                color: const Color(0xff6B7280),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        SizedBox(
+                                          height: 36,
+                                          child: ElevatedButton(
+                                            onPressed: (productId == null || productId <= 0 || isAdding)
+                                                ? null
+                                                : () async {
+                                                    setSheetState(() {
+                                                      addingProductIds.add(productId);
+                                                    });
+                                                    await _addLineItemToCart(
+                                                      productId: productId,
+                                                    );
+                                                    if (sheetContext.mounted) {
+                                                      setSheetState(() {
+                                                        addingProductIds.remove(productId);
+                                                      });
+                                                    }
+                                                  },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: context.primary,
+                                              foregroundColor: context.onPrimary,
+                                              elevation: 0,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              padding: const EdgeInsetsDirectional.symmetric(horizontal: 14),
+                                            ),
+                                            child: isAdding
+                                                ? const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                                  )
+                                                : AppText.labelLarge(
+                                                    'طلب',
+                                                    color: context.onPrimary,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = _mapBundles();
@@ -163,10 +360,13 @@ class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
                         ),
                       )
                     else
-                      ...items.map(
-                        (item) => Padding(
+                      ...items.asMap().entries.map(
+                        (entry) => Padding(
                           padding: const EdgeInsetsDirectional.only(bottom: 12),
-                          child: LuckySuggestionCard(item: item),
+                          child: LuckySuggestionCard(
+                            item: entry.value,
+                            onTap: () => _openSuggestionProductsSheet(_response.bundles[entry.key]),
+                          ),
                         ),
                       ),
                   ],

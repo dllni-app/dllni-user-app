@@ -1,19 +1,31 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'app.dart';
+import 'core/deeplink/deep_link_service.dart';
 import 'core/di/injection.dart';
 import 'core/session/session_expired_handler.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    usePathUrlStrategy();
+  }
+
   final navigatorKey = GlobalKey<NavigatorState>();
   SessionExpiredHandler.navigatorKey = navigatorKey;
+
+  await configureInjection();
 
   await bootstrapApp(
     AppBootstrapConfig(
       navigatorKey: navigatorKey,
       app: App(navigatorKey: navigatorKey),
-      configureDependencies: configureInjection,
+      configureDependencies: () async {},
       enableNotifications: true,
       startLocale: Locale('ar'),
       fallbackLocale: const Locale('ar'),
@@ -22,4 +34,9 @@ Future<void> main() async {
       fcmTokenKey: 'fcm_token',
     ),
   );
+
+  // bootstrapApp/runApp return before the first frame; Navigator is only ready after paint.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(getIt<DeepLinkService>().init(navigatorKey: navigatorKey));
+  });
 }

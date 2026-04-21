@@ -44,6 +44,8 @@ class RestaurantProductDetailsProduct {
   final String? primaryImage;
   final List<String> images;
   final bool? isFavorite;
+  /// Public marketing URL from API (e.g. `/product/{id}`), preferred for share when present.
+  final String? shareUrl;
 
   RestaurantProductDetailsProduct({
     this.id,
@@ -54,6 +56,7 @@ class RestaurantProductDetailsProduct {
     this.primaryImage,
     this.images = const [],
     this.isFavorite,
+    this.shareUrl,
   });
 
   factory RestaurantProductDetailsProduct.fromJson(Map<String, dynamic> json) {
@@ -65,6 +68,7 @@ class RestaurantProductDetailsProduct {
       discountedPrice: _pdNum(json['discountedPrice']),
       primaryImage: _pdString(json['primaryImage']),
       isFavorite: _pdBool(json['isFavorite'] ?? json['is_favorite']),
+      shareUrl: _pdString(json['shareUrl'] ?? json['share_url']),
       images: json['images'] is List
           ? (json['images'] as List).map((e) => _pdString(e)?.trim() ?? '').where((e) => e.isNotEmpty).toList()
           : const [],

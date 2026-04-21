@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/widgets/rs_app_product_card.dart';
-import '../../../rs_discover/data/models/fetch_restaurant_products_search_model.dart';
 import '../../../rs_discover/view/models/product_preview_data.dart';
 import '../../../rs_discover/view/screens/rs_product_details_screen.dart';
 
-import '../../data/models/fetch_restaurant_home_suggested_products_model.dart';
 import '../manager/bloc/rs_home_bloc.dart';
 
 class SuggestedProductsSection extends StatelessWidget {
@@ -52,17 +50,27 @@ class SuggestedProductsSection extends StatelessWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: list.length,
-                itemBuilder: (_, index) => RsAppProductCard(
-                  onTap: () {},
-                  productId: state.restaurantSuggestedProducts!.suggestedProducts![index].productId!,
-                  title: state.restaurantSuggestedProducts!.suggestedProducts![index].name!,
-                  image: state.restaurantSuggestedProducts!.suggestedProducts![index].primaryImageUrl!,
-                  offer: null,
-                  price:
-                      '${state.restaurantSuggestedProducts!.suggestedProducts![index].displayPrice} ${state.restaurantSuggestedProducts!.suggestedProducts![index].currency}',
-                  restaurant: state.restaurantSuggestedProducts!.suggestedProducts![index].restaurantName ?? 'restaurant',
-                ),
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final item = list[index];
+                  final productId = item.productId;
+                  return RsAppProductCard(
+                    onTap: productId == null
+                        ? () {}
+                        : () {
+                            context.pushRoute(
+                              '/rs_product',
+                              arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromSuggestedItem(item)),
+                            );
+                          },
+                    productId: productId ?? 0,
+                    title: item.name ?? '',
+                    image: item.primaryImageUrl ?? '',
+                    offer: null,
+                    price: '${item.displayPrice} ${item.currency}',
+                    restaurant: item.restaurantName ?? 'restaurant',
+                  );
+                },
+                separatorBuilder: (context, _) => const SizedBox(width: 12),
               ),
             ),
           ],
@@ -70,161 +78,4 @@ class SuggestedProductsSection extends StatelessWidget {
       },
     );
   }
-}
-
-class _SuggestedProductCard extends StatelessWidget {
-  const _SuggestedProductCard({required this.item});
-
-  final RestaurantHomeSuggestedProductItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final productId = item.productId;
-    final subtitle = _restaurantAndLocationText(item);
-    final tags = item.tags ?? const <String>[];
-
-    return InkWell(
-      borderRadius: const BorderRadius.all(Radius.circular(24)),
-      onTap: productId == null
-          ? null
-          : () {
-              context.pushRoute('/rs_product', arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromSuggestedItem(item)));
-            },
-      child: Container(
-        width: 260,
-        decoration: BoxDecoration(
-          color: context.onPrimaryContainer,
-          borderRadius: const BorderRadius.all(Radius.circular(24)),
-          border: Border.all(color: const Color(0xFFF3F4F6)),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    child: item.primaryImageUrl == null || item.primaryImageUrl!.isEmpty
-                        ? Container(
-                            width: double.infinity,
-                            color: const Color(0xFFF5F5F5),
-                            child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
-                          )
-                        : AppImage.network(
-                            item.primaryImageUrl!,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorWidget: Container(
-                              width: double.infinity,
-                              color: const Color(0xFFF5F5F5),
-                              child: const Center(child: Icon(Icons.image_outlined, color: Color(0xFF9CA3AF))),
-                            ),
-                          ),
-                  ),
-                  PositionedDirectional(
-                    top: 12,
-                    end: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(12))),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            (item.rating ?? 0).toStringAsFixed(1),
-                            style: const TextStyle(color: Color(0xFF273C8F), fontSize: 14, fontWeight: FontWeight.w700, height: 20 / 14),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.star, color: Color(0xFFFBBC05), size: 18),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Directionality(
-                    textDirection: TextDirection.rtl,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.name ?? '-',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.w700, height: 28 / 20),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _priceText(item.displayPrice, item.currency),
-                          style: const TextStyle(color: Color(0xFF273C8F), fontSize: 18, fontWeight: FontWeight.w700, height: 26 / 18),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
-                    ),
-                  ],
-                  if (tags.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: tags
-                          .where((tag) => tag.trim().isNotEmpty)
-                          .map(
-                            (tag) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(999)),
-                              child: Text(
-                                tag,
-                                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500, height: 16 / 12),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-String _priceText(num? price, String? currency) {
-  if (price == null) return '-';
-  final cleanedPrice = price % 1 == 0 ? price.toInt().toString() : price.toString();
-  final cleanedCurrency = (currency ?? '').trim();
-  if (cleanedCurrency.isEmpty) return cleanedPrice;
-  return '$cleanedPrice $cleanedCurrency';
-}
-
-String? _restaurantAndLocationText(RestaurantHomeSuggestedProductItem item) {
-  final restaurant = item.restaurantName?.trim();
-  final location = item.location?.trim();
-  final hasRestaurant = restaurant != null && restaurant.isNotEmpty;
-  final hasLocation = location != null && location.isNotEmpty;
-
-  if (hasRestaurant && hasLocation) {
-    return '$restaurant - $location';
-  }
-  if (hasRestaurant) return restaurant;
-  if (hasLocation) return location;
-  return null;
 }

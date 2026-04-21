@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -166,6 +169,11 @@ class _SmStoreDetailsScreenState extends State<SmStoreDetailsScreen> {
                   StoreCoverSection(
                     store: header,
                     storeId: widget.args?.storeId ?? 0,
+                    onShareTap: () {
+                      final id = widget.args?.storeId ?? 0;
+                      if (id <= 0) return;
+                      unawaited(shareDeepLinkUrl(supermarketStoreUrl(id), context: context));
+                    },
                   ),
                   StoreStatusSection(store: header),
                   if (store != null) ...[

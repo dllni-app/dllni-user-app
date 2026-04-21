@@ -16,8 +16,6 @@ class App extends StatelessWidget {
     final token = SharedPreferencesHelper.getData(key: 'token');
     final hasAuthToken = token != null && token.toString().trim().isNotEmpty;
 
-    print(token);
-
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: 'دللني',

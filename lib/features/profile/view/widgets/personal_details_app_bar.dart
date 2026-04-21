@@ -7,11 +7,13 @@ class PersonalDetailsAppBar extends StatelessWidget {
     required this.title,
     this.backgroundColor,
     this.foregroundColor,
+    this.trailing,
   });
 
   final String title;
   final Color? backgroundColor;
   final Color? foregroundColor;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +66,7 @@ class PersonalDetailsAppBar extends StatelessWidget {
               textAlign: TextAlign.start,
             ),
           ),
+          if (trailing != null) trailing!,
         ],
       ),
     );
