@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -278,7 +281,14 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                       SizedBox(width: 8),
                                       _ActionButton(
                                         icon: FontAwesomeIcons.shareNodes,
-                                        onTap: () {},
+                                        onTap: () {
+                                          unawaited(
+                                            shareDeepLinkUrl(
+                                              supermarketProductUrl(widget.args.productId),
+                                              context: context,
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),

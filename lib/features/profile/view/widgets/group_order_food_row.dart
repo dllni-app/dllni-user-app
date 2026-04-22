@@ -6,6 +6,7 @@ class GroupOrderFoodRow {
   final String type;
   final String subtitle;
   final String? imageUrl;
+  final String? sizeLabel;
 
   const GroupOrderFoodRow({
     required this.itemId,
@@ -15,5 +16,6 @@ class GroupOrderFoodRow {
     required this.type,
     required this.subtitle,
     required this.imageUrl,
+    this.sizeLabel,
   });
 }

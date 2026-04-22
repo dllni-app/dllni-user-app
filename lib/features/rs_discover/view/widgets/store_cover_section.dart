@@ -13,6 +13,7 @@ class StoreCoverSection extends StatelessWidget {
     required this.onFavouriteTap,
     this.cartCount = 0,
     this.onCartTap,
+    this.onShareTap,
   });
 
   final String title;
@@ -23,6 +24,7 @@ class StoreCoverSection extends StatelessWidget {
   final VoidCallback onFavouriteTap;
   final int cartCount;
   final VoidCallback? onCartTap;
+  final VoidCallback? onShareTap;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +80,7 @@ class StoreCoverSection extends StatelessWidget {
                   onTap: onCartTap ?? () {},
                 ),
                 SizedBox(width: 8),
-                _ActionButton(icon: FontAwesomeIcons.shareNodes, onTap: () {}),
+                _ActionButton(icon: FontAwesomeIcons.shareNodes, onTap: onShareTap ?? () {}),
               ],
             ),
           ),

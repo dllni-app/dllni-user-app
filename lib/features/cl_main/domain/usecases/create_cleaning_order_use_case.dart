@@ -29,7 +29,6 @@ class CreateCleaningOrderParams with Params {
   final double addressLatitude;
   final double addressLongitude;
   final int? preferredWorkerId;
-  final String quoteId;
   final bool termsAccepted;
 
   CreateCleaningOrderParams({
@@ -44,7 +43,6 @@ class CreateCleaningOrderParams with Params {
     required this.scheduledTime,
     required this.addressLatitude,
     required this.addressLongitude,
-    required this.quoteId,
     this.preferredWorkerId,
     this.termsAccepted = true,
   });
@@ -65,7 +63,7 @@ class CreateCleaningOrderParams with Params {
       'scheduledTime': scheduledTime,
       'addressLatitude': addressLatitude,
       'addressLongitude': addressLongitude,
-      'preferredWorkerId': preferredWorkerId,
+      if (preferredWorkerId != null) 'preferredWorkerId': preferredWorkerId,
       'termsAccepted': termsAccepted,
     };
   }

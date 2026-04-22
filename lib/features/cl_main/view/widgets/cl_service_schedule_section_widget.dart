@@ -8,7 +8,7 @@ import 'cl_service_time_picker_field_widget.dart';
 class ClServiceScheduleSectionWidget extends StatelessWidget {
   const ClServiceScheduleSectionWidget({
     required this.dayAr,
-    required this.dayEn,
+    required this.dayDate,
     required this.fromTimeController,
     required this.toTimeController,
     required this.onPickDate,
@@ -18,7 +18,7 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
   });
 
   final String dayAr;
-  final String dayEn;
+  final String dayDate;
   final TextEditingController fromTimeController;
   final TextEditingController toTimeController;
   final VoidCallback onPickDate;
@@ -35,7 +35,7 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: ClServiceDayPreviewCardWidget(dayAr: dayAr, dayEn: dayEn),
+                child: ClServiceDayPreviewCardWidget(dayAr: dayAr, dayDate: dayDate),
               ),
               const SizedBox(width: 10),
               FilledButton(

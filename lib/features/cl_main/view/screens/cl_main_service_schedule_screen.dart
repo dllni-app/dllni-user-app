@@ -124,14 +124,6 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
-    final quoteId = args.estimate.quote?.quoteId;
-    if (quoteId == null || quoteId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر إرسال الطلب بدون رقم عرض السعر')),
-      );
-      return;
-    }
-
     final selectedAddress = _selectedAddress;
 
     bloc.add(
@@ -151,7 +143,6 @@ class _ClMainServiceScheduleScreenState
           addressLatitude: args.addressLatitude,
           addressLongitude: args.addressLongitude,
           preferredWorkerId: state.selectedWorkerId,
-          quoteId: quoteId,
           termsAccepted: true,
         ),
       ),
@@ -161,7 +152,7 @@ class _ClMainServiceScheduleScreenState
   @override
   Widget build(BuildContext context) {
     final dayAr = DateFormat('EEEE', 'ar').format(_selectedDate);
-    final dayEn = DateFormat('EEEE', 'en').format(_selectedDate);
+    final dayDate = DateFormat('d MMM yyyy', 'en').format(_selectedDate);
     final estimate = _routeArgs?.estimate;
     final bloc = _bloc;
 
@@ -224,7 +215,7 @@ class _ClMainServiceScheduleScreenState
                           const SizedBox(height: 10),
                           ClServiceScheduleSectionWidget(
                             dayAr: dayAr,
-                            dayEn: dayEn,
+                            dayDate: dayDate,
                             fromTimeController: _fromTimeController,
                             toTimeController: _toTimeController,
                             onPickDate: _pickDate,
@@ -270,6 +261,8 @@ class _ClMainServiceScheduleScreenState
                                     workerId: selectedWorkerId,
                                   ),
                                 );
+                              } else if (selectedWorkerId == false) {
+                                bloc.add(SetPreferredWorkerEvent(workerId: null));
                               }
                             },
                           ),

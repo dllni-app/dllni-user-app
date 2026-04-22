@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/toast_component.dart';
@@ -33,6 +34,9 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
   String _propertyType = 'apartment';
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
+
+  bool get _hideBedroomsCountRow =>
+      _propertyType == 'studio' || _propertyType == 'office';
   double? _lastLatitude;
   double? _lastLongitude;
 
@@ -60,22 +64,50 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
     });
   }
 
-  Future<({double latitude, double longitude})?> _resolveCurrentLocation() async {
-    final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!isServiceEnabled) {
-      return null;
-    }
+  Future<void> _showLocationPermissionSettingsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('إذن الموقع مطلوب'),
+        content: const Text('يُرجى منح التطبيق إذن الوصول إلى الموقع من إعدادات التطبيق.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await openAppSettings();
+            },
+            child: const Text('فتح الإعدادات'),
+          ),
+        ],
+      ),
+    );
+  }
 
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-      return null;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-    return (latitude: position.latitude, longitude: position.longitude);
+  Future<void> _showLocationServiceSettingsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('خدمة الموقع غير مفعّلة'),
+        content: const Text('يُرجى تفعيل الموقع (GPS) من إعدادات الجهاز ثم الضغط على متابعة مرة أخرى.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await Geolocator.openLocationSettings();
+            },
+            child: const Text('فتح إعدادات الموقع'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _onContinuePressed(ClMainBloc bloc) async {
@@ -84,15 +116,43 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
       return;
     }
 
-    final location = await _resolveCurrentLocation();
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
     if (!mounted) return;
-    if (location == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر الوصول إلى الموقع الحالي')));
+
+    if (permission == LocationPermission.deniedForever) {
+      await _showLocationPermissionSettingsDialog();
+      return;
+    }
+    if (permission == LocationPermission.denied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يُرجى منح إذن الوصول إلى الموقع للمتابعة')),
+      );
       return;
     }
 
-    _lastLatitude = location.latitude;
-    _lastLongitude = location.longitude;
+    final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!isServiceEnabled) {
+      await _showLocationServiceSettingsDialog();
+      return;
+    }
+
+    Position position;
+    try {
+      position = await Geolocator.getCurrentPosition();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر الحصول على الموقع الحالي')),
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    _lastLatitude = position.latitude;
+    _lastLongitude = position.longitude;
 
     bloc.add(
       EstimateCleaningPriceEvent(
@@ -102,8 +162,8 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
           rooms: roomsCount,
           bathrooms: bathroomsCount,
           livingRoomSize: selectedLivingRoomOption,
-          addressLatitude: location.latitude,
-          addressLongitude: location.longitude,
+          addressLatitude: position.latitude,
+          addressLongitude: position.longitude,
           preferredWorkerId: null,
         ),
       ),
@@ -185,13 +245,14 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
                                   onIncrement: () => setState(() => bathroomsCount++),
                                   onDecrement: () => setState(() => bathroomsCount = (bathroomsCount > 1) ? bathroomsCount - 1 : 1),
                                 ),
-                                ClCounterRowWidget(
-                                  label: 'عدد غرف النوم',
-                                  value: roomsCount,
-                                  icon: Icons.home_work_outlined,
-                                  onIncrement: () => setState(() => roomsCount++),
-                                  onDecrement: () => setState(() => roomsCount = (roomsCount > 1) ? roomsCount - 1 : 1),
-                                ),
+                                if (!_hideBedroomsCountRow)
+                                  ClCounterRowWidget(
+                                    label: 'عدد غرف النوم',
+                                    value: roomsCount,
+                                    icon: Icons.home_work_outlined,
+                                    onIncrement: () => setState(() => roomsCount++),
+                                    onDecrement: () => setState(() => roomsCount = (roomsCount > 1) ? roomsCount - 1 : 1),
+                                  ),
                                 ClCounterRowWidget(
                                   label: 'عدد المطابخ',
                                   value: kitchenCount,

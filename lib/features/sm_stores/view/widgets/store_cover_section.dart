@@ -14,9 +14,10 @@ import '../../../sm_discover/view/manager/bloc/sm_discover_bloc.dart';
 import '../screens/sm_store_details_screen.dart';
 
 class StoreCoverSection extends StatefulWidget {
-  const StoreCoverSection({super.key, this.store, this.storeId = 0});
+  const StoreCoverSection({super.key, this.store, this.storeId = 0, this.onShareTap});
   final SmStarterStoreDetailsData? store;
   final int storeId;
+  final VoidCallback? onShareTap;
 
   @override
   State<StoreCoverSection> createState() => _StoreCoverSectionState();
@@ -150,7 +151,7 @@ class _StoreCoverSectionState extends State<StoreCoverSection> {
                   SizedBox(width: 8),
                   _ActionButton(
                     icon: FontAwesomeIcons.shareNodes,
-                    onTap: () {},
+                    onTap: widget.onShareTap ?? () {},
                   ),
                 ],
               ),

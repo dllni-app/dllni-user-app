@@ -28,6 +28,12 @@ class FetchNotificationsEvent extends ProfileEvent with EventWithReload {
 
 class MarkAllNotificationsReadEvent extends ProfileEvent {}
 
+class MarkNotificationReadEvent extends ProfileEvent {
+  final String id;
+
+  MarkNotificationReadEvent({required this.id});
+}
+
 class FetchFavoriteRestaurantsEvent extends ProfileEvent with EventWithReload {
   final FetchFavoriteRestaurantsParams params;
   final bool loadMore;

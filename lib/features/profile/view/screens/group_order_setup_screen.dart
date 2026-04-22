@@ -14,7 +14,6 @@ import '../widgets/group_order_created_groups_list.dart';
 import '../widgets/group_order_mode.dart';
 import '../widgets/group_order_mode_switcher.dart';
 import '../widgets/group_order_restaurant_picker_sheet.dart';
-import '../widgets/group_order_success_dialog.dart';
 import '../widgets/personal_details_app_bar.dart';
 import 'group_order_followup_screen.dart';
 
@@ -57,19 +56,6 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
     if (!mounted || selected == null) return;
     context.read<ProfileBloc>().add(SelectGroupOrderRestaurantEvent(restaurant: selected));
     _restaurantController.text = selected.name ?? '';
-  }
-
-  void _showSuccessDialog({required int groupOrderId, required String? shareToken}) {
-    showGroupOrderSuccessSheet(
-      context,
-      shareToken: shareToken,
-      onFollowupTap: () {
-        context.pushRoute(
-          '/group-order/followup',
-          arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
-        );
-      },
-    );
   }
 
   void _onModeChanged(GroupOrderMode mode) {
@@ -161,7 +147,10 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
           final result = state.createGroupOrderResult;
           final groupOrderId = result?.groupOrderId ?? result?.details?.groupOrder?.id;
           if (groupOrderId != null) {
-            _showSuccessDialog(groupOrderId: groupOrderId, shareToken: result?.details?.groupOrder?.shareToken);
+            context.pushRoute(
+              '/group-order/followup',
+              arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
+            );
           }
         }
       },

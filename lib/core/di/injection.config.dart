@@ -45,10 +45,16 @@ import '../../features/orders/domain/usecases/cancel_cleaning_order_use_case.dar
     as _i172;
 import '../../features/orders/domain/usecases/check_restaurant_coupon_use_case.dart'
     as _i576;
+import '../../features/orders/domain/usecases/confirm_cleaning_completion_use_case.dart'
+    as _i28;
+import '../../features/orders/domain/usecases/confirm_cleaning_start_verification_use_case.dart'
+    as _i561;
 import '../../features/orders/domain/usecases/delete_cart_item_use_case.dart'
     as _i242;
 import '../../features/orders/domain/usecases/delete_store_cart_item_use_case.dart'
     as _i29;
+import '../../features/orders/domain/usecases/extend_cleaning_completion_time_use_case.dart'
+    as _i22;
 import '../../features/orders/domain/usecases/fetch_cleaning_order_details_use_case.dart'
     as _i232;
 import '../../features/orders/domain/usecases/fetch_cleaning_orders_use_case.dart'
@@ -71,6 +77,8 @@ import '../../features/orders/domain/usecases/place_restaurant_order_use_case.da
     as _i109;
 import '../../features/orders/domain/usecases/place_store_order_use_case.dart'
     as _i969;
+import '../../features/orders/domain/usecases/reject_cleaning_completion_use_case.dart'
+    as _i51;
 import '../../features/orders/domain/usecases/update_cart_item_quantity_use_case.dart'
     as _i925;
 import '../../features/orders/domain/usecases/update_store_cart_item_quantity_use_case.dart'
@@ -145,6 +153,8 @@ import '../../features/profile/domain/usecases/join_group_order_use_case.dart'
     as _i461;
 import '../../features/profile/domain/usecases/mark_all_notifications_read_use_case.dart'
     as _i10;
+import '../../features/profile/domain/usecases/mark_notification_read_use_case.dart'
+    as _i338;
 import '../../features/profile/domain/usecases/place_group_order_use_case.dart'
     as _i342;
 import '../../features/profile/domain/usecases/remove_favorite_restaurant_use_case.dart'
@@ -327,6 +337,8 @@ import '../../features/sm_stores/domain/usecases/get_supermarket_store_details_u
     as _i151;
 import '../../features/sm_stores/view/manager/bloc/sm_stores_bloc.dart'
     as _i883;
+import '../deeplink/deep_link_remote_data_source.dart' as _i229;
+import '../deeplink/deep_link_service.dart' as _i359;
 import 'injection.dart' as _i464;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -367,6 +379,9 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i446.SmOffersRepo>(() => _i213.SmOffersRepoImpl());
   gh.lazySingleton<_i753.SmOrdersRepo>(() => _i290.SmOrdersRepoImpl());
   gh.lazySingleton<_i744.RsMainRepo>(() => _i427.RsMainRepoImpl());
+  gh.lazySingleton<_i229.DeepLinkRemoteDataSource>(
+    () => _i229.DeepLinkRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
+  );
   gh.lazySingleton<_i777.AuthRemoteDataSource>(
     () => _i777.AuthRemoteDataSource(dioNetwork: gh<_i960.DioNetwork>()),
   );
@@ -423,6 +438,9 @@ _i174.GetIt $initGetIt(
     () => _i489.RsFavouriteRepoImpl(
       rsFavouriteRemoteDataSource: gh<_i206.RsFavouriteRemoteDataSource>(),
     ),
+  );
+  gh.lazySingleton<_i359.DeepLinkService>(
+    () => _i359.DeepLinkService(gh<_i229.DeepLinkRemoteDataSource>()),
   );
   gh.lazySingleton<_i359.SmStoresRepo>(
     () => _i580.SmStoresRepoImpl(
@@ -589,11 +607,26 @@ _i174.GetIt $initGetIt(
     () =>
         _i576.CheckRestaurantCouponUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
+  gh.lazySingleton<_i28.ConfirmCleaningCompletionUseCase>(
+    () => _i28.ConfirmCleaningCompletionUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i561.ConfirmCleaningStartVerificationUseCase>(
+    () => _i561.ConfirmCleaningStartVerificationUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
+  );
   gh.lazySingleton<_i242.DeleteCartItemUseCase>(
     () => _i242.DeleteCartItemUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
   gh.lazySingleton<_i29.DeleteStoreCartItemUseCase>(
     () => _i29.DeleteStoreCartItemUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
+  );
+  gh.lazySingleton<_i22.ExtendCleaningCompletionTimeUseCase>(
+    () => _i22.ExtendCleaningCompletionTimeUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
   );
   gh.lazySingleton<_i232.FetchCleaningOrderDetailsUseCase>(
     () => _i232.FetchCleaningOrderDetailsUseCase(
@@ -633,6 +666,11 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i969.PlaceStoreOrderUseCase>(
     () => _i969.PlaceStoreOrderUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
+  );
+  gh.lazySingleton<_i51.RejectCleaningCompletionUseCase>(
+    () => _i51.RejectCleaningCompletionUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
   );
   gh.lazySingleton<_i925.UpdateCartItemQuantityUseCase>(
     () =>
@@ -734,14 +772,6 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i1.FetchRestaurantProductDetailsUseCase>(
     () => _i1.FetchRestaurantProductDetailsUseCase(
       rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
-    ),
-  );
-  gh.factory<_i589.RsDiscoverBloc>(
-    () => _i589.RsDiscoverBloc(
-      gh<_i303.FetchDiscoverRestaurantsUseCase>(),
-      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
-      fetchRestaurantProductsSearchUseCase:
-          gh<_i526.FetchRestaurantProductsSearchUseCase>(),
     ),
   );
   gh.lazySingleton<_i620.CreateCleaningOrderUseCase>(
@@ -882,6 +912,10 @@ _i174.GetIt $initGetIt(
       profileRepo: gh<_i275.ProfileRepo>(),
     ),
   );
+  gh.lazySingleton<_i338.MarkNotificationReadUseCase>(
+    () =>
+        _i338.MarkNotificationReadUseCase(profileRepo: gh<_i275.ProfileRepo>()),
+  );
   gh.lazySingleton<_i342.PlaceGroupOrderUseCase>(
     () => _i342.PlaceGroupOrderUseCase(profileRepo: gh<_i275.ProfileRepo>()),
   );
@@ -941,12 +975,56 @@ _i174.GetIt $initGetIt(
       gh<_i576.CheckRestaurantCouponUseCase>(),
     ),
   );
+  gh.factory<_i362.ClMainBloc>(
+    () => _i362.ClMainBloc(
+      estimateCleaningPriceUseCase: gh<_i762.EstimateCleaningPriceUseCase>(),
+      getPreviousCleaningWorkersUseCase:
+          gh<_i491.GetPreviousCleaningWorkersUseCase>(),
+      createCleaningOrderUseCase: gh<_i620.CreateCleaningOrderUseCase>(),
+    ),
+  );
+  gh.lazySingleton<_i37.LoginUseCase>(
+    () => _i37.LoginUseCase(authRepo: gh<_i976.AuthRepo>()),
+  );
+  gh.lazySingleton<_i97.RegisterUseCase>(
+    () => _i97.RegisterUseCase(authRepo: gh<_i976.AuthRepo>()),
+  );
+  gh.factory<_i589.RsDiscoverBloc>(
+    () => _i589.RsDiscoverBloc(
+      gh<_i303.FetchDiscoverRestaurantsUseCase>(),
+      gh<_i1.FetchRestaurantProductDetailsUseCase>(),
+      gh<_i426.UserLocationService>(),
+      fetchRestaurantProductsSearchUseCase:
+          gh<_i526.FetchRestaurantProductsSearchUseCase>(),
+    ),
+  );
+  gh.factory<_i836.RsHomeBloc>(
+    () => _i836.RsHomeBloc(
+      gh<_i181.FetchStoresUseCase>(),
+      gh<_i238.FetchNearByStoresUseCase>(),
+      gh<_i555.FetchFeaturedOffersUseCase>(),
+      gh<_i89.FetchRestaurantHomeCategoriesUseCase>(),
+      gh<_i1047.FetchRestaurantHomeExclusiveOffersUseCase>(),
+      gh<_i339.FetchRestaurantHomeSuggestedProductsUseCase>(),
+      gh<_i967.FetchRestaurantHomeNearestRestaurantsUseCase>(),
+      gh<_i171.FetchRestaurantHomeLatestOrderedProductsUseCase>(),
+      gh<_i373.ReorderLatestOrderedProductUseCase>(),
+      gh<_i892.FetchRestaurantHomeCategoryProductsUseCase>(),
+    ),
+  );
+  gh.factory<_i849.LuckyBoxCubit>(
+    () => _i849.LuckyBoxCubit(
+      fetchLuckBoxOptionsUseCase: gh<_i866.FetchLuckBoxOptionsUseCase>(),
+      suggestLuckBoxUseCase: gh<_i89.SuggestLuckBoxUseCase>(),
+    ),
+  );
   gh.factory<_i821.ProfileBloc>(
     () => _i821.ProfileBloc(
       gh<_i376.FetchAddressesUseCase>(),
       gh<_i262.SetDefaultAddressUseCase>(),
       gh<_i438.FetchNotificationsUseCase>(),
       gh<_i10.MarkAllNotificationsReadUseCase>(),
+      gh<_i338.MarkNotificationReadUseCase>(),
       gh<_i319.FetchFavoriteRestaurantsUseCase>(),
       gh<_i999.RemoveFavoriteRestaurantUseCase>(),
       gh<_i679.CreateVoteUseCase>(),
@@ -971,40 +1049,6 @@ _i174.GetIt $initGetIt(
       gh<_i567.UnsubmitGroupOrderUseCase>(),
       gh<_i592.CancelGroupOrderUseCase>(),
       gh<_i342.PlaceGroupOrderUseCase>(),
-    ),
-  );
-  gh.factory<_i362.ClMainBloc>(
-    () => _i362.ClMainBloc(
-      estimateCleaningPriceUseCase: gh<_i762.EstimateCleaningPriceUseCase>(),
-      getPreviousCleaningWorkersUseCase:
-          gh<_i491.GetPreviousCleaningWorkersUseCase>(),
-      createCleaningOrderUseCase: gh<_i620.CreateCleaningOrderUseCase>(),
-    ),
-  );
-  gh.lazySingleton<_i37.LoginUseCase>(
-    () => _i37.LoginUseCase(authRepo: gh<_i976.AuthRepo>()),
-  );
-  gh.lazySingleton<_i97.RegisterUseCase>(
-    () => _i97.RegisterUseCase(authRepo: gh<_i976.AuthRepo>()),
-  );
-  gh.factory<_i836.RsHomeBloc>(
-    () => _i836.RsHomeBloc(
-      gh<_i181.FetchStoresUseCase>(),
-      gh<_i238.FetchNearByStoresUseCase>(),
-      gh<_i555.FetchFeaturedOffersUseCase>(),
-      gh<_i89.FetchRestaurantHomeCategoriesUseCase>(),
-      gh<_i1047.FetchRestaurantHomeExclusiveOffersUseCase>(),
-      gh<_i339.FetchRestaurantHomeSuggestedProductsUseCase>(),
-      gh<_i967.FetchRestaurantHomeNearestRestaurantsUseCase>(),
-      gh<_i171.FetchRestaurantHomeLatestOrderedProductsUseCase>(),
-      gh<_i373.ReorderLatestOrderedProductUseCase>(),
-      gh<_i892.FetchRestaurantHomeCategoryProductsUseCase>(),
-    ),
-  );
-  gh.factory<_i849.LuckyBoxCubit>(
-    () => _i849.LuckyBoxCubit(
-      fetchLuckBoxOptionsUseCase: gh<_i866.FetchLuckBoxOptionsUseCase>(),
-      suggestLuckBoxUseCase: gh<_i89.SuggestLuckBoxUseCase>(),
     ),
   );
   gh.factory<_i767.CouponsCubit>(

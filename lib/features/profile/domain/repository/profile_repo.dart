@@ -8,6 +8,7 @@ import '../models/personal_details_update_input.dart';
 import '../usecases/fetch_addresses_use_case.dart';
 import '../usecases/fetch_favorite_restaurants_use_case.dart';
 import '../usecases/fetch_notifications_use_case.dart';
+import '../usecases/mark_notification_read_use_case.dart';
 import '../usecases/fetch_vote_suggestions_use_case.dart';
 import '../usecases/create_vote_use_case.dart';
 import '../usecases/create_address_use_case.dart';
@@ -52,6 +53,8 @@ abstract class ProfileRepo {
   );
 
   DataResponse<ActionResultModel> markAllNotificationsRead(NoParams params);
+
+  DataResponse<ActionResultModel> markNotificationRead(MarkNotificationReadParams params);
 
   DataResponse<ActionResultModel> removeFavoriteRestaurant(
     RemoveFavoriteRestaurantParams params,

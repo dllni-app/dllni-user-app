@@ -14,20 +14,7 @@ class CleaningOrderCard extends StatelessWidget {
   final VoidCallback? onReportIssueTap;
   final VoidCallback? onCancelTap;
 
-  String get _statusLabel {
-    switch ((order.status ?? '').toLowerCase()) {
-      case 'pending':
-        return 'مرحلة الاستعداد';
-      case 'completed':
-        return 'مكتمل';
-      case 'cancelled':
-        return 'ملغي';
-      case 'in_progress':
-        return 'قيد التنفيذ';
-      default:
-        return 'قيد المعالجة';
-    }
-  }
+  String get _statusLabel => cleaningOrderStatusLabelAr(order.status);
 
   bool get _isCompleted => (order.status ?? '').toLowerCase() == 'completed';
 

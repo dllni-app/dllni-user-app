@@ -8,11 +8,11 @@ import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/rs_app_product_card.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_nearest_restaurants_model.dart';
 import '../../../rs_home/view/widgets/store_card.dart';
-import '../../../sm_discover/view/widgets/smart_search_sheet.dart';
 import '../../data/models/fetch_discover_restaurants_model.dart';
 import '../../data/models/fetch_restaurant_products_search_model.dart';
 import '../manager/bloc/rs_discover_bloc.dart';
 import '../models/product_preview_data.dart';
+import '../widgets/discover_tab_bar.dart';
 import '../models/store_product_item.dart';
 import 'rs_product_details_screen.dart';
 
@@ -46,9 +46,7 @@ class _SearchViewState extends State<_SearchView> {
     super.initState();
     final state = context.read<RsDiscoverBloc>().state;
     _searchController = TextEditingController(
-      text: state.activeSearchMode == RsDiscoverSearchMode.restaurant
-          ? state.searchQuery
-          : state.productSearchQuery,
+      text: state.activeSearchMode == RsDiscoverSearchMode.restaurant ? state.searchQuery : state.productSearchQuery,
     );
   }
 
@@ -56,59 +54,6 @@ class _SearchViewState extends State<_SearchView> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _dispatchSearchForMode(String value, RsDiscoverSearchMode mode) {
-    final bloc = context.read<RsDiscoverBloc>();
-    if (mode == RsDiscoverSearchMode.restaurant) {
-      bloc.add(DiscoverSearchQueryChangedEvent(value));
-      return;
-    }
-    bloc.add(
-      DiscoverProductSearchQueryChangedEvent(
-        value,
-        resultingMode: mode == RsDiscoverSearchMode.smart ? RsDiscoverSearchMode.smart : null,
-      ),
-    );
-  }
-
-  Future<void> _openSmartSearchSheet() async {
-    final words = await showModalBottomSheet<List<String>>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const SmartSearchSheet(),
-    );
-    if (!mounted || words == null || words.isEmpty) return;
-    final query = words.join(' , ');
-    setState(() {
-      _searchController.text = query;
-      _searchController.selection = TextSelection.collapsed(offset: query.length);
-    });
-    context.read<RsDiscoverBloc>().add(
-      DiscoverProductSearchQueryChangedEvent(
-        query,
-        resultingMode: RsDiscoverSearchMode.smart,
-      ),
-    );
-  }
-
-  void _onSearchSubmitted(String value) {
-    final currentMode = context.read<RsDiscoverBloc>().state.activeSearchMode;
-    _dispatchSearchForMode(value, currentMode);
-  }
-
-  void _onModeSelected(RsDiscoverSearchMode mode) {
-    final bloc = context.read<RsDiscoverBloc>();
-    bloc.add(DiscoverSearchModeChangedEvent(mode));
-    if (mode == RsDiscoverSearchMode.smart) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _openSmartSearchSheet();
-      });
-      return;
-    }
-    _dispatchSearchForMode(_searchController.text, mode);
   }
 
   @override
@@ -123,53 +68,49 @@ class _SearchViewState extends State<_SearchView> {
             return RsAppSimpleAppBarWithSearch(
               title: "اكتشف",
               searchHintText: "حدد ما تود البحث عنه",
-              onSearchChanged: _onSearchSubmitted,
               searchController: _searchController,
               searchReadOnly: smart,
-              onSearchTap: smart ? _openSmartSearchSheet : null,
             );
           },
         ),
-        const SizedBox(height: 12),
         BlocBuilder<RsDiscoverBloc, RsDiscoverState>(
-          buildWhen: (p, c) => p.activeSearchMode != c.activeSearchMode,
+          buildWhen: (p, c) =>
+              p.activeSearchMode != c.activeSearchMode || p.selectedTabIndex != c.selectedTabIndex,
           builder: (context, state) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _SearchModeChip(
-                      label: "عن وجبة",
-                      icon: FontAwesomeIcons.bowlFood,
-                      isSelected: state.activeSearchMode == RsDiscoverSearchMode.meal,
-                      onTap: () => _onModeSelected(RsDiscoverSearchMode.meal),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SearchModeChip(
-                      label: "عن مطعم",
-                      icon: FontAwesomeIcons.store,
-                      isSelected: state.activeSearchMode == RsDiscoverSearchMode.restaurant,
-                      onTap: () => _onModeSelected(RsDiscoverSearchMode.restaurant),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SearchModeChip(
-                      label: "بحث ذكي",
-                      icon: FontAwesomeIcons.microphone,
-                      isSelected: state.activeSearchMode == RsDiscoverSearchMode.smart,
-                      onTap: () => _onModeSelected(RsDiscoverSearchMode.smart),
-                    ),
-                  ),
-                ],
-              ),
+            if (state.activeSearchMode != RsDiscoverSearchMode.restaurant) {
+              return const SizedBox(height: 16);
+            }
+            return DiscoverTabBar(
+              selectedIndex: state.selectedTabIndex,
+              items: [
+                DiscoverTabBarItem(title: 'الكل'),
+                DiscoverTabBarItem(
+                  title: 'الأقرب',
+                  icon: FaIcon(FontAwesomeIcons.locationDot, size: 14),
+                ),
+                DiscoverTabBarItem(
+                  title: 'الأعلى تقييماً',
+                  icon: FaIcon(FontAwesomeIcons.star, size: 14),
+                ),
+                DiscoverTabBarItem(
+                  title: 'الأسرع توصيلاً',
+                  icon: FaIcon(FontAwesomeIcons.bolt, size: 14),
+                ),
+                DiscoverTabBarItem(
+                  title: 'يوجد عروض',
+                  icon: FaIcon(FontAwesomeIcons.tag, size: 14),
+                ),
+                DiscoverTabBarItem(
+                  title: 'مفتوح الآن',
+                  icon: FaIcon(FontAwesomeIcons.clock, size: 14),
+                ),
+              ],
+              onChanged: (index) {
+                context.read<RsDiscoverBloc>().add(DiscoverTabChangedEvent(index));
+              },
             );
           },
         ),
-        const SizedBox(height: 16),
         Expanded(
           child: BlocBuilder<RsDiscoverBloc, RsDiscoverState>(
             buildWhen: (p, c) => p.activeSearchMode != c.activeSearchMode || p.restaurants != c.restaurants || p.products != c.products,
@@ -193,9 +134,24 @@ class _SearchViewState extends State<_SearchView> {
         child: AppText('لا توجد مطاعم', style: TextStyle(color: Color(0xFF6B7280), fontSize: 16)),
       ),
       failedWidget: Center(
-        child: TextButton(
-          onPressed: () => context.read<RsDiscoverBloc>().add(FetchDiscoverRestaurantsEvent(isReload: true)),
-          child: AppText('إعادة المحاولة'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (p.errorMessage.isNotEmpty)
+                AppText(
+                  p.errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+                ),
+              if (p.errorMessage.isNotEmpty) const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => context.read<RsDiscoverBloc>().add(FetchDiscoverRestaurantsEvent(isReload: true)),
+                child: AppText('إعادة المحاولة'),
+              ),
+            ],
+          ),
         ),
       ),
       successWidget: () => RefreshIndicator(
@@ -270,43 +226,6 @@ class _SearchViewState extends State<_SearchView> {
   }
 }
 
-class _SearchModeChip extends StatelessWidget {
-  const _SearchModeChip({required this.label, required this.icon, required this.isSelected, required this.onTap});
-
-  final String label;
-  final FaIconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(color: isSelected ? context.primary : const Color(0xFFDADCEA), borderRadius: BorderRadius.circular(24)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: isSelected ? context.onPrimary.withValues(alpha: .24) : context.primary,
-              child: FaIcon(icon, size: 12, color: isSelected ? context.onPrimary : Colors.white),
-            ),
-            const SizedBox(width: 8),
-            AppText(
-              label,
-              style: TextStyle(color: isSelected ? context.onPrimary : context.primary, fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MealSearchCard extends StatelessWidget {
   const _MealSearchCard({required this.product});
 
@@ -316,7 +235,6 @@ class _MealSearchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final mapped = _toStoreProductItem(product);
     final productId = mapped.id ?? 0;
-    final offerText = (mapped.offerBadgeText ?? mapped.offer ?? '').trim();
     return RsAppProductCard(
       productId: mapped.id!,
       image: (mapped.imageUrl ?? '').trim(),

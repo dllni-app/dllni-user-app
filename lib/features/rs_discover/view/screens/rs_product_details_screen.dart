@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
@@ -141,7 +144,16 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                   },
                 ),
                 SizedBox(width: 8),
-                ProductActionButton(icon: Icons.share, onTap: () {}),
+                ProductActionButton(
+                  icon: Icons.share,
+                  onTap: () {
+                    final fromApi = state.productDetails?.product?.shareUrl?.trim();
+                    final url = (fromApi != null && fromApi.isNotEmpty)
+                        ? fromApi
+                        : restaurantProductUrl(widget.params.product.productId);
+                    unawaited(shareDeepLinkUrl(url, context: context));
+                  },
+                ),
                 SizedBox(width: 8),
               ],
             ),

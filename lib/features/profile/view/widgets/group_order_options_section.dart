@@ -7,10 +7,16 @@ import 'group_order_food_row.dart';
 class GroupOrderOptionsSection extends StatefulWidget {
   final List<GroupOrderFoodRow> foods;
   final List<String> availableTypes;
-  final bool isCreator;
   final VoidCallback? onAddMultiTap;
+  final void Function(GroupOrderFoodRow row)? onMenuProductTap;
 
-  const GroupOrderOptionsSection({super.key, required this.foods, required this.availableTypes, required this.isCreator, this.onAddMultiTap});
+  const GroupOrderOptionsSection({
+    super.key,
+    required this.foods,
+    required this.availableTypes,
+    this.onAddMultiTap,
+    this.onMenuProductTap,
+  });
 
   @override
   State<GroupOrderOptionsSection> createState() => _GroupOrderOptionsSectionState();
@@ -18,6 +24,7 @@ class GroupOrderOptionsSection extends StatefulWidget {
 
 class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
   final Set<String> _expandedTypes = <String>{};
+  bool _didApplyDefaultExpansion = false;
 
   String _sanitizeType(String? value) {
     final type = (value ?? '').trim();
@@ -36,6 +43,28 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
     return ordered;
   }
 
+  void _applyDefaultExpansionOnce() {
+    if (!mounted || _didApplyDefaultExpansion) return;
+    final types = _orderedTypes();
+    if (types.isEmpty) return;
+    setState(() {
+      _expandedTypes.add(types.first);
+      _didApplyDefaultExpansion = true;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyDefaultExpansionOnce());
+  }
+
+  @override
+  void didUpdateWidget(GroupOrderOptionsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyDefaultExpansionOnce());
+  }
+
   @override
   Widget build(BuildContext context) {
     final types = _orderedTypes();
@@ -49,12 +78,8 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
       grouped[type]!.add(row);
     }
 
-    if (_expandedTypes.isEmpty && types.isNotEmpty) {
-      _expandedTypes.add(types.first);
-    }
-
     if (widget.foods.isEmpty && types.isEmpty) {
-      return AppText.bodyMedium('لا توجد خيارات مضافة حتى الآن', color: const Color(0xff6B7280));
+      return AppText.bodyMedium('لا توجد منتجات في القائمة', color: const Color(0xff6B7280));
     }
 
     return Column(
@@ -84,7 +109,9 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
                   },
                   child: Row(
                     children: [
-                      Expanded(child: AppText.titleSmall(type, fontWeight: FontWeight.w700)),
+                      Expanded(
+                        child: AppText.titleSmall(type, fontWeight: FontWeight.w700, textAlign: TextAlign.start),
+                      ),
                       Icon(expanded ? Icons.expand_less : Icons.expand_more, color: const Color(0xff9CA3AF)),
                     ],
                   ),
@@ -92,12 +119,23 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
                 if (expanded) ...[
                   const SizedBox(height: 8),
                   if (rows.isEmpty)
-                    AppText.bodySmall('لا توجد خيارات ضمن هذا النوع', color: const Color(0xff9CA3AF))
+                    AppText.bodySmall('لا توجد منتجات ضمن هذا القسم', color: const Color(0xff9CA3AF))
                   else
-                    ...rows.map(
-                      (row) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: GroupOrderFoodCard(row: row),
+                    SizedBox(
+                      height: 175,
+                      child: ListView.separated(
+                        itemBuilder: (context, index) {
+                          final row = rows[index];
+                          final pid = row.productId;
+                          final isMenuRow = row.itemId == null && pid != null && pid > 0;
+                          return GroupOrderFoodCard(
+                            row: row,
+                            onTap: widget.onMenuProductTap != null && isMenuRow ? () => widget.onMenuProductTap!(row) : null,
+                          );
+                        },
+                        separatorBuilder: (context, index) => SizedBox(width: 10),
+                        itemCount: rows.length,
+                        scrollDirection: Axis.horizontal,
                       ),
                     ),
                 ],
@@ -105,7 +143,7 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
             ),
           );
         }),
-        if (!widget.isCreator) ...[
+        if (widget.onAddMultiTap != null) ...[
           const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,

@@ -6,6 +6,7 @@ import 'package:injectable/injectable.dart';
 import 'package:common_package/helpers/droppable_helper.dart';
 import 'package:common_package/helpers/pagination_helper.dart';
 import '../../../../../core/di/injection.dart';
+import '../../../../profile/domain/services/user_location_service.dart';
 
 import '../../../data/models/fetch_discover_restaurants_model.dart';
 import '../../../data/models/fetch_restaurant_product_details_model.dart';
@@ -27,10 +28,12 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
   fetchRestaurantProductDetailsUseCase;
   final FetchRestaurantProductsSearchUseCase
   fetchRestaurantProductsSearchUseCase;
+  final UserLocationService userLocationService;
 
   RsDiscoverBloc(
     this.fetchDiscoverRestaurantsUseCase,
-    this.fetchRestaurantProductDetailsUseCase, {
+    this.fetchRestaurantProductDetailsUseCase,
+    this.userLocationService, {
     FetchRestaurantProductsSearchUseCase? fetchRestaurantProductsSearchUseCase,
   }) : fetchRestaurantProductsSearchUseCase =
            fetchRestaurantProductsSearchUseCase ??
@@ -141,6 +144,32 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
     final page = isLoadMore ? state.restaurants.pageNumber : 1;
 
     final bool nearestSort = tabQuery.sort == 'nearest';
+    double? latitude;
+    double? longitude;
+    if (nearestSort) {
+      if (isLoadMore) {
+        latitude = state.nearestLatitude;
+        longitude = state.nearestLongitude;
+      }
+      if (latitude == null || longitude == null) {
+        final loc = await userLocationService.getCurrentPosition();
+        latitude = loc.latitude;
+        longitude = loc.longitude;
+      }
+      if (latitude == null || longitude == null) {
+        emit(
+          state.copyWith(
+            restaurants: state.restaurants.setFaild(
+              errorMessage:
+                  'لم نتمكن من الحصول على موقعك. فعّل صلاحية الموقع وخدمة تحديد الموقع.',
+            ),
+            resetNearestCoords: true,
+          ),
+        );
+        return;
+      }
+    }
+
     final params = FetchDiscoverRestaurantsParams(
       page: page,
       perPage: perPage,
@@ -148,8 +177,8 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
       sort: tabQuery.sort,
       filterOpenNow: tabQuery.filterOpenNow,
       filterHasOffers: tabQuery.filterHasOffers,
-      latitude: nearestSort ? 31.97 : null,
-      longitude: nearestSort ? 35.935 : null,
+      latitude: nearestSort ? latitude : null,
+      longitude: nearestSort ? longitude : null,
     );
 
     final res = await fetchDiscoverRestaurantsUseCase(params);
@@ -179,6 +208,9 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
           state.copyWith(
             restaurants: next,
             totalCount: meta?.total ?? next.list.length,
+            resetNearestCoords: !nearestSort,
+            nearestLatitude: nearestSort ? latitude : null,
+            nearestLongitude: nearestSort ? longitude : null,
           ),
         );
       },

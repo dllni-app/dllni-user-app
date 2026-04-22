@@ -27,6 +27,7 @@ class $AssetsImagesGen {
   final AssetGenImage burgerImage = const AssetGenImage('assets/images/burger_image.png');
   final AssetGenImage chocolate = const AssetGenImage('assets/images/chocolate.png');
   final AssetGenImage cleaningBanner = const AssetGenImage('assets/images/cleaning_banner.png');
+  final SvgGenImage cleaninigServiceIcon = const SvgGenImage('assets/images/cleaninig_service_icon.svg');
   final AssetGenImage databases = const AssetGenImage('assets/images/databases.png');
   final AssetGenImage detergents = const AssetGenImage('assets/images/detergents.png');
   final AssetGenImage facebook = const AssetGenImage('assets/images/facebook.png');
@@ -45,6 +46,7 @@ class $AssetsImagesGen {
   final AssetGenImage officeImage = const AssetGenImage('assets/images/office_image.png');
   final AssetGenImage pastries = const AssetGenImage('assets/images/pastries.png');
   final AssetGenImage products = const AssetGenImage('assets/images/products.png');
+  final SvgGenImage restaurantServiceIcon = const SvgGenImage('assets/images/restaurant_service_icon.svg');
   final SvgGenImage rsDiscoverBottomNavBar = const SvgGenImage('assets/images/rs_discover_bottom_nav_bar.svg');
   final SvgGenImage rsFavourite = const SvgGenImage('assets/images/rs_favourite.svg');
   final SvgGenImage rsHomeBottomNavBar = const SvgGenImage('assets/images/rs_home_bottom_nav_bar.svg');
@@ -55,6 +57,7 @@ class $AssetsImagesGen {
   final AssetGenImage search = const AssetGenImage('assets/images/search.png');
   final AssetGenImage socialImage = const AssetGenImage('assets/images/social_image.png');
   final AssetGenImage store = const AssetGenImage('assets/images/store.png');
+  final SvgGenImage storeServiceIcon = const SvgGenImage('assets/images/store_service_icon.svg');
   final AssetGenImage studioImage = const AssetGenImage('assets/images/studio_image.png');
   final AssetGenImage test = const AssetGenImage('assets/images/test.png');
   final AssetGenImage threeStarsImage = const AssetGenImage('assets/images/three_stars_image.png');

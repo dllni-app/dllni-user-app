@@ -14,11 +14,15 @@ class DiscoverTabBar extends StatefulWidget {
     required this.items,
     required this.onChanged,
     this.initialIndex = 0,
+    this.selectedIndex,
   });
 
   final List<DiscoverTabBarItem> items;
   final void Function(int index) onChanged;
   final int initialIndex;
+
+  /// When non-null, selection is driven by the parent (e.g. bloc state).
+  final int? selectedIndex;
 
   @override
   State<DiscoverTabBar> createState() => _DiscoverTabBarState();
@@ -34,8 +38,14 @@ class _DiscoverTabBarState extends State<DiscoverTabBar> {
     selectedIndex = widget.initialIndex.clamp(0, maxIndex);
   }
 
+  int get _effectiveSelection {
+    if (widget.selectedIndex != null) return widget.selectedIndex!;
+    return selectedIndex;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final effective = _effectiveSelection;
     return SizedBox(
       height: 38 + 32,
       width: double.infinity,
@@ -46,14 +56,14 @@ class _DiscoverTabBarState extends State<DiscoverTabBar> {
           highlightColor: Colors.transparent,
           splashColor: Colors.transparent,
           onTap: () {
-            if (index != selectedIndex) {
-              selectedIndex = index;
-              setState(() {});
-              widget.onChanged(index);
+            if (index == effective) return;
+            if (widget.selectedIndex == null) {
+              setState(() => selectedIndex = index);
             }
+            widget.onChanged(index);
           },
           child: _CategoryChip(
-            isSelected: index == selectedIndex,
+            isSelected: index == effective,
             item: widget.items[index],
           ),
         ),
@@ -92,7 +102,14 @@ class _CategoryChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: 8,
         children: [
-          if (item.icon != null) item.icon!,
+          if (item.icon != null)
+            IconTheme.merge(
+              data: IconThemeData(
+                color: isSelected ? context.onPrimary : const Color(0xFF4B5563),
+                size: 14,
+              ),
+              child: item.icon!,
+            ),
           Text(
             item.title,
             style: TextStyle(

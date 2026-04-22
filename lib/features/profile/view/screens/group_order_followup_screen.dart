@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:dio/dio.dart';
 import 'package:dllni_user_app/core/app_config.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 
@@ -20,8 +22,8 @@ import '../widgets/expandable_numbered_section.dart';
 import '../widgets/group_order_footer_bar.dart';
 import '../widgets/group_order_food_row.dart';
 import '../widgets/group_order_menu_multi_select_sheet.dart';
+import '../widgets/group_order_creator_participants_items_section.dart';
 import '../widgets/group_order_options_section.dart';
-import '../widgets/group_order_participants_section.dart';
 import '../widgets/group_order_requested_foods_section.dart';
 import '../widgets/personal_details_app_bar.dart';
 
@@ -111,7 +113,12 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
         },
         onEvent: (PusherEvent event) {
           if (event.channelName == channelName && event.eventName == 'group-order.updated') {
-            context.read<ProfileBloc>().add(ShowGroupOrderEvent(params: ShowGroupOrderParams(groupOrderId: widget.params.groupOrderId)));
+            context.read<ProfileBloc>().add(
+              ShowGroupOrderEvent(
+                params: ShowGroupOrderParams(groupOrderId: widget.params.groupOrderId),
+                skipMenuFetch: true,
+              ),
+            );
           }
         },
       );
@@ -120,20 +127,23 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
     } catch (_) {}
   }
 
-  List<GroupOrderFoodRow> _buildAllFoods(GroupOrderDetailsModel details) {
+  List<GroupOrderFoodRow> _buildAllMenuFoods(ProfileState state) {
     final rows = <GroupOrderFoodRow>[];
-    final typeByProduct = _buildTypeByProductId();
-    for (final participant in details.participants) {
-      for (final item in participant.items) {
+    for (final section in state.groupOrderMenuSections) {
+      for (final item in section.items) {
+        final price = item.displayPrice;
+        final currency = item.currency ?? '';
+        final subtitle = price != null ? 'السعر: $price $currency'.trim() : '';
         rows.add(
           GroupOrderFoodRow(
-            itemId: item.itemId,
-            productId: item.productId,
-            name: item.name ?? '-',
-            quantity: item.quantity,
-            type: typeByProduct[item.productId] ?? 'غير مصنف',
-            subtitle: participant.name ?? '',
-            imageUrl: item.imageUrl,
+            itemId: null,
+            productId: item.id,
+            name: item.name.isEmpty ? '-' : item.name,
+            quantity: 0,
+            type: section.name.trim().isEmpty ? 'غير مصنف' : section.name,
+            subtitle: subtitle,
+            imageUrl: item.primaryImageUrl,
+            sizeLabel: (item.sizeLabel ?? '').trim().isEmpty ? null : item.sizeLabel,
           ),
         );
       }
@@ -222,13 +232,39 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
         body: SafeArea(
           child: Column(
             children: [
-              const PersonalDetailsAppBar(title: 'متابعة التصويت'),
+              BlocBuilder<ProfileBloc, ProfileState>(
+                buildWhen: (previous, current) => previous.groupOrderDetails != current.groupOrderDetails,
+                builder: (context, state) {
+                  final go = state.groupOrderDetails?.groupOrder;
+                  final id = go?.id ?? widget.params.groupOrderId;
+                  return PersonalDetailsAppBar(
+                    title: 'متابعة الطلب الجماعي',
+                    trailing: id > 0
+                        ? IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 42, minHeight: 42),
+                            onPressed: () {
+                              unawaited(
+                                shareDeepLinkUrl(
+                                  groupOrderUrl(id: id, shareToken: go?.shareToken),
+                                  context: context,
+                                ),
+                              );
+                            },
+                            icon: FaIcon(FontAwesomeIcons.shareNodes, color: context.primary, size: 20),
+                          )
+                        : null,
+                  );
+                },
+              ),
               const SizedBox(height: 14),
               Expanded(
                 child: BlocBuilder<ProfileBloc, ProfileState>(
                   buildWhen: (previous, current) =>
                       previous.groupOrderDetailsStatus != current.groupOrderDetailsStatus ||
                       previous.groupOrderDetails != current.groupOrderDetails ||
+                      previous.groupOrderMenuStatus != current.groupOrderMenuStatus ||
+                      previous.groupOrderMenuSections != current.groupOrderMenuSections ||
                       previous.groupOrderMenuProducts != current.groupOrderMenuProducts ||
                       previous.groupOrderActionStatus != current.groupOrderActionStatus,
                   builder: (context, state) {
@@ -244,9 +280,8 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
                     final isCreator = details.groupOrder?.isCreator ?? false;
                     final groupOrderId = details.groupOrder?.id ?? widget.params.groupOrderId;
                     final canSubmit = (details.groupOrder?.status ?? '').toLowerCase() == 'active';
-                    final allFoods = _buildAllFoods(details);
+                    final allFoods = _buildAllMenuFoods(state);
                     final requestedFoods = _buildRequestedFoods(details);
-                    final participantNames = details.participants.map((e) => e.name ?? '-').toList();
 
                     return Column(
                       children: [
@@ -264,19 +299,34 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
                                       _isOptionsExpanded = !_isOptionsExpanded;
                                     });
                                   },
-                                  child: GroupOrderOptionsSection(
-                                    foods: allFoods,
-                                    availableTypes: _availableTypes(),
-                                    isCreator: isCreator,
-                                    onAddMultiTap: isCreator
-                                        ? null
-                                        : () => _addMultipleItems(groupOrderId: groupOrderId, menuProducts: state.groupOrderMenuProducts),
-                                  ),
+                                  child: state.groupOrderMenuStatus == BlocStatus.loading
+                                      ? const Padding(
+                                          padding: EdgeInsets.symmetric(vertical: 24),
+                                          child: Center(child: CircularProgressIndicator()),
+                                        )
+                                      : GroupOrderOptionsSection(
+                                          foods: allFoods,
+                                          availableTypes: _availableTypes(),
+                                          onAddMultiTap: canSubmit
+                                              ? () => _addMultipleItems(groupOrderId: groupOrderId, menuProducts: state.groupOrderMenuProducts)
+                                              : null,
+                                          onMenuProductTap: canSubmit
+                                              ? (row) {
+                                                  final pid = row.productId;
+                                                  if (pid == null || pid <= 0) return;
+                                                  context.read<ProfileBloc>().add(
+                                                    AddGroupOrderItemEvent(
+                                                      params: AddGroupOrderItemParams(groupOrderId: groupOrderId, productId: pid),
+                                                    ),
+                                                  );
+                                                }
+                                              : null,
+                                        ),
                                 ),
                                 const SizedBox(height: 14),
                                 ExpandableNumberedSection(
                                   sectionNumber: '2',
-                                  title: isCreator ? 'أسماء المصوتين' : 'الاطعمة المطلوبة',
+                                  title: isCreator ? 'اختيارات الأعضاء' : 'الاطعمة المطلوبة',
                                   isExpanded: _isSecondSectionExpanded,
                                   onHeaderTap: () {
                                     setState(() {
@@ -284,7 +334,10 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
                                     });
                                   },
                                   child: isCreator
-                                      ? GroupOrderParticipantsSection(names: participantNames)
+                                      ? GroupOrderCreatorParticipantsItemsSection(
+                                          details: details,
+                                          menuProducts: state.groupOrderMenuProducts,
+                                        )
                                       : GroupOrderRequestedFoodsSection(
                                           foods: requestedFoods,
                                           onDelete: (row) {

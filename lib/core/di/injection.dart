@@ -53,7 +53,11 @@ abstract class InjectableModule {
       ),
       UnauthorizedInterceptor(
         onUnauthorized: SessionExpiredHandler.handle,
-        excludedPathSuffixes: const <String>['/api/v1/user/login'],
+        excludedPathSuffixes: const <String>[
+          '/api/v1/user/login',
+          '/api/v1/deep-links/resolve',
+          '/api/v1/deep-links/events',
+        ],
       ),
     ],
   );

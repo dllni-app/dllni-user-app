@@ -268,7 +268,7 @@ class _ProfileActionsWidget extends StatelessWidget {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: () => context.pop(),
+                onPressed: () => context.pop(false),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF9FA8C8),
                   foregroundColor: Colors.white,

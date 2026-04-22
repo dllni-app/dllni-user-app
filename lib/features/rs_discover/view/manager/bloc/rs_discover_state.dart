@@ -14,6 +14,8 @@ class RsDiscoverState {
   final FetchRestaurantProductDetailsModel? productDetails;
   final bool isLoadingProductDetails;
   final String productDetailsErrorMessage;
+  final double? nearestLatitude;
+  final double? nearestLongitude;
 
   RsDiscoverState({
     this.restaurants = const PaginationStateModel(perPage: 10),
@@ -26,6 +28,8 @@ class RsDiscoverState {
     this.productDetails,
     this.isLoadingProductDetails = false,
     this.productDetailsErrorMessage = '',
+    this.nearestLatitude,
+    this.nearestLongitude,
   });
 
   RsDiscoverState copyWith({
@@ -40,6 +44,9 @@ class RsDiscoverState {
     bool clearProductDetails = false,
     bool? isLoadingProductDetails,
     String? productDetailsErrorMessage,
+    double? nearestLatitude,
+    double? nearestLongitude,
+    bool resetNearestCoords = false,
   }) {
     return RsDiscoverState(
       restaurants: restaurants ?? this.restaurants,
@@ -56,6 +63,12 @@ class RsDiscoverState {
           isLoadingProductDetails ?? this.isLoadingProductDetails,
       productDetailsErrorMessage:
           productDetailsErrorMessage ?? this.productDetailsErrorMessage,
+      nearestLatitude: resetNearestCoords
+          ? null
+          : (nearestLatitude ?? this.nearestLatitude),
+      nearestLongitude: resetNearestCoords
+          ? null
+          : (nearestLongitude ?? this.nearestLongitude),
     );
   }
 }
