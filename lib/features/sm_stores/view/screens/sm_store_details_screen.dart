@@ -196,7 +196,12 @@ class _SmStoreDetailsScreenState extends State<SmStoreDetailsScreen> {
                             ),
                           ),
                           InkWell(
-                            onTap: () {},
+                            onTap: () {
+                              context.pushRoute(
+                                "/sm_store-all-products",
+                                arguments: widget.args?.storeId ?? 0,
+                              );
+                            },
                             borderRadius: BorderRadius.all(Radius.circular(4)),
                             child: Text(
                               " عرض الكل ",

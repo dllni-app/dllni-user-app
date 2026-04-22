@@ -41,6 +41,7 @@ import 'package:dllni_user_app/features/rs_main/view/rs_main_screen.dart';
 import 'package:dllni_user_app/features/sm_cart/view/screens/sm_cart_details_screen.dart';
 import 'package:dllni_user_app/features/sm_cart/view/screens/sm_cart_screen.dart';
 import 'package:dllni_user_app/features/sm_cart/view/screens/sm_late_time_screen.dart';
+import 'package:dllni_user_app/features/sm_discover/view/screens/sm_all_products_screen.dart';
 import 'package:dllni_user_app/features/sm_discover/view/screens/sm_discover_screen.dart';
 import 'package:dllni_user_app/features/sm_favorite/view/screens/sm_favorite_screen.dart';
 import 'package:dllni_user_app/features/sm_home/view/screens/sm_home_screen.dart';
@@ -328,6 +329,14 @@ class GeneratedAppRoutes {
           builder: (_) => SmLateTimeScreen(),
           settings: settings,
         );
+      case '/sm_store-all-products':
+        if (args is int) {
+          return MaterialPageRoute(
+            builder: (_) => SmAllProductsScreen(storeId: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/sm_discover':
         if (args is SmDiscoverScreenParams) {
           return MaterialPageRoute(

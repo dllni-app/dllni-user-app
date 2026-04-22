@@ -1,10 +1,9 @@
-
 import 'package:flutter/material.dart';
 
+import '../themes/app_colors.dart';
+
 class DownloadMore extends StatelessWidget {
-  const DownloadMore({
-    super.key,
-  });
+  const DownloadMore({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,11 +14,8 @@ class DownloadMore extends StatelessWidget {
         children: [
           CircularProgressIndicator(
             strokeWidth: 2,
-            color: Color(0xFF9CA3AF),
-            constraints: BoxConstraints(
-              maxWidth: 14,
-              maxHeight: 14,
-            ),
+            color: AppColors.primary,
+            constraints: BoxConstraints(maxWidth: 14, maxHeight: 14),
           ),
           SizedBox(width: 8),
           Text(

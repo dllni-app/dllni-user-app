@@ -107,6 +107,7 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                           AppText(
                             widget.product.name.toString(), //"ربطة خبز سياحي",
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Color(0xFF1A1A1A),
                               fontSize: 14,

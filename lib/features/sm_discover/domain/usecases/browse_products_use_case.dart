@@ -19,14 +19,18 @@ class BrowseProductsUseCase
 
 class BrowseProductsParams with Params {
   final String? search;
+  final int? storeId;
   final int page;
 
-  BrowseProductsParams({this.search, this.page = 1});
+  BrowseProductsParams({this.search, this.storeId, this.page = 1});
 
   @override
-  QueryParams getParams() => {
-    "perPage": 10,
-    "page": page,
-    if (search != null || search != "") "search": search,
-  };
+  QueryParams getParams() {
+    return {
+      "perPage": 10,
+      "page": page,
+      if (search != null && search != "") "search": search,
+      if (storeId != null) "filter[storeId]": storeId,
+    };
+  }
 }
