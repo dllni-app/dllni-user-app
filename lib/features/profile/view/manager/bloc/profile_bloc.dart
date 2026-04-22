@@ -31,6 +31,7 @@ import '../../../domain/usecases/fetch_shopping_list_detail_use_case.dart';
 import '../../../domain/usecases/get_shopping_list_use_case.dart';
 import '../../../domain/usecases/join_group_order_use_case.dart';
 import '../../../domain/usecases/mark_all_notifications_read_use_case.dart';
+import '../../../domain/usecases/mark_notification_read_use_case.dart';
 import '../../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../../domain/usecases/fetch_active_votes_use_case.dart';
 import '../../../domain/usecases/place_group_order_use_case.dart';
@@ -57,6 +58,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final SetDefaultAddressUseCase setDefaultAddressUseCase;
   final FetchNotificationsUseCase fetchNotificationsUseCase;
   final MarkAllNotificationsReadUseCase markAllNotificationsReadUseCase;
+  final MarkNotificationReadUseCase markNotificationReadUseCase;
   final FetchFavoriteRestaurantsUseCase fetchFavoriteRestaurantsUseCase;
   final RemoveFavoriteRestaurantUseCase removeFavoriteRestaurantUseCase;
   final CreateVoteUseCase createVoteUseCase;
@@ -87,6 +89,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     this.setDefaultAddressUseCase,
     this.fetchNotificationsUseCase,
     this.markAllNotificationsReadUseCase,
+    this.markNotificationReadUseCase,
     this.fetchFavoriteRestaurantsUseCase,
     this.removeFavoriteRestaurantUseCase,
     this.createVoteUseCase,
@@ -116,6 +119,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<SetDefaultAddressEvent>(_setDefaultAddress);
     on<FetchNotificationsEvent>(_fetchNotifications, transformer: paginationEventTransformer());
     on<MarkAllNotificationsReadEvent>(_markAllNotificationsRead);
+    on<MarkNotificationReadEvent>(_markNotificationRead);
     on<FetchFavoriteRestaurantsEvent>(_fetchFavoriteRestaurants, transformer: paginationEventTransformer());
     on<RemoveFavoriteRestaurantEvent>(_removeFavoriteRestaurant);
     on<CreateVoteEvent>(_createVote);
@@ -182,7 +186,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final isLoadMore = event.loadMore && !event.isReload;
     if (isLoadMore && pagination.isEndPage) return;
 
-    emit(state.copyWith(notificationsPagination: pagination.setLoading(isReload: event.isReload)));
+    emit(
+      state.copyWith(
+        notificationsPagination: pagination.setLoading(isReload: event.isReload),
+        clearNotificationActionError: true,
+      ),
+    );
 
     final page = isLoadMore ? pagination.pageNumber : 1;
     final perPage = pagination.perPage;
@@ -205,17 +214,61 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             ),
           ),
         );
-        add(MarkAllNotificationsReadEvent());
       },
     );
   }
 
   Future<void> _markAllNotificationsRead(MarkAllNotificationsReadEvent event, Emitter<ProfileState> emit) async {
+    emit(
+      state.copyWith(
+        markAllNotificationsReadStatus: BlocStatus.loading,
+        clearNotificationActionError: true,
+      ),
+    );
     final response = await markAllNotificationsReadUseCase(NoParams());
-    response.fold((_) {}, (_) {
-      final updatedNotifications = state.notifications.map((item) => item.copyWith(isRead: true, showTrailingAccent: false)).toList();
-      emit(state.copyWith(notificationsPagination: state.notificationsPagination.copyWith(list: updatedNotifications)));
-    });
+    await response.fold(
+      (failure) async {
+        emit(
+          state.copyWith(
+            clearMarkAllNotificationsReadStatus: true,
+            notificationActionError: failure.message,
+          ),
+        );
+      },
+      (_) async {
+        final updatedNotifications = state.notifications.map((item) => item.copyWith(isRead: true, showTrailingAccent: false)).toList();
+        emit(
+          state.copyWith(
+            clearMarkAllNotificationsReadStatus: true,
+            notificationsPagination: state.notificationsPagination.copyWith(list: updatedNotifications),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _markNotificationRead(MarkNotificationReadEvent event, Emitter<ProfileState> emit) async {
+    final id = event.id.trim();
+    if (id.isEmpty) return;
+
+    final response = await markNotificationReadUseCase(MarkNotificationReadParams(notificationId: id));
+    response.fold(
+      (failure) => emit(state.copyWith(notificationActionError: failure.message)),
+      (_) {
+        final updated = state.notifications.map((item) {
+          if (item.id == id) {
+            return item.copyWith(isRead: true, showTrailingAccent: false);
+          }
+          return item;
+        }).toList();
+        emit(
+          state.copyWith(
+            notificationsPagination: state.notificationsPagination.copyWith(list: updated),
+            notificationActionError: null,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _fetchFavoriteRestaurants(FetchFavoriteRestaurantsEvent event, Emitter<ProfileState> emit) async {
@@ -542,13 +595,21 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   FetchNotificationsModelDataItem _toNotificationItem(NotificationResourceModel item) {
+    final read = (item.readAt ?? '').trim().isNotEmpty;
     return FetchNotificationsModelDataItem(
+      id: item.id,
       type: item.type ?? 'system',
       title: item.title,
       body: item.body,
       createdAt: item.createdAt,
-      isRead: item.readAt != null,
-      showTrailingAccent: item.readAt == null,
+      isRead: read,
+      showTrailingAccent: !read,
+      module: item.module,
+      icon: item.icon,
+      category: item.category,
+      priority: item.priority,
+      canonicalType: item.canonicalType,
+      data: item.data,
     );
   }
 }

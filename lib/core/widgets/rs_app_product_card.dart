@@ -152,7 +152,7 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: AppText.bodyMedium(
-                  'طلب الوجبة',
+                  isInCart ? 'تم الطلب' : 'طلب الوجبة',
                   color: isInCart ? context.primary : context.onPrimary,
                   fontWeight: FontWeight.w700,
                   maxLines: 1,

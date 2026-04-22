@@ -42,7 +42,7 @@ class DiscoverTabQuery {
         return 'مفتوح الآن';
       case 0:
       default:
-        return 'التقييم';
+        return 'الكل';
     }
   }
 }

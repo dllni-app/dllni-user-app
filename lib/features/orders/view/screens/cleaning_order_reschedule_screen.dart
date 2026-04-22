@@ -184,7 +184,7 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
   @override
   Widget build(BuildContext context) {
     final dayAr = DateFormat('EEEE', 'ar').format(_selectedDate);
-    final dayEn = DateFormat('EEEE', 'en').format(_selectedDate);
+    final dayDate = DateFormat('d MMM yyyy', 'en').format(_selectedDate);
     final isSaveDisabled = _isSaving || _missingDataMessage != null;
 
     return BlocProvider.value(
@@ -216,7 +216,7 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
                           children: [
                             ClServiceScheduleSectionWidget(
                               dayAr: dayAr,
-                              dayEn: dayEn,
+                              dayDate: dayDate,
                               fromTimeController: _fromTimeController,
                               toTimeController: _toTimeController,
                               onPickDate: _pickDate,
@@ -314,7 +314,7 @@ class _CleaningOrderRescheduleSummaryCard extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: Text(
             'ملخص الطلب',
-            style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 20),
+            style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w600, fontSize: 16),
           ),
         ),
         const SizedBox(height: 10),
@@ -324,14 +324,14 @@ class _CleaningOrderRescheduleSummaryCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF2196F3), width: 1.2),
+            border: Border.all(color: const Color(0xFFEEEEEE), width: 1.2),
           ),
           child: Column(
             children: [
               _SummaryItemRow(label: 'المبلغ الإجمالي', value: _money(subtotal)),
-              const Divider(color: Color(0xFF2196F3), thickness: 1, height: 16),
+              const Divider(color: Color(0xFFEEEEEE), thickness: 1, height: 16),
               _SummaryItemRow(label: 'الضريبة', value: _money(tax)),
-              const Divider(color: Color(0xFF2196F3), thickness: 1, height: 16),
+              const Divider(color: Color(0xFFEEEEEE), thickness: 1, height: 16),
               _SummaryItemRow(label: 'المجموع النهائي', value: _money(total), isTotal: true),
             ],
           ),
@@ -358,12 +358,12 @@ class _SummaryItemRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(color: labelColor, fontWeight: fontWeight, fontSize: 19),
+          style: TextStyle(color: labelColor, fontWeight: fontWeight, fontSize: 14),
         ),
         const Spacer(),
         Text(
           value,
-          style: TextStyle(color: valueColor, fontWeight: fontWeight, fontSize: 23),
+          style: TextStyle(color: valueColor, fontWeight: fontWeight, fontSize: 14),
         ),
       ],
     );

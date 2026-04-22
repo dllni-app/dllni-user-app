@@ -5,6 +5,28 @@ import 'package:text_scroll/text_scroll.dart';
 
 import '../theme/text_theme.dart';
 
+/// Language codes that use RTL marquee direction (`TextScroll` + width check).
+const _rtlMarqueeLanguageCodes = <String>{
+  'ar',
+  'he',
+  'fa',
+  'ur',
+  'ps',
+  'sd',
+  'dv',
+  'ug',
+  'ckb',
+  'iw',
+};
+
+const _kMarqueeFitEpsilon = 1.0;
+
+ui.TextDirection _marqueeTextDirection(BuildContext context, ui.TextDirection? explicit) {
+  if (explicit != null) return explicit;
+  final code = Localizations.localeOf(context).languageCode;
+  return _rtlMarqueeLanguageCodes.contains(code) ? ui.TextDirection.rtl : ui.TextDirection.ltr;
+}
+
 class AppText extends StatelessWidget {
   AppText(
     this.text, {
@@ -36,16 +58,18 @@ class AppText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return scrollText
-        ? TextScroll(
-            text,
-            mode: TextScrollMode.endless,
-            velocity: const Velocity(pixelsPerSecond: Offset(30, 0)),
-            delayBefore: const Duration(milliseconds: 1000),
-            pauseBetween: const Duration(milliseconds: 2000),
-            style: style?.copyWith(color: color),
-            selectable: true,
-            intervalSpaces: 5,
+        ? _ScrollTextIfOverflow(
+            key: key,
+            text: text,
+            style: style,
+            color: color,
+            decoration: decoration,
             textAlign: textAlign,
+            textDirection: textDirection,
+            locale: locale,
+            softWrap: softWrap,
+            overflow: overflow,
+            maxLines: maxLines,
           )
         : Text(
             text,
@@ -55,7 +79,7 @@ class AppText extends StatelessWidget {
             maxLines: maxLines,
             overflow: overflow,
             softWrap: softWrap,
-            textAlign: textAlign ?? TextAlign.center,
+            textAlign: textAlign ?? TextAlign.start,
             textDirection: textDirection,
           );
   }
@@ -328,4 +352,93 @@ class AppText extends StatelessWidget {
     FontWeight? fontWeight,
     super.key,
   }) : style = textTheme.bodySmall?.merge(style).copyWith(fontWeight: fontWeight);
+}
+
+class _ScrollTextIfOverflow extends StatelessWidget {
+  const _ScrollTextIfOverflow({
+    required this.text,
+    required this.style,
+    super.key,
+    this.color,
+    this.decoration,
+    this.textAlign,
+    this.textDirection,
+    this.locale,
+    this.softWrap,
+    this.overflow,
+    this.maxLines,
+  });
+
+  final String text;
+  final TextStyle? style;
+  final Color? color;
+  final TextDecoration? decoration;
+  final TextAlign? textAlign;
+  final ui.TextDirection? textDirection;
+  final Locale? locale;
+  final bool? softWrap;
+  final TextOverflow? overflow;
+  final int? maxLines;
+
+  TextStyle? get _resolvedStyle => style?.copyWith(
+        color: color,
+        textBaseline: TextBaseline.alphabetic,
+        decoration: decoration,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final marqueeDir = _marqueeTextDirection(context, textDirection);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth;
+        if (!maxW.isFinite) {
+          return Text(
+            text,
+            style: _resolvedStyle,
+            locale: locale,
+            maxLines: maxLines,
+            overflow: overflow,
+            softWrap: softWrap,
+            textAlign: textAlign ?? TextAlign.start,
+            textDirection: textDirection,
+          );
+        }
+
+        final painter = TextPainter(
+          text: TextSpan(text: text, style: _resolvedStyle),
+          textDirection: marqueeDir,
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout(maxWidth: double.infinity);
+
+        if (painter.width <= maxW + _kMarqueeFitEpsilon) {
+          return Text(
+            text,
+            style: _resolvedStyle,
+            locale: locale,
+            maxLines: maxLines,
+            overflow: overflow,
+            softWrap: softWrap,
+            textAlign: textAlign ?? TextAlign.start,
+            textDirection: textDirection,
+          );
+        }
+
+        return TextScroll(
+          text,
+          mode: TextScrollMode.endless,
+          velocity: const Velocity(pixelsPerSecond: Offset(30, 0)),
+          delayBefore: const Duration(milliseconds: 1000),
+          pauseBetween: const Duration(milliseconds: 2000),
+          style: _resolvedStyle,
+          selectable: true,
+          intervalSpaces: 5,
+          textAlign: textAlign ?? TextAlign.start,
+          textDirection: marqueeDir,
+        );
+      },
+    );
+  }
 }

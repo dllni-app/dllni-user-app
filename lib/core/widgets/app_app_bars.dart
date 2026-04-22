@@ -1,8 +1,11 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../features/rs_discover/view/manager/bloc/rs_discover_bloc.dart';
+import '../../features/sm_discover/view/widgets/smart_search_sheet.dart';
 import '../themes/app_colors.dart';
 import 'search_with_type_dropdown.dart';
 
@@ -172,27 +175,32 @@ class ArrowBackButton extends StatelessWidget {
 
 enum ArrowBackType { material, cupertino }
 
-class RsAppSimpleAppBarWithSearch extends StatelessWidget {
+class RsAppSimpleAppBarWithSearch extends StatefulWidget {
   final String title;
 
-  final void Function(String value) onSearchChanged;
-  final void Function()? onSearchTap;
+  final void Function(String value)? onSearchChanged;
   final VoidCallback? onBackTap;
   final String searchHintText;
   final TextEditingController? searchController;
   final bool searchReadOnly;
+  final bool isCategory;
 
   const RsAppSimpleAppBarWithSearch({
     super.key,
     required this.title,
-    required this.onSearchChanged,
-    this.onSearchTap,
     this.onBackTap,
     this.searchHintText = "ابحث عن مطعم أو وجبة...",
     this.searchController,
     this.searchReadOnly = false,
+    this.isCategory = false,
+    this.onSearchChanged,
   });
 
+  @override
+  State<RsAppSimpleAppBarWithSearch> createState() => _RsAppSimpleAppBarWithSearchState();
+}
+
+class _RsAppSimpleAppBarWithSearchState extends State<RsAppSimpleAppBarWithSearch> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -210,9 +218,9 @@ class RsAppSimpleAppBarWithSearch extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (onBackTap != null) ...[
+              if (widget.onBackTap != null) ...[
                 InkWell(
-                  onTap: onBackTap,
+                  onTap: widget.onBackTap,
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
                     padding: const EdgeInsets.all(8),
@@ -228,7 +236,7 @@ class RsAppSimpleAppBarWithSearch extends StatelessWidget {
               ],
               Expanded(
                 child: AppText(
-                  title,
+                  widget.title,
                   textAlign: TextAlign.start,
                   style: TextStyle(color: context.primary, fontSize: 24, fontWeight: FontWeight.w700, height: 32 / 24),
                 ),
@@ -240,16 +248,137 @@ class RsAppSimpleAppBarWithSearch extends StatelessWidget {
             children: [
               Expanded(
                 child: _SearchField(
-                  hintText: searchHintText,
-                  onChanged: onSearchChanged,
-                  onTap: onSearchTap,
-                  controller: searchController,
-                  readOnly: searchReadOnly,
+                  hintText: widget.searchHintText,
+                  onChanged: widget.onSearchChanged ?? _onSearchSubmitted,
+                  onTap: widget.searchReadOnly ? _openSmartSearchSheet : null,
+                  controller: widget.searchController,
+                  readOnly: widget.searchReadOnly,
                 ),
               ),
             ],
           ),
+          if (!widget.isCategory) ...[
+            const SizedBox(height: 12),
+            BlocBuilder<RsDiscoverBloc, RsDiscoverState>(
+              buildWhen: (p, c) => p.activeSearchMode != c.activeSearchMode,
+              builder: (context, state) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _SearchModeChip(
+                          label: "الوجبات",
+                          icon: FontAwesomeIcons.bowlFood,
+                          isSelected: state.activeSearchMode == RsDiscoverSearchMode.meal,
+                          onTap: () => _onModeSelected(RsDiscoverSearchMode.meal),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _SearchModeChip(
+                          label: "المطاعم",
+                          icon: FontAwesomeIcons.store,
+                          isSelected: state.activeSearchMode == RsDiscoverSearchMode.restaurant,
+                          onTap: () => _onModeSelected(RsDiscoverSearchMode.restaurant),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _SearchModeChip(
+                          label: "بحث ذكي",
+                          icon: FontAwesomeIcons.microphone,
+                          isSelected: state.activeSearchMode == RsDiscoverSearchMode.smart,
+                          onTap: () => _onModeSelected(RsDiscoverSearchMode.smart),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  void _dispatchSearchForMode(String value, RsDiscoverSearchMode mode) {
+    final bloc = context.read<RsDiscoverBloc>();
+    if (mode == RsDiscoverSearchMode.restaurant) {
+      bloc.add(DiscoverSearchQueryChangedEvent(value));
+      return;
+    }
+    bloc.add(DiscoverProductSearchQueryChangedEvent(value, resultingMode: mode == RsDiscoverSearchMode.smart ? RsDiscoverSearchMode.smart : null));
+  }
+
+  Future<void> _openSmartSearchSheet() async {
+    final words = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const SmartSearchSheet(),
+    );
+    if (!mounted || words == null || words.isEmpty) return;
+    final query = words.join(' , ');
+    setState(() {
+      widget.searchController!.text = query;
+      widget.searchController!.selection = TextSelection.collapsed(offset: query.length);
+    });
+    context.read<RsDiscoverBloc>().add(DiscoverProductSearchQueryChangedEvent(query, resultingMode: RsDiscoverSearchMode.smart));
+  }
+
+  void _onSearchSubmitted(String value) {
+    final currentMode = context.read<RsDiscoverBloc>().state.activeSearchMode;
+    _dispatchSearchForMode(value, currentMode);
+  }
+
+  void _onModeSelected(RsDiscoverSearchMode mode) {
+    final bloc = context.read<RsDiscoverBloc>();
+    bloc.add(DiscoverSearchModeChangedEvent(mode));
+    if (mode == RsDiscoverSearchMode.smart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openSmartSearchSheet();
+      });
+      return;
+    }
+    _dispatchSearchForMode(widget.searchController!.text, mode);
+  }
+}
+
+class _SearchModeChip extends StatelessWidget {
+  const _SearchModeChip({required this.label, required this.icon, required this.isSelected, required this.onTap});
+
+  final String label;
+  final FaIconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(color: isSelected ? context.primary : const Color(0xFFDADCEA), borderRadius: BorderRadius.circular(24)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: isSelected ? context.onPrimary.withValues(alpha: .24) : context.primary,
+              child: FaIcon(icon, size: 12, color: isSelected ? context.onPrimary : Colors.white),
+            ),
+            const SizedBox(width: 8),
+            AppText(
+              label,
+              style: TextStyle(color: isSelected ? context.onPrimary : context.primary, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -263,13 +392,7 @@ class _SearchField extends StatelessWidget {
   final TextEditingController? controller;
   final bool readOnly;
 
-  const _SearchField({
-    required this.onChanged,
-    this.onTap,
-    required this.hintText,
-    this.controller,
-    this.readOnly = false,
-  });
+  const _SearchField({required this.onChanged, this.onTap, required this.hintText, this.controller, this.readOnly = false});
 
   @override
   Widget build(BuildContext context) {

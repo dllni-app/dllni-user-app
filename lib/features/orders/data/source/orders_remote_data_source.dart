@@ -4,6 +4,9 @@ import 'package:injectable/injectable.dart';
 
 import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/check_restaurant_coupon_use_case.dart';
+import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
+import '../../domain/usecases/confirm_cleaning_start_verification_use_case.dart';
+import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/delete_cart_item_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_orders_use_case.dart';
@@ -13,6 +16,7 @@ import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/place_restaurant_order_use_case.dart';
 import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_order_use_case.dart';
+import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
@@ -67,6 +71,58 @@ class OrdersRemoteDataSource with HandlingApiManager {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
         endPoint: '/api/v1/user/cleaning/orders/${params.orderId}',
+      ),
+      jsonConvert: fetchCleaningOrderDetailsModelFromJson,
+    );
+  }
+
+  Future<FetchCleaningOrderDetailsModel> confirmCleaningStartVerification(
+    ConfirmCleaningStartVerificationParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/${params.orderId}/start-verification/confirm',
+        data: params.getBody(),
+      ),
+      jsonConvert: fetchCleaningOrderDetailsModelFromJson,
+    );
+  }
+
+  Future<FetchCleaningOrderDetailsModel> confirmCleaningCompletion(
+    ConfirmCleaningCompletionParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/${params.orderId}/completion/confirm',
+        data: params.getBody(),
+      ),
+      jsonConvert: fetchCleaningOrderDetailsModelFromJson,
+    );
+  }
+
+  Future<FetchCleaningOrderDetailsModel> rejectCleaningCompletion(
+    RejectCleaningCompletionParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/${params.orderId}/completion/reject',
+        data: params.getBody(),
+      ),
+      jsonConvert: fetchCleaningOrderDetailsModelFromJson,
+    );
+  }
+
+  Future<FetchCleaningOrderDetailsModel> extendCleaningCompletionTime(
+    ExtendCleaningCompletionTimeParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/${params.orderId}/completion/extend-time',
+        data: params.getBody(),
       ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );

@@ -17,6 +17,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     List<String> titles = ['مطاعم', 'تنظيف', 'تسوق'];
     List<String> screens = ['/rsmain', '/clmain', '/smmain'];
+    List<String> images = [Assets.images.restaurantServiceIcon.path, Assets.images.cleaninigServiceIcon.path, Assets.images.storeServiceIcon.path];
 
     return BlocProvider(
       create: (_) => getIt<HomeBloc>()..add(FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true)),
@@ -102,14 +103,12 @@ class HomeScreen extends StatelessWidget {
                           Container(
                             width: 64,
                             height: 64,
-                            decoration: BoxDecoration(
-                              color: context.onPrimary,
-                              borderRadius: BorderRadius.circular(24),
-                              image: DecorationImage(image: AssetImage(Assets.images.test.path), fit: BoxFit.cover),
-                            ),
+                            decoration: BoxDecoration(color: context.onPrimary, borderRadius: BorderRadius.circular(24)),
+                            padding: EdgeInsetsDirectional.all(15),
+                            child: AppImage.asset(images[index], color: context.primary),
                           ),
                           SizedBox(height: 8),
-                          AppText.labelLarge(titles[index % 3], color: Color(0xff6B7280), fontWeight: FontWeight.w500),
+                          AppText.labelLarge(titles[index], color: Color(0xff6B7280), fontWeight: FontWeight.w500),
                         ],
                       ),
                     ),

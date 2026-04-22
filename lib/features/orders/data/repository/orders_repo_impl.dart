@@ -5,6 +5,9 @@ import 'package:injectable/injectable.dart';
 import '../../domain/repository/orders_repo.dart';
 import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/check_restaurant_coupon_use_case.dart';
+import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
+import '../../domain/usecases/confirm_cleaning_start_verification_use_case.dart';
+import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/delete_cart_item_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_orders_use_case.dart';
@@ -14,6 +17,7 @@ import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/place_restaurant_order_use_case.dart';
 import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_order_use_case.dart';
+import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
@@ -57,6 +61,44 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   ) {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.fetchCleaningOrderDetails(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchCleaningOrderDetailsModel> confirmCleaningStartVerification(
+    ConfirmCleaningStartVerificationParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () =>
+          ordersRemoteDataSource.confirmCleaningStartVerification(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchCleaningOrderDetailsModel> confirmCleaningCompletion(
+    ConfirmCleaningCompletionParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.confirmCleaningCompletion(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchCleaningOrderDetailsModel> rejectCleaningCompletion(
+    RejectCleaningCompletionParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.rejectCleaningCompletion(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchCleaningOrderDetailsModel> extendCleaningCompletionTime(
+    ExtendCleaningCompletionTimeParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () =>
+          ordersRemoteDataSource.extendCleaningCompletionTime(params),
     );
   }
 

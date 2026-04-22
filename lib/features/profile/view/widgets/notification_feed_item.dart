@@ -1,55 +1,46 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../data/models/fetch_notifications_model.dart';
 
-class NotificationFeedItem extends StatefulWidget {
+class NotificationFeedItem extends StatelessWidget {
   const NotificationFeedItem({super.key, required this.notification});
 
   final FetchNotificationsModelDataItem notification;
 
-  @override
-  State<NotificationFeedItem> createState() => _NotificationFeedItemState();
-}
+  static String _normalizedCategory(FetchNotificationsModelDataItem n) {
+    final c = (n.category ?? '').trim().toLowerCase();
+    if (c.isNotEmpty) return c;
+    final t = (n.type).trim().toLowerCase();
+    if (t.contains('offer')) return 'offers';
+    if (t.contains('order')) return 'orders';
+    return 'system';
+  }
 
-class _NotificationFeedItemState extends State<NotificationFeedItem> {
   Color notificationStatusColor() {
-    if (widget.notification.type == 'order') {
-      return const Color(0xff10B981);
-    } else if (widget.notification.type == 'inventory') {
-      return const Color(0xffF59E0B);
-    } else if (widget.notification.type == 'offers') {
-      return const Color(0xffD97706);
-    } else if (widget.notification.type == 'system') {
-      return const Color(0xff6B7280);
-    } else if (widget.notification.type == 'gift') {
-      return const Color(0xffA855F7);
-    } else if (widget.notification.type == 'alert') {
-      return const Color(0xff3B82F6);
-    } else if (widget.notification.type == 'safety') {
-      return const Color(0xff059669);
-    } else {
-      return const Color(0xff6366F1);
+    switch (_normalizedCategory(notification)) {
+      case 'orders':
+        return const Color(0xff10B981);
+      case 'offers':
+        return const Color(0xffD97706);
+      case 'system':
+        return const Color(0xff6B7280);
+      default:
+        return const Color(0xff6366F1);
     }
   }
 
   IconData notificationStatusIcon() {
-    if (widget.notification.type == 'order') {
-      return Icons.check_circle;
-    } else if (widget.notification.type == 'inventory') {
-      return Icons.two_wheeler;
-    } else if (widget.notification.type == 'offers') {
-      return Icons.local_offer;
-    } else if (widget.notification.type == 'system') {
-      return Icons.restaurant;
-    } else if (widget.notification.type == 'gift') {
-      return Icons.card_giftcard;
-    } else if (widget.notification.type == 'alert') {
-      return Icons.notifications_active;
-    } else if (widget.notification.type == 'safety') {
-      return Icons.shield_outlined;
-    } else {
-      return Icons.favorite;
+    switch (_normalizedCategory(notification)) {
+      case 'orders':
+        return Icons.receipt_long_outlined;
+      case 'offers':
+        return Icons.local_offer_outlined;
+      case 'system':
+        return Icons.info_outline;
+      default:
+        return Icons.notifications_none_outlined;
     }
   }
 
@@ -81,41 +72,54 @@ class _NotificationFeedItemState extends State<NotificationFeedItem> {
     return 'منذ أسبوع';
   }
 
+  Widget _leadingIcon(BuildContext context) {
+    final statusColor = notificationStatusColor();
+    final url = (notification.icon ?? '').trim();
+    if (url.isEmpty) {
+      return Icon(notificationStatusIcon(), color: statusColor, size: 18);
+    }
+    final lower = url.toLowerCase();
+    Widget child;
+    if (lower.endsWith('.svg')) {
+      child = SvgPicture.network(
+        url,
+        width: 30,
+        height: 30,
+        fit: BoxFit.contain,
+        placeholderBuilder: (_) => Icon(notificationStatusIcon(), color: statusColor, size: 18),
+      );
+    } else {
+      child = Image.network(
+        url,
+        width: 30,
+        height: 30,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Icon(notificationStatusIcon(), color: statusColor, size: 18),
+      );
+    }
+    return child;
+  }
+
   @override
   Widget build(BuildContext context) {
     final statusColor = notificationStatusColor();
-    final isUnread = widget.notification.isRead != true;
+    final isUnread = notification.isRead != true;
 
     return Container(
       color: context.onPrimary,
       child: Stack(
         children: [
-          if (widget.notification.showTrailingAccent)
+          if (notification.showTrailingAccent)
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: Container(width: 3, color: context.primaryContainer),
             ),
           Padding(
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: statusColor.withAlpha(25),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    notificationStatusIcon(),
-                    color: statusColor,
-                    size: 18,
-                  ),
-                ),
+                _leadingIcon(context),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -129,16 +133,13 @@ class _NotificationFeedItemState extends State<NotificationFeedItem> {
                               width: 6,
                               height: 6,
                               margin: const EdgeInsetsDirectional.only(top: 7),
-                              decoration: BoxDecoration(
-                                color: context.primaryContainer,
-                                shape: BoxShape.circle,
-                              ),
+                              decoration: BoxDecoration(color: context.primaryContainer, shape: BoxShape.circle),
                             ),
                             const SizedBox(width: 8),
                           ],
                           Expanded(
                             child: AppText.bodyMedium(
-                              widget.notification.title ?? '',
+                              notification.title ?? '',
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF111827),
                               textAlign: TextAlign.start,
@@ -147,14 +148,10 @@ class _NotificationFeedItemState extends State<NotificationFeedItem> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      AppText.bodyMedium(
-                        widget.notification.body ?? '',
-                        color: const Color(0xFF4B5563),
-                        textAlign: TextAlign.start,
-                      ),
+                      AppText.bodyMedium(notification.body ?? '', color: const Color(0xFF4B5563), textAlign: TextAlign.start),
                       const SizedBox(height: 4),
                       AppText.labelLarge(
-                        _relativeTime(widget.notification.createdAt),
+                        _relativeTime(notification.createdAt),
                         color: const Color(0xFF9CA3AF),
                         fontWeight: FontWeight.w500,
                         textAlign: TextAlign.start,

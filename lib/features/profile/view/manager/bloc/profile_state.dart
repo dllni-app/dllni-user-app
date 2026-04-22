@@ -16,6 +16,8 @@ class ProfileState {
   final BlocStatus? setDefaultAddressStatus;
 
   final PaginationStateModel<FetchNotificationsModelDataItem> notificationsPagination;
+  final BlocStatus? markAllNotificationsReadStatus;
+  final String? notificationActionError;
 
   final PaginationStateModel<FavoriteRestaurantModel> favoriteRestaurantsPagination;
   final BlocStatus? removeFavoriteRestaurantStatus;
@@ -60,6 +62,8 @@ class ProfileState {
     this.defaultAddressId,
     this.setDefaultAddressStatus,
     this.notificationsPagination = const PaginationStateModel<FetchNotificationsModelDataItem>(perPage: 10),
+    this.markAllNotificationsReadStatus,
+    this.notificationActionError,
     this.favoriteRestaurantsPagination = const PaginationStateModel<FavoriteRestaurantModel>(perPage: 20),
     this.removeFavoriteRestaurantStatus,
     this.createVoteStatus,
@@ -110,6 +114,10 @@ class ProfileState {
     String? defaultAddressId,
     BlocStatus? setDefaultAddressStatus,
     PaginationStateModel<FetchNotificationsModelDataItem>? notificationsPagination,
+    BlocStatus? markAllNotificationsReadStatus,
+    bool clearMarkAllNotificationsReadStatus = false,
+    String? notificationActionError,
+    bool clearNotificationActionError = false,
     PaginationStateModel<FavoriteRestaurantModel>? favoriteRestaurantsPagination,
     BlocStatus? removeFavoriteRestaurantStatus,
     BlocStatus? createVoteStatus,
@@ -160,6 +168,12 @@ class ProfileState {
     defaultAddressId: defaultAddressId ?? this.defaultAddressId,
     setDefaultAddressStatus: setDefaultAddressStatus ?? this.setDefaultAddressStatus,
     notificationsPagination: notificationsPagination ?? this.notificationsPagination,
+    markAllNotificationsReadStatus: clearMarkAllNotificationsReadStatus
+        ? null
+        : (markAllNotificationsReadStatus ?? this.markAllNotificationsReadStatus),
+    notificationActionError: clearNotificationActionError
+        ? null
+        : (notificationActionError ?? this.notificationActionError),
     favoriteRestaurantsPagination: favoriteRestaurantsPagination ?? this.favoriteRestaurantsPagination,
     removeFavoriteRestaurantStatus: removeFavoriteRestaurantStatus ?? this.removeFavoriteRestaurantStatus,
     createVoteStatus: createVoteStatus ?? this.createVoteStatus,

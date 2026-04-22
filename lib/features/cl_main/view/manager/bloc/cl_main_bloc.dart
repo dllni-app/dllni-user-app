@@ -107,12 +107,16 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
   }
 
   FutureOr<void> _setPreferredWorker(SetPreferredWorkerEvent event, Emitter<ClMainState> emit) {
-    emit(
-      state.copyWith(
-        selectedWorkerId: event.workerId,
-        clearErrorMessage: true,
-      ),
-    );
+    if (event.workerId == null) {
+      emit(state.copyWith(clearSelectedWorker: true, clearErrorMessage: true));
+    } else {
+      emit(
+        state.copyWith(
+          selectedWorkerId: event.workerId,
+          clearErrorMessage: true,
+        ),
+      );
+    }
   }
 
   FutureOr<void> _createCleaningOrder(CreateCleaningOrderEvent event, Emitter<ClMainState> emit) async {

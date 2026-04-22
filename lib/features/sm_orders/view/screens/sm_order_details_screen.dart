@@ -71,11 +71,17 @@ class _SmOrderDetailsScreenState extends State<SmOrderDetailsScreen> {
   }
 
   int _statusStep() {
-    final status = (_tracking?.latestToStatus ?? widget.args.order.status ?? '')
+    final order = widget.args.order;
+    final hasDelivery =
+        (order.fulfillment?.type ?? '').toLowerCase() == 'delivery';
+    final status = (_tracking?.latestToStatus ?? order.status ?? '')
         .toLowerCase();
-    if (status.contains('delivered') || status.contains('completed')) return 4;
-    if (status.contains('out_for_delivery') || status.contains('dispatch'))
-      return 3;
+    if (status.contains('delivered') || status.contains('completed')) {
+      return hasDelivery ? 4 : 3;
+    }
+    if (status.contains('out_for_delivery') || status.contains('dispatch')) {
+      return hasDelivery ? 3 : 2;
+    }
     if (status.contains('preparing') || status.contains('ready')) return 2;
     if (status.isNotEmpty) return 1;
     return 0;

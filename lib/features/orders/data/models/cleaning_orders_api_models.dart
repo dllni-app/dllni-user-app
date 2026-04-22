@@ -33,6 +33,39 @@ String? _toStringValue(dynamic value) {
   return text.isEmpty ? null : text;
 }
 
+/// Merges `tracking` into the root map when the API nests lifecycle timestamps.
+Map<String, dynamic> _cleaningDetailJsonMap(Map<String, dynamic> json) {
+  final tracking = json['tracking'];
+  if (tracking is Map) {
+    return {...json, ..._toMap(tracking)};
+  }
+  return json;
+}
+
+/// Arabic status chip/label for cleaning orders (list + details).
+String cleaningOrderStatusLabelAr(String? status) {
+  switch ((status ?? '').toLowerCase()) {
+    case 'pending':
+      return 'في مرحلة الاستعداد';
+    case 'worker_assigned':
+      return 'تم تعيين مقدم الخدمة';
+    case 'awaiting_start_verification':
+      return 'بانتظار رمز التحقق';
+    case 'in_progress':
+      return 'قيد التنفيذ';
+    case 'awaiting_customer_completion':
+      return 'بانتظار تأكيد الإكمال';
+    case 'time_extension_requested':
+      return 'طلب تمديد الوقت';
+    case 'completed':
+      return 'مكتمل';
+    case 'cancelled':
+      return 'ملغي';
+    default:
+      return 'قيد المعالجة';
+  }
+}
+
 FetchCleaningOrdersModel fetchCleaningOrdersModelFromJson(dynamic json) {
   return FetchCleaningOrdersModel.fromJson(_toMap(json));
 }
@@ -154,6 +187,12 @@ class CleaningOrderDetailModel {
   final double? travelFee;
   final double? totalPrice;
   final CleaningOrderWorkerModel? worker;
+  final String? startedTravelAt;
+  final String? arrivedAt;
+  final String? workStartedAt;
+  final String? workFinishedAt;
+  final String? customerConfirmedAt;
+  final String? cancelledAt;
 
   CleaningOrderDetailModel({
     this.id,
@@ -178,44 +217,66 @@ class CleaningOrderDetailModel {
     this.travelFee,
     this.totalPrice,
     this.worker,
+    this.startedTravelAt,
+    this.arrivedAt,
+    this.workStartedAt,
+    this.workFinishedAt,
+    this.customerConfirmedAt,
+    this.cancelledAt,
   });
 
   factory CleaningOrderDetailModel.fromJson(Map<String, dynamic> json) {
+    final m = _cleaningDetailJsonMap(json);
     return CleaningOrderDetailModel(
-      id: _toInt(json['id']),
-      customerId: _toInt(json['customerId']),
-      workerId: _toInt(json['workerId']),
-      bookingNumber: _toStringValue(json['bookingNumber']),
-      status: _toStringValue(json['status']),
-      propertyType: _toStringValue(json['propertyType']),
+      id: _toInt(m['id'] ?? json['id']),
+      customerId: _toInt(m['customerId'] ?? json['customerId']),
+      workerId: _toInt(m['workerId'] ?? json['workerId']),
+      bookingNumber: _toStringValue(m['bookingNumber'] ?? json['bookingNumber']),
+      status: _toStringValue(m['status'] ?? json['status']),
+      propertyType: _toStringValue(m['propertyType'] ?? json['propertyType']),
       propertyDetails: json['propertyDetails'] == null
           ? null
           : CleaningPropertyDetailsModel.fromJson(
               _toMap(json['propertyDetails']),
             ),
       addressLatitude: _toDouble(
-        json['addressLatitude'] ?? json['address_latitude'] ?? json['latitude'],
+        m['addressLatitude'] ??
+            m['address_latitude'] ??
+            m['latitude'] ??
+            json['addressLatitude'] ??
+            json['address_latitude'] ??
+            json['latitude'],
       ),
       addressLongitude: _toDouble(
-        json['addressLongitude'] ??
+        m['addressLongitude'] ??
+            m['address_longitude'] ??
+            m['longitude'] ??
+            json['addressLongitude'] ??
             json['address_longitude'] ??
             json['longitude'],
       ),
-      locationName: _toStringValue(json['locationName']),
-      numberOfRooms: _toInt(json['numberOfRooms']),
-      numberOfKitchens: _toInt(json['numberOfKitchens']),
-      estimatedSqm: _toStringValue(json['estimatedSqm']),
-      estimatedHours: _toStringValue(json['estimatedHours']),
-      totalHours: _toDouble(json['totalHours']),
-      scheduledDate: _toStringValue(json['scheduledDate']),
-      scheduledTime: _toStringValue(json['scheduledTime']),
-      basePrice: _toDouble(json['basePrice']),
-      addonsTotal: _toDouble(json['addonsTotal']),
-      travelFee: _toDouble(json['travelFee']),
-      totalPrice: _toDouble(json['totalPrice']),
+      locationName: _toStringValue(m['locationName'] ?? json['locationName']),
+      numberOfRooms: _toInt(m['numberOfRooms'] ?? json['numberOfRooms']),
+      numberOfKitchens: _toInt(m['numberOfKitchens'] ?? json['numberOfKitchens']),
+      estimatedSqm: _toStringValue(m['estimatedSqm'] ?? json['estimatedSqm']),
+      estimatedHours: _toStringValue(m['estimatedHours'] ?? json['estimatedHours']),
+      totalHours: _toDouble(m['totalHours'] ?? json['totalHours']),
+      scheduledDate: _toStringValue(m['scheduledDate'] ?? json['scheduledDate']),
+      scheduledTime: _toStringValue(m['scheduledTime'] ?? json['scheduledTime']),
+      basePrice: _toDouble(m['basePrice'] ?? json['basePrice']),
+      addonsTotal: _toDouble(m['addonsTotal'] ?? json['addonsTotal']),
+      travelFee: _toDouble(m['travelFee'] ?? json['travelFee']),
+      totalPrice: _toDouble(m['totalPrice'] ?? json['totalPrice']),
       worker: json['worker'] == null
           ? null
           : CleaningOrderWorkerModel.fromJson(_toMap(json['worker'])),
+      startedTravelAt: _toStringValue(m['startedTravelAt'] ?? json['startedTravelAt']),
+      arrivedAt: _toStringValue(m['arrivedAt'] ?? json['arrivedAt']),
+      workStartedAt: _toStringValue(m['workStartedAt'] ?? json['workStartedAt']),
+      workFinishedAt: _toStringValue(m['workFinishedAt'] ?? json['workFinishedAt']),
+      customerConfirmedAt:
+          _toStringValue(m['customerConfirmedAt'] ?? json['customerConfirmedAt']),
+      cancelledAt: _toStringValue(m['cancelledAt'] ?? json['cancelledAt']),
     );
   }
 

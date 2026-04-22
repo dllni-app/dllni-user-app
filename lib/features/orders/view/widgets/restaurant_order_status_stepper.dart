@@ -12,7 +12,37 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
   final OrderResourceModel order;
   final RestaurantOrderTrackingDataModel? tracking;
 
-  static int _mapApiStatusToStepIndex(String status) {
+  static bool _isDeliveryOrder(OrderResourceModel order) {
+    final t = (order.fulfillment?.type ?? '').toLowerCase().trim();
+    return t == 'delivery';
+  }
+
+  /// [isDelivery] false → 3 steps (no driver leg); true → 4 steps.
+  static int _mapApiStatusToStepIndex(String status, {required bool isDelivery}) {
+    if (isDelivery) {
+      switch (status) {
+        case 'pending':
+          return 0;
+        case 'accepted':
+        case 'preparing':
+          return 1;
+        case 'ready_for_pickup':
+        case 'ready_for_delivery':
+        case 'out_for_delivery':
+        case 'on_the_way':
+        case 'driver_assigned':
+          return 2;
+        case 'picked_up':
+        case 'completed':
+        case 'delivered':
+          return 3;
+        case 'cancelled':
+        case 'rejected':
+          return 0;
+        default:
+          return 1;
+      }
+    }
     switch (status) {
       case 'pending':
         return 0;
@@ -20,15 +50,15 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
       case 'preparing':
         return 1;
       case 'ready_for_pickup':
+      case 'picked_up':
+      case 'completed':
+      case 'delivered':
+        return 2;
       case 'ready_for_delivery':
       case 'out_for_delivery':
       case 'on_the_way':
       case 'driver_assigned':
-        return 2;
-      case 'picked_up':
-      case 'completed':
-      case 'delivered':
-        return 3;
+        return 1;
       case 'cancelled':
       case 'rejected':
         return 0;
@@ -57,10 +87,22 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
     return OrderTrackPhase.onTheWay;
   }
 
-  int get _currentIndex {
+  int _currentIndex(bool isDelivery) {
     final api = tracking?.latestToStatus;
     if (api != null && api.isNotEmpty) {
-      return _mapApiStatusToStepIndex(api);
+      return _mapApiStatusToStepIndex(api, isDelivery: isDelivery);
+    }
+    if (isDelivery) {
+      switch (_phaseFromOrderOnly()) {
+        case OrderTrackPhase.received:
+          return 0;
+        case OrderTrackPhase.preparing:
+          return 1;
+        case OrderTrackPhase.onTheWay:
+          return 2;
+        case OrderTrackPhase.delivered:
+          return 3;
+      }
     }
     switch (_phaseFromOrderOnly()) {
       case OrderTrackPhase.received:
@@ -68,9 +110,9 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
       case OrderTrackPhase.preparing:
         return 1;
       case OrderTrackPhase.onTheWay:
-        return 2;
+        return 1;
       case OrderTrackPhase.delivered:
-        return 3;
+        return 2;
     }
   }
 
@@ -86,20 +128,39 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
     });
   }
 
-  List<OrderTrackingStepVisual> _buildSteps() {
-    return const [
-      OrderTrackingStepVisual(title: 'تم استلام الطلب', subtitle: 'تم إرسال الطلب للمطعم', icon: Icons.check),
-      OrderTrackingStepVisual(title: 'جاري تحضير الطلب', subtitle: 'المطعم يقوم بتجهيز طلبك', icon: Icons.restaurant),
-      OrderTrackingStepVisual(title: 'السائق في الطريق', subtitle: 'السائق يتجه إليك الآن', icon: Icons.two_wheeler),
-      OrderTrackingStepVisual(title: 'تم تسليم الطلب', subtitle: '', icon: Icons.home_outlined),
-    ];
+  List<OrderTrackingStepVisual> _buildSteps(bool isDelivery) {
+    const received = OrderTrackingStepVisual(
+      title: 'تم استلام الطلب',
+      subtitle: 'تم إرسال الطلب للمطعم',
+      icon: Icons.check,
+    );
+    const preparing = OrderTrackingStepVisual(
+      title: 'جاري تحضير الطلب',
+      subtitle: 'المطعم يقوم بتجهيز طلبك',
+      icon: Icons.restaurant,
+    );
+    const driver = OrderTrackingStepVisual(
+      title: 'السائق في الطريق',
+      subtitle: 'السائق يتجه إليك الآن',
+      icon: Icons.two_wheeler,
+    );
+    const done = OrderTrackingStepVisual(
+      title: 'تم تسليم الطلب',
+      subtitle: '',
+      icon: Icons.home_outlined,
+    );
+    if (isDelivery) {
+      return const [received, preparing, driver, done];
+    }
+    return const [received, preparing, done];
   }
 
   @override
   Widget build(BuildContext context) {
-    final steps = _buildSteps();
-    final current = _currentIndex;
-    const n = 4;
+    final isDelivery = _isDeliveryOrder(order);
+    final steps = _buildSteps(isDelivery);
+    final current = _currentIndex(isDelivery);
+    final n = steps.length;
     final below = _computeBelowLines(current, n);
 
     return Container(

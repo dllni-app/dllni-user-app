@@ -5,6 +5,9 @@ import '../../data/models/cleaning_orders_api_models.dart';
 import '../../data/models/orders_api_models.dart';
 import '../usecases/cancel_cleaning_order_use_case.dart';
 import '../usecases/check_restaurant_coupon_use_case.dart';
+import '../usecases/confirm_cleaning_completion_use_case.dart';
+import '../usecases/confirm_cleaning_start_verification_use_case.dart';
+import '../usecases/extend_cleaning_completion_time_use_case.dart';
 import '../usecases/delete_cart_item_use_case.dart';
 import '../usecases/fetch_cleaning_order_details_use_case.dart';
 import '../usecases/fetch_cleaning_orders_use_case.dart';
@@ -14,6 +17,7 @@ import '../usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../usecases/place_restaurant_order_use_case.dart';
 import '../usecases/place_store_order_use_case.dart';
 import '../usecases/patch_cleaning_order_use_case.dart';
+import '../usecases/reject_cleaning_completion_use_case.dart';
 import '../usecases/update_cart_item_quantity_use_case.dart';
 
 abstract class OrdersRepo {
@@ -26,6 +30,18 @@ abstract class OrdersRepo {
   );
   DataResponse<FetchCleaningOrderDetailsModel> fetchCleaningOrderDetails(
     FetchCleaningOrderDetailsParams params,
+  );
+  DataResponse<FetchCleaningOrderDetailsModel> confirmCleaningStartVerification(
+    ConfirmCleaningStartVerificationParams params,
+  );
+  DataResponse<FetchCleaningOrderDetailsModel> confirmCleaningCompletion(
+    ConfirmCleaningCompletionParams params,
+  );
+  DataResponse<FetchCleaningOrderDetailsModel> rejectCleaningCompletion(
+    RejectCleaningCompletionParams params,
+  );
+  DataResponse<FetchCleaningOrderDetailsModel> extendCleaningCompletionTime(
+    ExtendCleaningCompletionTimeParams params,
   );
   DataResponse<OrdersActionResultModel> patchCleaningOrder(
     PatchCleaningOrderParams params,

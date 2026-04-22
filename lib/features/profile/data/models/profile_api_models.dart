@@ -259,6 +259,23 @@ class FetchAddressesModel {
   }
 }
 
+String? _firstNonEmptyString(Map<String, dynamic> json, List<String> keys) {
+  for (final k in keys) {
+    final s = _asString(json[k]);
+    if (s != null && s.trim().isNotEmpty) return s;
+  }
+  return null;
+}
+
+Map<String, dynamic>? _asStringKeyMap(dynamic value) {
+  if (value is! Map) return null;
+  final out = <String, dynamic>{};
+  for (final e in value.entries) {
+    out['${e.key}'] = e.value;
+  }
+  return out;
+}
+
 class NotificationResourceModel {
   final String? id;
   final String? type;
@@ -266,6 +283,12 @@ class NotificationResourceModel {
   final String? body;
   final String? readAt;
   final String? createdAt;
+  final String? module;
+  final String? icon;
+  final String? canonicalType;
+  final String? category;
+  final String? priority;
+  final Map<String, dynamic>? data;
 
   const NotificationResourceModel({
     this.id,
@@ -274,6 +297,12 @@ class NotificationResourceModel {
     this.body,
     this.readAt,
     this.createdAt,
+    this.module,
+    this.icon,
+    this.canonicalType,
+    this.category,
+    this.priority,
+    this.data,
   });
 
   factory NotificationResourceModel.fromJson(Map<String, dynamic> json) {
@@ -282,8 +311,14 @@ class NotificationResourceModel {
       type: _asString(json['type']),
       title: _asString(json['title']),
       body: _asString(json['body']),
-      readAt: _asString(json['readAt']),
-      createdAt: _asString(json['createdAt']),
+      readAt: _firstNonEmptyString(json, const ['readAt', 'read_at']),
+      createdAt: _firstNonEmptyString(json, const ['createdAt', 'created_at']),
+      module: _asString(json['module']),
+      icon: _asString(json['icon']),
+      canonicalType: _firstNonEmptyString(json, const ['canonicalType', 'canonical_type']),
+      category: _asString(json['category']),
+      priority: _asString(json['priority']),
+      data: _asStringKeyMap(json['data']),
     );
   }
 }

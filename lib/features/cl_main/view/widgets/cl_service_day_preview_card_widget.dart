@@ -2,10 +2,10 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class ClServiceDayPreviewCardWidget extends StatelessWidget {
-  const ClServiceDayPreviewCardWidget({required this.dayAr, required this.dayEn, super.key});
+  const ClServiceDayPreviewCardWidget({required this.dayAr, required this.dayDate, super.key});
 
   final String dayAr;
-  final String dayEn;
+  final String dayDate;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class ClServiceDayPreviewCardWidget extends StatelessWidget {
             children: [
               AppText.titleMedium(dayAr, color: const Color(0xFF151E43), fontWeight: FontWeight.w700),
               const SizedBox(height: 2),
-              AppText.bodySmall(dayEn, color: const Color(0xFF6B7280), fontWeight: FontWeight.w500),
+              AppText.bodySmall(dayDate, color: const Color(0xFF6B7280), fontWeight: FontWeight.w500),
             ],
           ),
         ),
