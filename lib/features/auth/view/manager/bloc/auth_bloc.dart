@@ -84,7 +84,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final response = await registerUseCase(
       RegisterParams(
         name: event.name,
-        email: event.email,
         phone: event.phone,
         password: event.password,
       ),

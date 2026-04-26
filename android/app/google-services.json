@@ -7,6 +7,82 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:212739916006:android:dffa05d72bc017d921fb27",
+        "android_client_info": {
+          "package_name": "com.alnadha.user"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqKgNz1HcrWEXDt5YCk9F-4dK2wLTi_VU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212739916006:android:b99535e7fea56cb721fb27",
+        "android_client_info": {
+          "package_name": "com.dllni.clOwner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqKgNz1HcrWEXDt5YCk9F-4dK2wLTi_VU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212739916006:android:4a5128a83dfb977521fb27",
+        "android_client_info": {
+          "package_name": "com.dllni.restOwner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqKgNz1HcrWEXDt5YCk9F-4dK2wLTi_VU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212739916006:android:22f453918797fcd621fb27",
+        "android_client_info": {
+          "package_name": "com.dllni.smOwner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqKgNz1HcrWEXDt5YCk9F-4dK2wLTi_VU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:212739916006:android:6e5240151937eb6321fb27",
         "android_client_info": {
           "package_name": "com.dllni.userapp"

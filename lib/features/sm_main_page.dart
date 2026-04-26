@@ -52,7 +52,7 @@ class _SmMainPageState extends State<SmMainPage> with SingleTickerProviderStateM
       ),
       bottomNavigationBar: AppNavBar(
         items: [
-          AppNavBarItem(title: "الرئيسية", icon: FontAwesomeIcons.solidHouse),
+          AppNavBarItem(title: "المتاجر", icon: FontAwesomeIcons.solidHouse),
           AppNavBarItem(title: "تصفح", icon: FontAwesomeIcons.solidCompass),
           AppNavBarItem(title: "المفضلة", icon: FontAwesomeIcons.tags),
         ],

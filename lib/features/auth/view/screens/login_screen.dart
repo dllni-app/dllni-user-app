@@ -172,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: Border.all(color: context.secondary.withAlpha(220), width: 1),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: AppText.labelLarge('إنشاء حساب جديد', fontWeight: FontWeight.w700, color: context.secondary),
+                      child: AppText.labelLarge('إنشاء حساب جديد', fontWeight: FontWeight.w700, color: context.secondary, textAlign: TextAlign.center,),
                     ),
                   ),
                   SizedBox(height: 32,),

@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
 import 'personal_details_screen.dart';
@@ -120,7 +121,9 @@ class ProfileScreen extends StatelessWidget {
                           image: Icon(Icons.headphones, size: 18, color: Color(0xff6366F1)),
                           title: 'الدعم والمساعدة',
                           subtitle: 'التواصل مع الدعم الفني',
-                          onTap: () {},
+                          onTap: () {
+                            launchUrl(Uri.parse('https://wa.me/message/XJOZBNT3VS5SJ1'));
+                          },
                         ),
                       ],
                     ),

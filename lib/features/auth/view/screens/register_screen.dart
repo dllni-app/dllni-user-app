@@ -19,7 +19,6 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -35,7 +34,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -46,14 +44,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final local = _phoneController.text.trim().replaceAll(' ', '');
-    bloc.add(
-      RegisterSubmittedEvent(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: local,
-        password: _passwordController.text,
-      ),
-    );
+    bloc.add(RegisterSubmittedEvent(name: _nameController.text.trim(), phone: local, password: _passwordController.text));
   }
 
   @override
@@ -64,24 +55,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         listenWhen: (prev, curr) => curr.registerStatus == BlocStatus.failed || curr.registerStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.registerStatus == BlocStatus.failed) {
-            AppToast.showToast(
-              context: context,
-              message: state.registerErrorMessage ?? 'فشل إنشاء الحساب',
-              type: ToastificationType.error,
-            );
+            AppToast.showToast(context: context, message: state.registerErrorMessage ?? 'فشل إنشاء الحساب', type: ToastificationType.error);
             return;
           }
           if (state.registerStatus == BlocStatus.success) {
             final r = state.registerResult;
-            final email = _emailController.text.trim();
             if (context.mounted) {
               context.pushRoute(
                 '/verify-account',
-                arguments: VerifyAccountRouteArgs(
-                  email: email,
-                  message: r?.message,
-                  expiresAt: r?.expiresAt,
-                ),
+                arguments: VerifyAccountRouteArgs(message: r?.message, expiresAt: r?.expiresAt),
               );
             }
           }
@@ -104,17 +86,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       validator: AuthFormValidators.fullName,
                       enabled: !loading,
                       prefixIcon: const Icon(Icons.person_outline_rounded, color: _iconGray, size: 22),
-                    ),
-                    const SizedBox(height: 18),
-                    AuthLabeledField(
-                      label: 'البريد الإلكتروني',
-                      isRequired: true,
-                      controller: _emailController,
-                      hintText: 'example@email.com',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: AuthFormValidators.email,
-                      enabled: !loading,
-                      prefixIcon: const Icon(Icons.email_outlined, color: _iconGray, size: 22),
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -204,7 +175,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         border: Border.all(color: context.secondary.withAlpha(220), width: 1),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: AppText.labelLarge('قم بتسجيل الدخول', fontWeight: FontWeight.w700, color: context.secondary),
+                      child: AppText.labelLarge(
+                        'قم بتسجيل الدخول',
+                        fontWeight: FontWeight.w700,
+                        color: context.secondary,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/profile_api_models.dart';
 import '../manager/bloc/profile_bloc.dart';
@@ -31,8 +32,9 @@ const String _kVotePusherCluster = 'eu';
 class VoteFollowupScreenParams {
   final int voteId;
   final VoteCreatedData? initialData;
+  final bool? needShare;
 
-  const VoteFollowupScreenParams({required this.voteId, this.initialData});
+  const VoteFollowupScreenParams({required this.voteId, this.initialData, this.needShare = false});
 }
 
 @AutoRoutePage()
@@ -66,11 +68,18 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   @override
   void initState() {
     super.initState();
+    if(widget.params.needShare!){
+      shareUrl();
+    }
     _hydrateFromCreatedData(widget.params.initialData);
     _startTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_connectVoteRealtime());
     });
+  }
+
+  void shareUrl() async {
+    await SharePlus.instance.share(ShareParams(text: 'تجربة'));
   }
 
   Future<void> _connectVoteRealtime() async {

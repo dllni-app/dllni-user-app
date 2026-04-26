@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/widgets/success_action_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -756,16 +757,39 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
           _showSnackBar(state.errorMessage!);
           return;
         }
-        if (state.createVoteStatus == BlocStatus.success) {
+        // Add SuccessActionBottomSheet for createVoteStatus success
+        if (state.createVoteStatus == BlocStatus.success && _mode == OrderVotingMode.create) {
           final createdVote = state.createdVote;
           final voteId = createdVote?.voteId;
           if (createdVote?.data == null || voteId == null) {
             _showSnackBar('تعذر إنشاء التصويت');
             return;
           }
-          context.pushRoute(
-            '/votefollowup',
-            arguments: VoteFollowupScreenParams(voteId: voteId, initialData: createdVote!.data),
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            builder: (context) {
+              return SuccessActionBottomSheet(
+                title: 'تم إنشاء التصويت',
+                followUpLabel: 'متابعة التصويت',
+                shareLabel: 'مشاركة',
+                onFollowUp: () {
+                  Navigator.of(context).pop();
+                  context.pushRoute(
+                    '/votefollowup',
+                    arguments: VoteFollowupScreenParams(voteId: voteId, initialData: createdVote!.data),
+                  );
+                },
+                onShare: () {
+                  Navigator.of(context).pop();
+                  context.pushRoute(
+                    '/votefollowup',
+                    arguments: VoteFollowupScreenParams(voteId: voteId, initialData: createdVote!.data, needShare: true),
+                  );
+                },
+              );
+            },
           );
         }
       },
