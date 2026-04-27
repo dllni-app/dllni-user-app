@@ -18,19 +18,26 @@ import '../../domain/usecases/create_shopping_list_use_case.dart';
 import '../../domain/usecases/update_shopping_list_use_case.dart';
 import '../manager/bloc/profile_bloc.dart';
 
-enum FrequencyType { once, weekly, monthly }
-
-class _SchedulePeriod {
-  const _SchedulePeriod({required this.from, required this.to});
-
-  final TimeOfDay from;
-  final TimeOfDay to;
-
-  _SchedulePeriod copyWith({TimeOfDay? from, TimeOfDay? to}) => _SchedulePeriod(from: from ?? this.from, to: to ?? this.to);
+/// Inverse of [_uiDayIndexToApiWeekday] for UI index 0…6 (Sunday…Saturday).
+int? _apiWeekdayToUiIndex(int w) {
+  if (w == 7) return 0;
+  if (w >= 1 && w <= 6) return w;
+  return null;
 }
 
 String _arPeriodTitle(int index) {
-  const ordinals = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'];
+  const ordinals = [
+    'الأولى',
+    'الثانية',
+    'الثالثة',
+    'الرابعة',
+    'الخامسة',
+    'السادسة',
+    'السابعة',
+    'الثامنة',
+    'التاسعة',
+    'العاشرة',
+  ];
   if (index >= 0 && index < ordinals.length) {
     return 'الفترة ${ordinals[index]}';
   }
@@ -40,26 +47,6 @@ String _arPeriodTitle(int index) {
 String _formatTimeOfDay(TimeOfDay t) {
   final dt = DateTime(1970, 1, 1, t.hour, t.minute);
   return DateFormat('hh:mm a', 'en').format(dt);
-}
-
-TimeOfDay? _timeFromHHmm(String s) {
-  if (s.isEmpty) return null;
-  final parts = s.split(':');
-  if (parts.length < 2) return null;
-  final h = int.tryParse(parts[0]);
-  final m = int.tryParse(parts[1]);
-  if (h == null || m == null) return null;
-  return TimeOfDay(hour: h.clamp(0, 23), minute: m.clamp(0, 59));
-}
-
-/// API `weekDays`: same as [DateTime.weekday] (1 = Monday … 7 = Sunday).
-int _uiDayIndexToApiWeekday(int index) => index == 0 ? 7 : index;
-
-/// Inverse of [_uiDayIndexToApiWeekday] for UI index 0…6 (Sunday…Saturday).
-int? _apiWeekdayToUiIndex(int w) {
-  if (w == 7) return 0;
-  if (w >= 1 && w <= 6) return w;
-  return null;
 }
 
 FrequencyType? _frequencyTypeFromApi(String? t) {
@@ -75,9 +62,48 @@ FrequencyType? _frequencyTypeFromApi(String? t) {
   }
 }
 
-String _timeOfDayToApiHHmm(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+TimeOfDay? _timeFromHHmm(String s) {
+  if (s.isEmpty) return null;
+  final parts = s.split(':');
+  if (parts.length < 2) return null;
+  final h = int.tryParse(parts[0]);
+  final m = int.tryParse(parts[1]);
+  if (h == null || m == null) return null;
+  return TimeOfDay(hour: h.clamp(0, 23), minute: m.clamp(0, 59));
+}
+
+String _timeOfDayToApiHHmm(TimeOfDay t) =>
+    '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
 int _timeOfDayToMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+
+/// API `weekDays`: same as [DateTime.weekday] (1 = Monday … 7 = Sunday).
+int _uiDayIndexToApiWeekday(int index) => index;
+
+@AutoRoutePage(path: '/add_edit_shopping_list')
+class AddEditShoppingListScreen extends StatefulWidget {
+  final AddEditShoppingListScreenArgs args;
+
+  const AddEditShoppingListScreen({super.key, required this.args});
+
+  @override
+  State<AddEditShoppingListScreen> createState() =>
+      _AddEditShoppingListScreenState();
+}
+
+class AddEditShoppingListScreenArgs {
+  final ProfileBloc profileBloc;
+  final int? shoppingListId;
+  final ShoppingListDetailModel? initialDetail;
+
+  const AddEditShoppingListScreenArgs({
+    required this.profileBloc,
+    this.shoppingListId,
+    this.initialDetail,
+  });
+}
+
+enum FrequencyType { once, weekly, monthly }
 
 class PeriodCard extends StatelessWidget {
   final String title;
@@ -103,7 +129,10 @@ class PeriodCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(color: Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         children: [
           Row(
@@ -111,12 +140,21 @@ class PeriodCard extends StatelessWidget {
             children: [
               AppText(
                 title,
-                style: TextStyle(color: Color(0xFF4B5563), fontSize: 12, fontWeight: FontWeight.w700, height: 16 / 12),
+                style: TextStyle(
+                  color: Color(0xFF4B5563),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 16 / 12,
+                ),
               ),
               if (canDelete)
                 GestureDetector(
                   onTap: onDelete,
-                  child: FaIcon(FontAwesomeIcons.trash, size: 14, color: Color(0xFF9CA3AF)),
+                  child: FaIcon(
+                    FontAwesomeIcons.trash,
+                    size: 14,
+                    color: Color(0xFF9CA3AF),
+                  ),
                 ),
             ],
           ),
@@ -133,7 +171,12 @@ class PeriodCard extends StatelessWidget {
                       padding: const EdgeInsets.only(right: 8.0),
                       child: AppText(
                         "من",
-                        style: TextStyle(color: Color(0xFF4B5563), fontSize: 12, fontWeight: FontWeight.w700, height: 16 / 12),
+                        style: TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          height: 16 / 12,
+                        ),
                       ),
                     ),
                     SizedBox(height: 8),
@@ -141,7 +184,10 @@ class PeriodCard extends StatelessWidget {
                       onTap: onFromTap,
                       behavior: HitTestBehavior.opaque,
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.white,
                           border: Border.all(color: Color(0xFFE5E7EB)),
@@ -149,12 +195,21 @@ class PeriodCard extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            FaIcon(FontAwesomeIcons.solidClock, size: 14, color: Color(0xFF9CA3AF)),
+                            FaIcon(
+                              FontAwesomeIcons.solidClock,
+                              size: 14,
+                              color: Color(0xFF9CA3AF),
+                            ),
                             SizedBox(width: 16),
                             AppText(
                               from,
                               textDirection: ui.TextDirection.ltr,
-                              style: TextStyle(color: Color(0xFF1F2937), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
+                              style: TextStyle(
+                                color: Color(0xFF1F2937),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                height: 20 / 14,
+                              ),
                             ),
                           ],
                         ),
@@ -172,7 +227,12 @@ class PeriodCard extends StatelessWidget {
                       padding: const EdgeInsets.only(right: 8.0),
                       child: AppText(
                         "إلى",
-                        style: TextStyle(color: Color(0xFF4B5563), fontSize: 12, fontWeight: FontWeight.w700, height: 16 / 12),
+                        style: TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          height: 16 / 12,
+                        ),
                       ),
                     ),
                     SizedBox(height: 8),
@@ -180,7 +240,10 @@ class PeriodCard extends StatelessWidget {
                       onTap: onToTap,
                       behavior: HitTestBehavior.opaque,
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.white,
                           border: Border.all(color: Color(0xFFE5E7EB)),
@@ -188,12 +251,21 @@ class PeriodCard extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            FaIcon(FontAwesomeIcons.solidClock, size: 14, color: Color(0xFF9CA3AF)),
+                            FaIcon(
+                              FontAwesomeIcons.solidClock,
+                              size: 14,
+                              color: Color(0xFF9CA3AF),
+                            ),
                             SizedBox(width: 16),
                             AppText(
                               to,
                               textDirection: ui.TextDirection.ltr,
-                              style: TextStyle(color: Color(0xFF1F2937), fontSize: 14, fontWeight: FontWeight.w500, height: 20 / 14),
+                              style: TextStyle(
+                                color: Color(0xFF1F2937),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                height: 20 / 14,
+                              ),
                             ),
                           ],
                         ),
@@ -210,59 +282,6 @@ class PeriodCard extends StatelessWidget {
   }
 }
 
-class _DayRow extends StatelessWidget {
-  final String dayAr;
-  final String dayEn;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _DayRow({required this.dayAr, required this.dayEn, required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppText(
-              dayAr,
-              textAlign: TextAlign.start,
-              style: TextStyle(color: Color(0xFF111827), fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
-            ),
-            AppText(
-              dayEn,
-              textAlign: TextAlign.start,
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 12, height: 16 / 12),
-            ),
-          ],
-        ),
-        CupertinoSwitch(value: value, onChanged: onChanged),
-      ],
-    );
-  }
-}
-
-class AddEditShoppingListScreenArgs {
-  final ProfileBloc profileBloc;
-  final int? shoppingListId;
-  final ShoppingListDetailModel? initialDetail;
-
-  const AddEditShoppingListScreenArgs({required this.profileBloc, this.shoppingListId, this.initialDetail});
-}
-
-@AutoRoutePage(path: '/add_edit_shopping_list')
-class AddEditShoppingListScreen extends StatefulWidget {
-  final AddEditShoppingListScreenArgs args;
-
-  const AddEditShoppingListScreen({super.key, required this.args});
-
-  @override
-  State<AddEditShoppingListScreen> createState() => _AddEditShoppingListScreenState();
-}
-
 class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
   late TextEditingController nameController;
   List<bool> daysSelected = List.filled(7, false);
@@ -271,40 +290,402 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
   List<bool> monthDaySelected = List.filled(31, false);
   FrequencyType? frequencyType;
 
-  final List<_SchedulePeriod> _periods = [_SchedulePeriod(from: const TimeOfDay(hour: 9, minute: 0), to: const TimeOfDay(hour: 11, minute: 0))];
+  final List<_SchedulePeriod> _periods = [
+    _SchedulePeriod(
+      from: const TimeOfDay(hour: 9, minute: 0),
+      to: const TimeOfDay(hour: 11, minute: 0),
+    ),
+  ];
 
-  Future<void> _editPeriodFrom(int index) async {
-    final p = _periods[index];
-    final value = await AppPickers.showAppTimePicker(context: context, initialTime: p.from);
-    final t = _timeFromHHmm(value);
-    if (t != null && mounted) {
-      setState(() {
-        _periods[index] = p.copyWith(from: t);
-      });
-    }
+  final List<String> daysEn = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  final List<String> daysAr = [
+    "الأحد",
+    "الاثنين",
+    "الثلاثاء",
+    "الأربعاء",
+    "الخميس",
+    "الجمعة",
+    "السبت",
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: widget.args.profileBloc,
+      child: BlocListener<ProfileBloc, ProfileState>(
+        listenWhen: (previous, current) {
+          final createDone =
+              previous.createShoppingListStatus == BlocStatus.loading &&
+              (current.createShoppingListStatus == BlocStatus.success ||
+                  current.createShoppingListStatus == BlocStatus.failed);
+          final updateDone =
+              previous.updateShoppingListStatus == BlocStatus.loading &&
+              (current.updateShoppingListStatus == BlocStatus.success ||
+                  current.updateShoppingListStatus == BlocStatus.failed);
+          return createDone || updateDone;
+        },
+        listener: (context, state) {
+          final createSt = state.createShoppingListStatus;
+          final updateSt = state.updateShoppingListStatus;
+          if (createSt == BlocStatus.success ||
+              updateSt == BlocStatus.success) {
+            Loading.close();
+            AppToast.showToast(
+              context: context,
+              message: state.updateShoppingListStatus == BlocStatus.success
+                  ? 'تم تحديث القائمة بنجاح'
+                  : 'تم إضافة القائمة بنجاح',
+              type: ToastificationType.success,
+            );
+            Navigator.of(context).pop(true);
+          } else if (createSt == BlocStatus.failed ||
+              updateSt == BlocStatus.failed) {
+            Loading.close();
+            AppToast.showToast(
+              context: context,
+              message: state.errorMessage ?? 'حدث خطأ',
+              type: ToastificationType.error,
+            );
+          }
+        },
+        child: Scaffold(
+          body: Column(
+            children: [
+              AppSimpleAppBar2(
+                title: widget.args.shoppingListId != null
+                    ? 'تعديل القائمة'
+                    : 'إضافة قائمة جديدة',
+                arrowBackType: ArrowBackType.cupertino,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  child: Column(
+                    children: [
+                      StepDetails(
+                        number: 1,
+                        title: "المعلومات الأساسية",
+                        child: AppTextField(
+                          controller: nameController,
+                          title: "اسم القائمة",
+                          isRequired: true,
+                          hintText: "ضع اسماً للقائمة: المنزل - العمل ...",
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      StepDetails(
+                        number: 2,
+                        title: "أضف منتجاتك",
+                        child: Column(
+                          children: [
+                            SizedBox(height: 16),
+                            AppText(
+                              "لا يوجد منتجات",
+                              style: TextStyle(
+                                color: Color(0xE52F2B3D),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 32),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      StepDetails(
+                        number: 3,
+                        title: "جدولة القائمة",
+                        child: Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            border: Border.all(color: Color(0xFFF3F4F6)),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                offset: Offset(0, 1),
+                                blurRadius: 2,
+                                color: Color(0x0D000000),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              RadioGroup(
+                                groupValue: frequencyType,
+                                onChanged: _onFrequencyChanged,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Radio(
+                                          visualDensity: VisualDensity(
+                                            vertical: -4,
+                                            horizontal: -4,
+                                          ),
+                                          value: FrequencyType.once,
+                                        ),
+                                        SizedBox(width: 8),
+                                        AppText(
+                                          "مرة واحدة",
+                                          style: TextStyle(
+                                            color: Color(0xFF0F172A),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Radio(
+                                          visualDensity: VisualDensity(
+                                            vertical: -4,
+                                            horizontal: -4,
+                                          ),
+                                          value: FrequencyType.weekly,
+                                        ),
+                                        SizedBox(width: 8),
+                                        AppText(
+                                          "تكرار مرة كل أسبوع",
+                                          style: TextStyle(
+                                            color: Color(0xFF0F172A),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Radio(
+                                          visualDensity: VisualDensity(
+                                            vertical: -4,
+                                            horizontal: -4,
+                                          ),
+                                          value: FrequencyType.monthly,
+                                        ),
+                                        SizedBox(width: 8),
+                                        AppText(
+                                          "تكرار مرة كل شهر",
+                                          style: TextStyle(
+                                            color: Color(0xFF0F172A),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (frequencyType == FrequencyType.weekly) ...[
+                                SizedBox(height: 12),
+                                Column(
+                                  spacing: 12,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(
+                                    daysEn.length,
+                                    (index) => _DayRow(
+                                      dayAr: daysAr[index],
+                                      dayEn: daysEn[index],
+                                      value: daysSelected[index],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          daysSelected[index] = value;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              if (frequencyType == FrequencyType.monthly) ...[
+                                SizedBox(height: 12),
+                                AppText(
+                                  'أيام الشهر',
+                                  textAlign: TextAlign.start,
+                                  style: TextStyle(
+                                    color: Color(0xFF4B5563),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    height: 16 / 12,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: List.generate(31, (index) {
+                                    final day = index + 1;
+                                    final selected = monthDaySelected[index];
+                                    return GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          monthDaySelected[index] = !selected;
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 40,
+                                        height: 40,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: selected
+                                              ? AppColors.primary.withValues(
+                                                  alpha: 0.12,
+                                                )
+                                              : const Color(0xFFF9FAFB),
+                                          border: Border.all(
+                                            color: selected
+                                                ? AppColors.primary
+                                                : const Color(0xFFE5E7EB),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: AppText(
+                                          '$day',
+                                          textDirection: ui.TextDirection.ltr,
+                                          style: TextStyle(
+                                            color: selected
+                                                ? AppColors.primary
+                                                : const Color(0xFF111827),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ],
+                              SizedBox(height: 12),
+                              ...List.generate(_periods.length, (i) {
+                                final p = _periods[i];
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: i < _periods.length - 1 ? 12 : 0,
+                                  ),
+                                  child: PeriodCard(
+                                    title: _arPeriodTitle(i),
+                                    from: _formatTimeOfDay(p.from),
+                                    to: _formatTimeOfDay(p.to),
+                                    canDelete: _periods.length > 1,
+                                    onDelete: () => _removePeriod(i),
+                                    onFromTap: () => _editPeriodFrom(i),
+                                    onToTap: () => _editPeriodTo(i),
+                                  ),
+                                );
+                              }),
+                              SizedBox(height: 12),
+                              GestureDetector(
+                                onTap: _addPeriod,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(
+                                      alpha: .06,
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.primary.withValues(
+                                        alpha: .21,
+                                      ),
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      FaIcon(
+                                        FontAwesomeIcons.plus,
+                                        size: 14,
+                                        color: AppColors.primary,
+                                      ),
+                                      SizedBox(width: 8),
+                                      AppText(
+                                        "إضافة فترة",
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          height: 20 / 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      GestureDetector(
+                        onTap: _submit,
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: AppText(
+                            widget.args.shoppingListId != null
+                                ? 'حفظ التعديلات'
+                                : 'حفظ وإضافة القائمة',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFFFFEEFF),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 100),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Future<void> _editPeriodTo(int index) async {
-    final p = _periods[index];
-    final value = await AppPickers.showAppTimePicker(context: context, initialTime: p.to);
-    final t = _timeFromHHmm(value);
-    if (t != null && mounted) {
-      setState(() {
-        _periods[index] = p.copyWith(to: t);
-      });
-    }
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
   }
 
-  void _removePeriod(int index) {
-    if (_periods.length <= 1) return;
-    setState(() {
-      _periods.removeAt(index);
-    });
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController();
+    final initial = widget.args.initialDetail;
+    if (initial != null) {
+      _hydrateFromDetail(initial);
+    }
   }
 
   void _addPeriod() {
     setState(() {
-      final from = _periods.isNotEmpty ? _periods.last.to : const TimeOfDay(hour: 9, minute: 0);
+      final from = _periods.isNotEmpty
+          ? _periods.last.to
+          : const TimeOfDay(hour: 9, minute: 0);
       var h = from.hour + 1;
       if (h > 23) h = 23;
       _periods.add(
@@ -316,9 +697,73 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     });
   }
 
-  final List<String> daysEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  Future<void> _editPeriodFrom(int index) async {
+    final p = _periods[index];
+    final value = await AppPickers.showAppTimePicker(
+      context: context,
+      initialTime: p.from,
+    );
+    final t = _timeFromHHmm(value);
+    if (t != null && mounted) {
+      setState(() {
+        _periods[index] = p.copyWith(from: t);
+      });
+    }
+  }
 
-  final List<String> daysAr = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+  Future<void> _editPeriodTo(int index) async {
+    final p = _periods[index];
+    final value = await AppPickers.showAppTimePicker(
+      context: context,
+      initialTime: p.to,
+    );
+    final t = _timeFromHHmm(value);
+    if (t != null && mounted) {
+      setState(() {
+        _periods[index] = p.copyWith(to: t);
+      });
+    }
+  }
+
+  void _hydrateFromDetail(ShoppingListDetailModel d) {
+    nameController.text = d.name;
+    final s = d.schedule;
+    frequencyType = _frequencyTypeFromApi(s?.frequencyType);
+    daysSelected = List.filled(7, false);
+    for (final w in s?.weekDays ?? const <int>[]) {
+      final idx = _apiWeekdayToUiIndex(w);
+      if (idx != null && idx >= 0 && idx < 7) {
+        daysSelected[idx] = true;
+      }
+    }
+    monthDaySelected = List.filled(31, false);
+    for (final raw in s?.monthDays ?? const <dynamic>[]) {
+      final day = raw is int ? raw : int.tryParse('$raw');
+      if (day != null && day >= 1 && day <= 31) {
+        monthDaySelected[day - 1] = true;
+      }
+    }
+    _periods.clear();
+    final plist = s?.periods ?? const <ShoppingListSchedulePeriodModel>[];
+    if (plist.isEmpty) {
+      _periods.add(
+        const _SchedulePeriod(
+          from: TimeOfDay(hour: 9, minute: 0),
+          to: TimeOfDay(hour: 11, minute: 0),
+        ),
+      );
+    } else {
+      for (final p in plist) {
+        final from =
+            _timeFromHHmm(p.fromTime ?? '') ??
+            const TimeOfDay(hour: 9, minute: 0);
+        final to =
+            _timeFromHHmm(p.toTime ?? '') ??
+            const TimeOfDay(hour: 11, minute: 0);
+        _periods.add(_SchedulePeriod(from: from, to: to));
+      }
+    }
+  }
 
   void _onFrequencyChanged(FrequencyType? value) {
     setState(() {
@@ -334,29 +779,56 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     });
   }
 
+  void _removePeriod(int index) {
+    if (_periods.length <= 1) return;
+    setState(() {
+      _periods.removeAt(index);
+    });
+  }
+
   void _submit() {
     final name = nameController.text.trim();
     if (name.isEmpty) {
-      AppToast.showToast(context: context, message: 'يرجى إدخال اسم القائمة', type: ToastificationType.error);
+      AppToast.showToast(
+        context: context,
+        message: 'يرجى إدخال اسم القائمة',
+        type: ToastificationType.error,
+      );
       return;
     }
     if (frequencyType == null) {
-      AppToast.showToast(context: context, message: 'يرجى اختيار نوع التكرار', type: ToastificationType.error);
+      AppToast.showToast(
+        context: context,
+        message: 'يرجى اختيار نوع التكرار',
+        type: ToastificationType.error,
+      );
       return;
     }
     final ft = frequencyType!;
     if (ft == FrequencyType.weekly && !daysSelected.any((e) => e)) {
-      AppToast.showToast(context: context, message: 'يرجى اختيار يوم واحد على الأقل في الأسبوع', type: ToastificationType.error);
+      AppToast.showToast(
+        context: context,
+        message: 'يرجى اختيار يوم واحد على الأقل في الأسبوع',
+        type: ToastificationType.error,
+      );
       return;
     }
     if (ft == FrequencyType.monthly && !monthDaySelected.any((e) => e)) {
-      AppToast.showToast(context: context, message: 'يرجى اختيار يوم واحد على الأقل من أيام الشهر', type: ToastificationType.error);
+      AppToast.showToast(
+        context: context,
+        message: 'يرجى اختيار يوم واحد على الأقل من أيام الشهر',
+        type: ToastificationType.error,
+      );
       return;
     }
     for (var i = 0; i < _periods.length; i++) {
       final p = _periods[i];
       if (_timeOfDayToMinutes(p.from) > _timeOfDayToMinutes(p.to)) {
-        AppToast.showToast(context: context, message: 'وقت البداية يجب أن يكون قبل وقت النهاية (الفترة ${i + 1})', type: ToastificationType.error);
+        AppToast.showToast(
+          context: context,
+          message: 'وقت البداية يجب أن يكون قبل وقت النهاية (الفترة ${i + 1})',
+          type: ToastificationType.error,
+        );
         return;
       }
     }
@@ -381,7 +853,13 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     final periods = <ShoppingListPeriodParam>[];
     for (var i = 0; i < _periods.length; i++) {
       final p = _periods[i];
-      periods.add(ShoppingListPeriodParam(label: _arPeriodTitle(i), fromTime: _timeOfDayToApiHHmm(p.from), toTime: _timeOfDayToApiHHmm(p.to)));
+      periods.add(
+        ShoppingListPeriodParam(
+          label: _arPeriodTitle(i),
+          fromTime: _timeOfDayToApiHHmm(p.from),
+          toTime: _timeOfDayToApiHHmm(p.to),
+        ),
+      );
     }
 
     final freq = switch (ft) {
@@ -424,303 +902,63 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       );
     }
   }
+}
 
-  void _hydrateFromDetail(ShoppingListDetailModel d) {
-    nameController.text = d.name;
-    final s = d.schedule;
-    frequencyType = _frequencyTypeFromApi(s?.frequencyType);
-    daysSelected = List.filled(7, false);
-    for (final w in s?.weekDays ?? const <int>[]) {
-      final idx = _apiWeekdayToUiIndex(w);
-      if (idx != null && idx >= 0 && idx < 7) {
-        daysSelected[idx] = true;
-      }
-    }
-    monthDaySelected = List.filled(31, false);
-    for (final raw in s?.monthDays ?? const <dynamic>[]) {
-      final day = raw is int ? raw : int.tryParse('$raw');
-      if (day != null && day >= 1 && day <= 31) {
-        monthDaySelected[day - 1] = true;
-      }
-    }
-    _periods.clear();
-    final plist = s?.periods ?? const <ShoppingListSchedulePeriodModel>[];
-    if (plist.isEmpty) {
-      _periods.add(const _SchedulePeriod(from: TimeOfDay(hour: 9, minute: 0), to: TimeOfDay(hour: 11, minute: 0)));
-    } else {
-      for (final p in plist) {
-        final from = _timeFromHHmm(p.fromTime ?? '') ?? const TimeOfDay(hour: 9, minute: 0);
-        final to = _timeFromHHmm(p.toTime ?? '') ?? const TimeOfDay(hour: 11, minute: 0);
-        _periods.add(_SchedulePeriod(from: from, to: to));
-      }
-    }
-  }
+class _DayRow extends StatelessWidget {
+  final String dayAr;
+  final String dayEn;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _DayRow({
+    required this.dayAr,
+    required this.dayEn,
+    required this.value,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: widget.args.profileBloc,
-      child: BlocListener<ProfileBloc, ProfileState>(
-        listenWhen: (previous, current) {
-          final createDone =
-              previous.createShoppingListStatus == BlocStatus.loading &&
-              (current.createShoppingListStatus == BlocStatus.success || current.createShoppingListStatus == BlocStatus.failed);
-          final updateDone =
-              previous.updateShoppingListStatus == BlocStatus.loading &&
-              (current.updateShoppingListStatus == BlocStatus.success || current.updateShoppingListStatus == BlocStatus.failed);
-          return createDone || updateDone;
-        },
-        listener: (context, state) {
-          final createSt = state.createShoppingListStatus;
-          final updateSt = state.updateShoppingListStatus;
-          if (createSt == BlocStatus.success || updateSt == BlocStatus.success) {
-            Loading.close();
-            AppToast.showToast(
-              context: context,
-              message: state.updateShoppingListStatus == BlocStatus.success ? 'تم تحديث القائمة بنجاح' : 'تم إضافة القائمة بنجاح',
-              type: ToastificationType.success,
-            );
-            Navigator.of(context).pop(true);
-          } else if (createSt == BlocStatus.failed || updateSt == BlocStatus.failed) {
-            Loading.close();
-            AppToast.showToast(context: context, message: state.errorMessage ?? 'حدث خطأ', type: ToastificationType.error);
-          }
-        },
-        child: Scaffold(
-          body: Column(
-            children: [
-              AppSimpleAppBar2(
-                title: widget.args.shoppingListId != null ? 'تعديل القائمة' : 'إضافة قائمة جديدة',
-                arrowBackType: ArrowBackType.cupertino,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppText(
+              dayAr,
+              textAlign: TextAlign.start,
+              style: TextStyle(
+                color: Color(0xFF111827),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                height: 24 / 16,
               ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Column(
-                    children: [
-                      StepDetails(
-                        number: 1,
-                        title: "المعلومات الأساسية",
-                        child: AppTextField(
-                          controller: nameController,
-                          title: "اسم القائمة",
-                          isRequired: true,
-                          hintText: "ضع اسماً للقائمة: المنزل - العمل ...",
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      StepDetails(
-                        number: 2,
-                        title: "أضف منتجاتك",
-                        child: Column(
-                          children: [
-                            SizedBox(height: 16),
-                            AppText(
-                              "لا يوجد منتجات",
-                              style: TextStyle(color: Color(0xE52F2B3D), fontSize: 14, fontWeight: FontWeight.w500),
-                            ),
-                            SizedBox(height: 32),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      StepDetails(
-                        number: 3,
-                        title: "جدولة القائمة",
-                        child: Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            border: Border.all(color: Color(0xFFF3F4F6)),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(offset: Offset(0, 1), blurRadius: 2, color: Color(0x0D000000))],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              RadioGroup(
-                                groupValue: frequencyType,
-                                onChanged: _onFrequencyChanged,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Radio(visualDensity: VisualDensity(vertical: -4, horizontal: -4), value: FrequencyType.once),
-                                        SizedBox(width: 8),
-                                        AppText(
-                                          "مرة واحدة",
-                                          style: TextStyle(color: Color(0xFF0F172A), fontSize: 11, fontWeight: FontWeight.w500),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Radio(visualDensity: VisualDensity(vertical: -4, horizontal: -4), value: FrequencyType.weekly),
-                                        SizedBox(width: 8),
-                                        AppText(
-                                          "تكرار مرة كل أسبوع",
-                                          style: TextStyle(color: Color(0xFF0F172A), fontSize: 11, fontWeight: FontWeight.w500),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Radio(visualDensity: VisualDensity(vertical: -4, horizontal: -4), value: FrequencyType.monthly),
-                                        SizedBox(width: 8),
-                                        AppText(
-                                          "تكرار مرة كل شهر",
-                                          style: TextStyle(color: Color(0xFF0F172A), fontSize: 11, fontWeight: FontWeight.w500),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (frequencyType == FrequencyType.weekly) ...[
-                                SizedBox(height: 12),
-                                Column(
-                                  spacing: 12,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: List.generate(
-                                    daysEn.length,
-                                    (index) => _DayRow(
-                                      dayAr: daysAr[index],
-                                      dayEn: daysEn[index],
-                                      value: daysSelected[index],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          daysSelected[index] = value;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              if (frequencyType == FrequencyType.monthly) ...[
-                                SizedBox(height: 12),
-                                AppText(
-                                  'أيام الشهر',
-                                  textAlign: TextAlign.start,
-                                  style: TextStyle(color: Color(0xFF4B5563), fontSize: 12, fontWeight: FontWeight.w700, height: 16 / 12),
-                                ),
-                                SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: List.generate(31, (index) {
-                                    final day = index + 1;
-                                    final selected = monthDaySelected[index];
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          monthDaySelected[index] = !selected;
-                                        });
-                                      },
-                                      child: Container(
-                                        width: 40,
-                                        height: 40,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: selected ? AppColors.primary.withValues(alpha: 0.12) : const Color(0xFFF9FAFB),
-                                          border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB)),
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: AppText(
-                                          '$day',
-                                          textDirection: ui.TextDirection.ltr,
-                                          style: TextStyle(
-                                            color: selected ? AppColors.primary : const Color(0xFF111827),
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                ),
-                              ],
-                              SizedBox(height: 12),
-                              ...List.generate(_periods.length, (i) {
-                                final p = _periods[i];
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: i < _periods.length - 1 ? 12 : 0),
-                                  child: PeriodCard(
-                                    title: _arPeriodTitle(i),
-                                    from: _formatTimeOfDay(p.from),
-                                    to: _formatTimeOfDay(p.to),
-                                    canDelete: _periods.length > 1,
-                                    onDelete: () => _removePeriod(i),
-                                    onFromTap: () => _editPeriodFrom(i),
-                                    onToTap: () => _editPeriodTo(i),
-                                  ),
-                                );
-                              }),
-                              SizedBox(height: 12),
-                              GestureDetector(
-                                onTap: _addPeriod,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(vertical: 11),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: .06),
-                                    border: Border.all(color: AppColors.primary.withValues(alpha: .21)),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      FaIcon(FontAwesomeIcons.plus, size: 14, color: AppColors.primary),
-                                      SizedBox(width: 8),
-                                      AppText(
-                                        "إضافة فترة",
-                                        style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w700, height: 20 / 14),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 24),
-                      GestureDetector(
-                        onTap: _submit,
-                        child: Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(12)),
-                          child: AppText(
-                            widget.args.shoppingListId != null ? 'حفظ التعديلات' : 'حفظ وإضافة القائمة',
-                            style: TextStyle(color: Color(0xFFFFEEFF), fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 100),
-                    ],
-                  ),
-                ),
+            ),
+            AppText(
+              dayEn,
+              textAlign: TextAlign.start,
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontSize: 12,
+                height: 16 / 12,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
+        CupertinoSwitch(value: value, onChanged: onChanged),
+      ],
     );
   }
+}
 
-  @override
-  void dispose() {
-    nameController.dispose();
-    super.dispose();
-  }
+class _SchedulePeriod {
+  final TimeOfDay from;
 
-  @override
-  void initState() {
-    super.initState();
-    nameController = TextEditingController();
-    final initial = widget.args.initialDetail;
-    if (initial != null) {
-      _hydrateFromDetail(initial);
-    }
-  }
+  final TimeOfDay to;
+  const _SchedulePeriod({required this.from, required this.to});
+
+  _SchedulePeriod copyWith({TimeOfDay? from, TimeOfDay? to}) =>
+      _SchedulePeriod(from: from ?? this.from, to: to ?? this.to);
 }

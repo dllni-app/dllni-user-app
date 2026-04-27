@@ -125,7 +125,7 @@ class _SupermarketCartCheckoutBodyState extends State<SupermarketCartCheckoutBod
                       ),
                     ),
                   ),
-                  const RestaurantCartAddMoreProductsButton(),
+                  const RestaurantCartAddMoreProductsButton(isRestaurant: false),
                   const SizedBox(height: 12),
                   RestaurantCartCouponSection(
                     couponController: _couponController,

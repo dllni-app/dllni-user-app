@@ -1,13 +1,26 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-class RestaurantCartAddMoreProductsButton extends StatelessWidget {
-  const RestaurantCartAddMoreProductsButton({super.key});
+import '../../../sm_main_page.dart';
 
+class RestaurantCartAddMoreProductsButton extends StatelessWidget {
+  const RestaurantCartAddMoreProductsButton({
+    super.key,
+    this.isRestaurant = true,
+  });
+  final bool isRestaurant;
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.pushRoute('/home'),
+      onTap: () => isRestaurant
+          ? context.pushRoute('/home')
+          : context.pushRoute(
+              '/smmain',
+              arguments: SmMainScreenParams(
+                initialPage: 0,
+                expandSearch: false,
+              ),
+            ),
       borderRadius: BorderRadius.circular(14),
       child: Container(
         height: 54,

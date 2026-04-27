@@ -197,7 +197,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             builder: (context) {
               return GestureDetector(
                 onTap: () async {
-                  final result = await context.pushRoute<bool>(
+                  final result = await context.pushRoute(
                     "/add_edit_shopping_list",
                     arguments: AddEditShoppingListScreenArgs(
                       profileBloc: context.read<ProfileBloc>(),
@@ -218,6 +218,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   ),
                   child: AppText(
                     "إضافة قائمة تسوق جديدة",
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Color(0xFFFFEEFF),
                       fontSize: 14,

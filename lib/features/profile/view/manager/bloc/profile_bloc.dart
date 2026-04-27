@@ -21,6 +21,7 @@ import '../../../domain/usecases/create_vote_use_case.dart';
 import '../../../domain/usecases/create_address_use_case.dart';
 import '../../../domain/usecases/delete_group_order_item_use_case.dart';
 import '../../../domain/usecases/delete_address_use_case.dart';
+import '../../../domain/usecases/delete_shopping_list_item_use_case.dart';
 import '../../../domain/usecases/end_vote_use_case.dart';
 import '../../../domain/usecases/fetch_active_group_orders_use_case.dart';
 import '../../../domain/usecases/fetch_group_order_menu_sections_use_case.dart';
@@ -45,6 +46,7 @@ import '../../../domain/usecases/unsubmit_group_order_use_case.dart';
 import '../../../domain/usecases/update_address_use_case.dart';
 import '../../../domain/usecases/update_group_order_item_use_case.dart';
 import '../../../domain/usecases/update_shopping_list_use_case.dart';
+import '../../../domain/usecases/update_shopping_list_item_use_case.dart';
 import '../../../../rs_discover/domain/params/fetch_discover_restaurants_params.dart';
 import '../../../../rs_discover/domain/usecases/fetch_discover_restaurants_use_case.dart';
 
@@ -83,6 +85,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final UnsubmitGroupOrderUseCase unsubmitGroupOrderUseCase;
   final CancelGroupOrderUseCase cancelGroupOrderUseCase;
   final PlaceGroupOrderUseCase placeGroupOrderUseCase;
+  final GetShoppingListUseCase getShoppingListUseCase;
+  final FetchShoppingListDetailUseCase fetchShoppingListDetailUseCase;
+  final CreateShoppingListUseCase createShoppingListUseCase;
+  final UpdateShoppingListUseCase updateShoppingListUseCase;
+  final UpdateShoppingListItemUseCase updateShoppingListItemUseCase;
+  final DeleteShoppingListItemUseCase deleteShoppingListItemUseCase;
+  final AddShoppingListToCartUseCase addShoppingListToCartUseCase;
 
   ProfileBloc(
     this.fetchAddressesUseCase,
@@ -114,6 +123,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     this.unsubmitGroupOrderUseCase,
     this.cancelGroupOrderUseCase,
     this.placeGroupOrderUseCase,
+    this.getShoppingListUseCase,
+    this.fetchShoppingListDetailUseCase,
+    this.createShoppingListUseCase,
+    this.updateShoppingListUseCase,
+    this.updateShoppingListItemUseCase,
+    this.deleteShoppingListItemUseCase,
+    this.addShoppingListToCartUseCase,
   ) : super(ProfileState()) {
     on<FetchAddressesEvent>(_fetchAddresses);
     on<SetDefaultAddressEvent>(_setDefaultAddress);
@@ -144,6 +160,126 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<UnsubmitGroupOrderEvent>(_unsubmitGroupOrder);
     on<CancelGroupOrderEvent>(_cancelGroupOrder);
     on<PlaceGroupOrderEvent>(_placeGroupOrder);
+    on<GetShoppingListEvent>(_getShoppingList);
+    on<GetShoppingListDetailEvent>(_getShoppingListDetail);
+    on<CreateShoppingListEvent>(_createShoppingList);
+    on<UpdateShoppingListEvent>(_updateShoppingList);
+    on<PatchShoppingListItemQuantityEvent>(_patchShoppingListItemQuantity);
+    on<DeleteShoppingListItemEvent>(_deleteShoppingListItem);
+    on<AddShoppingListToCartEvent>(_addShoppingListToCart);
+    on<ClearShoppingListQuantityPatchErrorEvent>(_clearShoppingListQuantityPatchError);
+  }
+
+  Future<void> _getShoppingList(GetShoppingListEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(shoppingListStatus: BlocStatus.loading));
+    final response = await getShoppingListUseCase(event.params);
+    response.fold(
+      (failure) => emit(state.copyWith(shoppingListStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(state.copyWith(shoppingListStatus: BlocStatus.success, shoppingList: result)),
+    );
+  }
+
+  Future<void> _getShoppingListDetail(GetShoppingListDetailEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(shoppingListDetailStatus: BlocStatus.loading));
+    final response = await fetchShoppingListDetailUseCase(event.params);
+    response.fold(
+      (failure) => emit(state.copyWith(shoppingListDetailStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(
+        state.copyWith(
+          shoppingListDetailStatus: BlocStatus.success,
+          shoppingListDetail: result.data,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createShoppingList(CreateShoppingListEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(createShoppingListStatus: BlocStatus.loading));
+    final response = await createShoppingListUseCase(event.params);
+    response.fold(
+      (failure) => emit(state.copyWith(createShoppingListStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(
+        state.copyWith(
+          createShoppingListStatus: BlocStatus.success,
+          shoppingListDetail: result.data ?? state.shoppingListDetail,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateShoppingList(UpdateShoppingListEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(updateShoppingListStatus: BlocStatus.loading));
+    final response = await updateShoppingListUseCase(event.params);
+    response.fold(
+      (failure) => emit(state.copyWith(updateShoppingListStatus: BlocStatus.failed, errorMessage: failure.message)),
+      (result) => emit(
+        state.copyWith(
+          updateShoppingListStatus: BlocStatus.success,
+          shoppingListDetail: result.data ?? state.shoppingListDetail,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _patchShoppingListItemQuantity(PatchShoppingListItemQuantityEvent event, Emitter<ProfileState> emit) async {
+    final response = await updateShoppingListItemUseCase(
+      UpdateShoppingListItemParams(
+        shoppingListId: event.shoppingListId,
+        itemId: event.itemId,
+        quantity: event.quantity,
+      ),
+    );
+    response.fold(
+      (failure) => emit(state.copyWith(quantityPatchError: failure.message)),
+      (result) => emit(
+        state.copyWith(
+          shoppingListDetail: result.data ?? state.shoppingListDetail,
+          quantityPatchError: null,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteShoppingListItem(DeleteShoppingListItemEvent event, Emitter<ProfileState> emit) async {
+    Loading.show(event.context);
+    final response = await deleteShoppingListItemUseCase(
+      DeleteShoppingListItemParams(shoppingListId: event.shoppingListId, itemId: event.itemId),
+    );
+    await response.fold(
+      (failure) async {
+        Loading.close();
+        AppToast.showToast(context: event.context, message: failure.message, type: ToastificationType.error);
+        emit(state.copyWith(errorMessage: failure.message));
+      },
+      (_) async {
+        Loading.close();
+        final detailResponse = await fetchShoppingListDetailUseCase(
+          FetchShoppingListDetailParams(shoppingListId: event.shoppingListId),
+        );
+        detailResponse.fold(
+          (f) => emit(state.copyWith(errorMessage: f.message)),
+          (r) => emit(state.copyWith(shoppingListDetail: r.data, errorMessage: null)),
+        );
+      },
+    );
+  }
+
+  Future<void> _addShoppingListToCart(AddShoppingListToCartEvent event, Emitter<ProfileState> emit) async {
+    emit(state.copyWith(addShoppingListToCartStatus: BlocStatus.loading));
+    final response = await addShoppingListToCartUseCase(event.params);
+    response.fold(
+      (failure) => emit(
+        state.copyWith(
+          addShoppingListToCartStatus: BlocStatus.failed,
+          errorMessage: failure.message,
+        ),
+      ),
+      (_) => emit(state.copyWith(addShoppingListToCartStatus: BlocStatus.success)),
+    );
+  }
+
+  void _clearShoppingListQuantityPatchError(ClearShoppingListQuantityPatchErrorEvent event, Emitter<ProfileState> emit) {
+    emit(state.copyWith(clearQuantityPatchError: true));
   }
 
   Future<void> _fetchAddresses(FetchAddressesEvent event, Emitter<ProfileState> emit) async {

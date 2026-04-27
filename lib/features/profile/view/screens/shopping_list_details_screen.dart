@@ -388,16 +388,6 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
     _nameController = TextEditingController(text: widget.args.shoppingListName);
   }
 
-  void _reloadDetail(BuildContext context) {
-    context.read<ProfileBloc>().add(
-      GetShoppingListDetailEvent(
-        params: FetchShoppingListDetailParams(
-          shoppingListId: widget.args.shoppingListId,
-        ),
-      ),
-    );
-  }
-
   Widget _buildBody(BuildContext context, ProfileState state) {
     if (state.shoppingListDetailStatus == BlocStatus.loading) {
       return const Center(child: CircularProgressIndicator());
@@ -663,7 +653,8 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
                     ],
                   ),
                   child: AppText(
-                    'إعادة طلب هذه  القائمة',
+                    'إعادة طلب هذه القائمة',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Color(0xFFFFEEFF),
                       fontSize: 16,
@@ -706,6 +697,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
               ),
               child: AppText(
                 'تعديل القائمة',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFFFFEEFF),
                   fontSize: 16,
@@ -716,6 +708,16 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
           ),
           const SizedBox(height: 100),
         ],
+      ),
+    );
+  }
+
+  void _reloadDetail(BuildContext context) {
+    context.read<ProfileBloc>().add(
+      GetShoppingListDetailEvent(
+        params: FetchShoppingListDetailParams(
+          shoppingListId: widget.args.shoppingListId,
+        ),
       ),
     );
   }

@@ -11,7 +11,7 @@ class SmMainScreenParams {
   final int? initialPage;
   final bool expandSearch;
 
-  SmMainScreenParams({required this.initialPage, required this.expandSearch});
+  SmMainScreenParams({required this.initialPage,  this.expandSearch = false});
 }
 
 @AutoRoutePage(path: "/smmain")
