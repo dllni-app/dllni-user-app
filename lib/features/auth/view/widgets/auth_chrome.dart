@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../generated/assets.dart';
 
@@ -77,7 +78,7 @@ class AuthTrailing extends StatelessWidget {
               AppText.bodySmall('هل تواجه مشكلة في تسجيل الدخول؟', color: Color(0xff9CA3AF), style: const TextStyle(fontSize: 12)),
               GestureDetector(
                 onTap: () {
-                  AppToast.showToast(context: context, message: 'سيتم تفعيل التواصل مع الدعم قريباً', type: ToastificationType.info);
+                  launchUrl(Uri.parse('https://wa.me/message/XJOZBNT3VS5SJ1'));
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

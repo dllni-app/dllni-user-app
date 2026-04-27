@@ -284,7 +284,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                         onTap: () {
                                           unawaited(
                                             shareDeepLinkUrl(
-                                              supermarketProductUrl(widget.args.productId),
+                                              supermarketStoreUrl(widget.args.productId),
                                               context: context,
                                             ),
                                           );

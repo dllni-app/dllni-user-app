@@ -68,6 +68,7 @@ class _RsFavouriteViewState extends State<RsFavouriteView> with SingleTickerProv
                         i == 0 ? 'المطاعم' : 'الوجبات',
                         color: _tabController.index != i ? null : context.onPrimary,
                         fontWeight: FontWeight.bold,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),

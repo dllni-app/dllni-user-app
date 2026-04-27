@@ -11,30 +11,18 @@ import 'injection.config.dart';
 
 final GetIt getIt = GetIt.instance;
 
-@InjectableInit(
-  initializerName: r'$initGetIt',
-  preferRelativeImports: true,
-  asExtension: false,
-)
+@InjectableInit(initializerName: r'$initGetIt', preferRelativeImports: true, asExtension: false)
 Future<GetIt> configureInjection() async {
   await SharedPreferencesHelper.init();
   $initGetIt(getIt);
   if (!getIt.isRegistered<FetchRestaurantCartProductsCountUseCase>()) {
-    getIt.registerLazySingleton<FetchRestaurantCartProductsCountUseCase>(
-      () => FetchRestaurantCartProductsCountUseCase(rsDiscoverRepo: getIt()),
-    );
+    getIt.registerLazySingleton<FetchRestaurantCartProductsCountUseCase>(() => FetchRestaurantCartProductsCountUseCase(rsDiscoverRepo: getIt()));
   }
   if (!getIt.isRegistered<CartProductsCountCubit>()) {
-    getIt.registerLazySingleton<CartProductsCountCubit>(
-      () => CartProductsCountCubit(
-        fetchRestaurantCartProductsCountUseCase: getIt(),
-      ),
-    );
+    getIt.registerLazySingleton<CartProductsCountCubit>(() => CartProductsCountCubit(fetchRestaurantCartProductsCountUseCase: getIt()));
   }
   if (!getIt.isRegistered<FetchRestaurantProductsSearchUseCase>()) {
-    getIt.registerLazySingleton<FetchRestaurantProductsSearchUseCase>(
-      () => FetchRestaurantProductsSearchUseCase(rsDiscoverRepo: getIt()),
-    );
+    getIt.registerLazySingleton<FetchRestaurantProductsSearchUseCase>(() => FetchRestaurantProductsSearchUseCase(rsDiscoverRepo: getIt()));
   }
   return getIt;
 }
@@ -45,19 +33,10 @@ abstract class InjectableModule {
   DioNetwork get dio => DioNetwork(
     baseUrl: AppConfig.baseUrl,
     interceptors: [
-      TokenInterceptor(
-        tokenKey: 'token',
-        fcmKey: 'fcm',
-        lang: '',
-        onRequestFunction: null,
-      ),
+      TokenInterceptor(tokenKey: 'token', fcmKey: 'fcm_token', lang: '', onRequestFunction: null),
       UnauthorizedInterceptor(
         onUnauthorized: SessionExpiredHandler.handle,
-        excludedPathSuffixes: const <String>[
-          '/api/v1/user/login',
-          '/api/v1/deep-links/resolve',
-          '/api/v1/deep-links/events',
-        ],
+        excludedPathSuffixes: const <String>['/api/v1/user/login', '/api/v1/deep-links/resolve', '/api/v1/deep-links/events'],
       ),
     ],
   );

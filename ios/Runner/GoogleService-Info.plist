@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.dllni.userapp</string>
+	<string>com.alnadha.user</string>
 	<key>PROJECT_ID</key>
 	<string>dllni-96b5a</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:212739916006:ios:2e7f1d706a90da7a21fb27</string>
+	<string>1:212739916006:ios:46e95e8e3ab2ee1521fb27</string>
 </dict>
 </plist>

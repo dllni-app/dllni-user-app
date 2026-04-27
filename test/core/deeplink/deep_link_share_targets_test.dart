@@ -6,7 +6,7 @@ void main() {
   const api = '$base/api/v1/user';
 
   test('supermarketProductUrl', () {
-    expect(supermarketProductUrl(42), '$api/supermarket/products/42');
+    expect(supermarketStoreUrl(42), '$api/supermarket/products/42');
   });
 
   test('restaurantProductUrl', () {
@@ -26,10 +26,7 @@ void main() {
   });
 
   test('groupOrderUrl prefers shareToken', () {
-    expect(
-      groupOrderUrl(id: 1, shareToken: 'abc def'),
-      '$api/restaurants/group-orders/${Uri.encodeComponent('abc def')}',
-    );
+    expect(groupOrderUrl(id: 1, shareToken: 'abc def'), '$api/restaurants/group-orders/${Uri.encodeComponent('abc def')}');
   });
 
   test('groupOrderUrl falls back to id', () {

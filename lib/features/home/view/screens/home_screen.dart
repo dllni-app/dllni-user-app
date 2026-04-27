@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 24),
-                  Row(
+                  /*Row(
                     children: [
                       SizedBox(
                         height: 20,
@@ -48,7 +48,7 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.start,
                     fontWeight: FontWeight.w500,
                   ),
-                  SizedBox(height: 32),
+                  SizedBox(height: 32),*/
                   BlocBuilder<HomeBloc, HomeState>(
                     buildWhen: (prev, next) =>
                         prev.userOffersStatus != next.userOffersStatus ||

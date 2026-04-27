@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/group_order_api_models.dart';
 import '../../domain/usecases/create_group_order_use_case.dart';
@@ -16,6 +17,7 @@ import '../widgets/group_order_mode_switcher.dart';
 import '../widgets/group_order_restaurant_picker_sheet.dart';
 import '../widgets/personal_details_app_bar.dart';
 import 'group_order_followup_screen.dart';
+import 'package:dllni_user_app/core/widgets/success_action_bottom_sheet.dart';
 
 @AutoRoutePage(path: '/group-order/create')
 class GroupOrderSetupScreen extends StatelessWidget {
@@ -64,29 +66,21 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
       _mode = mode;
     });
     if (mode == GroupOrderMode.existingGroups) {
-      context.read<ProfileBloc>().add(
-            FetchActiveGroupOrdersEvent(params: FetchActiveGroupOrdersParams()),
-          );
+      context.read<ProfileBloc>().add(FetchActiveGroupOrdersEvent(params: FetchActiveGroupOrdersParams()));
     }
   }
 
-  List<GroupOrderCreatedGroupItem> _mapActiveGroupsToItems(
-    List<GroupOrderDetailsModel> groups,
-  ) {
+  List<GroupOrderCreatedGroupItem> _mapActiveGroupsToItems(List<GroupOrderDetailsModel> groups) {
     return groups.where((e) => e.groupOrder?.id != null).map((entry) {
       final groupOrder = entry.groupOrder!;
       final id = groupOrder.id!;
       final title = (groupOrder.name ?? '').trim().isNotEmpty
           ? groupOrder.name!.trim()
-          : ((groupOrder.restaurantName ?? '').trim().isNotEmpty
-                ? groupOrder.restaurantName!.trim()
-                : 'جلسة #$id');
+          : ((groupOrder.restaurantName ?? '').trim().isNotEmpty ? groupOrder.restaurantName!.trim() : 'جلسة #$id');
       final participants = entry.counts?.participants ?? entry.participants.length;
-      final responded = entry.counts?.responded ??
-          entry.participants.where((e) => e.hasResponded).length;
+      final responded = entry.counts?.responded ?? entry.participants.where((e) => e.hasResponded).length;
       final pending = entry.counts?.pending ?? (participants - responded).clamp(0, participants);
-      final itemsCount = entry.counts?.items ??
-          entry.participants.fold<int>(0, (acc, p) => acc + p.items.length);
+      final itemsCount = entry.counts?.items ?? entry.participants.fold<int>(0, (acc, p) => acc + p.items.length);
       final total = entry.amounts?.total;
       final detailParts = <String>[
         '$responded/$participants مشارك',
@@ -99,12 +93,7 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
       if (remaining != null) {
         detailParts.add(remaining);
       }
-      return GroupOrderCreatedGroupItem(
-        title: title,
-        detail: detailParts.join(' • '),
-        groupOrderId: id,
-        initialData: entry,
-      );
+      return GroupOrderCreatedGroupItem(title: title, detail: detailParts.join(' • '), groupOrderId: id, initialData: entry);
     }).toList();
   }
 
@@ -147,9 +136,33 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
           final result = state.createGroupOrderResult;
           final groupOrderId = result?.groupOrderId ?? result?.details?.groupOrder?.id;
           if (groupOrderId != null) {
-            context.pushRoute(
-              '/group-order/followup',
-              arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              builder: (context) {
+                return SuccessActionBottomSheet(
+                  title: 'تم إنشاء الطلب الجماعي',
+                  followUpLabel: 'متابعة الطلب الجماعي',
+                  shareLabel: 'مشاركة',
+                  onFollowUp: () {
+                    Navigator.of(context).pop();
+                    context.pushRoute(
+                      '/group-order/followup',
+                      arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
+                    );
+                  },
+                  onShare: () async {
+                    Navigator.of(context).pop();
+                    context.pushRoute(
+                      '/group-order/followup',
+                      arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
+                    );
+                  },
+                );
+              },
             );
           }
         }
@@ -163,10 +176,7 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
               const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
-                child: GroupOrderModeSwitcher(
-                  mode: _mode,
-                  onModeChanged: _onModeChanged,
-                ),
+                child: GroupOrderModeSwitcher(mode: _mode, onModeChanged: _onModeChanged),
               ),
               const SizedBox(height: 14),
               Expanded(
@@ -190,8 +200,7 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                                 controller: _restaurantController,
                                 readOnly: true,
                                 onTap: _pickRestaurant,
-                                suffixIcon:
-                                    const Icon(Icons.keyboard_arrow_down_rounded),
+                                suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -204,50 +213,31 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                                   _isOptionsExpanded = !_isOptionsExpanded;
                                 });
                               },
-                              child: FilledTextField(
-                                label: 'اسم الجلسة (اختياري)',
-                                controller: _nameController,
-                              ),
+                              child: FilledTextField(label: 'اسم الجلسة (اختياري)', controller: _nameController),
                             ),
                           ],
                         )
                       : BlocBuilder<ProfileBloc, ProfileState>(
                           buildWhen: (previous, current) =>
-                              previous.activeGroupOrdersStatus !=
-                                  current.activeGroupOrdersStatus ||
-                              previous.activeGroupOrders !=
-                                  current.activeGroupOrders,
+                              previous.activeGroupOrdersStatus != current.activeGroupOrdersStatus ||
+                              previous.activeGroupOrders != current.activeGroupOrders,
                           builder: (context, state) {
-                            if (state.activeGroupOrdersStatus ==
-                                BlocStatus.loading) {
+                            if (state.activeGroupOrdersStatus == BlocStatus.loading) {
                               return const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 40),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
+                                child: Center(child: CircularProgressIndicator()),
                               );
                             }
-                            if (state.activeGroupOrdersStatus ==
-                                BlocStatus.failed) {
+                            if (state.activeGroupOrdersStatus == BlocStatus.failed) {
                               return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 20),
+                                padding: const EdgeInsets.symmetric(vertical: 20),
                                 child: Column(
                                   children: [
-                                    AppText.bodyMedium(
-                                      state.errorMessage ??
-                                          'تعذر تحميل الجلسات القائمة',
-                                      color: const Color(0xff6B7280),
-                                    ),
+                                    AppText.bodyMedium(state.errorMessage ?? 'تعذر تحميل الجلسات القائمة', color: const Color(0xff6B7280)),
                                     const SizedBox(height: 12),
                                     OutlinedButton(
                                       onPressed: () {
-                                        context.read<ProfileBloc>().add(
-                                              FetchActiveGroupOrdersEvent(
-                                                params:
-                                                    FetchActiveGroupOrdersParams(),
-                                              ),
-                                            );
+                                        context.read<ProfileBloc>().add(FetchActiveGroupOrdersEvent(params: FetchActiveGroupOrdersParams()));
                                       },
                                       child: const Text('إعادة المحاولة'),
                                     ),
@@ -255,17 +245,11 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                                 ),
                               );
                             }
-                            final items = _mapActiveGroupsToItems(
-                              state.activeGroupOrders,
-                            );
+                            final items = _mapActiveGroupsToItems(state.activeGroupOrders);
                             if (items.isEmpty) {
                               return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 20),
-                                child: AppText.bodyMedium(
-                                  'لا توجد جلسات قائمة حالياً',
-                                  color: const Color(0xff6B7280),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                child: AppText.bodyMedium('لا توجد جلسات قائمة حالياً', color: const Color(0xff6B7280)),
                               );
                             }
                             return GroupOrderCreatedGroupsList(
@@ -273,9 +257,7 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                               onGroupTap: (item) {
                                 context.pushRoute(
                                   '/group-order/followup',
-                                  arguments: GroupOrderFollowupScreenParams(
-                                    groupOrderId: item.groupOrderId,
-                                  ),
+                                  arguments: GroupOrderFollowupScreenParams(groupOrderId: item.groupOrderId),
                                 );
                               },
                             );
@@ -292,71 +274,38 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                         flex: 3,
                         child: BlocBuilder<ProfileBloc, ProfileState>(
                           buildWhen: (previous, current) =>
-                              previous.createGroupOrderStatus !=
-                                  current.createGroupOrderStatus ||
-                              previous.selectedGroupOrderRestaurant !=
-                                  current.selectedGroupOrderRestaurant,
+                              previous.createGroupOrderStatus != current.createGroupOrderStatus ||
+                              previous.selectedGroupOrderRestaurant != current.selectedGroupOrderRestaurant,
                           builder: (context, state) {
-                            final isLoading =
-                                state.createGroupOrderStatus ==
-                                    BlocStatus.loading;
+                            final isLoading = state.createGroupOrderStatus == BlocStatus.loading;
                             return ElevatedButton(
                               onPressed: isLoading
                                   ? null
                                   : () {
-                                      final selectedRestaurantId = state
-                                          .selectedGroupOrderRestaurant
-                                          ?.id;
-                                      if (selectedRestaurantId == null ||
-                                          selectedRestaurantId <= 0) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'يرجى اختيار مطعم أولاً',
-                                            ),
-                                          ),
-                                        );
+                                      final selectedRestaurantId = state.selectedGroupOrderRestaurant?.id;
+                                      if (selectedRestaurantId == null || selectedRestaurantId <= 0) {
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار مطعم أولاً')));
                                         return;
                                       }
                                       context.read<ProfileBloc>().add(
-                                            CreateGroupOrderEvent(
-                                              params: CreateGroupOrderParams(
-                                                restaurantId:
-                                                    selectedRestaurantId,
-                                                name: _nameController.text
-                                                        .trim()
-                                                        .isEmpty
-                                                    ? null
-                                                    : _nameController.text
-                                                          .trim(),
-                                              ),
-                                            ),
-                                          );
+                                        CreateGroupOrderEvent(
+                                          params: CreateGroupOrderParams(
+                                            restaurantId: selectedRestaurantId,
+                                            name: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
+                                          ),
+                                        ),
+                                      );
                                     },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: context.primary,
                                 foregroundColor: context.onPrimary,
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                               child: isLoading
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : AppText.labelLarge(
-                                      'إنشاء التصويت',
-                                      color: context.onPrimary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : AppText.labelLarge('إنشاء التصويت', color: context.onPrimary, fontWeight: FontWeight.w700),
                             );
                           },
                         ),
@@ -367,16 +316,10 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                           onPressed: () => Navigator.of(context).maybePop(),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: context.error.withAlpha(200)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: AppText.labelLarge(
-                            'إلغاء',
-                            color: context.error,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          child: AppText.labelLarge('إلغاء', color: context.error, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],

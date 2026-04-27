@@ -6,12 +6,10 @@ import 'package:toastification/toastification.dart';
 
 class VerifyAccountRouteArgs {
   const VerifyAccountRouteArgs({
-    required this.email,
     this.message,
     this.expiresAt,
   });
 
-  final String email;
   final String? message;
   final String? expiresAt;
 }
@@ -87,7 +85,6 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final email = widget.args.email;
     final hint = widget.args.message;
 
     return AuthScreenChrome(
@@ -102,7 +99,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
           ),
           const SizedBox(height: 8),
           AppText.bodyMedium(
-            email,
+            'email',
             textAlign: TextAlign.center,
             fontWeight: FontWeight.w700,
             style: TextStyle(color: context.primary, fontSize: 15),

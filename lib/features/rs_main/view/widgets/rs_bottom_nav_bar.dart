@@ -23,7 +23,7 @@ class _RsBottomNavBarState extends State<RsBottomNavBar> {
       Assets.images.rsFavourite.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
     ];
 
-    List<String> titles = ['الرئيسية', 'اكتشف', 'العروض', 'المفضلة'];
+    List<String> titles = ['المطاعم', 'اكتشف', 'العروض', 'المفضلة'];
 
     return Container(
       decoration: BoxDecoration(

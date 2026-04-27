@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "REPLACE_WITH_APPLE_TEAM_ID.com.dllni.userapp",
+        "appID": "C4S72M3DX2.com.alnadha.user",
         "paths": [
           "/api/v1/user/*",
           "/product/*",

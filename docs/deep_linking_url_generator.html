@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منشئ روابط التطبيق العميقة - Dllni</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-btn:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-row-full {
+            grid-column: 1 / -1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-copy {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #38a169;
+        }
+
+        .btn-qr {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-qr:hover {
+            background: #dd6b20;
+        }
+
+        .output-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .output-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .output-url {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #e6f2ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #2c5aa0;
+        }
+
+        .param-section {
+            background: white;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .param-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        input[type="checkbox"] {
+            margin-top: 2px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .preview-section {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border: 1px dashed #667eea;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 13px;
+        }
+
+        .preview-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .preview-item strong {
+            color: #667eea;
+        }
+
+        .url-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .url-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .url-item-text {
+            flex: 1;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .url-item-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #999;
+            font-size: 12px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+            }
+
+            button, .tab-btn {
+                display: none;
+            }
+        }
+
+        .qr-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .qr-modal.active {
+            display: flex;
+        }
+
+        .qr-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .qr-modal-close {
+            float: left;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .qr-modal-close:hover {
+            color: #000;
+        }
+
+        #qrcode {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔗 منشئ روابط التطبيق العميقة</h1>
+            <p class="subtitle">أنشئ واختبر روابط التطبيق العميقة بسهولة - Dllni Deep Link Generator</p>
+        </header>
+
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('restaurant')">🏪 المطعم</button>
+            <button class="tab-btn" onclick="switchTab('product')">🍕 المنتج</button>
+            <button class="tab-btn" onclick="switchTab('vote')">🗳️ التصويت</button>
+            <button class="tab-btn" onclick="switchTab('grouporder')">👥 طلب جماعي</button>
+            <button class="tab-btn" onclick="switchTab('examples')">📋 أمثلة</button>
+            <button class="tab-btn" onclick="switchTab('reference')">📚 مرجع</button>
+        </div>
+
+        <!-- Restaurant Tab -->
+        <div id="restaurant" class="tab-content active">
+            <div class="info-box">
+                📌 أنشئ رابط عميق لصفحة تفاصيل المطعم
+            </div>
+
+            <div class="form-group">
+                <label>رقم المطعم (Restaurant ID) *</label>
+                <input type="number" id="restaurantId" placeholder="أدخل رقم المطعم" min="1">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>مصدر المشاركة (UTM Source)</label>
+                    <select id="restaurantSource">
+                        <option value="">-- بدون --</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="email">البريد الإلكتروني</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الحملة (UTM Campaign)</label>
+                    <input type="text" id="restaurantCampaign" placeholder="مثال: summer_promo">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>معرّف المشارك (Sharer ID)</label>
+                <input type="number" id="restaurantSharerId" placeholder="رقم المستخدم الذي شارك الرابط" min="1">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="generaterestaurant()">📍 إنشاء الرابط</button>
+                <button class="btn-secondary" onclick="clearRestaurant()">🗑️ مسح</button>
+            </div>
+
+            <div id="restaurantOutput"></div>
+        </div>
+
+        <!-- Product Tab -->
+        <div id="product" class="tab-content">
+            <div class="info-box">
+                📌 أنشئ رابط عميق لصفحة تفاصيل المنتج
+            </div>
+
+            <div class="form-group">
+                <label>نوع المنتج *</label>
+                <select id="productType" onchange="updateProductType()">
+                    <option value="">-- اختر النوع --</option>
+                    <option value="restaurant">🍕 منتج المطعم</option>
+                    <option value="supermarket">🛒 منتج السوبرماركت</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>رقم المنتج (Product ID) *</label>
+                <input type="number" id="productId" placeholder="أدخل رقم المنتج" min="1">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>مصدر المشاركة (UTM Source)</label>
+                    <select id="productSource">
+                        <option value="">-- بدون --</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="email">البريد الإلكتروني</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الحملة (UTM Campaign)</label>
+                    <input type="text" id="productCampaign" placeholder="مثال: special_offer">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>معرّف المشارك (Sharer ID)</label>
+                <input type="number" id="productSharerId" placeholder="رقم المستخدم الذي شارك الرابط" min="1">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="generateProduct()">📍 إنشاء الرابط</button>
+                <button class="btn-secondary" onclick="clearProduct()">🗑️ مسح</button>
+            </div>
+
+            <div id="productOutput"></div>
+        </div>
+
+        <!-- Vote Tab -->
+        <div id="vote" class="tab-content">
+            <div class="info-box">
+                📌 أنشئ رابط عميق لصفحة التصويت/الاستطلاع
+            </div>
+
+            <div class="form-group">
+                <label>رقم التصويت (Vote ID) *</label>
+                <input type="number" id="voteId" placeholder="أدخل رقم التصويت" min="1">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>مصدر المشاركة (UTM Source)</label>
+                    <select id="voteSource">
+                        <option value="">-- بدون --</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="email">البريد الإلكتروني</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الحملة (UTM Campaign)</label>
+                    <input type="text" id="voteCampaign" placeholder="مثال: vote_campaign">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>معرّف المشارك (Sharer ID)</label>
+                <input type="number" id="voteSharerId" placeholder="رقم المستخدم الذي شارك الرابط" min="1">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="generateVote()">📍 إنشاء الرابط</button>
+                <button class="btn-secondary" onclick="clearVote()">🗑️ مسح</button>
+            </div>
+
+            <div id="voteOutput"></div>
+        </div>
+
+        <!-- Group Order Tab -->
+        <div id="grouporder" class="tab-content">
+            <div class="info-box">
+                📌 أنشئ رابط عميق لصفحة الطلب الجماعي
+            </div>
+
+            <div class="form-group">
+                <label>نوع المعرف *</label>
+                <select id="groupOrderType" onchange="updateGroupOrderType()">
+                    <option value="">-- اختر النوع --</option>
+                    <option value="id">رقمي (Numeric ID)</option>
+                    <option value="token">رمز المشاركة (Share Token)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="groupOrderIdField">
+                <label>رقم الطلب الجماعي *</label>
+                <input type="number" id="groupOrderId" placeholder="أدخل رقم الطلب" min="1">
+            </div>
+
+            <div class="form-group" id="groupOrderTokenField" style="display:none;">
+                <label>رمز المشاركة *</label>
+                <input type="text" id="groupOrderToken" placeholder="أدخل رمز المشاركة">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>مصدر المشاركة (UTM Source)</label>
+                    <select id="groupOrderSource">
+                        <option value="">-- بدون --</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="email">البريد الإلكتروني</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الحملة (UTM Campaign)</label>
+                    <input type="text" id="groupOrderCampaign" placeholder="مثال: group_order">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>معرّف المشارك (Sharer ID)</label>
+                <input type="number" id="groupOrderSharerId" placeholder="رقم المستخدم الذي شارك الرابط" min="1">
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="generateGroupOrder()">📍 إنشاء الرابط</button>
+                <button class="btn-secondary" onclick="clearGroupOrder()">🗑️ مسح</button>
+            </div>
+
+            <div id="groupOrderOutput"></div>
+        </div>
+
+        <!-- Examples Tab -->
+        <div id="examples" class="tab-content">
+            <div class="info-box">
+                📌 أمثلة جاهزة للاستخدام والاختبار
+            </div>
+
+            <h3 style="margin: 20px 0 15px; color: #333;">أمثلة الروابط</h3>
+
+            <div class="url-list">
+                <div class="url-item">
+                    <div style="flex: 1;">
+                        <div class="url-item-title">🏪 تفاصيل المطعم البسيط</div>
+                        <div class="url-item-text" id="exampleUrlRestaurant"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyExample('exampleUrlRestaurant')">نسخ</button>
+                </div>
+
+                <div class="url-item">
+                    <div style="flex: 1;">
+                        <div class="url-item-title">🍕 منتج المطعم مع UTM</div>
+                        <div class="url-item-text" id="exampleUrlProduct"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyExample('exampleUrlProduct')">نسخ</button>
+                </div>
+
+                <div class="url-item">
+                    <div style="flex: 1;">
+                        <div class="url-item-title">🛒 منتج السوبرماركت</div>
+                        <div class="url-item-text" id="exampleUrlSupermarket"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyExample('exampleUrlSupermarket')">نسخ</button>
+                </div>
+
+                <div class="url-item">
+                    <div style="flex: 1;">
+                        <div class="url-item-title">🗳️ رابط التصويت مع Sharer ID</div>
+                        <div class="url-item-text" id="exampleUrlVote"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyExample('exampleUrlVote')">نسخ</button>
+                </div>
+
+                <div class="url-item">
+                    <div style="flex: 1;">
+                        <div class="url-item-title">👥 طلب جماعي برقمي</div>
+                        <div class="url-item-text" id="exampleUrlGroupOrder"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyExample('exampleUrlGroupOrder')">نسخ</button>
+                </div>
+
+                <div class="url-item">
+                    <div style="flex: 1;">
+                        <div class="url-item-title">👥 طلب جماعي برمز مشاركة</div>
+                        <div class="url-item-text" id="exampleUrlGroupOrderToken"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyExample('exampleUrlGroupOrderToken')">نسخ</button>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 15px; color: #333;">روابط قصيرة</h3>
+            <div class="url-list">
+                <div class="url-item">
+                    <div style="flex: 1;">
+                        <div class="url-item-title">🔗 رابط قصير</div>
+                        <div class="url-item-text" id="exampleUrlShort"></div>
+                    </div>
+                    <button class="btn-copy" onclick="copyExample('exampleUrlShort')">نسخ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reference Tab -->
+        <div id="reference" class="tab-content">
+            <div class="info-box">
+                📌 مرجع سريع لصيغ الروابط المدعومة
+            </div>
+
+            <h3 style="margin: 20px 0 15px; color: #333;">صيغ الروابط المدعومة</h3>
+
+            <div class="url-list">
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">المطعم</div>
+                        <div class="url-item-text">/api/v1/user/restaurants/{id}</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">منتج المطعم</div>
+                        <div class="url-item-text">/api/v1/user/products/{id}</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">متجر السوبرماركت</div>
+                        <div class="url-item-text">/api/v1/user/supermarket/stores/{id}</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">منتج السوبرماركت</div>
+                        <div class="url-item-text">/api/v1/user/supermarket/products/{id}</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">التصويت</div>
+                        <div class="url-item-text">/api/v1/user/restaurants/votes/{id}</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">الطلب الجماعي</div>
+                        <div class="url-item-text">/api/v1/user/restaurants/group-orders/{id}</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">الرابط القصير</div>
+                        <div class="url-item-text">/s/{shortCode}</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 15px; color: #333;">المعاملات الاختيارية</h3>
+
+            <div class="url-list">
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">utm_source</div>
+                        <div class="url-item-text">مصدر المشاركة: facebook, instagram, twitter, whatsapp, email</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">utm_medium</div>
+                        <div class="url-item-text">وسيط المشاركة: share, post, story, message</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">utm_campaign</div>
+                        <div class="url-item-text">اسم الحملة: summer_promo, special_offer</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">sharer_id</div>
+                        <div class="url-item-text">معرف المستخدم الذي شارك الرابط (رقمي)</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 15px; color: #333;">رسائل الخطأ</h3>
+
+            <div class="url-list">
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">غير موجود (not_found)</div>
+                        <div class="url-item-text">المحتوى غير متوفر حالياً</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">محظور (forbidden)</div>
+                        <div class="url-item-text">لا يمكنك الوصول إلى هذا المحتوى</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">انتهت صلاحيته (expired)</div>
+                        <div class="url-item-text">انتهت صلاحية هذا الرابط</div>
+                    </div>
+                </div>
+
+                <div class="url-item">
+                    <div>
+                        <div class="url-item-title">خطأ عام</div>
+                        <div class="url-item-text">تعذر فتح هذا الرابط</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>❤️ صُنع بواسطة فريق تطوير Dllni</p>
+            <p>آخر تحديث: إبريل 2026</p>
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qrModal" class="qr-modal">
+        <div class="qr-modal-content">
+            <span class="qr-modal-close" onclick="closeQRModal()">&times;</span>
+            <h2 style="margin-bottom: 20px;">رمز الاستجابة السريعة</h2>
+            <div id="qrcode"></div>
+            <p style="margin-top: 20px; color: #666; font-size: 14px;">امسح الرمز باستخدام تطبيق الكاميرا أو قارئ الرموز</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        const BASE_URL = 'https://dllni.mustafafares.com';
+        const API_BASE = `${BASE_URL}/api/v1/user`;
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Deactivate all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Activate selected button
+            event.target.classList.add('active');
+
+            // Load examples when switching to examples tab
+            if (tabName === 'examples') {
+                loadExamples();
+            }
+        }
+
+        function buildUrl(basePath, params = {}) {
+            let url = `${BASE_URL}${basePath}`;
+            const queryParams = [];
+
+            if (params.utm_source) queryParams.push(`utm_source=${params.utm_source}`);
+            if (params.utm_medium) queryParams.push(`utm_medium=${params.utm_medium}`);
+            if (params.utm_campaign) queryParams.push(`utm_campaign=${params.utm_campaign}`);
+            if (params.sharer_id) queryParams.push(`sharer_id=${params.sharer_id}`);
+
+            if (queryParams.length > 0) {
+                url += `?${queryParams.join('&')}`;
+            }
+
+            return url;
+        }
+
+        function createOutputSection(url, type) {
+            return `
+                <div class="output-section">
+                    <div class="output-label">الرابط المُنشأ</div>
+                    <div class="output-url">${url}</div>
+                    <div class="button-group">
+                        <button class="btn-copy" onclick="copyToClipboard('${url.replace(/'/g, "\\'")}')">📋 نسخ الرابط</button>
+                        <button class="btn-qr" onclick="generateQR('${url.replace(/'/g, "\\'")}')">📲 إنشاء QR Code</button>
+                        <a href="${url}" target="_blank" style="display: inline-block;">
+                            <button class="btn-secondary">🌐 فتح الرابط</button>
+                        </a>
+                    </div>
+                    <div class="success-message" style="display: none;">✅ تم النسخ بنجاح!</div>
+                </div>
+            `;
+        }
+
+        function generateRestaurant() {
+            const id = document.getElementById('restaurantId').value;
+            if (!id || id <= 0) {
+                alert('الرجاء إدخال رقم المطعم صحيح');
+                return;
+            }
+
+            const url = buildUrl(`/api/v1/user/restaurants/${id}`, {
+                utm_source: document.getElementById('restaurantSource').value,
+                utm_campaign: document.getElementById('restaurantCampaign').value,
+                sharer_id: document.getElementById('restaurantSharerId').value
+            });
+
+            document.getElementById('restaurantOutput').innerHTML = createOutputSection(url);
+        }
+
+        function generateProduct() {
+            const id = document.getElementById('productId').value;
+            const type = document.getElementById('productType').value;
+
+            if (!id || id <= 0) {
+                alert('الرجاء إدخال رقم المنتج صحيح');
+                return;
+            }
+
+            if (!type) {
+                alert('الرجاء اختيار نوع المنتج');
+                return;
+            }
+
+            let path;
+            if (type === 'restaurant') {
+                path = `/api/v1/user/products/${id}`;
+            } else {
+                path = `/api/v1/user/supermarket/products/${id}`;
+            }
+
+            const url = buildUrl(path, {
+                utm_source: document.getElementById('productSource').value,
+                utm_campaign: document.getElementById('productCampaign').value,
+                sharer_id: document.getElementById('productSharerId').value
+            });
+
+            document.getElementById('productOutput').innerHTML = createOutputSection(url);
+        }
+
+        function generateVote() {
+            const id = document.getElementById('voteId').value;
+            if (!id || id <= 0) {
+                alert('الرجاء إدخال رقم التصويت صحيح');
+                return;
+            }
+
+            const url = buildUrl(`/api/v1/user/restaurants/votes/${id}`, {
+                utm_source: document.getElementById('voteSource').value,
+                utm_campaign: document.getElementById('voteCampaign').value,
+                sharer_id: document.getElementById('voteSharerId').value
+            });
+
+            document.getElementById('voteOutput').innerHTML = createOutputSection(url);
+        }
+
+        function generateGroupOrder() {
+            const type = document.getElementById('groupOrderType').value;
+            let id = '';
+
+            if (!type) {
+                alert('الرجاء اختيار نوع المعرف');
+                return;
+            }
+
+            if (type === 'id') {
+                id = document.getElementById('groupOrderId').value;
+                if (!id || id <= 0) {
+                    alert('الرجاء إدخال رقم الطلب صحيح');
+                    return;
+                }
+            } else {
+                id = document.getElementById('groupOrderToken').value;
+                if (!id || id.trim() === '') {
+                    alert('الرجاء إدخال رمز المشاركة');
+                    return;
+                }
+                id = encodeURIComponent(id);
+            }
+
+            const url = buildUrl(`/api/v1/user/restaurants/group-orders/${id}`, {
+                utm_source: document.getElementById('groupOrderSource').value,
+                utm_campaign: document.getElementById('groupOrderCampaign').value,
+                sharer_id: document.getElementById('groupOrderSharerId').value
+            });
+
+            document.getElementById('groupOrderOutput').innerHTML = createOutputSection(url);
+        }
+
+        function updateProductType() {
+            // Additional logic can be added here
+        }
+
+        function updateGroupOrderType() {
+            const type = document.getElementById('groupOrderType').value;
+            const idField = document.getElementById('groupOrderIdField');
+            const tokenField = document.getElementById('groupOrderTokenField');
+
+            if (type === 'token') {
+                idField.style.display = 'none';
+                tokenField.style.display = 'block';
+            } else {
+                idField.style.display = 'block';
+                tokenField.style.display = 'none';
+            }
+        }
+
+        function clearRestaurant() {
+            document.getElementById('restaurantId').value = '';
+            document.getElementById('restaurantSource').value = '';
+            document.getElementById('restaurantCampaign').value = '';
+            document.getElementById('restaurantSharerId').value = '';
+            document.getElementById('restaurantOutput').innerHTML = '';
+        }
+
+        function clearProduct() {
+            document.getElementById('productType').value = '';
+            document.getElementById('productId').value = '';
+            document.getElementById('productSource').value = '';
+            document.getElementById('productCampaign').value = '';
+            document.getElementById('productSharerId').value = '';
+            document.getElementById('productOutput').innerHTML = '';
+        }
+
+        function clearVote() {
+            document.getElementById('voteId').value = '';
+            document.getElementById('voteSource').value = '';
+            document.getElementById('voteCampaign').value = '';
+            document.getElementById('voteSharerId').value = '';
+            document.getElementById('voteOutput').innerHTML = '';
+        }
+
+        function clearGroupOrder() {
+            document.getElementById('groupOrderType').value = '';
+            document.getElementById('groupOrderId').value = '';
+            document.getElementById('groupOrderToken').value = '';
+            document.getElementById('groupOrderSource').value = '';
+            document.getElementById('groupOrderCampaign').value = '';
+            document.getElementById('groupOrderSharerId').value = '';
+            document.getElementById('groupOrderOutput').innerHTML = '';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const event = event || window.event;
+                const successMsg = event.target.closest('.output-section').querySelector('.success-message');
+                if (successMsg) {
+                    successMsg.style.display = 'block';
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 2000);
+                }
+            });
+        }
+
+        function copyExample(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            copyToClipboard(text);
+        }
+
+        function generateQR(url) {
+            const modal = document.getElementById('qrModal');
+            const qrcodeDiv = document.getElementById('qrcode');
+
+            // Clear previous QR code
+            qrcodeDiv.innerHTML = '';
+
+            // Generate new QR code
+            new QRCode(qrcodeDiv, {
+                text: url,
+                width: 300,
+                height: 300,
+            });
+
+            modal.classList.add('active');
+        }
+
+        function closeQRModal() {
+            document.getElementById('qrModal').classList.remove('active');
+        }
+
+        function loadExamples() {
+            document.getElementById('exampleUrlRestaurant').textContent = `${BASE_URL}/api/v1/user/restaurants/1`;
+            document.getElementById('exampleUrlProduct').textContent = `${BASE_URL}/api/v1/user/products/123?utm_source=facebook&utm_campaign=special_offer`;
+            document.getElementById('exampleUrlSupermarket').textContent = `${BASE_URL}/api/v1/user/supermarket/products/456`;
+            document.getElementById('exampleUrlVote').textContent = `${BASE_URL}/api/v1/user/restaurants/votes/789?sharer_id=123`;
+            document.getElementById('exampleUrlGroupOrder').textContent = `${BASE_URL}/api/v1/user/restaurants/group-orders/999`;
+            document.getElementById('exampleUrlGroupOrderToken').textContent = `${BASE_URL}/api/v1/user/restaurants/group-orders/share-token-abc123`;
+            document.getElementById('exampleUrlShort').textContent = `${BASE_URL}/s/abc123`;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('qrModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('qrModal')) {
+                closeQRModal();
+            }
+        });
+
+        // Load examples on page load
+        loadExamples();
+    </script>
+</body>
+</html>
+
