@@ -1,9 +1,9 @@
 import 'package:common_package/common_package.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/download_more.dart';
@@ -50,6 +50,20 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
           onTypeSelected: widget.onTypeSelected,
           isSearchExpand: widget.expandSearch,
         ),
+        if (kDebugMode) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/sm_autocomplete_demo');
+                },
+                child: const Text('تجربة Autocomplete'),
+              ),
+            ),
+          ),
+        ],
         SizedBox(height: 16),
         // DiscoverTabBar(items: discoverTabs, onChanged: (index) {}),
         // SizedBox(height: 24),

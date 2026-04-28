@@ -164,9 +164,7 @@ class _LoadingPageViewState extends State<LoadingPageView> {
               onDotClicked: (index) {},
             ),
           ),
-        ),
-        SizedBox(height: 24),
-        NearStoresSection(),
+        )
       ],
     );
   }

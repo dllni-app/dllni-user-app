@@ -80,9 +80,11 @@ FetchFeaturedOffersModelOffersItem fetchFeaturedOffersModelOffersItemFromJson(st
 String fetchFeaturedOffersModelOffersItemToJson(FetchFeaturedOffersModelOffersItem data) => json.encode(data.toJson());
 
 
-FetchFeaturedOffersModelOffersItemStore fetchFeaturedOffersModelOffersItemStoreFromJson(str) => FetchFeaturedOffersModelOffersItemStore.fromJson(str);
+FetchFeaturedOffersModelRestaurant fetchFeaturedOffersModelRestaurantFromJson(str) =>
+    FetchFeaturedOffersModelRestaurant.fromJson(str);
 
-String fetchFeaturedOffersModelOffersItemStoreToJson(FetchFeaturedOffersModelOffersItemStore data) => json.encode(data.toJson());
+String fetchFeaturedOffersModelRestaurantToJson(FetchFeaturedOffersModelRestaurant data) =>
+    json.encode(data.toJson());
 
 
 class FetchFeaturedOffersModel {
@@ -106,55 +108,217 @@ class FetchFeaturedOffersModel {
 }
 
 class FetchFeaturedOffersModelOffersItem {
-  int? id;
-  int? storeId;
-  FetchFeaturedOffersModelOffersItemStore? store;
-  String? name;
-  String? description;
-  String? offerType;
-  dynamic discountValue;
-  int? discountPercent;
-  String? startsAt;
-  String? endsAt;
-  bool? isActive;
-  int? offerProductsCount;
-  int? affectedOrdersCount;
-  String? createdAt;
-  String? updatedAt;
+  int? offerId;
+  int? restaurantId;
+  String? restaurantName;
+  String? offerBadgeText;
+  String? offerDescription;
+  String? discountType;
+  num? discountValue;
+  String? urgencyTag;
+  double? distanceKm;
+  String? distanceUnit;
+  String? imageUrl;
+  FetchFeaturedOffersModelRestaurant? restaurant;
+  List<FetchFeaturedOffersModelProduct>? products;
 
   FetchFeaturedOffersModelOffersItem({
-    this.id,
-    this.storeId,
-    this.store,
-    this.name,
-    this.description,
-    this.offerType,
+    this.offerId,
+    this.restaurantId,
+    this.restaurantName,
+    this.offerBadgeText,
+    this.offerDescription,
+    this.discountType,
     this.discountValue,
-    this.discountPercent,
-    this.startsAt,
-    this.endsAt,
-    this.isActive,
-    this.offerProductsCount,
-    this.affectedOrdersCount,
-    this.createdAt,
-    this.updatedAt,
+    this.urgencyTag,
+    this.distanceKm,
+    this.distanceUnit,
+    this.imageUrl,
+    this.restaurant,
+    this.products,
   });
 
   factory FetchFeaturedOffersModelOffersItem.fromJson(Map<String, dynamic> json) {
     return FetchFeaturedOffersModelOffersItem(
+      offerId: _asInt(json['offerId']),
+      restaurantId: _asInt(json['restaurantId']),
+      restaurantName: _asString(json['restaurantName']),
+      offerBadgeText: _asString(json['offerBadgeText']),
+      offerDescription: _asString(json['offerDescription']),
+      discountType: _asString(json['discountType']),
+      discountValue: _asNum(json['discountValue']),
+      urgencyTag: _asString(json['urgencyTag']),
+      distanceKm: _asDouble(json['distanceKm']),
+      distanceUnit: _asString(json['distanceUnit']),
+      imageUrl: _asString(json['imageUrl']),
+      restaurant: json['restaurant'] is Map
+          ? FetchFeaturedOffersModelRestaurant.fromJson(
+              Map<String, dynamic>.from(json['restaurant'] as Map),
+            )
+          : null,
+      products: json['products'] is List
+          ? (json['products'] as List)
+              .whereType<Map>()
+              .map(
+                (item) => FetchFeaturedOffersModelProduct.fromJson(
+                  Map<String, dynamic>.from(item),
+                ),
+              )
+              .toList()
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'offerId': offerId,
+      'restaurantId': restaurantId,
+      'restaurantName': restaurantName,
+      'offerBadgeText': offerBadgeText,
+      'offerDescription': offerDescription,
+      'discountType': discountType,
+      'discountValue': discountValue,
+      'urgencyTag': urgencyTag,
+      'distanceKm': distanceKm,
+      'distanceUnit': distanceUnit,
+      'imageUrl': imageUrl,
+      'restaurant': restaurant?.toJson(),
+      'products': products?.map((item) => item.toJson()).toList(),
+    };
+  }
+}
+
+class FetchFeaturedOffersModelRestaurant {
+  int? id;
+  int? userId;
+  String? name;
+  String? slug;
+  String? description;
+  String? address;
+  String? city;
+  String? district;
+  String? locationDetails;
+  double? latitude;
+  double? longitude;
+  String? phone;
+  String? whatsappNumber;
+  String? whatsapp;
+  String? email;
+  String? instagramUsername;
+  String? instagram;
+  String? facebookPageName;
+  String? face;
+  double? averageRating;
+  int? totalReviews;
+  int? estimatedPreparationTime;
+  num? minimumOrderAmount;
+  String? priceRange;
+  int? reputationScore;
+  int? warningCount;
+  int? visibilityScore;
+  bool? manualVisibilityOverride;
+  bool? isActive;
+  bool? isFeatured;
+  bool? isTemporarilyClosed;
+  dynamic suspensionUntil;
+  String? primaryImage;
+  String? image;
+  String? imageUrl;
+  String? banner;
+  List<dynamic>? images;
+  double? lat;
+  double? long;
+  double? distanceKm;
+  String? createdAt;
+  String? updatedAt;
+
+  FetchFeaturedOffersModelRestaurant({
+    this.id,
+    this.userId,
+    this.name,
+    this.slug,
+    this.description,
+    this.address,
+    this.city,
+    this.district,
+    this.locationDetails,
+    this.latitude,
+    this.longitude,
+    this.phone,
+    this.whatsappNumber,
+    this.whatsapp,
+    this.email,
+    this.instagramUsername,
+    this.instagram,
+    this.facebookPageName,
+    this.face,
+    this.averageRating,
+    this.totalReviews,
+    this.estimatedPreparationTime,
+    this.minimumOrderAmount,
+    this.priceRange,
+    this.reputationScore,
+    this.warningCount,
+    this.visibilityScore,
+    this.manualVisibilityOverride,
+    this.isActive,
+    this.isFeatured,
+    this.isTemporarilyClosed,
+    this.suspensionUntil,
+    this.primaryImage,
+    this.image,
+    this.imageUrl,
+    this.banner,
+    this.images,
+    this.lat,
+    this.long,
+    this.distanceKm,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory FetchFeaturedOffersModelRestaurant.fromJson(Map<String, dynamic> json) {
+    return FetchFeaturedOffersModelRestaurant(
       id: _asInt(json['id']),
-      storeId: _asInt(json['storeId']),
-      store: json['store'] is Map ? FetchFeaturedOffersModelOffersItemStore.fromJson(Map<String, dynamic>.from(json['store'] as Map)) : null,
+      userId: _asInt(json['userId']),
       name: _asString(json['name']),
-      description: _asDynamic(json['description']),
-      offerType: _asString(json['offerType']),
-      discountValue: _asDynamic(json['discountValue']),
-      discountPercent: _asInt(json['discountPercent']),
-      startsAt: _asDynamic(json['startsAt']),
-      endsAt: _asDynamic(json['endsAt']),
+      slug: _asString(json['slug']),
+      description: _asString(json['description']),
+      address: _asString(json['address']),
+      city: _asString(json['city']),
+      district: _asString(json['district']),
+      locationDetails: _asString(json['locationDetails']),
+      latitude: _asDouble(json['latitude']),
+      longitude: _asDouble(json['longitude']),
+      phone: _asString(json['phone']),
+      whatsappNumber: _asString(json['whatsappNumber']),
+      whatsapp: _asString(json['whatsapp']),
+      email: _asString(json['email']),
+      instagramUsername: _asString(json['instagramUsername']),
+      instagram: _asString(json['instagram']),
+      facebookPageName: _asString(json['facebookPageName']),
+      face: _asString(json['face']),
+      averageRating: _asDouble(json['averageRating']),
+      totalReviews: _asInt(json['totalReviews']),
+      estimatedPreparationTime: _asInt(json['estimatedPreparationTime']),
+      minimumOrderAmount: _asNum(json['minimumOrderAmount']),
+      priceRange: _asString(json['priceRange']),
+      reputationScore: _asInt(json['reputationScore']),
+      warningCount: _asInt(json['warningCount']),
+      visibilityScore: _asInt(json['visibilityScore']),
+      manualVisibilityOverride: _asBool(json['manualVisibilityOverride']),
       isActive: _asBool(json['isActive']),
-      offerProductsCount: _asInt(json['offerProductsCount']),
-      affectedOrdersCount: _asInt(json['affectedOrdersCount']),
+      isFeatured: _asBool(json['isFeatured']),
+      isTemporarilyClosed: _asBool(json['isTemporarilyClosed']),
+      suspensionUntil: _asDynamic(json['suspensionUntil']),
+      primaryImage: _asString(json['primaryImage']),
+      image: _asString(json['image']),
+      imageUrl: _asString(json['imageUrl']),
+      banner: _asString(json['banner']),
+      images: _asDynamicList(json['images']),
+      lat: _asDouble(json['lat']),
+      long: _asDouble(json['long']),
+      distanceKm: _asDouble(json['distanceKm']),
       createdAt: _asString(json['createdAt']),
       updatedAt: _asString(json['updatedAt']),
     );
@@ -163,98 +327,119 @@ class FetchFeaturedOffersModelOffersItem {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'storeId': storeId,
-      'store': store?.toJson(),
+      'userId': userId,
       'name': name,
+      'slug': slug,
       'description': description,
-      'offerType': offerType,
-      'discountValue': discountValue,
-      'discountPercent': discountPercent,
-      'startsAt': startsAt,
-      'endsAt': endsAt,
+      'address': address,
+      'city': city,
+      'district': district,
+      'locationDetails': locationDetails,
+      'latitude': latitude,
+      'longitude': longitude,
+      'phone': phone,
+      'whatsappNumber': whatsappNumber,
+      'whatsapp': whatsapp,
+      'email': email,
+      'instagramUsername': instagramUsername,
+      'instagram': instagram,
+      'facebookPageName': facebookPageName,
+      'face': face,
+      'averageRating': averageRating,
+      'totalReviews': totalReviews,
+      'estimatedPreparationTime': estimatedPreparationTime,
+      'minimumOrderAmount': minimumOrderAmount,
+      'priceRange': priceRange,
+      'reputationScore': reputationScore,
+      'warningCount': warningCount,
+      'visibilityScore': visibilityScore,
+      'manualVisibilityOverride': manualVisibilityOverride,
       'isActive': isActive,
-      'offerProductsCount': offerProductsCount,
-      'affectedOrdersCount': affectedOrdersCount,
+      'isFeatured': isFeatured,
+      'isTemporarilyClosed': isTemporarilyClosed,
+      'suspensionUntil': suspensionUntil,
+      'primaryImage': primaryImage,
+      'image': image,
+      'imageUrl': imageUrl,
+      'banner': banner,
+      'images': images,
+      'lat': lat,
+      'long': long,
+      'distanceKm': distanceKm,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
   }
 }
 
-class FetchFeaturedOffersModelOffersItemStore {
+class FetchFeaturedOffersModelProduct {
   int? id;
-  int? ownerUserId;
+  int? restaurantId;
+  int? categoryId;
   String? name;
-  String? slug;
   String? description;
-  String? address;
-  dynamic city;
-  dynamic neighborhood;
-  String? latitude;
-  String? longitude;
-  String? phone;
-  String? email;
-  dynamic cover;
-  dynamic logo;
-  String? averageRating;
-  int? totalReviews;
-  int? trustScore;
-  int? warningCount;
-  bool? isActive;
+  num? price;
+  num? discountedPrice;
+  bool? isFavorite;
+  bool? isAvailable;
+  bool? isAvailableNow;
+  String? availabilityMode;
+  dynamic unavailableUntil;
+  String? availabilityNote;
+  int? stockQuantity;
+  int? lowStockThreshold;
+  int? preparationTime;
   bool? isFeatured;
-  dynamic suspensionUntil;
+  String? primaryImage;
+  List<dynamic>? images;
   String? createdAt;
   String? updatedAt;
 
-  FetchFeaturedOffersModelOffersItemStore({
+  FetchFeaturedOffersModelProduct({
     this.id,
-    this.ownerUserId,
+    this.restaurantId,
+    this.categoryId,
     this.name,
-    this.slug,
     this.description,
-    this.address,
-    this.city,
-    this.neighborhood,
-    this.latitude,
-    this.longitude,
-    this.phone,
-    this.email,
-    this.cover,
-    this.logo,
-    this.averageRating,
-    this.totalReviews,
-    this.trustScore,
-    this.warningCount,
-    this.isActive,
+    this.price,
+    this.discountedPrice,
+    this.isFavorite,
+    this.isAvailable,
+    this.isAvailableNow,
+    this.availabilityMode,
+    this.unavailableUntil,
+    this.availabilityNote,
+    this.stockQuantity,
+    this.lowStockThreshold,
+    this.preparationTime,
     this.isFeatured,
-    this.suspensionUntil,
+    this.primaryImage,
+    this.images,
     this.createdAt,
     this.updatedAt,
   });
 
-  factory FetchFeaturedOffersModelOffersItemStore.fromJson(Map<String, dynamic> json) {
-    return FetchFeaturedOffersModelOffersItemStore(
+  factory FetchFeaturedOffersModelProduct.fromJson(Map<String, dynamic> json) {
+    return FetchFeaturedOffersModelProduct(
       id: _asInt(json['id']),
-      ownerUserId: _asInt(json['ownerUserId']),
+      restaurantId: _asInt(json['restaurantId']),
+      categoryId: _asInt(json['categoryId']),
       name: _asString(json['name']),
-      slug: _asString(json['slug']),
       description: _asString(json['description']),
-      address: _asString(json['address']),
-      city: _asDynamic(json['city']),
-      neighborhood: _asDynamic(json['neighborhood']),
-      latitude: _asString(json['latitude']),
-      longitude: _asString(json['longitude']),
-      phone: _asString(json['phone']),
-      email: _asString(json['email']),
-      cover: _asDynamic(json['cover']),
-      logo: _asDynamic(json['logo']),
-      averageRating: _asString(json['averageRating']),
-      totalReviews: _asInt(json['totalReviews']),
-      trustScore: _asInt(json['trustScore']),
-      warningCount: _asInt(json['warningCount']),
-      isActive: _asBool(json['isActive']),
+      price: _asNum(json['price']),
+      discountedPrice: _asNum(json['discountedPrice']),
+      isFavorite: _asBool(json['isFavorite']),
+      isAvailable: _asBool(json['isAvailable']),
+      isAvailableNow: _asBool(json['isAvailableNow']),
+      availabilityMode: _asString(json['availabilityMode']),
+      unavailableUntil: _asDynamic(json['unavailableUntil']),
+      availabilityNote: _asString(json['availabilityNote']),
+      stockQuantity: _asInt(json['stockQuantity']),
+      lowStockThreshold: _asInt(json['lowStockThreshold']),
+      preparationTime: _asInt(json['preparationTime']),
       isFeatured: _asBool(json['isFeatured']),
-      suspensionUntil: _asDynamic(json['suspensionUntil']),
+      primaryImage: _asString(json['primaryImage']),
+      images: _asDynamicList(json['images']),
       createdAt: _asString(json['createdAt']),
       updatedAt: _asString(json['updatedAt']),
     );
@@ -263,26 +448,24 @@ class FetchFeaturedOffersModelOffersItemStore {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'ownerUserId': ownerUserId,
+      'restaurantId': restaurantId,
+      'categoryId': categoryId,
       'name': name,
-      'slug': slug,
       'description': description,
-      'address': address,
-      'city': city,
-      'neighborhood': neighborhood,
-      'latitude': latitude,
-      'longitude': longitude,
-      'phone': phone,
-      'email': email,
-      'cover': cover,
-      'logo': logo,
-      'averageRating': averageRating,
-      'totalReviews': totalReviews,
-      'trustScore': trustScore,
-      'warningCount': warningCount,
-      'isActive': isActive,
+      'price': price,
+      'discountedPrice': discountedPrice,
+      'isFavorite': isFavorite,
+      'isAvailable': isAvailable,
+      'isAvailableNow': isAvailableNow,
+      'availabilityMode': availabilityMode,
+      'unavailableUntil': unavailableUntil,
+      'availabilityNote': availabilityNote,
+      'stockQuantity': stockQuantity,
+      'lowStockThreshold': lowStockThreshold,
+      'preparationTime': preparationTime,
       'isFeatured': isFeatured,
-      'suspensionUntil': suspensionUntil,
+      'primaryImage': primaryImage,
+      'images': images,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
