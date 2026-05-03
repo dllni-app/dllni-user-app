@@ -79,6 +79,8 @@ import '../../features/orders/domain/usecases/place_store_order_use_case.dart'
     as _i969;
 import '../../features/orders/domain/usecases/reject_cleaning_completion_use_case.dart'
     as _i51;
+import '../../features/orders/domain/usecases/submit_cleaning_review_use_case.dart'
+    as _i642;
 import '../../features/orders/domain/usecases/update_cart_item_quantity_use_case.dart'
     as _i925;
 import '../../features/orders/domain/usecases/update_store_cart_item_quantity_use_case.dart'
@@ -339,6 +341,7 @@ import '../../features/sm_stores/view/manager/bloc/sm_stores_bloc.dart'
     as _i883;
 import '../deeplink/deep_link_remote_data_source.dart' as _i229;
 import '../deeplink/deep_link_service.dart' as _i359;
+import '../realtime/cleaning_booking_pusher_service.dart' as _i432;
 import 'injection.dart' as _i464;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -354,6 +357,9 @@ _i174.GetIt $initGetIt(
   gh.factory<_i709.SmOffersBloc>(() => _i709.SmOffersBloc());
   gh.factory<_i803.SmOrdersBloc>(() => _i803.SmOrdersBloc());
   gh.singleton<_i960.DioNetwork>(() => injectableModule.dio);
+  gh.lazySingleton<_i432.CleaningBookingPusherService>(
+    () => _i432.CleaningBookingPusherService(),
+  );
   gh.lazySingleton<_i426.UserLocationService>(
     () => _i426.UserLocationService(),
   );
@@ -671,6 +677,9 @@ _i174.GetIt $initGetIt(
     () => _i51.RejectCleaningCompletionUseCase(
       ordersRepo: gh<_i132.OrdersRepo>(),
     ),
+  );
+  gh.lazySingleton<_i642.SubmitCleaningReviewUseCase>(
+    () => _i642.SubmitCleaningReviewUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
   gh.lazySingleton<_i925.UpdateCartItemQuantityUseCase>(
     () =>

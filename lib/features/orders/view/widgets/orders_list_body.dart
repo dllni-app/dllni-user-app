@@ -14,11 +14,7 @@ import 'cleaning_order_card.dart';
 import 'restaurant_order_card.dart';
 
 class OrdersListBody extends StatelessWidget {
-  const OrdersListBody({
-    super.key,
-    required this.state,
-    required this.scrollController,
-  });
+  const OrdersListBody({super.key, required this.state, required this.scrollController});
 
   final OrdersState state;
   final ScrollController scrollController;
@@ -38,11 +34,7 @@ class OrdersListBody extends StatelessWidget {
       return ListView(
         children: [
           SizedBox(height: context.height * .2),
-          Center(
-            child: AppText.labelLarge(
-              state.errorMessage ?? 'تعذر تحميل الطلبات',
-            ),
-          ),
+          Center(child: AppText.labelLarge(state.errorMessage ?? 'تعذر تحميل الطلبات')),
         ],
       );
     }
@@ -65,10 +57,7 @@ class OrdersListBody extends StatelessWidget {
                 context.read<OrdersBloc>().add(FetchOrdersEvent(loadMore: true));
               }
               return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: CircularProgressIndicator(),
-                ),
+                child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()),
               );
             }
             if (isCleaningSection) {
@@ -80,74 +69,36 @@ class OrdersListBody extends StatelessWidget {
                     onTap: () {
                       final orderId = cleaningOrder.id;
                       if (orderId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'تعذر تحديد الطلب الحالي، حاول مرة أخرى',
-                            ),
-                          ),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تحديد الطلب الحالي، حاول مرة أخرى')));
                         return;
                       }
-                      context.pushRoute(
-                        '/cleaning-order-details',
-                        arguments: CleaningOrderDetailsArgs(orderId: orderId),
-                      );
+                      context.pushRoute('/cleaning-order-details', arguments: CleaningOrderDetailsArgs(orderId: orderId));
                     },
                     onRescheduleTap: () {
                       final orderId = cleaningOrder.id;
                       if (orderId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'تعذر تحديد الطلب الحالي، حاول مرة أخرى',
-                            ),
-                          ),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تحديد الطلب الحالي، حاول مرة أخرى')));
                         return;
                       }
-                      context
-                          .pushRoute(
-                            '/cleaning-order-reschedule',
-                            arguments: CleaningOrderRescheduleArgs(
-                              order: cleaningOrder,
-                            ),
-                          )
-                          ?.then((result) {
-                            if (result == true && context.mounted) {
-                              context.read<OrdersBloc>().add(
-                                FetchOrdersEvent(isReload: true),
-                              );
-                            }
-                          });
+                      context.pushRoute('/cleaning-order-reschedule', arguments: CleaningOrderRescheduleArgs(order: cleaningOrder))?.then((result) {
+                        if (result == true && context.mounted) {
+                          context.read<OrdersBloc>().add(FetchOrdersEvent(isReload: true));
+                        }
+                      });
                     },
                     onReportIssueTap: () {
-                      context.pushRoute(
-                        '/cleaning-order-problem',
-                        arguments: CleaningOrderProblemReportArgs(
-                          order: cleaningOrder,
-                        ),
-                      );
+                      context.pushRoute('/cleaning-order-problem', arguments: CleaningOrderProblemReportArgs(order: cleaningOrder));
                     },
                     onCancelTap: () {
                       final orderId = cleaningOrder.id;
                       if (orderId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'تعذر تحديد الطلب الحالي، حاول مرة أخرى',
-                            ),
-                          ),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تحديد الطلب الحالي، حاول مرة أخرى')));
                         return;
                       }
                       showDialog<bool>(
                         context: context,
                         barrierDismissible: false,
-                        builder: (_) => CleaningCancelReasonDialog(
-                          orderId: orderId,
-                          bloc: context.read<OrdersBloc>(),
-                        ),
+                        builder: (_) => CleaningCancelReasonDialog(orderId: orderId, bloc: context.read<OrdersBloc>()),
                       );
                     },
                   );
@@ -159,10 +110,7 @@ class OrdersListBody extends StatelessWidget {
               return OrderCard(
                 order: order,
                 onTap: () {
-                  context.pushRoute(
-                    '/order_details',
-                    arguments: SmOrderDetailsScreenArgs(order: order),
-                  );
+                  context.pushRoute('/order_details', arguments: SmOrderDetailsScreenArgs(order: order));
                 },
               );
             }
@@ -172,10 +120,7 @@ class OrdersListBody extends StatelessWidget {
               onTap: () {
                 context.pushRoute(
                   '/restaurant-order-tracking',
-                  arguments: RestaurantOrderTrackingArgs(
-                    order: order,
-                    section: 'restaurant',
-                  ),
+                  arguments: RestaurantOrderTrackingArgs(order: order, section: 'restaurant'),
                 );
               },
             );
@@ -183,13 +128,7 @@ class OrdersListBody extends StatelessWidget {
           separatorBuilder: (context, index) => const SizedBox(height: 14),
           itemCount: pagination.listLength(1),
         ),
-        if (pagination.status == BlocStatus.loading && listLength > 0)
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: LinearProgressIndicator(minHeight: 2),
-          ),
+        if (pagination.status == BlocStatus.loading && listLength > 0) const Positioned(top: 0, left: 0, right: 0, child: LinearProgressIndicator(minHeight: 2)),
       ],
     );
   }

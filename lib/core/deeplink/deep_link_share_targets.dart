@@ -5,25 +5,32 @@ import 'package:share_plus/share_plus.dart';
 import 'package:toastification/toastification.dart';
 
 /// Canonical HTTPS base for deep links (API Contract V1).
-String deepLinkBase() => 'https://${AppConfig.deepLinkCanonicalHost}';
+String deepLinkBase() =>
+    '${AppConfig.deepLinkCanonicalScheme}://${AppConfig.deepLinkCanonicalHost}';
 
-/// Same origin as [AppConfig.baseUrl] user API: `/api/v1/user`.
+/// Alias retained for compatibility with existing call sites/tests.
 String deepLinkUserApiRoot() => deepLinkBase();
 
-/// Restaurant (RS) store detail — matches `GET /api/v1/user/restaurants/{id}`.
+/// Canonical product URL: `/product/{identifier}`.
+String productUrl(int id) => '${deepLinkBase()}/product/$id';
+
+/// Canonical restaurant URL: `/restaurant/{identifier}`.
 String restaurantUrl(int id) => '${deepLinkUserApiRoot()}/restaurant/$id';
 
-/// Restaurant (RS) product — matches `GET /api/v1/user/products/{id}`.
+/// Canonical store URL: `/store/{identifier}`.
+String storeUrl(int id) => '${deepLinkBase()}/store/$id';
+
+/// Legacy alias kept for feature modules already importing this helper.
 String restaurantProductUrl(int id) => '${deepLinkUserApiRoot()}/product/$id';
 
-/// Supermarket store — matches `GET /api/v1/user/supermarket/stores/{id}`.
+/// Legacy alias kept for feature modules already importing this helper.
 String supermarketStoreUrl(int id) => '${deepLinkUserApiRoot()}/store/$id';
 
-/// Vote follow-up — matches `.../restaurants/votes/{voteId}`.
+/// Canonical vote URL: `/vote/{identifier}`.
 String voteUrl(int id) => '${deepLinkUserApiRoot()}/vote/$id';
 
 /// Prefer [shareToken] when present; otherwise numeric [id].
-/// Matches `.../restaurants/group-orders/{idOrToken}`.
+/// Canonical group-order URL: `/group-order/{identifier}`.
 String groupOrderUrl({int? id, String? shareToken}) {
   final t = shareToken?.trim();
   if (t != null && t.isNotEmpty) {
@@ -36,12 +43,20 @@ String groupOrderUrl({int? id, String? shareToken}) {
 }
 
 /// Opens the system share sheet with [url]. Optionally shows a toast on failure when [context] is mounted.
-Future<void> shareDeepLinkUrl(String url, {String? subject, BuildContext? context}) async {
+Future<void> shareDeepLinkUrl(
+  String url, {
+  String? subject,
+  BuildContext? context,
+}) async {
   try {
     await SharePlus.instance.share(ShareParams(text: url, subject: subject));
   } catch (_) {
     if (context?.mounted == true) {
-      AppToast.showToast(context: context!, message: 'تعذر مشاركة الرابط', type: ToastificationType.error);
+      AppToast.showToast(
+        context: context!,
+        message: 'تعذر مشاركة الرابط',
+        type: ToastificationType.error,
+      );
     }
   }
 }

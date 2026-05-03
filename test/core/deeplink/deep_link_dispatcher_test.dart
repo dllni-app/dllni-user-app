@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/app_config.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_dispatcher.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_models.dart';
 import 'package:dllni_user_app/features/profile/view/screens/group_order_followup_screen.dart';
@@ -9,6 +10,8 @@ import 'package:dllni_user_app/features/sm_stores/view/screens/sm_store_details_
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  final host = AppConfig.deepLinkCanonicalHost;
+
   test('dispatches supermarket product to /product', () {
     final r = DeepLinkResolveResult(
       type: 'product',
@@ -36,6 +39,19 @@ void main() {
     final t = DeepLinkDispatcher.dispatch(r);
     expect(t?.routeName, '/rs_product');
     expect(t?.arguments, isA<ProductDetailsScreenParams>());
+  });
+
+  test('dispatches store', () {
+    final r = DeepLinkResolveResult(
+      type: 'store',
+      id: 4,
+      slug: null,
+      status: DeepLinkResolveStatus.ok,
+      requiresAuth: false,
+    );
+    final t = DeepLinkDispatcher.dispatch(r);
+    expect(t?.routeName, '/store');
+    expect((t!.arguments! as SmStoreDetailsScreenArgs).storeId, 4);
   });
 
   test('dispatches vote', () {
@@ -88,65 +104,60 @@ void main() {
     expect(DeepLinkDispatcher.dispatch(r), isNull);
   });
 
-  test('dispatchFromCanonicalUri parses API restaurant path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/api/v1/user/restaurants/1');
-    final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
-    expect(t?.routeName, '/rs_store');
-    expect(t?.arguments, isA<StoreDetailsScreenParams>());
-    expect((t!.arguments! as StoreDetailsScreenParams).restaurantId, 1);
-  });
-
-  test('dispatchFromCanonicalUri parses legacy restaurant path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/restaurant/1');
+  test('dispatchFromCanonicalUri parses canonical restaurant path', () {
+    final u = Uri.parse('https://$host/restaurant/1');
     final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
     expect(t?.routeName, '/rs_store');
     expect((t!.arguments! as StoreDetailsScreenParams).restaurantId, 1);
   });
 
-  test('dispatchFromCanonicalUri parses API supermarket product path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/api/v1/user/supermarket/products/42');
+  test('dispatchFromCanonicalUri parses canonical product path', () {
+    final u = Uri.parse('https://$host/product/42');
     final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
     expect(t?.routeName, '/product');
     expect((t!.arguments! as SmProductDetailsScreenArgs).productId, 42);
   });
 
-  test('dispatchFromCanonicalUri parses API restaurant product path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/api/v1/user/products/42');
-    final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
-    expect(t?.routeName, '/rs_product');
-    expect(t?.arguments, isA<ProductDetailsScreenParams>());
-  });
-
-  test('dispatchFromCanonicalUri parses API supermarket store path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/api/v1/user/supermarket/stores/3');
+  test('dispatchFromCanonicalUri parses canonical store path', () {
+    final u = Uri.parse('https://$host/store/3');
     final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
     expect(t?.routeName, '/store');
     expect((t!.arguments! as SmStoreDetailsScreenArgs).storeId, 3);
   });
 
-  test('dispatchFromCanonicalUri parses API vote path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/api/v1/user/restaurants/votes/9');
+  test('dispatchFromCanonicalUri parses canonical vote path', () {
+    final u = Uri.parse('https://$host/vote/9');
     final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
     expect(t?.routeName, '/votefollowup');
     expect((t!.arguments! as VoteFollowupScreenParams).voteId, 9);
   });
 
-  test('dispatchFromCanonicalUri parses API group-order path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/api/v1/user/restaurants/group-orders/100');
+  test('dispatchFromCanonicalUri parses canonical group-order path', () {
+    final u = Uri.parse('https://$host/group-order/100');
     final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
     expect(t?.routeName, '/group-order/followup');
     expect((t!.arguments! as GroupOrderFollowupScreenParams).groupOrderId, 100);
   });
 
-  test('dispatchFromCanonicalUri parses legacy product path', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/product/42');
+  test(
+    'dispatchFromCanonicalUri parses API compatibility supermarket product path',
+    () {
+      final u = Uri.parse('https://$host/api/v1/user/supermarket/products/42');
+      final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
+      expect(t?.routeName, '/product');
+      expect((t!.arguments! as SmProductDetailsScreenArgs).productId, 42);
+    },
+  );
+
+  test('dispatchFromCanonicalUri parses open endpoint path', () {
+    final u = Uri.parse('https://$host/api/v1/deep-links/store/6');
     final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
-    expect(t?.routeName, '/product');
-    expect((t!.arguments! as SmProductDetailsScreenArgs).productId, 42);
+    expect(t?.routeName, '/store');
+    expect((t!.arguments! as SmStoreDetailsScreenArgs).storeId, 6);
   });
 
   test('dispatchFromCanonicalUri returns null for short link', () {
-    final u = Uri.parse('https://dllni.mustafafares.com/s/abc');
+    final u = Uri.parse('https://$host/s/abc');
     expect(DeepLinkDispatcher.dispatchFromCanonicalUri(u), isNull);
   });
 }

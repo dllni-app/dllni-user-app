@@ -32,27 +32,33 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/product/"/>
+                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/restaurant/"/>
+                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/store/"/>
+                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/vote/"/>
+                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/group-order/"/>
+                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/api/v1/deep-links/"/>
+                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/open"/>
                 <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/api/v1/user/restaurants/votes/"/>
                 <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/api/v1/user/restaurants/group-orders/"/>
                 <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/api/v1/user/restaurants/"/>
                 <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/api/v1/user/supermarket/products/"/>
                 <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/api/v1/user/supermarket/stores/"/>
                 <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/api/v1/user/products/"/>
-                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/product/"/>
-                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/restaurant/"/>
-                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/vote/"/>
-                <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/group-order/"/>
                 <data android:scheme="https" android:host="dllni.mustafafares.com" android:pathPrefix="/s/"/>
+                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/product/"/>
+                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/restaurant/"/>
+                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/store/"/>
+                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/vote/"/>
+                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/group-order/"/>
+                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/api/v1/deep-links/"/>
+                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/open"/>
                 <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/api/v1/user/restaurants/votes/"/>
                 <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/api/v1/user/restaurants/group-orders/"/>
                 <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/api/v1/user/restaurants/"/>
                 <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/api/v1/user/supermarket/products/"/>
                 <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/api/v1/user/supermarket/stores/"/>
                 <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/api/v1/user/products/"/>
-                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/product/"/>
-                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/restaurant/"/>
-                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/vote/"/>
-                <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/group-order/"/>
                 <data android:scheme="https" android:host="www.dllni.mustafafares.com" android:pathPrefix="/s/"/>
             </intent-filter>
         </activity>

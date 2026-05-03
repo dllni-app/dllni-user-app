@@ -1,3 +1,5 @@
+import 'cleaning_booking_status.dart';
+
 import 'orders_api_models.dart';
 
 Map<String, dynamic> _toMap(dynamic value) {
@@ -45,21 +47,21 @@ Map<String, dynamic> _cleaningDetailJsonMap(Map<String, dynamic> json) {
 /// Arabic status chip/label for cleaning orders (list + details).
 String cleaningOrderStatusLabelAr(String? status) {
   switch ((status ?? '').toLowerCase()) {
-    case 'pending':
+    case CleaningBookingStatus.pending:
       return 'في مرحلة الاستعداد';
-    case 'worker_assigned':
+    case CleaningBookingStatus.workerAssigned:
       return 'تم تعيين مقدم الخدمة';
-    case 'awaiting_start_verification':
+    case CleaningBookingStatus.awaitingStartVerification:
       return 'بانتظار رمز التحقق';
-    case 'in_progress':
+    case CleaningBookingStatus.inProgress:
       return 'قيد التنفيذ';
-    case 'awaiting_customer_completion':
+    case CleaningBookingStatus.awaitingCustomerCompletion:
       return 'بانتظار تأكيد الإكمال';
-    case 'time_extension_requested':
+    case CleaningBookingStatus.timeExtensionRequested:
       return 'طلب تمديد الوقت';
-    case 'completed':
+    case CleaningBookingStatus.completed:
       return 'مكتمل';
-    case 'cancelled':
+    case CleaningBookingStatus.cancelled:
       return 'ملغي';
     default:
       return 'قيد المعالجة';
@@ -231,7 +233,9 @@ class CleaningOrderDetailModel {
       id: _toInt(m['id'] ?? json['id']),
       customerId: _toInt(m['customerId'] ?? json['customerId']),
       workerId: _toInt(m['workerId'] ?? json['workerId']),
-      bookingNumber: _toStringValue(m['bookingNumber'] ?? json['bookingNumber']),
+      bookingNumber: _toStringValue(
+        m['bookingNumber'] ?? json['bookingNumber'],
+      ),
       status: _toStringValue(m['status'] ?? json['status']),
       propertyType: _toStringValue(m['propertyType'] ?? json['propertyType']),
       propertyDetails: json['propertyDetails'] == null
@@ -257,12 +261,20 @@ class CleaningOrderDetailModel {
       ),
       locationName: _toStringValue(m['locationName'] ?? json['locationName']),
       numberOfRooms: _toInt(m['numberOfRooms'] ?? json['numberOfRooms']),
-      numberOfKitchens: _toInt(m['numberOfKitchens'] ?? json['numberOfKitchens']),
+      numberOfKitchens: _toInt(
+        m['numberOfKitchens'] ?? json['numberOfKitchens'],
+      ),
       estimatedSqm: _toStringValue(m['estimatedSqm'] ?? json['estimatedSqm']),
-      estimatedHours: _toStringValue(m['estimatedHours'] ?? json['estimatedHours']),
+      estimatedHours: _toStringValue(
+        m['estimatedHours'] ?? json['estimatedHours'],
+      ),
       totalHours: _toDouble(m['totalHours'] ?? json['totalHours']),
-      scheduledDate: _toStringValue(m['scheduledDate'] ?? json['scheduledDate']),
-      scheduledTime: _toStringValue(m['scheduledTime'] ?? json['scheduledTime']),
+      scheduledDate: _toStringValue(
+        m['scheduledDate'] ?? json['scheduledDate'],
+      ),
+      scheduledTime: _toStringValue(
+        m['scheduledTime'] ?? json['scheduledTime'],
+      ),
       basePrice: _toDouble(m['basePrice'] ?? json['basePrice']),
       addonsTotal: _toDouble(m['addonsTotal'] ?? json['addonsTotal']),
       travelFee: _toDouble(m['travelFee'] ?? json['travelFee']),
@@ -270,12 +282,19 @@ class CleaningOrderDetailModel {
       worker: json['worker'] == null
           ? null
           : CleaningOrderWorkerModel.fromJson(_toMap(json['worker'])),
-      startedTravelAt: _toStringValue(m['startedTravelAt'] ?? json['startedTravelAt']),
+      startedTravelAt: _toStringValue(
+        m['startedTravelAt'] ?? json['startedTravelAt'],
+      ),
       arrivedAt: _toStringValue(m['arrivedAt'] ?? json['arrivedAt']),
-      workStartedAt: _toStringValue(m['workStartedAt'] ?? json['workStartedAt']),
-      workFinishedAt: _toStringValue(m['workFinishedAt'] ?? json['workFinishedAt']),
-      customerConfirmedAt:
-          _toStringValue(m['customerConfirmedAt'] ?? json['customerConfirmedAt']),
+      workStartedAt: _toStringValue(
+        m['workStartedAt'] ?? json['workStartedAt'],
+      ),
+      workFinishedAt: _toStringValue(
+        m['workFinishedAt'] ?? json['workFinishedAt'],
+      ),
+      customerConfirmedAt: _toStringValue(
+        m['customerConfirmedAt'] ?? json['customerConfirmedAt'],
+      ),
       cancelledAt: _toStringValue(m['cancelledAt'] ?? json['cancelledAt']),
     );
   }

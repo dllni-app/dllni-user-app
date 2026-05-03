@@ -25,10 +25,6 @@ import '../widgets/vote_followup_timer_banner.dart';
 import '../widgets/vote_followup_voters_list.dart';
 import '../widgets/vote_winner_dialog.dart';
 
-/// Pusher Channels public key (must match backend). Never ship [PUSHER_APP_SECRET] in the app.
-const String _kVotePusherKey = 'e85e7756c1171baaa471';
-const String _kVotePusherCluster = 'eu';
-
 class VoteFollowupScreenParams {
   final int voteId;
   final VoteCreatedData? initialData;
@@ -90,8 +86,9 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
 
     try {
       await _pusher.init(
-        apiKey: _kVotePusherKey,
-        cluster: _kVotePusherCluster,
+        apiKey: AppConfig.pusherKey,
+        cluster: AppConfig.pusherCluster,
+        useTLS: true,
         authEndpoint: '${AppConfig.baseUrl}/broadcasting/auth',
         onAuthorizer: (channelName_, socketId, dynamic options) async {
           try {
@@ -100,7 +97,11 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
               '/broadcasting/auth',
               data: <String, dynamic>{'channel_name': channelName_, 'socket_id': socketId},
               options: Options(
-                headers: <String, dynamic>{'Accept': 'application/json', if (token.isNotEmpty) 'Authorization': 'Bearer $token'},
+                headers: <String, dynamic>{
+                  'Accept': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest',
+                  if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+                },
                 contentType: Headers.formUrlEncodedContentType,
                 responseType: ResponseType.json,
               ),

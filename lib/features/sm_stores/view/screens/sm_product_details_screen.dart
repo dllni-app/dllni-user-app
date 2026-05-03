@@ -284,7 +284,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                         onTap: () {
                                           unawaited(
                                             shareDeepLinkUrl(
-                                              supermarketStoreUrl(widget.args.productId),
+                                              productUrl(widget.args.productId),
                                               context: context,
                                             ),
                                           );
@@ -297,7 +297,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                   bottom: 24,
                                   left: 24,
                                   child: _ActionButton(
-                                    icon: FontAwesomeIcons.add,
+                                    icon: FontAwesomeIcons.plus,
                                     onTap: () {
                                       final masterId =
                                           widget.args.starter?.masterId ??
