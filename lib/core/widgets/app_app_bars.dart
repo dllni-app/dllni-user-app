@@ -318,7 +318,7 @@ class _RsAppSimpleAppBarWithSearchState extends State<RsAppSimpleAppBarWithSearc
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => const SmartSearchSheet(),
+      builder: (ctx) => const SmartSearchSheet(isSupermarket: false,),
     );
     if (!mounted || words == null || words.isEmpty) return;
     final query = words.join(' , ');

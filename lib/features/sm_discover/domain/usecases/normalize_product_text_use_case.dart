@@ -12,7 +12,9 @@ class NormalizeProductTextUseCase
   NormalizeProductTextUseCase({required this.smDiscover});
 
   @override
-  DataResponse<NormalizeProductTextModel> call(NormalizeProductTextParams params) {
+  DataResponse<NormalizeProductTextModel> call(
+    NormalizeProductTextParams params,
+  ) {
     return smDiscover.normalizeProductText(params);
   }
 }
@@ -20,9 +22,17 @@ class NormalizeProductTextUseCase
 class NormalizeProductTextParams with Params {
   final String text;
   final String locale;
-
-  NormalizeProductTextParams({required this.text, this.locale = 'ar'});
+  final bool isSupermarket;
+  NormalizeProductTextParams({
+    required this.text,
+    this.locale = 'ar',
+    required this.isSupermarket,
+  });
 
   @override
-  BodyMap getBody() => {'text': text, 'locale': locale};
+  BodyMap getBody() => {
+    'text': text,
+    'locale': locale,
+    'module': isSupermarket ? 'supermarket' : 'restaurant',
+  };
 }
