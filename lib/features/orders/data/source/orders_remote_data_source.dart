@@ -17,10 +17,12 @@ import '../../domain/usecases/place_restaurant_order_use_case.dart';
 import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_order_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
+import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/orders_api_models.dart';
+import '../models/submit_cleaning_review_model.dart';
 
 @lazySingleton
 class OrdersRemoteDataSource with HandlingApiManager {
@@ -125,6 +127,19 @@ class OrdersRemoteDataSource with HandlingApiManager {
         data: params.getBody(),
       ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
+    );
+  }
+
+  Future<SubmitCleaningReviewModel> submitCleaningReview(
+    SubmitCleaningReviewParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        // TODO(backend): confirm /review contract once endpoint is shipped.
+        endPoint: '/api/v1/user/cleaning/orders/${params.orderId}/review',
+        data: params.getBody(),
+      ),
+      jsonConvert: submitCleaningReviewModelFromJson,
     );
   }
 

@@ -34,6 +34,8 @@ dependencies:
   mason: ^0.1.2
   tab_indicator_styler: ^2.0.0
   pusher_channels_flutter: ^2.4.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   dartz: ^0.10.1
   geolocator: ^13.0.2
   flutter_cube_transition: ^1.0.2

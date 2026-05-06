@@ -4,6 +4,14 @@ import 'package:dllni_user_app/core/app_config.dart';
 class DeepLinkParser {
   DeepLinkParser._();
 
+  static const Set<String> _canonicalTypes = <String>{
+    'product',
+    'restaurant',
+    'store',
+    'vote',
+    'group-order',
+  };
+
   /// Apex host only (no `www.`), for comparison with [AppConfig.deepLinkCanonicalHost].
   static String canonicalHost(Uri uri) {
     var h = uri.host.toLowerCase();
@@ -29,29 +37,61 @@ class DeepLinkParser {
     if (canonicalHost(uri) != AppConfig.deepLinkCanonicalHost) {
       return false;
     }
+
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (segments.isEmpty) {
       return false;
     }
+
+    if (_isOpenLandingPath(uri, segments)) {
+      return true;
+    }
+
     final first = segments.first.toLowerCase();
+
+    // Backward compatibility with short-code web flows (`/s/{code}`).
     if (first == 's' && segments.length >= 2) {
       return true;
     }
-    if (segments.length >= 5 && first == 'api' && segments[1] == 'v1' && segments[2] == 'user') {
+
+    if (_isOpenApiPath(segments)) {
+      return true;
+    }
+
+    if (segments.length >= 5 &&
+        first == 'api' &&
+        segments[1] == 'v1' &&
+        segments[2] == 'user') {
       return _isSupportedApiUserPath(segments);
     }
-    if (segments.length < 2) {
-      return false;
+
+    return segments.length >= 2 && _canonicalTypes.contains(first);
+  }
+
+  /// Converts `/api/v1/deep-links/{type}/{identifier}` into canonical `/{type}/{identifier}`
+  /// so resolver + local dispatcher can share one shape.
+  static Uri normalizeOpenApiPathIfNeeded(Uri uri) {
+    final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (!_isOpenApiPath(segments)) {
+      return uri;
     }
-    switch (first) {
-      case 'product':
-      case 'restaurant':
-      case 'vote':
-      case 'group-order':
-        return true;
-      default:
-        return false;
+
+    final type = segments[3];
+    final identifier = segments[4];
+    return uri.replace(pathSegments: <String>[type, identifier]);
+  }
+
+  /// Extracts `deep_link` from web landing `/open?deep_link=...` when present.
+  static Uri? extractDeepLinkFromLanding(Uri uri) {
+    final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (!_isOpenLandingPath(uri, segments)) {
+      return null;
     }
+    final raw = uri.queryParameters['deep_link']?.trim();
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    return Uri.tryParse(raw);
   }
 
   /// `/api/v1/user/...` paths aligned with REST endpoints (see [deep_link_share_targets.dart]).
@@ -79,5 +119,23 @@ class DeepLinkParser {
       return int.tryParse(segments[4]) != null;
     }
     return false;
+  }
+
+  static bool _isOpenApiPath(List<String> segments) {
+    if (segments.length < 5) {
+      return false;
+    }
+    return segments[0] == 'api' &&
+        segments[1] == 'v1' &&
+        segments[2] == 'deep-links' &&
+        _canonicalTypes.contains(segments[3]) &&
+        segments[4].trim().isNotEmpty;
+  }
+
+  static bool _isOpenLandingPath(Uri uri, List<String> segments) {
+    if (segments.length != 1 || segments.first != 'open') {
+      return false;
+    }
+    return (uri.queryParameters['deep_link'] ?? '').trim().isNotEmpty;
   }
 }

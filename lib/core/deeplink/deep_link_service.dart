@@ -65,7 +65,9 @@ class DeepLinkService {
 
   bool _isDuplicate(String fingerprint) {
     final now = DateTime.now();
-    if (_lastFingerprint == fingerprint && _lastAt != null && now.difference(_lastAt!) < _dedupe) {
+    if (_lastFingerprint == fingerprint &&
+        _lastAt != null &&
+        now.difference(_lastAt!) < _dedupe) {
       return true;
     }
     _lastFingerprint = fingerprint;
@@ -73,24 +75,77 @@ class DeepLinkService {
     return false;
   }
 
-  Map<String, String> _utmFromUri(Uri uri) {
+  Map<String, String> _trackingFromUri(Uri uri) {
     final q = uri.queryParameters;
     return <String, String>{
-      if (q['utm_source'] != null) 'source': q['utm_source']!,
-      if (q['utm_medium'] != null) 'medium': q['utm_medium']!,
-      if (q['utm_campaign'] != null) 'campaign': q['utm_campaign']!,
+      if (q['source'] != null) 'source': q['source']!,
+      if (q['medium'] != null) 'medium': q['medium']!,
+      if (q['campaign'] != null) 'campaign': q['campaign']!,
+      if (q['source'] == null && q['utm_source'] != null)
+        'source': q['utm_source']!,
+      if (q['medium'] == null && q['utm_medium'] != null)
+        'medium': q['utm_medium']!,
+      if (q['campaign'] == null && q['utm_campaign'] != null)
+        'campaign': q['utm_campaign']!,
     };
   }
 
   int? _sharerIdFromUri(Uri uri) {
-    final raw = uri.queryParameters['sharer_id'] ?? uri.queryParameters['sharerId'];
+    final raw =
+        uri.queryParameters['sharer_id'] ?? uri.queryParameters['sharerId'];
     if (raw == null || raw.isEmpty) return null;
     return int.tryParse(raw);
   }
 
-  Future<void> handleIncomingUri(Uri uri, {bool isResume = false}) async {
-    final normalized = DeepLinkParser.normalizeHostIfNeeded(uri);
+  Uri _mergeTrackingQuery({required Uri base, required Uri fallback}) {
+    final merged = Map<String, String>.from(base.queryParameters);
+    const keys = <String>[
+      'source',
+      'medium',
+      'campaign',
+      'utm_source',
+      'utm_medium',
+      'utm_campaign',
+      'sharer_id',
+      'sharerId',
+    ];
+
+    for (final key in keys) {
+      final current = merged[key]?.trim();
+      if (current != null && current.isNotEmpty) {
+        continue;
+      }
+      final v = fallback.queryParameters[key]?.trim();
+      if (v != null && v.isNotEmpty) {
+        merged[key] = v;
+      }
+    }
+
+    return base.replace(queryParameters: merged.isEmpty ? null : merged);
+  }
+
+  Uri? _normalizeIncomingUri(Uri uri) {
+    var normalized = DeepLinkParser.normalizeHostIfNeeded(uri);
+
+    final embedded = DeepLinkParser.extractDeepLinkFromLanding(normalized);
+    if (embedded != null) {
+      var inner = DeepLinkParser.normalizeHostIfNeeded(embedded);
+      inner = DeepLinkParser.normalizeOpenApiPathIfNeeded(inner);
+      inner = _mergeTrackingQuery(base: inner, fallback: normalized);
+      normalized = inner;
+    } else {
+      normalized = DeepLinkParser.normalizeOpenApiPathIfNeeded(normalized);
+    }
+
     if (!DeepLinkParser.isSupportedDeepLink(normalized)) {
+      return null;
+    }
+    return normalized;
+  }
+
+  Future<void> handleIncomingUri(Uri uri, {bool isResume = false}) async {
+    final normalized = _normalizeIncomingUri(uri);
+    if (normalized == null) {
       return;
     }
 
@@ -99,35 +154,36 @@ class DeepLinkService {
       return;
     }
 
-    final utm = _utmFromUri(normalized);
+    final tracking = _trackingFromUri(normalized);
     final sharerId = _sharerIdFromUri(normalized);
     final platform = _platformLabel();
 
     await _remoteDataSource.postDeepLinkEvent(
-      action: 'link_received',
+      action: 'click',
       url: urlStr,
-      source: utm['source'],
-      medium: utm['medium'],
-      campaign: utm['campaign'],
+      source: tracking['source'],
+      medium: tracking['medium'],
+      campaign: tracking['campaign'],
       sharerId: sharerId,
       platform: platform,
     );
 
     final resolved = await _remoteDataSource.resolve(urlStr);
-
     if (resolved != null) {
       await _remoteDataSource.postDeepLinkEvent(
-        action: 'link_resolved',
+        action: 'resolve',
         url: resolved.canonicalUrl ?? urlStr,
-        source: utm['source'],
-        medium: utm['medium'],
-        campaign: utm['campaign'],
+        source: tracking['source'],
+        medium: tracking['medium'],
+        campaign: tracking['campaign'],
         sharerId: sharerId,
         platform: platform,
       );
     }
 
-    final pendingUrl = (resolved?.canonicalUrl != null && resolved!.canonicalUrl!.trim().isNotEmpty)
+    final pendingUrl =
+        (resolved?.canonicalUrl != null &&
+            resolved!.canonicalUrl!.trim().isNotEmpty)
         ? resolved.canonicalUrl!.trim()
         : urlStr;
 
@@ -140,6 +196,17 @@ class DeepLinkService {
       return;
     }
 
+    if (resolved != null &&
+        resolved.status != DeepLinkResolveStatus.ok &&
+        !(resolved.status == DeepLinkResolveStatus.forbidden &&
+            resolved.requiresAuth)) {
+      _pushFallback(
+        fallbackUrl: resolved.fallbackUrl,
+        message: _messageForStatus(resolved.status),
+      );
+      return;
+    }
+
     DeepLinkDispatchTarget? apiTarget;
     if (resolved != null && resolved.status == DeepLinkResolveStatus.ok) {
       apiTarget = DeepLinkDispatcher.dispatch(resolved);
@@ -147,24 +214,12 @@ class DeepLinkService {
     final localTarget = DeepLinkDispatcher.dispatchFromCanonicalUri(normalized);
     final target = apiTarget ?? localTarget;
 
-    if (resolved != null && resolved.status == DeepLinkResolveStatus.expired) {
-      await _emitFailed(urlStr, utm, sharerId, platform);
-      _pushFallback(fallbackUrl: resolved.fallbackUrl, message: _messageForStatus(DeepLinkResolveStatus.expired));
-      return;
-    }
-
-    if (resolved != null &&
-        resolved.status == DeepLinkResolveStatus.forbidden &&
-        !resolved.requiresAuth) {
-      await _emitFailed(urlStr, utm, sharerId, platform);
-      _pushFallback(fallbackUrl: resolved.fallbackUrl, message: _messageForStatus(DeepLinkResolveStatus.forbidden));
-      return;
-    }
-
     if (target == null) {
-      await _emitFailed(urlStr, utm, sharerId, platform);
       if (resolved == null) {
-        _pushFallback(fallbackUrl: null, message: 'تعذر التحقق من الرابط.');
+        _pushFallback(
+          fallbackUrl: null,
+          message: 'Unable to verify deep link.',
+        );
       } else {
         _pushFallback(
           fallbackUrl: resolved.fallbackUrl,
@@ -184,53 +239,44 @@ class DeepLinkService {
       return;
     }
 
-    final pushed = await _pushNamedWithRetry(target.routeName, target.arguments);
-    if (pushed) {
-      await _remoteDataSource.postDeepLinkEvent(
-        action: 'link_open_success',
-        url: resolved?.canonicalUrl ?? urlStr,
-        source: utm['source'],
-        medium: utm['medium'],
-        campaign: utm['campaign'],
-        sharerId: sharerId,
-        platform: platform,
+    final pushed = await _pushNamedWithRetry(
+      target.routeName,
+      target.arguments,
+    );
+    if (!pushed) {
+      _pushFallback(
+        fallbackUrl: resolved?.fallbackUrl,
+        message: 'Unable to open deep link.',
       );
-    } else {
-      await _emitFailed(urlStr, utm, sharerId, platform);
+      return;
     }
-  }
 
-  bool _routeNeedsLocalAuth(DeepLinkDispatchTarget target) {
-    return target.routeName == '/votefollowup' || target.routeName == '/group-order/followup';
-  }
-
-  Future<void> _emitFailed(
-    String url,
-    Map<String, String> utm,
-    int? sharerId,
-    String platform,
-  ) async {
     await _remoteDataSource.postDeepLinkEvent(
-      action: 'link_open_failed',
-      url: url,
-      source: utm['source'],
-      medium: utm['medium'],
-      campaign: utm['campaign'],
+      action: 'open',
+      url: resolved?.canonicalUrl ?? urlStr,
+      source: tracking['source'],
+      medium: tracking['medium'],
+      campaign: tracking['campaign'],
       sharerId: sharerId,
       platform: platform,
     );
   }
 
+  bool _routeNeedsLocalAuth(DeepLinkDispatchTarget target) {
+    return target.routeName == '/votefollowup' ||
+        target.routeName == '/group-order/followup';
+  }
+
   String? _messageForStatus(DeepLinkResolveStatus st) {
     switch (st) {
       case DeepLinkResolveStatus.notFound:
-        return 'الرابط غير موجود.';
+        return 'The link was not found.';
       case DeepLinkResolveStatus.expired:
-        return 'انتهت صلاحية هذا الرابط.';
+        return 'This link has expired.';
       case DeepLinkResolveStatus.forbidden:
-        return 'لا يمكنك الوصول إلى هذا المحتوى.';
+        return 'You do not have access to this content.';
       default:
-        return 'تعذر فتح هذا الرابط.';
+        return 'Unable to open this link.';
     }
   }
 

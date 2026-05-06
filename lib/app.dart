@@ -1,15 +1,30 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import 'core/di/injection.dart';
+import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/routes/app_router.dart';
 import 'features/auth/view/screens/login_screen.dart';
 import 'features/main/view/screens/main_screen.dart';
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App({super.key, required this.navigatorKey});
 
   final GlobalKey<NavigatorState> navigatorKey;
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(getIt<CleaningBookingPusherService>().ensureInitialized());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +32,7 @@ class App extends StatelessWidget {
     final hasAuthToken = token != null && token.toString().trim().isNotEmpty;
 
     return MaterialApp(
-      navigatorKey: navigatorKey,
+      navigatorKey: widget.navigatorKey,
       title: 'دللني',
       debugShowCheckedModeBanner: false,
       locale: context.locale,

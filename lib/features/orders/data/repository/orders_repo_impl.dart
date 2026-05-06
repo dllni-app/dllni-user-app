@@ -18,10 +18,12 @@ import '../../domain/usecases/place_restaurant_order_use_case.dart';
 import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_order_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
+import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/orders_api_models.dart';
+import '../models/submit_cleaning_review_model.dart';
 import '../source/orders_remote_data_source.dart';
 
 @LazySingleton(as: OrdersRepo)
@@ -99,6 +101,15 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
     return wrapHandlingException(
       tryCall: () =>
           ordersRemoteDataSource.extendCleaningCompletionTime(params),
+    );
+  }
+
+  @override
+  DataResponse<SubmitCleaningReviewModel> submitCleaningReview(
+    SubmitCleaningReviewParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.submitCleaningReview(params),
     );
   }
 

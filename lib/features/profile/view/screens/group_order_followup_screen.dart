@@ -28,9 +28,6 @@ import '../widgets/group_order_options_section.dart';
 import '../widgets/group_order_requested_foods_section.dart';
 import '../widgets/personal_details_app_bar.dart';
 
-const String _kGroupOrderPusherKey = 'e85e7756c1171baaa471';
-const String _kGroupOrderPusherCluster = 'eu';
-
 class GroupOrderFollowupScreenParams {
   final int groupOrderId;
   final bool needShare;
@@ -100,8 +97,9 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
     _channelName = channelName;
     try {
       await _pusher.init(
-        apiKey: _kGroupOrderPusherKey,
-        cluster: _kGroupOrderPusherCluster,
+        apiKey: AppConfig.pusherKey,
+        cluster: AppConfig.pusherCluster,
+        useTLS: true,
         authEndpoint: '${AppConfig.baseUrl}/broadcasting/auth',
         onAuthorizer: (channelName_, socketId, dynamic options) async {
           final token = (SharedPreferencesHelper.getData(key: 'token') ?? '').toString();
@@ -109,7 +107,11 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
             '/broadcasting/auth',
             data: <String, dynamic>{'channel_name': channelName_, 'socket_id': socketId},
             options: Options(
-              headers: <String, dynamic>{'Accept': 'application/json', if (token.isNotEmpty) 'Authorization': 'Bearer $token'},
+              headers: <String, dynamic>{
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+              },
               contentType: Headers.formUrlEncodedContentType,
               responseType: ResponseType.json,
             ),

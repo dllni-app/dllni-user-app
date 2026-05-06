@@ -1,11 +1,5 @@
 /// Resolver business status (API Contract V1 — returned in JSON body on HTTP 200).
-enum DeepLinkResolveStatus {
-  ok,
-  notFound,
-  forbidden,
-  expired,
-  unknown,
-}
+enum DeepLinkResolveStatus { ok, notFound, forbidden, expired, unknown }
 
 DeepLinkResolveStatus deepLinkResolveStatusFromString(String? raw) {
   switch ((raw ?? '').trim().toLowerCase()) {
@@ -38,6 +32,7 @@ class DeepLinkResolveResult {
     this.canonicalUrl,
     this.fallbackUrl,
     this.target,
+    this.query,
     this.raw,
   });
 
@@ -51,6 +46,9 @@ class DeepLinkResolveResult {
 
   /// When present, refines navigation (e.g. supermarket vs restaurant product).
   final String? target;
+
+  /// Optional query metadata returned by resolver.
+  final Map<String, dynamic>? query;
 
   final Map<String, dynamic>? raw;
 
@@ -66,21 +64,27 @@ class DeepLinkResolveResult {
     }
 
     final slugVal = json['slug'];
-    final slug = slugVal == null ? null : slugVal.toString();
+    final slug = slugVal?.toString();
 
     final targetVal = json['target'];
-    final target = targetVal == null ? null : targetVal.toString();
+    final target = targetVal?.toString();
 
-    final requiresAuth = _readBool(json, 'requires_auth') ?? _readBool(json, 'requiresAuth') ?? false;
+    final queryVal = json['query'];
+    final query = queryVal is Map<String, dynamic> ? queryVal : null;
+
+    final requiresAuth =
+        _readBool(json, 'requires_auth') ??
+        _readBool(json, 'requiresAuth') ??
+        false;
 
     final canonical = json['canonical_url'] ?? json['canonicalUrl'];
     final fallback = json['fallback_url'] ?? json['fallbackUrl'];
 
     final typeVal = json['type'];
-    final type = typeVal == null ? '' : typeVal.toString().trim();
+    final type = typeVal?.toString().trim() ?? '';
 
     final statusRaw = json['status'];
-    final statusStr = statusRaw == null ? null : statusRaw.toString();
+    final statusStr = statusRaw?.toString();
 
     return DeepLinkResolveResult(
       type: type,
@@ -88,9 +92,10 @@ class DeepLinkResolveResult {
       slug: slug,
       status: deepLinkResolveStatusFromString(statusStr),
       requiresAuth: requiresAuth,
-      canonicalUrl: canonical == null ? null : canonical.toString(),
-      fallbackUrl: fallback == null ? null : fallback.toString(),
+      canonicalUrl: canonical?.toString(),
+      fallbackUrl: fallback?.toString(),
       target: target,
+      query: query,
       raw: json,
     );
   }

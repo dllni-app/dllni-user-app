@@ -3,21 +3,20 @@ import 'dart:convert';
 
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
-import 'package:dio/dio.dart';
-import 'package:dllni_user_app/core/app_config.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
+import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../cl_main/view/widgets/cl_service_address_section_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_day_preview_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_section_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_time_picker_field_widget.dart';
+import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_start_verification_use_case.dart';
@@ -29,9 +28,10 @@ import '../manager/bloc/orders_bloc.dart';
 import '../widgets/cleaning_cancel_reason_dialog.dart';
 import 'cleaning_order_problem_report_screen.dart';
 import 'cleaning_order_reschedule_screen.dart';
-
-const String _kCleaningPusherKey = 'e85e7756c1171baaa471';
-const String _kCleaningPusherCluster = 'eu';
+import 'cleaning_worker_rating_screen.dart';
+import '../widgets/cleaning_worker_tracking_map.dart';
+import '../widgets/cleaning_completion_decision_sheet.dart';
+import '../widgets/cleaning_start_verification_dialog.dart';
 
 class CleaningOrderDetailsArgs {
   const CleaningOrderDetailsArgs({required this.orderId});
@@ -46,47 +46,47 @@ class CleaningOrderDetailsScreen extends StatefulWidget {
   final CleaningOrderDetailsArgs args;
 
   @override
-  State<CleaningOrderDetailsScreen> createState() => _CleaningOrderDetailsScreenState();
+  State<CleaningOrderDetailsScreen> createState() =>
+      _CleaningOrderDetailsScreenState();
 }
 
-class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen> {
+class _CleaningOrderDetailsScreenState
+    extends State<CleaningOrderDetailsScreen> {
   CleaningOrderDetailModel? _order;
   bool _isLoading = true;
   String? _loadError;
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
-  late TextEditingController _pinController;
 
-  final PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
-  String? _cleaningPusherChannelName;
+  late final CleaningBookingPusherService _pusherService;
   double? _workerLiveLatitude;
   double? _workerLiveLongitude;
 
   String? _gateError;
   bool _gateSubmitting = false;
+  bool _verifyDialogDismissed = false;
+  bool _verifyDialogOpen = false;
+  bool _completionSheetDismissed = false;
+  bool _completionSheetOpen = false;
 
   @override
   void initState() {
     super.initState();
     _fromTimeController = TextEditingController();
     _toTimeController = TextEditingController();
-    _pinController = TextEditingController();
-    _fetchDetails();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_connectCleaningPusher());
-    });
+    _pusherService = getIt<CleaningBookingPusherService>();
+    _fetchDetails(triggerGatePrompts: true);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _connectCleaningPusher(),
+    );
   }
 
   @override
   void dispose() {
-    final channel = _cleaningPusherChannelName;
-    if (channel != null) {
-      unawaited(_pusher.unsubscribe(channelName: channel).catchError((Object _) {}));
-    }
-    unawaited(_pusher.disconnect().catchError((Object _) {}));
+    _pusherService.setBookingHandler(widget.args.orderId, null);
+    unawaited(_pusherService.unsubscribeBookingChannel(widget.args.orderId));
     _fromTimeController.dispose();
     _toTimeController.dispose();
-    _pinController.dispose();
     super.dispose();
   }
 
@@ -94,85 +94,41 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
 
   bool _blocksCancel(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
-    return s == 'awaiting_start_verification' || s == 'awaiting_customer_completion';
+    return s == CleaningBookingStatus.awaitingStartVerification ||
+        s == CleaningBookingStatus.awaitingCustomerCompletion;
   }
 
   bool _blocksReschedule(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
-    return s == 'awaiting_start_verification' ||
-        s == 'awaiting_customer_completion' ||
-        s == 'in_progress' ||
-        s == 'time_extension_requested';
+    return s == CleaningBookingStatus.awaitingStartVerification ||
+        s == CleaningBookingStatus.awaitingCustomerCompletion ||
+        s == CleaningBookingStatus.inProgress ||
+        s == CleaningBookingStatus.timeExtensionRequested;
   }
 
-  Future<void> _connectCleaningPusher() async {
+  void _connectCleaningPusher() {
     if (!mounted) return;
     final bookingId = widget.args.orderId;
-    final channelName = 'private-cleaning-booking.$bookingId';
-    _cleaningPusherChannelName = channelName;
-    try {
-      await _pusher.init(
-        apiKey: _kCleaningPusherKey,
-        cluster: _kCleaningPusherCluster,
-        authEndpoint: '${AppConfig.baseUrl}/broadcasting/auth',
-        onAuthorizer: (channelName_, socketId, dynamic options) async {
-          final token = (SharedPreferencesHelper.getData(key: 'token') ?? '').toString();
-          final res = await DioNetwork.dio.post<Map<String, dynamic>>(
-            '/broadcasting/auth',
-            data: <String, dynamic>{'channel_name': channelName_, 'socket_id': socketId},
-            options: Options(
-              headers: <String, dynamic>{
-                'Accept': 'application/json',
-                if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-              },
-              contentType: Headers.formUrlEncodedContentType,
-              responseType: ResponseType.json,
-            ),
-          );
-          final body = res.data;
-          if (body == null || body['auth'] == null) {
-            throw StateError('Invalid broadcasting auth response');
-          }
-          return <String, dynamic>{
-            'auth': body['auth'],
-            if (body['channel_data'] != null) 'channel_data': body['channel_data'],
-          };
-        },
-        onSubscriptionError: (message, e) {
-          debugPrint('Cleaning Pusher subscription error: $message $e');
-        },
-        onError: (message, code, e) {
-          debugPrint('Cleaning Pusher error: $message code=$code $e');
-        },
-        onEvent: _onCleaningPusherEvent,
-      );
-      if (!mounted) return;
-      await _pusher.connect();
-      if (!mounted) return;
-      await _pusher.subscribe(channelName: channelName);
-    } catch (e, st) {
-      debugPrint('Cleaning Pusher connect failed: $e\n$st');
-    }
+    _pusherService.setBookingHandler(bookingId, _onCleaningPusherEvent);
+    unawaited(_pusherService.subscribeBookingChannel(bookingId));
   }
 
-  void _onCleaningPusherEvent(PusherEvent event) {
-    final expected = _cleaningPusherChannelName;
-    if (expected == null || event.channelName != expected) {
+  void _onCleaningPusherEvent(String eventName, Map<String, dynamic> payload) {
+    if (eventName == 'WorkerLocationUpdated') {
+      _applyWorkerLocation(payload);
       return;
     }
-    if (event.eventName == 'WorkerLocationUpdated') {
-      _applyWorkerLocation(event.data);
-      return;
-    }
-    switch (event.eventName) {
+    switch (eventName) {
       case 'CleaningBookingTrackingUpdated':
       case 'WorkerArrived':
+      case 'SecurityCodeIssued':
       case 'cleaning_order.awaiting_start_verification':
+      case 'cleaning_order.security_code_issued':
       case 'cleaning_order.awaiting_customer_completion':
       case 'ArrivalVerified':
       case 'CompletionDecisionMade':
       case 'ServiceExtensionRequested':
-        unawaited(_fetchDetails(showLoading: false));
+        unawaited(_fetchDetails(showLoading: false, triggerGatePrompts: true));
         return;
       default:
         return;
@@ -213,16 +169,20 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     return raw.map((dynamic k, dynamic v) => MapEntry(k.toString(), v));
   }
 
-  Future<void> _fetchDetails({bool showLoading = true}) async {
+  Future<void> _fetchDetails({
+    bool showLoading = true,
+    bool triggerGatePrompts = false,
+  }) async {
     if (showLoading) {
       setState(() {
         _isLoading = true;
         _loadError = null;
       });
     }
-    final Either<Failure, FetchCleaningOrderDetailsModel> response = await getIt<FetchCleaningOrderDetailsUseCase>()(
-      FetchCleaningOrderDetailsParams(orderId: widget.args.orderId),
-    );
+    final Either<Failure, FetchCleaningOrderDetailsModel> response =
+        await getIt<FetchCleaningOrderDetailsUseCase>()(
+          FetchCleaningOrderDetailsParams(orderId: widget.args.orderId),
+        );
     if (!mounted) return;
     response.fold(
       (failure) => setState(() {
@@ -241,16 +201,18 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
         }
       }),
     );
+    if (triggerGatePrompts) {
+      unawaited(_maybePromptForVerifyGate());
+      unawaited(_maybePromptForCompletionGate());
+    }
   }
 
-  Future<void> _submitStartVerification(CleaningOrderDetailModel order) async {
+  Future<String?> _confirmStartVerification(
+    String code,
+    CleaningOrderDetailModel order,
+  ) async {
     final orderId = order.id;
-    if (orderId == null) return;
-    final code = _pinController.text.trim();
-    if (code.length != 4) {
-      setState(() => _gateError = 'الرجاء إدخال 4 أرقام');
-      return;
-    }
+    if (orderId == null) return 'تعذر تحديد الطلب';
     setState(() {
       _gateSubmitting = true;
       _gateError = null;
@@ -258,26 +220,71 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     final response = await getIt<ConfirmCleaningStartVerificationUseCase>()(
       ConfirmCleaningStartVerificationParams(orderId: orderId, code: code),
     );
-    if (!mounted) return;
+    if (!mounted) return null;
+    String? errorMessage;
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        _gateError = failure.message;
+        errorMessage = _mapVerificationError(failure.message);
+        _gateError = errorMessage;
       }),
       (result) {
         setState(() {
           _gateSubmitting = false;
           _gateError = null;
           _order = result.data;
-          _pinController.clear();
+          _verifyDialogDismissed = false;
         });
       },
     );
+    if (!mounted) return errorMessage;
+    return errorMessage;
   }
 
-  Future<void> _submitCompletionConfirm(CleaningOrderDetailModel order) async {
+  String _mapVerificationError(String message) {
+    final normalized = message.toLowerCase();
+    if (normalized.contains('429') ||
+        normalized.contains('too many') ||
+        normalized.contains('محاولات')) {
+      return 'محاولات كثيرة، انتظر دقيقة ثم حاول مجدداً.';
+    }
+    if (normalized.contains('code') ||
+        normalized.contains('رمز') ||
+        normalized.contains('verification')) {
+      return 'الرمز غير صحيح، حاول مرة أخرى.';
+    }
+    return message;
+  }
+
+  Future<void> _maybePromptForVerifyGate({bool force = false}) async {
+    final order = _order;
+    if (!mounted || order == null) return;
+    final status = _normStatus(order.status);
+    if (status != CleaningBookingStatus.awaitingStartVerification) {
+      _verifyDialogDismissed = false;
+      return;
+    }
+    if (_verifyDialogOpen) return;
+    if (_verifyDialogDismissed && !force) return;
+    _verifyDialogOpen = true;
+    final confirmed = await CleaningStartVerificationDialog.show(
+      context,
+      onSubmit: (code) => _confirmStartVerification(code, order),
+    );
+    if (!mounted) return;
+    _verifyDialogOpen = false;
+    if (!confirmed) {
+      setState(() => _verifyDialogDismissed = true);
+      return;
+    }
+    unawaited(_fetchDetails(showLoading: false));
+  }
+
+  Future<String?> _submitCompletionConfirm(
+    CleaningOrderDetailModel order,
+  ) async {
     final orderId = order.id;
-    if (orderId == null) return;
+    if (orderId == null) return 'تعذر تحديد الطلب';
     setState(() {
       _gateSubmitting = true;
       _gateError = null;
@@ -285,11 +292,13 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     final response = await getIt<ConfirmCleaningCompletionUseCase>()(
       ConfirmCleaningCompletionParams(orderId: orderId),
     );
-    if (!mounted) return;
+    if (!mounted) return 'تعذر تحديث الحالة';
+    String? errorMessage;
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        _gateError = failure.message;
+        errorMessage = failure.message;
+        _gateError = errorMessage;
       }),
       (result) => setState(() {
         _gateSubmitting = false;
@@ -297,11 +306,15 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
         _order = result.data;
       }),
     );
+    return errorMessage;
   }
 
-  Future<void> _submitCompletionReject(CleaningOrderDetailModel order, String? reason) async {
+  Future<String?> _submitCompletionReject(
+    CleaningOrderDetailModel order,
+    String? reason,
+  ) async {
     final orderId = order.id;
-    if (orderId == null) return;
+    if (orderId == null) return 'تعذر تحديد الطلب';
     setState(() {
       _gateSubmitting = true;
       _gateError = null;
@@ -309,11 +322,13 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     final response = await getIt<RejectCleaningCompletionUseCase>()(
       RejectCleaningCompletionParams(orderId: orderId, reason: reason),
     );
-    if (!mounted) return;
+    if (!mounted) return 'تعذر تحديث الحالة';
+    String? errorMessage;
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        _gateError = failure.message;
+        errorMessage = failure.message;
+        _gateError = errorMessage;
       }),
       (result) => setState(() {
         _gateSubmitting = false;
@@ -321,23 +336,32 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
         _order = result.data;
       }),
     );
+    return errorMessage;
   }
 
-  Future<void> _submitExtendTime(CleaningOrderDetailModel order, int? additionalMinutes) async {
+  Future<String?> _submitExtendTime(
+    CleaningOrderDetailModel order,
+    int? additionalMinutes,
+  ) async {
     final orderId = order.id;
-    if (orderId == null) return;
+    if (orderId == null) return 'تعذر تحديد الطلب';
     setState(() {
       _gateSubmitting = true;
       _gateError = null;
     });
     final response = await getIt<ExtendCleaningCompletionTimeUseCase>()(
-      ExtendCleaningCompletionTimeParams(orderId: orderId, additionalMinutes: additionalMinutes),
+      ExtendCleaningCompletionTimeParams(
+        orderId: orderId,
+        additionalMinutes: additionalMinutes,
+      ),
     );
-    if (!mounted) return;
+    if (!mounted) return 'تعذر تحديث الحالة';
+    String? errorMessage;
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        _gateError = failure.message;
+        errorMessage = failure.message;
+        _gateError = errorMessage;
       }),
       (result) => setState(() {
         _gateSubmitting = false;
@@ -345,76 +369,57 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
         _order = result.data;
       }),
     );
+    return errorMessage;
   }
 
-  Future<void> _showRejectCompletionDialog(CleaningOrderDetailModel order) async {
-    final controller = TextEditingController();
-    final submitted = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('لم يكتمل العمل'),
-          content: TextField(
-            controller: controller,
-            maxLines: 3,
-            maxLength: 500,
-            decoration: const InputDecoration(
-              hintText: 'سبب اختياري',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('إرسال'),
-            ),
-          ],
-        );
-      },
+  Future<void> _openCompletionSheet({bool force = false}) async {
+    final order = _order;
+    if (order == null || !mounted) return;
+    final status = _normStatus(order.status);
+    if (status != CleaningBookingStatus.awaitingCustomerCompletion) return;
+    if (_completionSheetOpen) return;
+    if (_completionSheetDismissed && !force) return;
+    _completionSheetOpen = true;
+    final decision = await CleaningCompletionDecisionSheet.show(
+      context,
+      onConfirm: () => _submitCompletionConfirm(order),
+      onReject: (reason) => _submitCompletionReject(order, reason),
+      onExtend: (minutes) => _submitExtendTime(order, minutes),
     );
-    final reasonText = controller.text.trim();
-    controller.dispose();
-    if (submitted == true && mounted) {
-      await _submitCompletionReject(order, reasonText.isEmpty ? null : reasonText);
-    }
-  }
-
-  Future<void> _showExtendTimeDialog(CleaningOrderDetailModel order) async {
-    final controller = TextEditingController(text: '30');
-    final submitted = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('طلب وقت إضافي'),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'دقائق إضافية (1–480)',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('تأكيد'),
-            ),
-          ],
-        );
-      },
-    );
-    final raw = controller.text.trim();
-    controller.dispose();
-    if (submitted != true || !mounted) return;
-    final minutes = int.tryParse(raw);
-    if (minutes == null || minutes < 1 || minutes > 480) {
-      setState(() => _gateError = 'أدخل عدد دقائق بين 1 و 480');
+    if (!mounted) return;
+    _completionSheetOpen = false;
+    if (decision == null) {
+      setState(() => _completionSheetDismissed = true);
       return;
     }
-    await _submitExtendTime(order, minutes);
+    setState(() => _completionSheetDismissed = false);
+    if (decision == CleaningCompletionDecision.confirmed && mounted) {
+      final updatedOrder = _order;
+      final worker = updatedOrder?.worker;
+      if (updatedOrder?.id != null) {
+        context.pushRoute(
+          '/cleaning-worker-rating',
+          arguments: CleaningWorkerRatingArgs(
+            orderId: updatedOrder!.id!,
+            workerId: worker?.id,
+            workerName: worker?.name,
+            workerAvatarUrl: worker?.avatarUrl,
+          ),
+        );
+      }
+    }
+    unawaited(_fetchDetails(showLoading: false));
+  }
+
+  Future<void> _maybePromptForCompletionGate({bool force = false}) async {
+    final order = _order;
+    if (!mounted || order == null) return;
+    final status = _normStatus(order.status);
+    if (status != CleaningBookingStatus.awaitingCustomerCompletion) {
+      _completionSheetDismissed = false;
+      return;
+    }
+    await _openCompletionSheet(force: force);
   }
 
   String _serviceLabel(String? propertyType) {
@@ -469,7 +474,15 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     if (rawDate == null || rawDate.isEmpty) return '-';
     final date = DateTime.tryParse(rawDate);
     if (date == null) return '-';
-    const arabicDays = <String>['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+    const arabicDays = <String>[
+      'الاثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت',
+      'الأحد',
+    ];
     return arabicDays[date.weekday - 1];
   }
 
@@ -488,7 +501,13 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xffE5E7EB)),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: child,
     );
@@ -498,13 +517,17 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     final value = phone?.trim();
     if (value == null || value.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رقم الهاتف غير متوفر')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('رقم الهاتف غير متوفر')));
       return;
     }
     final uri = Uri(scheme: 'tel', path: value);
     final launched = await launchUrl(uri);
     if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح تطبيق الاتصال')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر فتح تطبيق الاتصال')));
     }
   }
 
@@ -512,21 +535,33 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     if (_blocksReschedule(order)) {
       return;
     }
-    final result = await context.pushRoute('/cleaning-order-reschedule', arguments: CleaningOrderRescheduleArgs(order: order.toCleaningOrderModel()));
+    final result = await context.pushRoute(
+      '/cleaning-order-reschedule',
+      arguments: CleaningOrderRescheduleArgs(
+        order: order.toCleaningOrderModel(),
+      ),
+    );
     if (result == true && mounted) {
       _fetchDetails();
     }
   }
 
   void _reportIssue(CleaningOrderDetailModel order) {
-    context.pushRoute('/cleaning-order-problem', arguments: CleaningOrderProblemReportArgs(order: order.toCleaningOrderModel()));
+    context.pushRoute(
+      '/cleaning-order-problem',
+      arguments: CleaningOrderProblemReportArgs(
+        order: order.toCleaningOrderModel(),
+      ),
+    );
   }
 
   Future<void> _cancelOrder(CleaningOrderDetailModel order) async {
     if (_blocksCancel(order)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('أكمل خطوة التحقق أو تأكيد الإكمال قبل الإلغاء')),
+        const SnackBar(
+          content: Text('أكمل خطوة التحقق أو تأكيد الإكمال قبل الإلغاء'),
+        ),
       );
       return;
     }
@@ -535,7 +570,10 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => CleaningCancelReasonDialog(orderId: orderId, bloc: context.read<OrdersBloc>()),
+      builder: (_) => CleaningCancelReasonDialog(
+        orderId: orderId,
+        bloc: context.read<OrdersBloc>(),
+      ),
     );
     if (result == true && mounted) {
       Navigator.of(context).pop(true);
@@ -548,14 +586,24 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
     if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xffF3F4F6),
-        appBar: AppBar(title: const Text('تفاصيل الطلب'), centerTitle: true, backgroundColor: const Color(0xffF3F4F6), elevation: 0),
+        appBar: AppBar(
+          title: const Text('تفاصيل الطلب'),
+          centerTitle: true,
+          backgroundColor: const Color(0xffF3F4F6),
+          elevation: 0,
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     if (_loadError != null) {
       return Scaffold(
         backgroundColor: const Color(0xffF3F4F6),
-        appBar: AppBar(title: const Text('تفاصيل الطلب'), centerTitle: true, backgroundColor: const Color(0xffF3F4F6), elevation: 0),
+        appBar: AppBar(
+          title: const Text('تفاصيل الطلب'),
+          centerTitle: true,
+          backgroundColor: const Color(0xffF3F4F6),
+          elevation: 0,
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -564,7 +612,10 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
               children: [
                 Text(_loadError!, textAlign: TextAlign.center),
                 const SizedBox(height: 8),
-                TextButton(onPressed: () => _fetchDetails(showLoading: true), child: const Text('إعادة المحاولة')),
+                TextButton(
+                  onPressed: () => _fetchDetails(showLoading: true),
+                  child: const Text('إعادة المحاولة'),
+                ),
               ],
             ),
           ),
@@ -585,10 +636,13 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
       );
     }
     final startDateTime = _resolveStartDateTime(order);
-    final endDateTime = startDateTime?.add(Duration(minutes: (_resolveHours(order) * 60).round()));
+    final endDateTime = startDateTime?.add(
+      Duration(minutes: (_resolveHours(order) * 60).round()),
+    );
     _fromTimeController.text = _timeLabel(startDateTime);
     _toTimeController.text = _timeLabel(endDateTime);
-    final isCompleted = _normStatus(order.status) == 'completed';
+    final isCompleted =
+        _normStatus(order.status) == CleaningBookingStatus.completed;
     final statusNorm = _normStatus(order.status);
     final rescheduleLocked = _blocksReschedule(order);
 
@@ -600,7 +654,8 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
             const PersonalDetailsAppBar(title: 'تفاصيل الطلب'),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () => _fetchDetails(showLoading: false),
+                onRefresh: () =>
+                    _fetchDetails(showLoading: false, triggerGatePrompts: true),
                 child: ListView(
                   padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 24),
                   children: [
@@ -610,7 +665,10 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                         children: [
                           const Text(
                             'معلومات الخدمة',
-                            style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xff1F2937)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xff1F2937),
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Row(
@@ -618,15 +676,28 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                               Expanded(
                                 child: Text(
                                   _bookingLabel(order),
-                                  style: const TextStyle(color: Color(0xff9CA3AF), fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    color: Color(0xff9CA3AF),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(color: const Color(0xFFE2F5F4), borderRadius: BorderRadius.circular(16)),
+                                padding: const EdgeInsetsDirectional.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE2F5F4),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                                 child: Text(
                                   cleaningOrderStatusLabelAr(order.status),
-                                  style: const TextStyle(color: Color(0xff0CBBC7), fontWeight: FontWeight.w700, fontSize: 12),
+                                  style: const TextStyle(
+                                    color: Color(0xff0CBBC7),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -634,12 +705,16 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                           const SizedBox(height: 8),
                           Text(
                             _serviceLabel(order.propertyType),
-                            style: const TextStyle(color: Color(0xff111827), fontWeight: FontWeight.w700),
+                            style: const TextStyle(
+                              color: Color(0xff111827),
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    if (statusNorm == 'awaiting_start_verification') ...[
+                    if (statusNorm ==
+                        CleaningBookingStatus.awaitingStartVerification) ...[
                       const SizedBox(height: 12),
                       _card(
                         child: Column(
@@ -647,52 +722,78 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                           children: [
                             const Text(
                               'التحقق من بدء الخدمة',
-                              style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xff1F2937)),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xff1F2937),
+                              ),
                             ),
                             const SizedBox(height: 8),
                             const Text(
-                              'أدخل الرمز المكوّن من 4 أرقام الذي يظهره لك مقدم الخدمة. لا يُعرض الرمز في التطبيق.',
-                              style: TextStyle(color: Color(0xff6B7280), fontSize: 13),
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: _pinController,
-                              keyboardType: TextInputType.number,
-                              maxLength: 4,
-                              obscureText: true,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.w700),
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              decoration: const InputDecoration(
-                                counterText: '',
-                                border: OutlineInputBorder(),
-                                hintText: '••••',
+                              'أدخل رمز الأمان من النافذة المنبثقة لتأكيد بدء العمل.',
+                              style: TextStyle(
+                                color: Color(0xff6B7280),
+                                fontSize: 13,
                               ),
                             ),
                             if (_gateError != null) ...[
                               const SizedBox(height: 8),
                               Text(
                                 _gateError!,
-                                style: const TextStyle(color: Color(0xffDC2626), fontSize: 13),
+                                style: const TextStyle(
+                                  color: Color(0xffDC2626),
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                             const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: _gateSubmitting
+                                  ? null
+                                  : () {
+                                      unawaited(
+                                        _maybePromptForVerifyGate(force: true),
+                                      );
+                                    },
+                              icon: const Icon(Icons.lock_clock_outlined),
+                              label: const Text('إعادة فتح رمز الأمان'),
+                            ),
+                            if (_verifyDialogDismissed) ...[
+                              const SizedBox(height: 8),
+                              const Text(
+                                'تم إغلاق نافذة الرمز. اضغط لإعادة فتحها.',
+                                style: TextStyle(
+                                  color: Color(0xff6B7280),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
                             FilledButton(
-                              onPressed: _gateSubmitting ? null : () => _submitStartVerification(order),
+                              onPressed: _gateSubmitting
+                                  ? null
+                                  : () {
+                                      unawaited(
+                                        _maybePromptForVerifyGate(force: true),
+                                      );
+                                    },
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF1E2A78),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
-                              child: _gateSubmitting
-                                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text('تأكيد الرمز', style: TextStyle(fontWeight: FontWeight.w700)),
+                              child: const Text(
+                                'فتح نافذة إدخال الرمز',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                    if (statusNorm == 'awaiting_customer_completion') ...[
+                    if (statusNorm ==
+                        CleaningBookingStatus.awaitingCustomerCompletion) ...[
                       const SizedBox(height: 12),
                       _card(
                         child: Column(
@@ -700,47 +801,67 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                           children: [
                             const Text(
                               'تأكيد إكمال العمل',
-                              style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xff1F2937)),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xff1F2937),
+                              ),
                             ),
                             const SizedBox(height: 8),
                             const Text(
                               'أبلغ مقدم الخدمة عن انتهاء العمل. يمكنك تأكيد الإكمال أو الإبلاغ بأن العمل لم يكتمل، أو طلب وقت إضافي.',
-                              style: TextStyle(color: Color(0xff6B7280), fontSize: 13),
+                              style: TextStyle(
+                                color: Color(0xff6B7280),
+                                fontSize: 13,
+                              ),
                             ),
+                            if (_completionSheetDismissed) ...[
+                              const SizedBox(height: 8),
+                              const Text(
+                                'تم إغلاق نافذة القرار. اضغط لإعادة فتحها.',
+                                style: TextStyle(
+                                  color: Color(0xff6B7280),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                             if (_gateError != null) ...[
                               const SizedBox(height: 8),
                               Text(
                                 _gateError!,
-                                style: const TextStyle(color: Color(0xffDC2626), fontSize: 13),
+                                style: const TextStyle(
+                                  color: Color(0xffDC2626),
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                             const SizedBox(height: 12),
-                            FilledButton(
-                              onPressed: _gateSubmitting ? null : () => _submitCompletionConfirm(order),
+                            FilledButton.icon(
+                              onPressed: _gateSubmitting
+                                  ? null
+                                  : () {
+                                      unawaited(
+                                        _openCompletionSheet(force: true),
+                                      );
+                                    },
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF0CBBC7),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
-                              child: _gateSubmitting
-                                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text('تأكيد الإكمال', style: TextStyle(fontWeight: FontWeight.w700)),
-                            ),
-                            const SizedBox(height: 10),
-                            OutlinedButton(
-                              onPressed: _gateSubmitting ? null : () => _showRejectCompletionDialog(order),
-                              child: const Text('العمل لم يكتمل بعد'),
-                            ),
-                            const SizedBox(height: 8),
-                            OutlinedButton(
-                              onPressed: _gateSubmitting ? null : () => _showExtendTimeDialog(order),
-                              child: const Text('طلب وقت إضافي'),
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: const Text(
+                                'فتح نافذة اتخاذ القرار',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                    if (statusNorm == 'time_extension_requested') ...[
+                    if (statusNorm ==
+                        CleaningBookingStatus.timeExtensionRequested) ...[
                       const SizedBox(height: 12),
                       _card(
                         child: const Row(
@@ -750,7 +871,10 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                             Expanded(
                               child: Text(
                                 'تم إرسال طلب تمديد الوقت. سيتم إشعارك عند تحديث الحالة.',
-                                style: TextStyle(color: Color(0xff374151), fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  color: Color(0xff374151),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -767,28 +891,46 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                           Row(
                             children: [
                               Expanded(
-                                child: ClServiceDayPreviewCardWidget(dayAr: _dayLabel(order.scheduledDate), dayDate: _dayDateEnLabel(order.scheduledDate)),
+                                child: ClServiceDayPreviewCardWidget(
+                                  dayAr: _dayLabel(order.scheduledDate),
+                                  dayDate: _dayDateEnLabel(order.scheduledDate),
+                                ),
                               ),
                               const SizedBox(width: 10),
                               FilledButton(
-                                onPressed: rescheduleLocked ? null : () => _goToReschedule(order),
+                                onPressed: rescheduleLocked
+                                    ? null
+                                    : () => _goToReschedule(order),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: const Color(0xFF1E2A78),
                                   foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
-                                child: AppText.bodyMedium('تغيير اليوم', color: Colors.white, fontWeight: FontWeight.w600),
+                                child: AppText.bodyMedium(
+                                  'تغيير اليوم',
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 12),
                           Container(
                             padding: const EdgeInsetsDirectional.all(12),
-                            decoration: BoxDecoration(color: const Color(0xFFF7F7F9), borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF7F7F9),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                AppText.bodyMedium('مدة الخدمة', color: const Color(0xFF656B78), fontWeight: FontWeight.w700),
+                                AppText.bodyMedium(
+                                  'مدة الخدمة',
+                                  color: const Color(0xFF656B78),
+                                  fontWeight: FontWeight.w700,
+                                ),
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
@@ -796,7 +938,9 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                                       child: ClServiceTimePickerFieldWidget(
                                         title: 'من',
                                         controller: _fromTimeController,
-                                        onTap: rescheduleLocked ? () {} : () => _goToReschedule(order),
+                                        onTap: rescheduleLocked
+                                            ? () {}
+                                            : () => _goToReschedule(order),
                                       ),
                                     ),
                                     const SizedBox(width: 10),
@@ -804,7 +948,9 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                                       child: ClServiceTimePickerFieldWidget(
                                         title: 'إلى',
                                         controller: _toTimeController,
-                                        onTap: rescheduleLocked ? () {} : () => _goToReschedule(order),
+                                        onTap: rescheduleLocked
+                                            ? () {}
+                                            : () => _goToReschedule(order),
                                       ),
                                     ),
                                   ],
@@ -816,16 +962,24 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: rescheduleLocked ? null : () => _goToReschedule(order),
+                              onPressed: rescheduleLocked
+                                  ? null
+                                  : () => _goToReschedule(order),
                               style: ElevatedButton.styleFrom(
                                 elevation: 0,
                                 backgroundColor: const Color(0xffE5E7EB),
                                 foregroundColor: const Color(0xff1E2A78),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                               child: Text(
-                                rescheduleLocked ? 'تغيير الموعد غير متاح حالياً' : 'تغيير موعد الخدمة',
-                                style: const TextStyle(fontWeight: FontWeight.w700),
+                                rescheduleLocked
+                                    ? 'تغيير الموعد غير متاح حالياً'
+                                    : 'تغيير موعد الخدمة',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
@@ -833,8 +987,30 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ClServiceAddressSectionWidget(locationName: order.locationName ?? 'المنزل', address: order.propertyDetails?.address ?? '-'),
+                    ClServiceAddressSectionWidget(
+                      locationName: order.locationName ?? 'المنزل',
+                      address: order.propertyDetails?.address ?? '-',
+                    ),
                     const SizedBox(height: 12),
+                    if (order.addressLatitude != null &&
+                        order.addressLongitude != null) ...[
+                      CleaningWorkerTrackingMap(
+                        customerLatLng: LatLng(
+                          order.addressLatitude!,
+                          order.addressLongitude!,
+                        ),
+                        workerLatLng:
+                            (_workerLiveLatitude != null &&
+                                _workerLiveLongitude != null)
+                            ? LatLng(
+                                _workerLiveLatitude!,
+                                _workerLiveLongitude!,
+                              )
+                            : null,
+                        bookingStatus: statusNorm,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     _card(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -843,8 +1019,12 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                             children: [
                               CircleAvatar(
                                 radius: 20,
-                                backgroundImage: order.worker?.avatarUrl == null ? null : NetworkImage(order.worker!.avatarUrl!),
-                                child: order.worker?.avatarUrl == null ? const Icon(Icons.person, size: 20) : null,
+                                backgroundImage: order.worker?.avatarUrl == null
+                                    ? null
+                                    : NetworkImage(order.worker!.avatarUrl!),
+                                child: order.worker?.avatarUrl == null
+                                    ? const Icon(Icons.person, size: 20)
+                                    : null,
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -853,12 +1033,18 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                                   children: [
                                     Text(
                                       order.worker?.name ?? 'مقدم الخدمة',
-                                      style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xff1F2937)),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xff1F2937),
+                                      ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       '⭐ ${order.worker?.averageRating?.toStringAsFixed(1) ?? '-'} • مقدم الخدمة',
-                                      style: const TextStyle(color: Color(0xff6B7280), fontSize: 12),
+                                      style: const TextStyle(
+                                        color: Color(0xff6B7280),
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -869,24 +1055,40 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                                 child: Container(
                                   width: 38,
                                   height: 38,
-                                  decoration: BoxDecoration(color: const Color(0xffF3F4F6), borderRadius: BorderRadius.circular(19)),
-                                  child: const Icon(Icons.call, color: Color(0xff111827), size: 19),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xffF3F4F6),
+                                    borderRadius: BorderRadius.circular(19),
+                                  ),
+                                  child: const Icon(
+                                    Icons.call,
+                                    color: Color(0xff111827),
+                                    size: 19,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          if (order.startedTravelAt != null && order.arrivedAt == null) ...[
+                          if (order.startedTravelAt != null &&
+                              order.arrivedAt == null) ...[
                             const SizedBox(height: 10),
                             const Text(
                               'مقدم الخدمة في الطريق إلى موقعك.',
-                              style: TextStyle(color: Color(0xff0CBBC7), fontWeight: FontWeight.w600, fontSize: 13),
+                              style: TextStyle(
+                                color: Color(0xff0CBBC7),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
-                          if (_workerLiveLatitude != null && _workerLiveLongitude != null) ...[
+                          if (_workerLiveLatitude != null &&
+                              _workerLiveLongitude != null) ...[
                             const SizedBox(height: 8),
                             Text(
-                              'آخر موقع مباشر: ${_workerLiveLatitude!.toStringAsFixed(5)}, ${_workerLiveLongitude!.toStringAsFixed(5)}',
-                              style: const TextStyle(color: Color(0xff6B7280), fontSize: 12),
+                              'تم تحديث الموقع المباشر لمقدم الخدمة',
+                              style: const TextStyle(
+                                color: Color(0xff6B7280),
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ],
@@ -899,20 +1101,40 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                         children: [
                           const Text(
                             'ملخص الطلب',
-                            style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xff1F2937)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xff1F2937),
+                            ),
                           ),
                           const SizedBox(height: 10),
-                          _SummaryRow(title: 'تكلفة الخدمة', value: '${(order.basePrice ?? 0).formatWithComma()} ل.س'),
+                          _SummaryRow(
+                            title: 'تكلفة الخدمة',
+                            value:
+                                '${(order.basePrice ?? 0).formatWithComma()} ل.س',
+                          ),
                           const SizedBox(height: 6),
-                          _SummaryRow(title: 'رسوم التنقل', value: '${(order.travelFee ?? 0).formatWithComma()} ل.س'),
+                          _SummaryRow(
+                            title: 'رسوم التنقل',
+                            value:
+                                '${(order.travelFee ?? 0).formatWithComma()} ل.س',
+                          ),
                           if ((order.addonsTotal ?? 0) > 0) ...[
                             const SizedBox(height: 6),
-                            _SummaryRow(title: 'إضافات', value: '${(order.addonsTotal ?? 0).formatWithComma()} ل.س'),
+                            _SummaryRow(
+                              title: 'إضافات',
+                              value:
+                                  '${(order.addonsTotal ?? 0).formatWithComma()} ل.س',
+                            ),
                           ],
                           const SizedBox(height: 10),
                           const Divider(color: Color(0xffE5E7EB)),
                           const SizedBox(height: 10),
-                          _SummaryRow(title: 'الإجمالي النهائي', value: '${(order.totalPrice ?? 0).formatWithComma()} ل.س', isTotal: true),
+                          _SummaryRow(
+                            title: 'الإجمالي النهائي',
+                            value:
+                                '${(order.totalPrice ?? 0).formatWithComma()} ل.س',
+                            isTotal: true,
+                          ),
                         ],
                       ),
                     ),
@@ -920,17 +1142,30 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
                     SizedBox(
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: () => isCompleted ? _reportIssue(order) : _cancelOrder(order),
+                        onPressed: () => isCompleted
+                            ? _reportIssue(order)
+                            : _cancelOrder(order),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor: isCompleted ? const Color(0xff9CA3AF).withAlpha(35) : const Color(0xffFEE2E2),
-                          foregroundColor: isCompleted ? const Color(0xff6B7280) : const Color(0xffDC2626),
+                          backgroundColor: isCompleted
+                              ? const Color(0xff9CA3AF).withAlpha(35)
+                              : const Color(0xffFEE2E2),
+                          foregroundColor: isCompleted
+                              ? const Color(0xff6B7280)
+                              : const Color(0xffDC2626),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: isCompleted ? const Color(0xff9CA3AF) : const Color(0xffEF4444)),
+                            side: BorderSide(
+                              color: isCompleted
+                                  ? const Color(0xff9CA3AF)
+                                  : const Color(0xffEF4444),
+                            ),
                           ),
                         ),
-                        child: Text(isCompleted ? 'إبلاغ عن مشكلة' : 'إلغاء الطلب', style: const TextStyle(fontWeight: FontWeight.w700)),
+                        child: Text(
+                          isCompleted ? 'إبلاغ عن مشكلة' : 'إلغاء الطلب',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ),
                   ],
@@ -945,7 +1180,11 @@ class _CleaningOrderDetailsScreenState extends State<CleaningOrderDetailsScreen>
 }
 
 class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.title, required this.value, this.isTotal = false});
+  const _SummaryRow({
+    required this.title,
+    required this.value,
+    this.isTotal = false,
+  });
 
   final String title;
   final String value;

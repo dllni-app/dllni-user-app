@@ -3,6 +3,7 @@ import 'package:common_package/widgets/app_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/num_extensions.dart';
+import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 
 class CleaningOrderCard extends StatelessWidget {
@@ -16,7 +17,7 @@ class CleaningOrderCard extends StatelessWidget {
 
   String get _statusLabel => cleaningOrderStatusLabelAr(order.status);
 
-  bool get _isCompleted => (order.status ?? '').toLowerCase() == 'completed';
+  bool get _isCompleted => (order.status ?? '').toLowerCase() == CleaningBookingStatus.completed;
 
   String get _bookingLabel {
     final bookingNumber = order.bookingNumber;
@@ -105,14 +106,7 @@ class CleaningOrderCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: AppText.bodyLarge(
-                    _serviceTitle,
-                    color: const Color(0xff111827),
-                    fontWeight: FontWeight.w700,
-                    maxLines: 1,
-                    textAlign: TextAlign.start,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: AppText.bodyLarge(_serviceTitle, color: const Color(0xff111827), fontWeight: FontWeight.w700, maxLines: 1, textAlign: TextAlign.start, overflow: TextOverflow.ellipsis),
                 ),
                 const SizedBox(width: 12),
                 AppText.bodySmall(_priceLabel, color: const Color(0xff1E2A78), fontWeight: FontWeight.w700),
@@ -165,6 +159,7 @@ class CleaningOrderCard extends StatelessWidget {
                 child: AppText.labelLarge(
                   _isCompleted ? 'إبلاغ عن مشكلة' : 'إلغاء الطلب',
                   fontWeight: FontWeight.bold,
+                  textAlign: TextAlign.center,
                   color: _isCompleted ? const Color(0xff9CA3AF) : const Color(0xffDC2626),
                 ),
               ),

@@ -43,6 +43,8 @@ class DeepLinkDispatcher {
         return _dispatchProduct(resolved);
       case 'restaurant':
         return _dispatchRestaurant(resolved);
+      case 'store':
+        return _dispatchStore(resolved);
       case 'vote':
         return _dispatchVote(resolved);
       case 'group-order':
@@ -58,25 +60,37 @@ class DeepLinkDispatcher {
     if (!DeepLinkParser.isSupportedDeepLink(uri)) {
       return null;
     }
-    final segments = uri.pathSegments.where((String s) => s.isNotEmpty).toList();
+    final normalized = DeepLinkParser.normalizeOpenApiPathIfNeeded(uri);
+    final segments = normalized.pathSegments
+        .where((String s) => s.isNotEmpty)
+        .toList();
     if (segments.isEmpty) {
       return null;
     }
-    if (segments.length >= 5 && segments[0].toLowerCase() == 'api' && segments[1] == 'v1' && segments[2] == 'user') {
+    if (segments.length >= 5 &&
+        segments[0].toLowerCase() == 'api' &&
+        segments[1] == 'v1' &&
+        segments[2] == 'user') {
       return _dispatchFromApiUserSegments(segments);
     }
-    return _dispatchFromLegacySegments(segments, uri);
+    return _dispatchFromCanonicalSegments(segments, normalized);
   }
 
-  static DeepLinkDispatchTarget? _dispatchFromApiUserSegments(List<String> segments) {
-    if (segments.length >= 6 && segments[3] == 'restaurants' && segments[4] == 'votes') {
+  static DeepLinkDispatchTarget? _dispatchFromApiUserSegments(
+    List<String> segments,
+  ) {
+    if (segments.length >= 6 &&
+        segments[3] == 'restaurants' &&
+        segments[4] == 'votes') {
       final id = int.tryParse(segments[5]);
       if (id == null || id <= 0) {
         return null;
       }
       return _dispatchVote(_synthetic(type: 'vote', id: id));
     }
-    if (segments.length >= 6 && segments[3] == 'restaurants' && segments[4] == 'group-orders') {
+    if (segments.length >= 6 &&
+        segments[3] == 'restaurants' &&
+        segments[4] == 'group-orders') {
       final raw = segments[5];
       final id = int.tryParse(raw);
       if (id == null || id <= 0) {
@@ -91,14 +105,20 @@ class DeepLinkDispatcher {
       }
       return _dispatchRestaurant(_synthetic(type: 'restaurant', id: id));
     }
-    if (segments.length >= 6 && segments[3] == 'supermarket' && segments[4] == 'products') {
+    if (segments.length >= 6 &&
+        segments[3] == 'supermarket' &&
+        segments[4] == 'products') {
       final id = int.tryParse(segments[5]);
       if (id == null || id <= 0) {
         return null;
       }
-      return _dispatchProduct(_synthetic(type: 'product', id: id, target: 'supermarket'));
+      return _dispatchProduct(
+        _synthetic(type: 'product', id: id, target: 'supermarket'),
+      );
     }
-    if (segments.length >= 6 && segments[3] == 'supermarket' && segments[4] == 'stores') {
+    if (segments.length >= 6 &&
+        segments[3] == 'supermarket' &&
+        segments[4] == 'stores') {
       final id = int.tryParse(segments[5]);
       if (id == null || id <= 0) {
         return null;
@@ -113,12 +133,17 @@ class DeepLinkDispatcher {
       if (id == null || id <= 0) {
         return null;
       }
-      return _dispatchProduct(_synthetic(type: 'product', id: id, target: 'restaurant'));
+      return _dispatchProduct(
+        _synthetic(type: 'product', id: id, target: 'restaurant'),
+      );
     }
     return null;
   }
 
-  static DeepLinkDispatchTarget? _dispatchFromLegacySegments(List<String> segments, Uri uri) {
+  static DeepLinkDispatchTarget? _dispatchFromCanonicalSegments(
+    List<String> segments,
+    Uri uri,
+  ) {
     if (segments.length < 2) {
       return null;
     }
@@ -149,6 +174,8 @@ class DeepLinkDispatcher {
         return _dispatchProduct(synthetic);
       case 'restaurant':
         return _dispatchRestaurant(synthetic);
+      case 'store':
+        return _dispatchStore(synthetic);
       case 'vote':
         return _dispatchVote(synthetic);
       case 'group-order':
@@ -203,7 +230,22 @@ class DeepLinkDispatcher {
 
     return DeepLinkDispatchTarget(
       routeName: '/rs_store',
-      arguments: StoreDetailsScreenParams(restaurantId: restaurantId, preview: preview),
+      arguments: StoreDetailsScreenParams(
+        restaurantId: restaurantId,
+        preview: preview,
+      ),
+    );
+  }
+
+  static DeepLinkDispatchTarget? _dispatchStore(DeepLinkResolveResult r) {
+    final storeId = r.id;
+    if (storeId == null || storeId <= 0) {
+      return null;
+    }
+
+    return DeepLinkDispatchTarget(
+      routeName: '/store',
+      arguments: SmStoreDetailsScreenArgs(storeId: storeId),
     );
   }
 

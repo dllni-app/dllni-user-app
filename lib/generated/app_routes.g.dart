@@ -13,6 +13,7 @@ import 'package:dllni_user_app/features/main/view/screens/main_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_details_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_problem_report_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_reschedule_screen.dart';
+import 'package:dllni_user_app/features/orders/view/screens/cleaning_worker_rating_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_fulfillment_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/add_address_screen.dart';
@@ -135,6 +136,14 @@ class GeneratedAppRoutes {
         if (args is CleaningOrderRescheduleArgs) {
           return MaterialPageRoute(
             builder: (_) => CleaningOrderRescheduleScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/cleaning-worker-rating':
+        if (args is CleaningWorkerRatingArgs) {
+          return MaterialPageRoute(
+            builder: (_) => CleaningWorkerRatingScreen(args: args),
             settings: settings,
           );
         }
