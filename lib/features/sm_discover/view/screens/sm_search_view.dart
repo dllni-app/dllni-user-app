@@ -65,7 +65,7 @@ class _SmSearchViewState extends State<SmSearchView> {
                           isScrollControlled: true,
                           useSafeArea: true,
                           backgroundColor: Colors.transparent,
-                          builder: (ctx) => const SmartSearchSheet(),
+                          builder: (ctx) => const SmartSearchSheet(isSupermarket: true,),
                         );
                         if (!context.mounted ||
                             words == null ||

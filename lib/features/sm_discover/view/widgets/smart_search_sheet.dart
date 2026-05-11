@@ -14,7 +14,8 @@ import '../../data/models/normalize_product_text_model.dart';
 import '../../domain/usecases/normalize_product_text_use_case.dart';
 
 class SmartSearchSheet extends StatefulWidget {
-  const SmartSearchSheet({super.key});
+  const SmartSearchSheet({super.key, required this.isSupermarket});
+  final bool isSupermarket;
 
   @override
   State<SmartSearchSheet> createState() => _SmartSearchSheetState();
@@ -354,7 +355,11 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     setState(() => _isSubmitting = true);
     final locale = context.locale.languageCode;
     final result = await _normalizeProductTextUseCase(
-      NormalizeProductTextParams(text: trimmed, locale: locale),
+      NormalizeProductTextParams(
+        text: trimmed,
+        locale: locale,
+        isSupermarket: widget.isSupermarket,
+      ),
     );
     if (!mounted) return;
     setState(() => _isSubmitting = false);
