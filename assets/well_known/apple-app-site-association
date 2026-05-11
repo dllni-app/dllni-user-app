@@ -3,11 +3,12 @@
     "apps": [],
     "details": [
       {
-        "appID": "C4S72M3DX2.com.alnadha.user",
+        "appID": "C4S72M3DX2.com.alnadha.app",
         "paths": [
           "/api/v1/user/*",
           "/product/*",
           "/restaurant/*",
+          "/store/*",
           "/vote/*",
           "/group-order/*",
           "/s/*"

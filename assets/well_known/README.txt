@@ -21,7 +21,7 @@ Before deployment, replace placeholders in the JSON files:
 
 2) apple-app-site-association — appID
    - Format: <Apple Team ID>.<bundle id>
-   - Bundle ID for this app: com.dllni.userapp
+  - Bundle ID for this app: com.alnadha.app
    - Team ID: Apple Developer account → Membership (10 characters).
 
 Serving notes
@@ -32,5 +32,5 @@ Serving notes
 
 Package / bundle IDs (from this Flutter project)
 ------------------------------------------------
-- Android applicationId: com.dllni.userapp
-- iOS PRODUCT_BUNDLE_IDENTIFIER: com.dllni.userapp
+- Android applicationId: com.alnadha.app
+- iOS PRODUCT_BUNDLE_IDENTIFIER: com.alnadha.app

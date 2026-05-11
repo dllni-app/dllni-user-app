@@ -348,8 +348,8 @@ adb shell am start -a android.intent.action.VIEW -d "https://dllni.mustafafares.
 adb shell am start -a android.intent.action.VIEW -d "https://dllni.mustafafares.com/api/v1/user/products/123?utm_source=facebook"
 
 # Kill app first
-adb shell am force-stop com.dllni.userapp
-adb shell am start -a android.intent.action.VIEW -d "https://dllni.mustafafares.com/api/v1/user/votes/789"
+adb shell am force-stop com.alnadha.app
+adb shell am start -a android.intent.action.VIEW -d "https://dllni.mustafafares.com/api/v1/user/restaurants/votes/789"
 ```
 
 ### Procedure 2: Using xcrun (iOS Simulator)
@@ -359,8 +359,8 @@ adb shell am start -a android.intent.action.VIEW -d "https://dllni.mustafafares.
 xcrun simctl openurl booted "https://dllni.mustafafares.com/api/v1/user/restaurants/1"
 
 # Kill app first
-xcrun simctl launch --wait booted com.dllni.userapp
-xcrun simctl terminate booted com.dllni.userapp
+xcrun simctl launch --wait booted com.alnadha.app
+xcrun simctl terminate booted com.alnadha.app
 xcrun simctl openurl booted "https://dllni.mustafafares.com/api/v1/user/products/456"
 ```
 
@@ -388,7 +388,7 @@ xcrun simctl openurl booted "https://dllni.mustafafares.com/api/v1/user/products
 flutter logs
 
 # Filter deep link events
-flutter logs | grep -i "deeplink\|deep_link"
+flutter logs | grep -Ei "deeplink|deep_link"
 
 # Monitor specific service
 flutter logs | grep "DeepLinkService"

@@ -35,7 +35,6 @@ Future<void> main() async {
     ),
   );
 
-  // bootstrapApp/runApp return before the first frame; Navigator is only ready after paint.
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(getIt<DeepLinkService>().init(navigatorKey: navigatorKey));
   });
