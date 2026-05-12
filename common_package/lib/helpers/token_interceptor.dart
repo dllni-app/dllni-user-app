@@ -20,9 +20,16 @@ class TokenInterceptor extends Interceptor {
       }
 
       if (tokenKey != null) {
-        final token = SharedPreferencesHelper.getData(key: tokenKey!) ?? '';
-        options.headers['Authorization'] = 'Bearer $token';
-        log('========================> token: $token');
+        final token = (SharedPreferencesHelper.getData(key: tokenKey!) ?? '')
+            .toString()
+            .trim();
+        if (token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+          log('========================> token: $token');
+        } else {
+          options.headers.remove('Authorization');
+          log('========================> token: empty');
+        }
       }
 
       if (fcmKey != null) {

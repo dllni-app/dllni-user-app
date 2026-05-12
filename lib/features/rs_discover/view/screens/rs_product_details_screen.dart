@@ -147,10 +147,7 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                 ProductActionButton(
                   icon: Icons.share,
                   onTap: () {
-                    final fromApi = state.productDetails?.product?.shareUrl?.trim();
-                    final url = (fromApi != null && fromApi.isNotEmpty)
-                        ? fromApi
-                        : restaurantProductUrl(widget.params.product.productId);
+                    final url = productUrl(widget.params.product.productId);
                     unawaited(shareDeepLinkUrl(url, context: context));
                   },
                 ),

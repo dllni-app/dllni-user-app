@@ -354,7 +354,13 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
                         cartCount: cartCount,
                         onCartTap: () => context.pushRoute('/cart'),
                         onShareTap: () {
-                          unawaited(shareDeepLinkUrl(restaurantUrl(widget.params.restaurantId), context: context));
+                          if (widget.params.restaurantId <= 0) return;
+                          unawaited(
+                            shareDeepLinkUrl(
+                              restaurantUrl(widget.params.restaurantId),
+                              context: context,
+                            ),
+                          );
                         },
                       );
                     },

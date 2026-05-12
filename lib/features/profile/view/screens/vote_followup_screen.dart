@@ -6,12 +6,12 @@ import 'package:dio/dio.dart';
 import 'package:dllni_user_app/core/app_config.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/session/session_expired_handler.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/show_vote_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/profile_api_models.dart';
 import '../manager/bloc/profile_bloc.dart';
@@ -23,6 +23,7 @@ import '../widgets/vote_followup_option_card.dart';
 import '../widgets/vote_followup_option_data.dart';
 import '../widgets/vote_followup_timer_banner.dart';
 import '../widgets/vote_followup_voters_list.dart';
+import '../widgets/vote_winner_bottom_sheet.dart';
 import '../widgets/vote_winner_dialog.dart';
 
 class VoteFollowupScreenParams {
@@ -51,6 +52,8 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   bool _isVotersExpanded = true;
   bool _canEndVote = true;
   bool _pendingWinnerDialog = false;
+  bool _handledTimeExpired = false;
+  bool _hasSeenPositiveRemaining = false;
   int? _submittingOptionId;
   int? _selectedOptionId;
 
@@ -64,18 +67,19 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   @override
   void initState() {
     super.initState();
-    if(widget.params.needShare!){
-      shareUrl();
+    if (widget.params.needShare == true) {
+      unawaited(
+        shareDeepLinkUrl(
+          voteUrl(widget.params.voteId),
+          context: context,
+        ),
+      );
     }
     _hydrateFromCreatedData(widget.params.initialData);
     _startTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_connectVoteRealtime());
     });
-  }
-
-  void shareUrl() async {
-    await SharePlus.instance.share(ShareParams(text: 'تجربة'));
   }
 
   Future<void> _connectVoteRealtime() async {
@@ -157,6 +161,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
         timer.cancel();
         return;
       }
+      final previousRemaining = _remaining;
       setState(() {
         if (_remaining.inSeconds <= 1) {
           _remaining = Duration.zero;
@@ -165,12 +170,13 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           _remaining -= const Duration(seconds: 1);
         }
       });
+      _handleRemainingTransition(previous: previousRemaining, next: _remaining);
     });
   }
 
   void _hydrateFromCreatedData(VoteCreatedData? createdData) {
     if (createdData == null) return;
-    _syncRemainingFromSeconds(createdData.vote?.secondsRemaining);
+    _syncRemainingFromSeconds(createdData.vote?.secondsRemaining, canTriggerExpiry: false);
     _canEndVote = createdData.vote?.isCreator ?? _canEndVote;
     _options = createdData.options.map(_mapVoteOption).toList();
     if (createdData.voters.isNotEmpty) {
@@ -282,10 +288,14 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     return null;
   }
 
-  void _syncRemainingFromSeconds(int? secondsRemaining) {
+  void _syncRemainingFromSeconds(int? secondsRemaining, {bool canTriggerExpiry = true}) {
     if (secondsRemaining == null) return;
+    final previousRemaining = _remaining;
     final safeSeconds = secondsRemaining < 0 ? 0 : secondsRemaining;
     _remaining = Duration(seconds: safeSeconds);
+    if (safeSeconds > 0) {
+      _hasSeenPositiveRemaining = true;
+    }
     if (safeSeconds > 0) {
       if (_timer == null || !_timer!.isActive) {
         _startTimer();
@@ -294,6 +304,80 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       _timer?.cancel();
       _timer = null;
     }
+    if (canTriggerExpiry) {
+      _handleRemainingTransition(previous: previousRemaining, next: _remaining);
+    }
+  }
+
+  void _handleRemainingTransition({required Duration previous, required Duration next}) {
+    if (_handledTimeExpired) return;
+    if (next.inSeconds > 0) {
+      _hasSeenPositiveRemaining = true;
+      return;
+    }
+    if (!_hasSeenPositiveRemaining || previous.inSeconds <= 0) {
+      return;
+    }
+    _handledTimeExpired = true;
+    unawaited(_handleVoteTimeExpired());
+  }
+
+  Future<void> _handleVoteTimeExpired() async {
+    final winnerData = await _resolveWinnerDataForSheet();
+    if (!mounted) return;
+    context.pushRouteAndRemoveUntil('/rsmain', predicate: (route) => route.isFirst);
+    _showWinnerBottomSheetOnRoot(winnerData);
+  }
+
+  Future<_WinnerSheetData> _resolveWinnerDataForSheet() async {
+    String? winnerName;
+    try {
+      final result = await getIt<ShowVoteUseCase>()(ShowVoteParams(voteId: widget.params.voteId));
+      result.fold((_) {}, (vote) {
+        winnerName = vote.winnerLabel?.trim();
+        final rawWinner = vote.rawData?['winner'];
+        if (rawWinner is Map) {
+          final winnerMap = Map<String, dynamic>.from(rawWinner);
+          winnerName ??= _toStringValue(winnerMap['label'])?.trim();
+        }
+      });
+    } catch (_) {}
+
+    if (winnerName == null || winnerName!.isEmpty) {
+      VoteFollowupOptionData? leadingOption;
+      for (final option in _options) {
+        if (leadingOption == null || option.votes > leadingOption.votes) {
+          leadingOption = option;
+        }
+      }
+      winnerName = leadingOption?.name.trim();
+    }
+
+    final safeWinnerName = (winnerName == null || winnerName!.isEmpty) ? 'بيتزا مارغريتا' : winnerName!;
+    return _WinnerSheetData(winnerName: safeWinnerName);
+  }
+
+  void _showWinnerBottomSheetOnRoot(_WinnerSheetData winnerData) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rootContext = SessionExpiredHandler.navigatorKey?.currentContext;
+      if (rootContext == null || !rootContext.mounted) {
+        return;
+      }
+      showModalBottomSheet<void>(
+        context: rootContext,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        builder: (_) {
+          return VoteWinnerBottomSheet(
+            winnerName: winnerData.winnerName,
+            onShowBestOfferTap: () {
+              Navigator.of(rootContext).pop();
+              ScaffoldMessenger.maybeOf(rootContext)?.showSnackBar(const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')));
+            },
+          );
+        },
+      );
+    });
   }
 
   void _submitBallot(int optionId, ProfileBloc bloc) {
@@ -455,4 +539,10 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       ),
     );
   }
+}
+
+class _WinnerSheetData {
+  const _WinnerSheetData({required this.winnerName});
+
+  final String winnerName;
 }

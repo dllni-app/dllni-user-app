@@ -9,6 +9,10 @@ class SessionExpiredHandler {
 
   static Future<void> handle() async {
     if (_isNavigatingToLogin) return;
+    final token = (SharedPreferencesHelper.getData(key: 'token') ?? '')
+        .toString()
+        .trim();
+    if (token.isEmpty) return;
 
     _isNavigatingToLogin = true;
     try {

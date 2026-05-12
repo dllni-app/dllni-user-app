@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/group_order_api_models.dart';
 import '../../domain/usecases/add_group_order_item_use_case.dart';
@@ -69,16 +68,17 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
   @override
   void initState() {
     super.initState();
-    if(widget.params.needShare){
-      shareUrl();
+    if (widget.params.needShare) {
+      unawaited(
+        shareDeepLinkUrl(
+          groupOrderUrl(id: widget.params.groupOrderId),
+          context: context,
+        ),
+      );
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _connectRealtime();
     });
-  }
-
-  void shareUrl() async {
-    await SharePlus.instance.share(ShareParams(text: 'تجربة'));
   }
 
   @override

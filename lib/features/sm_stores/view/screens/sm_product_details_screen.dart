@@ -2,13 +2,15 @@ import 'dart:async';
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:toastification/toastification.dart';
 
-import '../../../../core/di/injection.dart';
-import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/failure_widget.dart';
+import '../../../rs_discover/view/widgets/product_details_sub_widgets.dart';
+import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 import '../../../sm_discover/domain/usecases/change_product_favorite_use_case.dart';
 import '../../../sm_discover/view/manager/bloc/sm_discover_bloc.dart';
 import '../../data/models/get_supermarket_product_details_model.dart';
@@ -16,8 +18,6 @@ import '../../domain/usecases/get_compare_products_use_case.dart';
 import '../manager/bloc/sm_stores_bloc.dart';
 import '../widgets/dialogs/related_products_dialog.dart';
 import '../widgets/dialogs/shopping_lists_dialog.dart';
-import '../widgets/products_bottom_nav_bar.dart';
-import 'package:toastification/toastification.dart';
 
 String _smStoresTrim(dynamic value) =>
     value == null ? '-' : value.toString().trim();
@@ -51,6 +51,41 @@ String _smStoresTrim(dynamic value) =>
     return (spr.isEmpty ? '' : '$spr ل.س', null);
   }
   return ('', null);
+}
+
+String _smDescriptionText(SupermarketProductDetailsProduct? product) {
+  final d = product?.description;
+  if (d == null) return '';
+  if (d is String) return d.trim();
+  return d.toString().trim();
+}
+
+List<String> _smImageUrls(
+  SupermarketProductDetailsProduct? product,
+  SmStarterProductDetailsData? starter,
+) {
+  final urls = <String>[];
+  void add(String? u) {
+    final t = (u ?? '').trim();
+    if (t.isEmpty || urls.contains(t)) return;
+    urls.add(t);
+  }
+
+  if (product != null) {
+    add(product.primaryImage);
+    add(product.imageUrl);
+    add(product.image?.url);
+    add(product.image?.thumbnailUrl);
+    for (final u in product.imageUrls ?? const <String>[]) {
+      add(u);
+    }
+    for (final im in product.images ?? const <SupermarketProductDetailsMedia>[]) {
+      add(im.url);
+      add(im.thumbnailUrl);
+    }
+  }
+  add(starter?.imageUrl);
+  return urls;
 }
 
 class SmStarterProductDetailsData {
@@ -93,6 +128,11 @@ class SmProductDetailsScreen extends StatefulWidget {
 class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
   bool _favoriteLocal = false;
   late SmDiscoverBloc _bloc;
+  final TextEditingController _notesController = TextEditingController();
+  final PageController _imagePageController = PageController();
+  final List<String> _savedNotes = <String>[];
+  int _currentImagePage = 0;
+  int _quantity = 1;
 
   @override
   void initState() {
@@ -103,8 +143,67 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
 
   @override
   void dispose() {
+    _notesController.dispose();
+    _imagePageController.dispose();
     _bloc.close();
     super.dispose();
+  }
+
+  void _openCompareDialog(BuildContext context) {
+    context.read<SmStoresBloc>().add(
+          GetCompareProductsEvent(
+            isReload: true,
+            params: GetCompareProductsParams(
+              productId: widget.args.productId,
+            ),
+          ),
+        );
+    showDialog<void>(
+      context: context,
+      builder: (_) => BlocProvider.value(
+        value: context.read<SmStoresBloc>(),
+        child: RelatedProductsDialog(
+          productId: widget.args.productId,
+        ),
+      ),
+    );
+  }
+
+  void _openShoppingListsDialog(BuildContext context) {
+    final masterId = widget.args.starter?.masterId ??
+        context.read<SmStoresBloc>().state.productDetails?.masterProductId;
+    if (masterId == null || masterId <= 0) {
+      AppToast.showToast(
+        context: context,
+        message: 'تعذر تحديد المنتج',
+        type: ToastificationType.error,
+      );
+      return;
+    }
+    context.read<SmStoresBloc>().add(LoadShoppingListsEvent());
+    showDialog<void>(
+      context: context,
+      builder: (_) => BlocProvider.value(
+        value: context.read<SmStoresBloc>(),
+        child: ShoppingListsDialog(masterProductId: masterId),
+      ),
+    );
+  }
+
+  void _saveCurrentNote() {
+    final note = _notesController.text.trim();
+    if (note.isEmpty) return;
+    setState(() {
+      _savedNotes.add(note);
+      _notesController.clear();
+    });
+  }
+
+  void _removeSavedNote(int index) {
+    if (index < 0 || index >= _savedNotes.length) return;
+    setState(() {
+      _savedNotes.removeAt(index);
+    });
   }
 
   @override
@@ -143,7 +242,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
           final productStatus = state.productDetailsStatus;
           final loadingProduct =
               productStatus == BlocStatus.loading ||
-              productStatus == BlocStatus.init;
+                  productStatus == BlocStatus.init;
           final failedProduct = productStatus == BlocStatus.failed;
 
           final showFullScreenLoading =
@@ -156,14 +255,17 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
             starter: starter,
           );
 
-          final heroUrl = product != null
-              ? (product.imageUrl ?? '').trim()
-              : (starter?.imageUrl ?? '').trim();
+          final imageUrls = _smImageUrls(product, starter);
 
           final displayStore =
               product?.store?.name?.trim() ?? starter?.storeName?.trim() ?? '';
-          final displayTitle =
-              product?.name?.trim() ?? starter?.name?.trim() ?? '';
+          final displayTitle = product?.name?.trim().isNotEmpty == true
+              ? product!.name!.trim()
+              : starter?.name?.trim() ?? '';
+          final displayStoreLine =
+              displayStore.isNotEmpty ? displayStore : 'متجر';
+
+          final description = _smDescriptionText(product);
 
           return PopScope(
             canPop: false,
@@ -176,457 +278,546 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
               }
             },
             child: Scaffold(
-              body: showFullScreenLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : showFullScreenFailure
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: FailureWidget(
-                          message: state.errorMessage ?? '',
-                          onRetry: () {
-                            context.read<SmStoresBloc>().add(
-                              LoadSupermarketProductDetailsEvent(
-                                productId: widget.args.productId,
-                              ),
-                            );
-                          },
+              backgroundColor: const Color(0xFFF9FAFB),
+              appBar: AppBar(
+                forceMaterialTransparency: true,
+                title: AppText(
+                  displayTitle.isEmpty ? ' ' : displayTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF111827),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    height: 24 / 17,
+                  ),
+                ),
+                leading: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: ProductActionButton(
+                    icon: Icons.arrow_back,
+                    onTap: () => context.pop<bool>(_favoriteLocal),
+                  ),
+                ),
+                actions: [
+                  BlocListener<SmDiscoverBloc, SmDiscoverState>(
+                    bloc: _bloc,
+                    listener: (context, discoverState) {
+                      if (discoverState.changeProductFavoriteStatus ==
+                          BlocStatus.failed) {
+                        setState(() {
+                          _favoriteLocal = !_favoriteLocal;
+                        });
+                        AppToast.showToast(
+                          context: context,
+                          message: discoverState.errorMessage.toString(),
+                          type: ToastificationType.error,
+                        );
+                      }
+                    },
+                    child: ProductActionButton(
+                      icon: _favoriteLocal
+                          ? Icons.favorite
+                          : Icons.favorite_outline,
+                      iconColor: _favoriteLocal
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF6B7280),
+                      onTap: () {
+                        setState(() {
+                          _favoriteLocal = !_favoriteLocal;
+                        });
+                        _bloc.add(
+                          ChangeProductFavoriteEvent(
+                            params: ChangeProductFavoriteParams(
+                              productId: widget.args.productId,
+                              isFavorite: _favoriteLocal,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ProductActionButton(
+                    icon: Icons.compare_arrows,
+                    onTap: () => _openCompareDialog(context),
+                  ),
+                  const SizedBox(width: 8),
+                  ProductActionButton(
+                    icon: Icons.playlist_add,
+                    onTap: () => _openShoppingListsDialog(context),
+                  ),
+                  const SizedBox(width: 8),
+                  ProductActionButton(
+                    icon: Icons.shopping_cart_outlined,
+                    onTap: () => context.pushRoute(
+                      '/cart',
+                      arguments: SmCartScreenParams(initialSectionIndex: 1),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ProductActionButton(
+                    icon: Icons.share,
+                    onTap: () {
+                      final id = widget.args.productId;
+                      if (id <= 0) return;
+                      unawaited(
+                        shareDeepLinkUrl(
+                          productUrl(id),
+                          context: context,
                         ),
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            height: 340 + MediaQuery.paddingOf(context).top,
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: AppImage.network(
-                                    heroUrl,
-                                    fit: BoxFit.cover,
-                                    errorWidget: Icon(
-                                      Icons.broken_image_outlined,
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: MediaQuery.paddingOf(context).top + 32,
-                                  left: 24,
-                                  right: 24,
-                                  child: Row(
-                                    spacing: 5,
-                                    children: [
-                                      _ActionButton(
-                                        icon: FontAwesomeIcons.arrowRight,
-                                        onTap: () =>
-                                            context.pop<bool>(_favoriteLocal),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              body: showFullScreenLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : showFullScreenFailure
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: FailureWidget(
+                              message: state.errorMessage ?? '',
+                              onRetry: () {
+                                context.read<SmStoresBloc>().add(
+                                      LoadSupermarketProductDetailsEvent(
+                                        productId: widget.args.productId,
                                       ),
-                                      Expanded(
-                                        child: AppText(
-                                          displayStore,
-                                          textAlign: TextAlign.start,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: Color(0xFF111827),
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                            height: 24 / 16,
-                                          ),
-                                        ),
-                                      ),
-                                      BlocListener<
-                                        SmDiscoverBloc,
-                                        SmDiscoverState
-                                      >(
-                                        bloc: _bloc,
-                                        listener: (context, state) {
-                                          if (state
-                                                  .changeProductFavoriteStatus ==
-                                              BlocStatus.failed) {
-                                            setState(() {
-                                              _favoriteLocal = !_favoriteLocal;
-                                            });
-                                            AppToast.showToast(
-                                              context: context,
-                                              message: state.errorMessage
-                                                  .toString(),
-                                              type: ToastificationType.error,
-                                            );
-                                          }
-                                        },
-                                        child: _ActionButton(
-                                          icon: _favoriteLocal
-                                              ? FontAwesomeIcons.solidHeart
-                                              : FontAwesomeIcons.heart,
-                                          onTap: () {
-                                            setState(() {
-                                              _favoriteLocal = !_favoriteLocal;
-                                            });
-                                            _bloc.add(
-                                              ChangeProductFavoriteEvent(
-                                                params:
-                                                    ChangeProductFavoriteParams(
-                                                      productId:
-                                                          widget.args.productId,
-                                                      isFavorite:
-                                                          _favoriteLocal,
-                                                    ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      SizedBox(width: 8),
-                                      _ActionButton(
-                                        icon: FontAwesomeIcons.shareNodes,
-                                        onTap: () {
-                                          unawaited(
-                                            shareDeepLinkUrl(
-                                              productUrl(widget.args.productId),
-                                              context: context,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 24,
-                                  left: 24,
-                                  child: _ActionButton(
-                                    icon: FontAwesomeIcons.plus,
-                                    onTap: () {
-                                      final masterId =
-                                          widget.args.starter?.masterId ??
-                                          context
-                                              .read<SmStoresBloc>()
-                                              .state
-                                              .productDetails
-                                              ?.masterProductId;
-                                      if (masterId == null || masterId <= 0) {
-                                        AppToast.showToast(
-                                          context: context,
-                                          message: 'تعذر تحديد المنتج',
-                                          type: ToastificationType.error,
-                                        );
-                                        return;
-                                      }
-                                      context.read<SmStoresBloc>().add(
-                                        LoadShoppingListsEvent(),
-                                      );
-                                      showDialog<void>(
-                                        context: context,
-                                        builder: (_) => BlocProvider.value(
-                                          value: context.read<SmStoresBloc>(),
-                                          child: ShoppingListsDialog(
-                                            masterProductId: masterId,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                if (state.productDetailsStatus ==
-                                        BlocStatus.success &&
-                                    (product?.offers?.isNotEmpty ?? false))
-                                  Positioned(
-                                    bottom: 20,
-                                    right: 16,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 22,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF4CAF50),
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(8),
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            offset: Offset(0, 4),
-                                            blurRadius: 6,
-                                            spreadRadius: -4,
-                                            color: Color(0x1A000000),
-                                          ),
-                                          BoxShadow(
-                                            offset: Offset(0, 10),
-                                            blurRadius: 15,
-                                            spreadRadius: -3,
-                                            color: Color(0x1A000000),
-                                          ),
-                                        ],
-                                      ),
-                                      child: AppText(
-                                        "الأكثر طلباً",
-                                        style: TextStyle(
-                                          color: AppColors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          height: 16 / 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                                    );
+                              },
                             ),
                           ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 20,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.white,
-                              border: Border.all(color: Color(0xFFF3F4F6)),
-                            ),
-                            child: Column(
-                              children: [
-                                SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: AppText(
-                                        displayTitle,
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                          color: Color(0xFF111827),
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w700,
-                                          height: 32 / 20,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 20),
-                                    InkWell(
-                                      onTap: () {
-                                        context.read<SmStoresBloc>().add(
-                                          GetCompareProductsEvent(
-                                            isReload: true,
-                                            params: GetCompareProductsParams(
-                                              productId: widget.args.productId,
-                                            ),
-                                          ),
-                                        );
-                                        showDialog(
-                                          context: context,
-                                          builder: (_) => BlocProvider.value(
-                                            value: context.read<SmStoresBloc>(),
-                                            child: RelatedProductsDialog(
-                                              productId: widget.args.productId,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(8),
-                                      ),
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 11,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(8),
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              offset: Offset(0, 4),
-                                              blurRadius: 6,
-                                              spreadRadius: -4,
-                                              color: Color(0x1A000000),
-                                            ),
-                                            BoxShadow(
-                                              offset: Offset(0, 10),
-                                              blurRadius: 15,
-                                              spreadRadius: -3,
-                                              color: Color(0x1A000000),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          "مقارنة السعر",
-                                          style: TextStyle(
-                                            color: AppColors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            height: 16 / 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 20),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    AppText(
-                                      priceMainText,
-                                      style: TextStyle(
-                                        color: Color(0xFF4CAF50),
-                                        fontSize: 30,
-                                        fontWeight: FontWeight.w700,
-                                        height: 36 / 30,
-                                      ),
-                                    ),
-                                    if (priceStrikeText != null)
-                                      AppText(
-                                        priceStrikeText,
-                                        style: TextStyle(
-                                          color: Color(0xFF9CA3AF),
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500,
-                                          height: 28 / 18,
-                                          decoration:
-                                              TextDecoration.lineThrough,
-                                          decorationColor: Color(0xFF9CA3AF),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (failedProduct &&
-                              product == null &&
-                              starter != null)
-                            Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: FailureWidget(
-                                message: state.errorMessage ?? '',
-                                onRetry: () {
-                                  context.read<SmStoresBloc>().add(
-                                    LoadSupermarketProductDetailsEvent(
-                                      productId: widget.args.productId,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 20,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.white,
-                              border: Border.all(color: Color(0xFFF3F4F6)),
-                            ),
+                        )
+                      : SafeArea(
+                          child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SizedBox(height: 4),
-                                AppText(
-                                  "ملاحظات خاصة",
-                                  textAlign: TextAlign.start,
-                                  style: TextStyle(
-                                    color: Color(0xFF111827),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    height: 28 / 18,
+                                SizedBox(
+                                  height: 350,
+                                  child: Stack(
+                                    children: [
+                                      Positioned.fill(
+                                        child: imageUrls.isEmpty
+                                            ? Container(
+                                                color: const Color(0xFFF5F5F5),
+                                                alignment: Alignment.center,
+                                                child: const Icon(
+                                                  Icons.image_outlined,
+                                                  size: 56,
+                                                  color: Color(0xFF9CA3AF),
+                                                ),
+                                              )
+                                            : PageView.builder(
+                                                controller: _imagePageController,
+                                                itemCount: imageUrls.length,
+                                                onPageChanged: (index) {
+                                                  setState(() {
+                                                    _currentImagePage = index;
+                                                  });
+                                                },
+                                                itemBuilder: (_, index) {
+                                                  return AppImage.network(
+                                                    imageUrls[index],
+                                                    fit: BoxFit.cover,
+                                                    errorWidget: Container(
+                                                      color: const Color(
+                                                          0xFFF5F5F5),
+                                                      alignment:
+                                                          Alignment.center,
+                                                      child: const Icon(
+                                                        Icons.image_outlined,
+                                                        size: 56,
+                                                        color:
+                                                            Color(0xFF9CA3AF),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                      ),
+                                      if (state.productDetailsStatus ==
+                                              BlocStatus.success &&
+                                          (product?.offers?.isNotEmpty ??
+                                              false))
+                                        Positioned(
+                                          bottom: 20,
+                                          right: 16,
+                                          child: const ProductBadge(
+                                            title: 'الأكثر طلباً',
+                                            color: Color(0xFF22C55E),
+                                          ),
+                                        ),
+                                      if (imageUrls.length > 1)
+                                        Positioned(
+                                          bottom: 20,
+                                          right: 16,
+                                          left: 16,
+                                          child: Center(
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0x80000000),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: List.generate(
+                                                  imageUrls.length,
+                                                  (index) {
+                                                    final isActive =
+                                                        _currentImagePage ==
+                                                            index;
+                                                    return Container(
+                                                      width:
+                                                          isActive ? 14 : 6,
+                                                      height: 6,
+                                                      margin: EdgeInsetsDirectional
+                                                          .only(
+                                                        start: index == 0
+                                                            ? 0
+                                                            : 4,
+                                                      ),
+                                                      decoration:
+                                                          BoxDecoration(
+                                                        color: isActive
+                                                            ? Colors.white
+                                                            : const Color(
+                                                                0x80FFFFFF,
+                                                              ),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(999),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                AppText(
-                                  "أضف أي طلب خاص",
-                                  style: TextStyle(
-                                    color: Color(0xFF6B7280),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    height: 20 / 14,
+                                const SizedBox(height: 12),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  color: context.onPrimary,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 8),
+                                      AppText(
+                                        displayTitle,
+                                        textAlign: TextAlign.start,
+                                        style: const TextStyle(
+                                          color: Color(0xFF111827),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          height: 30 / 18,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      AppText(
+                                        displayStoreLine,
+                                        textAlign: TextAlign.start,
+                                        style: const TextStyle(
+                                          color: Color(0xFF6B7280),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          height: 22 / 14,
+                                        ),
+                                      ),
+                                      if (description.isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        AppText(
+                                          description,
+                                          textAlign: TextAlign.start,
+                                          style: const TextStyle(
+                                            color: Color(0xFF6B7280),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            height: 20 / 13,
+                                          ),
+                                        ),
+                                      ],
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsetsDirectional
+                                                .all(12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xffFEFCE8),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                const FaIcon(
+                                                  FontAwesomeIcons.solidStar,
+                                                  size: 13,
+                                                  color: Color(0xFFFBBF24),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                AppText(
+                                                  product?.store
+                                                              ?.averageRating
+                                                              ?.trim()
+                                                              .isNotEmpty ==
+                                                          true
+                                                      ? product!
+                                                          .store!
+                                                          .averageRating!
+                                                          .trim()
+                                                      : '4.9',
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF374151),
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w700,
+                                                    height: 20 / 14,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                AppText(
+                                                  product?.store?.totalReviews !=
+                                                          null
+                                                      ? '(${product!.store!.totalReviews} تقييم)'
+                                                      : '(320 تقييم)',
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF6B7280),
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
+                                                    height: 20 / 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsetsDirectional
+                                                .all(12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xffF9FAFB),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                FaIcon(
+                                                  FontAwesomeIcons.fire,
+                                                  size: 13,
+                                                  color: context
+                                                      .primaryContainer,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                AppText(
+                                                  '450 مرة طلب',
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF6B7280),
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
+                                                    height: 20 / 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          AppText(
+                                            priceMainText.isEmpty
+                                                ? '-'
+                                                : priceMainText,
+                                            style: const TextStyle(
+                                              color: Color(0xFF16A34A),
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w700,
+                                              height: 30 / 22,
+                                            ),
+                                          ),
+                                          if (priceStrikeText != null)
+                                            AppText(
+                                              priceStrikeText,
+                                              style: const TextStyle(
+                                                color: Color(0xFF9CA3AF),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                height: 20 / 12,
+                                                decoration: TextDecoration
+                                                    .lineThrough,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 20),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                TextField(
-                                  maxLines: 3,
-                                  style: TextStyle(
-                                    color: Color(0xFF111827),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    height: 20 / 14,
+                                if (failedProduct &&
+                                    product == null &&
+                                    starter != null)
+                                  Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: FailureWidget(
+                                      message: state.errorMessage ?? '',
+                                      onRetry: () {
+                                        context.read<SmStoresBloc>().add(
+                                              LoadSupermarketProductDetailsEvent(
+                                                productId:
+                                                    widget.args.productId,
+                                              ),
+                                            );
+                                      },
+                                    ),
                                   ),
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        "اكتب ملاحظة خاصة بالطلب (اختياري)\nمثل: يرجى اختيار ربطة خبز تازة",
-                                    hintStyle: TextStyle(
-                                      color: Color(0xFF9CA3AF),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      height: 20 / 14,
-                                    ),
-                                    contentPadding: EdgeInsets.all(16),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(12),
+                                const SizedBox(height: 6),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 22,
+                                  ),
+                                  color: context.onPrimary,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      AppText(
+                                        'ملاحظات خاصة',
+                                        textAlign: TextAlign.start,
+                                        style: const TextStyle(
+                                          color: Color(0xFF111827),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          height: 24 / 16,
+                                        ),
                                       ),
-                                      borderSide: BorderSide(
-                                        width: 2,
-                                        color: Color(0xFFE5E7EB),
+                                      const SizedBox(height: 4),
+                                      AppText(
+                                        'أضف اي طلب خاص',
+                                        textAlign: TextAlign.start,
+                                        style: const TextStyle(
+                                          color: Color(0xFF9CA3AF),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          height: 16 / 12,
+                                        ),
                                       ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(12),
+                                      const SizedBox(height: 16),
+                                      TextField(
+                                        controller: _notesController,
+                                        maxLines: 3,
+                                        textInputAction: TextInputAction.done,
+                                        onSubmitted: (_) =>
+                                            _saveCurrentNote(),
+                                        style: const TextStyle(
+                                          color: Color(0xFF111827),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          height: 20 / 14,
+                                        ),
+                                        decoration: const InputDecoration(
+                                          hintText:
+                                              'اكتب ملاحظة خاصة بالطلب (اختياري)',
+                                          hintStyle: TextStyle(
+                                            color: Color(0xFF9CA3AF),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            height: 20 / 13,
+                                          ),
+                                          contentPadding: EdgeInsets.all(16),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(14),
+                                            ),
+                                            borderSide: BorderSide(
+                                              width: 1.5,
+                                              color: Color(0xFFE5E7EB),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(14),
+                                            ),
+                                            borderSide: BorderSide(
+                                              width: 1.5,
+                                              color: Color(0xFFE5E7EB),
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                      borderSide: BorderSide(
-                                        width: 2,
-                                        color: Color(0xFFE5E7EB),
-                                      ),
-                                    ),
+                                      if (_savedNotes.isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: List.generate(
+                                            _savedNotes.length,
+                                            (index) {
+                                              return ProductSavedNoteChip(
+                                                label: _savedNotes[index],
+                                                onRemove: () =>
+                                                    _removeSavedNote(index),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          SizedBox(height: 30),
-                        ],
-                      ),
+                        ),
+              bottomNavigationBar: showFullScreenLoading ||
+                      showFullScreenFailure
+                  ? null
+                  : ProductBottomBar(
+                      quantity: _quantity,
+                      isSubmitting:
+                          state.addToCartStatus == BlocStatus.loading,
+                      onDecrease: () {
+                        if (_quantity == 1) return;
+                        setState(() {
+                          _quantity -= 1;
+                        });
+                      },
+                      onIncrease: () {
+                        setState(() {
+                          _quantity += 1;
+                        });
+                      },
+                      onAddPressed: () {
+                        context.read<SmStoresBloc>().add(
+                              AddSupermarketCartItemEvent(
+                                productId: widget.args.productId,
+                                quantity: _quantity,
+                              ),
+                            );
+                      },
                     ),
-              bottomNavigationBar: ProductsBottomNavBar(
-                isSubmitting: state.addToCartStatus == BlocStatus.loading,
-                onAddToCart: (quantity) {
-                  context.read<SmStoresBloc>().add(
-                    AddSupermarketCartItemEvent(
-                      productId: widget.args.productId,
-                      quantity: quantity,
-                    ),
-                  );
-                },
-              ),
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final FaIconData icon;
-  final void Function() onTap;
-  const _ActionButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      customBorder: CircleBorder(),
-      child: Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-        ),
-        child: FaIcon(icon, size: 18, color: Color(0xFF1F2937)),
       ),
     );
   }

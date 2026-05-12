@@ -1,13 +1,11 @@
 import 'dart:async';
 
-import 'package:common_package/common_package.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'core/di/injection.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/routes/app_router.dart';
-import 'features/auth/view/screens/login_screen.dart';
 import 'features/main/view/screens/main_screen.dart';
 
 class App extends StatefulWidget {
@@ -28,9 +26,6 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    final token = SharedPreferencesHelper.getData(key: 'token');
-    final hasAuthToken = token != null && token.toString().trim().isNotEmpty;
-
     return MaterialApp(
       navigatorKey: widget.navigatorKey,
       title: 'دللني',
@@ -39,7 +34,7 @@ class _AppState extends State<App> {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      home: hasAuthToken ? const MainScreen() : const LoginScreen(),
+      home: const MainScreen(),
       theme: ThemeData(
         fontFamily: 'cairo',
         colorScheme: ColorScheme(

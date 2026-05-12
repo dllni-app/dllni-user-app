@@ -172,7 +172,7 @@ class _SmStoreDetailsScreenState extends State<SmStoreDetailsScreen> {
                     onShareTap: () {
                       final id = widget.args?.storeId ?? 0;
                       if (id <= 0) return;
-                      unawaited(shareDeepLinkUrl(supermarketStoreUrl(id), context: context));
+                      unawaited(shareDeepLinkUrl(storeUrl(id), context: context));
                     },
                   ),
                   StoreStatusSection(store: header),
