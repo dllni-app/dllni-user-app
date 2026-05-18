@@ -13,7 +13,6 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
     required this.toTimeController,
     required this.onPickDate,
     required this.onPickFromTime,
-    required this.onPickToTime,
     super.key,
   });
 
@@ -23,7 +22,6 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
   final TextEditingController toTimeController;
   final VoidCallback onPickDate;
   final VoidCallback onPickFromTime;
-  final VoidCallback onPickToTime;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +63,7 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: ClServiceTimePickerFieldWidget(title: 'إلى', controller: toTimeController, onTap: onPickToTime),
+                      child: ClServiceTimePickerFieldWidget(title: 'إلى', controller: toTimeController),
                     ),
                   ],
                 ),

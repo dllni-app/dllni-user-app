@@ -15,6 +15,7 @@ import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_previous_workers_section_widget.dart';
+import '../helpers/cl_service_schedule_time_utils.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_worker_profile_detail_screen.dart';
@@ -43,7 +44,7 @@ class _ClMainServiceScheduleScreenState
     super.initState();
     _selectedDate = DateTime.now();
     _fromTimeController = TextEditingController(text: '09:00');
-    _toTimeController = TextEditingController(text: '23:00');
+    _toTimeController = TextEditingController();
   }
 
   @override
@@ -55,6 +56,7 @@ class _ClMainServiceScheduleScreenState
     if (args is ClMainScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
+      _syncToTime();
     }
     _bloc?.add(
       GetPreviousCleaningWorkersEvent(
@@ -79,19 +81,20 @@ class _ClMainServiceScheduleScreenState
     });
   }
 
+  void _syncToTime() {
+    final estimatedHours = _routeArgs?.estimate.size?.estimatedHours ?? 0;
+    _toTimeController.text = formatClServiceEndTime(
+      startTime: _fromTimeController.text,
+      durationHours: estimatedHours,
+    );
+  }
+
   Future<void> _pickFromTime() async {
     final value = await AppPickers.showAppTimePicker(context: context);
     if (value.isEmpty) return;
     setState(() {
       _fromTimeController.text = value;
-    });
-  }
-
-  Future<void> _pickToTime() async {
-    final value = await AppPickers.showAppTimePicker(context: context);
-    if (value.isEmpty) return;
-    setState(() {
-      _toTimeController.text = value;
+      _syncToTime();
     });
   }
 
@@ -220,7 +223,6 @@ class _ClMainServiceScheduleScreenState
                             toTimeController: _toTimeController,
                             onPickDate: _pickDate,
                             onPickFromTime: _pickFromTime,
-                            onPickToTime: _pickToTime,
                           ),
                           const SizedBox(height: 10),
                           ClServiceAddressSectionWidget(
@@ -246,24 +248,14 @@ class _ClMainServiceScheduleScreenState
                                 SetPreferredWorkerEvent(workerId: workerId),
                               );
                             },
-                            onOpenWorkerProfile: (worker) async {
-                              final selectedWorkerId = await context.pushRoute(
+                            onOpenWorkerProfile: (worker) {
+                              context.pushRoute(
                                 '/clworkerprofiledetail',
                                 arguments:
                                     WorkerProfileRouteArgs.fromPreviousWorker(
                                       worker,
                                     ),
                               );
-                              if (!context.mounted) return;
-                              if (selectedWorkerId is int) {
-                                bloc.add(
-                                  SetPreferredWorkerEvent(
-                                    workerId: selectedWorkerId,
-                                  ),
-                                );
-                              } else if (selectedWorkerId == false) {
-                                bloc.add(SetPreferredWorkerEvent(workerId: null));
-                              }
                             },
                           ),
                           const SizedBox(height: 12),

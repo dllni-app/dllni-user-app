@@ -16,6 +16,7 @@ class AuthFormValidators {
     return null;
   }
 
+  @Deprecated('Use validatePhoneNumber from phone_number_helper.dart')
   static String? phoneLocal(String? value) {
     final v = value?.trim().replaceAll(' ', '') ?? '';
     if (v.isEmpty) return 'أدخل رقم الجوال';

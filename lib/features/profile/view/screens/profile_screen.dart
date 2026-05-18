@@ -18,8 +18,7 @@ class ProfileScreen extends StatelessWidget {
   static const PersonalDetailsParams _personalDetailsParams =
       PersonalDetailsParams(
         name: 'مطعم البيت الحلبي',
-        phoneLocal: '987654321',
-        dialCode: '+963',
+        phone: '+963987654321',
         isPhoneVerified: true,
         email: 'ahmed.m@example.com',
       );

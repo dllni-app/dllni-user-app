@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../features/orders/data/models/cleaning_booking_status.dart';
 import '../../features/orders/data/models/cleaning_orders_api_models.dart';
@@ -37,9 +38,11 @@ class CleaningGlobalVerificationGateCoordinator {
       CleaningGateSessionStore.instance;
 
   Timer? _pollTimer;
+  final List<Timer> _arrivalFollowUpRefreshTimers = <Timer>[];
   bool _started = false;
   bool _gatePromptOpen = false;
   bool _refreshing = false;
+  bool _useUnfilteredPollingFallback = false;
   int? _listeningCustomerId;
   bool _customerChannelAuthWarningShown = false;
 
@@ -76,14 +79,50 @@ class CleaningGlobalVerificationGateCoordinator {
         .toList(growable: false);
   }
 
+  @visibleForTesting
+  static bool shouldSwitchToUnfilteredPolling({
+    required String? requestedStatus,
+    required Either<Failure, FetchCleaningOrdersModel> response,
+  }) {
+    if (requestedStatus == null || requestedStatus.trim().isEmpty) {
+      return false;
+    }
+    return response.fold(_isStatusFilterValidationFailure, (_) => false);
+  }
+
+  @visibleForTesting
+  static CleaningPolledGateTargets resolvePolledGateTargets(
+    List<CleaningOrderModel> orders,
+  ) {
+    return CleaningPolledGateTargets(
+      awaitingVerificationOrderIds: findAwaitingVerificationOrderIds(orders),
+      awaitingCompletionOrderIds: findAwaitingCompletionOrderIds(orders),
+    );
+  }
+
+  static bool _isStatusFilterValidationFailure(Failure failure) {
+    if (failure.statusCode == 422) return true;
+    final normalizedMessage = failure.message.toLowerCase();
+    return normalizedMessage.contains('filter.status') &&
+        normalizedMessage.contains('invalid');
+  }
+
   Future<void> start() async {
     if (_started) return;
     _started = true;
     await _pusher.ensureInitialized();
     await _ensureCustomerRealtimeChannel();
     unawaited(_refreshPendingGates());
+    _scheduleStartupPostFrameRefresh();
     _pollTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       unawaited(_ensureCustomerRealtimeChannel());
+      unawaited(_refreshPendingGates());
+    });
+  }
+
+  void _scheduleStartupPostFrameRefresh() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_started) return;
       unawaited(_refreshPendingGates());
     });
   }
@@ -91,7 +130,9 @@ class CleaningGlobalVerificationGateCoordinator {
   Future<void> stop() async {
     _pollTimer?.cancel();
     _pollTimer = null;
+    _cancelArrivalFollowUpRefreshTimers();
     _gatePromptOpen = false;
+    _useUnfilteredPollingFallback = false;
     if (_listeningCustomerId != null) {
       _pusher.setCustomerHandler(_listeningCustomerId!, null);
       _pusher.setCustomerErrorHandler(_listeningCustomerId!, null);
@@ -111,6 +152,8 @@ class CleaningGlobalVerificationGateCoordinator {
         _listeningCustomerId = null;
       }
       _gateSession.reset();
+      _cancelArrivalFollowUpRefreshTimers();
+      _useUnfilteredPollingFallback = false;
       return;
     }
 
@@ -140,16 +183,10 @@ class CleaningGlobalVerificationGateCoordinator {
 
     if (normalizedEvent == CleaningRealtimeContract.awaitingStartVerification) {
       if (bookingId != null) {
-        // Treat explicit awaiting-start realtime events as a fresh
-        // verification request for this booking, so refetched codes can
-        // re-open even after temporary user dismissal.
+        // Clear temporary dismissal, then let refresh-based reconciliation
+        // decide prompt order (completion first when both are eligible).
         _gateSession.clearStartDismissed(bookingId);
-        unawaited(
-          _promptForStartVerificationGateIfNeeded(
-            orderId: bookingId,
-            force: true,
-          ),
-        );
+        unawaited(_refreshPendingGates());
       } else {
         unawaited(_refreshPendingGates());
       }
@@ -178,8 +215,18 @@ class CleaningGlobalVerificationGateCoordinator {
       return;
     }
 
+    if (normalizedEvent == CleaningRealtimeContract.workerArrived) {
+      if (bookingId != null) {
+        // Keep start dialog eligibility fresh, but use refresh ordering
+        // instead of direct prompt so completion can take priority.
+        _gateSession.clearStartDismissed(bookingId);
+      }
+      unawaited(_refreshPendingGates());
+      _scheduleArrivalFollowUpRefreshes();
+      return;
+    }
+
     if (normalizedEvent == CleaningRealtimeContract.trackingUpdated ||
-        normalizedEvent == CleaningRealtimeContract.workerArrived ||
         normalizedEvent == CleaningRealtimeContract.completionDecisionMade ||
         normalizedEvent == CleaningRealtimeContract.serviceExtensionRequested) {
       unawaited(_refreshPendingGates());
@@ -205,27 +252,59 @@ class CleaningGlobalVerificationGateCoordinator {
     if (!_hasToken() || _refreshing) return;
     _refreshing = true;
     try {
-      await _refreshPendingGatesForStatus(
-        CleaningBookingStatus.awaitingStartVerification,
-      );
-      await _refreshPendingGatesForStatus(
-        CleaningBookingStatus.awaitingCustomerCompletion,
-      );
+      if (_useUnfilteredPollingFallback) {
+        await _refreshPendingGatesWithoutStatusFilter();
+        return;
+      }
+
+      for (final statusFilter in resolveStatusPollPriority()) {
+        final outcome = await _refreshPendingGatesForStatus(statusFilter);
+        if (outcome == _StatusPollOutcome.switchToUnfilteredFallback) {
+          _useUnfilteredPollingFallback = true;
+          await _refreshPendingGatesWithoutStatusFilter();
+          return;
+        }
+      }
     } finally {
       _refreshing = false;
     }
   }
 
-  Future<void> _refreshPendingGatesForStatus(String statusFilter) async {
+  Future<_StatusPollOutcome> _refreshPendingGatesForStatus(
+    String statusFilter,
+  ) async {
     for (var page = 1; page <= _pollMaxPagesPerStatus; page++) {
       final Either<Failure, FetchCleaningOrdersModel> response =
-          await getIt<FetchCleaningOrdersUseCase>()(
-            FetchCleaningOrdersParams(
-              status: statusFilter,
-              page: page,
-              perPage: _pollPageSize,
-            ),
+          await _fetchCleaningOrdersPage(
+            statusFilter: statusFilter,
+            page: page,
           );
+
+      if (shouldSwitchToUnfilteredPolling(
+        requestedStatus: statusFilter,
+        response: response,
+      )) {
+        return _StatusPollOutcome.switchToUnfilteredFallback;
+      }
+
+      if (!_started) return _StatusPollOutcome.completed;
+
+      final orders = response.fold<List<CleaningOrderModel>>(
+        (_) => const <CleaningOrderModel>[],
+        (result) => result.data,
+      );
+      if (orders.isEmpty) break;
+      _processPolledOrders(orders);
+
+      if (orders.length < _pollPageSize) break;
+    }
+    return _StatusPollOutcome.completed;
+  }
+
+  Future<void> _refreshPendingGatesWithoutStatusFilter() async {
+    for (var page = 1; page <= _pollMaxPagesPerStatus; page++) {
+      final Either<Failure, FetchCleaningOrdersModel> response =
+          await _fetchCleaningOrdersPage(page: page);
 
       if (!_started) return;
 
@@ -235,27 +314,64 @@ class CleaningGlobalVerificationGateCoordinator {
       );
       if (orders.isEmpty) break;
 
-      for (final order in orders) {
-        final orderId = order.id;
-        if (orderId == null) continue;
-        final status = (order.status ?? '').toLowerCase();
-        _gateSession.syncWithStatus(
-          bookingId: orderId,
-          normalizedStatus: status,
-        );
-        if (status == CleaningBookingStatus.awaitingStartVerification) {
+      _processPolledOrders(orders);
+      if (orders.length < _pollPageSize) break;
+    }
+  }
+
+  Future<Either<Failure, FetchCleaningOrdersModel>> _fetchCleaningOrdersPage({
+    required int page,
+    String? statusFilter,
+  }) {
+    return getIt<FetchCleaningOrdersUseCase>()(
+      FetchCleaningOrdersParams(
+        status: statusFilter,
+        page: page,
+        perPage: _pollPageSize,
+      ),
+    );
+  }
+
+  void _processPolledOrders(List<CleaningOrderModel> orders) {
+    final targets = resolvePolledGateTargets(orders);
+    final Map<int, CleaningOrderModel> ordersById = <int, CleaningOrderModel>{};
+
+    for (final order in orders) {
+      final orderId = order.id;
+      if (orderId == null) continue;
+      ordersById[orderId] = order;
+      final status = (order.status ?? '').toLowerCase();
+      _gateSession.syncWithStatus(bookingId: orderId, normalizedStatus: status);
+    }
+
+    final hasEligibleCompletionPrompt = targets.awaitingCompletionOrderIds.any(
+      (orderId) => !_gateSession.isCompletionSuppressed(orderId),
+    );
+
+    for (final priority in resolvePolledPromptPriority()) {
+      if (priority == CleaningPolledPromptPriority.completion) {
+        for (final orderId in targets.awaitingCompletionOrderIds) {
           unawaited(
-            _promptForStartVerificationGateIfNeeded(
+            _promptForCompletionGateIfNeeded(
               orderId: orderId,
-              previewOrder: order,
+              requestedFromCompletionPoll: true,
             ),
           );
-        } else if (status == CleaningBookingStatus.awaitingCustomerCompletion) {
-          unawaited(_promptForCompletionGateIfNeeded(orderId: orderId));
         }
+        continue;
       }
 
-      if (orders.length < _pollPageSize) break;
+      if (hasEligibleCompletionPrompt) {
+        continue;
+      }
+      for (final orderId in targets.awaitingVerificationOrderIds) {
+        unawaited(
+          _promptForStartVerificationGateIfNeeded(
+            orderId: orderId,
+            previewOrder: ordersById[orderId],
+          ),
+        );
+      }
     }
   }
 
@@ -278,16 +394,13 @@ class CleaningGlobalVerificationGateCoordinator {
     bool force = false,
   }) async {
     if (!_started || _gatePromptOpen) return;
-    if (_isOrderDetailsScreenOpenFor(orderId)) return;
+    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
     if (_gateSession.isStartVerificationSuppressed(orderId, force: force)) {
       return;
     }
     if (previewOrder != null &&
         _isStartVerificationExpired(
           scheduledDate: previewOrder.scheduledDate,
-          scheduledTime: previewOrder.scheduledTime,
-          totalHours: previewOrder.totalHours,
-          estimatedHours: previewOrder.estimatedHours,
         )) {
       _gateSession.suppressStartVerification(
         orderId,
@@ -298,7 +411,7 @@ class CleaningGlobalVerificationGateCoordinator {
 
     final details = await _fetchOrderDetails(orderId);
     if (!_started || _gatePromptOpen) return;
-    if (_isOrderDetailsScreenOpenFor(orderId)) return;
+    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
 
     if (details == null) return;
     _syncGateSessionWithDetails(details);
@@ -306,12 +419,7 @@ class CleaningGlobalVerificationGateCoordinator {
     if (status != CleaningBookingStatus.awaitingStartVerification) {
       return;
     }
-    if (_isStartVerificationExpired(
-      scheduledDate: details.scheduledDate,
-      scheduledTime: details.scheduledTime,
-      totalHours: details.totalHours,
-      estimatedHours: details.estimatedHours,
-    )) {
+    if (_isStartVerificationExpired(scheduledDate: details.scheduledDate)) {
       _gateSession.suppressStartVerification(
         orderId,
         CleaningGateSuppressionReason.bookingTimeExpired,
@@ -324,7 +432,7 @@ class CleaningGlobalVerificationGateCoordinator {
 
     final navContext = _navigatorKey.currentContext;
     if (navContext == null || !navContext.mounted) return;
-    if (_isOrderDetailsScreenOpenFor(orderId)) return;
+    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
 
     _gatePromptOpen = true;
     var confirmed = false;
@@ -350,33 +458,32 @@ class CleaningGlobalVerificationGateCoordinator {
       unawaited(_refreshPendingGates());
       return;
     }
-    _gateSession.suppressStartVerification(
-      orderId,
-      CleaningGateSuppressionReason.userDismissed,
-    );
-    // Keep scanning immediately so other awaiting bookings can prompt
-    // without waiting for the periodic poll.
-    unawaited(_refreshPendingGates());
+    return;
   }
 
   Future<void> _promptForCompletionGateIfNeeded({
     required int orderId,
     bool force = false,
+    bool requestedFromCompletionPoll = false,
   }) async {
     if (!_started || _gatePromptOpen) return;
-    if (_isOrderDetailsScreenOpenFor(orderId)) return;
+    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
     if (_gateSession.isCompletionSuppressed(orderId, force: force)) {
       return;
     }
 
     final details = await _fetchOrderDetails(orderId);
     if (!_started || _gatePromptOpen) return;
-    if (_isOrderDetailsScreenOpenFor(orderId)) return;
+    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
     if (details == null) return;
 
     _syncGateSessionWithDetails(details);
     final status = (details.status ?? '').toLowerCase();
-    if (status != CleaningBookingStatus.awaitingCustomerCompletion) {
+    final handlingDecision = resolveCompletionGateHandlingDecision(
+      requestedFromCompletionPoll: requestedFromCompletionPoll,
+      normalizedDetailsStatus: status,
+    );
+    if (handlingDecision == CompletionGateHandlingDecision.noCompletionSheet) {
       return;
     }
     if (_gateSession.isCompletionSuppressed(orderId, force: force)) {
@@ -385,12 +492,12 @@ class CleaningGlobalVerificationGateCoordinator {
 
     final navContext = _navigatorKey.currentContext;
     if (navContext == null || !navContext.mounted) return;
-    if (_isOrderDetailsScreenOpenFor(orderId)) return;
+    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
 
     _gatePromptOpen = true;
-    CleaningCompletionDecision? decision;
+    CleaningCompletionDecision? sheetDecision;
     try {
-      decision = await CleaningCompletionDecisionSheet.show(
+      sheetDecision = await CleaningCompletionDecisionSheet.show(
         navContext,
         useRootNavigator: true,
         onConfirm: () => _submitCompletionConfirm(orderId: orderId),
@@ -405,7 +512,11 @@ class CleaningGlobalVerificationGateCoordinator {
       _gatePromptOpen = false;
     }
 
-    if (decision == null) {
+    final shouldPromptStartVerificationAfterSheet =
+        handlingDecision ==
+        CompletionGateHandlingDecision.completionThenStartDialog;
+
+    if (sheetDecision == null) {
       _gateSession.suppressCompletion(
         orderId,
         CleaningGateSuppressionReason.userDismissed,
@@ -414,11 +525,23 @@ class CleaningGlobalVerificationGateCoordinator {
       // Keep scanning immediately so other awaiting bookings can prompt
       // without waiting for the periodic poll.
       unawaited(_refreshPendingGates());
+      if (shouldPromptStartVerificationAfterSheet) {
+        unawaited(_promptForStartVerificationGateIfNeeded(orderId: orderId));
+      }
       return;
     }
     _gateSession.clearCompletionAwaitingCycle(orderId);
 
-    if (decision == CleaningCompletionDecision.confirmed &&
+    if (sheetDecision == CleaningCompletionDecision.extensionRequested &&
+        navContext.mounted) {
+      AppToast.showToast(
+        context: navContext,
+        message: 'تم إرسال طلب تمديد الوقت إلى العامل',
+        type: ToastificationType.success,
+      );
+    }
+
+    if (sheetDecision == CleaningCompletionDecision.confirmed &&
         navContext.mounted &&
         details.id != null) {
       final workerProfile = await resolveCleaningWorkerProfileForRating(
@@ -444,6 +567,9 @@ class CleaningGlobalVerificationGateCoordinator {
       }
     }
     unawaited(_refreshPendingGates());
+    if (shouldPromptStartVerificationAfterSheet) {
+      unawaited(_promptForStartVerificationGateIfNeeded(orderId: orderId));
+    }
   }
 
   Future<CleaningOrderDetailModel?> _fetchOrderDetails(int orderId) async {
@@ -464,12 +590,7 @@ class CleaningGlobalVerificationGateCoordinator {
       bookingId: orderId,
       normalizedStatus: (details.status ?? '').toLowerCase(),
     );
-    if (_isStartVerificationExpired(
-      scheduledDate: details.scheduledDate,
-      scheduledTime: details.scheduledTime,
-      totalHours: details.totalHours,
-      estimatedHours: details.estimatedHours,
-    )) {
+    if (_isStartVerificationExpired(scheduledDate: details.scheduledDate)) {
       _gateSession.suppressStartVerification(
         orderId,
         CleaningGateSuppressionReason.bookingTimeExpired,
@@ -477,18 +598,43 @@ class CleaningGlobalVerificationGateCoordinator {
     }
   }
 
-  bool _isStartVerificationExpired({
-    required String? scheduledDate,
-    required String? scheduledTime,
-    required double? totalHours,
-    required String? estimatedHours,
-  }) {
-    return isCleaningBookingPastEndTime(
+  bool _isStartVerificationExpired({required String? scheduledDate}) {
+    return isCleaningBookingScheduledDateBeforeToday(
       scheduledDate: scheduledDate,
-      scheduledTime: scheduledTime,
-      totalHours: totalHours,
-      estimatedHours: estimatedHours,
     );
+  }
+
+  @visibleForTesting
+  static CompletionGateHandlingDecision resolveCompletionGateHandlingDecision({
+    required bool requestedFromCompletionPoll,
+    required String normalizedDetailsStatus,
+  }) {
+    if (normalizedDetailsStatus ==
+        CleaningBookingStatus.awaitingCustomerCompletion) {
+      return CompletionGateHandlingDecision.completionOnly;
+    }
+    if (requestedFromCompletionPoll &&
+        normalizedDetailsStatus ==
+            CleaningBookingStatus.awaitingStartVerification) {
+      return CompletionGateHandlingDecision.completionThenStartDialog;
+    }
+    return CompletionGateHandlingDecision.noCompletionSheet;
+  }
+
+  @visibleForTesting
+  static List<String> resolveStatusPollPriority() {
+    return const <String>[
+      CleaningBookingStatus.awaitingCustomerCompletion,
+      CleaningBookingStatus.awaitingStartVerification,
+    ];
+  }
+
+  @visibleForTesting
+  static List<CleaningPolledPromptPriority> resolvePolledPromptPriority() {
+    return const <CleaningPolledPromptPriority>[
+      CleaningPolledPromptPriority.completion,
+      CleaningPolledPromptPriority.startVerification,
+    ];
   }
 
   Future<String?> _confirmStartVerificationCode({
@@ -606,4 +752,46 @@ class CleaningGlobalVerificationGateCoordinator {
         .toString();
     return token.trim().isNotEmpty;
   }
+
+  void _scheduleArrivalFollowUpRefreshes() {
+    _cancelArrivalFollowUpRefreshTimers();
+    for (final delay in const <Duration>[
+      Duration(seconds: 3),
+      Duration(seconds: 8),
+    ]) {
+      final timer = Timer(delay, () {
+        if (!_started) return;
+        unawaited(_refreshPendingGates());
+      });
+      _arrivalFollowUpRefreshTimers.add(timer);
+    }
+  }
+
+  void _cancelArrivalFollowUpRefreshTimers() {
+    for (final timer in _arrivalFollowUpRefreshTimers) {
+      timer.cancel();
+    }
+    _arrivalFollowUpRefreshTimers.clear();
+  }
+}
+
+enum _StatusPollOutcome { completed, switchToUnfilteredFallback }
+
+enum CompletionGateHandlingDecision {
+  completionOnly,
+  completionThenStartDialog,
+  noCompletionSheet,
+}
+
+enum CleaningPolledPromptPriority { completion, startVerification }
+
+@visibleForTesting
+class CleaningPolledGateTargets {
+  const CleaningPolledGateTargets({
+    required this.awaitingVerificationOrderIds,
+    required this.awaitingCompletionOrderIds,
+  });
+
+  final List<int> awaitingVerificationOrderIds;
+  final List<int> awaitingCompletionOrderIds;
 }

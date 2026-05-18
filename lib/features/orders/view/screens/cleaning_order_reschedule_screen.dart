@@ -12,6 +12,7 @@ import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../../cl_main/view/manager/bloc/cl_main_bloc.dart';
 import '../../../cl_main/view/widgets/app_pickers.dart';
+import '../../../cl_main/view/helpers/cl_service_schedule_time_utils.dart';
 import '../../../cl_main/view/widgets/cl_service_schedule_section_widget.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
@@ -66,7 +67,8 @@ class _CleaningOrderRescheduleScreenState
         fallback: '09:00',
       ),
     );
-    _toTimeController = TextEditingController(text: '23:00');
+    _toTimeController = TextEditingController();
+    _syncToTime(_parseOrderEstimatedHours());
     _requestEstimate();
   }
 
@@ -141,20 +143,31 @@ class _CleaningOrderRescheduleScreenState
     });
   }
 
+  double _parseOrderEstimatedHours() {
+    return double.tryParse((widget.args.order.estimatedHours ?? '').trim()) ?? 0;
+  }
+
+  void _syncToTime(double estimatedHours) {
+    if (estimatedHours <= 0) return;
+    _toTimeController.text = formatClServiceEndTime(
+      startTime: _fromTimeController.text,
+      durationHours: estimatedHours,
+    );
+  }
+
   Future<void> _pickFromTime() async {
     final value = await AppPickers.showAppTimePicker(context: context);
     if (value.isEmpty) return;
     setState(() {
       _fromTimeController.text = value;
+      _syncToTime(_resolveEstimatedHours(_clMainBloc.state));
     });
   }
 
-  Future<void> _pickToTime() async {
-    final value = await AppPickers.showAppTimePicker(context: context);
-    if (value.isEmpty) return;
-    setState(() {
-      _toTimeController.text = value;
-    });
+  double _resolveEstimatedHours(ClMainState state) {
+    final fromEstimate = state.estimatePrice?.size?.estimatedHours;
+    if (fromEstimate != null && fromEstimate > 0) return fromEstimate;
+    return _parseOrderEstimatedHours();
   }
 
   String _leadTimeBlockMessage(Duration? remaining) {
@@ -251,7 +264,13 @@ class _CleaningOrderRescheduleScreenState
 
     return BlocProvider.value(
       value: _clMainBloc,
-      child: BlocBuilder<ClMainBloc, ClMainState>(
+      child: BlocConsumer<ClMainBloc, ClMainState>(
+        listenWhen: (previous, current) =>
+            previous.estimatePrice?.size?.estimatedHours !=
+            current.estimatePrice?.size?.estimatedHours,
+        listener: (context, state) {
+          _syncToTime(_resolveEstimatedHours(state));
+        },
         builder: (context, state) {
           final pricing = state.estimatePrice?.pricing;
           final subtotal =
@@ -292,7 +311,6 @@ class _CleaningOrderRescheduleScreenState
                               toTimeController: _toTimeController,
                               onPickDate: _pickDate,
                               onPickFromTime: _pickFromTime,
-                              onPickToTime: _pickToTime,
                             ),
                             const SizedBox(height: 12),
                             if (isLoadingEstimate) ...[

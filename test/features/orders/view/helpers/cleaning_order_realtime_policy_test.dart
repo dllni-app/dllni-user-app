@@ -60,5 +60,32 @@ void main() {
         expect(action.reopenCompletionAfterRefresh, isTrue);
       },
     );
+
+    test('extension_rejected decision reopens completion sheet', () {
+      final action = CleaningOrderRealtimePolicy.resolve(
+        eventName: 'CompletionDecisionMade',
+        payload: const <String, dynamic>{'decision': 'extension_rejected'},
+        currentStatus: CleaningBookingStatus.timeExtensionRequested,
+      );
+
+      expect(action.reopenCompletionAfterRefresh, isTrue);
+    });
+
+    test(
+      'tracking update to awaiting_customer_completion reopens completion',
+      () {
+        final action = CleaningOrderRealtimePolicy.resolve(
+          eventName: 'CleaningBookingTrackingUpdated',
+          payload: const <String, dynamic>{
+            'tracking': {
+              'status': CleaningBookingStatus.awaitingCustomerCompletion,
+            },
+          },
+          currentStatus: CleaningBookingStatus.timeExtensionRequested,
+        );
+
+        expect(action.reopenCompletionAfterRefresh, isTrue);
+      },
+    );
   });
 }

@@ -52,7 +52,12 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
                 children: [
                   _ProfileHeaderWidget(profile: profile),
                   Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 20),
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      14,
+                      16,
+                      20 + MediaQuery.viewPaddingOf(context).bottom,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -127,7 +132,6 @@ class ClWorkerProfileDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          _ProfileActionsWidget(args: args),
         ],
       ),
     );
@@ -242,63 +246,6 @@ class _InfoPillWidget extends StatelessWidget {
           if (icon != null) ...{Icon(icon, color: iconColor, size: 18), const SizedBox(width: 6)},
           AppText.bodyMedium(text, color: textColor, fontWeight: FontWeight.w600, textAlign: TextAlign.center),
         ],
-      ),
-    );
-  }
-}
-
-class _ProfileActionsWidget extends StatelessWidget {
-  const _ProfileActionsWidget({required this.args});
-
-  final WorkerProfileRouteArgs args;
-
-  int? _resolveWorkerId() {
-    return args.worker?.id ?? int.tryParse(args.workerId);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final workerId = _resolveWorkerId();
-    return Container(
-      color: const Color(0xFFF2F2F2),
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 18),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => context.pop(false),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9FA8C8),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
-                ),
-                child: AppText.bodyMedium('رفض العامل', color: Colors.white, fontWeight: FontWeight.w700, textAlign: TextAlign.center),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  if (workerId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تحديد مقدم الخدمة')));
-                    return;
-                  }
-                  context.pop(workerId);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF08BFCF),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
-                ),
-                child: AppText.bodyMedium('قبول العامل', color: Colors.white, fontWeight: FontWeight.w700, textAlign: TextAlign.center),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -93,13 +93,17 @@ class _CleaningWorkerRatingScreenState
               ? widget.args.workerProfile.firstName!.trim()
               : 'مقدم الخدمة');
     final workerAvatarUrl = widget.args.workerProfile.avatar?.url;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
     return Scaffold(
       backgroundColor: const Color(0xffF3F4F6),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: Stack(
+                clipBehavior: Clip.none,
                 children: [
                   Positioned.fill(
                     child: workerAvatarUrl == null
@@ -109,11 +113,13 @@ class _CleaningWorkerRatingScreenState
                   Positioned.fill(
                     child: Container(color: Colors.black.withAlpha(70)),
                   ),
-                  Positioned.fill(
+                  Positioned(
                     top: 120,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.fromLTRB(14, 56, 14, 14),
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
@@ -121,8 +127,13 @@ class _CleaningWorkerRatingScreenState
                           topRight: Radius.circular(24),
                         ),
                       ),
-                      child: Column(
-                        children: [
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(14, 56, 14, 14 + bottomInset),
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                           AppText.titleLarge(
                             workerName,
                             fontWeight: FontWeight.bold,
@@ -202,7 +213,7 @@ class _CleaningWorkerRatingScreenState
                               );
                             }).toList(),
                           ),
-                          const Spacer(),
+                          const SizedBox(height: 20),
                           Row(
                             children: [
                               Expanded(
@@ -250,6 +261,7 @@ class _CleaningWorkerRatingScreenState
                             ],
                           ),
                         ],
+                        ),
                       ),
                     ),
                   ),

@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
+import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_password_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:toastification/toastification.dart';
 
 import '../widgets/account_info_section.dart';
@@ -19,16 +22,14 @@ import '../widgets/profile_photo_section.dart';
 class PersonalDetailsParams {
   const PersonalDetailsParams({
     required this.name,
-    this.phoneLocal,
-    this.dialCode = '+963',
+    this.phone,
     this.isPhoneVerified = true,
     this.avatarUrl,
     this.email,
   });
 
   final String name;
-  final String? phoneLocal;
-  final String dialCode;
+  final String? phone;
   final bool isPhoneVerified;
   final String? avatarUrl;
   final String? email;
@@ -48,19 +49,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameController;
-  late final TextEditingController _phoneLocalController;
   late final TextEditingController _currentPasswordController;
   late final TextEditingController _newPasswordController;
   late final TextEditingController _confirmPasswordController;
 
-  String _dialCode = '+963';
-  static const List<String> _dialCodes = [
-    '+963',
-    '+966',
-    '+971',
-    '+962',
-    '+20',
-  ];
+  final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
+  PhoneNumber? _phone;
+  PhoneNumber? _initialPhone;
+  bool _isLoadingPhone = true;
 
   File? _selectedImage;
   bool _obscureCurrent = true;
@@ -73,22 +69,25 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.params.name);
-    _phoneLocalController = TextEditingController(
-      text: widget.params.phoneLocal ?? '',
-    );
-    _dialCode = widget.params.dialCode;
-    if (!_dialCodes.contains(_dialCode)) {
-      _dialCode = _dialCodes.first;
-    }
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
+    _loadInitialPhone();
+  }
+
+  Future<void> _loadInitialPhone() async {
+    final parsed = await parseInitialPhone(widget.params.phone);
+    if (!mounted) return;
+    setState(() {
+      _initialPhone = parsed;
+      _phone = parsed;
+      _isLoadingPhone = false;
+    });
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneLocalController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -148,6 +147,28 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (!_validatePasswordSection()) return;
 
+    final phoneError = await _phoneFieldKey.currentState?.validate();
+    if (!mounted) return;
+    if (phoneError != null) {
+      AppToast.showToast(
+        context: context,
+        message: phoneError,
+        type: ToastificationType.error,
+      );
+      return;
+    }
+
+    final phone = formatPhoneForApi(_phone);
+    if (phone == null) {
+      if (!mounted) return;
+      AppToast.showToast(
+        context: context,
+        message: 'الرجاء إدخال رقم الهاتف',
+        type: ToastificationType.error,
+      );
+      return;
+    }
+
     setState(() => isSaving = true);
 
     String? failureMessage;
@@ -156,7 +177,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final accountRes = await getIt<UpdateAccountUseCase>()(
       UpdateAccountParams(
         name: _nameController.text.trim(),
-        phone: '$_dialCode${_phoneLocalController.text.trim()}',
+        phone: phone,
         primaryImage: _selectedImage,
       ),
     );
@@ -244,28 +265,21 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       NumberedSectionCard(
                         sectionNumber: '2',
                         title: 'معلومات الحساب',
-                        child: AccountInfoSection(
-                          nameController: _nameController,
-                          phoneLocalController: _phoneLocalController,
-                          dialCode: _dialCode,
-                          dialCodes: _dialCodes,
-                          isPhoneVerified: widget.params.isPhoneVerified,
-                          onDialCodeChanged: (v) {
-                            if (v != null) setState(() => _dialCode = v);
-                          },
-                          nameValidator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'الرجاء إدخال الاسم';
-                            }
-                            return null;
-                          },
-                          phoneValidator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'الرجاء إدخال رقم الهاتف';
-                            }
-                            return null;
-                          },
-                        ),
+                        child: _isLoadingPhone
+                            ? const Center(child: CircularProgressIndicator())
+                            : AccountInfoSection(
+                                nameController: _nameController,
+                                phoneFieldKey: _phoneFieldKey,
+                                initialPhone: _initialPhone,
+                                isPhoneVerified: widget.params.isPhoneVerified,
+                                onPhoneChanged: (phone) => _phone = phone,
+                                nameValidator: (v) {
+                                  if (v == null || v.trim().isEmpty) {
+                                    return 'الرجاء إدخال الاسم';
+                                  }
+                                  return null;
+                                },
+                              ),
                       ),
                       const SizedBox(height: 16),
                       NumberedSectionCard(

@@ -31,6 +31,20 @@ void main() {
       expect(store.isStartVerificationSuppressed(22), isFalse);
     });
 
+    test(
+      'user-dismissed booking is skipped while next booking remains eligible',
+      () {
+        store.suppressStartVerification(
+          11,
+          CleaningGateSuppressionReason.userDismissed,
+        );
+
+        expect(store.isStartVerificationSuppressed(11), isTrue);
+        expect(store.isStartVerificationSuppressed(22), isFalse);
+        expect(store.isStartVerificationSuppressed(11, force: true), isFalse);
+      },
+    );
+
     test('start verification permanent suppression blocks even force mode', () {
       store.suppressStartVerification(
         11,
@@ -101,6 +115,56 @@ void main() {
         now: DateTime.parse('2026-05-17T12:00:00'),
       );
       expect(expired, isTrue);
+    });
+  });
+
+  group('CleaningGateSessionStore date-only expiry helper', () {
+    test('returns false when scheduledDate is today', () {
+      final expired = isCleaningBookingScheduledDateBeforeToday(
+        scheduledDate: '2026-05-18',
+        now: DateTime.parse('2026-05-18T09:00:00'),
+      );
+      expect(expired, isFalse);
+    });
+
+    test('returns false when scheduledDate is after today', () {
+      final expired = isCleaningBookingScheduledDateBeforeToday(
+        scheduledDate: '2026-05-19',
+        now: DateTime.parse('2026-05-18T09:00:00'),
+      );
+      expect(expired, isFalse);
+    });
+
+    test('returns true when scheduledDate is before today', () {
+      final expired = isCleaningBookingScheduledDateBeforeToday(
+        scheduledDate: '2026-05-17',
+        now: DateTime.parse('2026-05-18T09:00:00'),
+      );
+      expect(expired, isTrue);
+    });
+
+    test('returns false for null, empty, or invalid scheduledDate', () {
+      expect(
+        isCleaningBookingScheduledDateBeforeToday(
+          scheduledDate: null,
+          now: DateTime.parse('2026-05-18T09:00:00'),
+        ),
+        isFalse,
+      );
+      expect(
+        isCleaningBookingScheduledDateBeforeToday(
+          scheduledDate: '   ',
+          now: DateTime.parse('2026-05-18T09:00:00'),
+        ),
+        isFalse,
+      );
+      expect(
+        isCleaningBookingScheduledDateBeforeToday(
+          scheduledDate: 'not-a-date',
+          now: DateTime.parse('2026-05-18T09:00:00'),
+        ),
+        isFalse,
+      );
     });
   });
 }

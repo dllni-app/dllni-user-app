@@ -16,6 +16,29 @@ void main() {
       );
     });
 
+    test('normalizes arrival aliases and flexible event casing', () {
+      expect(
+        CleaningRealtimeContract.normalizeEventName('worker_arrived'),
+        CleaningRealtimeContract.workerArrived,
+      );
+      expect(
+        CleaningRealtimeContract.normalizeEventName(
+          'cleaning_order.worker_arrived',
+        ),
+        CleaningRealtimeContract.workerArrived,
+      );
+      expect(
+        CleaningRealtimeContract.normalizeEventName(
+          'arrival_verification_requested',
+        ),
+        CleaningRealtimeContract.awaitingStartVerification,
+      );
+      expect(
+        CleaningRealtimeContract.normalizeEventName('workerarrived'),
+        CleaningRealtimeContract.workerArrived,
+      );
+    });
+
     test('identifies security-code reissue raw events only', () {
       expect(
         CleaningRealtimeContract.isSecurityCodeReissuedEvent(
@@ -34,6 +57,61 @@ void main() {
           CleaningRealtimeContract.awaitingStartVerification,
         ),
         isFalse,
+      );
+    });
+
+    test('extracts booking id from cleaning_order_id payload aliases', () {
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'cleaning_order_id': 42,
+        }),
+        42,
+      );
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'cleaningOrderId': '77',
+        }),
+        77,
+      );
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'tracking': <String, dynamic>{'cleaning_order_id': 19},
+        }),
+        19,
+      );
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'cleaning_order': <String, dynamic>{'id': 63},
+        }),
+        63,
+      );
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'order': <String, dynamic>{'booking_id': '88'},
+        }),
+        88,
+      );
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'booking': <String, dynamic>{'cleaningOrderId': 91},
+        }),
+        91,
+      );
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'data': <String, dynamic>{
+            'cleaning_booking': <String, dynamic>{'id': 94},
+          },
+        }),
+        94,
+      );
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'data': <String, dynamic>{
+            'order': <String, dynamic>{'cleaning_booking_id': 96},
+          },
+        }),
+        96,
       );
     });
   });

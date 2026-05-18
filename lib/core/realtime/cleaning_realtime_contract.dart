@@ -25,11 +25,62 @@ class CleaningRealtimeContract {
     securityCodeIssued: awaitingStartVerification,
     securityCodeIssuedScoped: awaitingStartVerification,
     'ArrivalVerificationRequested': awaitingStartVerification,
+    'arrival_verification_requested': awaitingStartVerification,
+    'cleaning_order.arrival_verification_requested': awaitingStartVerification,
+    'worker_arrived': workerArrived,
+    'cleaning_order.worker_arrived': workerArrived,
+    'cleaning_order.arrival_verified': arrivalVerified,
     'CompletionReviewRequested': awaitingCustomerCompletion,
+    'completion_review_requested': awaitingCustomerCompletion,
+    'cleaning_order.completion_review_requested': awaitingCustomerCompletion,
   };
 
+  static final Map<String, String> _normalizedEventAliases =
+      _buildNormalizedEventAliases();
+
+  static Map<String, String> _buildNormalizedEventAliases() {
+    final aliases = <String, String>{};
+    void addAlias(String key, String value, {bool overrideExisting = true}) {
+      final trimmed = key.trim();
+      if (trimmed.isEmpty) return;
+      final lower = trimmed.toLowerCase();
+      if (overrideExisting) {
+        aliases[trimmed] = value;
+        aliases[lower] = value;
+        return;
+      }
+      aliases.putIfAbsent(trimmed, () => value);
+      aliases.putIfAbsent(lower, () => value);
+    }
+
+    for (final entry in legacyEventAliases.entries) {
+      addAlias(entry.key, entry.value);
+    }
+
+    const canonicalEvents = <String>{
+      workerLocationUpdated,
+      workerArrived,
+      securityCodeIssued,
+      securityCodeIssuedScoped,
+      awaitingStartVerification,
+      arrivalVerified,
+      awaitingCustomerCompletion,
+      completionDecisionMade,
+      serviceExtensionRequested,
+      trackingUpdated,
+    };
+    for (final eventName in canonicalEvents) {
+      addAlias(eventName, eventName, overrideExisting: false);
+    }
+    return aliases;
+  }
+
   static String normalizeEventName(String eventName) {
-    return legacyEventAliases[eventName] ?? eventName;
+    final raw = eventName.trim();
+    if (raw.isEmpty) return raw;
+    return _normalizedEventAliases[raw] ??
+        _normalizedEventAliases[raw.toLowerCase()] ??
+        raw;
   }
 
   static bool isLocationEvent(String eventName) {
@@ -53,22 +104,37 @@ class CleaningRealtimeContract {
   }
 
   static int? extractBookingId(Map<String, dynamic> payload) {
-    final tracking = payload['tracking'];
-    final trackingMap = tracking is Map
-        ? tracking.map((k, v) => MapEntry(k.toString(), v))
-        : const <String, dynamic>{};
-    return _asInt(
-          trackingMap['cleaningBookingId'] ??
-              trackingMap['bookingId'] ??
-              trackingMap['booking_id'] ??
-              trackingMap['cleaning_booking_id'] ??
-              trackingMap['id'],
-        ) ??
+    final dataMap = _asStringMap(payload['data']);
+    final trackingMap = _asStringMap(
+      payload['tracking'] ?? dataMap['tracking'],
+    );
+    final cleaningOrderMap = _asStringMap(
+      payload['cleaningOrder'] ??
+          payload['cleaning_order'] ??
+          payload['cleaningBooking'] ??
+          payload['cleaning_booking'] ??
+          dataMap['cleaningOrder'] ??
+          dataMap['cleaning_order'] ??
+          dataMap['cleaningBooking'] ??
+          dataMap['cleaning_booking'],
+    );
+    final orderMap = _asStringMap(payload['order'] ?? dataMap['order']);
+    final bookingMap = _asStringMap(payload['booking'] ?? dataMap['booking']);
+    return _extractIdFromMap(trackingMap) ??
+        _extractIdFromMap(cleaningOrderMap) ??
+        _extractIdFromMap(orderMap) ??
+        _extractIdFromMap(bookingMap) ??
+        _extractIdFromMap(dataMap) ??
         _asInt(
           payload['cleaningBookingId'] ??
+              payload['cleaning_bookingId'] ??
               payload['bookingId'] ??
               payload['booking_id'] ??
+              payload['cleaningOrderId'] ??
+              payload['cleaning_order_id'] ??
               payload['cleaning_booking_id'] ??
+              payload['cleaningBooking'] ??
+              payload['cleaning_booking'] ??
               payload['id'] ??
               payload['orderId'] ??
               payload['order_id'],
@@ -114,6 +180,30 @@ class CleaningRealtimeContract {
     if (value is double) return value;
     if (value is num) return value.toDouble();
     return double.tryParse('$value');
+  }
+
+  static Map<String, dynamic> _asStringMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map((k, v) => MapEntry(k.toString(), v));
+    }
+    return const <String, dynamic>{};
+  }
+
+  static int? _extractIdFromMap(Map<String, dynamic> source) {
+    if (source.isEmpty) return null;
+    return _asInt(
+      source['id'] ??
+          source['cleaningBookingId'] ??
+          source['cleaning_bookingId'] ??
+          source['bookingId'] ??
+          source['booking_id'] ??
+          source['cleaningOrderId'] ??
+          source['cleaning_order_id'] ??
+          source['cleaning_booking_id'] ??
+          source['orderId'] ??
+          source['order_id'],
+    );
   }
 }
 

@@ -4,11 +4,13 @@ import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/core/session/user_session_prefs.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
-import 'package:dllni_user_app/features/auth/view/auth_form_validators.dart';
+import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
+import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:toastification/toastification.dart';
 
 /// Reference auth layout shared with [RegisterScreen]. Route: `/login`.
@@ -60,28 +62,38 @@ String? _resolveLoginAvatarUrl(LoggedInUserModel? user) {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
   final _passwordController = TextEditingController();
 
-  String _dialCode = '+963';
+  PhoneNumber? _phone;
   bool _obscurePassword = true;
-
-  static const List<String> _dialCodes = ['+963'];
 
   static const Color _iconGray = Color(0xff6B7280);
 
   @override
   void dispose() {
-    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _submit(AuthBloc bloc) {
+  Future<void> _submit(AuthBloc bloc) async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final local = _phoneController.text.trim().replaceAll(' ', '');
-    final phone = '$_dialCode$local';
+
+    final phoneError = await _phoneFieldKey.currentState?.validate();
+    if (!mounted) return;
+    if (phoneError != null) {
+      AppToast.showToast(
+        context: context,
+        message: phoneError,
+        type: ToastificationType.error,
+      );
+      return;
+    }
+
+    final phone = formatPhoneForApi(_phone);
+    if (phone == null) return;
+
     bloc.add(
       LoginSubmittedEvent(phone: phone, password: _passwordController.text),
     );
@@ -132,79 +144,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText.bodyMedium(
-                          'رقم الجوال',
-                          fontWeight: FontWeight.w500,
-                        ),
-                        AppText.bodyMedium(
-                          '*',
-                          color: context.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
+                    AppPhoneNumberField(
+                      key: _phoneFieldKey,
+                      label: 'رقم الجوال',
+                      isRequired: true,
                       enabled: !loading,
-                      validator: AuthFormValidators.phoneLocal,
-                      style: const TextStyle(
-                        color: Color(0xff2F2B3D),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      decoration: authFieldDecoration(
-                        context,
-                        hasError: false,
-                        hintText: 'أدخل رقم الجوال',
-                        prefixIcon: const Icon(
-                          Icons.phone_rounded,
-                          color: _iconGray,
-                          size: 22,
-                        ),
-                        suffixIcon: Padding(
-                          padding: const EdgeInsetsDirectional.only(
-                            start: 4,
-                            end: 8,
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _dialCodes.contains(_dialCode)
-                                  ? _dialCode
-                                  : _dialCodes.first,
-                              isDense: true,
-                              icon: const Icon(
-                                Icons.keyboard_arrow_down,
-                                color: _iconGray,
-                                size: 20,
-                              ),
-                              style: const TextStyle(
-                                color: Color(0xff2F2B3D),
-                                fontSize: 14,
-                              ),
-                              items: _dialCodes
-                                  .map(
-                                    (c) => DropdownMenuItem<String>(
-                                      value: c,
-                                      child: Text(c),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: loading
-                                  ? null
-                                  : (v) {
-                                      if (v != null) {
-                                        setState(() => _dialCode = v);
-                                      }
-                                    },
-                            ),
-                          ),
-                        ),
-                      ),
+                      variant: AppPhoneFieldVariant.auth,
+                      onChanged: (number) => _phone = number,
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -266,8 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: loading ? 'جاري التحميل...' : 'تسجيل الدخول',
                 onPressed: loading
                     ? null
-                    : () {
-                        _submit(context.read<AuthBloc>());
+                    : () async {
+                        await _submit(context.read<AuthBloc>());
                       },
               ),
               belowPrimary: Column(

@@ -204,3 +204,21 @@ bool isCleaningBookingPastEndTime({
   if (end == null) return false;
   return (now ?? DateTime.now()).isAfter(end);
 }
+
+bool isCleaningBookingScheduledDateBeforeToday({
+  required String? scheduledDate,
+  DateTime? now,
+}) {
+  final rawDate = scheduledDate?.trim() ?? '';
+  if (rawDate.isEmpty) return false;
+  final parsedDate = DateTime.tryParse(rawDate);
+  if (parsedDate == null) return false;
+  final scheduledDay = DateTime(
+    parsedDate.year,
+    parsedDate.month,
+    parsedDate.day,
+  );
+  final current = now ?? DateTime.now();
+  final today = DateTime(current.year, current.month, current.day);
+  return scheduledDay.isBefore(today);
+}

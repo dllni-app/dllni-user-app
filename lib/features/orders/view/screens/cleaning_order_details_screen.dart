@@ -10,6 +10,7 @@ import 'package:dllni_user_app/core/realtime/cleaning_realtime_contract.dart';
 import 'package:dllni_user_app/core/realtime/pusher_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:toastification/toastification.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -293,7 +294,14 @@ class _CleaningOrderDetailsScreenState
           _normStatus(order.status) ==
               CleaningBookingStatus.awaitingCustomerCompletion) {
         _reopenCompletionAfterRefresh = false;
-        unawaited(_openCompletionSheet());
+        final orderId = order.id;
+        if (orderId != null) {
+          _gateSession.clearCompletionAwaitingCycle(orderId);
+          if (_completionSheetDismissed && mounted) {
+            setState(() => _completionSheetDismissed = false);
+          }
+        }
+        unawaited(_openCompletionSheet(force: true));
       }
     }
   }
@@ -387,11 +395,6 @@ class _CleaningOrderDetailsScreenState
     if (!mounted) return;
     _verifyDialogOpen = false;
     if (!confirmed) {
-      _gateSession.suppressStartVerification(
-        orderId,
-        CleaningGateSuppressionReason.userDismissed,
-      );
-      setState(() => _verifyDialogDismissed = true);
       return;
     }
     _gateSession.clearStartDismissed(orderId);
@@ -509,6 +512,13 @@ class _CleaningOrderDetailsScreenState
         }
       }),
     );
+    if (errorMessage == null && mounted) {
+      AppToast.showToast(
+        context: context,
+        message: 'تم إرسال طلب تمديد الوقت إلى العامل',
+        type: ToastificationType.success,
+      );
+    }
     return errorMessage;
   }
 
@@ -615,11 +625,8 @@ class _CleaningOrderDetailsScreenState
   }
 
   bool _isStartVerificationExpired(CleaningOrderDetailModel order) {
-    return isCleaningBookingPastEndTime(
+    return isCleaningBookingScheduledDateBeforeToday(
       scheduledDate: order.scheduledDate,
-      scheduledTime: order.scheduledTime,
-      totalHours: order.totalHours,
-      estimatedHours: order.estimatedHours,
     );
   }
 
