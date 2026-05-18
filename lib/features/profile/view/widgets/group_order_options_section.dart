@@ -7,6 +7,8 @@ import 'group_order_food_row.dart';
 class GroupOrderOptionsSection extends StatefulWidget {
   final List<GroupOrderFoodRow> foods;
   final List<String> availableTypes;
+  final Set<int> selectedProductIds;
+  final Set<int> syncingProductIds;
   final VoidCallback? onAddMultiTap;
   final void Function(GroupOrderFoodRow row)? onMenuProductTap;
 
@@ -14,12 +16,15 @@ class GroupOrderOptionsSection extends StatefulWidget {
     super.key,
     required this.foods,
     required this.availableTypes,
+    required this.selectedProductIds,
+    required this.syncingProductIds,
     this.onAddMultiTap,
     this.onMenuProductTap,
   });
 
   @override
-  State<GroupOrderOptionsSection> createState() => _GroupOrderOptionsSectionState();
+  State<GroupOrderOptionsSection> createState() =>
+      _GroupOrderOptionsSectionState();
 }
 
 class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
@@ -32,7 +37,10 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
   }
 
   List<String> _orderedTypes() {
-    final types = <String>[...widget.availableTypes.map(_sanitizeType), ...widget.foods.map((e) => _sanitizeType(e.type))];
+    final types = <String>[
+      ...widget.availableTypes.map(_sanitizeType),
+      ...widget.foods.map((e) => _sanitizeType(e.type)),
+    ];
     final seen = <String>{};
     final ordered = <String>[];
     for (final type in types) {
@@ -56,13 +64,17 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _applyDefaultExpansionOnce());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _applyDefaultExpansionOnce(),
+    );
   }
 
   @override
   void didUpdateWidget(GroupOrderOptionsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _applyDefaultExpansionOnce());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _applyDefaultExpansionOnce(),
+    );
   }
 
   @override
@@ -79,7 +91,10 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
     }
 
     if (widget.foods.isEmpty && types.isEmpty) {
-      return AppText.bodyMedium('لا توجد منتجات في القائمة', color: const Color(0xff6B7280));
+      return AppText.bodyMedium(
+        'لا توجد منتجات في القائمة',
+        color: const Color(0xff6B7280),
+      );
     }
 
     return Column(
@@ -110,16 +125,26 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: AppText.titleSmall(type, fontWeight: FontWeight.w700, textAlign: TextAlign.start),
+                        child: AppText.titleSmall(
+                          type,
+                          fontWeight: FontWeight.w700,
+                          textAlign: TextAlign.start,
+                        ),
                       ),
-                      Icon(expanded ? Icons.expand_less : Icons.expand_more, color: const Color(0xff9CA3AF)),
+                      Icon(
+                        expanded ? Icons.expand_less : Icons.expand_more,
+                        color: const Color(0xff9CA3AF),
+                      ),
                     ],
                   ),
                 ),
                 if (expanded) ...[
                   const SizedBox(height: 8),
                   if (rows.isEmpty)
-                    AppText.bodySmall('لا توجد منتجات ضمن هذا القسم', color: const Color(0xff9CA3AF))
+                    AppText.bodySmall(
+                      'لا توجد منتجات ضمن هذا القسم',
+                      color: const Color(0xff9CA3AF),
+                    )
                   else
                     SizedBox(
                       height: 175,
@@ -127,13 +152,28 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
                         itemBuilder: (context, index) {
                           final row = rows[index];
                           final pid = row.productId;
-                          final isMenuRow = row.itemId == null && pid != null && pid > 0;
+                          final isMenuRow =
+                              row.itemId == null && pid != null && pid > 0;
+                          final isSelected =
+                              pid != null &&
+                              widget.selectedProductIds.contains(pid);
+                          final isSyncing =
+                              pid != null &&
+                              widget.syncingProductIds.contains(pid);
                           return GroupOrderFoodCard(
                             row: row,
-                            onTap: widget.onMenuProductTap != null && isMenuRow ? () => widget.onMenuProductTap!(row) : null,
+                            isSelected: isSelected,
+                            isSyncing: isSyncing,
+                            onTap:
+                                widget.onMenuProductTap != null &&
+                                    isMenuRow &&
+                                    !isSyncing
+                                ? () => widget.onMenuProductTap!(row)
+                                : null,
                           );
                         },
-                        separatorBuilder: (context, index) => SizedBox(width: 10),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 10),
                         itemCount: rows.length,
                         scrollDirection: Axis.horizontal,
                       ),
@@ -150,7 +190,11 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
             child: ElevatedButton(
               onPressed: widget.onAddMultiTap,
               style: ElevatedButton.styleFrom(backgroundColor: context.primary),
-              child: AppText.bodyMedium('إضافة خيارات متعددة', color: context.onPrimary, fontWeight: FontWeight.w700),
+              child: AppText.bodyMedium(
+                'إضافة خيارات متعددة',
+                color: context.onPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

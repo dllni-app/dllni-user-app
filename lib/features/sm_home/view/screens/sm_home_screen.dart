@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/features/sm_home/domain/usecases/get_featured_offers_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
@@ -11,6 +10,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../data/models/get_featured_offers_model.dart';
+import '../../domain/usecases/get_featured_offers_use_case.dart';
 import '../../domain/usecases/get_nearby_stores_use_case.dart';
 import '../manager/bloc/sm_home_bloc.dart';
 import '../widgets/home_app_bar.dart';

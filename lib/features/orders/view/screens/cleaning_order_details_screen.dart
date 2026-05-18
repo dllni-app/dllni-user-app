@@ -1,11 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
+import 'package:dllni_user_app/core/realtime/cleaning_gate_session_store.dart';
+import 'package:dllni_user_app/core/realtime/cleaning_realtime_contract.dart';
+import 'package:dllni_user_app/core/realtime/pusher_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -16,13 +18,21 @@ import '../../../cl_main/view/widgets/cl_service_address_section_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_day_preview_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_section_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_time_picker_field_widget.dart';
+import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_start_verification_use_case.dart';
+import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
+import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
+import '../helpers/cleaning_lifecycle_error_mapper.dart';
+import '../helpers/cleaning_order_realtime_policy.dart';
+import '../helpers/cleaning_rebook_policy.dart';
+import '../helpers/cleaning_worker_rating_gate.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../widgets/cleaning_cancel_reason_dialog.dart';
@@ -52,6 +62,9 @@ class CleaningOrderDetailsScreen extends StatefulWidget {
 
 class _CleaningOrderDetailsScreenState
     extends State<CleaningOrderDetailsScreen> {
+  static const Duration _fallbackDebounce = Duration(milliseconds: 150);
+
+  late int _activeOrderId;
   CleaningOrderDetailModel? _order;
   bool _isLoading = true;
   String? _loadError;
@@ -59,6 +72,9 @@ class _CleaningOrderDetailsScreenState
   late TextEditingController _toTimeController;
 
   late final CleaningBookingPusherService _pusherService;
+  final CleaningGateSessionStore _gateSession =
+      CleaningGateSessionStore.instance;
+  int? _subscribedBookingId;
   double? _workerLiveLatitude;
   double? _workerLiveLongitude;
 
@@ -68,10 +84,16 @@ class _CleaningOrderDetailsScreenState
   bool _verifyDialogOpen = false;
   bool _completionSheetDismissed = false;
   bool _completionSheetOpen = false;
+  bool _realtimeAuthWarningShown = false;
+  bool _reopenVerificationAfterRefresh = false;
+  bool _reopenCompletionAfterRefresh = false;
+  bool _isRebooking = false;
+  Timer? _detailsFallbackRefreshDebounce;
 
   @override
   void initState() {
     super.initState();
+    _activeOrderId = widget.args.orderId;
     _fromTimeController = TextEditingController();
     _toTimeController = TextEditingController();
     _pusherService = getIt<CleaningBookingPusherService>();
@@ -83,8 +105,13 @@ class _CleaningOrderDetailsScreenState
 
   @override
   void dispose() {
-    _pusherService.setBookingHandler(widget.args.orderId, null);
-    unawaited(_pusherService.unsubscribeBookingChannel(widget.args.orderId));
+    _detailsFallbackRefreshDebounce?.cancel();
+    final subscribedBookingId = _subscribedBookingId;
+    if (subscribedBookingId != null) {
+      _pusherService.setBookingHandler(subscribedBookingId, null);
+      _pusherService.setBookingErrorHandler(subscribedBookingId, null);
+      unawaited(_pusherService.unsubscribeBookingChannel(subscribedBookingId));
+    }
     _fromTimeController.dispose();
     _toTimeController.dispose();
     super.dispose();
@@ -108,70 +135,106 @@ class _CleaningOrderDetailsScreenState
 
   void _connectCleaningPusher() {
     if (!mounted) return;
-    final bookingId = widget.args.orderId;
+    final bookingId = _activeOrderId;
+    final previousBookingId = _subscribedBookingId;
+    if (previousBookingId != null && previousBookingId != bookingId) {
+      _pusherService.setBookingHandler(previousBookingId, null);
+      _pusherService.setBookingErrorHandler(previousBookingId, null);
+      unawaited(_pusherService.unsubscribeBookingChannel(previousBookingId));
+    }
     _pusherService.setBookingHandler(bookingId, _onCleaningPusherEvent);
+    _pusherService.setBookingErrorHandler(bookingId, _onCleaningPusherError);
+    _subscribedBookingId = bookingId;
     unawaited(_pusherService.subscribeBookingChannel(bookingId));
   }
 
   void _onCleaningPusherEvent(String eventName, Map<String, dynamic> payload) {
-    if (eventName == 'WorkerLocationUpdated') {
+    final normalizedEvent = CleaningRealtimeContract.normalizeEventName(
+      eventName,
+    );
+
+    if (normalizedEvent == CleaningRealtimeContract.awaitingStartVerification) {
+      _gateSession.clearStartDismissed(_activeOrderId);
+      _reopenVerificationAfterRefresh = true;
+      if (_verifyDialogDismissed && mounted) {
+        setState(() => _verifyDialogDismissed = false);
+      } else {
+        _verifyDialogDismissed = false;
+      }
+    }
+    if (normalizedEvent ==
+        CleaningRealtimeContract.awaitingCustomerCompletion) {
+      _gateSession.clearCompletionAwaitingCycle(_activeOrderId);
+      _reopenCompletionAfterRefresh = true;
+      if (_completionSheetDismissed && mounted) {
+        setState(() => _completionSheetDismissed = false);
+      } else {
+        _completionSheetDismissed = false;
+      }
+    }
+
+    final action = CleaningOrderRealtimePolicy.resolve(
+      eventName: eventName,
+      payload: payload,
+      currentStatus: _order?.status,
+    );
+    if (action.type == CleaningOrderRealtimeActionType.patchWorkerLocation) {
       _applyWorkerLocation(payload);
       return;
     }
-    switch (eventName) {
-      case 'CleaningBookingTrackingUpdated':
-      case 'WorkerArrived':
-      case 'SecurityCodeIssued':
-      case 'cleaning_order.awaiting_start_verification':
-      case 'cleaning_order.security_code_issued':
-      case 'cleaning_order.awaiting_customer_completion':
-      case 'ArrivalVerified':
-      case 'CompletionDecisionMade':
-      case 'ServiceExtensionRequested':
-        unawaited(_fetchDetails(showLoading: false, triggerGatePrompts: true));
-        return;
-      default:
-        return;
+    if (action.type != CleaningOrderRealtimeActionType.refreshDetails) {
+      return;
     }
+    if (action.reopenCompletionAfterRefresh) {
+      _reopenCompletionAfterRefresh = true;
+    }
+    _scheduleDetailsFallbackRefresh(
+      fallbackReason: 'realtime_lifecycle_event_refresh',
+    );
   }
 
-  void _applyWorkerLocation(dynamic raw) {
-    try {
-      final Map<String, dynamic> map;
-      if (raw is String) {
-        final decoded = jsonDecode(raw);
-        if (decoded is! Map) {
-          return;
-        }
-        map = _toStringKeyMap(decoded);
-      } else if (raw is Map) {
-        map = _toStringKeyMap(raw);
-      } else {
-        return;
-      }
-      final lat = map['latitude'];
-      final lng = map['longitude'];
-      final latVal = lat is num ? lat.toDouble() : double.tryParse('$lat');
-      final lngVal = lng is num ? lng.toDouble() : double.tryParse('$lng');
-      if (latVal == null || lngVal == null || !mounted) {
-        return;
-      }
-      setState(() {
-        _workerLiveLatitude = latVal;
-        _workerLiveLongitude = lngVal;
-      });
-    } catch (e, st) {
-      debugPrint('WorkerLocationUpdated parse failed: $e\n$st');
-    }
+  void _applyWorkerLocation(Map<String, dynamic> payload) {
+    final location = CleaningRealtimeContract.parseLocation(payload);
+    if (location == null || !mounted) return;
+    setState(() {
+      _workerLiveLatitude = location.latitude;
+      _workerLiveLongitude = location.longitude;
+    });
   }
 
-  Map<String, dynamic> _toStringKeyMap(Map raw) {
-    return raw.map((dynamic k, dynamic v) => MapEntry(k.toString(), v));
+  void _onCleaningPusherError(RealtimeChannelError error) {
+    if (error.statusCode != 403) return;
+    _scheduleDetailsFallbackRefresh(
+      fallbackReason: 'realtime_channel_auth_403_refresh',
+    );
+    if (_realtimeAuthWarningShown || !mounted) return;
+    _realtimeAuthWarningShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'تعذر استقبال التحديث المباشر حالياً. تتم مزامنة الطلب بالخلفية.',
+        ),
+      ),
+    );
+  }
+
+  void _scheduleDetailsFallbackRefresh({required String fallbackReason}) {
+    _detailsFallbackRefreshDebounce?.cancel();
+    _detailsFallbackRefreshDebounce = Timer(_fallbackDebounce, () {
+      unawaited(
+        _fetchDetails(
+          showLoading: false,
+          triggerGatePrompts: true,
+          fallbackReason: fallbackReason,
+        ),
+      );
+    });
   }
 
   Future<void> _fetchDetails({
     bool showLoading = true,
     bool triggerGatePrompts = false,
+    String? fallbackReason,
   }) async {
     if (showLoading) {
       setState(() {
@@ -181,7 +244,7 @@ class _CleaningOrderDetailsScreenState
     }
     final Either<Failure, FetchCleaningOrderDetailsModel> response =
         await getIt<FetchCleaningOrderDetailsUseCase>()(
-          FetchCleaningOrderDetailsParams(orderId: widget.args.orderId),
+          FetchCleaningOrderDetailsParams(orderId: _activeOrderId),
         );
     if (!mounted) return;
     response.fold(
@@ -196,14 +259,42 @@ class _CleaningOrderDetailsScreenState
           _isLoading = false;
         }
         _order = result.data;
+        final updatedOrder = result.data;
+        if (updatedOrder != null) {
+          _syncGateSessionWithOrder(updatedOrder);
+        }
         if (showLoading) {
           _loadError = result.data == null ? 'تعذر تحميل تفاصيل الطلب' : null;
         }
       }),
     );
+    if (fallbackReason != null) {
+      PusherServiceLogger.event(
+        'private-cleaning-booking.$_activeOrderId',
+        'CleaningBookingTrackingUpdated',
+        _order?.toCleaningOrderModel().status,
+        eventHandledAtMs: DateTime.now().millisecondsSinceEpoch,
+        fallbackReason: fallbackReason,
+      );
+    }
     if (triggerGatePrompts) {
       unawaited(_maybePromptForVerifyGate());
       unawaited(_maybePromptForCompletionGate());
+      final order = _order;
+      if (_reopenVerificationAfterRefresh &&
+          order != null &&
+          _normStatus(order.status) ==
+              CleaningBookingStatus.awaitingStartVerification) {
+        _reopenVerificationAfterRefresh = false;
+        unawaited(_maybePromptForVerifyGate(force: true));
+      }
+      if (_reopenCompletionAfterRefresh &&
+          order != null &&
+          _normStatus(order.status) ==
+              CleaningBookingStatus.awaitingCustomerCompletion) {
+        _reopenCompletionAfterRefresh = false;
+        unawaited(_openCompletionSheet());
+      }
     }
   }
 
@@ -225,7 +316,7 @@ class _CleaningOrderDetailsScreenState
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        errorMessage = _mapVerificationError(failure.message);
+        errorMessage = _mapVerificationError(failure);
         _gateError = errorMessage;
       }),
       (result) {
@@ -233,6 +324,15 @@ class _CleaningOrderDetailsScreenState
           _gateSubmitting = false;
           _gateError = null;
           _order = result.data;
+          final updatedOrder = result.data;
+          if (updatedOrder != null) {
+            _syncGateSessionWithOrder(updatedOrder);
+            if (updatedOrder.id != null) {
+              _gateSession.clearStartDismissed(updatedOrder.id!);
+            }
+          } else {
+            _gateSession.clearStartDismissed(orderId);
+          }
           _verifyDialogDismissed = false;
         });
       },
@@ -241,42 +341,61 @@ class _CleaningOrderDetailsScreenState
     return errorMessage;
   }
 
-  String _mapVerificationError(String message) {
-    final normalized = message.toLowerCase();
-    if (normalized.contains('429') ||
-        normalized.contains('too many') ||
-        normalized.contains('محاولات')) {
-      return 'محاولات كثيرة، انتظر دقيقة ثم حاول مجدداً.';
-    }
-    if (normalized.contains('code') ||
-        normalized.contains('رمز') ||
-        normalized.contains('verification')) {
-      return 'الرمز غير صحيح، حاول مرة أخرى.';
-    }
-    return message;
+  String _mapVerificationError(Failure failure) {
+    return CleaningLifecycleErrorMapper.mapVerificationFailure(failure);
   }
 
   Future<void> _maybePromptForVerifyGate({bool force = false}) async {
     final order = _order;
     if (!mounted || order == null) return;
+    final orderId = order.id;
+    if (orderId == null) return;
     final status = _normStatus(order.status);
     if (status != CleaningBookingStatus.awaitingStartVerification) {
+      _gateSession.clearStartDismissed(orderId);
       _verifyDialogDismissed = false;
+      _reopenVerificationAfterRefresh = false;
+      return;
+    }
+    if (_isStartVerificationExpired(order)) {
+      _gateSession.suppressStartVerification(
+        orderId,
+        CleaningGateSuppressionReason.bookingTimeExpired,
+      );
+      setState(() => _verifyDialogDismissed = true);
       return;
     }
     if (_verifyDialogOpen) return;
-    if (_verifyDialogDismissed && !force) return;
+    if (_gateSession.isStartVerificationSuppressed(orderId, force: force)) {
+      if (!_verifyDialogDismissed) {
+        setState(() => _verifyDialogDismissed = true);
+      }
+      return;
+    }
     _verifyDialogOpen = true;
+    final scheduledAt = resolveCleaningBookingStartDateTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+    );
     final confirmed = await CleaningStartVerificationDialog.show(
       context,
+      bookingId: order.id,
+      bookingNumber: order.bookingNumber,
+      dateTime: scheduledAt?.toIso8601String(),
       onSubmit: (code) => _confirmStartVerification(code, order),
     );
     if (!mounted) return;
     _verifyDialogOpen = false;
     if (!confirmed) {
+      _gateSession.suppressStartVerification(
+        orderId,
+        CleaningGateSuppressionReason.userDismissed,
+      );
       setState(() => _verifyDialogDismissed = true);
       return;
     }
+    _gateSession.clearStartDismissed(orderId);
+    setState(() => _verifyDialogDismissed = false);
     unawaited(_fetchDetails(showLoading: false));
   }
 
@@ -297,13 +416,20 @@ class _CleaningOrderDetailsScreenState
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        errorMessage = failure.message;
+        errorMessage = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
+          failure,
+          invalidStateMessage: 'لا يمكن تأكيد الإكمال في حالة الطلب الحالية.',
+        );
         _gateError = errorMessage;
       }),
       (result) => setState(() {
         _gateSubmitting = false;
         _gateError = null;
         _order = result.data;
+        final updatedOrder = result.data;
+        if (updatedOrder != null) {
+          _syncGateSessionWithOrder(updatedOrder);
+        }
       }),
     );
     return errorMessage;
@@ -327,13 +453,20 @@ class _CleaningOrderDetailsScreenState
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        errorMessage = failure.message;
+        errorMessage = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
+          failure,
+          invalidStateMessage: 'لا يمكن رفض الإكمال في حالة الطلب الحالية.',
+        );
         _gateError = errorMessage;
       }),
       (result) => setState(() {
         _gateSubmitting = false;
         _gateError = null;
         _order = result.data;
+        final updatedOrder = result.data;
+        if (updatedOrder != null) {
+          _syncGateSessionWithOrder(updatedOrder);
+        }
       }),
     );
     return errorMessage;
@@ -360,13 +493,20 @@ class _CleaningOrderDetailsScreenState
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
-        errorMessage = failure.message;
+        errorMessage = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
+          failure,
+          invalidStateMessage: 'لا يمكن طلب تمديد الوقت في حالة الطلب الحالية.',
+        );
         _gateError = errorMessage;
       }),
       (result) => setState(() {
         _gateSubmitting = false;
         _gateError = null;
         _order = result.data;
+        final updatedOrder = result.data;
+        if (updatedOrder != null) {
+          _syncGateSessionWithOrder(updatedOrder);
+        }
       }),
     );
     return errorMessage;
@@ -375,13 +515,21 @@ class _CleaningOrderDetailsScreenState
   Future<void> _openCompletionSheet({bool force = false}) async {
     final order = _order;
     if (order == null || !mounted) return;
+    final orderId = order.id;
+    if (orderId == null) return;
     final status = _normStatus(order.status);
     if (status != CleaningBookingStatus.awaitingCustomerCompletion) return;
     if (_completionSheetOpen) return;
-    if (_completionSheetDismissed && !force) return;
+    if (_gateSession.isCompletionSuppressed(orderId, force: force)) {
+      if (!_completionSheetDismissed) {
+        setState(() => _completionSheetDismissed = true);
+      }
+      return;
+    }
     _completionSheetOpen = true;
     final decision = await CleaningCompletionDecisionSheet.show(
       context,
+      useRootNavigator: true,
       onConfirm: () => _submitCompletionConfirm(order),
       onReject: (reason) => _submitCompletionReject(order, reason),
       onExtend: (minutes) => _submitExtendTime(order, minutes),
@@ -389,23 +537,20 @@ class _CleaningOrderDetailsScreenState
     if (!mounted) return;
     _completionSheetOpen = false;
     if (decision == null) {
+      _gateSession.suppressCompletion(
+        orderId,
+        CleaningGateSuppressionReason.userDismissed,
+        currentAwaitingCycleOnly: true,
+      );
       setState(() => _completionSheetDismissed = true);
       return;
     }
+    _gateSession.clearCompletionAwaitingCycle(orderId);
     setState(() => _completionSheetDismissed = false);
     if (decision == CleaningCompletionDecision.confirmed && mounted) {
       final updatedOrder = _order;
-      final worker = updatedOrder?.worker;
-      if (updatedOrder?.id != null) {
-        context.pushRoute(
-          '/cleaning-worker-rating',
-          arguments: CleaningWorkerRatingArgs(
-            orderId: updatedOrder!.id!,
-            workerId: worker?.id,
-            workerName: worker?.name,
-            workerAvatarUrl: worker?.avatarUrl,
-          ),
-        );
+      if (updatedOrder != null) {
+        await _navigateToRating(updatedOrder);
       }
     }
     unawaited(_fetchDetails(showLoading: false));
@@ -414,9 +559,17 @@ class _CleaningOrderDetailsScreenState
   Future<void> _maybePromptForCompletionGate({bool force = false}) async {
     final order = _order;
     if (!mounted || order == null) return;
+    final orderId = order.id;
+    if (orderId == null) return;
     final status = _normStatus(order.status);
     if (status != CleaningBookingStatus.awaitingCustomerCompletion) {
+      _gateSession.clearCompletionAwaitingCycle(orderId);
       _completionSheetDismissed = false;
+      _reopenCompletionAfterRefresh = false;
+      return;
+    }
+    if (_gateSession.isCompletionSuppressed(orderId, force: force)) {
+      _completionSheetDismissed = true;
       return;
     }
     await _openCompletionSheet(force: force);
@@ -459,6 +612,58 @@ class _CleaningOrderDetailsScreenState
     final total = order.totalHours;
     if (total != null && total > 0) return total;
     return double.tryParse(order.estimatedHours ?? '') ?? 0;
+  }
+
+  bool _isStartVerificationExpired(CleaningOrderDetailModel order) {
+    return isCleaningBookingPastEndTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+      totalHours: order.totalHours,
+      estimatedHours: order.estimatedHours,
+    );
+  }
+
+  void _syncGateSessionWithOrder(CleaningOrderDetailModel order) {
+    final orderId = order.id;
+    if (orderId == null) return;
+    final normalizedStatus = _normStatus(order.status);
+    _gateSession.syncWithStatus(
+      bookingId: orderId,
+      normalizedStatus: normalizedStatus,
+    );
+    if (_isStartVerificationExpired(order)) {
+      _gateSession.suppressStartVerification(
+        orderId,
+        CleaningGateSuppressionReason.bookingTimeExpired,
+      );
+    }
+    _verifyDialogDismissed =
+        normalizedStatus == CleaningBookingStatus.awaitingStartVerification &&
+        _gateSession.isStartVerificationSuppressed(orderId);
+    _completionSheetDismissed =
+        normalizedStatus == CleaningBookingStatus.awaitingCustomerCompletion &&
+        _gateSession.isCompletionSuppressed(orderId);
+  }
+
+  Future<void> _navigateToRating(CleaningOrderDetailModel order) async {
+    if (!mounted || order.id == null) return;
+    final workerProfile = await resolveCleaningWorkerProfileForRating(
+      workerId: order.worker?.id,
+      fetchWorkerProfile: (params) =>
+          getIt<FetchCleaningWorkerProfileUseCase>()(params),
+      onError: (message) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
+    if (!mounted || workerProfile == null) return;
+    final ratingArgs = CleaningWorkerRatingArgs(
+      orderId: order.id!,
+      workerProfile: workerProfile,
+    );
+    context.pushRoute('/cleaning-worker-rating', arguments: ratingArgs);
   }
 
   String _timeLabel(DateTime? value) {
@@ -531,8 +736,208 @@ class _CleaningOrderDetailsScreenState
     }
   }
 
+  String _leadTimeLockMessage(Duration? remaining) {
+    if (remaining == null) {
+      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 24 ساعة من وقت الخدمة.';
+    }
+    final hours = remaining.inHours;
+    if (hours <= 0) {
+      return 'موعد الخدمة قريب جدًا، لا يمكن تعديل العنوان أو الموعد.';
+    }
+    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 24 ساعة. المتبقي: $hours ساعة.';
+  }
+
+  void _openOrdersListFallback() {
+    if (!mounted) return;
+    context.pushRoute('/main', arguments: 1);
+  }
+
+  CleaningRebookRequest? _buildRebookRequest({
+    required CleaningOrderDetailModel order,
+    required String scheduledDate,
+    required String scheduledTime,
+    required String address,
+    required String locationName,
+    required double addressLatitude,
+    required double addressLongitude,
+  }) {
+    final orderId = order.id;
+    final propertyType = order.propertyType;
+    final details = order.propertyDetails;
+    if (orderId == null ||
+        propertyType == null ||
+        propertyType.isEmpty ||
+        details == null ||
+        details.bedrooms == null ||
+        details.rooms == null ||
+        details.bathrooms == null ||
+        (details.livingRoomSize ?? '').isEmpty) {
+      return null;
+    }
+
+    return CleaningRebookRequest(
+      existingOrderId: orderId,
+      propertyType: propertyType,
+      bedrooms: details.bedrooms!,
+      rooms: details.rooms!,
+      bathrooms: details.bathrooms!,
+      livingRoomSize: details.livingRoomSize!,
+      address: address,
+      locationName: locationName,
+      scheduledDate: scheduledDate,
+      scheduledTime: scheduledTime,
+      addressLatitude: addressLatitude,
+      addressLongitude: addressLongitude,
+      preferredWorkerId: order.workerId,
+    );
+  }
+
+  Future<void> _switchToOrder(int newOrderId, {String? successMessage}) async {
+    final shouldReconnect = _activeOrderId != newOrderId;
+    setState(() {
+      _activeOrderId = newOrderId;
+      if (shouldReconnect) {
+        _workerLiveLatitude = null;
+        _workerLiveLongitude = null;
+      }
+    });
+    if (shouldReconnect) {
+      _connectCleaningPusher();
+    }
+    await _fetchDetails(showLoading: true, triggerGatePrompts: true);
+    if (!mounted || successMessage == null || successMessage.isEmpty) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(successMessage)));
+  }
+
+  Future<void> _rebookWithChanges({
+    required CleaningOrderDetailModel order,
+    required String scheduledDate,
+    required String scheduledTime,
+    required String address,
+    required String locationName,
+    required double addressLatitude,
+    required double addressLongitude,
+  }) async {
+    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+    );
+    if (!leadTimeCheck.allowed) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_leadTimeLockMessage(leadTimeCheck.remaining))),
+      );
+      return;
+    }
+
+    final request = _buildRebookRequest(
+      order: order,
+      scheduledDate: scheduledDate,
+      scheduledTime: scheduledTime,
+      address: address,
+      locationName: locationName,
+      addressLatitude: addressLatitude,
+      addressLongitude: addressLongitude,
+    );
+    if (request == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('بيانات الطلب غير مكتملة، لا يمكن تنفيذ إعادة الحجز.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isRebooking = true;
+    });
+
+    final policy = CleaningRebookPolicy(
+      cancelOrder: (params) => getIt<CancelCleaningOrderUseCase>()(params),
+      createOrder: (params) => getIt<CreateCleaningOrderUseCase>()(params),
+    );
+    final result = await policy.execute(request: request);
+    if (!mounted) return;
+
+    setState(() {
+      _isRebooking = false;
+    });
+
+    await result.fold(
+      (failure) async {
+        final message = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
+          failure,
+          invalidStateMessage:
+              'لا يمكن إعادة حجز الطلب في حالته الحالية. تحقق من حالة الطلب وحاول لاحقًا.',
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      },
+      (outcome) async {
+        final newOrderId = outcome.newOrderId;
+        if (newOrderId == null) {
+          _openOrdersListFallback();
+          return;
+        }
+        await _switchToOrder(
+          newOrderId,
+          successMessage: outcome.createMessage ?? 'تم تحديث الطلب بنجاح.',
+        );
+      },
+    );
+  }
+
+  Future<void> _changeAddress(CleaningOrderDetailModel order) async {
+    if (_isRebooking || _blocksReschedule(order)) return;
+    final selectedAddress = await context.pushRoute(
+      '/myaddresses',
+      arguments: true,
+    );
+    if (!mounted || selectedAddress is! AddressListItem) return;
+
+    final latitude = selectedAddress.latitude;
+    final longitude = selectedAddress.longitude;
+    if (latitude == null || longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('العنوان المختار لا يحتوي على إحداثيات موقع صالحة.'),
+        ),
+      );
+      return;
+    }
+
+    final scheduledDate = order.scheduledDate;
+    final scheduledTime = order.scheduledTime;
+    if (scheduledDate == null ||
+        scheduledDate.isEmpty ||
+        scheduledTime == null ||
+        scheduledTime.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('بيانات موعد الطلب غير مكتملة، لا يمكن تغيير العنوان.'),
+        ),
+      );
+      return;
+    }
+
+    await _rebookWithChanges(
+      order: order,
+      scheduledDate: scheduledDate,
+      scheduledTime: scheduledTime,
+      address: selectedAddress.line1,
+      locationName: selectedAddress.label,
+      addressLatitude: latitude,
+      addressLongitude: longitude,
+    );
+  }
+
   Future<void> _goToReschedule(CleaningOrderDetailModel order) async {
-    if (_blocksReschedule(order)) {
+    if (_blocksReschedule(order) || _isRebooking) {
       return;
     }
     final result = await context.pushRoute(
@@ -541,7 +946,22 @@ class _CleaningOrderDetailsScreenState
         order: order.toCleaningOrderModel(),
       ),
     );
-    if (result == true && mounted) {
+    if (!mounted) return;
+    if (result is CleaningOrderRescheduleResult) {
+      if (result.openOrdersListFallback) {
+        _openOrdersListFallback();
+        return;
+      }
+      final newOrderId = result.newOrderId;
+      if (newOrderId != null) {
+        await _switchToOrder(
+          newOrderId,
+          successMessage: 'تم تحديث الطلب بنجاح.',
+        );
+      }
+      return;
+    }
+    if (result == true) {
       _fetchDetails();
     }
   }
@@ -576,6 +996,10 @@ class _CleaningOrderDetailsScreenState
       ),
     );
     if (result == true && mounted) {
+      _gateSession.suppressStartVerification(
+        orderId,
+        CleaningGateSuppressionReason.cancelled,
+      );
       Navigator.of(context).pop(true);
     }
   }
@@ -644,7 +1068,12 @@ class _CleaningOrderDetailsScreenState
     final isCompleted =
         _normStatus(order.status) == CleaningBookingStatus.completed;
     final statusNorm = _normStatus(order.status);
-    final rescheduleLocked = _blocksReschedule(order);
+    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+    );
+    final editLocked =
+        _blocksReschedule(order) || _isRebooking || !leadTimeCheck.allowed;
 
     return Scaffold(
       backgroundColor: const Color(0xffF3F4F6),
@@ -659,6 +1088,25 @@ class _CleaningOrderDetailsScreenState
                 child: ListView(
                   padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 24),
                   children: [
+                    if (_isRebooking) ...[
+                      _card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: const [
+                            Text(
+                              'يتم تحديث الطلب بالخلفية...',
+                              style: TextStyle(
+                                color: Color(0xff1F2937),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            LinearProgressIndicator(minHeight: 2),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     _card(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -898,7 +1346,7 @@ class _CleaningOrderDetailsScreenState
                               ),
                               const SizedBox(width: 10),
                               FilledButton(
-                                onPressed: rescheduleLocked
+                                onPressed: editLocked
                                     ? null
                                     : () => _goToReschedule(order),
                                 style: FilledButton.styleFrom(
@@ -938,7 +1386,7 @@ class _CleaningOrderDetailsScreenState
                                       child: ClServiceTimePickerFieldWidget(
                                         title: 'من',
                                         controller: _fromTimeController,
-                                        onTap: rescheduleLocked
+                                        onTap: editLocked
                                             ? () {}
                                             : () => _goToReschedule(order),
                                       ),
@@ -948,7 +1396,7 @@ class _CleaningOrderDetailsScreenState
                                       child: ClServiceTimePickerFieldWidget(
                                         title: 'إلى',
                                         controller: _toTimeController,
-                                        onTap: rescheduleLocked
+                                        onTap: editLocked
                                             ? () {}
                                             : () => _goToReschedule(order),
                                       ),
@@ -962,7 +1410,7 @@ class _CleaningOrderDetailsScreenState
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: rescheduleLocked
+                              onPressed: editLocked
                                   ? null
                                   : () => _goToReschedule(order),
                               style: ElevatedButton.styleFrom(
@@ -974,7 +1422,7 @@ class _CleaningOrderDetailsScreenState
                                 ),
                               ),
                               child: Text(
-                                rescheduleLocked
+                                editLocked
                                     ? 'تغيير الموعد غير متاح حالياً'
                                     : 'تغيير موعد الخدمة',
                                 style: const TextStyle(
@@ -990,6 +1438,9 @@ class _CleaningOrderDetailsScreenState
                     ClServiceAddressSectionWidget(
                       locationName: order.locationName ?? 'المنزل',
                       address: order.propertyDetails?.address ?? '-',
+                      onChangeTap: editLocked
+                          ? null
+                          : () => _changeAddress(order),
                     ),
                     const SizedBox(height: 12),
                     if (order.addressLatitude != null &&

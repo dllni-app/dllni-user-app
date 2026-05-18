@@ -2,25 +2,42 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../helpers/cleaning_security_code_display.dart';
+
 class CleaningStartVerificationDialog {
   static Future<bool> show(
     BuildContext context, {
     required Future<String?> Function(String code) onSubmit,
+    int? bookingId,
+    String? bookingNumber,
+    String? dateTime,
   }) async {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) =>
-          _CleaningStartVerificationDialogContent(onSubmit: onSubmit),
+      builder: (_) => _CleaningStartVerificationDialogContent(
+        onSubmit: onSubmit,
+        bookingId: bookingId,
+        bookingNumber: bookingNumber,
+        dateTime: dateTime,
+      ),
     );
     return result ?? false;
   }
 }
 
 class _CleaningStartVerificationDialogContent extends StatefulWidget {
-  const _CleaningStartVerificationDialogContent({required this.onSubmit});
+  const _CleaningStartVerificationDialogContent({
+    required this.onSubmit,
+    this.bookingId,
+    this.bookingNumber,
+    this.dateTime,
+  });
 
   final Future<String?> Function(String code) onSubmit;
+  final int? bookingId;
+  final String? bookingNumber;
+  final String? dateTime;
 
   @override
   State<_CleaningStartVerificationDialogContent> createState() =>
@@ -80,55 +97,88 @@ class _CleaningStartVerificationDialogContentState
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: const Color(0xffF3F4F6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Align(
-              alignment: AlignmentDirectional.centerStart,
+              alignment: Alignment.centerRight,
               child: IconButton(
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: _submitting
+                    ? null
+                    : () => Navigator.of(context).pop(false),
                 icon: const Icon(Icons.close),
               ),
             ),
-            const SizedBox(height: 8),
-            Icon(
-              Icons.verified_user_outlined,
-              size: 72,
-              color: context.primaryContainer,
+            const Icon(
+              Icons.mark_chat_read_outlined,
+              size: 74,
+              color: Color(0xff1DBCC8),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             AppText.titleMedium(
               'أدخل رمز الأمان لتأكيد بدء العمل',
               textAlign: TextAlign.center,
-              color: context.primaryContainer,
+              color: const Color(0xff1DBCC8),
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             AppText.bodyMedium(
-              'رمز الأمان تحصل عليه من العامل للتأكد من أن هويته. لا تبدأ المهمة إن لم يعطك رمز الأمان',
+              'رمز الأمان تحصل عليه من العامل للتأكد من أن هويته\n'
+              'إذا بدأ المهمة لم يتم إعطاؤه رمز الأمان',
               textAlign: TextAlign.center,
+              color: const Color(0xff6B7280),
             ),
-            const SizedBox(height: 24),
+            if (widget.bookingId != null ||
+                (widget.bookingNumber ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 10),
+              AppText.bodySmall(
+                'رقم الحجز: ${formatCleaningBookingLabel(bookingId: widget.bookingId, bookingNumber: widget.bookingNumber)}',
+                textAlign: TextAlign.center,
+                color: const Color(0xff374151),
+                fontWeight: FontWeight.w600,
+              ),
+            ],
+            if ((widget.dateTime ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              AppText.bodySmall(
+                formatCleaningSecurityCodeDateTime(widget.dateTime),
+                textAlign: TextAlign.center,
+                color: const Color(0xff6B7280),
+              ),
+            ],
+            const SizedBox(height: 18),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List<Widget>.generate(4, (index) {
                 return Container(
-                  width: 48,
-                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  width: 52,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
                   child: TextField(
                     controller: _controllers[index],
                     focusNode: _focusNodes[index],
                     textAlign: TextAlign.center,
+                    textDirection: TextDirection.ltr,
                     maxLength: 1,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: const InputDecoration(
                       counterText: '',
-                      border: UnderlineInputBorder(),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xffD1D5DB)),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Color(0xff1E2A78),
+                          width: 2,
+                        ),
+                      ),
                     ),
                     onChanged: (value) {
                       if (value.isNotEmpty && index < 3) {
@@ -147,31 +197,20 @@ class _CleaningStartVerificationDialogContentState
               }),
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               AppText.bodySmall(_error!, color: context.error),
             ],
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : AppText.labelLarge(
-                        'تأكيد الرمز',
-                        color: context.onPrimary,
-                      ),
+            if (_submitting) ...[
+              const SizedBox(height: 12),
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
-            ),
+            ],
           ],
         ),
+      ),
       ),
     );
   }

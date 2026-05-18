@@ -267,9 +267,17 @@ class DeepLinkDispatcher {
       return null;
     }
 
+    final rawShareToken = r.slug?.trim();
+    final shareToken = (rawShareToken == null || rawShareToken.isEmpty)
+        ? null
+        : rawShareToken;
+
     return DeepLinkDispatchTarget(
       routeName: '/group-order/followup',
-      arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
+      arguments: GroupOrderFollowupScreenParams(
+        groupOrderId: groupOrderId,
+        shareToken: shareToken,
+      ),
     );
   }
 }

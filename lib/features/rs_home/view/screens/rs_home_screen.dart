@@ -318,7 +318,7 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                           InkWell(
                             borderRadius: BorderRadius.circular(24),
                             onTap: () {
-                              context.pushRoute('/group-order/create');
+
                             },
                             child: Container(
                               height: 153,

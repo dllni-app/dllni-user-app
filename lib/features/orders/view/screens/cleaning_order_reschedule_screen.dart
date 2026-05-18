@@ -1,5 +1,5 @@
-import 'dart:ui' as ui;
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -8,18 +8,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../../cl_main/view/manager/bloc/cl_main_bloc.dart';
 import '../../../cl_main/view/widgets/app_pickers.dart';
 import '../../../cl_main/view/widgets/cl_service_schedule_section_widget.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
-import '../../domain/usecases/patch_cleaning_order_use_case.dart';
+import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
+import '../helpers/cleaning_lifecycle_error_mapper.dart';
+import '../helpers/cleaning_rebook_policy.dart';
 
 class CleaningOrderRescheduleArgs {
   const CleaningOrderRescheduleArgs({required this.order});
 
   final CleaningOrderModel order;
+}
+
+class CleaningOrderRescheduleResult {
+  const CleaningOrderRescheduleResult({
+    this.newOrderId,
+    this.openOrdersListFallback = false,
+  });
+
+  final int? newOrderId;
+  final bool openOrdersListFallback;
 }
 
 @AutoRoutePage(path: '/cleaning-order-reschedule')
@@ -29,10 +42,12 @@ class CleaningOrderRescheduleScreen extends StatefulWidget {
   final CleaningOrderRescheduleArgs args;
 
   @override
-  State<CleaningOrderRescheduleScreen> createState() => _CleaningOrderRescheduleScreenState();
+  State<CleaningOrderRescheduleScreen> createState() =>
+      _CleaningOrderRescheduleScreenState();
 }
 
-class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleScreen> {
+class _CleaningOrderRescheduleScreenState
+    extends State<CleaningOrderRescheduleScreen> {
   late DateTime _selectedDate;
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
@@ -45,7 +60,12 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
     super.initState();
     _clMainBloc = getIt<ClMainBloc>();
     _selectedDate = _resolveInitialDate(widget.args.order.scheduledDate);
-    _fromTimeController = TextEditingController(text: _resolveInitialTime(widget.args.order.scheduledTime, fallback: '09:00'));
+    _fromTimeController = TextEditingController(
+      text: _resolveInitialTime(
+        widget.args.order.scheduledTime,
+        fallback: '09:00',
+      ),
+    );
     _toTimeController = TextEditingController(text: '23:00');
     _requestEstimate();
   }
@@ -89,14 +109,12 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
 
   String? get _missingDataMessage {
     if (_hasRequiredOrderData) return null;
-    return 'بيانات الطلب غير مكتملة، لا يمكن تعديل الموعد حالياً';
+    return 'بيانات الطلب غير مكتملة، لا يمكن تعديل الموعد حاليًا';
   }
 
   void _requestEstimate() {
     final missingDataMessage = _missingDataMessage;
-    if (missingDataMessage != null) {
-      return;
-    }
+    if (missingDataMessage != null) return;
 
     final order = widget.args.order;
     final details = order.propertyDetails!;
@@ -139,44 +157,88 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
     });
   }
 
+  String _leadTimeBlockMessage(Duration? remaining) {
+    if (remaining == null) {
+      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 24 ساعة من وقت الخدمة.';
+    }
+    final hours = remaining.inHours;
+    if (hours <= 0) {
+      return 'موعد الخدمة قريب جدًا، لا يمكن تعديل العنوان أو الموعد.';
+    }
+    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 24 ساعة. المتبقي: $hours ساعة.';
+  }
+
   Future<void> _onSave() async {
     if (_isSaving || _missingDataMessage != null) return;
     final order = widget.args.order;
     final details = order.propertyDetails!;
 
+    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+    );
+    if (!leadTimeCheck.allowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_leadTimeBlockMessage(leadTimeCheck.remaining))),
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
-    final response = await getIt<PatchCleaningOrderUseCase>()(
-      PatchCleaningOrderParams(
-        cleaningOrderId: order.id!,
+    final policy = CleaningRebookPolicy(
+      cancelOrder: (params) => getIt<CancelCleaningOrderUseCase>()(params),
+      createOrder: (params) => getIt<CreateCleaningOrderUseCase>()(params),
+    );
+    final result = await policy.execute(
+      request: CleaningRebookRequest(
+        existingOrderId: order.id!,
         propertyType: order.propertyType!,
-        scheduledDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
-        scheduledTime: _fromTimeController.text,
-        address: details.address ?? '',
         bedrooms: details.bedrooms!,
         rooms: details.rooms!,
         bathrooms: details.bathrooms!,
         livingRoomSize: details.livingRoomSize!,
+        address: details.address ?? '',
+        locationName: order.locationName ?? 'المنزل',
+        scheduledDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
+        scheduledTime: _fromTimeController.text,
         addressLatitude: order.addressLatitude!,
         addressLongitude: order.addressLongitude!,
+        preferredWorkerId: order.workerId,
       ),
     );
     if (!mounted) return;
 
-    response.fold(
+    setState(() {
+      _isSaving = false;
+    });
+
+    result.fold(
       (failure) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message)));
+        final message = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
+          failure,
+          invalidStateMessage:
+              'لا يمكن إعادة حجز الطلب في حالته الحالية. تحقق من بيانات الطلب وحاول لاحقًا.',
+        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       },
-      (_) {
-        setState(() {
-          _isSaving = false;
-        });
-        Navigator.of(context).pop(true);
+      (outcome) {
+        if (outcome.newOrderId == null) {
+          Navigator.of(context).pop(
+            const CleaningOrderRescheduleResult(openOrdersListFallback: true),
+          );
+          return;
+        }
+        Navigator.of(context).pop(
+          CleaningOrderRescheduleResult(
+            newOrderId: outcome.newOrderId,
+            openOrdersListFallback: false,
+          ),
+        );
       },
     );
   }
@@ -192,13 +254,17 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
       child: BlocBuilder<ClMainBloc, ClMainState>(
         builder: (context, state) {
           final pricing = state.estimatePrice?.pricing;
-          final subtotal = (pricing?.basePrice ?? 0) + (pricing?.travelFee ?? 0) + (pricing?.addonsTotal ?? 0);
+          final subtotal =
+              (pricing?.basePrice ?? 0) +
+              (pricing?.travelFee ?? 0) +
+              (pricing?.addonsTotal ?? 0);
           final total = pricing?.totalPrice ?? 0;
           final tax = math.max(0, total - subtotal).toDouble();
           final isLoadingEstimate =
               _missingDataMessage == null &&
               (state.estimatePriceStatus == BlocStatus.loading ||
-                  (state.estimatePriceStatus == BlocStatus.init && state.estimatePrice == null));
+                  (state.estimatePriceStatus == BlocStatus.init &&
+                      state.estimatePrice == null));
           final showSummary = pricing != null;
 
           return Directionality(
@@ -211,7 +277,12 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
                     const PersonalDetailsAppBar(title: 'تعديل معلومات الحجز'),
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 20, 24),
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          20,
+                          10,
+                          20,
+                          24,
+                        ),
                         child: Column(
                           children: [
                             ClServiceScheduleSectionWidget(
@@ -225,9 +296,16 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
                             ),
                             const SizedBox(height: 12),
                             if (isLoadingEstimate) ...[
-                              const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: CircularProgressIndicator()),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 24),
+                                child: CircularProgressIndicator(),
+                              ),
                             ] else if (showSummary) ...[
-                              _CleaningOrderRescheduleSummaryCard(subtotal: subtotal, tax: tax, total: total),
+                              _CleaningOrderRescheduleSummaryCard(
+                                subtotal: subtotal,
+                                tax: tax,
+                                total: total,
+                              ),
                             ] else ...[
                               const SizedBox.shrink(),
                             ],
@@ -237,7 +315,12 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
                     ),
                     Container(
                       color: const Color(0xFFF3F4F6),
-                      padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 20),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        20,
+                        8,
+                        20,
+                        20,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -248,16 +331,31 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF11B9C8),
                                   foregroundColor: Colors.white,
-                                  disabledBackgroundColor: const Color(0xFF8DD8DE),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  disabledBackgroundColor: const Color(
+                                    0xFF8DD8DE,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                   elevation: 2,
                                   shadowColor: Colors.black.withAlpha(25),
                                 ),
                                 child: _isSaving
-                                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
                                     : const Text(
                                         'حفظ التعديلات',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                        ),
                                       ),
                               ),
                             ),
@@ -267,18 +365,28 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
                             child: SizedBox(
                               height: 52,
                               child: ElevatedButton(
-                                onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                                onPressed: _isSaving
+                                    ? null
+                                    : () => Navigator.of(context).pop(),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFA8ABC9),
                                   foregroundColor: Colors.white,
-                                  disabledBackgroundColor: const Color(0xFFC7C9DC),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  disabledBackgroundColor: const Color(
+                                    0xFFC7C9DC,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                   elevation: 2,
                                   shadowColor: Colors.black.withAlpha(22),
                                 ),
                                 child: const Text(
                                   'تراجع',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                             ),
@@ -298,7 +406,11 @@ class _CleaningOrderRescheduleScreenState extends State<CleaningOrderRescheduleS
 }
 
 class _CleaningOrderRescheduleSummaryCard extends StatelessWidget {
-  const _CleaningOrderRescheduleSummaryCard({required this.subtotal, required this.tax, required this.total});
+  const _CleaningOrderRescheduleSummaryCard({
+    required this.subtotal,
+    required this.tax,
+    required this.total,
+  });
 
   final double subtotal;
   final double tax;
@@ -314,7 +426,11 @@ class _CleaningOrderRescheduleSummaryCard extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: Text(
             'ملخص الطلب',
-            style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w600, fontSize: 16),
+            style: TextStyle(
+              color: Color(0xFF111827),
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -328,11 +444,18 @@ class _CleaningOrderRescheduleSummaryCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _SummaryItemRow(label: 'المبلغ الإجمالي', value: _money(subtotal)),
+              _SummaryItemRow(
+                label: 'المبلغ الإجمالي',
+                value: _money(subtotal),
+              ),
               const Divider(color: Color(0xFFEEEEEE), thickness: 1, height: 16),
               _SummaryItemRow(label: 'الضريبة', value: _money(tax)),
               const Divider(color: Color(0xFFEEEEEE), thickness: 1, height: 16),
-              _SummaryItemRow(label: 'المجموع النهائي', value: _money(total), isTotal: true),
+              _SummaryItemRow(
+                label: 'المجموع النهائي',
+                value: _money(total),
+                isTotal: true,
+              ),
             ],
           ),
         ),
@@ -342,7 +465,11 @@ class _CleaningOrderRescheduleSummaryCard extends StatelessWidget {
 }
 
 class _SummaryItemRow extends StatelessWidget {
-  const _SummaryItemRow({required this.label, required this.value, this.isTotal = false});
+  const _SummaryItemRow({
+    required this.label,
+    required this.value,
+    this.isTotal = false,
+  });
 
   final String label;
   final String value;
@@ -350,20 +477,32 @@ class _SummaryItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = isTotal ? const Color(0xFF1E2A78) : const Color(0xFF6B7280);
-    final valueColor = isTotal ? const Color(0xFF1E2A78) : const Color(0xFF374151);
+    final labelColor = isTotal
+        ? const Color(0xFF1E2A78)
+        : const Color(0xFF6B7280);
+    final valueColor = isTotal
+        ? const Color(0xFF1E2A78)
+        : const Color(0xFF374151);
     final fontWeight = isTotal ? FontWeight.w900 : FontWeight.w600;
 
     return Row(
       children: [
         Text(
           label,
-          style: TextStyle(color: labelColor, fontWeight: fontWeight, fontSize: 14),
+          style: TextStyle(
+            color: labelColor,
+            fontWeight: fontWeight,
+            fontSize: 14,
+          ),
         ),
         const Spacer(),
         Text(
           value,
-          style: TextStyle(color: valueColor, fontWeight: fontWeight, fontSize: 14),
+          style: TextStyle(
+            color: valueColor,
+            fontWeight: fontWeight,
+            fontSize: 14,
+          ),
         ),
       ],
     );

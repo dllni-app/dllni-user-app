@@ -1,35 +1,40 @@
-import 'dart:convert';
-
-import 'package:common_package/helpers/logger_interceptor.dart';
-import 'package:common_package/helpers/pusher_service_logger.dart';
-import 'package:common_package/helpers/shared_preferences_helper.dart';
-import 'package:dio/dio.dart';
-import 'package:dllni_user_app/core/app_config.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:injectable/injectable.dart';
-import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+
+import 'pusher_manager.dart';
 
 typedef CleaningBookingEventHandler =
     void Function(String eventName, Map<String, dynamic> payload);
+typedef CleaningBookingChannelErrorHandler =
+    void Function(RealtimeChannelError error);
 
 @lazySingleton
 class CleaningBookingPusherService {
-  CleaningBookingPusherService() {
-    _broadcastAuthDio.interceptors.add(LoggerInterceptor());
+  CleaningBookingPusherService() : _pusherManager = getIt<PusherManager>();
+
+  final PusherManager _pusherManager;
+
+  final Map<int, CleaningBookingEventHandler> _bookingHandlers =
+      <int, CleaningBookingEventHandler>{};
+  final Map<int, CleaningBookingEventHandler> _customerHandlers =
+      <int, CleaningBookingEventHandler>{};
+  final Map<int, CleaningBookingChannelErrorHandler> _bookingErrorHandlers =
+      <int, CleaningBookingChannelErrorHandler>{};
+  final Map<int, CleaningBookingChannelErrorHandler> _customerErrorHandlers =
+      <int, CleaningBookingChannelErrorHandler>{};
+
+  final Map<int, RealtimeListenerHandle> _bookingListenerHandles =
+      <int, RealtimeListenerHandle>{};
+  final Map<int, RealtimeListenerHandle> _customerListenerHandles =
+      <int, RealtimeListenerHandle>{};
+
+  Future<void> ensureInitialized() {
+    return _pusherManager.ensureInitialized();
   }
 
-  final Dio _broadcastAuthDio = Dio(
-    BaseOptions(
-      baseUrl: AppConfig.baseUrl,
-      responseType: ResponseType.json,
-      contentType: Headers.formUrlEncodedContentType,
-    ),
-  );
-  final PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
-
-  bool _initialized = false;
-  String? _activeBookingChannel;
-  final Map<int, CleaningBookingEventHandler> _bookingHandlers = {};
-
+  @Deprecated(
+    'Use PusherManager.listen with RealtimeListenerHandle ownership instead.',
+  )
   void setBookingHandler(int bookingId, CleaningBookingEventHandler? onEvent) {
     if (onEvent == null) {
       _bookingHandlers.remove(bookingId);
@@ -38,131 +43,113 @@ class CleaningBookingPusherService {
     _bookingHandlers[bookingId] = onEvent;
   }
 
-  Future<void> ensureInitialized() async {
-    await _ensureInit();
-  }
-
-  Future<void> _ensureInit() async {
-    if (AppConfig.pusherKey.isEmpty) {
-      PusherServiceLogger.skippedNoPusherKey();
+  @Deprecated(
+    'Use PusherManager.listen with RealtimeListenerHandle ownership instead.',
+  )
+  void setCustomerHandler(
+    int customerId,
+    CleaningBookingEventHandler? onEvent,
+  ) {
+    if (onEvent == null) {
+      _customerHandlers.remove(customerId);
       return;
     }
-    if (_initialized) return;
-
-    PusherServiceLogger.init(
-      cluster: AppConfig.pusherCluster,
-      authEndpoint: '${AppConfig.baseUrl}/broadcasting/auth',
-      hasApiKey: AppConfig.pusherKey.isNotEmpty,
-    );
-
-    await _pusher.init(
-      apiKey: AppConfig.pusherKey,
-      cluster: AppConfig.pusherCluster,
-      useTLS: true,
-      onConnectionStateChange: (current, previous) {
-        PusherServiceLogger.connectionStateChange(current, previous);
-      },
-      onSubscriptionSucceeded: (channelName, data) {
-        PusherServiceLogger.subscriptionSucceeded(channelName, data);
-      },
-      onAuthorizer: (channelName, socketId, dynamic options) async {
-        try {
-          final token = (SharedPreferencesHelper.getData(key: 'token') ?? '')
-              .toString();
-          final res = await _broadcastAuthDio.post<Map<String, dynamic>>(
-            '/broadcasting/auth',
-            data: <String, dynamic>{
-              'channel_name': channelName,
-              'socket_id': socketId,
-            },
-            options: Options(
-              headers: <String, dynamic>{
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-              },
-              contentType: Headers.formUrlEncodedContentType,
-              responseType: ResponseType.json,
-            ),
-          );
-          final body = res.data;
-          if (body == null || body['auth'] == null) {
-            throw StateError('Invalid broadcasting auth response');
-          }
-          return <String, dynamic>{
-            'auth': body['auth'],
-            if (body['channel_data'] != null)
-              'channel_data': body['channel_data'],
-          };
-        } catch (e, st) {
-          PusherServiceLogger.authAuthorizerError(channelName, e, st);
-          rethrow;
-        }
-      },
-      onSubscriptionError: (message, e) {
-        PusherServiceLogger.subscriptionError('(subscription)', message, e);
-      },
-      onError: (message, code, e) {
-        PusherServiceLogger.socketError(message, code, e);
-      },
-      onEvent: _handleEvent,
-    );
-
-    PusherServiceLogger.connect();
-    await _pusher.connect();
-    _initialized = true;
+    _customerHandlers[customerId] = onEvent;
   }
 
-  void _handleEvent(PusherEvent event) {
-    PusherServiceLogger.event(
-      event.channelName,
-      event.eventName,
-      event.data,
-    );
-    final channel = event.channelName;
-    if (!channel.startsWith('private-cleaning-booking.')) return;
-    final bookingId = int.tryParse(channel.split('.').last);
-    if (bookingId == null) return;
-    _bookingHandlers[bookingId]?.call(
-      event.eventName,
-      _parsePayload(event.data),
-    );
+  @Deprecated(
+    'Use PusherManager.listen with RealtimeListenerHandle ownership instead.',
+  )
+  void setBookingErrorHandler(
+    int bookingId,
+    CleaningBookingChannelErrorHandler? onError,
+  ) {
+    if (onError == null) {
+      _bookingErrorHandlers.remove(bookingId);
+      return;
+    }
+    _bookingErrorHandlers[bookingId] = onError;
   }
 
-  Map<String, dynamic> _parsePayload(dynamic raw) {
-    if (raw is Map) {
-      return raw.map((key, value) => MapEntry(key.toString(), value));
+  @Deprecated(
+    'Use PusherManager.listen with RealtimeListenerHandle ownership instead.',
+  )
+  void setCustomerErrorHandler(
+    int customerId,
+    CleaningBookingChannelErrorHandler? onError,
+  ) {
+    if (onError == null) {
+      _customerErrorHandlers.remove(customerId);
+      return;
     }
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map) {
-          return decoded.map((key, value) => MapEntry(key.toString(), value));
-        }
-      } catch (_) {}
-    }
-    return const {};
+    _customerErrorHandlers[customerId] = onError;
   }
 
   Future<void> subscribeBookingChannel(int bookingId) async {
-    if (AppConfig.pusherKey.isEmpty) return;
-    await _ensureInit();
-    final channel = 'private-cleaning-booking.$bookingId';
-    if (_activeBookingChannel == channel) return;
-    if (_activeBookingChannel != null) {
-      PusherServiceLogger.unsubscribe(_activeBookingChannel!);
-      await _pusher.unsubscribe(channelName: _activeBookingChannel!);
-    }
-    _activeBookingChannel = channel;
-    PusherServiceLogger.subscribe(channel);
-    await _pusher.subscribe(channelName: channel);
+    if (_bookingListenerHandles.containsKey(bookingId)) return;
+    final handle = await _pusherManager.listen(
+      channelName: 'private-cleaning-booking.$bookingId',
+      onEvent: (event) {
+        final handler = _bookingHandlers[bookingId];
+        if (handler == null) return;
+        handler(event.eventName, event.payload);
+      },
+      onChannelError: (error) {
+        final handler = _bookingErrorHandlers[bookingId];
+        if (handler == null) return;
+        handler(error);
+      },
+    );
+    _bookingListenerHandles[bookingId] = handle;
   }
 
   Future<void> unsubscribeBookingChannel(int bookingId) async {
-    final channel = 'private-cleaning-booking.$bookingId';
-    if (_activeBookingChannel != channel) return;
-    PusherServiceLogger.unsubscribe(channel);
-    await _pusher.unsubscribe(channelName: channel);
-    _activeBookingChannel = null;
+    final handle = _bookingListenerHandles.remove(bookingId);
+    await handle?.dispose();
+  }
+
+  Future<void> subscribeCustomerChannel(int customerId) async {
+    if (_customerListenerHandles.containsKey(customerId)) return;
+    final handle = await _pusherManager.listen(
+      channelName: 'private-cleaning-customer.$customerId',
+      onEvent: (event) {
+        final handler = _customerHandlers[customerId];
+        if (handler == null) return;
+        handler(event.eventName, event.payload);
+      },
+      onChannelError: (error) {
+        final handler = _customerErrorHandlers[customerId];
+        if (handler == null) return;
+        handler(error);
+      },
+    );
+    _customerListenerHandles[customerId] = handle;
+  }
+
+  Future<void> unsubscribeCustomerChannel(int customerId) async {
+    final handle = _customerListenerHandles.remove(customerId);
+    await handle?.dispose();
+  }
+
+  Future<void> disposeAllForSession() async {
+    final bookingHandles = _bookingListenerHandles.values.toList(
+      growable: false,
+    );
+    final customerHandles = _customerListenerHandles.values.toList(
+      growable: false,
+    );
+    _bookingListenerHandles.clear();
+    _customerListenerHandles.clear();
+    _bookingHandlers.clear();
+    _customerHandlers.clear();
+    _bookingErrorHandlers.clear();
+    _customerErrorHandlers.clear();
+    for (final handle in bookingHandles) {
+      await handle.dispose();
+    }
+    for (final handle in customerHandles) {
+      await handle.dispose();
+    }
+    await _pusherManager.disposeAllForSession();
   }
 }

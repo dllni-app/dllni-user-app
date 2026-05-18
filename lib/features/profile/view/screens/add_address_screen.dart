@@ -1,11 +1,14 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../domain/models/address_list_item.dart';
 import '../../domain/usecases/create_address_use_case.dart';
 import '../../domain/usecases/update_address_use_case.dart';
+import '../helpers/nominatim_reverse_geocoding.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/filled_text_field.dart';
 import '../widgets/numbered_section_card.dart';
@@ -14,8 +17,39 @@ import '../widgets/personal_details_app_bar.dart';
 class MyAddressesScreenParams {
   final ProfileBloc bloc;
   final AddressListItem? addressItem;
+  final bool selectMode;
 
-  MyAddressesScreenParams({required this.bloc, this.addressItem});
+  MyAddressesScreenParams({
+    required this.bloc,
+    this.addressItem,
+    this.selectMode = false,
+  });
+}
+
+class CreatedAddressSelectionHint {
+  const CreatedAddressSelectionHint({
+    required this.label,
+    required this.mobile,
+    required this.city,
+    required this.neighborhood,
+    required this.street,
+    required this.floor,
+    required this.latitude,
+    required this.longitude,
+    this.building,
+    this.directions,
+  });
+
+  final String label;
+  final String mobile;
+  final String city;
+  final String neighborhood;
+  final String street;
+  final String floor;
+  final double latitude;
+  final double longitude;
+  final String? building;
+  final String? directions;
 }
 
 @AutoRoutePage()
@@ -41,8 +75,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   String _selectedType = 'المنزل';
   bool _isDefault = true;
+  bool _isResolvingMap = false;
+
+  double? _latitude;
+  double? _longitude;
 
   bool get _isEditMode => widget.params.addressItem != null;
+  bool get _hasSelectedLocation => _latitude != null && _longitude != null;
 
   @override
   void dispose() {
@@ -78,6 +117,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _floorController.text = item.floor ?? '';
     _directionsController.text = item.directions ?? item.landmark ?? '';
     _isDefault = item.isDefault;
+    _latitude = item.latitude;
+    _longitude = item.longitude;
     _selectedType = switch (item.type) {
       AddressType.work => 'العمل',
       AddressType.family => 'العائلة',
@@ -85,12 +126,100 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     };
   }
 
+  Future<void> _pickAddressFromMap() async {
+    final selected = await Navigator.of(context).push<_AddressMapSelection>(
+      MaterialPageRoute<_AddressMapSelection>(
+        builder: (_) => _AddressMapPickerScreen(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+        ),
+      ),
+    );
+    if (!mounted || selected == null) return;
+
+    setState(() {
+      _latitude = selected.latitude;
+      _longitude = selected.longitude;
+      _isResolvingMap = true;
+    });
+
+    final fields = await NominatimReverseGeocoding().reverse(
+      latitude: selected.latitude,
+      longitude: selected.longitude,
+    );
+    if (!mounted) return;
+
+    setState(() {
+      _isResolvingMap = false;
+      if (fields == null) return;
+      if ((fields.city ?? '').isNotEmpty) {
+        _cityController.text = fields.city!;
+      }
+      if ((fields.neighborhood ?? '').isNotEmpty) {
+        _neighborhoodController.text = fields.neighborhood!;
+      }
+      if ((fields.street ?? '').isNotEmpty) {
+        _streetController.text = fields.street!;
+      }
+      if ((fields.building ?? '').isNotEmpty) {
+        _buildingController.text = fields.building!;
+      }
+      if ((fields.directions ?? '').isNotEmpty) {
+        _directionsController.text = fields.directions!;
+      }
+    });
+
+    if (fields == null || !fields.hasAnyData) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم تحديد الموقع، يرجى إدخال بيانات العنوان يدويًا.'),
+        ),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('تم تحديد الموقع وتعبئة البيانات المتاحة من الخريطة.'),
+      ),
+    );
+  }
+
+  bool _validateLocationBeforeSubmit() {
+    if (_hasSelectedLocation) return true;
+    AppToast.showToast(
+      context: context,
+      message: 'يرجى تحديد العنوان على الخريطة أولًا',
+      type: ToastificationType.error,
+    );
+    return false;
+  }
+
+  CreatedAddressSelectionHint _buildCreatedAddressHint() {
+    return CreatedAddressSelectionHint(
+      label: _labelController.text.trim(),
+      mobile: _mobileController.text.trim(),
+      city: _cityController.text.trim(),
+      neighborhood: _neighborhoodController.text.trim(),
+      street: _streetController.text.trim(),
+      floor: _floorController.text.trim(),
+      latitude: _latitude!,
+      longitude: _longitude!,
+      building: _buildingController.text.trim().isEmpty
+          ? null
+          : _buildingController.text.trim(),
+      directions: _directionsController.text.trim().isEmpty
+          ? null
+          : _directionsController.text.trim(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<ProfileBloc, ProfileState>(
       bloc: widget.params.bloc,
       listenWhen: (previous, current) =>
-          previous.createAddressStatus != current.createAddressStatus || previous.updateAddressStatus != current.updateAddressStatus,
+          previous.createAddressStatus != current.createAddressStatus ||
+          previous.updateAddressStatus != current.updateAddressStatus,
       listener: (context, state) {
         final isCreateSuccess = state.createAddressStatus == BlocStatus.success;
         final isUpdateSuccess = state.updateAddressStatus == BlocStatus.success;
@@ -99,14 +228,23 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         final isCreating = state.createAddressStatus == BlocStatus.loading;
         final isUpdating = state.updateAddressStatus == BlocStatus.loading;
 
-        if (isCreateSuccess || isUpdateSuccess) {
+        if (isCreateSuccess) {
           Loading.close();
-          context.pop();
+          if (widget.params.selectMode) {
+            context.pop(_buildCreatedAddressHint());
+          } else {
+            context.pop(true);
+          }
+        } else if (isUpdateSuccess) {
+          Loading.close();
+          context.pop(true);
         } else if (isCreateFailure || isUpdateFailure) {
           Loading.close();
           AppToast.showToast(
             context: context,
-            message: state.errorMessage ?? (_isEditMode ? 'خطأ في تعديل العنوان' : 'خطا في اضافة العنوان'),
+            message:
+                state.errorMessage ??
+                (_isEditMode ? 'خطأ في تعديل العنوان' : 'خطأ في إضافة العنوان'),
             type: ToastificationType.error,
           );
         } else if (isCreating || isUpdating) {
@@ -118,7 +256,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              PersonalDetailsAppBar(title: _isEditMode ? 'تعديل العنوان' : 'إضافة عنوان جديد'),
+              PersonalDetailsAppBar(
+                title: _isEditMode ? 'تعديل العنوان' : 'إضافة عنوان جديد',
+              ),
               const SizedBox(height: 20),
               Expanded(
                 child: SingleChildScrollView(
@@ -131,23 +271,74 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _AddressTypeSelector(value: _selectedType, onChanged: (value) => setState(() => _selectedType = value)),
-                          const SizedBox(height: 12),
-                          FilledTextField(label: 'اسم العنوان', isRequired: true, controller: _labelController, validator: _requiredValidator),
+                          _AddressTypeSelector(
+                            value: _selectedType,
+                            onChanged: (value) =>
+                                setState(() => _selectedType = value),
+                          ),
                           const SizedBox(height: 12),
                           FilledTextField(
-                            label: 'اسم الجوال',
+                            label: 'اسم العنوان',
+                            isRequired: true,
+                            controller: _labelController,
+                            validator: _requiredValidator,
+                          ),
+                          const SizedBox(height: 12),
+                          FilledTextField(
+                            label: 'رقم الجوال',
                             isRequired: true,
                             controller: _mobileController,
                             keyboardType: TextInputType.phone,
                             validator: _requiredValidator,
                           ),
                           const SizedBox(height: 12),
-                          FilledTextField(label: 'اسم الحي', isRequired: true, controller: _neighborhoodController, validator: _requiredValidator),
+                          OutlinedButton.icon(
+                            onPressed: _isResolvingMap
+                                ? null
+                                : _pickAddressFromMap,
+                            icon: const Icon(Icons.map_outlined),
+                            label: Text(
+                              _hasSelectedLocation
+                                  ? 'تعديل الموقع على الخريطة'
+                                  : 'تحديد العنوان من الخريطة',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          if (_isResolvingMap) ...[
+                            const SizedBox(height: 8),
+                            const LinearProgressIndicator(minHeight: 2),
+                          ],
+                          if (_hasSelectedLocation) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'Lat: ${_latitude!.toStringAsFixed(6)}  •  Lng: ${_longitude!.toStringAsFixed(6)}',
+                              style: const TextStyle(
+                                color: Color(0xff6B7280),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 12),
-                          FilledTextField(label: 'اسم الشارع', isRequired: true, controller: _streetController, validator: _requiredValidator),
+                          FilledTextField(
+                            label: 'اسم الحي',
+                            isRequired: true,
+                            controller: _neighborhoodController,
+                            validator: _requiredValidator,
+                          ),
                           const SizedBox(height: 12),
-                          FilledTextField(label: 'اسم البناء', controller: _buildingController),
+                          FilledTextField(
+                            label: 'اسم الشارع',
+                            isRequired: true,
+                            controller: _streetController,
+                            validator: _requiredValidator,
+                          ),
+                          const SizedBox(height: 12),
+                          FilledTextField(
+                            label: 'اسم البناء',
+                            controller: _buildingController,
+                          ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'رقم الطابق',
@@ -157,15 +348,24 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             validator: _requiredValidator,
                           ),
                           const SizedBox(height: 12),
-                          FilledTextField(label: 'المدينة', isRequired: true, controller: _cityController, validator: _requiredValidator),
+                          FilledTextField(
+                            label: 'المدينة',
+                            isRequired: true,
+                            controller: _cityController,
+                            validator: _requiredValidator,
+                          ),
                           const SizedBox(height: 12),
-                          FilledTextField(label: 'تفاصيل أخرى', controller: _directionsController),
+                          FilledTextField(
+                            label: 'تفاصيل أخرى',
+                            controller: _directionsController,
+                          ),
                           const SizedBox(height: 8),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: AppText.bodyMedium('تعيين كعنوان افتراضي'),
                             value: _isDefault,
-                            onChanged: (value) => setState(() => _isDefault = value),
+                            onChanged: (value) =>
+                                setState(() => _isDefault = value),
                           ),
                         ],
                       ),
@@ -179,7 +379,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   bloc: widget.params.bloc,
                   builder: (context, state) {
                     final isSubmitting =
-                        state.createAddressStatus == BlocStatus.loading || state.updateAddressStatus == BlocStatus.loading;
+                        state.createAddressStatus == BlocStatus.loading ||
+                        state.updateAddressStatus == BlocStatus.loading;
                     return Row(
                       children: [
                         Expanded(
@@ -188,9 +389,17 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             onPressed: isSubmitting
                                 ? null
                                 : () {
-                                    if (!_formKey.currentState!.validate()) return;
+                                    if (!_formKey.currentState!.validate()) {
+                                      return;
+                                    }
+                                    if (!_validateLocationBeforeSubmit()) {
+                                      return;
+                                    }
+
                                     if (_isEditMode) {
-                                      final addressId = int.tryParse(widget.params.addressItem!.id);
+                                      final addressId = int.tryParse(
+                                        widget.params.addressItem!.id,
+                                      );
                                       if (addressId == null) {
                                         AppToast.showToast(
                                           context: context,
@@ -204,14 +413,23 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                           params: UpdateAddressParams(
                                             addressId: addressId,
                                             label: _labelController.text.trim(),
-                                            mobile: _mobileController.text.trim(),
+                                            mobile: _mobileController.text
+                                                .trim(),
                                             city: _cityController.text.trim(),
-                                            neighborhood: _neighborhoodController.text.trim(),
-                                            street: _streetController.text.trim(),
-                                            building: _buildingController.text.trim(),
+                                            neighborhood:
+                                                _neighborhoodController.text
+                                                    .trim(),
+                                            street: _streetController.text
+                                                .trim(),
+                                            building: _buildingController.text
+                                                .trim(),
                                             floor: _floorController.text.trim(),
-                                            directions: _directionsController.text.trim(),
+                                            directions: _directionsController
+                                                .text
+                                                .trim(),
                                             isDefault: _isDefault,
+                                            latitude: _latitude,
+                                            longitude: _longitude,
                                           ),
                                         ),
                                       );
@@ -223,14 +441,27 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                           label: _labelController.text.trim(),
                                           mobile: _mobileController.text.trim(),
                                           city: _cityController.text.trim(),
-                                          neighborhood: _neighborhoodController.text.trim(),
+                                          neighborhood: _neighborhoodController
+                                              .text
+                                              .trim(),
                                           street: _streetController.text.trim(),
-                                          building: _buildingController.text.trim().isEmpty ? null : _buildingController.text.trim(),
+                                          building:
+                                              _buildingController.text
+                                                  .trim()
+                                                  .isEmpty
+                                              ? null
+                                              : _buildingController.text.trim(),
                                           floor: _floorController.text.trim(),
-                                          directions: _directionsController.text.trim().isEmpty ? null : _directionsController.text.trim(),
+                                          directions:
+                                              _directionsController.text
+                                                  .trim()
+                                                  .isEmpty
+                                              ? null
+                                              : _directionsController.text
+                                                    .trim(),
                                           isDefault: _isDefault,
-                                          latitude: 36.2,
-                                          longitude: 37.15,
+                                          latitude: _latitude!,
+                                          longitude: _longitude!,
                                         ),
                                       ),
                                     );
@@ -239,7 +470,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               elevation: 0,
                               backgroundColor: context.primary,
                               foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                               minimumSize: const Size.fromHeight(42),
                             ),
                             child: AppText.labelLarge(
@@ -252,12 +485,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: isSubmitting ? null : () => context.pop(false),
+                            onPressed: isSubmitting
+                                ? null
+                                : () => context.pop(false),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: context.error),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                            child: AppText.labelLarge('إلغاء', color: context.error, fontWeight: FontWeight.w700),
+                            child: AppText.labelLarge(
+                              'إلغاء',
+                              color: context.error,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -293,7 +534,10 @@ class _AddressTypeSelector extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: const Color(0xffF9FAFB),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 8,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
@@ -307,12 +551,126 @@ class _AddressTypeSelector extends StatelessWidget {
               borderSide: BorderSide(color: context.primary, width: 1.2),
             ),
           ),
-          items: _types.map((item) => DropdownMenuItem<String>(value: item, child: AppText.bodyMedium(item))).toList(),
+          items: _types
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: AppText.bodyMedium(item),
+                ),
+              )
+              .toList(),
           onChanged: (selected) {
             if (selected != null) onChanged(selected);
           },
         ),
       ],
+    );
+  }
+}
+
+class _AddressMapSelection {
+  const _AddressMapSelection({required this.latitude, required this.longitude});
+
+  final double latitude;
+  final double longitude;
+}
+
+class _AddressMapPickerScreen extends StatefulWidget {
+  const _AddressMapPickerScreen({
+    required this.initialLatitude,
+    required this.initialLongitude,
+  });
+
+  final double? initialLatitude;
+  final double? initialLongitude;
+
+  @override
+  State<_AddressMapPickerScreen> createState() =>
+      _AddressMapPickerScreenState();
+}
+
+class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
+  static const LatLng _defaultCenter = LatLng(33.5138, 36.2765);
+  late LatLng _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = LatLng(
+      widget.initialLatitude ?? _defaultCenter.latitude,
+      widget.initialLongitude ?? _defaultCenter.longitude,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('تحديد الموقع على الخريطة')),
+      body: Column(
+        children: [
+          Expanded(
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: _selected,
+                initialZoom: 15,
+                onTap: (_, point) {
+                  setState(() => _selected = point);
+                },
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.dllni.user',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _selected,
+                      width: 44,
+                      height: 44,
+                      child: const Icon(
+                        Icons.location_on_rounded,
+                        size: 40,
+                        color: Color(0xffE51C28),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Lat: ${_selected.latitude.toStringAsFixed(6)}  •  Lng: ${_selected.longitude.toStringAsFixed(6)}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xff6B7280),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(
+                      _AddressMapSelection(
+                        latitude: _selected.latitude,
+                        longitude: _selected.longitude,
+                      ),
+                    );
+                  },
+                  child: const Text('تأكيد الموقع'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

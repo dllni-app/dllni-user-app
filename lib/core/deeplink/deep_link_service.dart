@@ -3,15 +3,16 @@ import 'dart:io' show Platform;
 
 import 'package:app_links/app_links.dart';
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/deeplink/deep_link_dispatcher.dart';
-import 'package:dllni_user_app/core/deeplink/deep_link_fallback_screen.dart';
-import 'package:dllni_user_app/core/deeplink/deep_link_models.dart';
-import 'package:dllni_user_app/core/deeplink/deep_link_parser.dart';
-import 'package:dllni_user_app/core/deeplink/deep_link_remote_data_source.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:injectable/injectable.dart';
+
+import 'deep_link_dispatcher.dart';
+import 'deep_link_fallback_screen.dart';
+import 'deep_link_models.dart';
+import 'deep_link_parser.dart';
+import 'deep_link_remote_data_source.dart';
 
 @lazySingleton
 class DeepLinkService {

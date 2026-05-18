@@ -1,32 +1,38 @@
+import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-import 'group_order_food_card.dart';
 import 'group_order_food_row.dart';
+import 'group_order_selected_products_formatter.dart';
 
 class GroupOrderRequestedFoodsSection extends StatelessWidget {
   final List<GroupOrderFoodRow> foods;
-  final void Function(GroupOrderFoodRow row)? onDelete;
+  final String memberName;
 
   const GroupOrderRequestedFoodsSection({
     super.key,
     required this.foods,
-    this.onDelete,
+    required this.memberName,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (foods.isEmpty) {
+      return AppText.bodySmall(
+        'لم تضف أي أطعمة بعد',
+        color: const Color(0xff9CA3AF),
+      );
+    }
+
     return Column(
-      children: foods
-          .map(
-            (row) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: GroupOrderFoodCard(
-                row: row,
-                onDelete: onDelete == null ? null : () => onDelete!(row),
-              ),
-            ),
-          )
-          .toList(),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppText.titleSmall(memberName, fontWeight: FontWeight.w700),
+        const SizedBox(height: 8),
+        AppText.bodyMedium(
+          GroupOrderSelectedProductsFormatter.formatFromRows(foods),
+          color: const Color(0xff4B5563),
+        ),
+      ],
     );
   }
 }

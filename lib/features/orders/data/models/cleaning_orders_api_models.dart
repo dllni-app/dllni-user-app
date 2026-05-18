@@ -12,9 +12,19 @@ Map<String, dynamic> _toMap(dynamic value) {
 
 List<Map<String, dynamic>> _toMapList(dynamic value) {
   if (value is List) {
-    return value.map((item) => _toMap(item)).toList();
+    return value.map((item) => _toMap(item)).toList(growable: false);
   }
   return const <Map<String, dynamic>>[];
+}
+
+List<dynamic>? _toDynamicList(dynamic value) {
+  if (value is! List) return null;
+  return value
+      .map((item) {
+        if (item is Map) return _toMap(item);
+        return item;
+      })
+      .toList(growable: false);
 }
 
 int? _toInt(dynamic value) {
@@ -35,8 +45,16 @@ String? _toStringValue(dynamic value) {
   return text.isEmpty ? null : text;
 }
 
-/// Merges `tracking` into the root map when the API nests lifecycle timestamps.
-Map<String, dynamic> _cleaningDetailJsonMap(Map<String, dynamic> json) {
+dynamic _pick(Map<String, dynamic> map, List<String> keys) {
+  for (final key in keys) {
+    if (!map.containsKey(key)) continue;
+    final value = map[key];
+    if (value != null) return value;
+  }
+  return null;
+}
+
+Map<String, dynamic> _withTracking(Map<String, dynamic> json) {
   final tracking = json['tracking'];
   if (tracking is Map) {
     return {...json, ..._toMap(tracking)};
@@ -114,54 +132,151 @@ class FetchCleaningOrderDetailsModel {
 
 class CleaningOrderModel {
   final int? id;
+  final int? customerId;
+  final int? workerId;
   final String? bookingNumber;
   final String? status;
   final String? propertyType;
-  final double? totalPrice;
-  final String? scheduledDate;
-  final String? scheduledTime;
+  final CleaningPropertyDetailsModel? propertyDetails;
   final double? addressLatitude;
   final double? addressLongitude;
   final String? locationName;
-  final CleaningPropertyDetailsModel? propertyDetails;
+  final String? estimatedSqm;
+  final String? estimatedHours;
+  final double? totalHours;
+  final double? basePrice;
+  final double? addonsTotal;
+  final double? travelFee;
+  final double? cancellationFee;
+  final double? totalPrice;
+  final String? scheduledDate;
+  final String? scheduledTime;
+  final String? startedTravelAt;
+  final String? arrivedAt;
+  final String? workStartedAt;
+  final String? workFinishedAt;
+  final String? customerConfirmedAt;
+  final String? cancelledAt;
+  final CleaningOrderCustomerModel? customer;
+  final CleaningOrderWorkerModel? worker;
+  final List<CleaningOrderLineItemModel>? services;
+  final List<CleaningOrderLineItemModel>? addons;
+  final Map<String, dynamic>? billingPolicy;
+  final List<dynamic>? timeWarnings;
+  final List<dynamic>? disputes;
 
   CleaningOrderModel({
     this.id,
+    this.customerId,
+    this.workerId,
     this.bookingNumber,
     this.status,
     this.propertyType,
-    this.totalPrice,
-    this.scheduledDate,
-    this.scheduledTime,
+    this.propertyDetails,
     this.addressLatitude,
     this.addressLongitude,
     this.locationName,
-    this.propertyDetails,
+    this.estimatedSqm,
+    this.estimatedHours,
+    this.totalHours,
+    this.basePrice,
+    this.addonsTotal,
+    this.travelFee,
+    this.cancellationFee,
+    this.totalPrice,
+    this.scheduledDate,
+    this.scheduledTime,
+    this.startedTravelAt,
+    this.arrivedAt,
+    this.workStartedAt,
+    this.workFinishedAt,
+    this.customerConfirmedAt,
+    this.cancelledAt,
+    this.customer,
+    this.worker,
+    this.services,
+    this.addons,
+    this.billingPolicy,
+    this.timeWarnings,
+    this.disputes,
   });
 
   factory CleaningOrderModel.fromJson(Map<String, dynamic> json) {
+    final m = _withTracking(json);
     return CleaningOrderModel(
-      id: _toInt(json['id']),
-      bookingNumber: _toStringValue(json['bookingNumber']),
-      status: _toStringValue(json['status']),
-      propertyType: _toStringValue(json['propertyType']),
-      totalPrice: _toDouble(json['totalPrice']),
-      scheduledDate: _toStringValue(json['scheduledDate']),
-      scheduledTime: _toStringValue(json['scheduledTime']),
+      id: _toInt(_pick(m, const <String>['id'])),
+      customerId: _toInt(_pick(m, const <String>['customerId', 'customer_id'])),
+      workerId: _toInt(_pick(m, const <String>['workerId', 'worker_id'])),
+      bookingNumber: _toStringValue(
+        _pick(m, const <String>['bookingNumber', 'booking_number']),
+      ),
+      status: _toStringValue(_pick(m, const <String>['status'])),
+      propertyType: _toStringValue(
+        _pick(m, const <String>['propertyType', 'property_type']),
+      ),
+      propertyDetails: m['propertyDetails'] == null
+          ? null
+          : CleaningPropertyDetailsModel.fromJson(_toMap(m['propertyDetails'])),
       addressLatitude: _toDouble(
-        json['addressLatitude'] ?? json['address_latitude'] ?? json['latitude'],
+        _pick(m, const <String>['addressLatitude', 'address_latitude', 'latitude']),
       ),
       addressLongitude: _toDouble(
-        json['addressLongitude'] ??
-            json['address_longitude'] ??
-            json['longitude'],
+        _pick(m, const <String>['addressLongitude', 'address_longitude', 'longitude']),
       ),
-      locationName: _toStringValue(json['locationName']),
-      propertyDetails: json['propertyDetails'] == null
+      locationName: _toStringValue(
+        _pick(m, const <String>['locationName', 'location_name']),
+      ),
+      estimatedSqm: _toStringValue(
+        _pick(m, const <String>['estimatedSqm', 'estimated_sqm']),
+      ),
+      estimatedHours: _toStringValue(
+        _pick(m, const <String>['estimatedHours', 'estimated_hours']),
+      ),
+      totalHours: _toDouble(_pick(m, const <String>['totalHours', 'total_hours'])),
+      basePrice: _toDouble(_pick(m, const <String>['basePrice', 'base_price'])),
+      addonsTotal: _toDouble(_pick(m, const <String>['addonsTotal', 'addons_total'])),
+      travelFee: _toDouble(_pick(m, const <String>['travelFee', 'travel_fee'])),
+      cancellationFee: _toDouble(
+        _pick(m, const <String>['cancellationFee', 'cancellation_fee']),
+      ),
+      totalPrice: _toDouble(_pick(m, const <String>['totalPrice', 'total_price'])),
+      scheduledDate: _toStringValue(
+        _pick(m, const <String>['scheduledDate', 'scheduled_date']),
+      ),
+      scheduledTime: _toStringValue(
+        _pick(m, const <String>['scheduledTime', 'scheduled_time']),
+      ),
+      startedTravelAt: _toStringValue(
+        _pick(m, const <String>['startedTravelAt', 'started_travel_at']),
+      ),
+      arrivedAt: _toStringValue(_pick(m, const <String>['arrivedAt', 'arrived_at'])),
+      workStartedAt: _toStringValue(
+        _pick(m, const <String>['workStartedAt', 'work_started_at']),
+      ),
+      workFinishedAt: _toStringValue(
+        _pick(m, const <String>['workFinishedAt', 'work_finished_at']),
+      ),
+      customerConfirmedAt: _toStringValue(
+        _pick(m, const <String>['customerConfirmedAt', 'customer_confirmed_at']),
+      ),
+      cancelledAt: _toStringValue(_pick(m, const <String>['cancelledAt', 'cancelled_at'])),
+      customer: m['customer'] == null
           ? null
-          : CleaningPropertyDetailsModel.fromJson(
-              _toMap(json['propertyDetails']),
-            ),
+          : CleaningOrderCustomerModel.fromJson(_toMap(m['customer'])),
+      worker: m['worker'] == null
+          ? null
+          : CleaningOrderWorkerModel.fromJson(_toMap(m['worker'])),
+      services: _toMapList(m['services'])
+          .map(CleaningOrderLineItemModel.fromJson)
+          .toList(growable: false),
+      addons: _toMapList(m['addons'])
+          .map(CleaningOrderLineItemModel.fromJson)
+          .toList(growable: false),
+      billingPolicy: m['billingPolicy'] is Map
+          ? _toMap(m['billingPolicy'])
+          : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
+      timeWarnings: _toDynamicList(m['timeWarnings'] ?? m['time_warnings']),
+      disputes: _toDynamicList(m['disputes']),
     );
   }
 }
@@ -182,19 +297,26 @@ class CleaningOrderDetailModel {
   final String? estimatedSqm;
   final String? estimatedHours;
   final double? totalHours;
-  final String? scheduledDate;
-  final String? scheduledTime;
   final double? basePrice;
   final double? addonsTotal;
   final double? travelFee;
+  final double? cancellationFee;
   final double? totalPrice;
-  final CleaningOrderWorkerModel? worker;
+  final String? scheduledDate;
+  final String? scheduledTime;
   final String? startedTravelAt;
   final String? arrivedAt;
   final String? workStartedAt;
   final String? workFinishedAt;
   final String? customerConfirmedAt;
   final String? cancelledAt;
+  final CleaningOrderCustomerModel? customer;
+  final CleaningOrderWorkerModel? worker;
+  final List<CleaningOrderLineItemModel>? services;
+  final List<CleaningOrderLineItemModel>? addons;
+  final Map<String, dynamic>? billingPolicy;
+  final List<dynamic>? timeWarnings;
+  final List<dynamic>? disputes;
 
   CleaningOrderDetailModel({
     this.id,
@@ -212,106 +334,148 @@ class CleaningOrderDetailModel {
     this.estimatedSqm,
     this.estimatedHours,
     this.totalHours,
-    this.scheduledDate,
-    this.scheduledTime,
     this.basePrice,
     this.addonsTotal,
     this.travelFee,
+    this.cancellationFee,
     this.totalPrice,
-    this.worker,
+    this.scheduledDate,
+    this.scheduledTime,
     this.startedTravelAt,
     this.arrivedAt,
     this.workStartedAt,
     this.workFinishedAt,
     this.customerConfirmedAt,
     this.cancelledAt,
+    this.customer,
+    this.worker,
+    this.services,
+    this.addons,
+    this.billingPolicy,
+    this.timeWarnings,
+    this.disputes,
   });
 
   factory CleaningOrderDetailModel.fromJson(Map<String, dynamic> json) {
-    final m = _cleaningDetailJsonMap(json);
+    final m = _withTracking(json);
     return CleaningOrderDetailModel(
-      id: _toInt(m['id'] ?? json['id']),
-      customerId: _toInt(m['customerId'] ?? json['customerId']),
-      workerId: _toInt(m['workerId'] ?? json['workerId']),
+      id: _toInt(_pick(m, const <String>['id'])),
+      customerId: _toInt(_pick(m, const <String>['customerId', 'customer_id'])),
+      workerId: _toInt(_pick(m, const <String>['workerId', 'worker_id'])),
       bookingNumber: _toStringValue(
-        m['bookingNumber'] ?? json['bookingNumber'],
+        _pick(m, const <String>['bookingNumber', 'booking_number']),
       ),
-      status: _toStringValue(m['status'] ?? json['status']),
-      propertyType: _toStringValue(m['propertyType'] ?? json['propertyType']),
-      propertyDetails: json['propertyDetails'] == null
+      status: _toStringValue(_pick(m, const <String>['status'])),
+      propertyType: _toStringValue(
+        _pick(m, const <String>['propertyType', 'property_type']),
+      ),
+      propertyDetails: m['propertyDetails'] == null
           ? null
           : CleaningPropertyDetailsModel.fromJson(
-              _toMap(json['propertyDetails']),
+              _toMap(m['propertyDetails']),
             ),
       addressLatitude: _toDouble(
-        m['addressLatitude'] ??
-            m['address_latitude'] ??
-            m['latitude'] ??
-            json['addressLatitude'] ??
-            json['address_latitude'] ??
-            json['latitude'],
+        _pick(m, const <String>['addressLatitude', 'address_latitude', 'latitude']),
       ),
       addressLongitude: _toDouble(
-        m['addressLongitude'] ??
-            m['address_longitude'] ??
-            m['longitude'] ??
-            json['addressLongitude'] ??
-            json['address_longitude'] ??
-            json['longitude'],
+        _pick(m, const <String>['addressLongitude', 'address_longitude', 'longitude']),
       ),
-      locationName: _toStringValue(m['locationName'] ?? json['locationName']),
-      numberOfRooms: _toInt(m['numberOfRooms'] ?? json['numberOfRooms']),
+      locationName: _toStringValue(
+        _pick(m, const <String>['locationName', 'location_name']),
+      ),
+      numberOfRooms: _toInt(_pick(m, const <String>['numberOfRooms', 'number_of_rooms'])),
       numberOfKitchens: _toInt(
-        m['numberOfKitchens'] ?? json['numberOfKitchens'],
+        _pick(m, const <String>['numberOfKitchens', 'number_of_kitchens']),
       ),
-      estimatedSqm: _toStringValue(m['estimatedSqm'] ?? json['estimatedSqm']),
+      estimatedSqm: _toStringValue(
+        _pick(m, const <String>['estimatedSqm', 'estimated_sqm']),
+      ),
       estimatedHours: _toStringValue(
-        m['estimatedHours'] ?? json['estimatedHours'],
+        _pick(m, const <String>['estimatedHours', 'estimated_hours']),
       ),
-      totalHours: _toDouble(m['totalHours'] ?? json['totalHours']),
+      totalHours: _toDouble(_pick(m, const <String>['totalHours', 'total_hours'])),
+      basePrice: _toDouble(_pick(m, const <String>['basePrice', 'base_price'])),
+      addonsTotal: _toDouble(_pick(m, const <String>['addonsTotal', 'addons_total'])),
+      travelFee: _toDouble(_pick(m, const <String>['travelFee', 'travel_fee'])),
+      cancellationFee: _toDouble(
+        _pick(m, const <String>['cancellationFee', 'cancellation_fee']),
+      ),
+      totalPrice: _toDouble(_pick(m, const <String>['totalPrice', 'total_price'])),
       scheduledDate: _toStringValue(
-        m['scheduledDate'] ?? json['scheduledDate'],
+        _pick(m, const <String>['scheduledDate', 'scheduled_date']),
       ),
       scheduledTime: _toStringValue(
-        m['scheduledTime'] ?? json['scheduledTime'],
+        _pick(m, const <String>['scheduledTime', 'scheduled_time']),
       ),
-      basePrice: _toDouble(m['basePrice'] ?? json['basePrice']),
-      addonsTotal: _toDouble(m['addonsTotal'] ?? json['addonsTotal']),
-      travelFee: _toDouble(m['travelFee'] ?? json['travelFee']),
-      totalPrice: _toDouble(m['totalPrice'] ?? json['totalPrice']),
-      worker: json['worker'] == null
-          ? null
-          : CleaningOrderWorkerModel.fromJson(_toMap(json['worker'])),
       startedTravelAt: _toStringValue(
-        m['startedTravelAt'] ?? json['startedTravelAt'],
+        _pick(m, const <String>['startedTravelAt', 'started_travel_at']),
       ),
-      arrivedAt: _toStringValue(m['arrivedAt'] ?? json['arrivedAt']),
+      arrivedAt: _toStringValue(_pick(m, const <String>['arrivedAt', 'arrived_at'])),
       workStartedAt: _toStringValue(
-        m['workStartedAt'] ?? json['workStartedAt'],
+        _pick(m, const <String>['workStartedAt', 'work_started_at']),
       ),
       workFinishedAt: _toStringValue(
-        m['workFinishedAt'] ?? json['workFinishedAt'],
+        _pick(m, const <String>['workFinishedAt', 'work_finished_at']),
       ),
       customerConfirmedAt: _toStringValue(
-        m['customerConfirmedAt'] ?? json['customerConfirmedAt'],
+        _pick(m, const <String>['customerConfirmedAt', 'customer_confirmed_at']),
       ),
-      cancelledAt: _toStringValue(m['cancelledAt'] ?? json['cancelledAt']),
+      cancelledAt: _toStringValue(_pick(m, const <String>['cancelledAt', 'cancelled_at'])),
+      customer: m['customer'] == null
+          ? null
+          : CleaningOrderCustomerModel.fromJson(_toMap(m['customer'])),
+      worker: m['worker'] == null
+          ? null
+          : CleaningOrderWorkerModel.fromJson(_toMap(m['worker'])),
+      services: _toMapList(m['services'])
+          .map(CleaningOrderLineItemModel.fromJson)
+          .toList(growable: false),
+      addons: _toMapList(m['addons'])
+          .map(CleaningOrderLineItemModel.fromJson)
+          .toList(growable: false),
+      billingPolicy: m['billingPolicy'] is Map
+          ? _toMap(m['billingPolicy'])
+          : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
+      timeWarnings: _toDynamicList(m['timeWarnings'] ?? m['time_warnings']),
+      disputes: _toDynamicList(m['disputes']),
     );
   }
 
   CleaningOrderModel toCleaningOrderModel() {
     return CleaningOrderModel(
       id: id,
+      customerId: customerId,
+      workerId: workerId,
       bookingNumber: bookingNumber,
       status: status,
       propertyType: propertyType,
-      totalPrice: totalPrice,
-      scheduledDate: scheduledDate,
-      scheduledTime: scheduledTime,
+      propertyDetails: propertyDetails,
       addressLatitude: addressLatitude,
       addressLongitude: addressLongitude,
       locationName: locationName,
-      propertyDetails: propertyDetails,
+      estimatedSqm: estimatedSqm,
+      estimatedHours: estimatedHours,
+      totalHours: totalHours,
+      basePrice: basePrice,
+      addonsTotal: addonsTotal,
+      travelFee: travelFee,
+      cancellationFee: cancellationFee,
+      totalPrice: totalPrice,
+      scheduledDate: scheduledDate,
+      scheduledTime: scheduledTime,
+      startedTravelAt: startedTravelAt,
+      arrivedAt: arrivedAt,
+      workStartedAt: workStartedAt,
+      workFinishedAt: workFinishedAt,
+      customerConfirmedAt: customerConfirmedAt,
+      cancelledAt: cancelledAt,
+      customer: customer,
+      worker: worker,
+      services: services,
+      addons: addons,
+      billingPolicy: billingPolicy,
+      timeWarnings: timeWarnings,
+      disputes: disputes,
     );
   }
 }
@@ -333,11 +497,60 @@ class CleaningOrderWorkerModel {
 
   factory CleaningOrderWorkerModel.fromJson(Map<String, dynamic> json) {
     return CleaningOrderWorkerModel(
-      id: _toInt(json['id']),
-      name: _toStringValue(json['name']) ?? _toStringValue(json['firstName']),
-      phone: _toStringValue(json['phone']),
-      averageRating: _toDouble(json['averageRating']),
-      avatarUrl: _toStringValue(json['avatarUrl']),
+      id: _toInt(_pick(json, const <String>['id'])),
+      name: _toStringValue(
+        _pick(json, const <String>['name', 'firstName', 'first_name']),
+      ),
+      phone: _toStringValue(_pick(json, const <String>['phone'])),
+      averageRating: _toDouble(
+        _pick(json, const <String>['averageRating', 'average_rating']),
+      ),
+      avatarUrl: _toStringValue(
+        _pick(json, const <String>['avatarUrl', 'avatar_url']),
+      ),
+    );
+  }
+}
+
+class CleaningOrderCustomerModel {
+  final int? id;
+  final String? name;
+  final String? phone;
+  final String? email;
+
+  CleaningOrderCustomerModel({
+    this.id,
+    this.name,
+    this.phone,
+    this.email,
+  });
+
+  factory CleaningOrderCustomerModel.fromJson(Map<String, dynamic> json) {
+    return CleaningOrderCustomerModel(
+      id: _toInt(_pick(json, const <String>['id'])),
+      name: _toStringValue(_pick(json, const <String>['name'])),
+      phone: _toStringValue(_pick(json, const <String>['phone'])),
+      email: _toStringValue(_pick(json, const <String>['email'])),
+    );
+  }
+}
+
+class CleaningOrderLineItemModel {
+  final int? id;
+  final String? name;
+  final int? quantity;
+
+  CleaningOrderLineItemModel({
+    this.id,
+    this.name,
+    this.quantity,
+  });
+
+  factory CleaningOrderLineItemModel.fromJson(Map<String, dynamic> json) {
+    return CleaningOrderLineItemModel(
+      id: _toInt(_pick(json, const <String>['id'])),
+      name: _toStringValue(_pick(json, const <String>['name'])),
+      quantity: _toInt(_pick(json, const <String>['quantity'])),
     );
   }
 }
@@ -363,13 +576,19 @@ class CleaningPropertyDetailsModel {
 
   factory CleaningPropertyDetailsModel.fromJson(Map<String, dynamic> json) {
     return CleaningPropertyDetailsModel(
-      address: _toStringValue(json['address']),
-      locationName: _toStringValue(json['location_name']),
-      bedrooms: _toInt(json['bedrooms']),
-      rooms: _toInt(json['rooms']),
-      bathrooms: _toInt(json['bathrooms']),
-      kitchens: _toInt(json['kitchens']),
-      livingRoomSize: _toStringValue(json['living_room_size']),
+      address: _toStringValue(_pick(json, const <String>['address'])),
+      locationName: _toStringValue(
+        _pick(json, const <String>['location_name', 'locationName']),
+      ),
+      bedrooms: _toInt(_pick(json, const <String>['bedrooms'])),
+      rooms: _toInt(_pick(json, const <String>['rooms'])),
+      bathrooms: _toInt(_pick(json, const <String>['bathrooms'])),
+      kitchens: _toInt(
+        _pick(json, const <String>['kitchens', 'kitchen_included']),
+      ),
+      livingRoomSize: _toStringValue(
+        _pick(json, const <String>['living_room_size', 'livingRoomSize']),
+      ),
     );
   }
 }

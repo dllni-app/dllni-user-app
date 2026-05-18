@@ -59,6 +59,8 @@ import '../../features/orders/domain/usecases/fetch_cleaning_order_details_use_c
     as _i232;
 import '../../features/orders/domain/usecases/fetch_cleaning_orders_use_case.dart'
     as _i382;
+import '../../features/orders/domain/usecases/fetch_cleaning_worker_profile_use_case.dart'
+    as _i1100;
 import '../../features/orders/domain/usecases/fetch_order_details_use_case.dart'
     as _i438;
 import '../../features/orders/domain/usecases/fetch_orders_use_case.dart'
@@ -636,6 +638,11 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i232.FetchCleaningOrderDetailsUseCase>(
     () => _i232.FetchCleaningOrderDetailsUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i1100.FetchCleaningWorkerProfileUseCase>(
+    () => _i1100.FetchCleaningWorkerProfileUseCase(
       ordersRepo: gh<_i132.OrdersRepo>(),
     ),
   );

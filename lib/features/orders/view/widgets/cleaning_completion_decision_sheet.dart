@@ -10,10 +10,18 @@ class CleaningCompletionDecisionSheet {
     required Future<String?> Function() onConfirm,
     required Future<String?> Function(String? reason) onReject,
     required Future<String?> Function(int minutes) onExtend,
+    bool useRootNavigator = true,
   }) async {
     return showModalBottomSheet<CleaningCompletionDecision>(
       context: context,
+      useRootNavigator: useRootNavigator,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => _CleaningCompletionDecisionSheetBody(
         onConfirm: onConfirm,
         onReject: onReject,
@@ -65,46 +73,118 @@ class _CleaningCompletionDecisionSheetBodyState
     Navigator.of(context).pop(decision);
   }
 
+  Future<void> _onExtendPressed() async {
+    final controller = TextEditingController(text: '30');
+    final accepted = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => AlertDialog(
+        title: const Text('طلب تمديد وقت إضافي'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(labelText: 'عدد الدقائق (1-480)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('إرسال'),
+          ),
+        ],
+      ),
+    );
+    final raw = controller.text.trim();
+    controller.dispose();
+    if (accepted != true) return;
+    final minutes = int.tryParse(raw);
+    if (minutes == null || minutes < 1 || minutes > 480) {
+      setState(() => _error = 'أدخل عدد دقائق بين 1 و 480');
+      return;
+    }
+    await _run(
+      () => widget.onExtend(minutes),
+      CleaningCompletionDecision.extensionRequested,
+    );
+  }
+
+  Future<void> _onRejectPressed() async {
+    final reasonController = TextEditingController();
+    final accepted = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (_) => AlertDialog(
+        title: const Text('العمل لم يكتمل بعد'),
+        content: TextField(
+          controller: reasonController,
+          minLines: 2,
+          maxLines: 3,
+          maxLength: 500,
+          decoration: const InputDecoration(hintText: 'اكتب ملاحظتك (اختياري)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('تأكيد'),
+          ),
+        ],
+      ),
+    );
+    final reason = reasonController.text.trim();
+    reasonController.dispose();
+    if (accepted != true) return;
+    await _run(
+      () => widget.onReject(reason.isEmpty ? null : reason),
+      CleaningCompletionDecision.rejected,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
+        left: 18,
+        right: 18,
         top: 12,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 18,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
-              ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: IconButton(
+              onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
             ),
           ),
-          const SizedBox(height: 14),
           const Icon(
-            Icons.verified_rounded,
-            color: Color(0xff2CB8C4),
-            size: 64,
+            Icons.verified_outlined,
+            color: Color(0xff20B7C4),
+            size: 74,
           ),
-          const SizedBox(height: 10),
-          AppText.titleMedium(
+          const SizedBox(height: 12),
+          AppText.titleLarge(
             'مقدم الخدمة قد أنهى المهمة',
             textAlign: TextAlign.center,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xff374151),
           ),
-          const SizedBox(height: 2),
-          AppText.bodyMedium(
+          const SizedBox(height: 4),
+          AppText.titleMedium(
             'يرجى التأكيد',
             textAlign: TextAlign.center,
-            color: const Color(0xff6B7280),
+            fontWeight: FontWeight.w700,
+            color: const Color(0xff374151),
           ),
           if (_error != null) ...[
             const SizedBox(height: 10),
@@ -114,53 +194,13 @@ class _CleaningCompletionDecisionSheetBodyState
               color: context.error,
             ),
           ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           FilledButton(
-            onPressed: _submitting
-                ? null
-                : () async {
-                    final controller = TextEditingController(text: '30');
-                    final accepted = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('طلب وقت إضافي'),
-                        content: TextField(
-                          controller: controller,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'دقائق إضافية (1–480)',
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('إلغاء'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('تأكيد'),
-                          ),
-                        ],
-                      ),
-                    );
-                    final raw = controller.text.trim();
-                    controller.dispose();
-                    if (accepted != true) return;
-                    final minutes = int.tryParse(raw);
-                    if (minutes == null || minutes < 1 || minutes > 480) {
-                      setState(() => _error = 'أدخل عدد دقائق بين 1 و 480');
-                      return;
-                    }
-                    await _run(
-                      () => widget.onExtend(minutes),
-                      CleaningCompletionDecision.extensionRequested,
-                    );
-                  },
+            onPressed: _submitting ? null : _onExtendPressed,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xff2CB8C4),
+              backgroundColor: const Color(0xff20B7C4),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 13),
             ),
             child: _submitting
                 ? const SizedBox(
@@ -174,64 +214,48 @@ class _CleaningCompletionDecisionSheetBodyState
                 : AppText.labelLarge(
                     'أرغب في تمديد الوقت',
                     color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
           ),
-          const SizedBox(height: 8),
-          FilledButton(
-            onPressed: _submitting
-                ? null
-                : () => _run(
-                    widget.onConfirm,
-                    CleaningCompletionDecision.confirmed,
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _submitting ? null : _onRejectPressed,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xff9CA3AF),
+                    side: const BorderSide(color: Color(0xffD1D5DB)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xff1E2A78),
-            ),
-            child: AppText.labelLarge(
-              'نعم، أؤكد انتهاء العمل',
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: _submitting
-                ? null
-                : () async {
-                    final controller = TextEditingController();
-                    final accepted = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('العمل لم يكتمل بعد'),
-                        content: TextField(
-                          controller: controller,
-                          minLines: 2,
-                          maxLines: 3,
-                          maxLength: 500,
-                          decoration: const InputDecoration(
-                            hintText: 'سبب اختياري',
-                          ),
+                  child: AppText.labelLarge(
+                    'لا، العمل لم ينته بعد',
+                    color: const Color(0xff9CA3AF),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _submitting
+                      ? null
+                      : () => _run(
+                          widget.onConfirm,
+                          CleaningCompletionDecision.confirmed,
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('إلغاء'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('إرسال'),
-                          ),
-                        ],
-                      ),
-                    );
-                    final reason = controller.text.trim();
-                    controller.dispose();
-                    if (accepted != true) return;
-                    await _run(
-                      () => widget.onReject(reason.isEmpty ? null : reason),
-                      CleaningCompletionDecision.rejected,
-                    );
-                  },
-            child: AppText.labelLarge('لا، العمل لم ينته بعد'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xff1E2A78),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: AppText.labelLarge(
+                    'نعم، أؤكد انتهاء العمل',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

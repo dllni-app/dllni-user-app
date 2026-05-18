@@ -4,8 +4,13 @@
     "details": [
       {
         "appID": "C4S72M3DX2.com.alnadha.app",
+        "appIDs": [
+          "C4S72M3DX2.com.alnadha.app"
+        ],
         "paths": [
           "/api/v1/user/*",
+          "/api/v1/deep-links/*",
+          "/open",
           "/product/*",
           "/restaurant/*",
           "/store/*",

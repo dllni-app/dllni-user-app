@@ -14,6 +14,9 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
     super.key,
   });
 
+  static const Color _screenBlue = Color(0xFF1E2A78);
+  static const Color _neutralBorder = Color(0xFFE5E7EB);
+
   final List<PreviousWorkerModel> workers;
   final int? selectedWorkerId;
   final bool isLoading;
@@ -21,15 +24,25 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
   final ValueChanged<int?> onSelectWorker;
   final ValueChanged<PreviousWorkerModel> onOpenWorkerProfile;
 
-  Color _avatarColor(int index) {
-    const colors = <Color>[Color(0xFFF4D9E2), Color(0xFFD8F3F2), Color(0xFFD4EDEA), Color(0xFFF6E8DE)];
-    return colors[index % colors.length];
+  String? _workerSubtitle(PreviousWorkerModel worker) {
+    final rating = worker.ratings?.average ?? worker.rating;
+    if (rating != null && rating > 0) {
+      return 'التقييم: ${rating.toStringAsFixed(1)}';
+    }
+    final lastService = worker.lastServiceDate?.trim();
+    if (lastService != null && lastService.isNotEmpty) {
+      return 'آخر خدمة: $lastService';
+    }
+    return null;
+  }
+
+  void _toggleWorker(PreviousWorkerModel worker) {
+    final id = worker.id;
+    onSelectWorker(selectedWorkerId == id ? null : id);
   }
 
   @override
   Widget build(BuildContext context) {
-    final visibleWorkers = workers.take(4).toList();
-
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -49,47 +62,92 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
             )
           else if (errorMessage != null && errorMessage!.isNotEmpty)
             AppText.bodySmall(errorMessage!, color: Colors.redAccent, textAlign: TextAlign.right)
-          else if (visibleWorkers.isEmpty)
+          else if (workers.isEmpty)
             AppText.bodySmall('لا يوجد عمال سابقون حالياً', color: const Color(0xFF6B7280), textAlign: TextAlign.right)
           else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: visibleWorkers
-                  .asMap()
-                  .entries
-                  .map(
-                    (entry) => Expanded(
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          final id = entry.value.id;
-                          onSelectWorker(selectedWorkerId == id ? null : id);
-                          onOpenWorkerProfile(entry.value);
-                        },
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: _avatarColor(entry.key),
-                              backgroundImage: entry.value.profileImage == null ? null : NetworkImage(entry.value.profileImage!),
-                              child: entry.value.profileImage != null ? null :  Icon(selectedWorkerId == entry.value.id ? Icons.check : Icons.person, size: 24, color: const Color(0xFF4B5563)),
-                            ),
-                            const SizedBox(height: 6),
-                            AppText.bodySmall(
-                              entry.value.name ?? '-',
-                              color: const Color(0xFF111827),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
+            Column(
+              children: [
+                for (var i = 0; i < workers.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  _WorkerSelectionCard(
+                    worker: workers[i],
+                    isSelected: selectedWorkerId == workers[i].id,
+                    subtitle: _workerSubtitle(workers[i]),
+                    onToggle: () => _toggleWorker(workers[i]),
+                    onOpenDetails: () => onOpenWorkerProfile(workers[i]),
+                  ),
+                ],
+              ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _WorkerSelectionCard extends StatelessWidget {
+  const _WorkerSelectionCard({
+    required this.worker,
+    required this.isSelected,
+    required this.subtitle,
+    required this.onToggle,
+    required this.onOpenDetails,
+  });
+
+  final PreviousWorkerModel worker;
+  final bool isSelected;
+  final String? subtitle;
+  final VoidCallback onToggle;
+  final VoidCallback onOpenDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.onPrimary,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? ClServicePreviousWorkersSectionWidget._screenBlue : ClServicePreviousWorkersSectionWidget._neutralBorder,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 4),
+        leading: Checkbox(
+          value: isSelected,
+          activeColor: ClServicePreviousWorkersSectionWidget._screenBlue,
+          fillColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return ClServicePreviousWorkersSectionWidget._screenBlue;
+            }
+            return null;
+          }),
+          onChanged: (_) => onToggle(),
+        ),
+        title: AppText.bodyMedium(
+          worker.name ?? '-',
+          color: const Color(0xFF111827),
+          fontWeight: FontWeight.w600,
+          textAlign: TextAlign.start,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: subtitle == null
+            ? null
+            : AppText.bodySmall(
+                subtitle!,
+                color: const Color(0xFF6B7280),
+                textAlign: TextAlign.start,
+              ),
+        trailing: TextButton(
+          onPressed: onOpenDetails,
+          style: TextButton.styleFrom(
+            foregroundColor: ClServicePreviousWorkersSectionWidget._screenBlue,
+            padding: const EdgeInsetsDirectional.symmetric(horizontal: 12),
+          ),
+          child: const Text('تفاصيل'),
+        ),
+        onTap: onToggle,
       ),
     );
   }

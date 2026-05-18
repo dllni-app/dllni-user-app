@@ -28,6 +28,8 @@ class UpdateAddressParams with Params {
   final String floor;
   final String directions;
   final bool isDefault;
+  final double? latitude;
+  final double? longitude;
 
   UpdateAddressParams({
     required this.addressId,
@@ -40,6 +42,8 @@ class UpdateAddressParams with Params {
     required this.floor,
     required this.directions,
     required this.isDefault,
+    this.latitude,
+    this.longitude,
   });
 
   @override
@@ -53,5 +57,7 @@ class UpdateAddressParams with Params {
     'floor': floor,
     'directions': directions,
     'isDefault': isDefault,
+    if (latitude != null) 'latitude': latitude,
+    if (longitude != null) 'longitude': longitude,
   };
 }

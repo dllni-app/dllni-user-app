@@ -1,4 +1,6 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
 import 'package:flutter/material.dart';
 
 class SessionExpiredHandler {
@@ -16,6 +18,7 @@ class SessionExpiredHandler {
 
     _isNavigatingToLogin = true;
     try {
+      await getIt<CleaningBookingPusherService>().disposeAllForSession();
       await SharedPreferencesHelper.clearData();
       navigatorKey?.currentState?.pushNamedAndRemoveUntil(
         '/login',

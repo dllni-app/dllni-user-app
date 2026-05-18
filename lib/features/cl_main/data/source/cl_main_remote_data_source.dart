@@ -15,7 +15,9 @@ class ClMainRemoteDataSource with HandlingApiManager {
 
   ClMainRemoteDataSource({required this.dioNetwork});
 
-  Future<EstimatePriceResponseModel> estimateCleaningPrice(EstimateCleaningPriceParams params) {
+  Future<EstimatePriceResponseModel> estimateCleaningPrice(
+    EstimateCleaningPriceParams params,
+  ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
         endPoint: '/api/v1/user/cleaning/orders/estimate-price',
@@ -26,7 +28,9 @@ class ClMainRemoteDataSource with HandlingApiManager {
     );
   }
 
-  Future<PreviousWorkersResponseModel> getPreviousCleaningWorkers(GetPreviousCleaningWorkersParams params) {
+  Future<PreviousWorkersResponseModel> getPreviousCleaningWorkers(
+    GetPreviousCleaningWorkersParams params,
+  ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
         endPoint: '/api/v1/user/cleaning/orders/previous-workers',
@@ -37,7 +41,9 @@ class ClMainRemoteDataSource with HandlingApiManager {
     );
   }
 
-  Future<CreateCleaningOrderResponseModel> createCleaningOrder(CreateCleaningOrderParams params) {
+  Future<CreateCleaningOrderResponseModel> createCleaningOrder(
+    CreateCleaningOrderParams params,
+  ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
         endPoint: '/api/v1/user/cleaning/orders',

@@ -67,7 +67,7 @@ void main() {
     expect((t!.arguments! as VoteFollowupScreenParams).voteId, 3);
   });
 
-  test('dispatches group-order', () {
+  test('dispatches group-order and forwards slug as share token', () {
     final r = DeepLinkResolveResult(
       type: 'group-order',
       id: 100,
@@ -77,7 +77,37 @@ void main() {
     );
     final t = DeepLinkDispatcher.dispatch(r);
     expect(t?.routeName, '/group-order/followup');
-    expect((t!.arguments! as GroupOrderFollowupScreenParams).groupOrderId, 100);
+    final args = t!.arguments! as GroupOrderFollowupScreenParams;
+    expect(args.groupOrderId, 100);
+    expect(args.shareToken, 'abc');
+  });
+
+  test('dispatches group-order without share token when slug is null', () {
+    final r = DeepLinkResolveResult(
+      type: 'group-order',
+      id: 100,
+      slug: null,
+      status: DeepLinkResolveStatus.ok,
+      requiresAuth: true,
+    );
+    final t = DeepLinkDispatcher.dispatch(r);
+    expect(t?.routeName, '/group-order/followup');
+    final args = t!.arguments! as GroupOrderFollowupScreenParams;
+    expect(args.groupOrderId, 100);
+    expect(args.shareToken, isNull);
+  });
+
+  test('dispatches group-order without share token when slug is empty', () {
+    final r = DeepLinkResolveResult(
+      type: 'group-order',
+      id: 100,
+      slug: '   ',
+      status: DeepLinkResolveStatus.ok,
+      requiresAuth: true,
+    );
+    final t = DeepLinkDispatcher.dispatch(r);
+    final args = t!.arguments! as GroupOrderFollowupScreenParams;
+    expect(args.shareToken, isNull);
   });
 
   test('dispatches restaurant', () {
@@ -136,7 +166,9 @@ void main() {
     final u = Uri.parse('https://$host/group-order/100');
     final t = DeepLinkDispatcher.dispatchFromCanonicalUri(u);
     expect(t?.routeName, '/group-order/followup');
-    expect((t!.arguments! as GroupOrderFollowupScreenParams).groupOrderId, 100);
+    final args = t!.arguments! as GroupOrderFollowupScreenParams;
+    expect(args.groupOrderId, 100);
+    expect(args.shareToken, isNull);
   });
 
   test(

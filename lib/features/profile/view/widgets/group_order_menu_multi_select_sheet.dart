@@ -52,7 +52,9 @@ class GroupOrderMenuMultiSelectSheet {
                                 }
                               });
                             },
-                            title: AppText.bodyMedium(product.name.isEmpty ? '-' : product.name),
+                            title: AppText.bodyMedium(
+                              product.name.isEmpty ? '-' : product.name,
+                            ),
                             subtitle: AppText.bodySmall(product.sectionName),
                             secondary: ClipRRect(
                               borderRadius: BorderRadius.circular(6),
@@ -80,7 +82,9 @@ class GroupOrderMenuMultiSelectSheet {
                               .toList();
                           Navigator.of(context).pop(picked);
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: context.primary),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.primary,
+                        ),
                         child: AppText.bodyMedium(
                           'التأكيد والإضافة إلى السلة',
                           color: context.onPrimary,

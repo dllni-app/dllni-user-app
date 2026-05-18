@@ -3,6 +3,7 @@ import 'package:injectable/injectable.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 
+import '../../../data/models/cleaning_booking_status.dart';
 import '../../../data/models/cleaning_orders_api_models.dart';
 import '../../../data/models/orders_api_models.dart';
 import '../../../domain/usecases/cancel_cleaning_order_use_case.dart';
@@ -122,6 +123,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       final perPage = pagination.perPage;
       final response = await fetchCleaningOrdersUseCase(
         FetchCleaningOrdersParams(
+          status: CleaningBookingStatus.pending,
           perPage: perPage,
           page: page,
         ),

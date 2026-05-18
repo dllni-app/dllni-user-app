@@ -141,7 +141,6 @@ class GetShoppingListEvent extends ProfileEvent {
   GetShoppingListEvent({required this.params});
 }
 
-
 class PatchShoppingListItemQuantityEvent extends ProfileEvent {
   final int shoppingListId;
   final int itemId;
@@ -201,11 +200,19 @@ class FetchActiveGroupOrdersEvent extends ProfileEvent {
 class ShowGroupOrderEvent extends ProfileEvent {
   final ShowGroupOrderParams params;
   final bool skipMenuFetch;
+  final String? fallbackReason;
 
   ShowGroupOrderEvent({
     required this.params,
     this.skipMenuFetch = false,
+    this.fallbackReason,
   });
+}
+
+class HydrateGroupOrderFromPayloadEvent extends ProfileEvent {
+  final Map<String, dynamic> payload;
+
+  HydrateGroupOrderFromPayloadEvent({required this.payload});
 }
 
 class AddGroupOrderItemEvent extends ProfileEvent {

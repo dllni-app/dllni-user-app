@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'core/di/injection.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
+import 'core/realtime/cleaning_global_verification_gate_coordinator.dart';
 import 'core/routes/app_router.dart';
 import 'features/main/view/screens/main_screen.dart';
 
@@ -18,10 +19,22 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  late final CleaningGlobalVerificationGateCoordinator _verificationCoordinator;
+
   @override
   void initState() {
     super.initState();
     unawaited(getIt<CleaningBookingPusherService>().ensureInitialized());
+    _verificationCoordinator = CleaningGlobalVerificationGateCoordinator(
+      navigatorKey: widget.navigatorKey,
+    );
+    unawaited(_verificationCoordinator.start());
+  }
+
+  @override
+  void dispose() {
+    unawaited(_verificationCoordinator.stop());
+    super.dispose();
   }
 
   @override

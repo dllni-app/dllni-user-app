@@ -1,17 +1,14 @@
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
-import 'package:dartz/dartz.dart' hide State;
-import 'package:dio/dio.dart';
-import 'package:dllni_user_app/core/app_config.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/realtime/pusher_manager.dart';
 import 'package:dllni_user_app/core/session/session_expired_handler.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/show_vote_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 
 import '../../data/models/profile_api_models.dart';
 import '../manager/bloc/profile_bloc.dart';
@@ -31,7 +28,11 @@ class VoteFollowupScreenParams {
   final VoteCreatedData? initialData;
   final bool? needShare;
 
-  const VoteFollowupScreenParams({required this.voteId, this.initialData, this.needShare = false});
+  const VoteFollowupScreenParams({
+    required this.voteId,
+    this.initialData,
+    this.needShare = false,
+  });
 }
 
 @AutoRoutePage()
@@ -46,7 +47,12 @@ class VoteFollowupScreen extends StatefulWidget {
 
 class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   static const Duration _initialDuration = Duration(minutes: 30);
+  static const Duration _fallbackDebounce = Duration(milliseconds: 150);
+
+  final PusherManager _pusherManager = getIt<PusherManager>();
+
   Timer? _timer;
+  Timer? _voteFallbackRefreshDebounce;
   Duration _remaining = _initialDuration;
   bool _isOptionsExpanded = true;
   bool _isVotersExpanded = true;
@@ -56,9 +62,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   bool _hasSeenPositiveRemaining = false;
   int? _submittingOptionId;
   int? _selectedOptionId;
-
-  final PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
-  String? _pusherVoteChannelName;
+  RealtimeListenerHandle? _voteRealtimeHandle;
 
   List<VoteFollowupOptionData> _options = const <VoteFollowupOptionData>[];
 
@@ -69,10 +73,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     super.initState();
     if (widget.params.needShare == true) {
       unawaited(
-        shareDeepLinkUrl(
-          voteUrl(widget.params.voteId),
-          context: context,
-        ),
+        shareDeepLinkUrl(voteUrl(widget.params.voteId), context: context),
       );
     }
     _hydrateFromCreatedData(widget.params.initialData);
@@ -84,69 +85,67 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
 
   Future<void> _connectVoteRealtime() async {
     if (!mounted) return;
-    final voteId = widget.params.voteId;
-    final channelName = 'private-vote.$voteId';
-    _pusherVoteChannelName = channelName;
+    final channelName = 'private-vote.${widget.params.voteId}';
 
     try {
-      await _pusher.init(
-        apiKey: AppConfig.pusherKey,
-        cluster: AppConfig.pusherCluster,
-        useTLS: true,
-        authEndpoint: '${AppConfig.baseUrl}/broadcasting/auth',
-        onAuthorizer: (channelName_, socketId, dynamic options) async {
-          try {
-            final token = (SharedPreferencesHelper.getData(key: 'token') ?? '').toString();
-            final res = await DioNetwork.dio.post<Map<String, dynamic>>(
-              '/broadcasting/auth',
-              data: <String, dynamic>{'channel_name': channelName_, 'socket_id': socketId},
-              options: Options(
-                headers: <String, dynamic>{
-                  'Accept': 'application/json',
-                  'X-Requested-With': 'XMLHttpRequest',
-                  if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-                },
-                contentType: Headers.formUrlEncodedContentType,
-                responseType: ResponseType.json,
-              ),
-            );
-            final body = res.data;
-            if (body == null || body['auth'] == null) {
-              throw StateError('Invalid broadcasting auth response');
-            }
-            return <String, dynamic>{'auth': body['auth'], if (body['channel_data'] != null) 'channel_data': body['channel_data']};
-          } catch (e, st) {
-            debugPrint('Vote Pusher auth error: $e\n$st');
-            rethrow;
-          }
-        },
-        onSubscriptionError: (message, e) {
-          debugPrint('Vote Pusher subscription error: $message $e');
-        },
-        onError: (message, code, e) {
-          debugPrint('Vote Pusher error: $message code=$code $e');
-        },
-        onEvent: (PusherEvent event) {
-          if (event.eventName != 'vote.updated' || event.channelName != channelName) {
-            return;
-          }
-          _refreshVoteFromPusher();
-        },
+      _voteRealtimeHandle = await _pusherManager.listen(
+        channelName: channelName,
+        eventNames: const <String>{'vote.updated'},
+        onEvent: _onVoteRealtimeEvent,
       );
-      if (!mounted) return;
-      await _pusher.connect();
-      if (!mounted) return;
-      await _pusher.subscribe(channelName: channelName);
     } catch (e, st) {
       debugPrint('Vote Pusher connect failed: $e\n$st');
     }
   }
 
-  void _refreshVoteFromPusher() {
-    getIt<ShowVoteUseCase>()(ShowVoteParams(voteId: widget.params.voteId)).then((Either<Failure, ShowVoteModel> result) {
-      if (!mounted) return;
-      result.fold((Failure f) => debugPrint('Vote Pusher refresh failed: ${f.message}'), _hydrateFromVoteDetails);
+  void _onVoteRealtimeEvent(RealtimeEvent event) {
+    if (!mounted) return;
+    final payload = _extractVotePayload(event.payload);
+    final hydrated = _hydrateFromVotePayload(payload);
+    if (hydrated) return;
+    _scheduleVoteFallbackRefresh(fallbackReason: 'missing_vote_payload_fields');
+  }
+
+  Map<String, dynamic> _extractVotePayload(Map<String, dynamic> payload) {
+    final directVote =
+        payload['vote'] is Map ||
+        payload['options'] is List ||
+        payload['voters'] is List;
+    if (directVote) {
+      return payload;
+    }
+    if (payload['data'] is Map) {
+      return Map<String, dynamic>.from(payload['data'] as Map);
+    }
+    return payload;
+  }
+
+  void _scheduleVoteFallbackRefresh({required String fallbackReason}) {
+    _voteFallbackRefreshDebounce?.cancel();
+    _voteFallbackRefreshDebounce = Timer(_fallbackDebounce, () {
+      unawaited(_refreshVoteFromPusher(fallbackReason: fallbackReason));
     });
+  }
+
+  Future<void> _refreshVoteFromPusher({String? fallbackReason}) async {
+    final result = await getIt<ShowVoteUseCase>()(
+      ShowVoteParams(voteId: widget.params.voteId),
+    );
+    if (!mounted) return;
+    result.fold(
+      (Failure f) => debugPrint('Vote Pusher refresh failed: ${f.message}'),
+      (model) {
+        _hydrateFromVoteDetails(model);
+        final handledAtMs = DateTime.now().millisecondsSinceEpoch;
+        PusherServiceLogger.event(
+          'private-vote.${widget.params.voteId}',
+          'vote.updated',
+          model.rawData,
+          eventHandledAtMs: handledAtMs,
+          fallbackReason: fallbackReason,
+        );
+      },
+    );
   }
 
   void _startTimer() {
@@ -176,11 +175,17 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
 
   void _hydrateFromCreatedData(VoteCreatedData? createdData) {
     if (createdData == null) return;
-    _syncRemainingFromSeconds(createdData.vote?.secondsRemaining, canTriggerExpiry: false);
+    _syncRemainingFromSeconds(
+      createdData.vote?.secondsRemaining,
+      canTriggerExpiry: false,
+    );
     _canEndVote = createdData.vote?.isCreator ?? _canEndVote;
     _options = createdData.options.map(_mapVoteOption).toList();
     if (createdData.voters.isNotEmpty) {
-      _voters = createdData.voters.map((e) => e.name?.trim() ?? '').where((e) => e.isNotEmpty).toList();
+      _voters = createdData.voters
+          .map((e) => e.name?.trim() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList();
     } else {
       _voters = const <String>[];
     }
@@ -202,10 +207,18 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   void _hydrateFromVoteDetails(ShowVoteModel? voteDetails) {
     final rawData = voteDetails?.rawData;
     if (rawData == null) return;
+    _hydrateFromVotePayload(rawData);
+  }
 
-    final voteMap = rawData['vote'] is Map ? Map<String, dynamic>.from(rawData['vote'] as Map) : rawData;
-    final seconds = _toInt(voteMap['secondsRemaining']) ?? _toInt(rawData['secondsRemaining']);
-    final isCreator = _toBool(voteMap['isCreator']) ?? _toBool(rawData['isCreator']);
+  bool _hydrateFromVotePayload(Map<String, dynamic> rawData) {
+    final voteMap = rawData['vote'] is Map
+        ? Map<String, dynamic>.from(rawData['vote'] as Map)
+        : rawData;
+    final seconds =
+        _toInt(voteMap['secondsRemaining']) ??
+        _toInt(rawData['secondsRemaining']);
+    final isCreator =
+        _toBool(voteMap['isCreator']) ?? _toBool(rawData['isCreator']);
 
     List<VoteFollowupOptionData>? nextOptions;
     if (rawData['options'] is List) {
@@ -222,7 +235,10 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           .map((e) {
             if (e is Map) {
               final map = Map<String, dynamic>.from(e);
-              return _toStringValue(map['name']) ?? _toStringValue(map['fullName']) ?? _toStringValue(map['displayName']) ?? '';
+              return _toStringValue(map['name']) ??
+                  _toStringValue(map['fullName']) ??
+                  _toStringValue(map['displayName']) ??
+                  '';
             }
             return _toStringValue(e) ?? '';
           })
@@ -240,8 +256,12 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
         _toInt(voteMap['selectedOptionId']) ??
         _toInt(rawData['selectedOptionId']);
 
-    if (seconds == null && nextOptions == null && nextVoters == null && isCreator == null && serverSelectedId == null) {
-      return;
+    if (seconds == null &&
+        nextOptions == null &&
+        nextVoters == null &&
+        isCreator == null &&
+        serverSelectedId == null) {
+      return false;
     }
 
     setState(() {
@@ -260,6 +280,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
         _selectedOptionId = serverSelectedId;
       }
     });
+    return true;
   }
 
   int? _toInt(dynamic value) {
@@ -288,7 +309,10 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     return null;
   }
 
-  void _syncRemainingFromSeconds(int? secondsRemaining, {bool canTriggerExpiry = true}) {
+  void _syncRemainingFromSeconds(
+    int? secondsRemaining, {
+    bool canTriggerExpiry = true,
+  }) {
     if (secondsRemaining == null) return;
     final previousRemaining = _remaining;
     final safeSeconds = secondsRemaining < 0 ? 0 : secondsRemaining;
@@ -309,7 +333,10 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     }
   }
 
-  void _handleRemainingTransition({required Duration previous, required Duration next}) {
+  void _handleRemainingTransition({
+    required Duration previous,
+    required Duration next,
+  }) {
     if (_handledTimeExpired) return;
     if (next.inSeconds > 0) {
       _hasSeenPositiveRemaining = true;
@@ -325,14 +352,19 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   Future<void> _handleVoteTimeExpired() async {
     final winnerData = await _resolveWinnerDataForSheet();
     if (!mounted) return;
-    context.pushRouteAndRemoveUntil('/rsmain', predicate: (route) => route.isFirst);
+    context.pushRouteAndRemoveUntil(
+      '/rsmain',
+      predicate: (route) => route.isFirst,
+    );
     _showWinnerBottomSheetOnRoot(winnerData);
   }
 
   Future<_WinnerSheetData> _resolveWinnerDataForSheet() async {
     String? winnerName;
     try {
-      final result = await getIt<ShowVoteUseCase>()(ShowVoteParams(voteId: widget.params.voteId));
+      final result = await getIt<ShowVoteUseCase>()(
+        ShowVoteParams(voteId: widget.params.voteId),
+      );
       result.fold((_) {}, (vote) {
         winnerName = vote.winnerLabel?.trim();
         final rawWinner = vote.rawData?['winner'];
@@ -353,7 +385,9 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       winnerName = leadingOption?.name.trim();
     }
 
-    final safeWinnerName = (winnerName == null || winnerName!.isEmpty) ? 'بيتزا مارغريتا' : winnerName!;
+    final safeWinnerName = (winnerName == null || winnerName!.isEmpty)
+        ? 'بيتزا مارغريتا'
+        : winnerName!;
     return _WinnerSheetData(winnerName: safeWinnerName);
   }
 
@@ -366,13 +400,17 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       showModalBottomSheet<void>(
         context: rootContext,
         isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         builder: (_) {
           return VoteWinnerBottomSheet(
             winnerName: winnerData.winnerName,
             onShowBestOfferTap: () {
               Navigator.of(rootContext).pop();
-              ScaffoldMessenger.maybeOf(rootContext)?.showSnackBar(const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')));
+              ScaffoldMessenger.maybeOf(rootContext)?.showSnackBar(
+                const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')),
+              );
             },
           );
         },
@@ -386,17 +424,20 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       _submittingOptionId = optionId;
       _selectedOptionId = optionId;
     });
-    bloc.add(SubmitVoteBallotEvent(voteId: widget.params.voteId, optionId: optionId));
+    bloc.add(
+      SubmitVoteBallotEvent(voteId: widget.params.voteId, optionId: optionId),
+    );
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    final channel = _pusherVoteChannelName;
-    if (channel != null) {
-      unawaited(_pusher.unsubscribe(channelName: channel).catchError((Object _) {}));
+    _voteFallbackRefreshDebounce?.cancel();
+    final handle = _voteRealtimeHandle;
+    _voteRealtimeHandle = null;
+    if (handle != null) {
+      unawaited(handle.dispose());
     }
-    unawaited(_pusher.disconnect().catchError((Object _) {}));
     super.dispose();
   }
 
@@ -408,7 +449,9 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           winnerName: winnerLabel ?? 'بيتزا مارغريتا',
           onShowBestOfferTap: () {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')),
+            );
           },
         );
       },
@@ -439,7 +482,8 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
             previous.voteDetailsStatus != current.voteDetailsStatus ||
             previous.voteBallotStatus != current.voteBallotStatus,
         listener: (context, state) {
-          if (state.voteBallotStatus == BlocStatus.failed || state.voteBallotStatus == BlocStatus.success) {
+          if (state.voteBallotStatus == BlocStatus.failed ||
+              state.voteBallotStatus == BlocStatus.success) {
             setState(() {
               _submittingOptionId = null;
             });
@@ -457,7 +501,9 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           if (state.errorMessage == null || state.errorMessage!.isEmpty) {
             return;
           }
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         },
         child: Scaffold(
           backgroundColor: const Color(0xffF9FAFB),
@@ -468,17 +514,34 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                   title: 'متابعة التصويت',
                   trailing: IconButton(
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 42, minHeight: 42),
+                    constraints: const BoxConstraints(
+                      minWidth: 42,
+                      minHeight: 42,
+                    ),
                     onPressed: () {
-                      unawaited(shareDeepLinkUrl(voteUrl(widget.params.voteId), context: context));
+                      unawaited(
+                        shareDeepLinkUrl(
+                          voteUrl(widget.params.voteId),
+                          context: context,
+                        ),
+                      );
                     },
-                    icon: FaIcon(FontAwesomeIcons.shareNodes, color: context.primary, size: 20),
+                    icon: FaIcon(
+                      FontAwesomeIcons.shareNodes,
+                      color: context.primary,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      0,
+                      16,
+                      24,
+                    ),
                     child: Column(
                       children: [
                         VoteFollowupTimerBanner(formattedTime: _formattedTime),
@@ -493,20 +556,38 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                             });
                           },
                           child: BlocBuilder<ProfileBloc, ProfileState>(
-                            buildWhen: (previous, current) => previous.voteBallotStatus != current.voteBallotStatus,
+                            buildWhen: (previous, current) =>
+                                previous.voteBallotStatus !=
+                                current.voteBallotStatus,
                             builder: (context, state) {
-                              final isSubmittingBallot = state.voteBallotStatus == BlocStatus.loading;
+                              final isSubmittingBallot =
+                                  state.voteBallotStatus == BlocStatus.loading;
                               return Column(
                                 children: _options
                                     .map(
                                       (option) => VoteFollowupOptionCard(
                                         option: option,
-                                        onTap: option.optionId == null || isSubmittingBallot
+                                        onTap:
+                                            option.optionId == null ||
+                                                isSubmittingBallot
                                             ? null
-                                            : () => _submitBallot(option.optionId!, context.read<ProfileBloc>()),
-                                        isSubmitting: isSubmittingBallot && _submittingOptionId == option.optionId,
-                                        isDisabled: option.optionId == null || (isSubmittingBallot && _submittingOptionId != option.optionId),
-                                        isSelected: option.optionId != null && option.optionId == _selectedOptionId,
+                                            : () => _submitBallot(
+                                                option.optionId!,
+                                                context.read<ProfileBloc>(),
+                                              ),
+                                        isSubmitting:
+                                            isSubmittingBallot &&
+                                            _submittingOptionId ==
+                                                option.optionId,
+                                        isDisabled:
+                                            option.optionId == null ||
+                                            (isSubmittingBallot &&
+                                                _submittingOptionId !=
+                                                    option.optionId),
+                                        isSelected:
+                                            option.optionId != null &&
+                                            option.optionId ==
+                                                _selectedOptionId,
                                       ),
                                     )
                                     .toList()
@@ -531,7 +612,10 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                     ),
                   ),
                 ),
-                VoteFollowupEndVoteBar(voteId: widget.params.voteId, canEndVote: _canEndVote),
+                VoteFollowupEndVoteBar(
+                  voteId: widget.params.voteId,
+                  canEndVote: _canEndVote,
+                ),
               ],
             ),
           ),

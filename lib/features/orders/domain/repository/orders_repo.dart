@@ -2,6 +2,7 @@ import 'package:common_package/helpers/typedef.dart';
 
 import '../../data/models/cleaning_order_cancel_api_models.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../../data/models/cleaning_worker_profile_model.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../data/models/submit_cleaning_review_model.dart';
 import '../usecases/cancel_cleaning_order_use_case.dart';
@@ -9,6 +10,7 @@ import '../usecases/check_restaurant_coupon_use_case.dart';
 import '../usecases/confirm_cleaning_completion_use_case.dart';
 import '../usecases/confirm_cleaning_start_verification_use_case.dart';
 import '../usecases/extend_cleaning_completion_time_use_case.dart';
+import '../usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../usecases/delete_cart_item_use_case.dart';
 import '../usecases/fetch_cleaning_order_details_use_case.dart';
 import '../usecases/fetch_cleaning_orders_use_case.dart';
@@ -47,6 +49,9 @@ abstract class OrdersRepo {
   );
   DataResponse<SubmitCleaningReviewModel> submitCleaningReview(
     SubmitCleaningReviewParams params,
+  );
+  DataResponse<FetchCleaningWorkerProfileModel> fetchCleaningWorkerProfile(
+    FetchCleaningWorkerProfileParams params,
   );
   DataResponse<OrdersActionResultModel> patchCleaningOrder(
     PatchCleaningOrderParams params,

@@ -8,6 +8,7 @@ import '../../domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_start_verification_use_case.dart';
 import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
+import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../domain/usecases/delete_cart_item_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_orders_use_case.dart';
@@ -22,6 +23,7 @@ import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
+import '../models/cleaning_worker_profile_model.dart';
 import '../models/orders_api_models.dart';
 import '../models/submit_cleaning_review_model.dart';
 import '../source/orders_remote_data_source.dart';
@@ -110,6 +112,15 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   ) {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.submitCleaningReview(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchCleaningWorkerProfileModel> fetchCleaningWorkerProfile(
+    FetchCleaningWorkerProfileParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.fetchCleaningWorkerProfile(params),
     );
   }
 

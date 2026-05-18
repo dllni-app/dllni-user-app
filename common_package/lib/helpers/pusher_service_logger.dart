@@ -34,13 +34,15 @@ abstract final class PusherServiceLogger {
 
   static void init({
     required String cluster,
-    required String authEndpoint,
     required bool hasApiKey,
+    String? authEndpoint,
+    bool useTls = true,
   }) {
     _logger.i(
       '[Pusher] init\n'
       'cluster: $cluster\n'
-      'authEndpoint: $authEndpoint\n'
+      'authEndpoint: ${authEndpoint ?? '(custom authorizer)'}\n'
+      'useTLS: $useTls\n'
       'hasApiKey: $hasApiKey',
     );
   }
@@ -76,12 +78,28 @@ abstract final class PusherServiceLogger {
     );
   }
 
-  static void event(String channel, String eventName, dynamic rawData) {
-    _logger.i(
-      '[Pusher] EVENT => $eventName\n'
-      'channel: $channel\n'
-      'data: ${_prettyJson(rawData)}',
-    );
+  static void event(
+    String channel,
+    String eventName,
+    dynamic rawData, {
+    int? eventReceivedAtMs,
+    int? eventHandledAtMs,
+    String? fallbackReason,
+  }) {
+    final message = StringBuffer()
+      ..writeln('[Pusher] EVENT => $eventName')
+      ..writeln('channel: $channel');
+    if (eventReceivedAtMs != null) {
+      message.writeln('eventReceivedAtMs: $eventReceivedAtMs');
+    }
+    if (eventHandledAtMs != null) {
+      message.writeln('eventHandledAtMs: $eventHandledAtMs');
+    }
+    if (fallbackReason != null) {
+      message.writeln('fallbackReason: $fallbackReason');
+    }
+    message.write('data: ${_prettyJson(rawData)}');
+    _logger.i(message.toString());
   }
 
   static void subscribe(String channel) {

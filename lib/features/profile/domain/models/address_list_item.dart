@@ -14,6 +14,8 @@ class AddressListItem {
     this.floor,
     this.directions,
     this.landmark,
+    this.latitude,
+    this.longitude,
     this.isDefault = false,
   });
 
@@ -28,6 +30,8 @@ class AddressListItem {
   final String? floor;
   final String? directions;
   final String? landmark;
+  final double? latitude;
+  final double? longitude;
   final AddressType type;
   final bool isDefault;
 }

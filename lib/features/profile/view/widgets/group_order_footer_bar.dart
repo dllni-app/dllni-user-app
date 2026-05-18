@@ -5,6 +5,9 @@ class GroupOrderFooterBar extends StatelessWidget {
   final bool isCreator;
   final bool isLoading;
   final bool canSubmit;
+
+  /// Creator: place whole group order. Member: send/unsend response ([SubmitGroupOrder]/[UnsubmitGroupOrder]).
+  final String primaryButtonLabel;
   final VoidCallback onSubmitOrPlace;
   final VoidCallback? onCancel;
 
@@ -13,6 +16,7 @@ class GroupOrderFooterBar extends StatelessWidget {
     required this.isCreator,
     required this.isLoading,
     required this.canSubmit,
+    this.primaryButtonLabel = 'التأكيد والإضافة إلى السلة',
     required this.onSubmitOrPlace,
     this.onCancel,
   });
@@ -35,7 +39,7 @@ class GroupOrderFooterBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             child: AppText.labelLarge(
-              'التأكيد والإضافة إلى السلة',
+              primaryButtonLabel,
               color: context.onPrimary,
               fontWeight: FontWeight.w700,
             ),

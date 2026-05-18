@@ -1,11 +1,11 @@
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dllni_user_app/features/orders/domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
-import 'package:dllni_user_app/features/orders/domain/usecases/fetch_store_order_tracking_use_case.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/orders_api_models.dart';
+import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
+import '../../domain/usecases/fetch_store_order_tracking_use_case.dart';
 import '../widgets/restaurant_order_tracking_view.dart';
 
 class RestaurantOrderTrackingArgs {
