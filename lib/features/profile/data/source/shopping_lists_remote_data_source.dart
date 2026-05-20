@@ -11,8 +11,10 @@ import '../../domain/usecases/fetch_shopping_list_detail_use_case.dart';
 import '../../domain/usecases/fetch_shopping_lists_use_case.dart';
 import '../../domain/usecases/update_shopping_list_item_use_case.dart';
 import '../../domain/usecases/update_shopping_list_use_case.dart';
+import '../../domain/usecases/search_master_products_for_shopping_list_use_case.dart';
 import '../models/profile_api_models.dart';
 import '../models/shopping_lists_api_models.dart';
+import '../models/search_master_products_for_shopping_list_model.dart';
 
 @lazySingleton
 class ShoppingListsRemoteDataSource with HandlingApiManager {
@@ -50,7 +52,8 @@ class ShoppingListsRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}',
+        endPoint:
+            '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}',
       ),
       jsonConvert: shoppingListDetailResponseModelFromJson,
     );
@@ -61,17 +64,21 @@ class ShoppingListsRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.patchData(
-        endPoint: '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}',
+        endPoint:
+            '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}',
         data: params.getBody(),
       ),
       jsonConvert: shoppingListDetailResponseModelFromJson,
     );
   }
 
-  Future<ActionResultModel> deleteShoppingList(DeleteShoppingListParams params) {
+  Future<ActionResultModel> deleteShoppingList(
+    DeleteShoppingListParams params,
+  ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.deleteData(
-        endPoint: '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}',
+        endPoint:
+            '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}',
       ),
       jsonConvert: actionResultModelFromJson,
     );
@@ -82,7 +89,8 @@ class ShoppingListsRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/items',
+        endPoint:
+            '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/items',
         data: params.getBody(),
       ),
       jsonConvert: shoppingListDetailResponseModelFromJson,
@@ -94,7 +102,8 @@ class ShoppingListsRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.patchData(
-        endPoint: '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/items/${params.itemId}',
+        endPoint:
+            '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/items/${params.itemId}',
         data: params.getBody(),
       ),
       jsonConvert: shoppingListDetailResponseModelFromJson,
@@ -106,7 +115,8 @@ class ShoppingListsRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.deleteData(
-        endPoint: '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/items/${params.itemId}',
+        endPoint:
+            '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/items/${params.itemId}',
       ),
       jsonConvert: actionResultModelFromJson,
     );
@@ -117,10 +127,24 @@ class ShoppingListsRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/add-to-cart',
+        endPoint:
+            '/api/v1/user/supermarket/shopping-lists/${params.shoppingListId}/add-to-cart',
         data: params.getBody(),
       ),
       jsonConvert: addShoppingListToCartModelFromJson,
+    );
+  }
+
+  Future<SearchMasterProductsForShoppingListModel> searchMasterProducts(
+    SearchMasterProductsForShoppingListParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/supermarket/master-products/search',
+        params: params.getParams(),
+        data: params.getBody().isEmpty ? null : params.getBody(),
+      ),
+      jsonConvert: searchMasterProductsForShoppingListModelFromJson,
     );
   }
 }

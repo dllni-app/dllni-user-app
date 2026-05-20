@@ -17,6 +17,7 @@ import '../../data/models/shopping_lists_api_models.dart';
 import '../../domain/usecases/create_shopping_list_use_case.dart';
 import '../../domain/usecases/update_shopping_list_use_case.dart';
 import '../manager/bloc/profile_bloc.dart';
+import 'shopping_list_master_products_search_screen.dart';
 
 /// Inverse of [_uiDayIndexToApiWeekday] for UI index 0…6 (Sunday…Saturday).
 int? _apiWeekdayToUiIndex(int w) {
@@ -285,6 +286,8 @@ class PeriodCard extends StatelessWidget {
 class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
   late TextEditingController nameController;
   List<bool> daysSelected = List.filled(7, false);
+  final Map<int, _SelectedMasterProductDraft> _selectedProductsByMasterId =
+      <int, _SelectedMasterProductDraft>{};
 
   /// Index `i` corresponds to calendar day `i + 1` (1–31).
   List<bool> monthDaySelected = List.filled(31, false);
@@ -319,6 +322,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedProducts = _selectedProductsByMasterId.values.toList(
+      growable: false,
+    );
     return BlocProvider.value(
       value: widget.args.profileBloc,
       child: BlocListener<ProfileBloc, ProfileState>(
@@ -385,18 +391,75 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
                       StepDetails(
                         number: 2,
                         title: "أضف منتجاتك",
+                        leading: TextButton(
+                          onPressed: _openMasterProductsPicker,
+                          child: AppText(
+                            "اختر منتجاتك",
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            SizedBox(height: 16),
-                            AppText(
-                              "لا يوجد منتجات",
-                              style: TextStyle(
-                                color: Color(0xE52F2B3D),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Color(0xFFE5E7EB)),
+                              ),
+                              child: AppText(
+                                "المنتجات المختارة: ${_selectedProductsByMasterId.length}",
+                                style: TextStyle(
+                                  color: Color(0xFF111827),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                            SizedBox(height: 32),
+                            SizedBox(height: 12),
+                            if (_selectedProductsByMasterId.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                child: AppText(
+                                  "لا يوجد منتجات",
+                                  style: TextStyle(
+                                    color: Color(0xE52F2B3D),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              )
+                            else
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxHeight: 320,
+                                ),
+                                child: ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount: selectedProducts.length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(height: 8),
+                                  itemBuilder: (context, index) {
+                                    final item = selectedProducts[index];
+                                    return _SelectedProductTile(
+                                      item: item,
+                                      onRemove: () => _removeSelectedProduct(
+                                        item.masterProductId,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -725,6 +788,48 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     }
   }
 
+  Future<void> _openMasterProductsPicker() async {
+    final selected = _selectedProductsByMasterId.values
+        .map(
+          (item) => ShoppingListMasterProductOption(
+            id: item.masterProductId,
+            name: item.name,
+          ),
+        )
+        .toList();
+    final picked = await Navigator.of(context)
+        .push<List<ShoppingListMasterProductOption>>(
+          MaterialPageRoute(
+            builder: (_) => ShoppingListMasterProductsSearchScreen(
+              initialSelected: selected,
+            ),
+          ),
+        );
+
+    if (!mounted || picked == null) return;
+    setState(() {
+      _selectedProductsByMasterId
+        ..clear()
+        ..addEntries(
+          picked.map(
+            (item) => MapEntry(
+              item.id,
+              _SelectedMasterProductDraft(
+                masterProductId: item.id,
+                name: item.name,
+              ),
+            ),
+          ),
+        );
+    });
+  }
+
+  void _removeSelectedProduct(int masterProductId) {
+    setState(() {
+      _selectedProductsByMasterId.remove(masterProductId);
+    });
+  }
+
   void _hydrateFromDetail(ShoppingListDetailModel d) {
     nameController.text = d.name;
     final s = d.schedule;
@@ -763,6 +868,23 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
         _periods.add(_SchedulePeriod(from: from, to: to));
       }
     }
+    _selectedProductsByMasterId
+      ..clear()
+      ..addEntries(
+        d.items
+            .where((item) => item.masterProductId > 0)
+            .map(
+              (item) => MapEntry(
+                item.masterProductId,
+                _SelectedMasterProductDraft(
+                  masterProductId: item.masterProductId,
+                  name: item.name.trim().isNotEmpty
+                      ? item.name
+                      : 'منتج ${item.masterProductId}',
+                ),
+              ),
+            ),
+      );
   }
 
   void _onFrequencyChanged(FrequencyType? value) {
@@ -957,8 +1079,60 @@ class _SchedulePeriod {
   final TimeOfDay from;
 
   final TimeOfDay to;
+
   const _SchedulePeriod({required this.from, required this.to});
 
   _SchedulePeriod copyWith({TimeOfDay? from, TimeOfDay? to}) =>
       _SchedulePeriod(from: from ?? this.from, to: to ?? this.to);
+}
+
+class _SelectedMasterProductDraft {
+  final int masterProductId;
+  final String name;
+
+  const _SelectedMasterProductDraft({
+    required this.masterProductId,
+    required this.name,
+  });
+}
+
+class _SelectedProductTile extends StatelessWidget {
+  final _SelectedMasterProductDraft item;
+  final VoidCallback onRemove;
+
+  const _SelectedProductTile({required this.item, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: AppText(
+              item.name,
+              style: const TextStyle(
+                color: Color(0xFF111827),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onRemove,
+            child: const FaIcon(
+              FontAwesomeIcons.xmark,
+              size: 14,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

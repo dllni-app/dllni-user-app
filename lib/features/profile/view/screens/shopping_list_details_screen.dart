@@ -2,7 +2,6 @@ import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -13,12 +12,15 @@ import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/app_text_fields.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../core/widgets/step_details.dart';
-import '../../../sm_main_page.dart';
+import '../../data/models/shopping_lists_api_models.dart';
+import '../../domain/usecases/add_shopping_list_item_use_case.dart';
 import '../../domain/usecases/add_shopping_list_to_cart_use_case.dart';
+import '../../domain/usecases/delete_shopping_list_item_use_case.dart';
 import '../../domain/usecases/fetch_shopping_list_detail_use_case.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/shopping_list_quantity_stepper.dart';
 import 'add_edit_shopping_list_screen.dart';
+import 'shopping_list_master_products_search_screen.dart';
 
 /// API: `weekDays` uses 1–7 (same as [DateTime.weekday]): 1 = Monday … 7 = Sunday.
 const List<String> _weekDaysAr = [
@@ -78,6 +80,7 @@ String? _frequencyTypeAr(String? t) {
 @AutoRoutePage(path: '/shopping_list_details')
 class ShoppingListDetailsScreen extends StatelessWidget {
   final ShoppingListDetailsScreenArgs args;
+
   const ShoppingListDetailsScreen({super.key, required this.args});
 
   @override
@@ -117,6 +120,7 @@ class ShoppingListDetailsScreen extends StatelessWidget {
 class ShoppingListDetailsScreenArgs {
   final int shoppingListId;
   final String shoppingListName;
+
   ShoppingListDetailsScreenArgs({
     required this.shoppingListId,
     required this.shoppingListName,
@@ -126,6 +130,7 @@ class ShoppingListDetailsScreenArgs {
 class _DayLabel extends StatelessWidget {
   final String dayAr;
   final String dayEn;
+
   const _DayLabel({required this.dayAr, required this.dayEn});
 
   @override
@@ -162,6 +167,7 @@ class _PeriodCard extends StatelessWidget {
   final String title;
   final String from;
   final String to;
+
   const _PeriodCard({
     required this.title,
     required this.from,
@@ -314,6 +320,7 @@ class _PeriodCard extends StatelessWidget {
 
 class _ShoppingListDetailsBody extends StatefulWidget {
   final ShoppingListDetailsScreenArgs args;
+
   const _ShoppingListDetailsBody({required this.args});
 
   @override
@@ -426,82 +433,78 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
           const SizedBox(height: 20),
           StepDetails(
             number: 2,
-            title: 'منتجات قائمة التسوق',
+            title: 'أضف منتجاتك',
+            leading: TextButton(
+              onPressed: () => _openMasterProductsPicker(list),
+              child: AppText(
+                "اختر منتجاتك",
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                list.items.isEmpty
-                    ? AppText(
-                        'لا يوجد منتجات',
-                        style: TextStyle(
-                          color: Color(0xE52F2B3D),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      )
-                    : Column(
-                        spacing: 24,
-                        children: [
-                          for (final item in list.items)
-                            ShoppingListDetailProductRow(
-                              key: ValueKey(item.id),
-                              shoppingListId: widget.args.shoppingListId,
-                              item: item,
-                            ),
-                        ],
-                      ),
-                SizedBox(height: 32),
-                GestureDetector(
-                  onTap: () async {
-                    await context.pushRoute(
-                      "/smmain",
-                      arguments: SmMainScreenParams(
-                        initialPage: 1,
-                        expandSearch: true,
-                      ),
-                    );
-                    if (!context.mounted) return;
-                    context.read<ProfileBloc>().add(
-                      GetShoppingListDetailEvent(
-                        params: FetchShoppingListDetailParams(
-                          shoppingListId: widget.args.shoppingListId,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(1),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: DottedBorder(
-                      options: RoundedRectDottedBorderOptions(
-                        radius: Radius.circular(16),
-                        color: Color(0xFFD1D5DB),
-                        strokeWidth: 2,
-                        dashPattern: [8, 8],
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          spacing: 8,
-                          children: [
-                            Icon(Icons.add, color: Color(0xE52F2B3D)),
-                            AppText(
-                              "إضافة منتجات أخرى",
-                              style: TextStyle(
-                                color: Color(0xE52F2B3D),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Color(0xFFE5E7EB)),
+                  ),
+                  child: AppText(
+                    "المنتجات المختارة: ${list.items.length}",
+                    style: TextStyle(
+                      color: Color(0xFF111827),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
+                SizedBox(height: 12),
+                if (list.items.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: AppText(
+                      'لا يوجد منتجات',
+                      style: TextStyle(
+                        color: Color(0xE52F2B3D),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 320),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: list.items.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final item = list.items[index];
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: ShoppingListDetailProductRow(
+                            key: ValueKey(item.id),
+                            shoppingListId: widget.args.shoppingListId,
+                            item: item,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
           ),
@@ -710,6 +713,84 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
         ],
       ),
     );
+  }
+
+  Future<void> _openMasterProductsPicker(ShoppingListDetailModel list) async {
+    final initialSelected = list.items
+        .where((item) => item.masterProductId > 0)
+        .map(
+          (item) => ShoppingListMasterProductOption(
+            id: item.masterProductId,
+            name: item.name,
+          ),
+        )
+        .toList();
+
+    final picked = await Navigator.of(context)
+        .push<List<ShoppingListMasterProductOption>>(
+          MaterialPageRoute(
+            builder: (_) => ShoppingListMasterProductsSearchScreen(
+              initialSelected: initialSelected,
+            ),
+          ),
+        );
+
+    if (!mounted || picked == null) return;
+
+    final selectedMasterIds = picked.map((item) => item.id).toSet();
+    final currentByMasterId = <int, ShoppingListItemModel>{};
+    for (final item in list.items) {
+      if (item.masterProductId > 0) {
+        currentByMasterId[item.masterProductId] = item;
+      }
+    }
+
+    final currentMasterIds = currentByMasterId.keys.toSet();
+    final masterIdsToAdd = selectedMasterIds.difference(currentMasterIds);
+    final masterIdsToRemove = currentMasterIds.difference(selectedMasterIds);
+
+    if (masterIdsToAdd.isEmpty && masterIdsToRemove.isEmpty) return;
+
+    Loading.show(context);
+    String? errorMessage;
+
+    final addUseCase = getIt<AddShoppingListItemUseCase>();
+    final deleteUseCase = getIt<DeleteShoppingListItemUseCase>();
+
+    for (final masterProductId in masterIdsToAdd) {
+      final response = await addUseCase(
+        AddShoppingListItemParams(
+          shoppingListId: widget.args.shoppingListId,
+          masterProductId: masterProductId,
+          quantity: 1,
+        ),
+      );
+      response.fold((failure) => errorMessage ??= failure.message, (_) {});
+    }
+
+    for (final masterProductId in masterIdsToRemove) {
+      final item = currentByMasterId[masterProductId];
+      if (item == null || item.id <= 0) continue;
+      final response = await deleteUseCase(
+        DeleteShoppingListItemParams(
+          shoppingListId: widget.args.shoppingListId,
+          itemId: item.id,
+        ),
+      );
+      response.fold((failure) => errorMessage ??= failure.message, (_) {});
+    }
+
+    Loading.close();
+    if (!mounted) return;
+    _reloadDetail(context);
+
+    if (errorMessage != null) {
+      AppToast.showToast(
+        context: context,
+        message: errorMessage!,
+        type: ToastificationType.error,
+      );
+    }
   }
 
   void _reloadDetail(BuildContext context) {

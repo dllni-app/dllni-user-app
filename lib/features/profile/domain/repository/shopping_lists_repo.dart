@@ -12,6 +12,8 @@ import '../usecases/fetch_shopping_list_detail_use_case.dart';
 import '../usecases/fetch_shopping_lists_use_case.dart';
 import '../usecases/update_shopping_list_item_use_case.dart';
 import '../usecases/update_shopping_list_use_case.dart';
+import '../usecases/search_master_products_for_shopping_list_use_case.dart';
+import '../../data/models/search_master_products_for_shopping_list_model.dart';
 
 abstract class ShoppingListsRepo {
   DataResponse<FetchShoppingListsModel> fetchShoppingLists(
@@ -48,5 +50,9 @@ abstract class ShoppingListsRepo {
 
   DataResponse<FetchRestaurantCartModel> addShoppingListToCart(
     AddShoppingListToCartParams params,
+  );
+
+  DataResponse<SearchMasterProductsForShoppingListModel> searchMasterProducts(
+    SearchMasterProductsForShoppingListParams params,
   );
 }
