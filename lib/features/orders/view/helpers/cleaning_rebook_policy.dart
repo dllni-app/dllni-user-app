@@ -1,6 +1,7 @@
 import 'package:common_package/helpers/error_handler.dart';
 import 'package:common_package/helpers/typedef.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_order_cancel_api_models.dart';
@@ -20,6 +21,7 @@ class CleaningRebookRequest {
     required this.scheduledTime,
     required this.addressLatitude,
     required this.addressLongitude,
+    this.genderPreference = CleaningGenderPreference.any,
     this.preferredWorkerId,
     this.termsAccepted = true,
   });
@@ -36,6 +38,7 @@ class CleaningRebookRequest {
   final String scheduledTime;
   final double addressLatitude;
   final double addressLongitude;
+  final CleaningGenderPreference genderPreference;
   final int? preferredWorkerId;
   final bool termsAccepted;
 }
@@ -144,6 +147,7 @@ class CleaningRebookPolicy {
           scheduledTime: request.scheduledTime,
           addressLatitude: request.addressLatitude,
           addressLongitude: request.addressLongitude,
+          genderPreference: request.genderPreference,
           preferredWorkerId: request.preferredWorkerId,
           termsAccepted: request.termsAccepted,
         ),

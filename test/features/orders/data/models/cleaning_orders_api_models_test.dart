@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_booking_status.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_orders_api_models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +15,7 @@ void main() {
           'workerId': 8,
           'scheduled_date': '2026-05-17',
           'scheduled_time': '10:00',
+          'gender_preference': 'female',
           'cancellation_fee': '7.25',
           'total_price': 49.5,
           'tracking': <String, dynamic>{
@@ -53,6 +55,7 @@ void main() {
       expect(data, isNotNull);
       expect(data!.id, 101);
       expect(data.bookingNumber, 'CL-101');
+      expect(data.genderPreference, CleaningGenderPreference.female);
       expect(data.customerId, 5);
       expect(data.workerId, 8);
       expect(data.startedTravelAt, '2026-05-17T09:45:00Z');
@@ -67,5 +70,22 @@ void main() {
       expect((data.timeWarnings ?? <dynamic>[]).length, 1);
       expect((data.disputes ?? <dynamic>[]).length, 1);
     });
+
+    test(
+      'parses gender preference from camelCase and preserves in model map',
+      () {
+        final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+          'data': <String, dynamic>{'id': 201, 'genderPreference': 'male'},
+        });
+
+        final data = model.data;
+        expect(data, isNotNull);
+        expect(data!.genderPreference, CleaningGenderPreference.male);
+        expect(
+          data.toCleaningOrderModel().genderPreference,
+          CleaningGenderPreference.male,
+        );
+      },
+    );
   });
 }

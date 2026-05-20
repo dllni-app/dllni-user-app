@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +13,7 @@ import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../../cl_main/view/manager/bloc/cl_main_bloc.dart';
 import '../../../cl_main/view/widgets/app_pickers.dart';
+import '../../../cl_main/view/widgets/cl_service_gender_preference_section_widget.dart';
 import '../../../cl_main/view/helpers/cl_service_schedule_time_utils.dart';
 import '../../../cl_main/view/widgets/cl_service_schedule_section_widget.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
@@ -53,6 +55,8 @@ class _CleaningOrderRescheduleScreenState
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
   late final ClMainBloc _clMainBloc;
+  CleaningGenderPreference _selectedGenderPreference =
+      CleaningGenderPreference.any;
 
   bool _isSaving = false;
 
@@ -68,6 +72,7 @@ class _CleaningOrderRescheduleScreenState
       ),
     );
     _toTimeController = TextEditingController();
+    _selectedGenderPreference = widget.args.order.genderPreference;
     _syncToTime(_parseOrderEstimatedHours());
     _requestEstimate();
   }
@@ -144,7 +149,8 @@ class _CleaningOrderRescheduleScreenState
   }
 
   double _parseOrderEstimatedHours() {
-    return double.tryParse((widget.args.order.estimatedHours ?? '').trim()) ?? 0;
+    return double.tryParse((widget.args.order.estimatedHours ?? '').trim()) ??
+        0;
   }
 
   void _syncToTime(double estimatedHours) {
@@ -219,6 +225,7 @@ class _CleaningOrderRescheduleScreenState
         scheduledTime: _fromTimeController.text,
         addressLatitude: order.addressLatitude!,
         addressLongitude: order.addressLongitude!,
+        genderPreference: _selectedGenderPreference,
         preferredWorkerId: order.workerId,
       ),
     );
@@ -311,6 +318,15 @@ class _CleaningOrderRescheduleScreenState
                               toTimeController: _toTimeController,
                               onPickDate: _pickDate,
                               onPickFromTime: _pickFromTime,
+                            ),
+                            const SizedBox(height: 12),
+                            ClServiceGenderPreferenceSectionWidget(
+                              selectedPreference: _selectedGenderPreference,
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedGenderPreference = value;
+                                });
+                              },
                             ),
                             const SizedBox(height: 12),
                             if (isLoadingEstimate) ...[

@@ -1,5 +1,6 @@
 import 'package:common_package/helpers/typedef.dart';
 import 'package:injectable/injectable.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 
 import '../../data/models/orders_api_models.dart';
 import '../repository/orders_repo.dart';
@@ -29,6 +30,7 @@ class PatchCleaningOrderParams with Params {
   final String livingRoomSize;
   final double addressLatitude;
   final double addressLongitude;
+  final CleaningGenderPreference genderPreference;
 
   PatchCleaningOrderParams({
     required this.cleaningOrderId,
@@ -42,21 +44,23 @@ class PatchCleaningOrderParams with Params {
     required this.livingRoomSize,
     required this.addressLatitude,
     required this.addressLongitude,
+    this.genderPreference = CleaningGenderPreference.any,
   });
 
   @override
   BodyMap getBody() => {
-        'propertyType': propertyType,
-        'scheduledDate': scheduledDate,
-        'scheduledTime': scheduledTime,
-        'propertyDetails': {
-          'address': address,
-          'bedrooms': bedrooms,
-          'rooms': rooms,
-          'bathrooms': bathrooms,
-          'living_room_size': livingRoomSize,
-        },
-        'addressLatitude': addressLatitude,
-        'addressLongitude': addressLongitude,
-      };
+    'propertyType': propertyType,
+    'scheduledDate': scheduledDate,
+    'scheduledTime': scheduledTime,
+    'propertyDetails': {
+      'address': address,
+      'bedrooms': bedrooms,
+      'rooms': rooms,
+      'bathrooms': bathrooms,
+      'living_room_size': livingRoomSize,
+    },
+    'addressLatitude': addressLatitude,
+    'addressLongitude': addressLongitude,
+    'genderPreference': genderPreference.apiValue,
+  };
 }

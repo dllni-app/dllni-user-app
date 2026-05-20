@@ -1,6 +1,8 @@
 import 'package:common_package/helpers/error_handler.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
+import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_order_cancel_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/cancel_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/orders/view/helpers/cleaning_rebook_policy.dart';
@@ -35,6 +37,7 @@ void main() {
     test('runs cancel then create and returns new order id', () async {
       bool createCalled = false;
       CancelCleaningOrderParams? cancelParams;
+      CreateCleaningOrderParams? createParams;
 
       final policy = CleaningRebookPolicy(
         cancelOrder: (params) async {
@@ -43,6 +46,7 @@ void main() {
         },
         createOrder: (params) async {
           createCalled = true;
+          createParams = params;
           return const Right(
             CreateCleaningOrderResponseModel(success: true, orderId: 88),
           );
@@ -63,13 +67,16 @@ void main() {
           scheduledTime: '10:00',
           addressLatitude: 33.5,
           addressLongitude: 36.3,
+          genderPreference: CleaningGenderPreference.female,
           preferredWorkerId: 7,
         ),
       );
 
       expect(createCalled, isTrue);
       expect(cancelParams, isNotNull);
+      expect(createParams, isNotNull);
       expect(cancelParams!.reason, CleaningRebookPolicy.cancelReason);
+      expect(createParams!.genderPreference, CleaningGenderPreference.female);
       expect(result.isRight(), isTrue);
       result.fold(
         (_) => fail('expected success'),

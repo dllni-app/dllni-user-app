@@ -795,6 +795,7 @@ class _CleaningOrderDetailsScreenState
       scheduledTime: scheduledTime,
       addressLatitude: addressLatitude,
       addressLongitude: addressLongitude,
+      genderPreference: order.genderPreference,
       preferredWorkerId: order.workerId,
     );
   }

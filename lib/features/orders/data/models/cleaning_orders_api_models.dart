@@ -1,3 +1,5 @@
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
+
 import 'cleaning_booking_status.dart';
 
 import 'orders_api_models.dart';
@@ -151,6 +153,7 @@ class CleaningOrderModel {
   final double? totalPrice;
   final String? scheduledDate;
   final String? scheduledTime;
+  final CleaningGenderPreference genderPreference;
   final String? startedTravelAt;
   final String? arrivedAt;
   final String? workStartedAt;
@@ -186,6 +189,7 @@ class CleaningOrderModel {
     this.totalPrice,
     this.scheduledDate,
     this.scheduledTime,
+    this.genderPreference = CleaningGenderPreference.any,
     this.startedTravelAt,
     this.arrivedAt,
     this.workStartedAt,
@@ -218,10 +222,18 @@ class CleaningOrderModel {
           ? null
           : CleaningPropertyDetailsModel.fromJson(_toMap(m['propertyDetails'])),
       addressLatitude: _toDouble(
-        _pick(m, const <String>['addressLatitude', 'address_latitude', 'latitude']),
+        _pick(m, const <String>[
+          'addressLatitude',
+          'address_latitude',
+          'latitude',
+        ]),
       ),
       addressLongitude: _toDouble(
-        _pick(m, const <String>['addressLongitude', 'address_longitude', 'longitude']),
+        _pick(m, const <String>[
+          'addressLongitude',
+          'address_longitude',
+          'longitude',
+        ]),
       ),
       locationName: _toStringValue(
         _pick(m, const <String>['locationName', 'location_name']),
@@ -232,24 +244,37 @@ class CleaningOrderModel {
       estimatedHours: _toStringValue(
         _pick(m, const <String>['estimatedHours', 'estimated_hours']),
       ),
-      totalHours: _toDouble(_pick(m, const <String>['totalHours', 'total_hours'])),
+      totalHours: _toDouble(
+        _pick(m, const <String>['totalHours', 'total_hours']),
+      ),
       basePrice: _toDouble(_pick(m, const <String>['basePrice', 'base_price'])),
-      addonsTotal: _toDouble(_pick(m, const <String>['addonsTotal', 'addons_total'])),
+      addonsTotal: _toDouble(
+        _pick(m, const <String>['addonsTotal', 'addons_total']),
+      ),
       travelFee: _toDouble(_pick(m, const <String>['travelFee', 'travel_fee'])),
       cancellationFee: _toDouble(
         _pick(m, const <String>['cancellationFee', 'cancellation_fee']),
       ),
-      totalPrice: _toDouble(_pick(m, const <String>['totalPrice', 'total_price'])),
+      totalPrice: _toDouble(
+        _pick(m, const <String>['totalPrice', 'total_price']),
+      ),
       scheduledDate: _toStringValue(
         _pick(m, const <String>['scheduledDate', 'scheduled_date']),
       ),
       scheduledTime: _toStringValue(
         _pick(m, const <String>['scheduledTime', 'scheduled_time']),
       ),
+      genderPreference: CleaningGenderPreference.fromApi(
+        _toStringValue(
+          _pick(m, const <String>['genderPreference', 'gender_preference']),
+        ),
+      ),
       startedTravelAt: _toStringValue(
         _pick(m, const <String>['startedTravelAt', 'started_travel_at']),
       ),
-      arrivedAt: _toStringValue(_pick(m, const <String>['arrivedAt', 'arrived_at'])),
+      arrivedAt: _toStringValue(
+        _pick(m, const <String>['arrivedAt', 'arrived_at']),
+      ),
       workStartedAt: _toStringValue(
         _pick(m, const <String>['workStartedAt', 'work_started_at']),
       ),
@@ -257,21 +282,26 @@ class CleaningOrderModel {
         _pick(m, const <String>['workFinishedAt', 'work_finished_at']),
       ),
       customerConfirmedAt: _toStringValue(
-        _pick(m, const <String>['customerConfirmedAt', 'customer_confirmed_at']),
+        _pick(m, const <String>[
+          'customerConfirmedAt',
+          'customer_confirmed_at',
+        ]),
       ),
-      cancelledAt: _toStringValue(_pick(m, const <String>['cancelledAt', 'cancelled_at'])),
+      cancelledAt: _toStringValue(
+        _pick(m, const <String>['cancelledAt', 'cancelled_at']),
+      ),
       customer: m['customer'] == null
           ? null
           : CleaningOrderCustomerModel.fromJson(_toMap(m['customer'])),
       worker: m['worker'] == null
           ? null
           : CleaningOrderWorkerModel.fromJson(_toMap(m['worker'])),
-      services: _toMapList(m['services'])
-          .map(CleaningOrderLineItemModel.fromJson)
-          .toList(growable: false),
-      addons: _toMapList(m['addons'])
-          .map(CleaningOrderLineItemModel.fromJson)
-          .toList(growable: false),
+      services: _toMapList(
+        m['services'],
+      ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
+      addons: _toMapList(
+        m['addons'],
+      ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
       billingPolicy: m['billingPolicy'] is Map
           ? _toMap(m['billingPolicy'])
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
@@ -304,6 +334,7 @@ class CleaningOrderDetailModel {
   final double? totalPrice;
   final String? scheduledDate;
   final String? scheduledTime;
+  final CleaningGenderPreference genderPreference;
   final String? startedTravelAt;
   final String? arrivedAt;
   final String? workStartedAt;
@@ -341,6 +372,7 @@ class CleaningOrderDetailModel {
     this.totalPrice,
     this.scheduledDate,
     this.scheduledTime,
+    this.genderPreference = CleaningGenderPreference.any,
     this.startedTravelAt,
     this.arrivedAt,
     this.workStartedAt,
@@ -371,19 +403,27 @@ class CleaningOrderDetailModel {
       ),
       propertyDetails: m['propertyDetails'] == null
           ? null
-          : CleaningPropertyDetailsModel.fromJson(
-              _toMap(m['propertyDetails']),
-            ),
+          : CleaningPropertyDetailsModel.fromJson(_toMap(m['propertyDetails'])),
       addressLatitude: _toDouble(
-        _pick(m, const <String>['addressLatitude', 'address_latitude', 'latitude']),
+        _pick(m, const <String>[
+          'addressLatitude',
+          'address_latitude',
+          'latitude',
+        ]),
       ),
       addressLongitude: _toDouble(
-        _pick(m, const <String>['addressLongitude', 'address_longitude', 'longitude']),
+        _pick(m, const <String>[
+          'addressLongitude',
+          'address_longitude',
+          'longitude',
+        ]),
       ),
       locationName: _toStringValue(
         _pick(m, const <String>['locationName', 'location_name']),
       ),
-      numberOfRooms: _toInt(_pick(m, const <String>['numberOfRooms', 'number_of_rooms'])),
+      numberOfRooms: _toInt(
+        _pick(m, const <String>['numberOfRooms', 'number_of_rooms']),
+      ),
       numberOfKitchens: _toInt(
         _pick(m, const <String>['numberOfKitchens', 'number_of_kitchens']),
       ),
@@ -393,24 +433,37 @@ class CleaningOrderDetailModel {
       estimatedHours: _toStringValue(
         _pick(m, const <String>['estimatedHours', 'estimated_hours']),
       ),
-      totalHours: _toDouble(_pick(m, const <String>['totalHours', 'total_hours'])),
+      totalHours: _toDouble(
+        _pick(m, const <String>['totalHours', 'total_hours']),
+      ),
       basePrice: _toDouble(_pick(m, const <String>['basePrice', 'base_price'])),
-      addonsTotal: _toDouble(_pick(m, const <String>['addonsTotal', 'addons_total'])),
+      addonsTotal: _toDouble(
+        _pick(m, const <String>['addonsTotal', 'addons_total']),
+      ),
       travelFee: _toDouble(_pick(m, const <String>['travelFee', 'travel_fee'])),
       cancellationFee: _toDouble(
         _pick(m, const <String>['cancellationFee', 'cancellation_fee']),
       ),
-      totalPrice: _toDouble(_pick(m, const <String>['totalPrice', 'total_price'])),
+      totalPrice: _toDouble(
+        _pick(m, const <String>['totalPrice', 'total_price']),
+      ),
       scheduledDate: _toStringValue(
         _pick(m, const <String>['scheduledDate', 'scheduled_date']),
       ),
       scheduledTime: _toStringValue(
         _pick(m, const <String>['scheduledTime', 'scheduled_time']),
       ),
+      genderPreference: CleaningGenderPreference.fromApi(
+        _toStringValue(
+          _pick(m, const <String>['genderPreference', 'gender_preference']),
+        ),
+      ),
       startedTravelAt: _toStringValue(
         _pick(m, const <String>['startedTravelAt', 'started_travel_at']),
       ),
-      arrivedAt: _toStringValue(_pick(m, const <String>['arrivedAt', 'arrived_at'])),
+      arrivedAt: _toStringValue(
+        _pick(m, const <String>['arrivedAt', 'arrived_at']),
+      ),
       workStartedAt: _toStringValue(
         _pick(m, const <String>['workStartedAt', 'work_started_at']),
       ),
@@ -418,21 +471,26 @@ class CleaningOrderDetailModel {
         _pick(m, const <String>['workFinishedAt', 'work_finished_at']),
       ),
       customerConfirmedAt: _toStringValue(
-        _pick(m, const <String>['customerConfirmedAt', 'customer_confirmed_at']),
+        _pick(m, const <String>[
+          'customerConfirmedAt',
+          'customer_confirmed_at',
+        ]),
       ),
-      cancelledAt: _toStringValue(_pick(m, const <String>['cancelledAt', 'cancelled_at'])),
+      cancelledAt: _toStringValue(
+        _pick(m, const <String>['cancelledAt', 'cancelled_at']),
+      ),
       customer: m['customer'] == null
           ? null
           : CleaningOrderCustomerModel.fromJson(_toMap(m['customer'])),
       worker: m['worker'] == null
           ? null
           : CleaningOrderWorkerModel.fromJson(_toMap(m['worker'])),
-      services: _toMapList(m['services'])
-          .map(CleaningOrderLineItemModel.fromJson)
-          .toList(growable: false),
-      addons: _toMapList(m['addons'])
-          .map(CleaningOrderLineItemModel.fromJson)
-          .toList(growable: false),
+      services: _toMapList(
+        m['services'],
+      ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
+      addons: _toMapList(
+        m['addons'],
+      ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
       billingPolicy: m['billingPolicy'] is Map
           ? _toMap(m['billingPolicy'])
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
@@ -463,6 +521,7 @@ class CleaningOrderDetailModel {
       totalPrice: totalPrice,
       scheduledDate: scheduledDate,
       scheduledTime: scheduledTime,
+      genderPreference: genderPreference,
       startedTravelAt: startedTravelAt,
       arrivedAt: arrivedAt,
       workStartedAt: workStartedAt,
@@ -518,12 +577,7 @@ class CleaningOrderCustomerModel {
   final String? phone;
   final String? email;
 
-  CleaningOrderCustomerModel({
-    this.id,
-    this.name,
-    this.phone,
-    this.email,
-  });
+  CleaningOrderCustomerModel({this.id, this.name, this.phone, this.email});
 
   factory CleaningOrderCustomerModel.fromJson(Map<String, dynamic> json) {
     return CleaningOrderCustomerModel(
@@ -540,11 +594,7 @@ class CleaningOrderLineItemModel {
   final String? name;
   final int? quantity;
 
-  CleaningOrderLineItemModel({
-    this.id,
-    this.name,
-    this.quantity,
-  });
+  CleaningOrderLineItemModel({this.id, this.name, this.quantity});
 
   factory CleaningOrderLineItemModel.fromJson(Map<String, dynamic> json) {
     return CleaningOrderLineItemModel(

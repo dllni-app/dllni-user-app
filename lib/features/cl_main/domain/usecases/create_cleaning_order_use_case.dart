@@ -1,17 +1,22 @@
 import 'package:common_package/helpers/typedef.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../data/models/create_cleaning_order_response_model.dart';
 import '../repository/cl_main_repo.dart';
 
 @lazySingleton
-class CreateCleaningOrderUseCase implements UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
+class CreateCleaningOrderUseCase
+    implements
+        UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
   final ClMainRepo clMainRepo;
 
   CreateCleaningOrderUseCase({required this.clMainRepo});
 
   @override
-  DataResponse<CreateCleaningOrderResponseModel> call(CreateCleaningOrderParams params) {
+  DataResponse<CreateCleaningOrderResponseModel> call(
+    CreateCleaningOrderParams params,
+  ) {
     return clMainRepo.createCleaningOrder(params);
   }
 }
@@ -28,6 +33,7 @@ class CreateCleaningOrderParams with Params {
   final String scheduledTime;
   final double addressLatitude;
   final double addressLongitude;
+  final CleaningGenderPreference genderPreference;
   final int? preferredWorkerId;
   final bool termsAccepted;
 
@@ -43,6 +49,7 @@ class CreateCleaningOrderParams with Params {
     required this.scheduledTime,
     required this.addressLatitude,
     required this.addressLongitude,
+    this.genderPreference = CleaningGenderPreference.any,
     this.preferredWorkerId,
     this.termsAccepted = true,
   });
@@ -63,6 +70,7 @@ class CreateCleaningOrderParams with Params {
       'scheduledTime': scheduledTime,
       'addressLatitude': addressLatitude,
       'addressLongitude': addressLongitude,
+      'genderPreference': genderPreference.apiValue,
       if (preferredWorkerId != null) 'preferredWorkerId': preferredWorkerId,
       'termsAccepted': termsAccepted,
     };
