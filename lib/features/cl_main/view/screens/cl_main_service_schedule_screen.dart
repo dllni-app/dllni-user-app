@@ -25,12 +25,10 @@ class ClMainServiceScheduleScreen extends StatefulWidget {
   const ClMainServiceScheduleScreen({super.key});
 
   @override
-  State<ClMainServiceScheduleScreen> createState() =>
-      _ClMainServiceScheduleScreenState();
+  State<ClMainServiceScheduleScreen> createState() => _ClMainServiceScheduleScreenState();
 }
 
-class _ClMainServiceScheduleScreenState
-    extends State<ClMainServiceScheduleScreen> {
+class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScreen> {
   ClMainBloc? _bloc;
   late DateTime _selectedDate;
   late TextEditingController _fromTimeController;
@@ -42,7 +40,7 @@ class _ClMainServiceScheduleScreenState
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    _selectedDate = DateTime.now().add(Duration(days: 1));
     _fromTimeController = TextEditingController(text: '09:00');
     _toTimeController = TextEditingController();
   }
@@ -58,12 +56,7 @@ class _ClMainServiceScheduleScreenState
       _bloc = args.bloc;
       _syncToTime();
     }
-    _bloc?.add(
-      GetPreviousCleaningWorkersEvent(
-        params: GetPreviousCleaningWorkersParams(page: 1),
-        isReload: true,
-      ),
-    );
+    _bloc?.add(GetPreviousCleaningWorkersEvent(params: GetPreviousCleaningWorkersParams(page: 1), isReload: true));
   }
 
   @override
@@ -74,7 +67,7 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _pickDate() async {
-    final value = await AppPickers.showAppDatePicker(context: context);
+    final value = await AppPickers.showAppDatePicker(context: context, startDate: DateTime.now().add(Duration(days: 1)));
     if (value.isEmpty) return;
     setState(() {
       _selectedDate = DateFormat('yyyy-MM-dd', 'en').parse(value);
@@ -83,10 +76,7 @@ class _ClMainServiceScheduleScreenState
 
   void _syncToTime() {
     final estimatedHours = _routeArgs?.estimate.size?.estimatedHours ?? 0;
-    _toTimeController.text = formatClServiceEndTime(
-      startTime: _fromTimeController.text,
-      durationHours: estimatedHours,
-    );
+    _toTimeController.text = formatClServiceEndTime(startTime: _fromTimeController.text, durationHours: estimatedHours);
   }
 
   Future<void> _pickFromTime() async {
@@ -99,10 +89,7 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _selectAddress() async {
-    final selectedAddress = await context.pushRoute(
-      '/myaddresses',
-      arguments: true,
-    );
+    final selectedAddress = await context.pushRoute('/myaddresses', arguments: true);
     if (!mounted) return;
     if (selectedAddress is AddressListItem) {
       setState(() {
@@ -115,15 +102,11 @@ class _ClMainServiceScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
       return;
     }
     if (bloc == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر تهيئة حالة الطلب')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تهيئة حالة الطلب')));
       return;
     }
 
@@ -137,9 +120,7 @@ class _ClMainServiceScheduleScreenState
           rooms: args.rooms,
           bathrooms: args.bathrooms,
           livingRoomSize: args.livingRoomSize,
-          address:
-              selectedAddress?.line1 ??
-              'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
+          address: selectedAddress?.line1 ?? 'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
           locationName: selectedAddress?.label ?? 'المنزل',
           scheduledDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
           scheduledTime: _fromTimeController.text,
@@ -169,30 +150,18 @@ class _ClMainServiceScheduleScreenState
     return BlocProvider.value(
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
-        listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus ||
-            previous.previousWorkersStatus != current.previousWorkersStatus,
+        listenWhen: (previous, current) => previous.createOrderStatus != current.createOrderStatus || previous.previousWorkersStatus != current.previousWorkersStatus,
         listener: (context, state) {
-          if (state.createOrderStatus == BlocStatus.loading ||
-              state.previousWorkersStatus == BlocStatus.loading) {
+          if (state.createOrderStatus == BlocStatus.loading || state.previousWorkersStatus == BlocStatus.loading) {
             Loading.show(context);
             return;
           }
           Loading.close();
           if (state.createOrderStatus == BlocStatus.success) {
-            AppToast.showToast(
-              context: context,
-              message: 'تم إرسال الطلب بنجاح',
-              type: ToastificationType.success,
-            );
+            AppToast.showToast(context: context, message: 'تم إرسال الطلب بنجاح', type: ToastificationType.success);
             context.pushRoute('/clmain');
-          } else if (state.createOrderStatus == BlocStatus.failed ||
-              state.previousWorkersStatus == BlocStatus.failed) {
-            AppToast.showToast(
-              context: context,
-              message: state.errorMessage ?? 'فشل تنفيذ الطلب',
-              type: ToastificationType.error,
-            );
+          } else if (state.createOrderStatus == BlocStatus.failed || state.previousWorkersStatus == BlocStatus.failed) {
+            AppToast.showToast(context: context, message: state.errorMessage ?? 'فشل تنفيذ الطلب', type: ToastificationType.error);
           }
         },
         builder: (context, state) {
@@ -205,16 +174,10 @@ class _ClMainServiceScheduleScreenState
                   const SizedBox(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.only(
-                        start: 20,
-                        end: 20,
-                      ),
+                      padding: const EdgeInsetsDirectional.only(start: 20, end: 20),
                       child: Column(
                         children: [
-                          ClServiceGradientInfoCardWidget(
-                            estimatedSqm: estimate?.size?.estimatedSqm ?? 0,
-                            estimatedHours: estimate?.size?.estimatedHours ?? 0,
-                          ),
+                          ClServiceGradientInfoCardWidget(estimatedSqm: estimate?.size?.estimatedSqm ?? 0, estimatedHours: estimate?.size?.estimatedHours ?? 0),
                           const SizedBox(height: 10),
                           ClServiceScheduleSectionWidget(
                             dayAr: dayAr,
@@ -227,35 +190,20 @@ class _ClMainServiceScheduleScreenState
                           const SizedBox(height: 10),
                           ClServiceAddressSectionWidget(
                             locationName: _selectedAddress?.label ?? 'المنزل',
-                            address:
-                                _selectedAddress?.line1 ??
-                                'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
+                            address: _selectedAddress?.line1 ?? 'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 16),
                           ClServicePreviousWorkersSectionWidget(
                             workers: state.previousWorkers.list,
                             selectedWorkerId: state.selectedWorkerId,
-                            isLoading:
-                                state.previousWorkersStatus ==
-                                BlocStatus.loading,
-                            errorMessage:
-                                state.previousWorkersStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
+                            isLoading: state.previousWorkersStatus == BlocStatus.loading,
+                            errorMessage: state.previousWorkersStatus == BlocStatus.failed ? state.errorMessage : null,
                             onSelectWorker: (workerId) {
-                              bloc.add(
-                                SetPreferredWorkerEvent(workerId: workerId),
-                              );
+                              bloc.add(SetPreferredWorkerEvent(workerId: workerId));
                             },
                             onOpenWorkerProfile: (worker) {
-                              context.pushRoute(
-                                '/clworkerprofiledetail',
-                                arguments:
-                                    WorkerProfileRouteArgs.fromPreviousWorker(
-                                      worker,
-                                    ),
-                              );
+                              context.pushRoute('/clworkerprofiledetail', arguments: WorkerProfileRouteArgs.fromPreviousWorker(worker));
                             },
                           ),
                           const SizedBox(height: 12),
@@ -272,14 +220,8 @@ class _ClMainServiceScheduleScreenState
                   ),
                   Container(
                     color: const Color(0xFFF2F2F2),
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 20,
-                      vertical: 20,
-                    ),
-                    child: ClServiceBottomActionsWidget(
-                      onBackPressed: () => context.pop(),
-                      onSubmitPressed: () => _onSubmitPressed(state),
-                    ),
+                    padding: const EdgeInsetsDirectional.symmetric(horizontal: 20, vertical: 20),
+                    child: ClServiceBottomActionsWidget(onBackPressed: () => context.pop(), onSubmitPressed: () => _onSubmitPressed(state)),
                   ),
                 ],
               ),

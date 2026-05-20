@@ -32,12 +32,12 @@ class AppPickers {
     return DateFormat('HH:mm', 'en').format(selectedTime);
   }
 
-  static Future<String> showAppDatePicker({required BuildContext context}) async {
+  static Future<String> showAppDatePicker({required BuildContext context, DateTime? startDate}) async {
     final DateTime? res = await showDatePicker(
       context: context,
       locale: const Locale('en'),
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1950),
+      initialDate: startDate ?? DateTime.now(),
+      firstDate: startDate ?? DateTime(1950),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
       builder: (context, child) => Theme(
         data: ThemeData.light().copyWith(
