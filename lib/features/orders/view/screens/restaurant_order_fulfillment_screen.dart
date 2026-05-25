@@ -27,7 +27,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
 
   String _scheduledLabel(DateTime? value) {
     if (value == null) return 'اختر التاريخ والوقت';
-    return DateFormat('yyyy/MM/dd - HH:mm').format(value);
+    return DateFormat('yyyy/MM/dd - HH:mm', 'en').format(value);
   }
 
   @override

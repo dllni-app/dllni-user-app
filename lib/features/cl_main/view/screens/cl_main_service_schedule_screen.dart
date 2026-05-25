@@ -150,7 +150,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
           selectedAddress?.line1 ??
               'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
           locationName: selectedAddress?.label ?? 'المنزل',
-          scheduledDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
+          scheduledDate: DateFormat('yyyy-MM-dd', 'en').format(_selectedDate),
           scheduledTime: _fromTimeController.text,
           addressLatitude: args.addressLatitude,
           addressLongitude: args.addressLongitude,
@@ -164,7 +164,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = DateFormat('EEEE', 'ar').format(_selectedDate);
+    final dayAr = DateFormat('EEEE', 'en').format(_selectedDate);
     final dayDate = DateFormat('d MMM yyyy', 'en').format(_selectedDate);
     final estimate = _routeArgs?.estimate;
     final bloc = _bloc;

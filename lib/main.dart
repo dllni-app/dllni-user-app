@@ -4,6 +4,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:intl/intl.dart';
 
 import 'app.dart';
 import 'core/deeplink/deep_link_service.dart';
@@ -11,6 +12,7 @@ import 'core/di/injection.dart';
 import 'core/session/session_expired_handler.dart';
 
 Future<void> main() async {
+  Intl.defaultLocale = 'en';
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
     usePathUrlStrategy();

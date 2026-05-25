@@ -230,6 +230,7 @@ class _AppDatePickerState extends State<AppDatePicker> {
                 onTap: () async {
                   DateTime? date = await showDatePicker(
                     context: context,
+                    locale: const Locale('en'),
                     firstDate: DateTime.now(),
                     lastDate: DateTime(2030),
                     builder: (BuildContext context, Widget? child) {

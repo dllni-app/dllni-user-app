@@ -221,7 +221,7 @@ class _CleaningOrderRescheduleScreenState
         livingRoomSize: details.livingRoomSize!,
         address: details.address ?? '',
         locationName: order.locationName ?? 'المنزل',
-        scheduledDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
+        scheduledDate: DateFormat('yyyy-MM-dd', 'en').format(_selectedDate),
         scheduledTime: _fromTimeController.text,
         addressLatitude: order.addressLatitude!,
         addressLongitude: order.addressLongitude!,
@@ -265,7 +265,7 @@ class _CleaningOrderRescheduleScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = DateFormat('EEEE', 'ar').format(_selectedDate);
+    final dayAr = DateFormat('EEEE', 'en').format(_selectedDate);
     final dayDate = DateFormat('d MMM yyyy', 'en').format(_selectedDate);
     final isSaveDisabled = _isSaving || _missingDataMessage != null;
 
