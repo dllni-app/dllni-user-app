@@ -6,11 +6,13 @@ import 'package:dartz/dartz.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
+import 'package:dllni_user_app/features/cl_main/data/models/cleaning_services_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/estimate_price_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/previous_workers_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/domain/repository/cl_main_repo.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
+import 'package:dllni_user_app/features/cl_main/domain/usecases/get_cleaning_services_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_order_cancel_api_models.dart';
@@ -66,6 +68,13 @@ class _FakeClMainRepo implements ClMainRepo {
     return const Right(
       PreviousWorkersResponseModel(data: <PreviousWorkerModel>[]),
     );
+  }
+
+  @override
+  DataResponse<CleaningServicesResponseModel> getCleaningServices(
+    GetCleaningServicesParams params,
+  ) async {
+    return const Right(CleaningServicesResponseModel());
   }
 }
 
@@ -125,6 +134,9 @@ Future<void> _pumpScreen(
   getIt.registerFactory<ClMainBloc>(
     () => ClMainBloc(
       estimateCleaningPriceUseCase: useCase,
+      getCleaningServicesUseCase: GetCleaningServicesUseCase(
+        clMainRepo: useCase.clMainRepo,
+      ),
       getPreviousCleaningWorkersUseCase: workersUseCase,
       createCleaningOrderUseCase: createUseCase,
     ),

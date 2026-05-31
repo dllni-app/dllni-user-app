@@ -1,8 +1,35 @@
 import 'dart:convert';
 
+double? _toDouble(dynamic value) {
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '');
+}
+
+int? _toInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
+bool? _toBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) {
+    if (value == 1) return true;
+    if (value == 0) return false;
+  }
+  final normalized = value?.toString().trim().toLowerCase();
+  if (normalized == 'true' || normalized == '1') return true;
+  if (normalized == 'false' || normalized == '0') return false;
+  return null;
+}
+
 EstimatePriceResponseModel estimatePriceResponseModelFromJson(dynamic json) {
   if (json is String && json.isNotEmpty) {
-    return EstimatePriceResponseModel.fromJson(jsonDecode(json) as Map<String, dynamic>);
+    return EstimatePriceResponseModel.fromJson(
+      jsonDecode(json) as Map<String, dynamic>,
+    );
   }
   if (json is Map<String, dynamic>) {
     return EstimatePriceResponseModel.fromJson(json);
@@ -14,11 +41,13 @@ class EstimatePriceResponseModel {
   final EstimateSizeModel? size;
   final EstimatePricingModel? pricing;
   final EstimateQuoteModel? quote;
+  final EstimateRecommendationModel? recommendation;
 
   const EstimatePriceResponseModel({
     this.size,
     this.pricing,
     this.quote,
+    this.recommendation,
   });
 
   factory EstimatePriceResponseModel.fromJson(Map<String, dynamic> json) {
@@ -27,10 +56,17 @@ class EstimatePriceResponseModel {
           ? EstimateSizeModel.fromJson(json['size'] as Map<String, dynamic>)
           : null,
       pricing: json['pricing'] is Map<String, dynamic>
-          ? EstimatePricingModel.fromJson(json['pricing'] as Map<String, dynamic>)
+          ? EstimatePricingModel.fromJson(
+              json['pricing'] as Map<String, dynamic>,
+            )
           : null,
       quote: json['quote'] is Map<String, dynamic>
           ? EstimateQuoteModel.fromJson(json['quote'] as Map<String, dynamic>)
+          : null,
+      recommendation: json['recommendation'] is Map<String, dynamic>
+          ? EstimateRecommendationModel.fromJson(
+              json['recommendation'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -61,23 +97,106 @@ class EstimatePricingModel {
   final double? travelFee;
   final double? addonsTotal;
   final double? totalPrice;
+  final double? distanceKm;
+  final double? adminMargin;
+  final bool? isPricingFinal;
   final String? currency;
+  final List<EstimateServiceLineModel> serviceLines;
 
   const EstimatePricingModel({
     this.basePrice,
     this.travelFee,
     this.addonsTotal,
     this.totalPrice,
+    this.distanceKm,
+    this.adminMargin,
+    this.isPricingFinal,
     this.currency,
+    this.serviceLines = const <EstimateServiceLineModel>[],
   });
 
   factory EstimatePricingModel.fromJson(Map<String, dynamic> json) {
+    final serviceLinesRaw = json['serviceLines'] ?? json['service_lines'];
+    final serviceLines = serviceLinesRaw is List
+        ? serviceLinesRaw
+              .whereType<Map<String, dynamic>>()
+              .map(EstimateServiceLineModel.fromJson)
+              .toList(growable: false)
+        : const <EstimateServiceLineModel>[];
+
     return EstimatePricingModel(
-      basePrice: (json['basePrice'] as num?)?.toDouble(),
-      travelFee: (json['travelFee'] as num?)?.toDouble(),
-      addonsTotal: (json['addonsTotal'] as num?)?.toDouble(),
-      totalPrice: (json['totalPrice'] as num?)?.toDouble(),
+      basePrice: _toDouble(json['basePrice'] ?? json['base_price']),
+      travelFee: _toDouble(json['travelFee'] ?? json['travel_fee']),
+      addonsTotal: _toDouble(json['addonsTotal'] ?? json['addons_total']),
+      totalPrice: _toDouble(json['totalPrice'] ?? json['total_price']),
+      distanceKm: _toDouble(json['distanceKm'] ?? json['distance_km']),
+      adminMargin: _toDouble(json['adminMargin'] ?? json['admin_margin']),
+      isPricingFinal: _toBool(
+        json['isPricingFinal'] ?? json['is_pricing_final'],
+      ),
       currency: json['currency'] as String?,
+      serviceLines: serviceLines,
+    );
+  }
+}
+
+class EstimateServiceLineModel {
+  final int? cleaningServiceId;
+  final String? name;
+  final int? quantity;
+  final double? unitPrice;
+  final double? totalPrice;
+  final double? minHours;
+
+  const EstimateServiceLineModel({
+    this.cleaningServiceId,
+    this.name,
+    this.quantity,
+    this.unitPrice,
+    this.totalPrice,
+    this.minHours,
+  });
+
+  factory EstimateServiceLineModel.fromJson(Map<String, dynamic> json) {
+    return EstimateServiceLineModel(
+      cleaningServiceId: _toInt(
+        json['cleaningServiceId'] ?? json['cleaning_service_id'],
+      ),
+      name: json['name'] as String?,
+      quantity: _toInt(json['quantity']),
+      unitPrice: _toDouble(json['unitPrice'] ?? json['unit_price']),
+      totalPrice: _toDouble(json['totalPrice'] ?? json['total_price']),
+      minHours: _toDouble(json['minHours'] ?? json['min_hours']),
+    );
+  }
+}
+
+class EstimateRecommendationModel {
+  final String? eventType;
+  final int? guestCount;
+  final String? venueType;
+  final int? selectedServiceCount;
+  final int? suggestedTeamSize;
+
+  const EstimateRecommendationModel({
+    this.eventType,
+    this.guestCount,
+    this.venueType,
+    this.selectedServiceCount,
+    this.suggestedTeamSize,
+  });
+
+  factory EstimateRecommendationModel.fromJson(Map<String, dynamic> json) {
+    return EstimateRecommendationModel(
+      eventType: (json['eventType'] ?? json['event_type']) as String?,
+      guestCount: _toInt(json['guestCount'] ?? json['guest_count']),
+      venueType: (json['venueType'] ?? json['venue_type']) as String?,
+      selectedServiceCount: _toInt(
+        json['selectedServiceCount'] ?? json['selected_service_count'],
+      ),
+      suggestedTeamSize: _toInt(
+        json['suggestedTeamSize'] ?? json['suggested_team_size'],
+      ),
     );
   }
 }
@@ -97,7 +216,8 @@ class EstimateQuoteModel {
     return EstimateQuoteModel(
       quoteId: (json['quoteId'] ?? json['quote_id']) as String?,
       expiresAt: (json['expiresAt'] ?? json['expires_at']) as String?,
-      algorithmVersion: (json['algorithmVersion'] ?? json['algorithm_version']) as String?,
+      algorithmVersion:
+          (json['algorithmVersion'] ?? json['algorithm_version']) as String?,
     );
   }
 }

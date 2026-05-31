@@ -8,7 +8,9 @@ import 'package:injectable/injectable.dart';
 
 import '../../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../domain/usecases/estimate_cleaning_price_use_case.dart';
+import '../../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
+import '../../../data/models/cleaning_services_response_model.dart';
 import '../../../data/models/create_cleaning_order_response_model.dart';
 import '../../../data/models/estimate_price_response_model.dart';
 import '../../../data/models/previous_workers_response_model.dart';
@@ -19,24 +21,70 @@ part 'cl_main_state.dart';
 @injectable
 class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
   final EstimateCleaningPriceUseCase estimateCleaningPriceUseCase;
+  final GetCleaningServicesUseCase getCleaningServicesUseCase;
   final GetPreviousCleaningWorkersUseCase getPreviousCleaningWorkersUseCase;
   final CreateCleaningOrderUseCase createCleaningOrderUseCase;
 
   ClMainBloc({
     required this.estimateCleaningPriceUseCase,
+    required this.getCleaningServicesUseCase,
     required this.getPreviousCleaningWorkersUseCase,
     required this.createCleaningOrderUseCase,
   }) : super(ClMainState()) {
     on<EstimateCleaningPriceEvent>(_estimateCleaningPrice);
-    on<GetPreviousCleaningWorkersEvent>(_getPreviousCleaningWorkers, transformer: paginationEventTransformer());
+    on<GetCleaningServicesEvent>(_getCleaningServices);
+    on<GetPreviousCleaningWorkersEvent>(
+      _getPreviousCleaningWorkers,
+      transformer: paginationEventTransformer(),
+    );
     on<SetPreferredWorkerEvent>(_setPreferredWorker);
     on<CreateCleaningOrderEvent>(_createCleaningOrder);
     on<ResetCreateOrderStatusEvent>(_resetCreateOrderStatus);
   }
 
-  FutureOr<void> _estimateCleaningPrice(EstimateCleaningPriceEvent event, Emitter<ClMainState> emit) async {
+  FutureOr<void> _getCleaningServices(
+    GetCleaningServicesEvent event,
+    Emitter<ClMainState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        cleaningServicesStatus: BlocStatus.loading,
+        clearErrorMessage: true,
+      ),
+    );
+    final response = await getCleaningServicesUseCase(event.params);
+    response.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            cleaningServicesStatus: BlocStatus.failed,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (result) {
+        emit(
+          state.copyWith(
+            cleaningServicesStatus: BlocStatus.success,
+            cleaningServices: result.data,
+            clearErrorMessage: true,
+          ),
+        );
+      },
+    );
+  }
+
+  FutureOr<void> _estimateCleaningPrice(
+    EstimateCleaningPriceEvent event,
+    Emitter<ClMainState> emit,
+  ) async {
     debugPrint('ClMainBloc estimate request -> ${event.params.getBody()}');
-    emit(state.copyWith(estimatePriceStatus: BlocStatus.loading, clearErrorMessage: true));
+    emit(
+      state.copyWith(
+        estimatePriceStatus: BlocStatus.loading,
+        clearErrorMessage: true,
+      ),
+    );
     final response = await estimateCleaningPriceUseCase(event.params);
     response.fold(
       (failure) {
@@ -67,20 +115,25 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     );
   }
 
-  FutureOr<void> _getPreviousCleaningWorkers(GetPreviousCleaningWorkersEvent event, Emitter<ClMainState> emit) async {
+  FutureOr<void> _getPreviousCleaningWorkers(
+    GetPreviousCleaningWorkersEvent event,
+    Emitter<ClMainState> emit,
+  ) async {
     final pagination = state.previousWorkers;
     final isLoadMore = event.loadMore && !event.isReload;
     if (isLoadMore && pagination.isEndPage) return;
 
-    emit(state.copyWith(previousWorkers: pagination.setLoading(isReload: event.isReload), clearErrorMessage: true));
+    emit(
+      state.copyWith(
+        previousWorkers: pagination.setLoading(isReload: event.isReload),
+        clearErrorMessage: true,
+      ),
+    );
 
     final page = isLoadMore ? pagination.pageNumber : 1;
     final perPage = pagination.perPage;
     final response = await getPreviousCleaningWorkersUseCase(
-      GetPreviousCleaningWorkersParams(
-        page: page,
-        perPage: perPage,
-      ),
+      GetPreviousCleaningWorkersParams(page: page, perPage: perPage),
     );
     response.fold(
       (failure) {
@@ -106,7 +159,10 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     );
   }
 
-  FutureOr<void> _setPreferredWorker(SetPreferredWorkerEvent event, Emitter<ClMainState> emit) {
+  FutureOr<void> _setPreferredWorker(
+    SetPreferredWorkerEvent event,
+    Emitter<ClMainState> emit,
+  ) {
     if (event.workerId == null) {
       emit(state.copyWith(clearSelectedWorker: true, clearErrorMessage: true));
     } else {
@@ -119,8 +175,16 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     }
   }
 
-  FutureOr<void> _createCleaningOrder(CreateCleaningOrderEvent event, Emitter<ClMainState> emit) async {
-    emit(state.copyWith(createOrderStatus: BlocStatus.loading, clearErrorMessage: true));
+  FutureOr<void> _createCleaningOrder(
+    CreateCleaningOrderEvent event,
+    Emitter<ClMainState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        createOrderStatus: BlocStatus.loading,
+        clearErrorMessage: true,
+      ),
+    );
     final response = await createCleaningOrderUseCase(event.params);
     response.fold(
       (failure) {
@@ -142,7 +206,10 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     );
   }
 
-  FutureOr<void> _resetCreateOrderStatus(ResetCreateOrderStatusEvent event, Emitter<ClMainState> emit) {
+  FutureOr<void> _resetCreateOrderStatus(
+    ResetCreateOrderStatusEvent event,
+    Emitter<ClMainState> emit,
+  ) {
     emit(state.copyWith(createOrderStatus: BlocStatus.init));
   }
 }

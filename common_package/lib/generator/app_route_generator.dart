@@ -9,7 +9,9 @@ class AggregatingAppRouteBuilder implements Builder {
     r'$lib$': ['generated/app_routes.g.dart'],
   };
 
-  static final _typeChecker = TypeChecker.fromUrl('package:common_package/annotations/auto_route_page.dart#AutoRoutePage');
+  static final _typeChecker = TypeChecker.fromUrl(
+    'package:common_package/annotations/auto_route_page.dart#AutoRoutePage',
+  );
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -31,15 +33,15 @@ class AggregatingAppRouteBuilder implements Builder {
           final readerAnnotation = ConstantReader(annotation);
 
           final customPath = readerAnnotation.peek('path')?.stringValue;
-
-          final routePath = customPath ?? '/${className.replaceAll('Screen', '').toLowerCase()}';
+          final routePath =
+              customPath ?? '/${className.replaceAll('Screen', '').toLowerCase()}';
 
           final importPath = input.path.replaceFirst('lib/', '');
           imports.add("import 'package:${buildStep.inputId.package}/$importPath';");
 
           final constructor = element.constructors.first;
-
-          final parameters = constructor.formalParameters.where((p) => p.name != 'key').toList();
+          final parameters =
+              constructor.formalParameters.where((p) => p.name != 'key').toList();
 
           if (parameters.isEmpty) {
             cases.add('''
@@ -50,7 +52,23 @@ class AggregatingAppRouteBuilder implements Builder {
         );
 ''');
           } else {
-            // Screen عندها parameters فعلية
+            final firstParamType = parameters.first.type;
+            final firstParamLibraryUri =
+                firstParamType.element?.library?.uri;
+            if (firstParamLibraryUri != null &&
+                firstParamLibraryUri.scheme == 'package' &&
+                firstParamLibraryUri.pathSegments.isNotEmpty &&
+                firstParamLibraryUri.pathSegments.first ==
+                    buildStep.inputId.package) {
+              final typeImportPath =
+                  firstParamLibraryUri.pathSegments.skip(1).join('/');
+              if (typeImportPath.isNotEmpty) {
+                imports.add(
+                  "import 'package:${buildStep.inputId.package}/$typeImportPath';",
+                );
+              }
+            }
+
             final paramAssignments = parameters
                 .map((p) {
                   final paramName = p.name;
@@ -73,13 +91,12 @@ class AggregatingAppRouteBuilder implements Builder {
           }
         }
       } catch (e) {
-        // Skip files that cannot be parsed as libraries (e.g., part files, empty files, syntax errors)
+        // Skip files that cannot be parsed as libraries (e.g., part files or syntax errors).
         continue;
       }
     }
 
-    final output =
-        '''
+    final output = '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:flutter/material.dart';
@@ -107,7 +124,10 @@ ${cases.join()}
 }
 ''';
 
-    final outputId = AssetId(buildStep.inputId.package, 'lib/generated/app_routes.g.dart');
+    final outputId = AssetId(
+      buildStep.inputId.package,
+      'lib/generated/app_routes.g.dart',
+    );
 
     await buildStep.writeAsString(outputId, output);
   }

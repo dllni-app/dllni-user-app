@@ -7,6 +7,9 @@ import 'core/di/injection.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/realtime/cleaning_global_verification_gate_coordinator.dart';
 import 'core/routes/app_router.dart';
+import 'core/session/user_session_keys.dart';
+import 'core/session/user_session_prefs.dart';
+import 'features/auth/view/screens/login_screen.dart';
 import 'features/main/view/screens/main_screen.dart';
 
 class App extends StatefulWidget {
@@ -20,10 +23,12 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final CleaningGlobalVerificationGateCoordinator _verificationCoordinator;
+  late final bool _hasSavedToken;
 
   @override
   void initState() {
     super.initState();
+    _hasSavedToken = UserSessionPrefs.readString(UserSessionKeys.token) != null;
     unawaited(getIt<CleaningBookingPusherService>().ensureInitialized());
     _verificationCoordinator = CleaningGlobalVerificationGateCoordinator(
       navigatorKey: widget.navigatorKey,
@@ -47,7 +52,7 @@ class _AppState extends State<App> {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      home: const MainScreen(),
+      home: _hasSavedToken ? const MainScreen() : const LoginScreen(),
       theme: ThemeData(
         fontFamily: 'cairo',
         colorScheme: ColorScheme(

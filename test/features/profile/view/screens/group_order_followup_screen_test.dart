@@ -377,6 +377,7 @@ class _TestPusherManager extends PusherManager {
   Future<RealtimeListenerHandle> listen({
     required String channelName,
     Set<String>? eventNames,
+    RealtimeChannelErrorCallback? onChannelError,
     required RealtimeEventCallback onEvent,
   }) async {
     _listenersByChannel[channelName] = onEvent;

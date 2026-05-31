@@ -1,4 +1,4 @@
-import 'package:intl/intl.dart';
+import '../../../../core/utils/app_date_time_locale.dart';
 
 const String cleaningSecurityCodeDateTimePattern = 'yy-MM-dd HH:mm a';
 
@@ -6,12 +6,16 @@ String formatCleaningSecurityCodeDateTime(String? raw) {
   if (raw == null || raw.trim().isEmpty) return '';
   final parsed = DateTime.tryParse(raw.trim());
   if (parsed == null) return raw.trim();
-  return DateFormat(cleaningSecurityCodeDateTimePattern, 'en').format(parsed.toLocal());
+  return AppDateTimeLocale.dateFormat(
+    cleaningSecurityCodeDateTimePattern,
+  ).format(parsed.toLocal());
 }
 
 String formatCleaningSecurityCodeDateTimeFromDateTime(DateTime? value) {
   if (value == null) return '';
-  return DateFormat(cleaningSecurityCodeDateTimePattern, 'en').format(value.toLocal());
+  return AppDateTimeLocale.dateFormat(
+    cleaningSecurityCodeDateTimePattern,
+  ).format(value.toLocal());
 }
 
 String formatCleaningBookingLabel({int? bookingId, String? bookingNumber}) {

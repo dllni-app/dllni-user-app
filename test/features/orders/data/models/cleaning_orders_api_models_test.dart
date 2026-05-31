@@ -18,6 +18,9 @@ void main() {
           'gender_preference': 'female',
           'cancellation_fee': '7.25',
           'total_price': 49.5,
+          'travel_distance_km': '3.456',
+          'admin_margin': 6.5,
+          'is_pricing_final': false,
           'tracking': <String, dynamic>{
             'started_travel_at': '2026-05-17T09:45:00Z',
             'address_latitude': '33.5',
@@ -62,6 +65,9 @@ void main() {
       expect(data.addressLatitude, 33.5);
       expect(data.addressLongitude, 36.3);
       expect(data.cancellationFee, 7.25);
+      expect(data.travelDistanceKm, 3.456);
+      expect(data.adminMargin, 6.5);
+      expect(data.isPricingFinal, isFalse);
       expect(data.customer?.name, 'Maya');
       expect(data.worker?.name, 'Omar');
       expect(data.services?.first.name, 'Main Service');
@@ -69,6 +75,9 @@ void main() {
       expect(data.billingPolicy?['id'], 12);
       expect((data.timeWarnings ?? <dynamic>[]).length, 1);
       expect((data.disputes ?? <dynamic>[]).length, 1);
+      expect(data.toCleaningOrderModel().travelDistanceKm, 3.456);
+      expect(data.toCleaningOrderModel().adminMargin, 6.5);
+      expect(data.toCleaningOrderModel().isPricingFinal, isFalse);
     });
 
     test(
@@ -87,5 +96,24 @@ void main() {
         );
       },
     );
+
+    test('parses new pricing fields on list payload', () {
+      final model = fetchCleaningOrdersModelFromJson(<String, dynamic>{
+        'data': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 301,
+            'travelDistanceKm': 1.25,
+            'adminMargin': '3.75',
+            'isPricingFinal': 1,
+          },
+        ],
+      });
+
+      final item = model.data.first;
+      expect(item.id, 301);
+      expect(item.travelDistanceKm, 1.25);
+      expect(item.adminMargin, 3.75);
+      expect(item.isPricingFinal, isTrue);
+    });
   });
 }

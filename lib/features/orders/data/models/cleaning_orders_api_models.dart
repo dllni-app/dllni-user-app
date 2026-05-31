@@ -41,6 +41,18 @@ double? _toDouble(dynamic value) {
   return double.tryParse(value?.toString() ?? '');
 }
 
+bool? _toBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) {
+    if (value == 1) return true;
+    if (value == 0) return false;
+  }
+  final normalized = value?.toString().trim().toLowerCase();
+  if (normalized == 'true' || normalized == '1') return true;
+  if (normalized == 'false' || normalized == '0') return false;
+  return null;
+}
+
 String? _toStringValue(dynamic value) {
   if (value == null) return null;
   final text = value.toString();
@@ -149,8 +161,11 @@ class CleaningOrderModel {
   final double? basePrice;
   final double? addonsTotal;
   final double? travelFee;
+  final double? travelDistanceKm;
+  final double? adminMargin;
   final double? cancellationFee;
   final double? totalPrice;
+  final bool? isPricingFinal;
   final String? scheduledDate;
   final String? scheduledTime;
   final CleaningGenderPreference genderPreference;
@@ -185,8 +200,11 @@ class CleaningOrderModel {
     this.basePrice,
     this.addonsTotal,
     this.travelFee,
+    this.travelDistanceKm,
+    this.adminMargin,
     this.cancellationFee,
     this.totalPrice,
+    this.isPricingFinal,
     this.scheduledDate,
     this.scheduledTime,
     this.genderPreference = CleaningGenderPreference.any,
@@ -252,11 +270,20 @@ class CleaningOrderModel {
         _pick(m, const <String>['addonsTotal', 'addons_total']),
       ),
       travelFee: _toDouble(_pick(m, const <String>['travelFee', 'travel_fee'])),
+      travelDistanceKm: _toDouble(
+        _pick(m, const <String>['travelDistanceKm', 'travel_distance_km']),
+      ),
+      adminMargin: _toDouble(
+        _pick(m, const <String>['adminMargin', 'admin_margin']),
+      ),
       cancellationFee: _toDouble(
         _pick(m, const <String>['cancellationFee', 'cancellation_fee']),
       ),
       totalPrice: _toDouble(
         _pick(m, const <String>['totalPrice', 'total_price']),
+      ),
+      isPricingFinal: _toBool(
+        _pick(m, const <String>['isPricingFinal', 'is_pricing_final']),
       ),
       scheduledDate: _toStringValue(
         _pick(m, const <String>['scheduledDate', 'scheduled_date']),
@@ -330,8 +357,11 @@ class CleaningOrderDetailModel {
   final double? basePrice;
   final double? addonsTotal;
   final double? travelFee;
+  final double? travelDistanceKm;
+  final double? adminMargin;
   final double? cancellationFee;
   final double? totalPrice;
+  final bool? isPricingFinal;
   final String? scheduledDate;
   final String? scheduledTime;
   final CleaningGenderPreference genderPreference;
@@ -368,8 +398,11 @@ class CleaningOrderDetailModel {
     this.basePrice,
     this.addonsTotal,
     this.travelFee,
+    this.travelDistanceKm,
+    this.adminMargin,
     this.cancellationFee,
     this.totalPrice,
+    this.isPricingFinal,
     this.scheduledDate,
     this.scheduledTime,
     this.genderPreference = CleaningGenderPreference.any,
@@ -441,11 +474,20 @@ class CleaningOrderDetailModel {
         _pick(m, const <String>['addonsTotal', 'addons_total']),
       ),
       travelFee: _toDouble(_pick(m, const <String>['travelFee', 'travel_fee'])),
+      travelDistanceKm: _toDouble(
+        _pick(m, const <String>['travelDistanceKm', 'travel_distance_km']),
+      ),
+      adminMargin: _toDouble(
+        _pick(m, const <String>['adminMargin', 'admin_margin']),
+      ),
       cancellationFee: _toDouble(
         _pick(m, const <String>['cancellationFee', 'cancellation_fee']),
       ),
       totalPrice: _toDouble(
         _pick(m, const <String>['totalPrice', 'total_price']),
+      ),
+      isPricingFinal: _toBool(
+        _pick(m, const <String>['isPricingFinal', 'is_pricing_final']),
       ),
       scheduledDate: _toStringValue(
         _pick(m, const <String>['scheduledDate', 'scheduled_date']),
@@ -517,8 +559,11 @@ class CleaningOrderDetailModel {
       basePrice: basePrice,
       addonsTotal: addonsTotal,
       travelFee: travelFee,
+      travelDistanceKm: travelDistanceKm,
+      adminMargin: adminMargin,
       cancellationFee: cancellationFee,
       totalPrice: totalPrice,
+      isPricingFinal: isPricingFinal,
       scheduledDate: scheduledDate,
       scheduledTime: scheduledTime,
       genderPreference: genderPreference,

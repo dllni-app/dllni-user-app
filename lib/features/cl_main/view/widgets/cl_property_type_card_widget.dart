@@ -4,12 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/cl_main_route_args.dart';
 
 class ClPropertyTypeCardWidget extends StatelessWidget {
-  const ClPropertyTypeCardWidget({
-    required this.title,
-    required this.icon,
-    required this.args,
-    super.key,
-  });
+  const ClPropertyTypeCardWidget({required this.title, required this.icon, required this.args, super.key});
 
   final String title;
   final String icon;
@@ -19,7 +14,7 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: (){
+      onTap: () {
         context.pushRoute('/clmainhomedescription', arguments: args);
       },
       child: Container(
@@ -38,7 +33,7 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
               padding: EdgeInsetsDirectional.symmetric(vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [AppText.labelLarge(title, fontWeight: FontWeight.w600)],
+                children: [AppText.bodyMedium(title, fontWeight: FontWeight.w700, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis)],
               ),
             ),
           ],

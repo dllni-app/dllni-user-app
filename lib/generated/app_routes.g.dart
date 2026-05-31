@@ -5,9 +5,14 @@ import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/register_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_home_description_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_description_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/data/cl_main_route_args.dart';
+import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_service_schedule_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_profile_detail_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/data/cl_worker_profile_mock_data.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_reviews_all_screen.dart';
 import 'package:dllni_user_app/features/main/view/screens/main_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_details_screen.dart';
@@ -23,6 +28,7 @@ import 'package:dllni_user_app/features/profile/view/screens/group_order_followu
 import 'package:dllni_user_app/features/profile/view/screens/group_order_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_args.dart';
 import 'package:dllni_user_app/features/profile/view/screens/my_addresses_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/notifications_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/order_voting_screen.dart';
@@ -82,11 +88,30 @@ class GeneratedAppRoutes {
           builder: (_) => ClMainHomeDescriptionScreen(),
           settings: settings,
         );
+      case '/clmainoccasiondescription':
+        if (args is ClMainOccasionDescriptionArgs?) {
+          return MaterialPageRoute(
+            builder: (_) => ClMainOccasionDescriptionScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/clmainoccasionschedule':
+        if (args is ClMainOccasionScheduleArgs?) {
+          return MaterialPageRoute(
+            builder: (_) => ClMainOccasionScheduleScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/clmain':
-        return MaterialPageRoute(
-          builder: (_) => ClMainScreen(),
-          settings: settings,
-        );
+        if (args is ClMainBloc?) {
+          return MaterialPageRoute(
+            builder: (_) => ClMainScreen(bloc: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/clmainserviceschedule':
         return MaterialPageRoute(
           builder: (_) => ClMainServiceScheduleScreen(),

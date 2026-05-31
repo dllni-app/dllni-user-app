@@ -28,6 +28,8 @@ import '../../features/cl_main/domain/usecases/create_cleaning_order_use_case.da
     as _i620;
 import '../../features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart'
     as _i762;
+import '../../features/cl_main/domain/usecases/get_cleaning_services_use_case.dart'
+    as _i895;
 import '../../features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart'
     as _i491;
 import '../../features/cl_main/view/manager/bloc/cl_main_bloc.dart' as _i362;
@@ -60,7 +62,7 @@ import '../../features/orders/domain/usecases/fetch_cleaning_order_details_use_c
 import '../../features/orders/domain/usecases/fetch_cleaning_orders_use_case.dart'
     as _i382;
 import '../../features/orders/domain/usecases/fetch_cleaning_worker_profile_use_case.dart'
-    as _i1100;
+    as _i891;
 import '../../features/orders/domain/usecases/fetch_order_details_use_case.dart'
     as _i438;
 import '../../features/orders/domain/usecases/fetch_orders_use_case.dart'
@@ -641,13 +643,13 @@ _i174.GetIt $initGetIt(
       ordersRepo: gh<_i132.OrdersRepo>(),
     ),
   );
-  gh.lazySingleton<_i1100.FetchCleaningWorkerProfileUseCase>(
-    () => _i1100.FetchCleaningWorkerProfileUseCase(
-      ordersRepo: gh<_i132.OrdersRepo>(),
-    ),
-  );
   gh.lazySingleton<_i382.FetchCleaningOrdersUseCase>(
     () => _i382.FetchCleaningOrdersUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
+  );
+  gh.lazySingleton<_i891.FetchCleaningWorkerProfileUseCase>(
+    () => _i891.FetchCleaningWorkerProfileUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
   );
   gh.lazySingleton<_i438.FetchOrderDetailsUseCase>(
     () => _i438.FetchOrderDetailsUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
@@ -796,6 +798,9 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i762.EstimateCleaningPriceUseCase>(
     () =>
         _i762.EstimateCleaningPriceUseCase(clMainRepo: gh<_i342.ClMainRepo>()),
+  );
+  gh.lazySingleton<_i895.GetCleaningServicesUseCase>(
+    () => _i895.GetCleaningServicesUseCase(clMainRepo: gh<_i342.ClMainRepo>()),
   );
   gh.lazySingleton<_i491.GetPreviousCleaningWorkersUseCase>(
     () => _i491.GetPreviousCleaningWorkersUseCase(
@@ -1031,14 +1036,6 @@ _i174.GetIt $initGetIt(
       gh<_i992.AddShoppingListToCartUseCase>(),
     ),
   );
-  gh.factory<_i362.ClMainBloc>(
-    () => _i362.ClMainBloc(
-      estimateCleaningPriceUseCase: gh<_i762.EstimateCleaningPriceUseCase>(),
-      getPreviousCleaningWorkersUseCase:
-          gh<_i491.GetPreviousCleaningWorkersUseCase>(),
-      createCleaningOrderUseCase: gh<_i620.CreateCleaningOrderUseCase>(),
-    ),
-  );
   gh.lazySingleton<_i37.LoginUseCase>(
     () => _i37.LoginUseCase(authRepo: gh<_i976.AuthRepo>()),
   );
@@ -1052,6 +1049,15 @@ _i174.GetIt $initGetIt(
       gh<_i426.UserLocationService>(),
       fetchRestaurantProductsSearchUseCase:
           gh<_i526.FetchRestaurantProductsSearchUseCase>(),
+    ),
+  );
+  gh.factory<_i362.ClMainBloc>(
+    () => _i362.ClMainBloc(
+      estimateCleaningPriceUseCase: gh<_i762.EstimateCleaningPriceUseCase>(),
+      getCleaningServicesUseCase: gh<_i895.GetCleaningServicesUseCase>(),
+      getPreviousCleaningWorkersUseCase:
+          gh<_i491.GetPreviousCleaningWorkersUseCase>(),
+      createCleaningOrderUseCase: gh<_i620.CreateCleaningOrderUseCase>(),
     ),
   );
   gh.factory<_i836.RsHomeBloc>(

@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../utils/app_date_time_locale.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/app_gradients.dart';
 import '../../../../core/themes/app_shadows.dart';
@@ -230,7 +231,7 @@ class _AppDatePickerState extends State<AppDatePicker> {
                 onTap: () async {
                   DateTime? date = await showDatePicker(
                     context: context,
-                    locale: const Locale('en'),
+                    locale: AppDateTimeLocale.locale,
                     firstDate: DateTime.now(),
                     lastDate: DateTime(2030),
                     builder: (BuildContext context, Widget? child) {

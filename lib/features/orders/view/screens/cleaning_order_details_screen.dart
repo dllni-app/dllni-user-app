@@ -11,10 +11,10 @@ import 'package:dllni_user_app/core/realtime/pusher_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../cl_main/view/widgets/cl_service_address_section_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_day_preview_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_section_card_widget.dart';
@@ -702,7 +702,7 @@ class _CleaningOrderDetailsScreenState
     if (rawDate == null || rawDate.isEmpty) return '-';
     final date = DateTime.tryParse(rawDate);
     if (date == null) return '-';
-    return DateFormat('d MMM yyyy', 'en').format(date);
+    return AppDateTimeLocale.dateFormat('d MMM yyyy').format(date);
   }
 
   Widget _card({required Widget child, EdgeInsetsGeometry? padding}) {

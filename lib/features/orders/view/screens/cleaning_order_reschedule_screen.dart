@@ -5,9 +5,9 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
+import 'package:dllni_user_app/core/utils/app_date_time_locale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
@@ -144,7 +144,7 @@ class _CleaningOrderRescheduleScreenState
     final value = await AppPickers.showAppDatePicker(context: context);
     if (value.isEmpty) return;
     setState(() {
-      _selectedDate = DateFormat('yyyy-MM-dd', 'en').parse(value);
+      _selectedDate = AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
     });
   }
 
@@ -221,7 +221,9 @@ class _CleaningOrderRescheduleScreenState
         livingRoomSize: details.livingRoomSize!,
         address: details.address ?? '',
         locationName: order.locationName ?? 'المنزل',
-        scheduledDate: DateFormat('yyyy-MM-dd', 'en').format(_selectedDate),
+        scheduledDate: AppDateTimeLocale.dateFormat(
+          'yyyy-MM-dd',
+        ).format(_selectedDate),
         scheduledTime: _fromTimeController.text,
         addressLatitude: order.addressLatitude!,
         addressLongitude: order.addressLongitude!,
@@ -265,8 +267,10 @@ class _CleaningOrderRescheduleScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = DateFormat('EEEE', 'en').format(_selectedDate);
-    final dayDate = DateFormat('d MMM yyyy', 'en').format(_selectedDate);
+    final dayAr = AppDateTimeLocale.dateFormat('EEEE').format(_selectedDate);
+    final dayDate = AppDateTimeLocale.dateFormat(
+      'd MMM yyyy',
+    ).format(_selectedDate);
     final isSaveDisabled = _isSaving || _missingDataMessage != null;
 
     return BlocProvider.value(

@@ -1,7 +1,7 @@
-import 'package:intl/intl.dart';
+import '../utils/app_date_time_locale.dart';
 
 extension NumExtensions on num {
   String formatWithComma() {
-    return NumberFormat.decimalPattern().format(this);
+    return AppDateTimeLocale.decimalPattern().format(this);
   }
 }

@@ -5,10 +5,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../../core/utils/app_pickers.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/app_text_fields.dart';
@@ -47,7 +47,7 @@ String _arPeriodTitle(int index) {
 
 String _formatTimeOfDay(TimeOfDay t) {
   final dt = DateTime(1970, 1, 1, t.hour, t.minute);
-  return DateFormat('hh:mm a', 'en').format(dt);
+  return AppDateTimeLocale.dateFormat('hh:mm a').format(dt);
 }
 
 FrequencyType? _frequencyTypeFromApi(String? t) {

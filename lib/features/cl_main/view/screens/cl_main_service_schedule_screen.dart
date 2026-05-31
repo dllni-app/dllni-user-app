@@ -2,9 +2,9 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
@@ -13,6 +13,7 @@ import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
+import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
@@ -31,16 +32,21 @@ class ClMainServiceScheduleScreen extends StatefulWidget {
       _ClMainServiceScheduleScreenState();
 }
 
-class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScreen> {
+class _ClMainServiceScheduleScreenState
+    extends State<ClMainServiceScheduleScreen> {
   ClMainBloc? _bloc;
   late DateTime _selectedDate;
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
+  late TextEditingController _couponController;
   ClMainScheduleArgs? _routeArgs;
   bool _didReadArgs = false;
   AddressListItem? _selectedAddress;
   CleaningGenderPreference _selectedGenderPreference =
       CleaningGenderPreference.any;
+  ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
+  String? _couponMessage;
+  String? _appliedCouponCode;
 
   @override
   void initState() {
@@ -48,6 +54,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
     _selectedDate = DateTime.now().add(Duration(days: 1));
     _fromTimeController = TextEditingController(text: '09:00');
     _toTimeController = TextEditingController();
+    _couponController = TextEditingController();
   }
 
   @override
@@ -55,10 +62,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
     super.didChangeDependencies();
     if (_didReadArgs) return;
     _didReadArgs = true;
-    final args = ModalRoute
-        .of(context)
-        ?.settings
-        .arguments;
+    final args = ModalRoute.of(context)?.settings.arguments;
     if (args is ClMainScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
@@ -76,6 +80,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
   void dispose() {
     _fromTimeController.dispose();
     _toTimeController.dispose();
+    _couponController.dispose();
     super.dispose();
   }
 
@@ -86,7 +91,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
     );
     if (value.isEmpty) return;
     setState(() {
-      _selectedDate = DateFormat('yyyy-MM-dd', 'en').parse(value);
+      _selectedDate = AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
     });
   }
 
@@ -120,6 +125,41 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
     }
   }
 
+  Future<void> _applyCoupon(String code) async {
+    if (code.isEmpty) {
+      setState(() {
+        _couponStatus = ClCouponUiStatus.failed;
+        _couponMessage = 'يرجى إدخال كود الحسم أولاً.';
+      });
+      return;
+    }
+
+    setState(() {
+      _couponStatus = ClCouponUiStatus.loading;
+      _couponMessage = null;
+    });
+
+    await Future<void>.delayed(const Duration(milliseconds: 550));
+    if (!mounted) return;
+
+    final normalized = code.trim().toLowerCase();
+    if (normalized == 'invalid' || normalized == 'expired') {
+      setState(() {
+        _couponStatus = ClCouponUiStatus.failed;
+        _couponMessage = 'الكوبون غير صالح حالياً.';
+        _appliedCouponCode = null;
+      });
+      return;
+    }
+
+    final discountText = normalized.contains('20') ? '20%' : '10%';
+    setState(() {
+      _couponStatus = ClCouponUiStatus.success;
+      _couponMessage = 'تم تطبيق الكوبون بنجاح: خصم $discountText (تجريبي)';
+      _appliedCouponCode = code;
+    });
+  }
+
   void _onSubmitPressed(ClMainState state) {
     final args = _routeArgs;
     final bloc = _bloc;
@@ -145,12 +185,16 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
           bedrooms: args.bedrooms,
           rooms: args.rooms,
           bathrooms: args.bathrooms,
+          balconies: args.roomSizeBreakdown.legacyBalconiesCount,
           livingRoomSize: args.livingRoomSize,
+          roomSizeBreakdown: args.roomSizeBreakdown,
           address:
-          selectedAddress?.line1 ??
+              selectedAddress?.line1 ??
               'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
           locationName: selectedAddress?.label ?? 'المنزل',
-          scheduledDate: DateFormat('yyyy-MM-dd', 'en').format(_selectedDate),
+          scheduledDate: AppDateTimeLocale.dateFormat(
+            'yyyy-MM-dd',
+          ).format(_selectedDate),
           scheduledTime: _fromTimeController.text,
           addressLatitude: args.addressLatitude,
           addressLongitude: args.addressLongitude,
@@ -164,8 +208,10 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = DateFormat('EEEE', 'en').format(_selectedDate);
-    final dayDate = DateFormat('d MMM yyyy', 'en').format(_selectedDate);
+    final dayAr = AppDateTimeLocale.dateFormat('EEEE').format(_selectedDate);
+    final dayDate = AppDateTimeLocale.dateFormat(
+      'd MMM yyyy',
+    ).format(_selectedDate);
     final estimate = _routeArgs?.estimate;
     final bloc = _bloc;
 
@@ -180,7 +226,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
-        previous.createOrderStatus != current.createOrderStatus ||
+            previous.createOrderStatus != current.createOrderStatus ||
             previous.previousWorkersStatus != current.previousWorkersStatus,
         listener: (context, state) {
           if (state.createOrderStatus == BlocStatus.loading ||
@@ -238,7 +284,7 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                           ClServiceAddressSectionWidget(
                             locationName: _selectedAddress?.label ?? 'المنزل',
                             address:
-                            _selectedAddress?.line1 ??
+                                _selectedAddress?.line1 ??
                                 'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
                             onChangeTap: _selectAddress,
                           ),
@@ -247,10 +293,10 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                             workers: state.previousWorkers.list,
                             selectedWorkerId: state.selectedWorkerId,
                             isLoading:
-                            state.previousWorkersStatus ==
+                                state.previousWorkersStatus ==
                                 BlocStatus.loading,
                             errorMessage:
-                            state.previousWorkersStatus == BlocStatus.failed
+                                state.previousWorkersStatus == BlocStatus.failed
                                 ? state.errorMessage
                                 : null,
                             onSelectWorker: (workerId) {
@@ -262,9 +308,9 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                               context.pushRoute(
                                 '/clworkerprofiledetail',
                                 arguments:
-                                WorkerProfileRouteArgs.fromPreviousWorker(
-                                  worker,
-                                ),
+                                    WorkerProfileRouteArgs.fromPreviousWorker(
+                                      worker,
+                                    ),
                               );
                             },
                           ),
@@ -278,11 +324,32 @@ class _ClMainServiceScheduleScreenState extends State<ClMainServiceScheduleScree
                             },
                           ),
                           const SizedBox(height: 12),
+                          ClServiceCouponSectionWidget(
+                            couponController: _couponController,
+                            status: _couponStatus,
+                            message: _couponMessage,
+                            onApply: _applyCoupon,
+                          ),
+                          if (_appliedCouponCode != null) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: AppText.bodySmall(
+                                'الكوبون المطبق: $_appliedCouponCode',
+                                color: const Color(0xFF047857),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
                           ClServiceOrderSummarySectionWidget(
                             basePrice: estimate?.pricing?.basePrice ?? 0,
                             travelFee: estimate?.pricing?.travelFee ?? 0,
                             addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
                             totalPrice: estimate?.pricing?.totalPrice ?? 0,
+                            distanceKm: estimate?.pricing?.distanceKm,
+                            adminMargin: estimate?.pricing?.adminMargin,
+                            isPricingFinal: estimate?.pricing?.isPricingFinal,
                             currency: estimate?.pricing?.currency ?? 'SYP',
                           ),
                         ],
