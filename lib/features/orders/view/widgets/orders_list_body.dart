@@ -153,6 +153,8 @@ class OrdersListBody extends StatelessWidget {
                         builder: (_) => CleaningCancelReasonDialog(
                           orderId: orderId,
                           bloc: context.read<OrdersBloc>(),
+                          scheduledDate: cleaningOrder.scheduledDate,
+                          scheduledTime: cleaningOrder.scheduledTime,
                         ),
                       );
                     },

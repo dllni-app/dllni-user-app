@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../domain/models/cl_worker_room_assignment_result.dart';
+
 double? _toDouble(dynamic value) {
   if (value is double) return value;
   if (value is num) return value.toDouble();
@@ -42,12 +44,14 @@ class EstimatePriceResponseModel {
   final EstimatePricingModel? pricing;
   final EstimateQuoteModel? quote;
   final EstimateRecommendationModel? recommendation;
+  final List<CleaningWorkerRoomAssignment> workerRoomAssignments;
 
   const EstimatePriceResponseModel({
     this.size,
     this.pricing,
     this.quote,
     this.recommendation,
+    this.workerRoomAssignments = const [],
   });
 
   factory EstimatePriceResponseModel.fromJson(Map<String, dynamic> json) {
@@ -68,6 +72,9 @@ class EstimatePriceResponseModel {
               json['recommendation'] as Map<String, dynamic>,
             )
           : null,
+      workerRoomAssignments: parseWorkerRoomAssignments(
+        json['workerRoomAssignments'] ?? json['worker_room_assignments'],
+      ),
     );
   }
 }

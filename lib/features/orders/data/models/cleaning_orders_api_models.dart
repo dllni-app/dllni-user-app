@@ -182,6 +182,9 @@ class CleaningOrderModel {
   final Map<String, dynamic>? billingPolicy;
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
+  final String? assignmentMode;
+  final int? numberOfWorkers;
+  final CleaningWorkerAcceptanceModel? workerAcceptance;
 
   CleaningOrderModel({
     this.id,
@@ -221,6 +224,9 @@ class CleaningOrderModel {
     this.billingPolicy,
     this.timeWarnings,
     this.disputes,
+    this.assignmentMode,
+    this.numberOfWorkers,
+    this.workerAcceptance,
   });
 
   factory CleaningOrderModel.fromJson(Map<String, dynamic> json) {
@@ -334,7 +340,31 @@ class CleaningOrderModel {
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
       timeWarnings: _toDynamicList(m['timeWarnings'] ?? m['time_warnings']),
       disputes: _toDynamicList(m['disputes']),
+      assignmentMode: _toStringValue(
+        _pick(m, const <String>['assignmentMode', 'assignment_mode']),
+      ),
+      numberOfWorkers: _toInt(
+        _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
+      ),
+      workerAcceptance: m['workerAcceptance'] == null &&
+              m['worker_acceptance'] == null
+          ? null
+          : CleaningWorkerAcceptanceModel.fromJson(
+              _toMap(m['workerAcceptance'] ?? m['worker_acceptance']),
+            ),
     );
+  }
+
+  bool get isMultiWorkerTeam =>
+      (assignmentMode ?? '').toLowerCase() == 'open_count' ||
+      (numberOfWorkers ?? 1) > 1;
+
+  bool get isSearchingForWorkers {
+    final statusNorm = (status ?? '').toLowerCase();
+    if (statusNorm != CleaningBookingStatus.pending) return false;
+    final acceptance = workerAcceptance;
+    if (acceptance == null) return isMultiWorkerTeam;
+    return acceptance.isFulfilled != true;
   }
 }
 
@@ -378,6 +408,13 @@ class CleaningOrderDetailModel {
   final Map<String, dynamic>? billingPolicy;
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
+  final String? assignmentMode;
+  final int? numberOfWorkers;
+  final CleaningWorkerAcceptanceModel? workerAcceptance;
+  final CleaningOrderWorkerModel? preferredWorker;
+  final List<CleaningWorkerAssignmentModel>? workerAssignments;
+  final List<CleaningRoomAssignmentModel>? roomAssignments;
+  final CleaningMyAssignmentModel? myAssignment;
 
   CleaningOrderDetailModel({
     this.id,
@@ -419,6 +456,13 @@ class CleaningOrderDetailModel {
     this.billingPolicy,
     this.timeWarnings,
     this.disputes,
+    this.assignmentMode,
+    this.numberOfWorkers,
+    this.workerAcceptance,
+    this.preferredWorker,
+    this.workerAssignments,
+    this.roomAssignments,
+    this.myAssignment,
   });
 
   factory CleaningOrderDetailModel.fromJson(Map<String, dynamic> json) {
@@ -538,7 +582,59 @@ class CleaningOrderDetailModel {
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
       timeWarnings: _toDynamicList(m['timeWarnings'] ?? m['time_warnings']),
       disputes: _toDynamicList(m['disputes']),
+      assignmentMode: _toStringValue(
+        _pick(m, const <String>['assignmentMode', 'assignment_mode']),
+      ),
+      numberOfWorkers: _toInt(
+        _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
+      ),
+      workerAcceptance: m['workerAcceptance'] == null &&
+              m['worker_acceptance'] == null
+          ? null
+          : CleaningWorkerAcceptanceModel.fromJson(
+              _toMap(m['workerAcceptance'] ?? m['worker_acceptance']),
+            ),
+      preferredWorker: m['preferredWorker'] == null &&
+              m['preferred_worker'] == null
+          ? null
+          : CleaningOrderWorkerModel.fromJson(
+              _toMap(m['preferredWorker'] ?? m['preferred_worker']),
+            ),
+      workerAssignments: _toMapList(
+        m['workerAssignments'] ?? m['worker_assignments'],
+      )
+          .map(CleaningWorkerAssignmentModel.fromJson)
+          .toList(growable: false),
+      roomAssignments: _toMapList(
+        m['roomAssignments'] ?? m['room_assignments'],
+      )
+          .map(CleaningRoomAssignmentModel.fromJson)
+          .toList(growable: false),
+      myAssignment: m['myAssignment'] == null && m['my_assignment'] == null
+          ? null
+          : CleaningMyAssignmentModel.fromJson(
+              _toMap(m['myAssignment'] ?? m['my_assignment']),
+            ),
     );
+  }
+
+  bool get isMultiWorkerTeam =>
+      (assignmentMode ?? '').toLowerCase() == 'open_count' ||
+      (numberOfWorkers ?? 1) > 1;
+
+  bool get isSearchingForWorkers {
+    final statusNorm = (status ?? '').toLowerCase();
+    if (statusNorm != CleaningBookingStatus.pending) return false;
+    final acceptance = workerAcceptance;
+    if (acceptance == null) return isMultiWorkerTeam;
+    return acceptance.isFulfilled != true;
+  }
+
+  List<CleaningWorkerAssignmentModel> get acceptedWorkerAssignments {
+    final assignments = workerAssignments ?? const [];
+    return assignments
+        .where((item) => (item.status ?? '').toLowerCase() == 'accepted')
+        .toList(growable: false);
   }
 
   CleaningOrderModel toCleaningOrderModel() {
@@ -580,6 +676,240 @@ class CleaningOrderDetailModel {
       billingPolicy: billingPolicy,
       timeWarnings: timeWarnings,
       disputes: disputes,
+      assignmentMode: assignmentMode,
+      numberOfWorkers: numberOfWorkers,
+      workerAcceptance: workerAcceptance,
+    );
+  }
+}
+
+class CleaningMyAssignmentModel {
+  final int? id;
+  final int? workerId;
+  final String? status;
+  final String? acceptedAt;
+  final int? roomCount;
+  final double? roomsWeight;
+  final double? serviceShareAmount;
+  final double? travelFee;
+  final double? adminMarginAmount;
+  final double? workerAmount;
+  final String? currency;
+  final List<int>? roomIds;
+
+  CleaningMyAssignmentModel({
+    this.id,
+    this.workerId,
+    this.status,
+    this.acceptedAt,
+    this.roomCount,
+    this.roomsWeight,
+    this.serviceShareAmount,
+    this.travelFee,
+    this.adminMarginAmount,
+    this.workerAmount,
+    this.currency,
+    this.roomIds,
+  });
+
+  factory CleaningMyAssignmentModel.fromJson(Map<String, dynamic> json) {
+    final roomIdsRaw = json['roomIds'] ?? json['room_ids'];
+    final roomIds = roomIdsRaw is List
+        ? roomIdsRaw.map((item) => _toInt(item)).whereType<int>().toList()
+        : null;
+
+    return CleaningMyAssignmentModel(
+      id: _toInt(_pick(json, const <String>['id'])),
+      workerId: _toInt(_pick(json, const <String>['workerId', 'worker_id'])),
+      status: _toStringValue(_pick(json, const <String>['status'])),
+      acceptedAt: _toStringValue(
+        _pick(json, const <String>['acceptedAt', 'accepted_at']),
+      ),
+      roomCount: _toInt(_pick(json, const <String>['roomCount', 'room_count'])),
+      roomsWeight: _toDouble(
+        _pick(json, const <String>['roomsWeight', 'rooms_weight']),
+      ),
+      serviceShareAmount: _toDouble(
+        _pick(
+          json,
+          const <String>['serviceShareAmount', 'service_share_amount'],
+        ),
+      ),
+      travelFee: _toDouble(_pick(json, const <String>['travelFee', 'travel_fee'])),
+      adminMarginAmount: _toDouble(
+        _pick(json, const <String>['adminMarginAmount', 'admin_margin_amount']),
+      ),
+      workerAmount: _toDouble(
+        _pick(json, const <String>['workerAmount', 'worker_amount']),
+      ),
+      currency: _toStringValue(_pick(json, const <String>['currency'])),
+      roomIds: roomIds,
+    );
+  }
+}
+
+class CleaningWorkerAcceptanceModel {
+  final int? required;
+  final int? accepted;
+  final int? remaining;
+  final bool? isFulfilled;
+
+  CleaningWorkerAcceptanceModel({
+    this.required,
+    this.accepted,
+    this.remaining,
+    this.isFulfilled,
+  });
+
+  factory CleaningWorkerAcceptanceModel.fromJson(Map<String, dynamic> json) {
+    return CleaningWorkerAcceptanceModel(
+      required: _toInt(_pick(json, const <String>['required'])),
+      accepted: _toInt(_pick(json, const <String>['accepted'])),
+      remaining: _toInt(_pick(json, const <String>['remaining'])),
+      isFulfilled: _toBool(
+        _pick(json, const <String>['isFulfilled', 'is_fulfilled']),
+      ),
+    );
+  }
+}
+
+class CleaningWorkerAssignmentModel {
+  final int? id;
+  final int? workerId;
+  final String? status;
+  final String? acceptedAt;
+  final int? roomCount;
+  final double? roomsWeight;
+  final double? serviceShareAmount;
+  final double? travelFee;
+  final double? adminMarginAmount;
+  final double? workerAmount;
+  final String? currency;
+  final List<int>? roomIds;
+  final CleaningOrderWorkerModel? worker;
+
+  CleaningWorkerAssignmentModel({
+    this.id,
+    this.workerId,
+    this.status,
+    this.acceptedAt,
+    this.roomCount,
+    this.roomsWeight,
+    this.serviceShareAmount,
+    this.travelFee,
+    this.adminMarginAmount,
+    this.workerAmount,
+    this.currency,
+    this.roomIds,
+    this.worker,
+  });
+
+  factory CleaningWorkerAssignmentModel.fromJson(Map<String, dynamic> json) {
+    final roomIdsRaw = json['roomIds'] ?? json['room_ids'];
+    final roomIds = roomIdsRaw is List
+        ? roomIdsRaw.map((item) => _toInt(item)).whereType<int>().toList()
+        : null;
+
+    return CleaningWorkerAssignmentModel(
+      id: _toInt(_pick(json, const <String>['id'])),
+      workerId: _toInt(_pick(json, const <String>['workerId', 'worker_id'])),
+      status: _toStringValue(_pick(json, const <String>['status'])),
+      acceptedAt: _toStringValue(
+        _pick(json, const <String>['acceptedAt', 'accepted_at']),
+      ),
+      roomCount: _toInt(_pick(json, const <String>['roomCount', 'room_count'])),
+      roomsWeight: _toDouble(
+        _pick(json, const <String>['roomsWeight', 'rooms_weight']),
+      ),
+      serviceShareAmount: _toDouble(
+        _pick(
+          json,
+          const <String>['serviceShareAmount', 'service_share_amount'],
+        ),
+      ),
+      travelFee: _toDouble(_pick(json, const <String>['travelFee', 'travel_fee'])),
+      adminMarginAmount: _toDouble(
+        _pick(json, const <String>['adminMarginAmount', 'admin_margin_amount']),
+      ),
+      workerAmount: _toDouble(
+        _pick(json, const <String>['workerAmount', 'worker_amount']),
+      ),
+      currency: _toStringValue(_pick(json, const <String>['currency'])),
+      roomIds: roomIds,
+      worker: json['worker'] == null
+          ? null
+          : CleaningOrderWorkerModel.fromJson(_toMap(json['worker'])),
+    );
+  }
+}
+
+class CleaningRoomAssignmentModel {
+  final int? id;
+  final String? roomKey;
+  final String? roomType;
+  final String? roomSize;
+  final String? displayLabel;
+  final double? weight;
+  final int? plannedWorkerSlot;
+  final int? plannedPreferredWorkerId;
+  final int? assignedWorkerId;
+  final String? assignmentSource;
+  final CleaningOrderWorkerModel? assignedWorker;
+
+  CleaningRoomAssignmentModel({
+    this.id,
+    this.roomKey,
+    this.roomType,
+    this.roomSize,
+    this.displayLabel,
+    this.weight,
+    this.plannedWorkerSlot,
+    this.plannedPreferredWorkerId,
+    this.assignedWorkerId,
+    this.assignmentSource,
+    this.assignedWorker,
+  });
+
+  factory CleaningRoomAssignmentModel.fromJson(Map<String, dynamic> json) {
+    return CleaningRoomAssignmentModel(
+      id: _toInt(_pick(json, const <String>['id'])),
+      roomKey: _toStringValue(
+        _pick(json, const <String>['roomKey', 'room_key']),
+      ),
+      roomType: _toStringValue(
+        _pick(json, const <String>['roomType', 'room_type']),
+      ),
+      roomSize: _toStringValue(
+        _pick(json, const <String>['roomSize', 'room_size']),
+      ),
+      displayLabel: _toStringValue(
+        _pick(json, const <String>['displayLabel', 'display_label']),
+      ),
+      weight: _toDouble(_pick(json, const <String>['weight'])),
+      plannedWorkerSlot: _toInt(
+        _pick(json, const <String>[
+          'plannedWorkerSlot',
+          'planned_worker_slot',
+        ]),
+      ),
+      plannedPreferredWorkerId: _toInt(
+        _pick(json, const <String>[
+          'plannedPreferredWorkerId',
+          'planned_preferred_worker_id',
+        ]),
+      ),
+      assignedWorkerId: _toInt(
+        _pick(json, const <String>['assignedWorkerId', 'assigned_worker_id']),
+      ),
+      assignmentSource: _toStringValue(
+        _pick(json, const <String>['assignmentSource', 'assignment_source']),
+      ),
+      assignedWorker: json['assignedWorker'] == null &&
+              json['assigned_worker'] == null
+          ? null
+          : CleaningOrderWorkerModel.fromJson(
+              _toMap(json['assignedWorker'] ?? json['assigned_worker']),
+            ),
     );
   }
 }

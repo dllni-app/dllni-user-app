@@ -7,6 +7,10 @@ class ClMainState {
   final BlocStatus cleaningServicesStatus;
   final PaginationStateModel<PreviousWorkerModel> previousWorkers;
   final int? selectedWorkerId;
+  final CleaningAssignmentMode assignmentMode;
+  final int numberOfWorkers;
+  final Map<String, int> workerRoomAssignments;
+  final Map<String, List<String>> assignmentFieldErrors;
   final CreateCleaningOrderResponseModel? createOrderResult;
   final BlocStatus createOrderStatus;
   final String? errorMessage;
@@ -20,6 +24,10 @@ class ClMainState {
       perPage: 10,
     ),
     this.selectedWorkerId,
+    this.assignmentMode = CleaningAssignmentMode.preferredWorker,
+    this.numberOfWorkers = 1,
+    this.workerRoomAssignments = const <String, int>{},
+    this.assignmentFieldErrors = const <String, List<String>>{},
     this.createOrderResult,
     this.createOrderStatus = BlocStatus.init,
     this.errorMessage,
@@ -33,6 +41,12 @@ class ClMainState {
     PaginationStateModel<PreviousWorkerModel>? previousWorkers,
     int? selectedWorkerId,
     bool clearSelectedWorker = false,
+    CleaningAssignmentMode? assignmentMode,
+    int? numberOfWorkers,
+    Map<String, int>? workerRoomAssignments,
+    bool clearWorkerRoomAssignments = false,
+    Map<String, List<String>>? assignmentFieldErrors,
+    bool clearAssignmentFieldErrors = false,
     CreateCleaningOrderResponseModel? createOrderResult,
     BlocStatus? createOrderStatus,
     String? errorMessage,
@@ -48,6 +62,14 @@ class ClMainState {
       selectedWorkerId: clearSelectedWorker
           ? null
           : (selectedWorkerId ?? this.selectedWorkerId),
+      assignmentMode: assignmentMode ?? this.assignmentMode,
+      numberOfWorkers: numberOfWorkers ?? this.numberOfWorkers,
+      workerRoomAssignments: clearWorkerRoomAssignments
+          ? const <String, int>{}
+          : (workerRoomAssignments ?? this.workerRoomAssignments),
+      assignmentFieldErrors: clearAssignmentFieldErrors
+          ? const <String, List<String>>{}
+          : (assignmentFieldErrors ?? this.assignmentFieldErrors),
       createOrderResult: createOrderResult ?? this.createOrderResult,
       createOrderStatus: createOrderStatus ?? this.createOrderStatus,
       errorMessage: clearErrorMessage

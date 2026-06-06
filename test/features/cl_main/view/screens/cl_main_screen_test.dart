@@ -1,5 +1,6 @@
 import 'package:common_package/helpers/typedef.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dllni_user_app/features/cl_main/data/models/cleaning_banners_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/cleaning_services_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/estimate_price_response_model.dart';
@@ -7,6 +8,7 @@ import 'package:dllni_user_app/features/cl_main/data/models/previous_workers_res
 import 'package:dllni_user_app/features/cl_main/domain/repository/cl_main_repo.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
+import 'package:dllni_user_app/features/cl_main/domain/usecases/get_cleaning_banners_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/get_cleaning_services_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
@@ -46,6 +48,13 @@ class _FakeClMainRepo implements ClMainRepo {
   ) async {
     return const Right(CleaningServicesResponseModel());
   }
+
+  @override
+  DataResponse<CleaningBannersResponseModel> getCleaningBanners(
+    GetCleaningBannersParams params,
+  ) async {
+    return const Right(CleaningBannersResponseModel());
+  }
 }
 
 ClMainBloc _buildBloc() {
@@ -63,16 +72,25 @@ ClMainBloc _buildBloc() {
 }
 
 void main() {
-  testWidgets('shows service tabs and switches to occasions list', (
+  testWidgets('shows cleaning banner and switches to occasions list', (
     WidgetTester tester,
   ) async {
     final bloc = _buildBloc();
     addTearDown(bloc.close);
 
-    await tester.pumpWidget(
-      MaterialApp(home: ClMainScreen(bloc: bloc)),
-    );
+    await tester.pumpWidget(MaterialApp(home: ClMainScreen(bloc: bloc)));
+
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.byKey(const Key('cl_main_featured_banner_section')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('cl_main_featured_banner_page_view')),
+      findsOneWidget,
+    );
 
     expect(find.byKey(const Key('cl_main_cleaning_tab')), findsOneWidget);
     expect(find.byKey(const Key('cl_main_occasions_tab')), findsOneWidget);

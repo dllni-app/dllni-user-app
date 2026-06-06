@@ -20,6 +20,7 @@ class CleaningRealtimeContract {
   static const String completionDecisionMade = 'CompletionDecisionMade';
   static const String serviceExtensionRequested = 'ServiceExtensionRequested';
   static const String trackingUpdated = 'CleaningBookingTrackingUpdated';
+  static const String teamUpdated = 'cleaning_booking.team_updated';
 
   static const Map<String, String> legacyEventAliases = <String, String>{
     securityCodeIssued: awaitingStartVerification,
@@ -68,6 +69,7 @@ class CleaningRealtimeContract {
       completionDecisionMade,
       serviceExtensionRequested,
       trackingUpdated,
+      teamUpdated,
     };
     for (final eventName in canonicalEvents) {
       addAlias(eventName, eventName, overrideExisting: false);
@@ -95,7 +97,8 @@ class CleaningRealtimeContract {
         normalized == awaitingCustomerCompletion ||
         normalized == completionDecisionMade ||
         normalized == serviceExtensionRequested ||
-        normalized == trackingUpdated;
+        normalized == trackingUpdated ||
+        normalized == teamUpdated;
   }
 
   static bool isSecurityCodeReissuedEvent(String eventName) {

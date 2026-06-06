@@ -22,15 +22,35 @@ void main() {
       },
     );
 
+    test('includes corridor in totalRooms and serialization map', () {
+      const breakdown = CleaningRoomSizeBreakdown(
+        bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+        corridor: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
+      );
+
+      expect(breakdown.totalRooms, 2);
+      expect(breakdown.toJson(), {
+        'bedroom': {'small': 1, 'medium': 0, 'large': 0},
+        'bathroom': {'small': 0, 'medium': 0, 'large': 0},
+        'kitchen': {'small': 0, 'medium': 0, 'large': 0},
+        'living_room': {'small': 0, 'medium': 0, 'large': 0},
+        'balcony': {'small': 0, 'medium': 0, 'large': 0},
+        'corridor': {'small': 0, 'medium': 1, 'large': 0},
+      });
+    });
+
     test('serializes balcony buckets inside room_size_breakdown', () {
       const breakdown = CleaningRoomSizeBreakdown(
         balcony: CleaningRoomSizeBucket(small: 2, medium: 1, large: 0),
       );
 
-      expect(breakdown.toJson()['balcony'], {
-        'small': 2,
-        'medium': 1,
-        'large': 0,
+      expect(breakdown.toJson(), {
+        'bedroom': {'small': 0, 'medium': 0, 'large': 0},
+        'bathroom': {'small': 0, 'medium': 0, 'large': 0},
+        'kitchen': {'small': 0, 'medium': 0, 'large': 0},
+        'living_room': {'small': 0, 'medium': 0, 'large': 0},
+        'balcony': {'small': 2, 'medium': 1, 'large': 0},
+        'corridor': {'small': 0, 'medium': 0, 'large': 0},
       });
     });
 

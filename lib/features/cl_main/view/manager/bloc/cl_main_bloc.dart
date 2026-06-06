@@ -10,10 +10,12 @@ import '../../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
+import '../../../domain/models/cleaning_assignment_mode.dart';
 import '../../../data/models/cleaning_services_response_model.dart';
 import '../../../data/models/create_cleaning_order_response_model.dart';
 import '../../../data/models/estimate_price_response_model.dart';
 import '../../../data/models/previous_workers_response_model.dart';
+import '../../helpers/cl_worker_room_assignment_errors.dart';
 
 part 'cl_main_event.dart';
 part 'cl_main_state.dart';
@@ -38,6 +40,10 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       transformer: paginationEventTransformer(),
     );
     on<SetPreferredWorkerEvent>(_setPreferredWorker);
+    on<SetAssignmentModeEvent>(_setAssignmentMode);
+    on<SetNumberOfWorkersEvent>(_setNumberOfWorkers);
+    on<SetWorkerRoomSlotEvent>(_setWorkerRoomSlot);
+    on<ClearWorkerRoomAssignmentsEvent>(_clearWorkerRoomAssignments);
     on<CreateCleaningOrderEvent>(_createCleaningOrder);
     on<ResetCreateOrderStatusEvent>(_resetCreateOrderStatus);
   }
@@ -83,6 +89,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       state.copyWith(
         estimatePriceStatus: BlocStatus.loading,
         clearErrorMessage: true,
+        clearAssignmentFieldErrors: true,
       ),
     );
     final response = await estimateCleaningPriceUseCase(event.params);
@@ -93,6 +100,11 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
           state.copyWith(
             estimatePriceStatus: BlocStatus.failed,
             errorMessage: failure.message,
+            assignmentFieldErrors: filterWorkerRoomAssignmentFieldErrors(
+              failure,
+            ),
+            clearAssignmentFieldErrors:
+                filterWorkerRoomAssignmentFieldErrors(failure).isEmpty,
           ),
         );
       },
@@ -103,12 +115,14 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
           'travelFee=${result.pricing?.travelFee}, '
           'addonsTotal=${result.pricing?.addonsTotal}, '
           'totalPrice=${result.pricing?.totalPrice}, '
-          'currency=${result.pricing?.currency}',
+          'currency=${result.pricing?.currency}, '
+          'workerRoomAssignments=${result.workerRoomAssignments.length}',
         );
         emit(
           state.copyWith(
             estimatePriceStatus: BlocStatus.success,
             estimatePrice: result,
+            clearAssignmentFieldErrors: true,
           ),
         );
       },
@@ -164,15 +178,112 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     Emitter<ClMainState> emit,
   ) {
     if (event.workerId == null) {
-      emit(state.copyWith(clearSelectedWorker: true, clearErrorMessage: true));
+      emit(state.copyWith(clearSelectedWorker: true, clearErrorMessage: true, clearAssignmentFieldErrors: true));
     } else {
       emit(
         state.copyWith(
           selectedWorkerId: event.workerId,
+          assignmentMode: CleaningAssignmentMode.preferredWorker,
+          numberOfWorkers: 1,
           clearErrorMessage: true,
+          clearAssignmentFieldErrors: true,
         ),
       );
     }
+  }
+
+  Map<String, int> _clampWorkerRoomAssignments(
+    Map<String, int> assignments,
+    int maxWorkers,
+  ) {
+    if (maxWorkers < 1 || assignments.isEmpty) return const {};
+    return Map<String, int>.fromEntries(
+      assignments.entries.where((entry) => entry.value <= maxWorkers),
+    );
+  }
+
+  FutureOr<void> _setAssignmentMode(
+    SetAssignmentModeEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    if (event.mode == CleaningAssignmentMode.openCount) {
+      final safeCount = state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers;
+      emit(
+        state.copyWith(
+          assignmentMode: event.mode,
+          clearSelectedWorker: true,
+          numberOfWorkers: safeCount,
+          workerRoomAssignments: _clampWorkerRoomAssignments(
+            state.workerRoomAssignments,
+            safeCount,
+          ),
+          clearErrorMessage: true,
+          clearAssignmentFieldErrors: true,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          assignmentMode: event.mode,
+          numberOfWorkers: 1,
+          clearWorkerRoomAssignments: true,
+          clearErrorMessage: true,
+          clearAssignmentFieldErrors: true,
+        ),
+      );
+    }
+  }
+
+  FutureOr<void> _setNumberOfWorkers(
+    SetNumberOfWorkersEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    final safeCount = event.count < 1 ? 1 : event.count;
+    emit(
+      state.copyWith(
+        numberOfWorkers: safeCount,
+        assignmentMode: CleaningAssignmentMode.openCount,
+        clearSelectedWorker: true,
+        workerRoomAssignments: _clampWorkerRoomAssignments(
+          state.workerRoomAssignments,
+          safeCount,
+        ),
+        clearErrorMessage: true,
+        clearAssignmentFieldErrors: true,
+      ),
+    );
+  }
+
+  FutureOr<void> _setWorkerRoomSlot(
+    SetWorkerRoomSlotEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    final updated = Map<String, int>.from(state.workerRoomAssignments);
+    if (event.workerSlot < 1) {
+      updated.remove(event.roomKey);
+    } else {
+      updated[event.roomKey] = event.workerSlot;
+    }
+    emit(
+      state.copyWith(
+        workerRoomAssignments: updated,
+        clearErrorMessage: true,
+        clearAssignmentFieldErrors: true,
+      ),
+    );
+  }
+
+  FutureOr<void> _clearWorkerRoomAssignments(
+    ClearWorkerRoomAssignmentsEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        clearWorkerRoomAssignments: true,
+        clearErrorMessage: true,
+        clearAssignmentFieldErrors: true,
+      ),
+    );
   }
 
   FutureOr<void> _createCleaningOrder(
@@ -183,6 +294,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       state.copyWith(
         createOrderStatus: BlocStatus.loading,
         clearErrorMessage: true,
+        clearAssignmentFieldErrors: true,
       ),
     );
     final response = await createCleaningOrderUseCase(event.params);
@@ -192,6 +304,11 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
           state.copyWith(
             createOrderStatus: BlocStatus.failed,
             errorMessage: failure.message,
+            assignmentFieldErrors: filterWorkerRoomAssignmentFieldErrors(
+              failure,
+            ),
+            clearAssignmentFieldErrors:
+                filterWorkerRoomAssignmentFieldErrors(failure).isEmpty,
           ),
         );
       },
@@ -200,6 +317,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
           state.copyWith(
             createOrderStatus: BlocStatus.success,
             createOrderResult: result,
+            clearAssignmentFieldErrors: true,
           ),
         );
       },

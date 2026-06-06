@@ -2,21 +2,19 @@ import 'package:common_package/helpers/typedef.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../data/models/estimate_price_response_model.dart';
+import '../models/cleaning_assignment_mode.dart';
 import '../models/cleaning_room_size_breakdown.dart';
+import '../models/cleaning_type.dart';
 import '../repository/cl_main_repo.dart';
 
 @lazySingleton
-class EstimateCleaningPriceUseCase
-    implements
-        UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
+class EstimateCleaningPriceUseCase implements UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
   final ClMainRepo clMainRepo;
 
   EstimateCleaningPriceUseCase({required this.clMainRepo});
 
   @override
-  DataResponse<EstimatePriceResponseModel> call(
-    EstimateCleaningPriceParams params,
-  ) {
+  DataResponse<EstimatePriceResponseModel> call(EstimateCleaningPriceParams params) {
     return clMainRepo.estimateCleaningPrice(params);
   }
 }
@@ -29,6 +27,7 @@ class EstimateCleaningPriceParams with Params {
   final int? balconies;
   final String? livingRoomSize;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
+  final CleaningType? cleaningType;
   final double? addressLatitude;
   final double? addressLongitude;
   final int? preferredWorkerId;
@@ -39,6 +38,8 @@ class EstimateCleaningPriceParams with Params {
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
+  final CleaningAssignmentMode assignmentMode;
+  final List<Map<String, dynamic>>? workerRoomAssignments;
 
   EstimateCleaningPriceParams({
     required this.propertyType,
@@ -48,16 +49,19 @@ class EstimateCleaningPriceParams with Params {
     this.balconies,
     required this.livingRoomSize,
     this.roomSizeBreakdown,
+    this.cleaningType,
     required this.addressLatitude,
     required this.addressLongitude,
     this.preferredWorkerId,
     this.serviceIds,
+    this.assignmentMode = CleaningAssignmentMode.preferredWorker,
+    this.numberOfWorkers,
+    this.workerRoomAssignments,
   }) : eventType = null,
        guestCount = null,
        venueType = null,
        specialRequirement = null,
-       notes = null,
-       numberOfWorkers = null;
+       notes = null;
 
   EstimateCleaningPriceParams.eventAssistance({
     this.propertyType = 'event_assistance',
@@ -71,12 +75,15 @@ class EstimateCleaningPriceParams with Params {
     this.specialRequirement,
     this.notes,
     this.numberOfWorkers,
+    this.assignmentMode = CleaningAssignmentMode.openCount,
   }) : bedrooms = null,
+       workerRoomAssignments = null,
        rooms = null,
        bathrooms = null,
        balconies = null,
        livingRoomSize = null,
-       roomSizeBreakdown = null;
+       roomSizeBreakdown = null,
+       cleaningType = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -85,21 +92,15 @@ class EstimateCleaningPriceParams with Params {
     return source.where((id) => id > 0).toSet().toList(growable: false);
   }
 
-  int? get _resolvedBedrooms =>
-      roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
+  int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
 
   int? get _resolvedRooms => roomSizeBreakdown?.legacyRoomsCount ?? rooms;
 
-  int? get _resolvedBathrooms =>
-      roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
+  int? get _resolvedBathrooms => roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
 
-  int? get _resolvedBalconies =>
-      roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
+  int? get _resolvedBalconies => roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
 
-  String get _resolvedLivingRoomSize =>
-      roomSizeBreakdown?.legacyLivingRoomSize ??
-      livingRoomSize ??
-      CleaningRoomSize.small.apiValue;
+  String get _resolvedLivingRoomSize => roomSizeBreakdown?.legacyLivingRoomSize ?? livingRoomSize ?? CleaningRoomSize.small.apiValue;
 
   Map<String, dynamic> _buildPropertyDetails() {
     if (_isEventAssistance) {
@@ -107,8 +108,7 @@ class EstimateCleaningPriceParams with Params {
         'eventType': eventType,
         'guestCount': guestCount,
         'venueType': venueType,
-        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
-          'specialRequirement': specialRequirement!.trim(),
+        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty) 'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       };
     }
@@ -118,8 +118,8 @@ class EstimateCleaningPriceParams with Params {
       'bathrooms': _resolvedBathrooms,
       if (_resolvedBalconies != null) 'balconies': _resolvedBalconies,
       'living_room_size': _resolvedLivingRoomSize,
-      if (roomSizeBreakdown != null)
-        'room_size_breakdown': roomSizeBreakdown!.toJson(),
+      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toJson(),
+      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
@@ -129,16 +129,32 @@ class EstimateCleaningPriceParams with Params {
       'propertyDetails': _buildPropertyDetails(),
       if (addressLatitude != null) 'addressLatitude': addressLatitude,
       if (addressLongitude != null) 'addressLongitude': addressLongitude,
-      if (preferredWorkerId != null) 'preferredWorkerId': preferredWorkerId,
+      'assignmentMode': assignmentMode.apiValue,
+      if (preferredWorkerId != null && assignmentMode == CleaningAssignmentMode.preferredWorker) 'preferredWorkerId': preferredWorkerId,
     };
     final cleanServiceIds = _sanitizeServiceIds();
     if (cleanServiceIds.isNotEmpty) {
       body['serviceIds'] = cleanServiceIds;
     }
-    if (_isEventAssistance && numberOfWorkers != null && numberOfWorkers! > 0) {
-      body['numberOfWorkers'] = numberOfWorkers;
+    final resolvedWorkers = _resolvedNumberOfWorkers;
+    if (resolvedWorkers != null && resolvedWorkers > 0) {
+      body['numberOfWorkers'] = resolvedWorkers;
+    }
+    final assignments = workerRoomAssignments;
+    if (assignments != null && assignments.isNotEmpty) {
+      body['workerRoomAssignments'] = assignments;
     }
     return body;
+  }
+
+  int? get _resolvedNumberOfWorkers {
+    if (_isEventAssistance) {
+      return numberOfWorkers;
+    }
+    if (assignmentMode == CleaningAssignmentMode.openCount) {
+      return numberOfWorkers ?? 1;
+    }
+    return 1;
   }
 
   @override

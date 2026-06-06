@@ -97,6 +97,102 @@ void main() {
       },
     );
 
+    test('parses multi-worker team fields on detail payload', () {
+      final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 123,
+          'status': CleaningBookingStatus.pending,
+          'assignmentMode': 'open_count',
+          'numberOfWorkers': 2,
+          'workerAcceptance': <String, dynamic>{
+            'required': 2,
+            'accepted': 1,
+            'remaining': 1,
+            'isFulfilled': false,
+          },
+          'workerAssignments': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 9001,
+              'workerId': 44,
+              'status': 'accepted',
+              'roomCount': 1,
+              'workerAmount': 20500,
+              'roomIds': <int>[501],
+              'worker': <String, dynamic>{
+                'id': 44,
+                'name': 'Ahmad Ali',
+                'averageRating': 4.8,
+              },
+            },
+          ],
+          'roomAssignments': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 501,
+              'roomKey': 'bedroom.small.1',
+              'roomType': 'bedroom',
+              'roomSize': 'small',
+              'displayLabel': 'Bedroom 1 - Small',
+              'assignedWorkerId': 44,
+              'assignmentSource': 'customer',
+            },
+          ],
+          'myAssignment': <String, dynamic>{
+            'id': 9001,
+            'workerId': 44,
+            'status': 'accepted',
+            'roomCount': 1,
+            'workerAmount': 20500,
+            'currency': 'SYP',
+            'roomIds': <int>[501],
+          },
+        },
+      });
+
+      final data = model.data;
+      expect(data, isNotNull);
+      expect(data!.assignmentMode, 'open_count');
+      expect(data.numberOfWorkers, 2);
+      expect(data.workerAcceptance?.required, 2);
+      expect(data.workerAcceptance?.accepted, 1);
+      expect(data.workerAcceptance?.remaining, 1);
+      expect(data.workerAcceptance?.isFulfilled, isFalse);
+      expect(data.workerAssignments?.length, 1);
+      expect(data.workerAssignments?.first.workerId, 44);
+      expect(data.roomAssignments?.length, 1);
+      expect(data.roomAssignments?.first.displayLabel, 'Bedroom 1 - Small');
+      expect(data.myAssignment?.workerId, 44);
+      expect(data.myAssignment?.workerAmount, 20500);
+      expect(data.isMultiWorkerTeam, isTrue);
+      expect(data.isSearchingForWorkers, isTrue);
+      expect(data.acceptedWorkerAssignments.length, 1);
+    });
+
+    test('parses multi-worker team fields on list payload', () {
+      final model = fetchCleaningOrdersModelFromJson(<String, dynamic>{
+        'data': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 401,
+            'status': CleaningBookingStatus.pending,
+            'assignment_mode': 'open_count',
+            'number_of_workers': 3,
+            'worker_acceptance': <String, dynamic>{
+              'required': 3,
+              'accepted': 1,
+              'remaining': 2,
+              'is_fulfilled': false,
+            },
+          },
+        ],
+      });
+
+      final item = model.data.first;
+      expect(item.assignmentMode, 'open_count');
+      expect(item.numberOfWorkers, 3);
+      expect(item.workerAcceptance?.accepted, 1);
+      expect(item.isMultiWorkerTeam, isTrue);
+      expect(item.isSearchingForWorkers, isTrue);
+    });
+
     test('parses new pricing fields on list payload', () {
       final model = fetchCleaningOrdersModelFromJson(<String, dynamic>{
         'data': <Map<String, dynamic>>[

@@ -1,4 +1,11 @@
-enum CleaningRoomType { bedroom, bathroom, kitchen, livingRoom, balcony }
+enum CleaningRoomType {
+  bedroom,
+  bathroom,
+  kitchen,
+  livingRoom,
+  balcony,
+  corridor,
+}
 
 extension CleaningRoomTypeX on CleaningRoomType {
   String get apiKey {
@@ -13,6 +20,8 @@ extension CleaningRoomTypeX on CleaningRoomType {
         return 'living_room';
       case CleaningRoomType.balcony:
         return 'balcony';
+      case CleaningRoomType.corridor:
+        return 'corridor';
     }
   }
 }
@@ -71,6 +80,7 @@ class CleaningRoomSizeBreakdown {
     this.kitchen = const CleaningRoomSizeBucket(),
     this.livingRoom = const CleaningRoomSizeBucket(),
     this.balcony = const CleaningRoomSizeBucket(),
+    this.corridor = const CleaningRoomSizeBucket(),
   });
 
   final CleaningRoomSizeBucket bedroom;
@@ -78,9 +88,17 @@ class CleaningRoomSizeBreakdown {
   final CleaningRoomSizeBucket kitchen;
   final CleaningRoomSizeBucket livingRoom;
   final CleaningRoomSizeBucket balcony;
+  final CleaningRoomSizeBucket corridor;
 
   int get totalRooms =>
-      bedroom.total + bathroom.total + kitchen.total + livingRoom.total;
+      bedroom.total +
+      bathroom.total +
+      kitchen.total +
+      livingRoom.total +
+      corridor.total;
+
+  /// Sum of all room units including balconies (max worker count cap).
+  int get totalUnits => totalRooms + balcony.total;
 
   bool get hasAnyRoom => totalRooms > 0;
 
@@ -110,6 +128,8 @@ class CleaningRoomSizeBreakdown {
         return livingRoom;
       case CleaningRoomType.balcony:
         return balcony;
+      case CleaningRoomType.corridor:
+        return corridor;
     }
   }
 
@@ -146,6 +166,7 @@ class CleaningRoomSizeBreakdown {
           kitchen: kitchen,
           livingRoom: livingRoom,
           balcony: balcony,
+          corridor: corridor,
         );
       case CleaningRoomType.bathroom:
         return CleaningRoomSizeBreakdown(
@@ -154,6 +175,7 @@ class CleaningRoomSizeBreakdown {
           kitchen: kitchen,
           livingRoom: livingRoom,
           balcony: balcony,
+          corridor: corridor,
         );
       case CleaningRoomType.kitchen:
         return CleaningRoomSizeBreakdown(
@@ -162,6 +184,7 @@ class CleaningRoomSizeBreakdown {
           kitchen: bucket,
           livingRoom: livingRoom,
           balcony: balcony,
+          corridor: corridor,
         );
       case CleaningRoomType.livingRoom:
         return CleaningRoomSizeBreakdown(
@@ -170,6 +193,7 @@ class CleaningRoomSizeBreakdown {
           kitchen: kitchen,
           livingRoom: bucket,
           balcony: balcony,
+          corridor: corridor,
         );
       case CleaningRoomType.balcony:
         return CleaningRoomSizeBreakdown(
@@ -178,15 +202,24 @@ class CleaningRoomSizeBreakdown {
           kitchen: kitchen,
           livingRoom: livingRoom,
           balcony: bucket,
+          corridor: corridor,
+        );
+      case CleaningRoomType.corridor:
+        return CleaningRoomSizeBreakdown(
+          bedroom: bedroom,
+          bathroom: bathroom,
+          kitchen: kitchen,
+          livingRoom: livingRoom,
+          balcony: balcony,
+          corridor: bucket,
         );
     }
   }
 
-  Map<String, dynamic> toJson() => {
-    CleaningRoomType.bedroom.apiKey: bedroom.toJson(),
-    CleaningRoomType.bathroom.apiKey: bathroom.toJson(),
-    CleaningRoomType.kitchen.apiKey: kitchen.toJson(),
-    CleaningRoomType.livingRoom.apiKey: livingRoom.toJson(),
-    CleaningRoomType.balcony.apiKey: balcony.toJson(),
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      for (final roomType in CleaningRoomType.values)
+        roomType.apiKey: bucketFor(roomType).toJson(),
+    };
+  }
 }

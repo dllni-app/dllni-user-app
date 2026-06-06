@@ -1,5 +1,6 @@
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_room_size_breakdown.dart';
+import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_type.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -73,13 +74,26 @@ void main() {
     expect(details['bathrooms'], breakdown.legacyBathroomsCount);
     expect(details['balconies'], breakdown.legacyBalconiesCount);
     expect(details['living_room_size'], 'large');
-    expect(details['room_size_breakdown'], {
-      'bedroom': {'small': 1, 'medium': 2, 'large': 1},
-      'bathroom': {'small': 0, 'medium': 1, 'large': 0},
-      'kitchen': {'small': 1, 'medium': 0, 'large': 0},
-      'living_room': {'small': 0, 'medium': 1, 'large': 1},
-      'balcony': {'small': 2, 'medium': 1, 'large': 0},
-    });
+    expect(details['room_size_breakdown'], breakdown.toJson());
+  });
+
+  test('getBody includes top-level cleaningType when provided', () {
+    final params = CreateCleaningOrderParams(
+      propertyType: 'apartment',
+      bedrooms: 1,
+      rooms: 1,
+      bathrooms: 1,
+      livingRoomSize: 'small',
+      cleaningType: CleaningType.regularCleaning,
+      address: 'Address',
+      locationName: 'Home',
+      scheduledDate: '2026-05-30',
+      scheduledTime: '10:00',
+      addressLatitude: 33.5,
+      addressLongitude: 36.3,
+    );
+
+    expect(params.getBody()['cleaningType'], 'regular_cleaning');
   });
 
   test('getBody omits balconies for event assistance flow', () {

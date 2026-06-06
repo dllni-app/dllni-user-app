@@ -4,24 +4,28 @@ import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
 import 'filled_text_field.dart';
 
-/// Full name and international phone field.
+/// Full name, optional email, and primary phone field.
 class AccountInfoSection extends StatelessWidget {
   const AccountInfoSection({
     super.key,
     required this.nameController,
+    required this.emailController,
     required this.phoneFieldKey,
     required this.initialPhone,
     required this.onPhoneChanged,
     required this.isPhoneVerified,
     this.nameValidator,
+    this.emailValidator,
   });
 
   final TextEditingController nameController;
+  final TextEditingController emailController;
   final GlobalKey<AppPhoneNumberFieldState> phoneFieldKey;
   final PhoneNumber? initialPhone;
   final ValueChanged<PhoneNumber> onPhoneChanged;
   final bool isPhoneVerified;
   final String? Function(String?)? nameValidator;
+  final String? Function(String?)? emailValidator;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +37,13 @@ class AccountInfoSection extends StatelessWidget {
           controller: nameController,
           isRequired: true,
           validator: nameValidator,
+        ),
+        const SizedBox(height: 14),
+        FilledTextField(
+          label: 'البريد الإلكتروني',
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          validator: emailValidator,
         ),
         const SizedBox(height: 14),
         AppPhoneNumberField(

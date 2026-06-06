@@ -3,21 +3,19 @@ import 'package:injectable/injectable.dart';
 
 import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../data/models/create_cleaning_order_response_model.dart';
+import '../models/cleaning_assignment_mode.dart';
 import '../models/cleaning_room_size_breakdown.dart';
+import '../models/cleaning_type.dart';
 import '../repository/cl_main_repo.dart';
 
 @lazySingleton
-class CreateCleaningOrderUseCase
-    implements
-        UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
+class CreateCleaningOrderUseCase implements UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
   final ClMainRepo clMainRepo;
 
   CreateCleaningOrderUseCase({required this.clMainRepo});
 
   @override
-  DataResponse<CreateCleaningOrderResponseModel> call(
-    CreateCleaningOrderParams params,
-  ) {
+  DataResponse<CreateCleaningOrderResponseModel> call(CreateCleaningOrderParams params) {
     return clMainRepo.createCleaningOrder(params);
   }
 }
@@ -30,6 +28,7 @@ class CreateCleaningOrderParams with Params {
   final int? balconies;
   final String? livingRoomSize;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
+  final CleaningType? cleaningType;
   final String? address;
   final String? locationName;
   final String scheduledDate;
@@ -45,7 +44,9 @@ class CreateCleaningOrderParams with Params {
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
+  final CleaningAssignmentMode assignmentMode;
   final bool termsAccepted;
+  final List<Map<String, dynamic>>? workerRoomAssignments;
 
   CreateCleaningOrderParams({
     required this.propertyType,
@@ -55,6 +56,7 @@ class CreateCleaningOrderParams with Params {
     this.balconies,
     required this.livingRoomSize,
     this.roomSizeBreakdown,
+    this.cleaningType,
     required this.address,
     required this.locationName,
     required this.scheduledDate,
@@ -64,13 +66,15 @@ class CreateCleaningOrderParams with Params {
     this.genderPreference = CleaningGenderPreference.any,
     this.preferredWorkerId,
     this.serviceIds,
+    this.assignmentMode = CleaningAssignmentMode.preferredWorker,
+    this.numberOfWorkers,
     this.termsAccepted = true,
+    this.workerRoomAssignments,
   }) : eventType = null,
        guestCount = null,
        venueType = null,
        specialRequirement = null,
-       notes = null,
-       numberOfWorkers = null;
+       notes = null;
 
   CreateCleaningOrderParams.eventAssistance({
     this.propertyType = 'event_assistance',
@@ -89,13 +93,16 @@ class CreateCleaningOrderParams with Params {
     this.specialRequirement,
     this.notes,
     this.numberOfWorkers,
+    this.assignmentMode = CleaningAssignmentMode.openCount,
     this.termsAccepted = true,
   }) : bedrooms = null,
+       workerRoomAssignments = null,
        rooms = null,
        bathrooms = null,
        balconies = null,
        livingRoomSize = null,
-       roomSizeBreakdown = null;
+       roomSizeBreakdown = null,
+       cleaningType = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -104,34 +111,25 @@ class CreateCleaningOrderParams with Params {
     return source.where((id) => id > 0).toSet().toList(growable: false);
   }
 
-  int? get _resolvedBedrooms =>
-      roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
+  int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
 
   int? get _resolvedRooms => roomSizeBreakdown?.legacyRoomsCount ?? rooms;
 
-  int? get _resolvedBathrooms =>
-      roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
+  int? get _resolvedBathrooms => roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
 
-  int? get _resolvedBalconies =>
-      roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
+  int? get _resolvedBalconies => roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
 
-  String get _resolvedLivingRoomSize =>
-      roomSizeBreakdown?.legacyLivingRoomSize ??
-      livingRoomSize ??
-      CleaningRoomSize.small.apiValue;
+  String get _resolvedLivingRoomSize => roomSizeBreakdown?.legacyLivingRoomSize ?? livingRoomSize ?? CleaningRoomSize.small.apiValue;
 
   Map<String, dynamic> _buildPropertyDetails() {
     if (_isEventAssistance) {
       return {
-        if (address != null && address!.trim().isNotEmpty)
-          'address': address!.trim(),
-        if (locationName != null && locationName!.trim().isNotEmpty)
-          'location_name': locationName!.trim(),
+        if (address != null && address!.trim().isNotEmpty) 'address': address!.trim(),
+        if (locationName != null && locationName!.trim().isNotEmpty) 'location_name': locationName!.trim(),
         'eventType': eventType,
         'guestCount': guestCount,
         'venueType': venueType,
-        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
-          'specialRequirement': specialRequirement!.trim(),
+        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty) 'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       };
     }
@@ -143,8 +141,7 @@ class CreateCleaningOrderParams with Params {
       'bathrooms': _resolvedBathrooms,
       if (_resolvedBalconies != null) 'balconies': _resolvedBalconies,
       'living_room_size': _resolvedLivingRoomSize,
-      if (roomSizeBreakdown != null)
-        'room_size_breakdown': roomSizeBreakdown!.toJson(),
+      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toJson(),
     };
   }
 
@@ -153,21 +150,38 @@ class CreateCleaningOrderParams with Params {
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'propertyDetails': _buildPropertyDetails(),
+      if (!_isEventAssistance && cleaningType != null) 'cleaningType': cleaningType!.apiValue,
       'scheduledDate': scheduledDate,
       'scheduledTime': scheduledTime,
       if (addressLatitude != null) 'addressLatitude': addressLatitude,
       if (addressLongitude != null) 'addressLongitude': addressLongitude,
       'genderPreference': genderPreference.apiValue,
-      if (preferredWorkerId != null) 'preferredWorkerId': preferredWorkerId,
+      'assignmentMode': assignmentMode.apiValue,
+      if (preferredWorkerId != null && assignmentMode == CleaningAssignmentMode.preferredWorker) 'preferredWorkerId': preferredWorkerId,
       'termsAccepted': termsAccepted,
     };
     final cleanServiceIds = _sanitizeServiceIds();
     if (cleanServiceIds.isNotEmpty) {
       body['serviceIds'] = cleanServiceIds;
     }
-    if (_isEventAssistance && numberOfWorkers != null && numberOfWorkers! > 0) {
-      body['numberOfWorkers'] = numberOfWorkers;
+    final resolvedWorkers = _resolvedNumberOfWorkers;
+    if (resolvedWorkers != null && resolvedWorkers > 0) {
+      body['numberOfWorkers'] = resolvedWorkers;
+    }
+    final assignments = workerRoomAssignments;
+    if (assignments != null && assignments.isNotEmpty) {
+      body['workerRoomAssignments'] = assignments;
     }
     return body;
+  }
+
+  int? get _resolvedNumberOfWorkers {
+    if (_isEventAssistance) {
+      return numberOfWorkers;
+    }
+    if (assignmentMode == CleaningAssignmentMode.openCount) {
+      return numberOfWorkers ?? 1;
+    }
+    return 1;
   }
 }

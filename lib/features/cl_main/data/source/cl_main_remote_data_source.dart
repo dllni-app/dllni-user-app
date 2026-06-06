@@ -4,8 +4,10 @@ import 'package:common_package/helpers/dio_network.dart';
 
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
+import '../../domain/usecases/get_cleaning_banners_use_case.dart';
 import '../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
+import '../models/cleaning_banners_response_model.dart';
 import '../models/cleaning_services_response_model.dart';
 import '../models/create_cleaning_order_response_model.dart';
 import '../models/estimate_price_response_model.dart';
@@ -66,6 +68,19 @@ class ClMainRemoteDataSource with HandlingApiManager {
         params: params.getParams(),
       ),
       jsonConvert: createCleaningOrderResponseModelFromJson,
+    );
+  }
+
+  Future<CleaningBannersResponseModel> getCleaningBanners(
+    GetCleaningBannersParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/cleaning/home/banners',
+        params: params.getParams(),
+        data: params.getBody().isEmpty ? null : params.getBody(),
+      ),
+      jsonConvert: cleaningBannersResponseModelFromJson,
     );
   }
 }

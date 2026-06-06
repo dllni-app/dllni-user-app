@@ -18,6 +18,7 @@ import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/place_restaurant_order_use_case.dart';
 import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_order_use_case.dart';
+import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
@@ -130,6 +131,16 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   ) {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.patchCleaningOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchCleaningOrderDetailsModel> patchCleaningRoomAssignments(
+    PatchCleaningRoomAssignmentsParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () =>
+          ordersRemoteDataSource.patchCleaningRoomAssignments(params),
     );
   }
 

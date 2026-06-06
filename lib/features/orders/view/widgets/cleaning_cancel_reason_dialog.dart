@@ -1,28 +1,71 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/realtime/cleaning_gate_session_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../manager/bloc/orders_bloc.dart';
 
 class CleaningCancelReasonDialog extends StatefulWidget {
-  const CleaningCancelReasonDialog({super.key, required this.orderId, required this.bloc});
+  const CleaningCancelReasonDialog({
+    super.key,
+    required this.orderId,
+    required this.bloc,
+    this.scheduledDate,
+    this.scheduledTime,
+  });
 
   final int orderId;
   final OrdersBloc bloc;
+  final String? scheduledDate;
+  final String? scheduledTime;
 
   @override
-  State<CleaningCancelReasonDialog> createState() => _CleaningCancelReasonDialogState();
+  State<CleaningCancelReasonDialog> createState() =>
+      _CleaningCancelReasonDialogState();
 }
 
 class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog> {
   final TextEditingController _reasonController = TextEditingController();
   String? _reasonValidationError;
   bool _hasSubmitted = false;
+  bool _showPolicyNotice = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _reasonController.addListener(_onReasonChanged);
+  }
 
   @override
   void dispose() {
+    _reasonController.removeListener(_onReasonChanged);
     _reasonController.dispose();
     super.dispose();
+  }
+
+  void _onReasonChanged() {
+    final shouldShow = _reasonController.text.trim().isNotEmpty;
+    if (shouldShow != _showPolicyNotice) {
+      setState(() => _showPolicyNotice = shouldShow);
+    }
+  }
+
+  String? _resolveCancelPolicyMessage() {
+    final scheduledAt = resolveCleaningBookingStartDateTime(
+      scheduledDate: widget.scheduledDate,
+      scheduledTime: widget.scheduledTime,
+    );
+    if (scheduledAt == null) return null;
+
+    final remaining = scheduledAt.difference(DateTime.now());
+
+    if (remaining >= const Duration(hours: 24)) {
+      return 'علماً أنه سيتم إلغاء الحجز مجاناً لأن الوقت المتبقي للخدمة أكثر من 24 ساعة';
+    }
+    if (remaining >= const Duration(hours: 1)) {
+      return 'علماً أنه سيتم إلغاء الحجز و سيطبق عليك رسوم إلغاء 10,000 ل.س  لأن الوقت المتبقي للخدمة أقل من 24 ساعة';
+    }
+    return 'اذا لم تتمكن من استقبال مقدم الخدمة سيتم احتساب رسوم عدم حضور وقدرها 25000';
   }
 
   void _submit(BuildContext context) {
@@ -35,27 +78,38 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
       return;
     }
     setState(() => _reasonValidationError = null);
-    widget.bloc.add(CancelCleaningOrderEvent(orderId: widget.orderId, reason: reason));
+    widget.bloc.add(
+      CancelCleaningOrderEvent(orderId: widget.orderId, reason: reason),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final policyMessage =
+        _showPolicyNotice ? _resolveCancelPolicyMessage() : null;
+
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: BlocConsumer<OrdersBloc, OrdersState>(
         bloc: widget.bloc,
-        listenWhen: (previous, current) => previous.cancelCleaningStatus != current.cancelCleaningStatus,
+        listenWhen: (previous, current) =>
+            previous.cancelCleaningStatus != current.cancelCleaningStatus,
         listener: (context, state) {
           if (state.cancelCleaningStatus == BlocStatus.success) {
             Navigator.of(context).pop(true);
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إلغاء الطلب بنجاح')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم إلغاء الطلب بنجاح')),
+            );
           }
         },
         builder: (context, state) {
           final isLoading = state.cancelCleaningStatus == BlocStatus.loading;
-          final blocError = (_hasSubmitted && state.cancelCleaningStatus == BlocStatus.failed) ? state.cancelCleaningErrorMessage : null;
+          final blocError =
+              (_hasSubmitted && state.cancelCleaningStatus == BlocStatus.failed)
+              ? state.cancelCleaningErrorMessage
+              : null;
           return Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 14),
             child: Column(
@@ -69,42 +123,26 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
                   color: Color(0xff111827),
                 ),
                 const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 10, 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFF87171), style: BorderStyle.solid),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.info, color: Color(0xffDC2626), size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: AppText.bodySmall(
-                          'علمًا أنه سيتم إلغاء الحجز بعد إدخال سبب الإلغاء.',
-                          color: Color(0xffB91C1C),
-                          textAlign: TextAlign.start,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
                 TextField(
                   controller: _reasonController,
                   minLines: 3,
                   maxLines: 4,
                   enabled: !isLoading,
-                  style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
                     hintText: 'اكتب سبب الإلغاء',
                     errorText: _reasonValidationError,
                     filled: true,
-                    hintStyle: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+                    hintStyle: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                     fillColor: const Color(0xffF9FAFB),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -120,9 +158,51 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
                     ),
                   ),
                 ),
+                if (policyMessage != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      10,
+                      8,
+                      10,
+                      8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFF87171),
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.info,
+                          color: Color(0xffDC2626),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: AppText.bodySmall(
+                            policyMessage,
+                            color: Color(0xffB91C1C),
+                            textAlign: TextAlign.start,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (blocError != null && blocError.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  AppText.labelMedium(blocError, color: const Color(0xffB91C1C), textAlign: TextAlign.start),
+                  AppText.labelMedium(
+                    blocError,
+                    color: const Color(0xffB91C1C),
+                    textAlign: TextAlign.start,
+                  ),
                 ],
                 const SizedBox(height: 16),
                 Row(
@@ -131,14 +211,22 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
                       child: SizedBox(
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: isLoading ? null : () => Navigator.of(context).pop(false),
+                          onPressed: isLoading
+                              ? null
+                              : () => Navigator.of(context).pop(false),
                           style: ElevatedButton.styleFrom(
                             elevation: 0,
                             backgroundColor: const Color(0xffA3A9C6),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: AppText.bodyLarge('تراجع', color: Colors.white, fontWeight: FontWeight.w700),
+                          child: AppText.bodyLarge(
+                            'تراجع',
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -152,11 +240,24 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
                             elevation: 0,
                             backgroundColor: const Color(0xffE51C28),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: isLoading
-                              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.3, color: Colors.white))
-                              : AppText.bodyLarge('إلغاء الطلب', color: Colors.white, fontWeight: FontWeight.w700),
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.3,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : AppText.bodyLarge(
+                                  'إلغاء الطلب',
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
                         ),
                       ),
                     ),

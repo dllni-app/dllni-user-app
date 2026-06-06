@@ -160,7 +160,7 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
           fontSize: 14,
           fontWeight: FontWeight.w400,
         ),
-        countries: const ['SY', 'SA', 'AE', 'JO', 'EG', 'LB', 'IQ', 'KW', 'QA', 'BH', 'OM'],
+        countries: const ['SY'],
         validator: (value) => validatePhoneNumberText(value),
         isEnabled: widget.enabled,
         locale: 'ar',

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../domain/models/cl_worker_room_assignment_result.dart';
+
 int? _toInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;
@@ -53,6 +55,35 @@ int? _extractOrderId(Map<String, dynamic> json) {
   );
 }
 
+List<CleaningWorkerRoomAssignment> _extractWorkerRoomAssignments(
+  Map<String, dynamic> json,
+) {
+  final direct = parseWorkerRoomAssignments(
+    json['workerRoomAssignments'] ?? json['worker_room_assignments'],
+  );
+  if (direct.isNotEmpty) return direct;
+
+  final data = _toMap(json['data']);
+  if (data.isNotEmpty) {
+    final dataAssignments = parseWorkerRoomAssignments(
+      data['workerRoomAssignments'] ?? data['worker_room_assignments'],
+    );
+    if (dataAssignments.isNotEmpty) return dataAssignments;
+
+    final nestedOrder = _toMap(data['order']);
+    final nestedOrderAssignments = parseWorkerRoomAssignments(
+      nestedOrder['workerRoomAssignments'] ??
+          nestedOrder['worker_room_assignments'],
+    );
+    if (nestedOrderAssignments.isNotEmpty) return nestedOrderAssignments;
+  }
+
+  final order = _toMap(json['order']);
+  return parseWorkerRoomAssignments(
+    order['workerRoomAssignments'] ?? order['worker_room_assignments'],
+  );
+}
+
 CreateCleaningOrderResponseModel createCleaningOrderResponseModelFromJson(
   dynamic json,
 ) {
@@ -77,11 +108,13 @@ class CreateCleaningOrderResponseModel {
   final bool success;
   final String? message;
   final int? orderId;
+  final List<CleaningWorkerRoomAssignment> workerRoomAssignments;
 
   const CreateCleaningOrderResponseModel({
     required this.success,
     this.message,
     this.orderId,
+    this.workerRoomAssignments = const [],
   });
 
   factory CreateCleaningOrderResponseModel.fromJson(Map<String, dynamic> json) {
@@ -89,6 +122,7 @@ class CreateCleaningOrderResponseModel {
       success: (json['success'] as bool?) ?? true,
       message: json['message'] as String?,
       orderId: _extractOrderId(json),
+      workerRoomAssignments: _extractWorkerRoomAssignments(json),
     );
   }
 }

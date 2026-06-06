@@ -1,4 +1,5 @@
 import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_room_size_breakdown.dart';
+import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_type.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,13 +33,24 @@ void main() {
     expect(details['bathrooms'], breakdown.legacyBathroomsCount);
     expect(details['balconies'], breakdown.legacyBalconiesCount);
     expect(details['living_room_size'], 'medium');
-    expect(details['room_size_breakdown'], {
-      'bedroom': {'small': 2, 'medium': 1, 'large': 0},
-      'bathroom': {'small': 1, 'medium': 0, 'large': 0},
-      'kitchen': {'small': 1, 'medium': 1, 'large': 0},
-      'living_room': {'small': 0, 'medium': 2, 'large': 0},
-      'balcony': {'small': 1, 'medium': 0, 'large': 2},
-    });
+    expect(details['room_size_breakdown'], breakdown.toJson());
+  });
+
+  test('getBody includes propertyDetails.cleaning_mode when provided', () {
+    final params = EstimateCleaningPriceParams(
+      propertyType: 'apartment',
+      bedrooms: 1,
+      rooms: 1,
+      bathrooms: 1,
+      livingRoomSize: 'small',
+      cleaningType: CleaningType.deepCleaning,
+      addressLatitude: 33.5,
+      addressLongitude: 36.3,
+    );
+
+    expect(params.getBody()['cleaningType'], isNull);
+    final details = params.getBody()['propertyDetails'] as Map<String, dynamic>;
+    expect(details['cleaning_mode'], 'deep');
   });
 
   test('getBody omits balconies for event assistance flow', () {

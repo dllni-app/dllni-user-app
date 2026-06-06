@@ -21,11 +21,13 @@ class UpdateAccountUseCase
 
 class UpdateAccountParams with Params {
   final String name;
+  final String email;
   final String phone;
   final File? primaryImage;
 
   UpdateAccountParams({
     required this.name,
+    required this.email,
     required this.phone,
     this.primaryImage,
   });
@@ -33,6 +35,7 @@ class UpdateAccountParams with Params {
   @override
   BodyMap getBody() => <String, dynamic>{
     'name': name,
+    'email': email,
     'phone': phone,
     if (primaryImage != null) 'primaryImage': primaryImage,
   };

@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:common_package/widgets/app_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/num_extensions.dart';
@@ -15,7 +14,19 @@ class CleaningOrderCard extends StatelessWidget {
   final VoidCallback? onReportIssueTap;
   final VoidCallback? onCancelTap;
 
-  String get _statusLabel => cleaningOrderStatusLabelAr(order.status);
+  String get _statusLabel {
+    if (order.isSearchingForWorkers) {
+      final accepted = order.workerAcceptance?.accepted ?? 0;
+      final required = order.workerAcceptance?.required ??
+          order.numberOfWorkers ??
+          0;
+      if (required > 0) {
+        return 'جاري البحث عن عمال ($accepted/$required)';
+      }
+      return 'جاري البحث عن عمال';
+    }
+    return cleaningOrderStatusLabelAr(order.status);
+  }
 
   bool get _isCompleted => (order.status ?? '').toLowerCase() == CleaningBookingStatus.completed;
 

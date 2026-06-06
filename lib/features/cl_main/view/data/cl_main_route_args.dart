@@ -1,5 +1,6 @@
 import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
+import '../../domain/models/cleaning_type.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 
 class ClMainHomeDescriptionArgs {
@@ -76,6 +77,7 @@ class ClMainScheduleArgs {
   final double addressLatitude;
   final double addressLongitude;
   final EstimatePriceResponseModel estimate;
+  final CleaningType cleaningType;
   final ClMainBloc bloc;
 
   const ClMainScheduleArgs({
@@ -88,6 +90,7 @@ class ClMainScheduleArgs {
     required this.addressLatitude,
     required this.addressLongitude,
     required this.estimate,
+    required this.cleaningType,
     required this.bloc,
   });
 }

@@ -28,6 +28,8 @@ import '../../features/cl_main/domain/usecases/create_cleaning_order_use_case.da
     as _i620;
 import '../../features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart'
     as _i762;
+import '../../features/cl_main/domain/usecases/get_cleaning_banners_use_case.dart'
+    as _i750;
 import '../../features/cl_main/domain/usecases/get_cleaning_services_use_case.dart'
     as _i895;
 import '../../features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart'
@@ -77,6 +79,8 @@ import '../../features/orders/domain/usecases/fetch_store_order_tracking_use_cas
     as _i138;
 import '../../features/orders/domain/usecases/patch_cleaning_order_use_case.dart'
     as _i795;
+import '../../features/orders/domain/usecases/patch_cleaning_room_assignments_use_case.dart'
+    as _i582;
 import '../../features/orders/domain/usecases/place_restaurant_order_use_case.dart'
     as _i109;
 import '../../features/orders/domain/usecases/place_store_order_use_case.dart'
@@ -676,6 +680,11 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i795.PatchCleaningOrderUseCase>(
     () => _i795.PatchCleaningOrderUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
+  gh.lazySingleton<_i582.PatchCleaningRoomAssignmentsUseCase>(
+    () => _i582.PatchCleaningRoomAssignmentsUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
+  );
   gh.lazySingleton<_i109.PlaceRestaurantOrderUseCase>(
     () => _i109.PlaceRestaurantOrderUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
@@ -798,6 +807,9 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i762.EstimateCleaningPriceUseCase>(
     () =>
         _i762.EstimateCleaningPriceUseCase(clMainRepo: gh<_i342.ClMainRepo>()),
+  );
+  gh.lazySingleton<_i750.GetCleaningBannersUseCase>(
+    () => _i750.GetCleaningBannersUseCase(clMainRepo: gh<_i342.ClMainRepo>()),
   );
   gh.lazySingleton<_i895.GetCleaningServicesUseCase>(
     () => _i895.GetCleaningServicesUseCase(clMainRepo: gh<_i342.ClMainRepo>()),

@@ -1,0 +1,12 @@
+00:00 +0: loading D:/my_projects/dllni_com/dllni-user-app/test/features/cl_main/view/screens/cl_main_banner_widget_test.dart
+00:00 +0: shows featured banner and switches to occasions list
+10:00 +0 -1: shows featured banner and switches to occasions list [E]
+  TimeoutException after 0:10:00.000000: Test timed out after 10 minutes.
+  dart:isolate  _RawReceivePort._handleMessage
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+10:00 +0 -1: Some tests failed.

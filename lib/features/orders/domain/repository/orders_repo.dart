@@ -20,6 +20,7 @@ import '../usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../usecases/place_restaurant_order_use_case.dart';
 import '../usecases/place_store_order_use_case.dart';
 import '../usecases/patch_cleaning_order_use_case.dart';
+import '../usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../usecases/reject_cleaning_completion_use_case.dart';
 import '../usecases/submit_cleaning_review_use_case.dart';
 import '../usecases/update_cart_item_quantity_use_case.dart';
@@ -55,6 +56,9 @@ abstract class OrdersRepo {
   );
   DataResponse<OrdersActionResultModel> patchCleaningOrder(
     PatchCleaningOrderParams params,
+  );
+  DataResponse<FetchCleaningOrderDetailsModel> patchCleaningRoomAssignments(
+    PatchCleaningRoomAssignmentsParams params,
   );
 
   DataResponse<FetchOrderDetailsModel> fetchOrderDetails(

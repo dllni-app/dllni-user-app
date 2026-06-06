@@ -2,9 +2,11 @@ import 'package:injectable/injectable.dart';
 import 'package:common_package/helpers/error_handler.dart';
 import 'package:common_package/helpers/typedef.dart';
 
+import '../../data/models/cleaning_banners_response_model.dart';
 import '../../data/models/cleaning_services_response_model.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
+import '../../domain/usecases/get_cleaning_banners_use_case.dart';
 import '../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../../domain/repository/cl_main_repo.dart';
@@ -52,6 +54,15 @@ class ClMainRepoImpl with HandlingException implements ClMainRepo {
   ) {
     return wrapHandlingException(
       tryCall: () => clMainRemoteDataSource.createCleaningOrder(params),
+    );
+  }
+
+  @override
+  DataResponse<CleaningBannersResponseModel> getCleaningBanners(
+    GetCleaningBannersParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => clMainRemoteDataSource.getCleaningBanners(params),
     );
   }
 }

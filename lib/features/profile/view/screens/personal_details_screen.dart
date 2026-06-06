@@ -49,6 +49,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
   late final TextEditingController _currentPasswordController;
   late final TextEditingController _newPasswordController;
   late final TextEditingController _confirmPasswordController;
@@ -69,6 +70,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.params.name);
+    _emailController = TextEditingController(text: widget.params.email ?? '');
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
@@ -88,10 +90,21 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  String? _validateOptionalEmail(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return null;
+    final emailRegex = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
+    if (!emailRegex.hasMatch(v)) {
+      return 'البريد الإلكتروني غير صالح';
+    }
+    return null;
   }
 
   void _syncPasswordMismatch() {
@@ -177,6 +190,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final accountRes = await getIt<UpdateAccountUseCase>()(
       UpdateAccountParams(
         name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
         phone: phone,
         primaryImage: _selectedImage,
       ),
@@ -269,10 +283,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                             ? const Center(child: CircularProgressIndicator())
                             : AccountInfoSection(
                                 nameController: _nameController,
+                                emailController: _emailController,
                                 phoneFieldKey: _phoneFieldKey,
                                 initialPhone: _initialPhone,
                                 isPhoneVerified: widget.params.isPhoneVerified,
                                 onPhoneChanged: (phone) => _phone = phone,
+                                emailValidator: _validateOptionalEmail,
                                 nameValidator: (v) {
                                   if (v == null || v.trim().isEmpty) {
                                     return 'الرجاء إدخال الاسم';

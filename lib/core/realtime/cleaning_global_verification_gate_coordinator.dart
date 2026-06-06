@@ -228,7 +228,8 @@ class CleaningGlobalVerificationGateCoordinator {
 
     if (normalizedEvent == CleaningRealtimeContract.trackingUpdated ||
         normalizedEvent == CleaningRealtimeContract.completionDecisionMade ||
-        normalizedEvent == CleaningRealtimeContract.serviceExtensionRequested) {
+        normalizedEvent == CleaningRealtimeContract.serviceExtensionRequested ||
+        normalizedEvent == CleaningRealtimeContract.teamUpdated) {
       unawaited(_refreshPendingGates());
     }
   }
@@ -446,6 +447,7 @@ class CleaningGlobalVerificationGateCoordinator {
         bookingId: details.id ?? orderId,
         bookingNumber: details.bookingNumber,
         dateTime: scheduledAt?.toIso8601String(),
+        workerAvatarUrl: details.worker?.avatarUrl,
         onSubmit: (code) =>
             _confirmStartVerificationCode(orderId: orderId, code: code),
       );

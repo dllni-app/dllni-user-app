@@ -66,15 +66,9 @@ class GeneratedAppRoutes {
 
     switch (settings.name) {
       case '/login':
-        return MaterialPageRoute(
-          builder: (_) => LoginScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => LoginScreen(), settings: settings);
       case '/register':
-        return MaterialPageRoute(
-          builder: (_) => RegisterScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => RegisterScreen(), settings: settings);
       case '/verify-account':
         if (args is VerifyAccountRouteArgs) {
           return MaterialPageRoute(
@@ -84,10 +78,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/clmainhomedescription':
-        return MaterialPageRoute(
-          builder: (_) => ClMainHomeDescriptionScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => ClMainHomeDescriptionScreen(), settings: settings);
       case '/clmainoccasiondescription':
         if (args is ClMainOccasionDescriptionArgs?) {
           return MaterialPageRoute(
@@ -113,10 +104,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/clmainserviceschedule':
-        return MaterialPageRoute(
-          builder: (_) => ClMainServiceScheduleScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => ClMainServiceScheduleScreen(), settings: settings);
       case '/clworkerprofiledetail':
         if (args is WorkerProfileRouteArgs) {
           return MaterialPageRoute(
@@ -206,10 +194,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/coupons':
-        return MaterialPageRoute(
-          builder: (_) => CouponsScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => CouponsScreen(), settings: settings);
       case '/group-order/followup':
         if (args is GroupOrderFollowupScreenParams) {
           return MaterialPageRoute(
@@ -219,15 +204,9 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/group-order/create':
-        return MaterialPageRoute(
-          builder: (_) => GroupOrderSetupScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => GroupOrderSetupScreen(), settings: settings);
       case '/luckyboxsetup':
-        return MaterialPageRoute(
-          builder: (_) => LuckyBoxSetupScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => LuckyBoxSetupScreen(), settings: settings);
       case '/luckyboxsuggestions':
         if (args is LuckyBoxSuggestionsArgs) {
           return MaterialPageRoute(
@@ -245,15 +224,9 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/notifications':
-        return MaterialPageRoute(
-          builder: (_) => NotificationsScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => NotificationsScreen(), settings: settings);
       case '/ordervoting':
-        return MaterialPageRoute(
-          builder: (_) => OrderVotingScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => OrderVotingScreen(), settings: settings);
       case '/personaldetails':
         if (args is PersonalDetailsParams) {
           return MaterialPageRoute(
@@ -271,10 +244,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/shopping_list':
-        return MaterialPageRoute(
-          builder: (_) => ShoppingListScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => ShoppingListScreen(), settings: settings);
       case '/votefollowup':
         if (args is VoteFollowupScreenParams) {
           return MaterialPageRoute(
@@ -324,10 +294,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/rsfavourite':
-        return MaterialPageRoute(
-          builder: (_) => RsFavouriteScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => RsFavouriteScreen(), settings: settings);
       case '/rshomecategoryproducts':
         if (args is RsHomeCategoryProductsScreenParams) {
           return MaterialPageRoute(
@@ -337,20 +304,11 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/home':
-        return MaterialPageRoute(
-          builder: (_) => RsHomeScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => RsHomeScreen(), settings: settings);
       case '/rsmain':
-        return MaterialPageRoute(
-          builder: (_) => RsMainScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => RsMainScreen(), settings: settings);
       case '/cart_details':
-        return MaterialPageRoute(
-          builder: (_) => SmCartDetailsScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => SmCartDetailsScreen(), settings: settings);
       case '/cart':
         if (args is SmCartScreenParams?) {
           return MaterialPageRoute(
@@ -360,10 +318,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/late_time':
-        return MaterialPageRoute(
-          builder: (_) => SmLateTimeScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => SmLateTimeScreen(), settings: settings);
       case '/sm_store-all-products':
         if (args is int) {
           return MaterialPageRoute(
@@ -373,10 +328,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/sm_autocomplete_demo':
-        return MaterialPageRoute(
-          builder: (_) => SmAutocompleteDemoScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => SmAutocompleteDemoScreen(), settings: settings);
       case '/sm_discover':
         if (args is SmDiscoverScreenParams) {
           return MaterialPageRoute(
@@ -386,15 +338,9 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/sm_favorite':
-        return MaterialPageRoute(
-          builder: (_) => SmFavoriteScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => SmFavoriteScreen(), settings: settings);
       case '/sm_home':
-        return MaterialPageRoute(
-          builder: (_) => SmHomeScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => SmHomeScreen(), settings: settings);
       case '/smmain':
         if (args is SmMainScreenParams) {
           return MaterialPageRoute(
@@ -404,10 +350,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/sm_offers':
-        return MaterialPageRoute(
-          builder: (_) => SmOffersScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => SmOffersScreen(), settings: settings);
       case '/order_details':
         if (args is SmOrderDetailsScreenArgs) {
           return MaterialPageRoute(
@@ -417,10 +360,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/order_tracking':
-        return MaterialPageRoute(
-          builder: (_) => SmOrderTrackingScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => SmOrderTrackingScreen(), settings: settings);
       case '/product':
         if (args is SmProductDetailsScreenArgs) {
           return MaterialPageRoute(
@@ -437,7 +377,6 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
-
     }
 
     return null;
@@ -445,9 +384,7 @@ class GeneratedAppRoutes {
 
   static Route<dynamic> _errorRoute(RouteSettings settings) {
     return MaterialPageRoute(
-      builder: (_) => const Scaffold(
-        body: Center(child: Text('Route Error')),
-      ),
+      builder: (_) => const Scaffold(body: Center(child: Text('Route Error'))),
       settings: settings,
     );
   }

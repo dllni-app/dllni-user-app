@@ -1,6 +1,7 @@
 import 'package:common_package/helpers/error_handler.dart';
 import 'package:common_package/helpers/typedef.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dllni_user_app/features/cl_main/data/models/cleaning_banners_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/cleaning_services_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/estimate_price_response_model.dart';
@@ -8,6 +9,7 @@ import 'package:dllni_user_app/features/cl_main/data/models/previous_workers_res
 import 'package:dllni_user_app/features/cl_main/domain/repository/cl_main_repo.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
+import 'package:dllni_user_app/features/cl_main/domain/usecases/get_cleaning_banners_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/get_cleaning_services_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import 'package:dllni_user_app/features/cl_main/view/data/cl_main_route_args.dart';
@@ -52,6 +54,13 @@ class _FakeClMainRepo implements ClMainRepo {
   ) async {
     onCreateOrder?.call(params);
     return const Left(ServerFailure(message: 'create failed'));
+  }
+
+  @override
+  DataResponse<CleaningBannersResponseModel> getCleaningBanners(
+    GetCleaningBannersParams params,
+  ) async {
+    return const Right(CleaningBannersResponseModel());
   }
 }
 

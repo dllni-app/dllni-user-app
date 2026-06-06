@@ -29,6 +29,7 @@ import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
+import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../helpers/cleaning_lifecycle_error_mapper.dart';
 import '../helpers/cleaning_order_realtime_policy.dart';
@@ -40,6 +41,10 @@ import '../widgets/cleaning_cancel_reason_dialog.dart';
 import 'cleaning_order_problem_report_screen.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_worker_rating_screen.dart';
+import '../widgets/cleaning_accepted_workers_section_widget.dart';
+import '../widgets/cleaning_preferred_worker_card_widget.dart';
+import '../widgets/cleaning_room_assignments_section_widget.dart';
+import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
 import '../widgets/cleaning_completion_decision_sheet.dart';
 import '../widgets/cleaning_start_verification_dialog.dart';
@@ -89,6 +94,7 @@ class _CleaningOrderDetailsScreenState
   bool _reopenVerificationAfterRefresh = false;
   bool _reopenCompletionAfterRefresh = false;
   bool _isRebooking = false;
+  bool _isPatchingRoomAssignments = false;
   Timer? _detailsFallbackRefreshDebounce;
 
   @override
@@ -132,6 +138,12 @@ class _CleaningOrderDetailsScreenState
         s == CleaningBookingStatus.awaitingCustomerCompletion ||
         s == CleaningBookingStatus.inProgress ||
         s == CleaningBookingStatus.timeExtensionRequested;
+  }
+
+  bool _canEditRoomAssignments(CleaningOrderDetailModel order) {
+    final s = _normStatus(order.status);
+    return s == CleaningBookingStatus.pending ||
+        s == CleaningBookingStatus.workerAssigned;
   }
 
   void _connectCleaningPusher() {
@@ -390,6 +402,7 @@ class _CleaningOrderDetailsScreenState
       bookingId: order.id,
       bookingNumber: order.bookingNumber,
       dateTime: scheduledAt?.toIso8601String(),
+      workerAvatarUrl: order.worker?.avatarUrl,
       onSubmit: (code) => _confirmStartVerification(code, order),
     );
     if (!mounted) return;
@@ -725,6 +738,43 @@ class _CleaningOrderDetailsScreenState
     );
   }
 
+  Future<void> _assignRoom(int roomId, int? workerId) async {
+    if (_isPatchingRoomAssignments) return;
+    setState(() => _isPatchingRoomAssignments = true);
+
+    final response = await getIt<PatchCleaningRoomAssignmentsUseCase>()(
+      PatchCleaningRoomAssignmentsParams(
+        orderId: _activeOrderId,
+        assignments: [
+          CleaningRoomAssignmentUpdate(roomId: roomId, workerId: workerId),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    response.fold(
+      (failure) {
+        setState(() => _isPatchingRoomAssignments = false);
+        AppToast.showToast(
+          context: context,
+          message: failure.message,
+          type: ToastificationType.error,
+        );
+      },
+      (result) {
+        setState(() {
+          _isPatchingRoomAssignments = false;
+          _order = result.data ?? _order;
+        });
+        AppToast.showToast(
+          context: context,
+          message: 'تم تحديث توزيع الغرف',
+          type: ToastificationType.success,
+        );
+      },
+    );
+  }
+
   Future<void> _callWorker(String? phone) async {
     final value = phone?.trim();
     if (value == null || value.isEmpty) {
@@ -1001,6 +1051,8 @@ class _CleaningOrderDetailsScreenState
       builder: (_) => CleaningCancelReasonDialog(
         orderId: orderId,
         bloc: context.read<OrdersBloc>(),
+        scheduledDate: order.scheduledDate,
+        scheduledTime: order.scheduledTime,
       ),
     );
     if (result == true && mounted) {
@@ -1169,6 +1221,41 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
+                    if (order.isSearchingForWorkers) ...[
+                      const SizedBox(height: 12),
+                      CleaningTeamSearchBannerWidget(
+                        acceptance: order.workerAcceptance,
+                        numberOfWorkers: order.numberOfWorkers,
+                      ),
+                    ],
+                    if (order.isSearchingForWorkers &&
+                        (order.assignmentMode ?? '').toLowerCase() ==
+                            'preferred_worker' &&
+                        order.preferredWorker != null) ...[
+                      const SizedBox(height: 12),
+                      CleaningPreferredWorkerCardWidget(
+                        worker: order.preferredWorker!,
+                        onCallWorker: _callWorker,
+                      ),
+                    ],
+                    if (order.isMultiWorkerTeam &&
+                        order.acceptedWorkerAssignments.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      CleaningAcceptedWorkersSectionWidget(
+                        assignments: order.acceptedWorkerAssignments,
+                        onCallWorker: _callWorker,
+                      ),
+                    ],
+                    if ((order.roomAssignments ?? const []).isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      CleaningRoomAssignmentsSectionWidget(
+                        roomAssignments: order.roomAssignments!,
+                        acceptedWorkers: order.acceptedWorkerAssignments,
+                        isEditable: _canEditRoomAssignments(order),
+                        isSaving: _isPatchingRoomAssignments,
+                        onAssignRoom: _assignRoom,
+                      ),
+                    ],
                     if (statusNorm ==
                         CleaningBookingStatus.awaitingStartVerification) ...[
                       const SizedBox(height: 12),
@@ -1470,90 +1557,92 @@ class _CleaningOrderDetailsScreenState
                       ),
                       const SizedBox(height: 12),
                     ],
-                    _card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundImage: order.worker?.avatarUrl == null
-                                    ? null
-                                    : NetworkImage(order.worker!.avatarUrl!),
-                                child: order.worker?.avatarUrl == null
-                                    ? const Icon(Icons.person, size: 20)
-                                    : null,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      order.worker?.name ?? 'مقدم الخدمة',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xff1F2937),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '⭐ ${order.worker?.averageRating?.toStringAsFixed(1) ?? '-'} • مقدم الخدمة',
-                                      style: const TextStyle(
-                                        color: Color(0xff6B7280),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                    if (!order.isMultiWorkerTeam) ...[
+                      _card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundImage: order.worker?.avatarUrl == null
+                                      ? null
+                                      : NetworkImage(order.worker!.avatarUrl!),
+                                  child: order.worker?.avatarUrl == null
+                                      ? const Icon(Icons.person, size: 20)
+                                      : null,
                                 ),
-                              ),
-                              InkWell(
-                                onTap: () => _callWorker(order.worker?.phone),
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xffF3F4F6),
-                                    borderRadius: BorderRadius.circular(19),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        order.worker?.name ?? 'مقدم الخدمة',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xff1F2937),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '⭐ ${order.worker?.averageRating?.toStringAsFixed(1) ?? '-'} • مقدم الخدمة',
+                                        style: const TextStyle(
+                                          color: Color(0xff6B7280),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  child: const Icon(
-                                    Icons.call,
-                                    color: Color(0xff111827),
-                                    size: 19,
+                                ),
+                                InkWell(
+                                  onTap: () => _callWorker(order.worker?.phone),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xffF3F4F6),
+                                      borderRadius: BorderRadius.circular(19),
+                                    ),
+                                    child: const Icon(
+                                      Icons.call,
+                                      color: Color(0xff111827),
+                                      size: 19,
+                                    ),
                                   ),
+                                ),
+                              ],
+                            ),
+                            if (order.startedTravelAt != null &&
+                                order.arrivedAt == null) ...[
+                              const SizedBox(height: 10),
+                              const Text(
+                                'مقدم الخدمة في الطريق إلى موقعك.',
+                                style: TextStyle(
+                                  color: Color(0xff0CBBC7),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
-                          ),
-                          if (order.startedTravelAt != null &&
-                              order.arrivedAt == null) ...[
-                            const SizedBox(height: 10),
-                            const Text(
-                              'مقدم الخدمة في الطريق إلى موقعك.',
-                              style: TextStyle(
-                                color: Color(0xff0CBBC7),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                            if (_workerLiveLatitude != null &&
+                                _workerLiveLongitude != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'تم تحديث الموقع المباشر لمقدم الخدمة',
+                                style: const TextStyle(
+                                  color: Color(0xff6B7280),
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
-                          if (_workerLiveLatitude != null &&
-                              _workerLiveLongitude != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'تم تحديث الموقع المباشر لمقدم الخدمة',
-                              style: const TextStyle(
-                                color: Color(0xff6B7280),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
+                    ],
                     _card(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

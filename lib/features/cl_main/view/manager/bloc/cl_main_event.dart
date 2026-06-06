@@ -33,6 +33,27 @@ class SetPreferredWorkerEvent extends ClMainEvent {
   SetPreferredWorkerEvent({required this.workerId});
 }
 
+class SetAssignmentModeEvent extends ClMainEvent {
+  final CleaningAssignmentMode mode;
+
+  SetAssignmentModeEvent({required this.mode});
+}
+
+class SetNumberOfWorkersEvent extends ClMainEvent {
+  final int count;
+
+  SetNumberOfWorkersEvent({required this.count});
+}
+
+class SetWorkerRoomSlotEvent extends ClMainEvent {
+  final String roomKey;
+  final int workerSlot;
+
+  SetWorkerRoomSlotEvent({required this.roomKey, required this.workerSlot});
+}
+
+class ClearWorkerRoomAssignmentsEvent extends ClMainEvent {}
+
 class CreateCleaningOrderEvent extends ClMainEvent {
   final CreateCleaningOrderParams params;
 

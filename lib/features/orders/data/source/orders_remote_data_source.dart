@@ -17,6 +17,7 @@ import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/place_restaurant_order_use_case.dart';
 import '../../domain/usecases/place_store_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_order_use_case.dart';
+import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
@@ -164,6 +165,19 @@ class OrdersRemoteDataSource with HandlingApiManager {
         data: params.getBody(),
       ),
       jsonConvert: ordersActionResultModelFromJson,
+    );
+  }
+
+  Future<FetchCleaningOrderDetailsModel> patchCleaningRoomAssignments(
+    PatchCleaningRoomAssignmentsParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.patchData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/${params.orderId}/room-assignments',
+        data: params.getBody(),
+      ),
+      jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );
   }
 

@@ -68,9 +68,17 @@ class ErrorHandler implements Exception {
           case ResponseCode.notAllowed:
             return UserNotAllowedFailure(message: AppConstants.notAllowed.tr());
           case ResponseCode.badContent:
-            return ServerFailure(message: ErrorMessageModel.fromJson(error.response?.data).statusMessage, statusCode: ResponseCode.badContent);
+            return ServerFailure(
+              message: ErrorMessageModel.fromJson(error.response?.data).statusMessage,
+              statusCode: ResponseCode.badContent,
+              fieldErrors: _parseFieldErrors(error.response?.data),
+            );
           case ResponseCode.badRequestServer:
-            return ServerFailure(message: ErrorMessageModel.fromJson(error.response?.data).statusMessage, statusCode: ResponseCode.badRequestServer);
+            return ServerFailure(
+              message: ErrorMessageModel.fromJson(error.response?.data).statusMessage,
+              statusCode: ResponseCode.badRequestServer,
+              fieldErrors: _parseFieldErrors(error.response?.data),
+            );
           default:
             return ServerFailure(
               message: error.response?.data["message"].toString() ?? error.response?.data["errors"]?.toString() ?? '',
@@ -79,6 +87,26 @@ class ErrorHandler implements Exception {
         }
     }
   }
+}
+
+Map<String, List<String>>? _parseFieldErrors(dynamic data) {
+  if (data is! Map<String, dynamic>) return null;
+
+  final errorsRaw = data['errors'];
+  if (errorsRaw is! Map) return null;
+
+  final fieldErrors = <String, List<String>>{};
+  for (final entry in errorsRaw.entries) {
+    final key = entry.key.toString();
+    final value = entry.value;
+    if (value is List) {
+      fieldErrors[key] = value.map((item) => item.toString()).toList(growable: false);
+    } else if (value != null) {
+      fieldErrors[key] = [value.toString()];
+    }
+  }
+
+  return fieldErrors.isEmpty ? null : fieldErrors;
 }
 
 extension DataSourceExtension on DataSource {
@@ -208,7 +236,16 @@ abstract class Failure extends Equatable {
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure({required super.message, super.statusCode});
+  final Map<String, List<String>>? fieldErrors;
+
+  const ServerFailure({
+    required super.message,
+    super.statusCode,
+    this.fieldErrors,
+  });
+
+  @override
+  List<Object?> get props => [message, statusCode, fieldErrors];
 }
 
 class UnauthenticatedFailure extends Failure {
