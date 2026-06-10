@@ -7,6 +7,17 @@ enum CleaningRoomType {
   corridor,
 }
 
+/// Room types accepted by the backend validator for `room_size_breakdown`
+/// and worker room assignment payloads.
+const backendSupportedCleaningRoomTypes = <CleaningRoomType>[
+  CleaningRoomType.bedroom,
+  CleaningRoomType.bathroom,
+  CleaningRoomType.kitchen,
+  CleaningRoomType.livingRoom,
+  CleaningRoomType.balcony,
+  CleaningRoomType.corridor,
+];
+
 extension CleaningRoomTypeX on CleaningRoomType {
   String get apiKey {
     switch (this) {
@@ -218,7 +229,7 @@ class CleaningRoomSizeBreakdown {
 
   Map<String, dynamic> toJson() {
     return {
-      for (final roomType in CleaningRoomType.values)
+      for (final roomType in backendSupportedCleaningRoomTypes)
         roomType.apiKey: bucketFor(roomType).toJson(),
     };
   }

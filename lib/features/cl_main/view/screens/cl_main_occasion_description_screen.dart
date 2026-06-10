@@ -413,7 +413,7 @@ class _ClMainOccasionDescriptionScreenState
                                   enabled: _enableNotes,
                                   decoration: InputDecoration(
                                     hintText:
-                                        'ملاحظات (إضافة الطعام السوري، ...)',
+                                        'غسل اطباق أو مساعدة في اشياء معينة',
                                     hintStyle: const TextStyle(
                                       color: Color(0xFF9CA3AF),
                                       fontSize: 12,

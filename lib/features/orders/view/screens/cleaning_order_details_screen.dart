@@ -96,6 +96,7 @@ class _CleaningOrderDetailsScreenState
   bool _isRebooking = false;
   bool _isPatchingRoomAssignments = false;
   Timer? _detailsFallbackRefreshDebounce;
+  CleaningWorkerAcceptanceModel? _liveWorkerAcceptance;
 
   @override
   void initState() {
@@ -166,6 +167,14 @@ class _CleaningOrderDetailsScreenState
       eventName,
     );
 
+    if (normalizedEvent == CleaningRealtimeContract.teamUpdated) {
+      _applyLiveTeamSummary(payload);
+      _scheduleDetailsFallbackRefresh(
+        fallbackReason: 'realtime_team_updated_refresh',
+      );
+      return;
+    }
+
     if (normalizedEvent == CleaningRealtimeContract.awaitingStartVerification) {
       _gateSession.clearStartDismissed(_activeOrderId);
       _reopenVerificationAfterRefresh = true;
@@ -213,6 +222,66 @@ class _CleaningOrderDetailsScreenState
       _workerLiveLatitude = location.latitude;
       _workerLiveLongitude = location.longitude;
     });
+  }
+
+  void _applyLiveTeamSummary(Map<String, dynamic> payload) {
+    final team = payload['team'];
+    if (team is! Map) return;
+
+    final teamMap = Map<String, dynamic>.from(team);
+    final acceptance = CleaningWorkerAcceptanceModel(
+      required: _intFromDynamic(
+        teamMap['requiredWorkers'] ?? teamMap['required_workers'],
+      ),
+      accepted: _intFromDynamic(
+        teamMap['acceptedWorkers'] ?? teamMap['accepted_workers'],
+      ),
+      remaining: _intFromDynamic(
+        teamMap['remainingWorkers'] ?? teamMap['remaining_workers'],
+      ),
+      isFulfilled: _boolFromDynamic(
+        teamMap['isFulfilled'] ?? teamMap['is_fulfilled'],
+      ),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _liveWorkerAcceptance = acceptance;
+    });
+  }
+
+  int? _intFromDynamic(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  bool? _boolFromDynamic(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) {
+      if (value == 1) return true;
+      if (value == 0) return false;
+    }
+    final normalized = value?.toString().trim().toLowerCase();
+    if (normalized == 'true' || normalized == '1') return true;
+    if (normalized == 'false' || normalized == '0') return false;
+    return null;
+  }
+
+  CleaningWorkerAcceptanceModel? _effectiveWorkerAcceptance(
+    CleaningOrderDetailModel order,
+  ) {
+    return _liveWorkerAcceptance ?? order.workerAcceptance;
+  }
+
+  bool _isSearchingForWorkers(
+    CleaningOrderDetailModel order,
+    CleaningWorkerAcceptanceModel? acceptance,
+  ) {
+    final statusNorm = _normStatus(order.status);
+    if (statusNorm != CleaningBookingStatus.pending) return false;
+    if (acceptance == null) return order.isSearchingForWorkers;
+    return acceptance.isFulfilled != true;
   }
 
   void _onCleaningPusherError(RealtimeChannelError error) {
@@ -275,6 +344,9 @@ class _CleaningOrderDetailsScreenState
         final updatedOrder = result.data;
         if (updatedOrder != null) {
           _syncGateSessionWithOrder(updatedOrder);
+          _liveWorkerAcceptance = updatedOrder.workerAcceptance;
+        } else {
+          _liveWorkerAcceptance = null;
         }
         if (showLoading) {
           _loadError = result.data == null ? 'تعذر تحميل تفاصيل الطلب' : null;
@@ -1134,6 +1206,8 @@ class _CleaningOrderDetailsScreenState
     );
     final editLocked =
         _blocksReschedule(order) || _isRebooking || !leadTimeCheck.allowed;
+    final liveAcceptance = _effectiveWorkerAcceptance(order);
+    final searchingForWorkers = _isSearchingForWorkers(order, liveAcceptance);
 
     return Scaffold(
       backgroundColor: const Color(0xffF3F4F6),
@@ -1221,14 +1295,14 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
-                    if (order.isSearchingForWorkers) ...[
+                    if (searchingForWorkers) ...[
                       const SizedBox(height: 12),
                       CleaningTeamSearchBannerWidget(
-                        acceptance: order.workerAcceptance,
+                        acceptance: liveAcceptance,
                         numberOfWorkers: order.numberOfWorkers,
                       ),
                     ],
-                    if (order.isSearchingForWorkers &&
+                    if (searchingForWorkers &&
                         (order.assignmentMode ?? '').toLowerCase() ==
                             'preferred_worker' &&
                         order.preferredWorker != null) ...[

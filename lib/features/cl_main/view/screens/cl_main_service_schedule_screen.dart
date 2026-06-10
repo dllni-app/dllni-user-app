@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
@@ -17,7 +16,6 @@ import '../widgets/app_pickers.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
-import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
@@ -45,8 +43,6 @@ class _ClMainServiceScheduleScreenState
   bool _didReadArgs = false;
   EstimatePriceResponseModel? _currentEstimate;
   AddressListItem? _selectedAddress;
-  CleaningGenderPreference _selectedGenderPreference =
-      CleaningGenderPreference.any;
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
   String? _appliedCouponCode;
@@ -237,14 +233,14 @@ class _ClMainServiceScheduleScreenState
           scheduledTime: _fromTimeController.text,
           addressLatitude: args.addressLatitude,
           addressLongitude: args.addressLongitude,
-          genderPreference: _selectedGenderPreference,
+          genderPreference: state.genderPreference,
           assignmentMode: state.assignmentMode,
-          numberOfWorkers: state.assignmentMode ==
-                  CleaningAssignmentMode.openCount
+          numberOfWorkers:
+              state.assignmentMode == CleaningAssignmentMode.openCount
               ? state.numberOfWorkers
               : 1,
-          preferredWorkerId: state.assignmentMode ==
-                  CleaningAssignmentMode.preferredWorker
+          preferredWorkerId:
+              state.assignmentMode == CleaningAssignmentMode.preferredWorker
               ? state.selectedWorkerId
               : null,
           workerRoomAssignments: workerRoomAssignments.isEmpty
@@ -286,7 +282,8 @@ class _ClMainServiceScheduleScreenState
           if (state.createOrderStatus == BlocStatus.success) {
             AppToast.showToast(
               context: context,
-              message: 'تم إرسال الطلب بنجاح',
+              message:
+                  state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
               type: ToastificationType.success,
             );
             context.pushRoute('/clmain');
@@ -344,15 +341,6 @@ class _ClMainServiceScheduleScreenState
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 16),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: _selectedGenderPreference,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedGenderPreference = value;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 12),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
                             status: _couponStatus,
@@ -376,7 +364,6 @@ class _ClMainServiceScheduleScreenState
                             travelFee: estimate?.pricing?.travelFee ?? 0,
                             addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
                             totalPrice: estimate?.pricing?.totalPrice ?? 0,
-                            distanceKm: estimate?.pricing?.distanceKm,
                             adminMargin: estimate?.pricing?.adminMargin,
                             isPricingFinal: estimate?.pricing?.isPricingFinal,
                             currency: estimate?.pricing?.currency ?? 'SYP',

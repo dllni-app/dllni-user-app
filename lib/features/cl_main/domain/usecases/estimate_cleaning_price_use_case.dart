@@ -5,6 +5,7 @@ import '../../data/models/estimate_price_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
+import '../models/cl_worker_room_assignment_result.dart';
 import '../repository/cl_main_repo.dart';
 
 @lazySingleton
@@ -140,7 +141,9 @@ class EstimateCleaningPriceParams with Params {
     if (resolvedWorkers != null && resolvedWorkers > 0) {
       body['numberOfWorkers'] = resolvedWorkers;
     }
-    final assignments = workerRoomAssignments;
+    final assignments = workerRoomAssignments == null
+        ? null
+        : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
     if (assignments != null && assignments.isNotEmpty) {
       body['workerRoomAssignments'] = assignments;
     }

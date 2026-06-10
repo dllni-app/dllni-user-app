@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../profile/domain/models/address_list_item.dart';
@@ -138,8 +139,7 @@ class _ClMainOccasionScheduleScreenState
   void _onApplyCoupon(String code) {
     setState(() {
       _couponStatus = ClCouponUiStatus.failed;
-      _couponMessage =
-          'الكوبونات غير متاحة لطلبات المناسبات حالياً.';
+      _couponMessage = 'الكوبونات غير متاحة لطلبات المناسبات حالياً.';
     });
   }
 
@@ -147,11 +147,9 @@ class _ClMainOccasionScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تعذر تجهيز بيانات الطلب'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
       return;
     }
 
@@ -210,14 +208,24 @@ class _ClMainOccasionScheduleScreenState
         listenWhen: (previous, current) =>
             previous.createOrderStatus != current.createOrderStatus,
         listener: (context, state) {
-          if (state.createOrderStatus == BlocStatus.loading) return;
+          if (state.createOrderStatus == BlocStatus.loading) {
+            Loading.show(context);
+            return;
+          }
+          Loading.close();
           if (state.createOrderStatus == BlocStatus.success) {
+            AppToast.showToast(
+              context: context,
+              message:
+                  state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
+              type: ToastificationType.success,
+            );
             context.pushRoute('/clmain');
           } else if (state.createOrderStatus == BlocStatus.failed) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage ?? 'فشل إرسال طلب المناسبة'),
-              ),
+            AppToast.showToast(
+              context: context,
+              message: state.errorMessage ?? 'فشل إرسال طلب المناسبة',
+              type: ToastificationType.error,
             );
           }
         },
@@ -240,6 +248,7 @@ class _ClMainOccasionScheduleScreenState
                           ClServiceGradientInfoCardWidget(
                             estimatedSqm: _estimatedSqm,
                             estimatedHours: _estimatedHours,
+                            showEstimatedSqm: false,
                           ),
                           const SizedBox(height: 10),
                           ClServiceSectionCardWidget(
@@ -290,8 +299,7 @@ class _ClMainOccasionScheduleScreenState
                           ),
                           const SizedBox(height: 10),
                           ClServiceAddressSectionWidget(
-                            locationName:
-                                _selectedAddress?.label ?? 'المنزل',
+                            locationName: _selectedAddress?.label ?? 'المنزل',
                             address:
                                 _selectedAddress?.line1 ??
                                 'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
@@ -345,7 +353,6 @@ class _ClMainOccasionScheduleScreenState
                             travelFee: estimate.pricing?.travelFee ?? 0,
                             addonsTotal: estimate.pricing?.addonsTotal ?? 0,
                             totalPrice: estimate.pricing?.totalPrice ?? 0,
-                            distanceKm: estimate.pricing?.distanceKm,
                             adminMargin: estimate.pricing?.adminMargin,
                             isPricingFinal: estimate.pricing?.isPricingFinal,
                             currency: estimate.pricing?.currency ?? 'SYP',

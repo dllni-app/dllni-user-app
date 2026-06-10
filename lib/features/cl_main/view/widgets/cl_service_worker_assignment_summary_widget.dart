@@ -18,7 +18,8 @@ class ClServiceWorkerAssignmentSummaryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (assignments.isEmpty) {
+    final visibleAssignments = filterNonEmptyWorkerRoomAssignments(assignments);
+    if (visibleAssignments.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -36,10 +37,10 @@ class ClServiceWorkerAssignmentSummaryWidget extends StatelessWidget {
             _FieldErrorsBanner(messages: generalErrors),
             const SizedBox(height: 12),
           ],
-          for (var i = 0; i < assignments.length; i++) ...[
+          for (var i = 0; i < visibleAssignments.length; i++) ...[
             if (i > 0) const SizedBox(height: 10),
             _SlotSummaryCard(
-              assignment: assignments[i],
+              assignment: visibleAssignments[i],
               fieldErrors: fieldErrors,
             ),
           ],

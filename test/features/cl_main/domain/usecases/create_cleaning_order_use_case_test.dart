@@ -74,7 +74,17 @@ void main() {
     expect(details['bathrooms'], breakdown.legacyBathroomsCount);
     expect(details['balconies'], breakdown.legacyBalconiesCount);
     expect(details['living_room_size'], 'large');
-    expect(details['room_size_breakdown'], breakdown.toJson());
+    final breakdownJson = details['room_size_breakdown'] as Map<String, dynamic>;
+    expect(breakdownJson, breakdown.toJson());
+    expect(breakdownJson.keys, {
+      'bedroom',
+      'bathroom',
+      'kitchen',
+      'living_room',
+      'balcony',
+      'corridor',
+    });
+    expect(breakdownJson.containsKey('corridor'), isTrue);
   });
 
   test('getBody includes top-level cleaningType when provided', () {

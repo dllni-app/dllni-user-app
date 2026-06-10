@@ -33,6 +33,12 @@ class SetPreferredWorkerEvent extends ClMainEvent {
   SetPreferredWorkerEvent({required this.workerId});
 }
 
+class SetGenderPreferenceEvent extends ClMainEvent {
+  final CleaningGenderPreference preference;
+
+  SetGenderPreferenceEvent({required this.preference});
+}
+
 class SetAssignmentModeEvent extends ClMainEvent {
   final CleaningAssignmentMode mode;
 

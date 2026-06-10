@@ -241,25 +241,6 @@ class _CleaningStartVerificationDialogContentState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ],
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: _submitting ? null : () {},
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xff1E2A78),
-                      side: const BorderSide(color: Color(0xff1E2A78)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'العامل لم يصل؟',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

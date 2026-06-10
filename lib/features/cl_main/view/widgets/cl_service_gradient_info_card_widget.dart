@@ -5,11 +5,13 @@ class ClServiceGradientInfoCardWidget extends StatelessWidget {
   const ClServiceGradientInfoCardWidget({
     required this.estimatedSqm,
     required this.estimatedHours,
+    this.showEstimatedSqm = true,
     super.key,
   });
 
   final int estimatedSqm;
   final double estimatedHours;
+  final bool showEstimatedSqm;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +29,14 @@ class ClServiceGradientInfoCardWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _InfoRowWidget(
-            title: 'المساحة التقريبية لمنزلك',
-            value: '$estimatedSqm م2',
-            icon: Icons.location_on_outlined,
-          ),
-          const SizedBox(height: 16),
+          if (showEstimatedSqm) ...[
+            _InfoRowWidget(
+              title: 'المساحة التقريبية لمنزلك',
+              value: '$estimatedSqm م2',
+              icon: Icons.location_on_outlined,
+            ),
+            const SizedBox(height: 16),
+          ],
           _InfoRowWidget(
             title: 'عدد ساعات العمل المتوقعة',
             value: '${estimatedHours.toStringAsFixed(1)} ساعات عمل',

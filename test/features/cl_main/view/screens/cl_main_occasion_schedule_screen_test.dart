@@ -159,6 +159,8 @@ void main() {
       await tester.tap(submitButton);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(seconds: 1));
 
       expect(capturedParams, isNotNull);
       expect(capturedParams?.preferredWorkerId, 77);

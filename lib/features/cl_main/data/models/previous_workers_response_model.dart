@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../../../core/models/cleaning_gender_preference.dart';
+
 PreviousWorkersResponseModel previousWorkersResponseModelFromJson(dynamic json) {
   if (json is String && json.isNotEmpty) {
     return PreviousWorkersResponseModel.fromJson(jsonDecode(json) as Map<String, dynamic>);
@@ -55,6 +57,7 @@ class PreviousWorkerModel {
   final int? id;
   final String? name;
   final String? phone;
+  final CleaningGenderPreference? gender;
   final double? rating;
   final int? totalJobs;
   final int? completedJobs;
@@ -69,6 +72,7 @@ class PreviousWorkerModel {
     this.id,
     this.name,
     this.phone,
+    this.gender,
     this.rating,
     this.totalJobs,
     this.completedJobs,
@@ -85,6 +89,7 @@ class PreviousWorkerModel {
       id: _extractWorkerId(json),
       name: json['name'] as String? ?? json['full_name'] as String? ?? json['worker_name'] as String?,
       phone: json['phone'] as String?,
+      gender: _extractGender(json),
       rating: (json['rating'] as num?)?.toDouble(),
       totalJobs: (json['totalJobs'] as num?)?.toInt() ?? (json['total_jobs'] as num?)?.toInt(),
       completedJobs: (json['completedJobs'] as num?)?.toInt() ?? (json['completed_jobs'] as num?)?.toInt(),
@@ -110,6 +115,24 @@ class PreviousWorkerModel {
 
     if (rawId is num) return rawId.toInt();
     if (rawId is String) return int.tryParse(rawId);
+    return null;
+  }
+
+  static CleaningGenderPreference? _extractGender(Map<String, dynamic> json) {
+    final nestedWorker = json['worker'];
+    final dynamic rawGender =
+        json['gender'] ??
+        json['sex'] ??
+        json['worker_gender'] ??
+        json['workerGender'] ??
+        json['genderPreference'] ??
+        json['gender_preference'] ??
+        (nestedWorker is Map<String, dynamic> ? nestedWorker['gender'] ?? nestedWorker['sex'] : null);
+
+    final normalized = rawGender?.toString().trim().toLowerCase();
+    if (normalized == 'male' || normalized == 'female') {
+      return CleaningGenderPreference.fromApi(normalized);
+    }
     return null;
   }
 }

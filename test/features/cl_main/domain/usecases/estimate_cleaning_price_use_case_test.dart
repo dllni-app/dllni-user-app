@@ -33,7 +33,45 @@ void main() {
     expect(details['bathrooms'], breakdown.legacyBathroomsCount);
     expect(details['balconies'], breakdown.legacyBalconiesCount);
     expect(details['living_room_size'], 'medium');
-    expect(details['room_size_breakdown'], breakdown.toJson());
+    final breakdownJson = details['room_size_breakdown'] as Map<String, dynamic>;
+    expect(breakdownJson, breakdown.toJson());
+    expect(breakdownJson.keys, {
+      'bedroom',
+      'bathroom',
+      'kitchen',
+      'living_room',
+      'balcony',
+      'corridor',
+    });
+    expect(breakdownJson.containsKey('corridor'), isTrue);
+  });
+
+  test('getBody includes corridor in room_size_breakdown when present locally', () {
+    const breakdown = CleaningRoomSizeBreakdown(
+      bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+      corridor: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
+    );
+
+    final params = EstimateCleaningPriceParams(
+      propertyType: 'villa',
+      bedrooms: 0,
+      rooms: 0,
+      bathrooms: 0,
+      livingRoomSize: 'small',
+      roomSizeBreakdown: breakdown,
+      addressLatitude: 33.5,
+      addressLongitude: 36.3,
+    );
+
+    final details = params.getBody()['propertyDetails'] as Map<String, dynamic>;
+    final breakdownJson = details['room_size_breakdown'] as Map<String, dynamic>;
+
+    expect(breakdownJson.containsKey('corridor'), isTrue);
+    expect(breakdownJson['corridor'], {
+      'small': 0,
+      'medium': 1,
+      'large': 0,
+    });
   });
 
   test('getBody includes propertyDetails.cleaning_mode when provided', () {

@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/toast_component.dart';
+import '../../data/models/previous_workers_response_model.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
@@ -19,6 +21,7 @@ import '../widgets/cl_counter_row_widget.dart';
 import '../widgets/cl_home_description_title_card_widget.dart';
 import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_service_assignment_mode_section_widget.dart';
+import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_worker_count_selector_widget.dart';
 import '../widgets/cl_service_worker_room_assignment_widget.dart';
@@ -61,6 +64,18 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
     setState(() {
       _roomSizeBreakdown = _roomSizeBreakdown.setCount(roomType, roomSize, currentCount + delta);
     });
+  }
+
+  List<PreviousWorkerModel> _filterWorkersByGender(
+    List<PreviousWorkerModel> workers,
+    CleaningGenderPreference preference,
+  ) {
+    if (preference == CleaningGenderPreference.any) {
+      return workers;
+    }
+    return workers
+        .where((worker) => worker.gender == preference)
+        .toList(growable: false);
   }
 
   Future<void> _showLocationPermissionSettingsDialog() async {
@@ -181,7 +196,7 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
       (type: CleaningRoomType.kitchen, title: 'المطابخ', icon: Icons.soup_kitchen_outlined),
       (type: CleaningRoomType.livingRoom, title: 'الصالون / غرفة المعيشة', icon: Icons.chair_alt_outlined),
       (type: CleaningRoomType.balcony, title: 'البلكونات', icon: Icons.balcony_outlined),
-      (type: CleaningRoomType.corridor, title: 'الموزع', icon: Icons.door_sliding_outlined),
+      (type: CleaningRoomType.corridor, title: 'الموزع', icon: Icons.meeting_room_outlined),
     ];
 
     const sizeOptions = <({CleaningRoomSize size, String label})>[
@@ -345,8 +360,20 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
                             ),
                             const SizedBox(height: 10),
                           ] else ...[
+                            ClServiceGenderPreferenceSectionWidget(
+                              selectedPreference: state.genderPreference,
+                              onChanged: (value) {
+                                bloc.add(
+                                  SetGenderPreferenceEvent(preference: value),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 10),
                             ClServicePreviousWorkersSectionWidget(
-                              workers: state.previousWorkers.list,
+                              workers: _filterWorkersByGender(
+                                state.previousWorkers.list,
+                                state.genderPreference,
+                              ),
                               selectedWorkerId: state.selectedWorkerId,
                               isLoading: state.previousWorkersStatus == BlocStatus.loading,
                               errorMessage: state.previousWorkersStatus == BlocStatus.failed ? state.errorMessage : null,

@@ -7,6 +7,7 @@ class ClMainState {
   final BlocStatus cleaningServicesStatus;
   final PaginationStateModel<PreviousWorkerModel> previousWorkers;
   final int? selectedWorkerId;
+  final CleaningGenderPreference genderPreference;
   final CleaningAssignmentMode assignmentMode;
   final int numberOfWorkers;
   final Map<String, int> workerRoomAssignments;
@@ -24,6 +25,7 @@ class ClMainState {
       perPage: 10,
     ),
     this.selectedWorkerId,
+    this.genderPreference = CleaningGenderPreference.any,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers = 1,
     this.workerRoomAssignments = const <String, int>{},
@@ -41,6 +43,7 @@ class ClMainState {
     PaginationStateModel<PreviousWorkerModel>? previousWorkers,
     int? selectedWorkerId,
     bool clearSelectedWorker = false,
+    CleaningGenderPreference? genderPreference,
     CleaningAssignmentMode? assignmentMode,
     int? numberOfWorkers,
     Map<String, int>? workerRoomAssignments,
@@ -62,6 +65,7 @@ class ClMainState {
       selectedWorkerId: clearSelectedWorker
           ? null
           : (selectedWorkerId ?? this.selectedWorkerId),
+      genderPreference: genderPreference ?? this.genderPreference,
       assignmentMode: assignmentMode ?? this.assignmentMode,
       numberOfWorkers: numberOfWorkers ?? this.numberOfWorkers,
       workerRoomAssignments: clearWorkerRoomAssignments

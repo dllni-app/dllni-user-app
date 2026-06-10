@@ -54,4 +54,40 @@ void main() {
       );
     });
   });
+
+  group('workerRoomAssignmentsToRequestJson', () {
+    test('drops slots with empty rooms arrays', () {
+      final payload = workerRoomAssignmentsToRequestJson([
+        CleaningWorkerRoomAssignment(
+          workerSlot: 1,
+          rooms: const [
+            CleaningWorkerRoomAssignmentRoom(
+              roomKey: 'living_room.large.1',
+              roomType: 'living_room',
+              roomSize: 'large',
+            ),
+          ],
+        ),
+        const CleaningWorkerRoomAssignment(workerSlot: 2),
+        const CleaningWorkerRoomAssignment(workerSlot: 3),
+        CleaningWorkerRoomAssignment(
+          workerSlot: 4,
+          rooms: const [
+            CleaningWorkerRoomAssignmentRoom(
+              roomKey: 'bedroom.small.1',
+              roomType: 'bedroom',
+              roomSize: 'small',
+            ),
+          ],
+        ),
+      ]);
+
+      expect(payload, hasLength(2));
+      expect(payload.map((entry) => entry['workerSlot']), [1, 4]);
+      expect(
+        payload.every((entry) => (entry['rooms'] as List).isNotEmpty),
+        isTrue,
+      );
+    });
+  });
 }

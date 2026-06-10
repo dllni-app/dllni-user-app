@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:common_package/helpers/pagination_helper.dart';
 import 'package:common_package/helpers/droppable_helper.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -40,6 +41,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       transformer: paginationEventTransformer(),
     );
     on<SetPreferredWorkerEvent>(_setPreferredWorker);
+    on<SetGenderPreferenceEvent>(_setGenderPreference);
     on<SetAssignmentModeEvent>(_setAssignmentMode);
     on<SetNumberOfWorkersEvent>(_setNumberOfWorkers);
     on<SetWorkerRoomSlotEvent>(_setWorkerRoomSlot);
@@ -103,8 +105,9 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
             assignmentFieldErrors: filterWorkerRoomAssignmentFieldErrors(
               failure,
             ),
-            clearAssignmentFieldErrors:
-                filterWorkerRoomAssignmentFieldErrors(failure).isEmpty,
+            clearAssignmentFieldErrors: filterWorkerRoomAssignmentFieldErrors(
+              failure,
+            ).isEmpty,
           ),
         );
       },
@@ -178,7 +181,13 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     Emitter<ClMainState> emit,
   ) {
     if (event.workerId == null) {
-      emit(state.copyWith(clearSelectedWorker: true, clearErrorMessage: true, clearAssignmentFieldErrors: true));
+      emit(
+        state.copyWith(
+          clearSelectedWorker: true,
+          clearErrorMessage: true,
+          clearAssignmentFieldErrors: true,
+        ),
+      );
     } else {
       emit(
         state.copyWith(
@@ -190,6 +199,31 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         ),
       );
     }
+  }
+
+  FutureOr<void> _setGenderPreference(
+    SetGenderPreferenceEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    PreviousWorkerModel? selectedWorker;
+    for (final worker in state.previousWorkers.list) {
+      if (worker.id == state.selectedWorkerId) {
+        selectedWorker = worker;
+        break;
+      }
+    }
+    final shouldClearSelectedWorker =
+        event.preference != CleaningGenderPreference.any &&
+        selectedWorker != null &&
+        selectedWorker.gender != event.preference;
+
+    emit(
+      state.copyWith(
+        genderPreference: event.preference,
+        clearSelectedWorker: shouldClearSelectedWorker,
+        clearErrorMessage: true,
+      ),
+    );
   }
 
   Map<String, int> _clampWorkerRoomAssignments(
@@ -212,6 +246,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         state.copyWith(
           assignmentMode: event.mode,
           clearSelectedWorker: true,
+          genderPreference: CleaningGenderPreference.any,
           numberOfWorkers: safeCount,
           workerRoomAssignments: _clampWorkerRoomAssignments(
             state.workerRoomAssignments,
@@ -244,6 +279,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         numberOfWorkers: safeCount,
         assignmentMode: CleaningAssignmentMode.openCount,
         clearSelectedWorker: true,
+        genderPreference: CleaningGenderPreference.any,
         workerRoomAssignments: _clampWorkerRoomAssignments(
           state.workerRoomAssignments,
           safeCount,
@@ -300,15 +336,16 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     final response = await createCleaningOrderUseCase(event.params);
     response.fold(
       (failure) {
+        final assignmentErrors = filterWorkerRoomAssignmentFieldErrors(failure);
         emit(
           state.copyWith(
             createOrderStatus: BlocStatus.failed,
-            errorMessage: failure.message,
-            assignmentFieldErrors: filterWorkerRoomAssignmentFieldErrors(
+            errorMessage: failureMessageWithFieldErrors(
               failure,
+              fallback: 'فشل تنفيذ الطلب',
             ),
-            clearAssignmentFieldErrors:
-                filterWorkerRoomAssignmentFieldErrors(failure).isEmpty,
+            assignmentFieldErrors: assignmentErrors,
+            clearAssignmentFieldErrors: assignmentErrors.isEmpty,
           ),
         );
       },

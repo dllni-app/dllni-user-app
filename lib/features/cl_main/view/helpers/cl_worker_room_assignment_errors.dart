@@ -22,11 +22,37 @@ List<String> flattenWorkerRoomAssignmentFieldErrors(
       .toList(growable: false);
 }
 
+List<String> flattenFieldErrors(Map<String, List<String>>? fieldErrors) {
+  if (fieldErrors == null || fieldErrors.isEmpty) {
+    return const <String>[];
+  }
+
+  return fieldErrors.values
+      .expand((messages) => messages)
+      .where((message) => message.trim().isNotEmpty)
+      .toList(growable: false);
+}
+
 Map<String, List<String>>? extractFieldErrorsFromFailure(Failure failure) {
   if (failure is ServerFailure) {
     return failure.fieldErrors;
   }
   return null;
+}
+
+String failureMessageWithFieldErrors(
+  Failure failure, {
+  required String fallback,
+}) {
+  final fieldMessages = flattenFieldErrors(
+    extractFieldErrorsFromFailure(failure),
+  );
+  if (fieldMessages.isNotEmpty) {
+    return fieldMessages.join('\n');
+  }
+
+  final message = failure.message.trim();
+  return message.isEmpty ? fallback : message;
 }
 
 Map<String, List<String>> filterWorkerRoomAssignmentFieldErrors(

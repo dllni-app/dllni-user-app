@@ -1,6 +1,6 @@
 import 'cleaning_assignment_mode.dart';
 import 'cleaning_room_size_breakdown.dart';
-
+import 'cl_worker_room_assignment_result.dart';
 class CleaningRoomUnit {
   const CleaningRoomUnit({
     required this.roomKey,
@@ -39,7 +39,7 @@ const Map<CleaningRoomSize, String> _roomSizeLabelsAr = {
 List<CleaningRoomUnit> enumerateRoomUnits(CleaningRoomSizeBreakdown breakdown) {
   final units = <CleaningRoomUnit>[];
 
-  for (final roomType in CleaningRoomType.values) {
+  for (final roomType in backendSupportedCleaningRoomTypes) {
     final typeLabel = _roomTypeLabelsAr[roomType] ?? roomType.apiKey;
     for (final size in CleaningRoomSize.values) {
       final count = breakdown.countFor(roomType, size);
@@ -73,15 +73,14 @@ List<Map<String, dynamic>> buildWorkerRoomAssignmentsJson({
       preferredWorkerId != null;
 
   if (isPreferredWorker) {
-    return [
+    return filterNonEmptyWorkerRoomAssignmentMaps([
       {
         'workerSlot': 1,
         'preferredWorkerId': preferredWorkerId,
         'rooms': units.map((unit) => unit.toJson()).toList(growable: false),
       },
-    ];
+    ]);
   }
-
   final slotRooms = <int, List<Map<String, dynamic>>>{};
   for (final unit in units) {
     final slot = slotByRoomKey[unit.roomKey];
@@ -91,16 +90,18 @@ List<Map<String, dynamic>> buildWorkerRoomAssignmentsJson({
 
   if (slotRooms.isEmpty) return const [];
 
-  return slotRooms.entries
-      .map(
-        (entry) => {
-          'workerSlot': entry.key,
-          'preferredWorkerId': null,
-          'rooms': entry.value,
-        },
-      )
-      .toList(growable: false)
-    ..sort(
-      (a, b) => (a['workerSlot'] as int).compareTo(b['workerSlot'] as int),
-    );
+  return filterNonEmptyWorkerRoomAssignmentMaps(
+    slotRooms.entries
+        .map(
+          (entry) => {
+            'workerSlot': entry.key,
+            'preferredWorkerId': null,
+            'rooms': entry.value,
+          },
+        )
+        .toList(growable: false)
+      ..sort(
+        (a, b) => (a['workerSlot'] as int).compareTo(b['workerSlot'] as int),
+      ),
+  );
 }

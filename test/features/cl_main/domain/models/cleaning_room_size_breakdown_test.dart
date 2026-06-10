@@ -22,7 +22,7 @@ void main() {
       },
     );
 
-    test('includes corridor in totalRooms and serialization map', () {
+    test('counts corridor in totalRooms and includes it in toJson', () {
       const breakdown = CleaningRoomSizeBreakdown(
         bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
         corridor: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
@@ -37,6 +37,7 @@ void main() {
         'balcony': {'small': 0, 'medium': 0, 'large': 0},
         'corridor': {'small': 0, 'medium': 1, 'large': 0},
       });
+      expect(breakdown.toJson().containsKey('corridor'), isTrue);
     });
 
     test('serializes balcony buckets inside room_size_breakdown', () {
@@ -52,6 +53,7 @@ void main() {
         'balcony': {'small': 2, 'medium': 1, 'large': 0},
         'corridor': {'small': 0, 'medium': 0, 'large': 0},
       });
+      expect(breakdown.toJson().containsKey('corridor'), isTrue);
     });
 
     test('balcony-only input does not satisfy hasAnyRoom', () {

@@ -35,7 +35,7 @@ class ClServiceAssignmentModeSectionWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: _ModeOption(
-                  label: 'عامل مفضل',
+                  label: 'عامل/ة',
                   isSelected:
                       selectedMode == CleaningAssignmentMode.preferredWorker,
                   onTap: () =>

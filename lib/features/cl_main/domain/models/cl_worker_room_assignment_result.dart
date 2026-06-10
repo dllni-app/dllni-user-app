@@ -88,6 +88,26 @@ class CleaningWorkerRoomAssignment {
   };
 }
 
+bool workerRoomAssignmentHasRooms(CleaningWorkerRoomAssignment assignment) =>
+    assignment.rooms.isNotEmpty;
+
+List<CleaningWorkerRoomAssignment> filterNonEmptyWorkerRoomAssignments(
+  List<CleaningWorkerRoomAssignment> assignments,
+) {
+  return assignments
+      .where(workerRoomAssignmentHasRooms)
+      .toList(growable: false);
+}
+
+List<Map<String, dynamic>> filterNonEmptyWorkerRoomAssignmentMaps(
+  List<Map<String, dynamic>> assignments,
+) {
+  return assignments.where((entry) {
+    final rooms = entry['rooms'];
+    return rooms is List && rooms.isNotEmpty;
+  }).toList(growable: false);
+}
+
 List<CleaningWorkerRoomAssignment> parseWorkerRoomAssignments(dynamic raw) {
   if (raw is! List) return const [];
   return raw
@@ -100,7 +120,7 @@ List<CleaningWorkerRoomAssignment> parseWorkerRoomAssignments(dynamic raw) {
 List<Map<String, dynamic>> workerRoomAssignmentsToRequestJson(
   List<CleaningWorkerRoomAssignment> assignments,
 ) {
-  return assignments
+  return filterNonEmptyWorkerRoomAssignments(assignments)
       .map((assignment) => assignment.toRequestJson())
       .toList(growable: false);
 }

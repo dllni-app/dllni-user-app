@@ -105,7 +105,7 @@ class CleaningOrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                AppText.bodySmall(_bookingLabel, color: const Color(0xff9CA3AF), fontWeight: FontWeight.w500),
+                Expanded(child: AppText.bodySmall(_bookingLabel, color: const Color(0xff9CA3AF), fontWeight: FontWeight.w500, textAlign: TextAlign.start,)),
                 Container(
                   padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 5),
                   decoration: BoxDecoration(color: const Color(0xFFE2F5F4), borderRadius: BorderRadius.circular(16)),
