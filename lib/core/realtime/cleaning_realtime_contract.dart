@@ -34,6 +34,11 @@ class CleaningRealtimeContract {
     'CompletionReviewRequested': awaitingCustomerCompletion,
     'completion_review_requested': awaitingCustomerCompletion,
     'cleaning_order.completion_review_requested': awaitingCustomerCompletion,
+    'arrival_verified': arrivalVerified,
+    'service_extension_requested': serviceExtensionRequested,
+    'cleaning_order.service_extension_requested': serviceExtensionRequested,
+    'completion_decision_made': completionDecisionMade,
+    'cleaning_order.completion_decision_made': completionDecisionMade,
   };
 
   static final Map<String, String> _normalizedEventAliases =
@@ -106,41 +111,48 @@ class CleaningRealtimeContract {
     return raw == securityCodeIssued || raw == securityCodeIssuedScoped;
   }
 
+  static Map<String, dynamic> unwrapPayload(Map<String, dynamic> payload) {
+    final nested = _asStringMap(payload['data']);
+    if (nested.isEmpty) return payload;
+    return <String, dynamic>{...nested, ...payload};
+  }
+
   static int? extractBookingId(Map<String, dynamic> payload) {
-    final dataMap = _asStringMap(payload['data']);
+    final unwrapped = unwrapPayload(payload);
+    final dataMap = _asStringMap(unwrapped['data']);
     final trackingMap = _asStringMap(
-      payload['tracking'] ?? dataMap['tracking'],
+      unwrapped['tracking'] ?? dataMap['tracking'],
     );
     final cleaningOrderMap = _asStringMap(
-      payload['cleaningOrder'] ??
-          payload['cleaning_order'] ??
-          payload['cleaningBooking'] ??
-          payload['cleaning_booking'] ??
+      unwrapped['cleaningOrder'] ??
+          unwrapped['cleaning_order'] ??
+          unwrapped['cleaningBooking'] ??
+          unwrapped['cleaning_booking'] ??
           dataMap['cleaningOrder'] ??
           dataMap['cleaning_order'] ??
           dataMap['cleaningBooking'] ??
           dataMap['cleaning_booking'],
     );
-    final orderMap = _asStringMap(payload['order'] ?? dataMap['order']);
-    final bookingMap = _asStringMap(payload['booking'] ?? dataMap['booking']);
+    final orderMap = _asStringMap(unwrapped['order'] ?? dataMap['order']);
+    final bookingMap = _asStringMap(unwrapped['booking'] ?? dataMap['booking']);
     return _extractIdFromMap(trackingMap) ??
         _extractIdFromMap(cleaningOrderMap) ??
         _extractIdFromMap(orderMap) ??
         _extractIdFromMap(bookingMap) ??
         _extractIdFromMap(dataMap) ??
         _asInt(
-          payload['cleaningBookingId'] ??
-              payload['cleaning_bookingId'] ??
-              payload['bookingId'] ??
-              payload['booking_id'] ??
-              payload['cleaningOrderId'] ??
-              payload['cleaning_order_id'] ??
-              payload['cleaning_booking_id'] ??
-              payload['cleaningBooking'] ??
-              payload['cleaning_booking'] ??
-              payload['id'] ??
-              payload['orderId'] ??
-              payload['order_id'],
+          unwrapped['cleaningBookingId'] ??
+              unwrapped['cleaning_bookingId'] ??
+              unwrapped['bookingId'] ??
+              unwrapped['booking_id'] ??
+              unwrapped['cleaningOrderId'] ??
+              unwrapped['cleaning_order_id'] ??
+              unwrapped['cleaning_booking_id'] ??
+              unwrapped['cleaningBooking'] ??
+              unwrapped['cleaning_booking'] ??
+              unwrapped['id'] ??
+              unwrapped['orderId'] ??
+              unwrapped['order_id'],
         );
   }
 
@@ -159,11 +171,12 @@ class CleaningRealtimeContract {
   }
 
   static CleaningRealtimeLocation? parseLocation(Map<String, dynamic> payload) {
-    final latitude = _asDouble(payload['latitude'] ?? payload['lat']);
-    final longitude = _asDouble(payload['longitude'] ?? payload['lng']);
+    final unwrapped = unwrapPayload(payload);
+    final latitude = _asDouble(unwrapped['latitude'] ?? unwrapped['lat']);
+    final longitude = _asDouble(unwrapped['longitude'] ?? unwrapped['lng']);
     if (latitude == null || longitude == null) return null;
-    final workerId = _asInt(payload['workerId'] ?? payload['worker_id']);
-    final updatedAt = (payload['updatedAt'] ?? payload['updated_at'])
+    final workerId = _asInt(unwrapped['workerId'] ?? unwrapped['worker_id']);
+    final updatedAt = (unwrapped['updatedAt'] ?? unwrapped['updated_at'])
         ?.toString();
     return CleaningRealtimeLocation(
       latitude: latitude,

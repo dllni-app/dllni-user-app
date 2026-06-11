@@ -4,6 +4,7 @@ import '../../data/models/cleaning_order_cancel_api_models.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../../data/models/cleaning_worker_profile_model.dart';
 import '../../data/models/orders_api_models.dart';
+import '../../data/models/sos_api_models.dart';
 import '../../data/models/submit_cleaning_review_model.dart';
 import '../usecases/cancel_cleaning_order_use_case.dart';
 import '../usecases/check_restaurant_coupon_use_case.dart';
@@ -23,6 +24,7 @@ import '../usecases/patch_cleaning_order_use_case.dart';
 import '../usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../usecases/reject_cleaning_completion_use_case.dart';
 import '../usecases/submit_cleaning_review_use_case.dart';
+import '../usecases/sos_use_cases.dart';
 import '../usecases/update_cart_item_quantity_use_case.dart';
 
 abstract class OrdersRepo {
@@ -99,5 +101,17 @@ abstract class OrdersRepo {
   );
   DataResponse<FetchRestaurantOrderTrackingModel> fetchStoreOrderTracking(
     FetchRestaurantOrderTrackingParams params,
+  );
+
+  DataResponse<CreateUserSosResponseModel> createUserSos(
+    CreateUserSosParams params,
+  );
+
+  DataResponse<FetchSosAlertsModel> fetchSosAlerts(
+    FetchSosAlertsParams params,
+  );
+
+  DataResponse<SosAlertModel> fetchSosAlertDetails(
+    FetchSosAlertDetailsParams params,
   );
 }

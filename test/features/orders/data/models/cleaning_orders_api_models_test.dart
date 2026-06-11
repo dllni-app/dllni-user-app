@@ -211,5 +211,31 @@ void main() {
       expect(item.adminMargin, 3.75);
       expect(item.isPricingFinal, isTrue);
     });
+
+    test('parses travelFee from camelCase and snake_case aliases', () {
+      final camelCase = fetchCleaningOrderDetailsModelFromJson(
+        <String, dynamic>{
+          'data': <String, dynamic>{
+            'id': 501,
+            'travelFee': 111.19,
+            'isPricingFinal': true,
+          },
+        },
+      );
+      expect(camelCase.data?.travelFee, 111.19);
+      expect(camelCase.data?.isPricingFinal, isTrue);
+
+      final snakeCase = fetchCleaningOrderDetailsModelFromJson(
+        <String, dynamic>{
+          'data': <String, dynamic>{
+            'id': 502,
+            'travel_fee': '0',
+            'is_pricing_final': false,
+          },
+        },
+      );
+      expect(snakeCase.data?.travelFee, 0);
+      expect(snakeCase.data?.isPricingFinal, isFalse);
+    });
   });
 }

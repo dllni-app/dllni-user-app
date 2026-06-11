@@ -87,6 +87,7 @@ import '../../features/orders/domain/usecases/place_store_order_use_case.dart'
     as _i969;
 import '../../features/orders/domain/usecases/reject_cleaning_completion_use_case.dart'
     as _i51;
+import '../../features/orders/domain/usecases/sos_use_cases.dart' as _i988;
 import '../../features/orders/domain/usecases/submit_cleaning_review_use_case.dart'
     as _i642;
 import '../../features/orders/domain/usecases/update_cart_item_quantity_use_case.dart'
@@ -695,6 +696,15 @@ _i174.GetIt $initGetIt(
     () => _i51.RejectCleaningCompletionUseCase(
       ordersRepo: gh<_i132.OrdersRepo>(),
     ),
+  );
+  gh.lazySingleton<_i988.CreateUserSosUseCase>(
+    () => _i988.CreateUserSosUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
+  );
+  gh.lazySingleton<_i988.FetchSosAlertsUseCase>(
+    () => _i988.FetchSosAlertsUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
+  );
+  gh.lazySingleton<_i988.FetchSosAlertDetailsUseCase>(
+    () => _i988.FetchSosAlertDetailsUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
   gh.lazySingleton<_i642.SubmitCleaningReviewUseCase>(
     () => _i642.SubmitCleaningReviewUseCase(ordersRepo: gh<_i132.OrdersRepo>()),

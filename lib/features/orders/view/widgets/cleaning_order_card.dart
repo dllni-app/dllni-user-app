@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/extensions/num_extensions.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../helpers/cleaning_event_assistance_helper.dart';
 
 class CleaningOrderCard extends StatelessWidget {
   const CleaningOrderCard({
@@ -54,18 +55,10 @@ class CleaningOrderCard extends StatelessWidget {
   }
 
   String get _serviceTitle {
-    switch ((order.propertyType ?? '').toLowerCase()) {
-      case 'studio':
-        return 'خدمة تنظيف ستوديو';
-      case 'apartment':
-        return 'خدمة تنظيف شقة';
-      case 'house':
-        return 'خدمة تنظيف منزل';
-      case 'villa':
-        return 'خدمة تنظيف فيلا';
-      default:
-        return 'خدمة تنظيف منزل';
-    }
+    return CleaningEventAssistanceHelper.serviceTitle(
+      propertyType: order.propertyType,
+      customService: order.propertyDetails?.customService,
+    );
   }
 
   String get _timeLabel {

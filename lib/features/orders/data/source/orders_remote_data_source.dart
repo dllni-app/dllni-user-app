@@ -20,11 +20,13 @@ import '../../domain/usecases/patch_cleaning_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../../domain/usecases/submit_cleaning_review_use_case.dart';
+import '../../domain/usecases/sos_use_cases.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/cleaning_worker_profile_model.dart';
 import '../models/orders_api_models.dart';
+import '../models/sos_api_models.dart';
 import '../models/submit_cleaning_review_model.dart';
 
 @lazySingleton
@@ -307,6 +309,39 @@ class OrdersRemoteDataSource with HandlingApiManager {
         endPoint: '/api/v1/user/orders/supermarket/${params.orderId}/tracking',
       ),
       jsonConvert: fetchRestaurantOrderTrackingModelFromJson,
+    );
+  }
+
+  Future<CreateUserSosResponseModel> createUserSos(
+    CreateUserSosParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/sos',
+        data: params.getBody(),
+      ),
+      jsonConvert: createUserSosResponseModelFromJson,
+    );
+  }
+
+  Future<FetchSosAlertsModel> fetchSosAlerts(FetchSosAlertsParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/sos-alerts',
+        params: params.getParams(),
+      ),
+      jsonConvert: fetchSosAlertsModelFromJson,
+    );
+  }
+
+  Future<SosAlertModel> fetchSosAlertDetails(
+    FetchSosAlertDetailsParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/sos-alerts/${params.alertId}',
+      ),
+      jsonConvert: sosAlertModelFromJson,
     );
   }
 }

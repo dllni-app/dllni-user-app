@@ -114,5 +114,34 @@ void main() {
         96,
       );
     });
+
+    test('unwraps nested data payloads for booking id extraction', () {
+      expect(
+        CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
+          'data': <String, dynamic>{
+            'team': <String, dynamic>{
+              'requiredWorkers': 2,
+            },
+            'cleaning_order_id': 55,
+          },
+        }),
+        55,
+      );
+    });
+
+    test('parseLocation reads coordinates from nested data payload', () {
+      final location = CleaningRealtimeContract.parseLocation(
+        const <String, dynamic>{
+          'data': <String, dynamic>{
+            'latitude': 33.5,
+            'longitude': 36.3,
+          },
+        },
+      );
+
+      expect(location, isNotNull);
+      expect(location!.latitude, 33.5);
+      expect(location.longitude, 36.3);
+    });
   });
 }

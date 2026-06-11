@@ -21,11 +21,13 @@ import '../../domain/usecases/patch_cleaning_order_use_case.dart';
 import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../../domain/usecases/submit_cleaning_review_use_case.dart';
+import '../../domain/usecases/sos_use_cases.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/cleaning_worker_profile_model.dart';
 import '../models/orders_api_models.dart';
+import '../models/sos_api_models.dart';
 import '../models/submit_cleaning_review_model.dart';
 import '../source/orders_remote_data_source.dart';
 
@@ -246,6 +248,33 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   ) {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.fetchStoreOrderTracking(params),
+    );
+  }
+
+  @override
+  DataResponse<CreateUserSosResponseModel> createUserSos(
+    CreateUserSosParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.createUserSos(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchSosAlertsModel> fetchSosAlerts(
+    FetchSosAlertsParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.fetchSosAlerts(params),
+    );
+  }
+
+  @override
+  DataResponse<SosAlertModel> fetchSosAlertDetails(
+    FetchSosAlertDetailsParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.fetchSosAlertDetails(params),
     );
   }
 }

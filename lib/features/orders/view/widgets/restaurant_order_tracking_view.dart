@@ -5,6 +5,7 @@ import '../../data/models/orders_api_models.dart';
 import 'restaurant_order_details_card.dart';
 import 'restaurant_order_eta_card.dart';
 import 'restaurant_order_number_chip.dart';
+import 'restaurant_order_sos_sheet.dart';
 import 'restaurant_order_status_stepper.dart';
 import 'restaurant_order_tracking_map_section.dart';
 import 'restaurant_tracking_restaurant_info_card.dart';
@@ -98,6 +99,25 @@ class RestaurantOrderTrackingView extends StatelessWidget {
                         total: total,
                         money: _money,
                       ),
+                      if (order.id != null) ...[
+                        const SizedBox(height: 14),
+                        OutlinedButton.icon(
+                          onPressed: () => RestaurantOrderSosSheet.show(
+                            context,
+                            orderId: order.id!,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xffDC2626),
+                            side: const BorderSide(color: Color(0xffDC2626)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          icon: const Icon(Icons.sos_outlined),
+                          label: const Text(
+                            'طلب SOS',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -31,6 +31,7 @@ import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
+import '../helpers/cleaning_event_assistance_helper.dart';
 import '../helpers/cleaning_lifecycle_error_mapper.dart';
 import '../helpers/cleaning_order_polling_equality.dart';
 import '../helpers/cleaning_order_realtime_policy.dart';
@@ -244,7 +245,8 @@ class _CleaningOrderDetailsScreenState
   }
 
   void _applyLiveTeamSummary(Map<String, dynamic> payload) {
-    final team = payload['team'];
+    final unwrapped = CleaningRealtimeContract.unwrapPayload(payload);
+    final team = unwrapped['team'];
     if (team is! Map) return;
 
     final teamMap = Map<String, dynamic>.from(team);
@@ -711,19 +713,11 @@ class _CleaningOrderDetailsScreenState
     await _openCompletionSheet(force: force);
   }
 
-  String _serviceLabel(String? propertyType) {
-    switch ((propertyType ?? '').toLowerCase()) {
-      case 'studio':
-        return 'تنظيف ستوديو';
-      case 'apartment':
-        return 'تنظيف شقة';
-      case 'house':
-        return 'تنظيف منزل';
-      case 'villa':
-        return 'تنظيف فيلا';
-      default:
-        return 'تنظيف منزل';
-    }
+  String _serviceLabel(CleaningOrderDetailModel order) {
+    return CleaningEventAssistanceHelper.serviceTitle(
+      propertyType: order.propertyType,
+      customService: order.propertyDetails?.customService,
+    );
   }
 
   String _bookingLabel(CleaningOrderDetailModel order) {
@@ -1319,7 +1313,7 @@ class _CleaningOrderDetailsScreenState
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _serviceLabel(order.propertyType),
+                            _serviceLabel(order),
                             style: const TextStyle(
                               color: Color(0xff111827),
                               fontWeight: FontWeight.w700,
@@ -1328,6 +1322,58 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
+                    if (CleaningEventAssistanceHelper.isEventAssistance(
+                      order.propertyType,
+                    )) ...[
+                      const SizedBox(height: 12),
+                      _card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'تفاصيل المناسبة',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xff1F2937),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _SummaryRow(
+                              title: 'نوع المناسبة',
+                              value: CleaningEventAssistanceHelper.eventTypeLabelAr(
+                                order.propertyDetails?.eventType,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            _SummaryRow(
+                              title: 'عدد الضيوف',
+                              value:
+                                  '${order.propertyDetails?.guestCount ?? '-'}',
+                            ),
+                            const SizedBox(height: 6),
+                            _SummaryRow(
+                              title: 'نوع المكان',
+                              value: CleaningEventAssistanceHelper.venueTypeLabelAr(
+                                order.propertyDetails?.venueType,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            _SummaryRow(
+                              title: 'مدة الحجز',
+                              value: CleaningEventAssistanceHelper.formatHours(
+                                CleaningEventAssistanceHelper.resolveBookedHours(
+                                  propertyHours: order.propertyDetails?.hours,
+                                  totalHours: order.totalHours,
+                                  estimatedHours: double.tryParse(
+                                    order.estimatedHours ?? '',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     if (searchingForWorkers) ...[
                       const SizedBox(height: 12),
                       CleaningTeamSearchBannerWidget(
@@ -1792,6 +1838,10 @@ class _CleaningOrderDetailsScreenState
                                 '${(order.totalPrice ?? 0).formatWithComma()} ل.س',
                             isTotal: true,
                           ),
+                          if (order.isPricingFinal == false) ...[
+                            const SizedBox(height: 12),
+                            const _ProvisionalPricingNotice(),
+                          ],
                         ],
                       ),
                     ),
@@ -1823,6 +1873,29 @@ class _CleaningOrderDetailsScreenState
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProvisionalPricingNotice extends StatelessWidget {
+  const _ProvisionalPricingNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7E8),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFF3D6A1)),
+      ),
+      child: AppText.bodySmall(
+        'السعر المعروض تقديري وغير نهائي، وسيتم تأكيد السعر النهائي بعد قبول مقدم الخدمة للطلب.',
+        color: const Color(0xFF8A5A12),
+        fontWeight: FontWeight.w600,
+        textAlign: TextAlign.right,
       ),
     );
   }

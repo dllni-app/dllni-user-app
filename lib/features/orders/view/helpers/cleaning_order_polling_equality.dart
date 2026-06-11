@@ -46,6 +46,7 @@ bool cleaningOrderDetailDisplayEquals(
       _nullableEquals(a.totalPrice, b.totalPrice) &&
       _nullableEquals(a.basePrice, b.basePrice) &&
       _nullableEquals(a.travelFee, b.travelFee) &&
+      _nullableEquals(a.isPricingFinal, b.isPricingFinal) &&
       _nullableEquals(a.addonsTotal, b.addonsTotal) &&
       _nullableEquals(a.assignmentMode, b.assignmentMode) &&
       _nullableEquals(a.numberOfWorkers, b.numberOfWorkers) &&
