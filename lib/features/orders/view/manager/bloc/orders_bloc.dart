@@ -3,9 +3,9 @@ import 'package:injectable/injectable.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 
-import '../../../data/models/cleaning_booking_status.dart';
 import '../../../data/models/cleaning_orders_api_models.dart';
 import '../../../data/models/orders_api_models.dart';
+import '../../helpers/cleaning_order_polling_equality.dart';
 import '../../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../../domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../domain/usecases/delete_cart_item_use_case.dart';
@@ -53,7 +53,10 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     this.placeStoreOrderUseCase,
   ) : super(OrdersState()) {
     on<OrdersSectionChangedEvent>(_onSectionChanged);
-    on<FetchOrdersEvent>(_onFetchOrders, transformer: paginationEventTransformer());
+    on<FetchOrdersEvent>(
+      _onFetchOrders,
+      transformer: paginationEventTransformer(),
+    );
     on<FetchCartForActiveSectionEvent>(_onFetchCartForActiveSection);
     on<FetchRestaurantCartEvent>(_onFetchRestaurantCart);
     on<FetchStoreCartEvent>(_onFetchStoreCart);
@@ -84,22 +87,32 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     return _sections[index];
   }
 
-  bool _isStoresSection() => _sectionByIndex(state.selectedTabIndex) == 'supermarket';
-  bool _isCleaningSection() => _sectionByIndex(state.selectedTabIndex) == 'cleaning';
+  bool _isStoresSection() =>
+      _sectionByIndex(state.selectedTabIndex) == 'supermarket';
+  bool _isCleaningSection() =>
+      _sectionByIndex(state.selectedTabIndex) == 'cleaning';
 
-  Future<void> _onSectionChanged(OrdersSectionChangedEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onSectionChanged(
+    OrdersSectionChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(
       state.copyWith(
         selectedTabIndex: event.tabIndex,
         orders: const PaginationStateModel<OrderResourceModel>(perPage: 10),
-        cleaningOrders: const PaginationStateModel<CleaningOrderModel>(perPage: 10),
+        cleaningOrders: const PaginationStateModel<CleaningOrderModel>(
+          perPage: 10,
+        ),
         clearError: true,
       ),
     );
     add(FetchOrdersEvent(isReload: true));
   }
 
-  Future<void> _onFetchCartForActiveSection(FetchCartForActiveSectionEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onFetchCartForActiveSection(
+    FetchCartForActiveSectionEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     if (_isStoresSection()) {
       add(FetchStoreCartEvent());
       return;
@@ -107,12 +120,50 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     add(FetchRestaurantCartEvent());
   }
 
-  Future<void> _onFetchOrders(FetchOrdersEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onFetchOrders(
+    FetchOrdersEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     final isCleaning = _isCleaningSection();
     final isLoadMore = event.loadMore && !event.isReload;
     if (isCleaning) {
       final pagination = state.cleaningOrders;
       if (isLoadMore && pagination.isEndPage) return;
+      if (event.silentRefresh) {
+        if (pagination.status == BlocStatus.loading) return;
+        final perPage = pagination.perPage;
+        final response = await fetchCleaningOrdersUseCase(
+          FetchCleaningOrdersParams(perPage: perPage, page: 1),
+        );
+        response.fold((_) {}, (result) {
+          final mergedList = mergeCleaningOrdersSilentPage1(
+            current: pagination.list,
+            fetched: result.data,
+            perPage: perPage,
+          );
+          if (cleaningOrderListsReferentiallyEqual(
+            pagination.list,
+            mergedList,
+          )) {
+            return;
+          }
+          final resolvedPerPage = result.meta?.perPage ?? perPage;
+          final resolvedTotal = result.meta?.total ?? pagination.total;
+          emit(
+            state.copyWith(
+              cleaningOrders: pagination.copyWith(
+                list: mergedList,
+                total: resolvedTotal,
+                perPage: resolvedPerPage,
+                isEndPage: result.data.length < resolvedPerPage,
+                status: BlocStatus.success,
+              ),
+              clearError: true,
+            ),
+          );
+        });
+        return;
+      }
       emit(
         state.copyWith(
           cleaningOrders: pagination.setLoading(isReload: event.isReload),
@@ -122,11 +173,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       final page = isLoadMore ? pagination.pageNumber : 1;
       final perPage = pagination.perPage;
       final response = await fetchCleaningOrdersUseCase(
-        FetchCleaningOrdersParams(
-          status: CleaningBookingStatus.pending,
-          perPage: perPage,
-          page: page,
-        ),
+        FetchCleaningOrdersParams(perPage: perPage, page: page),
       );
       response.fold(
         (failure) => emit(
@@ -162,7 +209,13 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     final page = isLoadMore ? pagination.pageNumber : 1;
     final perPage = pagination.perPage;
 
-    final response = await fetchOrdersUseCase(FetchOrdersParams(section: _sectionByIndex(state.selectedTabIndex), perPage: perPage, page: page));
+    final response = await fetchOrdersUseCase(
+      FetchOrdersParams(
+        section: _sectionByIndex(state.selectedTabIndex),
+        perPage: perPage,
+        page: page,
+      ),
+    );
     response.fold(
       (failure) => emit(
         state.copyWith(
@@ -185,12 +238,25 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-  Future<void> _onFetchRestaurantCart(FetchRestaurantCartEvent event, Emitter<OrdersState> emit) async {
-    emit(state.copyWith(restaurantCartStatus: BlocStatus.loading, clearRestaurantCartError: true));
+  Future<void> _onFetchRestaurantCart(
+    FetchRestaurantCartEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        restaurantCartStatus: BlocStatus.loading,
+        clearRestaurantCartError: true,
+      ),
+    );
     final response = await fetchRestaurantCartUseCase(NoParams());
     response.fold(
-      (failure) =>
-          emit(state.copyWith(restaurantCartStatus: BlocStatus.failed, restaurantCartErrorMessage: failure.message, clearRestaurantCart: true)),
+      (failure) => emit(
+        state.copyWith(
+          restaurantCartStatus: BlocStatus.failed,
+          restaurantCartErrorMessage: failure.message,
+          clearRestaurantCart: true,
+        ),
+      ),
       (result) => emit(
         state.copyWith(
           restaurantCartStatus: BlocStatus.success,
@@ -202,63 +268,167 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-  Future<void> _onFetchStoreCart(FetchStoreCartEvent event, Emitter<OrdersState> emit) async {
-    emit(state.copyWith(storeCartStatus: BlocStatus.loading, clearStoreCartError: true));
+  Future<void> _onFetchStoreCart(
+    FetchStoreCartEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        storeCartStatus: BlocStatus.loading,
+        clearStoreCartError: true,
+      ),
+    );
     final response = await fetchStoreCartUseCase(NoParams());
     response.fold(
-      (failure) => emit(state.copyWith(storeCartStatus: BlocStatus.failed, storeCartErrorMessage: failure.message, clearStoreCart: true)),
-      (result) =>
-          emit(state.copyWith(storeCartStatus: BlocStatus.success, replaceStoreCart: true, storeCart: result.data, clearStoreCartError: true)),
+      (failure) => emit(
+        state.copyWith(
+          storeCartStatus: BlocStatus.failed,
+          storeCartErrorMessage: failure.message,
+          clearStoreCart: true,
+        ),
+      ),
+      (result) => emit(
+        state.copyWith(
+          storeCartStatus: BlocStatus.success,
+          replaceStoreCart: true,
+          storeCart: result.data,
+          clearStoreCartError: true,
+        ),
+      ),
     );
   }
 
-  Future<void> _onUpdateRestaurantCartItem(UpdateRestaurantCartItemEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onUpdateRestaurantCartItem(
+    UpdateRestaurantCartItemEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(state.copyWith(isMutatingCartItem: true));
-    final response = await updateCartItemQuantityUseCase(UpdateCartItemQuantityParams(itemId: event.itemId, quantity: event.quantity));
-    await response.fold((failure) async => emit(state.copyWith(isMutatingCartItem: false, restaurantCartErrorMessage: failure.message)), (_) async {
-      emit(state.copyWith(isMutatingCartItem: false));
-      add(FetchRestaurantCartEvent());
-    });
+    final response = await updateCartItemQuantityUseCase(
+      UpdateCartItemQuantityParams(
+        itemId: event.itemId,
+        quantity: event.quantity,
+      ),
+    );
+    await response.fold(
+      (failure) async => emit(
+        state.copyWith(
+          isMutatingCartItem: false,
+          restaurantCartErrorMessage: failure.message,
+        ),
+      ),
+      (_) async {
+        emit(state.copyWith(isMutatingCartItem: false));
+        add(FetchRestaurantCartEvent());
+      },
+    );
   }
 
-  Future<void> _onDeleteRestaurantCartItem(DeleteRestaurantCartItemEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onDeleteRestaurantCartItem(
+    DeleteRestaurantCartItemEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(state.copyWith(isMutatingCartItem: true));
-    final response = await deleteCartItemUseCase(DeleteCartItemParams(itemId: event.itemId));
-    await response.fold((failure) async => emit(state.copyWith(isMutatingCartItem: false, restaurantCartErrorMessage: failure.message)), (_) async {
-      emit(state.copyWith(isMutatingCartItem: false));
-      add(FetchRestaurantCartEvent());
-    });
+    final response = await deleteCartItemUseCase(
+      DeleteCartItemParams(itemId: event.itemId),
+    );
+    await response.fold(
+      (failure) async => emit(
+        state.copyWith(
+          isMutatingCartItem: false,
+          restaurantCartErrorMessage: failure.message,
+        ),
+      ),
+      (_) async {
+        emit(state.copyWith(isMutatingCartItem: false));
+        add(FetchRestaurantCartEvent());
+      },
+    );
   }
 
-  Future<void> _onUpdateStoreCartItem(UpdateStoreCartItemEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onUpdateStoreCartItem(
+    UpdateStoreCartItemEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(state.copyWith(isMutatingStoreCartItem: true));
-    final response = await updateStoreCartItemQuantityUseCase(UpdateCartItemQuantityParams(itemId: event.itemId, quantity: event.quantity));
-    await response.fold((failure) async => emit(state.copyWith(isMutatingStoreCartItem: false, storeCartErrorMessage: failure.message)), (_) async {
-      emit(state.copyWith(isMutatingStoreCartItem: false));
-      add(FetchStoreCartEvent());
-    });
+    final response = await updateStoreCartItemQuantityUseCase(
+      UpdateCartItemQuantityParams(
+        itemId: event.itemId,
+        quantity: event.quantity,
+      ),
+    );
+    await response.fold(
+      (failure) async => emit(
+        state.copyWith(
+          isMutatingStoreCartItem: false,
+          storeCartErrorMessage: failure.message,
+        ),
+      ),
+      (_) async {
+        emit(state.copyWith(isMutatingStoreCartItem: false));
+        add(FetchStoreCartEvent());
+      },
+    );
   }
 
-  Future<void> _onDeleteStoreCartItem(DeleteStoreCartItemEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onDeleteStoreCartItem(
+    DeleteStoreCartItemEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(state.copyWith(isMutatingStoreCartItem: true));
-    final response = await deleteStoreCartItemUseCase(DeleteCartItemParams(itemId: event.itemId));
-    await response.fold((failure) async => emit(state.copyWith(isMutatingStoreCartItem: false, storeCartErrorMessage: failure.message)), (_) async {
-      emit(state.copyWith(isMutatingStoreCartItem: false));
-      add(FetchStoreCartEvent());
-    });
+    final response = await deleteStoreCartItemUseCase(
+      DeleteCartItemParams(itemId: event.itemId),
+    );
+    await response.fold(
+      (failure) async => emit(
+        state.copyWith(
+          isMutatingStoreCartItem: false,
+          storeCartErrorMessage: failure.message,
+        ),
+      ),
+      (_) async {
+        emit(state.copyWith(isMutatingStoreCartItem: false));
+        add(FetchStoreCartEvent());
+      },
+    );
   }
 
-  Future<void> _onApplyRestaurantCoupon(ApplyRestaurantCouponEvent event, Emitter<OrdersState> emit) async {
-    emit(state.copyWith(couponStatus: BlocStatus.loading, clearCouponError: true));
-    final response = await checkRestaurantCouponUseCase(CheckRestaurantCouponParams(couponCode: event.couponCode));
+  Future<void> _onApplyRestaurantCoupon(
+    ApplyRestaurantCouponEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
+    emit(
+      state.copyWith(couponStatus: BlocStatus.loading, clearCouponError: true),
+    );
+    final response = await checkRestaurantCouponUseCase(
+      CheckRestaurantCouponParams(couponCode: event.couponCode),
+    );
     response.fold(
-      (failure) => emit(state.copyWith(couponStatus: BlocStatus.failed, couponErrorMessage: failure.message)),
-      (result) => emit(state.copyWith(couponStatus: BlocStatus.success, couponData: result.data, clearCouponError: true)),
+      (failure) => emit(
+        state.copyWith(
+          couponStatus: BlocStatus.failed,
+          couponErrorMessage: failure.message,
+        ),
+      ),
+      (result) => emit(
+        state.copyWith(
+          couponStatus: BlocStatus.success,
+          couponData: result.data,
+          clearCouponError: true,
+        ),
+      ),
     );
   }
 
-  Future<void> _onApplyStoreCoupon(ApplyStoreCouponEvent event, Emitter<OrdersState> emit) async {
-    emit(state.copyWith(storeCouponStatus: BlocStatus.loading, clearStoreCouponError: true));
+  Future<void> _onApplyStoreCoupon(
+    ApplyStoreCouponEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        storeCouponStatus: BlocStatus.loading,
+        clearStoreCouponError: true,
+      ),
+    );
     final response = await checkRestaurantCouponUseCase(
       CheckRestaurantCouponParams(
         couponCode: event.couponCode,
@@ -266,38 +436,79 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       ),
     );
     response.fold(
-      (failure) => emit(state.copyWith(storeCouponStatus: BlocStatus.failed, storeCouponErrorMessage: failure.message)),
-      (result) => emit(state.copyWith(storeCouponStatus: BlocStatus.success, storeCouponData: result.data, clearStoreCouponError: true)),
+      (failure) => emit(
+        state.copyWith(
+          storeCouponStatus: BlocStatus.failed,
+          storeCouponErrorMessage: failure.message,
+        ),
+      ),
+      (result) => emit(
+        state.copyWith(
+          storeCouponStatus: BlocStatus.success,
+          storeCouponData: result.data,
+          clearStoreCouponError: true,
+        ),
+      ),
     );
   }
 
-  void _onCartNoteChanged(CartNoteChangedEvent event, Emitter<OrdersState> emit) {
+  void _onCartNoteChanged(
+    CartNoteChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
     emit(state.copyWith(cartNote: event.note));
   }
 
-  void _onCartFulfillmentTypeChanged(CartFulfillmentTypeChangedEvent event, Emitter<OrdersState> emit) {
+  void _onCartFulfillmentTypeChanged(
+    CartFulfillmentTypeChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
     emit(state.copyWith(selectedFulfillmentType: event.fulfillmentType));
   }
 
-  void _onStoreReceiveModeChanged(StoreReceiveModeChangedEvent event, Emitter<OrdersState> emit) {
+  void _onStoreReceiveModeChanged(
+    StoreReceiveModeChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
     emit(
       state.copyWith(
         storeReceiveMode: event.receiveMode,
-        storeScheduledAt: event.receiveMode == 'immediate' ? null : state.storeScheduledAt,
+        storeScheduledAt: event.receiveMode == 'immediate'
+            ? null
+            : state.storeScheduledAt,
         replaceStoreScheduledAt: event.receiveMode == 'immediate',
       ),
     );
   }
 
-  void _onStoreScheduledAtChanged(StoreScheduledAtChangedEvent event, Emitter<OrdersState> emit) {
-    emit(state.copyWith(storeScheduledAt: event.scheduledAt, replaceStoreScheduledAt: true));
+  void _onStoreScheduledAtChanged(
+    StoreScheduledAtChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        storeScheduledAt: event.scheduledAt,
+        replaceStoreScheduledAt: true,
+      ),
+    );
   }
 
-  void _onCartSelectedAddressChanged(CartSelectedAddressChangedEvent event, Emitter<OrdersState> emit) {
-    emit(state.copyWith(selectedAddress: event.address, replaceSelectedAddress: true));
+  void _onCartSelectedAddressChanged(
+    CartSelectedAddressChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        selectedAddress: event.address,
+        replaceSelectedAddress: true,
+      ),
+    );
   }
 
-  Future<void> _onCancelCleaningOrder(CancelCleaningOrderEvent event, Emitter<OrdersState> emit) async {
+  Future<void> _onCancelCleaningOrder(
+    CancelCleaningOrderEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(
       state.copyWith(
         cancelCleaningStatus: BlocStatus.loading,
@@ -329,13 +540,24 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-  Future<void> _onPlaceRestaurantOrder(PlaceRestaurantOrderEvent event, Emitter<OrdersState> emit) async {
-    final isDelivery = (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
+  Future<void> _onPlaceRestaurantOrder(
+    PlaceRestaurantOrderEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
+    final isDelivery =
+        (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
     final parsedAddressId = int.tryParse(state.selectedAddress?.id ?? '');
-    final couponCode = state.couponData?.isAvailable == true ? state.couponData?.couponCode : null;
+    final couponCode = state.couponData?.isAvailable == true
+        ? state.couponData?.couponCode
+        : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
 
-    emit(state.copyWith(placeOrderStatus: BlocStatus.loading, clearPlaceOrderError: true));
+    emit(
+      state.copyWith(
+        placeOrderStatus: BlocStatus.loading,
+        clearPlaceOrderError: true,
+      ),
+    );
 
     final response = await placeRestaurantOrderUseCase(
       PlaceRestaurantOrderParams(
@@ -346,30 +568,50 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       ),
     );
 
-    await response.fold((failure) async => emit(state.copyWith(placeOrderStatus: BlocStatus.failed, placeOrderErrorMessage: failure.message)), (
-      _,
-    ) async {
-      emit(state.copyWith(placeOrderStatus: BlocStatus.success, clearPlaceOrderError: true));
-      add(FetchRestaurantCartEvent());
-      add(FetchOrdersEvent(isReload: true));
-    });
+    await response.fold(
+      (failure) async => emit(
+        state.copyWith(
+          placeOrderStatus: BlocStatus.failed,
+          placeOrderErrorMessage: failure.message,
+        ),
+      ),
+      (_) async {
+        emit(
+          state.copyWith(
+            placeOrderStatus: BlocStatus.success,
+            clearPlaceOrderError: true,
+          ),
+        );
+        add(FetchRestaurantCartEvent());
+        add(FetchOrdersEvent(isReload: true));
+      },
+    );
   }
 
-  Future<void> _onPlaceStoreOrder(PlaceStoreOrderEvent event, Emitter<OrdersState> emit) async {
-    final isDelivery = (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
+  Future<void> _onPlaceStoreOrder(
+    PlaceStoreOrderEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
+    final isDelivery =
+        (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
     final mappedFulfillmentType = isDelivery ? 'delivery' : 'dine_in';
     final merchantId = state.storeCart?.merchant?.id;
     final parsedAddressId = int.tryParse(state.selectedAddress?.id ?? '');
-    final couponCode = state.storeCouponData?.isAvailable == true ? state.storeCouponData?.couponCode : null;
+    final couponCode = state.storeCouponData?.isAvailable == true
+        ? state.storeCouponData?.couponCode
+        : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
     final receiveMode = isDelivery ? state.storeReceiveMode : 'immediate';
-    final scheduledAt = (isDelivery && receiveMode == 'scheduled') ? state.storeScheduledAt : null;
+    final scheduledAt = (isDelivery && receiveMode == 'scheduled')
+        ? state.storeScheduledAt
+        : null;
 
     if (merchantId == null) {
       emit(
         state.copyWith(
           placeStoreOrderStatus: BlocStatus.failed,
-          placeStoreOrderErrorMessage: 'تعذر تحديد المتجر الحالي، يرجى تحديث السلة.',
+          placeStoreOrderErrorMessage:
+              'تعذر تحديد المتجر الحالي، يرجى تحديث السلة.',
         ),
       );
       return;
@@ -393,7 +635,12 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       return;
     }
 
-    emit(state.copyWith(placeStoreOrderStatus: BlocStatus.loading, clearPlaceStoreOrderError: true));
+    emit(
+      state.copyWith(
+        placeStoreOrderStatus: BlocStatus.loading,
+        clearPlaceStoreOrderError: true,
+      ),
+    );
 
     final response = await placeStoreOrderUseCase(
       PlaceStoreOrderParams(
@@ -408,9 +655,19 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
 
     await response.fold(
-      (failure) async => emit(state.copyWith(placeStoreOrderStatus: BlocStatus.failed, placeStoreOrderErrorMessage: failure.message)),
+      (failure) async => emit(
+        state.copyWith(
+          placeStoreOrderStatus: BlocStatus.failed,
+          placeStoreOrderErrorMessage: failure.message,
+        ),
+      ),
       (_) async {
-        emit(state.copyWith(placeStoreOrderStatus: BlocStatus.success, clearPlaceStoreOrderError: true));
+        emit(
+          state.copyWith(
+            placeStoreOrderStatus: BlocStatus.success,
+            clearPlaceStoreOrderError: true,
+          ),
+        );
         add(FetchStoreCartEvent());
         add(FetchOrdersEvent(isReload: true));
       },

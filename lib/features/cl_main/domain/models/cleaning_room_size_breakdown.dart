@@ -9,12 +9,17 @@ enum CleaningRoomType {
 
 /// Room types accepted by the backend validator for `room_size_breakdown`
 /// and worker room assignment payloads.
-const backendSupportedCleaningRoomTypes = <CleaningRoomType>[
+const backendAcceptedRoomSizeBreakdownTypes = <CleaningRoomType>[
   CleaningRoomType.bedroom,
   CleaningRoomType.bathroom,
   CleaningRoomType.kitchen,
   CleaningRoomType.livingRoom,
   CleaningRoomType.balcony,
+];
+
+/// All room types supported in the local UI (includes corridor until backend ships it).
+const allCleaningRoomTypes = <CleaningRoomType>[
+  ...backendAcceptedRoomSizeBreakdownTypes,
   CleaningRoomType.corridor,
 ];
 
@@ -227,10 +232,17 @@ class CleaningRoomSizeBreakdown {
     }
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      for (final roomType in backendSupportedCleaningRoomTypes)
-        roomType.apiKey: bucketFor(roomType).toJson(),
-    };
+  /// Serializes only backend-accepted room types with total > 0 for API payloads.
+  Map<String, dynamic> toBackendJson() {
+    final json = <String, dynamic>{};
+    for (final roomType in backendAcceptedRoomSizeBreakdownTypes) {
+      final bucket = bucketFor(roomType);
+      if (bucket.total > 0) {
+        json[roomType.apiKey] = bucket.toJson();
+      }
+    }
+    return json;
   }
+
+  Map<String, dynamic> toJson() => toBackendJson();
 }

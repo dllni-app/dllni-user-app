@@ -39,7 +39,7 @@ const Map<CleaningRoomSize, String> _roomSizeLabelsAr = {
 List<CleaningRoomUnit> enumerateRoomUnits(CleaningRoomSizeBreakdown breakdown) {
   final units = <CleaningRoomUnit>[];
 
-  for (final roomType in backendSupportedCleaningRoomTypes) {
+  for (final roomType in backendAcceptedRoomSizeBreakdownTypes) {
     final typeLabel = _roomTypeLabelsAr[roomType] ?? roomType.apiKey;
     for (final size in CleaningRoomSize.values) {
       final count = breakdown.countFor(roomType, size);

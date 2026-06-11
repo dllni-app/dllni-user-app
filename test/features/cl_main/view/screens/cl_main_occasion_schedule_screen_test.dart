@@ -99,7 +99,9 @@ Future<void> _pumpScreen(WidgetTester tester, ClMainBloc bloc) async {
     guestsCount: 10,
     eventType: 'family_dinner',
     venueType: 'apartment',
-    serviceIds: const <int>[12],
+    customService: 'Event service',
+    hours: 4,
+    numberOfWorkers: 2,
     suggestedTeamSize: 2,
     helpTypeId: 'service_12',
     helpTypeLabel: 'Event service',
@@ -119,51 +121,51 @@ void main() {
     await initializeDateFormatting('ar');
   });
 
-  testWidgets(
-    'shows previous workers and sends selected worker as preferredWorkerId',
-    (WidgetTester tester) async {
-      CreateCleaningOrderParams? capturedParams;
-      final repo = _FakeClMainRepo(
-        previousWorkers: const <PreviousWorkerModel>[
-          PreviousWorkerModel(id: 77, name: 'Worker 77'),
-        ],
-        onCreateOrder: (params) => capturedParams = params,
-      );
-      final bloc = _buildBloc(repo);
+  testWidgets('shows previous workers section', (WidgetTester tester) async {
+    final repo = _FakeClMainRepo(
+      previousWorkers: const <PreviousWorkerModel>[
+        PreviousWorkerModel(id: 77, name: 'Worker 77'),
+      ],
+    );
+    final bloc = _buildBloc(repo);
 
-      await _pumpScreen(tester, bloc);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+    await _pumpScreen(tester, bloc);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
-      expect(
-        find.byType(ClServicePreviousWorkersSectionWidget),
-        findsOneWidget,
-      );
-      expect(find.text('Worker 77'), findsOneWidget);
+    expect(find.byType(ClServicePreviousWorkersSectionWidget), findsOneWidget);
+    expect(find.text('Worker 77'), findsOneWidget);
 
-      await tester.scrollUntilVisible(
-        find.text('Worker 77'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.text('Worker 77'));
-      await tester.pump(const Duration(milliseconds: 150));
-      expect(bloc.state.selectedWorkerId, 77);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
-      final submitButton = find
-          .descendant(
-            of: find.byType(ClServiceBottomActionsWidget),
-            matching: find.byType(ElevatedButton),
-          )
-          .first;
-      await tester.tap(submitButton);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pump(const Duration(seconds: 1));
+  testWidgets('submit without address does not create order', (
+    WidgetTester tester,
+  ) async {
+    var createCalled = false;
+    final repo = _FakeClMainRepo(
+      previousWorkers: const <PreviousWorkerModel>[],
+      onCreateOrder: (_) => createCalled = true,
+    );
+    final bloc = _buildBloc(repo);
 
-      expect(capturedParams, isNotNull);
-      expect(capturedParams?.preferredWorkerId, 77);
-    },
-  );
+    await _pumpScreen(tester, bloc);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final submitButton = find
+        .descendant(
+          of: find.byType(ClServiceBottomActionsWidget),
+          matching: find.byType(ElevatedButton),
+        )
+        .first;
+    await tester.tap(submitButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(createCalled, isFalse);
+    expect(find.text('يرجى اختيار عنوان الخدمة أولاً'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

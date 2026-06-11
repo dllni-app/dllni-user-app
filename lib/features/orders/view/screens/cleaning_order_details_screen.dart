@@ -32,13 +32,13 @@ import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../helpers/cleaning_lifecycle_error_mapper.dart';
+import '../helpers/cleaning_order_polling_equality.dart';
 import '../helpers/cleaning_order_realtime_policy.dart';
 import '../helpers/cleaning_rebook_policy.dart';
 import '../helpers/cleaning_worker_rating_gate.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../widgets/cleaning_cancel_reason_dialog.dart';
-import 'cleaning_order_problem_report_screen.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_worker_rating_screen.dart';
 import '../widgets/cleaning_accepted_workers_section_widget.dart';
@@ -69,6 +69,7 @@ class CleaningOrderDetailsScreen extends StatefulWidget {
 class _CleaningOrderDetailsScreenState
     extends State<CleaningOrderDetailsScreen> {
   static const Duration _fallbackDebounce = Duration(milliseconds: 150);
+  static const Duration _detailsPollInterval = Duration(seconds: 10);
 
   late int _activeOrderId;
   CleaningOrderDetailModel? _order;
@@ -96,6 +97,8 @@ class _CleaningOrderDetailsScreenState
   bool _isRebooking = false;
   bool _isPatchingRoomAssignments = false;
   Timer? _detailsFallbackRefreshDebounce;
+  Timer? _detailsPollTimer;
+  bool _isDetailsFetchInFlight = false;
   CleaningWorkerAcceptanceModel? _liveWorkerAcceptance;
 
   @override
@@ -106,14 +109,30 @@ class _CleaningOrderDetailsScreenState
     _toTimeController = TextEditingController();
     _pusherService = getIt<CleaningBookingPusherService>();
     _fetchDetails(triggerGatePrompts: true);
+    _startDetailsPollTimer();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _connectCleaningPusher(),
     );
   }
 
+  void _startDetailsPollTimer() {
+    _detailsPollTimer?.cancel();
+    _detailsPollTimer = Timer.periodic(_detailsPollInterval, (_) {
+      if (!mounted) return;
+      unawaited(
+        _fetchDetails(
+          showLoading: false,
+          triggerGatePrompts: true,
+          fallbackReason: 'periodic_cleaning_details_refresh',
+        ),
+      );
+    });
+  }
+
   @override
   void dispose() {
     _detailsFallbackRefreshDebounce?.cancel();
+    _detailsPollTimer?.cancel();
     final subscribedBookingId = _subscribedBookingId;
     if (subscribedBookingId != null) {
       _pusherService.setBookingHandler(subscribedBookingId, null);
@@ -318,41 +337,63 @@ class _CleaningOrderDetailsScreenState
     bool triggerGatePrompts = false,
     String? fallbackReason,
   }) async {
+    if (!showLoading && _isDetailsFetchInFlight) return;
+    if (!showLoading) {
+      _isDetailsFetchInFlight = true;
+    }
     if (showLoading) {
       setState(() {
         _isLoading = true;
         _loadError = null;
       });
     }
-    final Either<Failure, FetchCleaningOrderDetailsModel> response =
-        await getIt<FetchCleaningOrderDetailsUseCase>()(
-          FetchCleaningOrderDetailsParams(orderId: _activeOrderId),
-        );
-    if (!mounted) return;
-    response.fold(
-      (failure) => setState(() {
-        if (showLoading) {
-          _isLoading = false;
-          _loadError = failure.message;
-        }
-      }),
-      (result) => setState(() {
-        if (showLoading) {
-          _isLoading = false;
-        }
-        _order = result.data;
-        final updatedOrder = result.data;
-        if (updatedOrder != null) {
-          _syncGateSessionWithOrder(updatedOrder);
-          _liveWorkerAcceptance = updatedOrder.workerAcceptance;
-        } else {
-          _liveWorkerAcceptance = null;
-        }
-        if (showLoading) {
-          _loadError = result.data == null ? 'تعذر تحميل تفاصيل الطلب' : null;
-        }
-      }),
-    );
+    try {
+      final Either<Failure, FetchCleaningOrderDetailsModel> response =
+          await getIt<FetchCleaningOrderDetailsUseCase>()(
+            FetchCleaningOrderDetailsParams(orderId: _activeOrderId),
+          );
+      if (!mounted) return;
+      response.fold(
+        (failure) {
+          if (!showLoading) return;
+          setState(() {
+            _isLoading = false;
+            _loadError = failure.message;
+          });
+        },
+        (result) {
+          final updatedOrder = result.data;
+          final currentOrder = _order;
+          if (!showLoading &&
+              updatedOrder != null &&
+              currentOrder != null &&
+              cleaningOrderDetailDisplayEquals(currentOrder, updatedOrder)) {
+            return;
+          }
+          setState(() {
+            if (showLoading) {
+              _isLoading = false;
+            }
+            _order = updatedOrder;
+            if (updatedOrder != null) {
+              _syncGateSessionWithOrder(updatedOrder);
+              _liveWorkerAcceptance = updatedOrder.workerAcceptance;
+            } else {
+              _liveWorkerAcceptance = null;
+            }
+            if (showLoading) {
+              _loadError = updatedOrder == null
+                  ? 'تعذر تحميل تفاصيل الطلب'
+                  : null;
+            }
+          });
+        },
+      );
+    } finally {
+      if (!showLoading) {
+        _isDetailsFetchInFlight = false;
+      }
+    }
     if (fallbackReason != null) {
       PusherServiceLogger.event(
         'private-cleaning-booking.$_activeOrderId',
@@ -1096,15 +1137,6 @@ class _CleaningOrderDetailsScreenState
     }
   }
 
-  void _reportIssue(CleaningOrderDetailModel order) {
-    context.pushRoute(
-      '/cleaning-order-problem',
-      arguments: CleaningOrderProblemReportArgs(
-        order: order.toCleaningOrderModel(),
-      ),
-    );
-  }
-
   Future<void> _cancelOrder(CleaningOrderDetailModel order) async {
     if (_blocksCancel(order)) {
       if (!mounted) return;
@@ -1197,9 +1229,10 @@ class _CleaningOrderDetailsScreenState
     );
     _fromTimeController.text = _timeLabel(startDateTime);
     _toTimeController.text = _timeLabel(endDateTime);
-    final isCompleted =
-        _normStatus(order.status) == CleaningBookingStatus.completed;
     final statusNorm = _normStatus(order.status);
+    final isTerminalStatus =
+        statusNorm == CleaningBookingStatus.completed ||
+        statusNorm == CleaningBookingStatus.cancelled;
     final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
       scheduledDate: order.scheduledDate,
       scheduledTime: order.scheduledTime,
@@ -1640,7 +1673,8 @@ class _CleaningOrderDetailsScreenState
                               children: [
                                 CircleAvatar(
                                   radius: 20,
-                                  backgroundImage: order.worker?.avatarUrl == null
+                                  backgroundImage:
+                                      order.worker?.avatarUrl == null
                                       ? null
                                       : NetworkImage(order.worker!.avatarUrl!),
                                   child: order.worker?.avatarUrl == null
@@ -1650,7 +1684,8 @@ class _CleaningOrderDetailsScreenState
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         order.worker?.name ?? 'مقدم الخدمة',
@@ -1760,36 +1795,28 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: () => isCompleted
-                            ? _reportIssue(order)
-                            : _cancelOrder(order),
-                        style: ElevatedButton.styleFrom(
-                          elevation: 0,
-                          backgroundColor: isCompleted
-                              ? const Color(0xff9CA3AF).withAlpha(35)
-                              : const Color(0xffFEE2E2),
-                          foregroundColor: isCompleted
-                              ? const Color(0xff6B7280)
-                              : const Color(0xffDC2626),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: isCompleted
-                                  ? const Color(0xff9CA3AF)
-                                  : const Color(0xffEF4444),
+                    if (!isTerminalStatus) ...[
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: () => _cancelOrder(order),
+                          style: ElevatedButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor: const Color(0xffFEE2E2),
+                            foregroundColor: const Color(0xffDC2626),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: Color(0xffEF4444)),
                             ),
                           ),
-                        ),
-                        child: Text(
-                          isCompleted ? 'إبلاغ عن مشكلة' : 'إلغاء الطلب',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          child: const Text(
+                            'إلغاء الطلب',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

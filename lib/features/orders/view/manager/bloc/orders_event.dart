@@ -11,23 +11,26 @@ class OrdersSectionChangedEvent extends OrdersEvent {
 class FetchOrdersEvent extends OrdersEvent with EventWithReload {
   final bool loadMore;
   final bool isReload;
+  final bool silentRefresh;
 
-  FetchOrdersEvent({this.loadMore = false, this.isReload = false});
+  FetchOrdersEvent({
+    this.loadMore = false,
+    this.isReload = false,
+    this.silentRefresh = false,
+  });
 }
 
 class FetchCartForActiveSectionEvent extends OrdersEvent {}
 
 class FetchRestaurantCartEvent extends OrdersEvent {}
+
 class FetchStoreCartEvent extends OrdersEvent {}
 
 class UpdateRestaurantCartItemEvent extends OrdersEvent {
   final int itemId;
   final int quantity;
 
-  UpdateRestaurantCartItemEvent({
-    required this.itemId,
-    required this.quantity,
-  });
+  UpdateRestaurantCartItemEvent({required this.itemId, required this.quantity});
 }
 
 class DeleteRestaurantCartItemEvent extends OrdersEvent {
@@ -40,10 +43,7 @@ class UpdateStoreCartItemEvent extends OrdersEvent {
   final int itemId;
   final int quantity;
 
-  UpdateStoreCartItemEvent({
-    required this.itemId,
-    required this.quantity,
-  });
+  UpdateStoreCartItemEvent({required this.itemId, required this.quantity});
 }
 
 class DeleteStoreCartItemEvent extends OrdersEvent {
@@ -98,11 +98,9 @@ class CancelCleaningOrderEvent extends OrdersEvent {
   final int orderId;
   final String reason;
 
-  CancelCleaningOrderEvent({
-    required this.orderId,
-    required this.reason,
-  });
+  CancelCleaningOrderEvent({required this.orderId, required this.reason});
 }
 
 class PlaceRestaurantOrderEvent extends OrdersEvent {}
+
 class PlaceStoreOrderEvent extends OrdersEvent {}

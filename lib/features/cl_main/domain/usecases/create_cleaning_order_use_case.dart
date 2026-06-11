@@ -42,6 +42,8 @@ class CreateCleaningOrderParams with Params {
   final String? eventType;
   final int? guestCount;
   final String? venueType;
+  final String? customService;
+  final double? hours;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
@@ -74,6 +76,8 @@ class CreateCleaningOrderParams with Params {
   }) : eventType = null,
        guestCount = null,
        venueType = null,
+       customService = null,
+       hours = null,
        specialRequirement = null,
        notes = null;
 
@@ -84,7 +88,8 @@ class CreateCleaningOrderParams with Params {
     required this.eventType,
     required this.guestCount,
     required this.venueType,
-    required this.serviceIds,
+    required this.customService,
+    required this.hours,
     this.address,
     this.locationName,
     this.addressLatitude,
@@ -103,7 +108,8 @@ class CreateCleaningOrderParams with Params {
        balconies = null,
        livingRoomSize = null,
        roomSizeBreakdown = null,
-       cleaningType = null;
+       cleaningType = null,
+       serviceIds = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -130,6 +136,8 @@ class CreateCleaningOrderParams with Params {
         'eventType': eventType,
         'guestCount': guestCount,
         'venueType': venueType,
+        'customService': customService?.trim(),
+        'hours': hours,
         if (specialRequirement != null && specialRequirement!.trim().isNotEmpty) 'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       };
@@ -142,7 +150,8 @@ class CreateCleaningOrderParams with Params {
       'bathrooms': _resolvedBathrooms,
       if (_resolvedBalconies != null) 'balconies': _resolvedBalconies,
       'living_room_size': _resolvedLivingRoomSize,
-      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toJson(),
+      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
+      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
@@ -151,7 +160,6 @@ class CreateCleaningOrderParams with Params {
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'propertyDetails': _buildPropertyDetails(),
-      if (!_isEventAssistance && cleaningType != null) 'cleaningType': cleaningType!.apiValue,
       'scheduledDate': scheduledDate,
       'scheduledTime': scheduledTime,
       if (addressLatitude != null) 'addressLatitude': addressLatitude,
@@ -161,9 +169,11 @@ class CreateCleaningOrderParams with Params {
       if (preferredWorkerId != null && assignmentMode == CleaningAssignmentMode.preferredWorker) 'preferredWorkerId': preferredWorkerId,
       'termsAccepted': termsAccepted,
     };
-    final cleanServiceIds = _sanitizeServiceIds();
-    if (cleanServiceIds.isNotEmpty) {
-      body['serviceIds'] = cleanServiceIds;
+    if (!_isEventAssistance) {
+      final cleanServiceIds = _sanitizeServiceIds();
+      if (cleanServiceIds.isNotEmpty) {
+        body['serviceIds'] = cleanServiceIds;
+      }
     }
     final resolvedWorkers = _resolvedNumberOfWorkers;
     if (resolvedWorkers != null && resolvedWorkers > 0) {

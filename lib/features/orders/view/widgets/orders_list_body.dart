@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../sm_orders/view/screens/sm_order_details_screen.dart';
 import '../../../sm_orders/view/widgets/order_card.dart';
+import '../../data/models/cleaning_booking_status.dart';
+import '../../data/models/cleaning_orders_api_models.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../screens/cleaning_order_details_screen.dart';
 import '../screens/cleaning_order_reschedule_screen.dart';
@@ -18,16 +20,31 @@ class OrdersListBody extends StatelessWidget {
     super.key,
     required this.state,
     required this.scrollController,
+    this.showCompletedCleaningOrders = false,
   });
 
   final OrdersState state;
   final ScrollController scrollController;
+  final bool showCompletedCleaningOrders;
+
+  bool _isPreviousCleaningOrder(String? status) {
+    final normalizedStatus = (status ?? '').toLowerCase();
+    return normalizedStatus == CleaningBookingStatus.completed ||
+        normalizedStatus == CleaningBookingStatus.cancelled;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isStoresSection = state.selectedTabIndex == 0;
     final isCleaningSection = state.selectedTabIndex == 2;
-    final cleaningOrders = state.cleaningOrders.list;
+    final cleaningOrders = state.cleaningOrders.list
+        .where((order) {
+          final isPreviousOrder = _isPreviousCleaningOrder(order.status);
+          return showCompletedCleaningOrders
+              ? isPreviousOrder
+              : !isPreviousOrder;
+        })
+        .toList(growable: false);
     final orders = state.orders.list;
     final pagination = isCleaningSection ? state.cleaningOrders : state.orders;
     final listLength = isCleaningSection
@@ -48,7 +65,7 @@ class OrdersListBody extends StatelessWidget {
         ],
       );
     }
-    if (listLength == 0) {
+    if (listLength == 0 && pagination.isEndPage) {
       return ListView(
         children: [
           SizedBox(height: context.height * .2),
@@ -56,6 +73,7 @@ class OrdersListBody extends StatelessWidget {
         ],
       );
     }
+    final itemCount = pagination.isEndPage ? listLength : listLength + 1;
     return Stack(
       children: [
         ListView.separated(
@@ -63,7 +81,8 @@ class OrdersListBody extends StatelessWidget {
           padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 24),
           itemBuilder: (context, index) {
             if (index >= listLength) {
-              if (index == listLength) {
+              if (index == listLength &&
+                  pagination.status != BlocStatus.loading) {
                 context.read<OrdersBloc>().add(
                   FetchOrdersEvent(loadMore: true),
                 );
@@ -77,89 +96,13 @@ class OrdersListBody extends StatelessWidget {
             }
             if (isCleaningSection) {
               final cleaningOrder = cleaningOrders[index];
-              return BlocBuilder<OrdersBloc, OrdersState>(
-                builder: (context, state) {
-                  return CleaningOrderCard(
-                    order: cleaningOrder,
-                    onTap: () {
-                      final orderId = cleaningOrder.id;
-                      if (orderId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'تعذر تحديد الطلب الحالي، حاول مرة أخرى',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      context.pushRoute(
-                        '/cleaning-order-details',
-                        arguments: CleaningOrderDetailsArgs(orderId: orderId),
-                      );
-                    },
-                    onRescheduleTap: () {
-                      final orderId = cleaningOrder.id;
-                      if (orderId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'تعذر تحديد الطلب الحالي، حاول مرة أخرى',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      context
-                          .pushRoute(
-                            '/cleaning-order-reschedule',
-                            arguments: CleaningOrderRescheduleArgs(
-                              order: cleaningOrder,
-                            ),
-                          )
-                          ?.then((result) {
-                            if (!context.mounted) return;
-                            if (result == true ||
-                                result is CleaningOrderRescheduleResult) {
-                              context.read<OrdersBloc>().add(
-                                FetchOrdersEvent(isReload: true),
-                              );
-                            }
-                          });
-                    },
-                    onReportIssueTap: () {
-                      context.pushRoute(
-                        '/cleaning-order-problem',
-                        arguments: CleaningOrderProblemReportArgs(
-                          order: cleaningOrder,
-                        ),
-                      );
-                    },
-                    onCancelTap: () {
-                      final orderId = cleaningOrder.id;
-                      if (orderId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'تعذر تحديد الطلب الحالي، حاول مرة أخرى',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      showDialog<bool>(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => CleaningCancelReasonDialog(
-                          orderId: orderId,
-                          bloc: context.read<OrdersBloc>(),
-                          scheduledDate: cleaningOrder.scheduledDate,
-                          scheduledTime: cleaningOrder.scheduledTime,
-                        ),
-                      );
-                    },
-                  );
-                },
+              final orderId = cleaningOrder.id;
+              if (orderId == null) {
+                return const SizedBox.shrink();
+              }
+              return _CleaningOrderListItem(
+                key: ValueKey<int>(orderId),
+                orderId: orderId,
               );
             }
             final order = orders[index];
@@ -189,7 +132,7 @@ class OrdersListBody extends StatelessWidget {
             );
           },
           separatorBuilder: (context, index) => const SizedBox(height: 14),
-          itemCount: pagination.listLength(1),
+          itemCount: itemCount,
         ),
         if (pagination.status == BlocStatus.loading && listLength > 0)
           const Positioned(
@@ -199,6 +142,74 @@ class OrdersListBody extends StatelessWidget {
             child: LinearProgressIndicator(minHeight: 2),
           ),
       ],
+    );
+  }
+}
+
+class _CleaningOrderListItem extends StatelessWidget {
+  const _CleaningOrderListItem({super.key, required this.orderId});
+
+  final int orderId;
+
+  CleaningOrderModel? _findOrder(OrdersState state) {
+    for (final order in state.cleaningOrders.list) {
+      if (order.id == orderId) return order;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<OrdersBloc, OrdersState, CleaningOrderModel?>(
+      selector: _findOrder,
+      builder: (context, cleaningOrder) {
+        if (cleaningOrder == null) {
+          return const SizedBox.shrink();
+        }
+        return CleaningOrderCard(
+          order: cleaningOrder,
+          onTap: () {
+            context.pushRoute(
+              '/cleaning-order-details',
+              arguments: CleaningOrderDetailsArgs(orderId: orderId),
+            );
+          },
+          onRescheduleTap: () {
+            context
+                .pushRoute(
+                  '/cleaning-order-reschedule',
+                  arguments: CleaningOrderRescheduleArgs(order: cleaningOrder),
+                )
+                ?.then((result) {
+                  if (!context.mounted) return;
+                  if (result == true ||
+                      result is CleaningOrderRescheduleResult) {
+                    context.read<OrdersBloc>().add(
+                      FetchOrdersEvent(isReload: true),
+                    );
+                  }
+                });
+          },
+          onReportIssueTap: () {
+            context.pushRoute(
+              '/cleaning-order-problem',
+              arguments: CleaningOrderProblemReportArgs(order: cleaningOrder),
+            );
+          },
+          onCancelTap: () {
+            showDialog<bool>(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => CleaningCancelReasonDialog(
+                orderId: orderId,
+                bloc: context.read<OrdersBloc>(),
+                scheduledDate: cleaningOrder.scheduledDate,
+                scheduledTime: cleaningOrder.scheduledTime,
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

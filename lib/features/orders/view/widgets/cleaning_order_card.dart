@@ -6,7 +6,14 @@ import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 
 class CleaningOrderCard extends StatelessWidget {
-  const CleaningOrderCard({super.key, required this.order, this.onTap, this.onRescheduleTap, this.onReportIssueTap, this.onCancelTap});
+  const CleaningOrderCard({
+    super.key,
+    required this.order,
+    this.onTap,
+    this.onRescheduleTap,
+    this.onReportIssueTap,
+    this.onCancelTap,
+  });
 
   final CleaningOrderModel order;
   final VoidCallback? onTap;
@@ -17,9 +24,8 @@ class CleaningOrderCard extends StatelessWidget {
   String get _statusLabel {
     if (order.isSearchingForWorkers) {
       final accepted = order.workerAcceptance?.accepted ?? 0;
-      final required = order.workerAcceptance?.required ??
-          order.numberOfWorkers ??
-          0;
+      final required =
+          order.workerAcceptance?.required ?? order.numberOfWorkers ?? 0;
       if (required > 0) {
         return 'جاري البحث عن عمال ($accepted/$required)';
       }
@@ -28,7 +34,11 @@ class CleaningOrderCard extends StatelessWidget {
     return cleaningOrderStatusLabelAr(order.status);
   }
 
-  bool get _isCompleted => (order.status ?? '').toLowerCase() == CleaningBookingStatus.completed;
+  bool get _isTerminalStatus {
+    final normalizedStatus = (order.status ?? '').toLowerCase();
+    return normalizedStatus == CleaningBookingStatus.completed ||
+        normalizedStatus == CleaningBookingStatus.cancelled;
+  }
 
   String get _bookingLabel {
     final bookingNumber = order.bookingNumber;
@@ -82,7 +92,15 @@ class CleaningOrderCard extends StatelessWidget {
     if (rawDate == null || rawDate.isEmpty) return '-';
     final date = DateTime.tryParse(rawDate);
     if (date == null) return '-';
-    const arabicDays = <String>['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+    const arabicDays = <String>[
+      'الاثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت',
+      'الأحد',
+    ];
     return arabicDays[date.weekday - 1];
   }
 
@@ -97,7 +115,13 @@ class CleaningOrderCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xffE5E7EB)),
-          boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(10),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,11 +129,28 @@ class CleaningOrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: AppText.bodySmall(_bookingLabel, color: const Color(0xff9CA3AF), fontWeight: FontWeight.w500, textAlign: TextAlign.start,)),
+                Expanded(
+                  child: AppText.bodySmall(
+                    _bookingLabel,
+                    color: const Color(0xff9CA3AF),
+                    fontWeight: FontWeight.w500,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
                 Container(
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 5),
-                  decoration: BoxDecoration(color: const Color(0xFFE2F5F4), borderRadius: BorderRadius.circular(16)),
-                  child: AppText.labelLarge(_statusLabel, color: const Color(0xff0CBBC7), fontWeight: FontWeight.w600),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 14,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2F5F4),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: AppText.labelLarge(
+                    _statusLabel,
+                    color: const Color(0xff0CBBC7),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -117,10 +158,21 @@ class CleaningOrderCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: AppText.bodyLarge(_serviceTitle, color: const Color(0xff111827), fontWeight: FontWeight.w700, maxLines: 1, textAlign: TextAlign.start, overflow: TextOverflow.ellipsis),
+                  child: AppText.bodyLarge(
+                    _serviceTitle,
+                    color: const Color(0xff111827),
+                    fontWeight: FontWeight.w700,
+                    maxLines: 1,
+                    textAlign: TextAlign.start,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                AppText.bodySmall(_priceLabel, color: const Color(0xff1E2A78), fontWeight: FontWeight.w700),
+                AppText.bodySmall(
+                  _priceLabel,
+                  color: const Color(0xff1E2A78),
+                  fontWeight: FontWeight.w700,
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -131,15 +183,27 @@ class CleaningOrderCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 22,
                   backgroundColor: context.primary.withAlpha(25),
-                  child: Icon(Icons.calendar_today, color: context.primary, size: 20),
+                  child: Icon(
+                    Icons.calendar_today,
+                    color: context.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AppText.labelMedium(_dayLabel, fontWeight: FontWeight.bold, textAlign: TextAlign.start),
-                      AppText.labelMedium('$_dateLabel - $_timeLabel', color: const Color(0xff6B7280), fontWeight: FontWeight.w500),
+                      AppText.labelMedium(
+                        _dayLabel,
+                        fontWeight: FontWeight.bold,
+                        textAlign: TextAlign.start,
+                      ),
+                      AppText.labelMedium(
+                        '$_dateLabel - $_timeLabel',
+                        color: const Color(0xff6B7280),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ],
                   ),
                 ),
@@ -148,33 +212,48 @@ class CleaningOrderCard extends StatelessWidget {
                   behavior: HitTestBehavior.opaque,
                   onTap: onRescheduleTap,
                   child: Container(
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: context.primary.withAlpha(30)),
-                    padding: EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 5),
-                    child: AppText.labelLarge('تغيير موعد الخدمة', fontWeight: FontWeight.bold, color: context.primary),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: context.primary.withAlpha(30),
+                    ),
+                    padding: EdgeInsetsDirectional.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    child: AppText.labelLarge(
+                      'تغيير موعد الخدمة',
+                      fontWeight: FontWeight.bold,
+                      color: context.primary,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: _isCompleted ? const Color(0xff9CA3AF).withAlpha(30) : const Color(0xffEF4444).withAlpha(25),
-                border: Border.all(color: _isCompleted ? const Color(0xff9CA3AF) : const Color(0xffEF4444), width: 1),
-              ),
-              width: context.width,
-              padding: EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 10),
-              child: InkWell(
-                onTap: _isCompleted ? onReportIssueTap : (onCancelTap ?? onReportIssueTap),
-                borderRadius: BorderRadius.circular(8),
-                child: AppText.labelLarge(
-                  _isCompleted ? 'إبلاغ عن مشكلة' : 'إلغاء الطلب',
-                  fontWeight: FontWeight.bold,
-                  textAlign: TextAlign.center,
-                  color: _isCompleted ? const Color(0xff9CA3AF) : const Color(0xffDC2626),
+            if (!_isTerminalStatus) ...[
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xffEF4444).withAlpha(25),
+                  border: Border.all(color: const Color(0xffEF4444), width: 1),
+                ),
+                width: context.width,
+                padding: EdgeInsetsDirectional.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
+                child: InkWell(
+                  onTap: onCancelTap ?? onReportIssueTap,
+                  borderRadius: BorderRadius.circular(8),
+                  child: AppText.labelLarge(
+                    'إلغاء الطلب',
+                    fontWeight: FontWeight.bold,
+                    textAlign: TextAlign.center,
+                    color: const Color(0xffDC2626),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

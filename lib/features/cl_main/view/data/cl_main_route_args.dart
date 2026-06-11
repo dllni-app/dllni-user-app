@@ -28,10 +28,12 @@ class ClMainOccasionOption {
 class ClMainOccasionDescriptionArgs {
   final ClMainOccasionOption option;
   final ClMainBloc bloc;
+  final bool navigateToScheduleOnEstimate;
 
   const ClMainOccasionDescriptionArgs({
     required this.option,
     required this.bloc,
+    this.navigateToScheduleOnEstimate = true,
   });
 }
 
@@ -42,7 +44,9 @@ class ClMainOccasionScheduleArgs {
   final int guestsCount;
   final String eventType;
   final String venueType;
-  final List<int> serviceIds;
+  final String customService;
+  final double hours;
+  final int numberOfWorkers;
   final int? suggestedTeamSize;
   final String helpTypeId;
   final String helpTypeLabel;
@@ -57,7 +61,9 @@ class ClMainOccasionScheduleArgs {
     required this.guestsCount,
     required this.eventType,
     required this.venueType,
-    required this.serviceIds,
+    required this.customService,
+    required this.hours,
+    required this.numberOfWorkers,
     required this.suggestedTeamSize,
     required this.helpTypeId,
     required this.helpTypeLabel,

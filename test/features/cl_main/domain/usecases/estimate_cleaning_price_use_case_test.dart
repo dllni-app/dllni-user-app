@@ -33,46 +33,47 @@ void main() {
     expect(details['bathrooms'], breakdown.legacyBathroomsCount);
     expect(details['balconies'], breakdown.legacyBalconiesCount);
     expect(details['living_room_size'], 'medium');
-    final breakdownJson = details['room_size_breakdown'] as Map<String, dynamic>;
-    expect(breakdownJson, breakdown.toJson());
+    final breakdownJson =
+        details['room_size_breakdown'] as Map<String, dynamic>;
+    expect(breakdownJson, breakdown.toBackendJson());
     expect(breakdownJson.keys, {
       'bedroom',
       'bathroom',
       'kitchen',
       'living_room',
       'balcony',
-      'corridor',
     });
-    expect(breakdownJson.containsKey('corridor'), isTrue);
+    expect(breakdownJson.containsKey('corridor'), isFalse);
   });
 
-  test('getBody includes corridor in room_size_breakdown when present locally', () {
-    const breakdown = CleaningRoomSizeBreakdown(
-      bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
-      corridor: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
-    );
+  test(
+    'getBody omits corridor from room_size_breakdown when present locally',
+    () {
+      const breakdown = CleaningRoomSizeBreakdown(
+        bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+        corridor: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
+      );
 
-    final params = EstimateCleaningPriceParams(
-      propertyType: 'villa',
-      bedrooms: 0,
-      rooms: 0,
-      bathrooms: 0,
-      livingRoomSize: 'small',
-      roomSizeBreakdown: breakdown,
-      addressLatitude: 33.5,
-      addressLongitude: 36.3,
-    );
+      final params = EstimateCleaningPriceParams(
+        propertyType: 'villa',
+        bedrooms: 0,
+        rooms: 0,
+        bathrooms: 0,
+        livingRoomSize: 'small',
+        roomSizeBreakdown: breakdown,
+        addressLatitude: 33.5,
+        addressLongitude: 36.3,
+      );
 
-    final details = params.getBody()['propertyDetails'] as Map<String, dynamic>;
-    final breakdownJson = details['room_size_breakdown'] as Map<String, dynamic>;
+      final details =
+          params.getBody()['propertyDetails'] as Map<String, dynamic>;
+      final breakdownJson =
+          details['room_size_breakdown'] as Map<String, dynamic>;
 
-    expect(breakdownJson.containsKey('corridor'), isTrue);
-    expect(breakdownJson['corridor'], {
-      'small': 0,
-      'medium': 1,
-      'large': 0,
-    });
-  });
+      expect(breakdownJson.containsKey('corridor'), isFalse);
+      expect(breakdownJson.keys, {'bedroom'});
+    },
+  );
 
   test('getBody includes propertyDetails.cleaning_mode when provided', () {
     final params = EstimateCleaningPriceParams(
@@ -96,12 +97,40 @@ void main() {
       eventType: 'family_dinner',
       guestCount: 10,
       venueType: 'home',
-      serviceIds: const [1, 2],
+      customService: 'تجهيز طاولات الضيافة',
+      hours: 4,
     );
 
     final body = params.getBody();
     final details = body['propertyDetails'] as Map<String, dynamic>;
 
     expect(details.containsKey('balconies'), isFalse);
+  });
+
+  test('event assistance getBody matches backend contract shape', () {
+    final params = EstimateCleaningPriceParams.eventAssistance(
+      eventType: 'family_dinner',
+      guestCount: 20,
+      venueType: 'apartment',
+      customService: 'مساعدة يدوية في تجهيز الضيافة',
+      hours: 6,
+      numberOfWorkers: 3,
+    );
+
+    final body = params.getBody();
+    final details = body['propertyDetails'] as Map<String, dynamic>;
+
+    expect(body['propertyType'], 'event_assistance');
+    expect(details['eventType'], 'family_dinner');
+    expect(details['guestCount'], 20);
+    expect(details['venueType'], 'apartment');
+    expect(details['customService'], 'مساعدة يدوية في تجهيز الضيافة');
+    expect(details['hours'], 6);
+    expect(body.containsKey('serviceIds'), isFalse);
+    expect(body['assignmentMode'], 'open_count');
+    expect(body['numberOfWorkers'], 3);
+    expect(details.containsKey('room_size_breakdown'), isFalse);
+    expect(details.containsKey('cleaning_mode'), isFalse);
+    expect(body.containsKey('workerRoomAssignments'), isFalse);
   });
 }

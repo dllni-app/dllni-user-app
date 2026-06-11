@@ -6,9 +6,12 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../profile/domain/models/address_list_item.dart';
+import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
+import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
+import '../helpers/cl_event_assignment_helper.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
@@ -44,6 +47,7 @@ class _ClMainOccasionScheduleScreenState
   ClMainOccasionScheduleArgs? _routeArgs;
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
+  EstimatePriceResponseModel? _currentEstimate;
   AddressListItem? _selectedAddress;
   CleaningGenderPreference _selectedGenderPreference =
       CleaningGenderPreference.any;
@@ -68,6 +72,7 @@ class _ClMainOccasionScheduleScreenState
     if (args is ClMainOccasionScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
+      _currentEstimate = args.estimate;
       _syncToTime();
     }
     _bloc?.add(
@@ -86,20 +91,75 @@ class _ClMainOccasionScheduleScreenState
     super.dispose();
   }
 
+  EstimatePriceResponseModel? get _activeEstimate =>
+      _currentEstimate ?? _routeArgs?.estimate;
+
   double get _estimatedHours {
-    final fromEstimate = _routeArgs?.estimate.size?.estimatedHours;
-    if (fromEstimate != null && fromEstimate > 0) return fromEstimate;
+    final routedHours = _routeArgs?.hours;
+    if (routedHours != null && routedHours > 0) return routedHours;
+    final fromPricing = _activeEstimate?.pricing?.eventHours;
+    if (fromPricing != null && fromPricing > 0) return fromPricing;
+    final fromRecommendation = _activeEstimate?.recommendation?.hours;
+    if (fromRecommendation != null && fromRecommendation > 0) {
+      return fromRecommendation;
+    }
     return 4;
   }
 
   int get _estimatedSqm {
-    return _routeArgs?.estimate.size?.estimatedSqm ?? 0;
+    return _activeEstimate?.size?.estimatedSqm ?? 0;
   }
 
   void _syncToTime() {
     _toTimeController.text = formatClServiceEndTime(
       startTime: _fromTimeController.text,
       durationHours: _estimatedHours,
+    );
+  }
+
+  EventAssignmentFields _resolveAssignment(ClMainState state) {
+    final estimate = _activeEstimate;
+    return resolveEventAssignmentFields(
+      selectedWorkerId: state.selectedWorkerId,
+      suggestedTeamSize:
+          _routeArgs?.numberOfWorkers ?? estimate?.suggestedTeamSize,
+      workerAcceptance: estimate?.workerAcceptance,
+    );
+  }
+
+  void _requestEventEstimate(ClMainState state, {int? selectedWorkerId}) {
+    final args = _routeArgs;
+    final bloc = _bloc;
+    if (args == null || bloc == null) return;
+
+    final specialRequirement = args.specialRequirementId == 'none'
+        ? null
+        : args.specialRequirementLabel;
+    final estimate = _activeEstimate;
+    final assignment = resolveEventAssignmentFields(
+      selectedWorkerId: selectedWorkerId ?? state.selectedWorkerId,
+      suggestedTeamSize: args.numberOfWorkers,
+      workerAcceptance: estimate?.workerAcceptance,
+    );
+    final address = _selectedAddress;
+
+    bloc.add(
+      EstimateCleaningPriceEvent(
+        params: EstimateCleaningPriceParams.eventAssistance(
+          eventType: args.eventType,
+          guestCount: args.guestsCount,
+          venueType: args.venueType,
+          customService: args.customService,
+          hours: args.hours,
+          addressLatitude: address?.latitude,
+          addressLongitude: address?.longitude,
+          preferredWorkerId: assignment.preferredWorkerId,
+          specialRequirement: specialRequirement,
+          notes: args.notes,
+          numberOfWorkers: assignment.numberOfWorkers,
+          assignmentMode: assignment.assignmentMode,
+        ),
+      ),
     );
   }
 
@@ -133,6 +193,10 @@ class _ClMainOccasionScheduleScreenState
       setState(() {
         _selectedAddress = selectedAddress;
       });
+      final bloc = _bloc;
+      if (bloc != null) {
+        _requestEventEstimate(bloc.state);
+      }
     }
   }
 
@@ -154,9 +218,19 @@ class _ClMainOccasionScheduleScreenState
     }
 
     final selectedAddress = _selectedAddress;
+    if (selectedAddress == null ||
+        selectedAddress.latitude == null ||
+        selectedAddress.longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+
     final specialRequirement = args.specialRequirementId == 'none'
         ? null
         : args.specialRequirementLabel;
+    final assignment = _resolveAssignment(state);
 
     bloc.add(
       CreateCleaningOrderEvent(
@@ -164,22 +238,22 @@ class _ClMainOccasionScheduleScreenState
           eventType: args.eventType,
           guestCount: args.guestsCount,
           venueType: args.venueType,
-          serviceIds: args.serviceIds,
-          address:
-              selectedAddress?.line1 ??
-              'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
-          locationName: selectedAddress?.label ?? 'المنزل',
+          customService: args.customService,
+          hours: args.hours,
+          address: selectedAddress.line1,
+          locationName: selectedAddress.label,
           scheduledDate: AppDateTimeLocale.dateFormat(
             'yyyy-MM-dd',
           ).format(_selectedDate),
           scheduledTime: _fromTimeController.text,
-          addressLatitude: selectedAddress?.latitude ?? 0,
-          addressLongitude: selectedAddress?.longitude ?? 0,
+          addressLatitude: selectedAddress.latitude,
+          addressLongitude: selectedAddress.longitude,
           genderPreference: _selectedGenderPreference,
-          preferredWorkerId: state.selectedWorkerId,
+          assignmentMode: assignment.assignmentMode,
+          preferredWorkerId: assignment.preferredWorkerId,
           specialRequirement: specialRequirement,
           notes: args.notes,
-          numberOfWorkers: args.suggestedTeamSize,
+          numberOfWorkers: assignment.numberOfWorkers,
           termsAccepted: true,
         ),
       ),
@@ -200,14 +274,23 @@ class _ClMainOccasionScheduleScreenState
     final dayDate = AppDateTimeLocale.dateFormat(
       'd MMM yyyy',
     ).format(_selectedDate);
-    final estimate = args.estimate;
+    final estimate = _activeEstimate;
 
     return BlocProvider.value(
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus,
+            previous.createOrderStatus != current.createOrderStatus ||
+            previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
+          if (state.estimatePriceStatus == BlocStatus.success &&
+              state.estimatePrice != null) {
+            setState(() {
+              _currentEstimate = state.estimatePrice;
+              _syncToTime();
+            });
+          }
+
           if (state.createOrderStatus == BlocStatus.loading) {
             Loading.show(context);
             return;
@@ -274,6 +357,17 @@ class _ClMainOccasionScheduleScreenState
                                 ),
                                 const SizedBox(height: 8),
                                 _OccasionInfoRow(
+                                  label: 'مدة الخدمة',
+                                  value:
+                                      '${args.hours.toStringAsFixed(0)} ساعة',
+                                ),
+                                const SizedBox(height: 8),
+                                _OccasionInfoRow(
+                                  label: 'عدد العمال',
+                                  value: '${args.numberOfWorkers}',
+                                ),
+                                const SizedBox(height: 8),
+                                _OccasionInfoRow(
                                   label: 'متطلبات خاصة',
                                   value: args.specialRequirementLabel,
                                 ),
@@ -299,10 +393,11 @@ class _ClMainOccasionScheduleScreenState
                           ),
                           const SizedBox(height: 10),
                           ClServiceAddressSectionWidget(
-                            locationName: _selectedAddress?.label ?? 'المنزل',
+                            locationName:
+                                _selectedAddress?.label ?? 'اختر عنوان الخدمة',
                             address:
                                 _selectedAddress?.line1 ??
-                                'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
+                                'اضغط لتغيير العنوان',
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 16),
@@ -319,6 +414,10 @@ class _ClMainOccasionScheduleScreenState
                             onSelectWorker: (workerId) {
                               bloc.add(
                                 SetPreferredWorkerEvent(workerId: workerId),
+                              );
+                              _requestEventEstimate(
+                                state,
+                                selectedWorkerId: workerId,
                               );
                             },
                             onOpenWorkerProfile: (worker) {
@@ -349,13 +448,13 @@ class _ClMainOccasionScheduleScreenState
                           ),
                           const SizedBox(height: 12),
                           ClServiceOrderSummarySectionWidget(
-                            basePrice: estimate.pricing?.basePrice ?? 0,
-                            travelFee: estimate.pricing?.travelFee ?? 0,
-                            addonsTotal: estimate.pricing?.addonsTotal ?? 0,
-                            totalPrice: estimate.pricing?.totalPrice ?? 0,
-                            adminMargin: estimate.pricing?.adminMargin,
-                            isPricingFinal: estimate.pricing?.isPricingFinal,
-                            currency: estimate.pricing?.currency ?? 'SYP',
+                            basePrice: estimate?.pricing?.basePrice ?? 0,
+                            travelFee: estimate?.pricing?.travelFee ?? 0,
+                            addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
+                            totalPrice: estimate?.pricing?.totalPrice ?? 0,
+                            adminMargin: estimate?.pricing?.adminMargin,
+                            isPricingFinal: estimate?.pricing?.isPricingFinal,
+                            currency: estimate?.pricing?.currency ?? 'SYP',
                           ),
                         ],
                       ),

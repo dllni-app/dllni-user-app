@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
-import '../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_home_description_title_card_widget.dart';
@@ -14,9 +13,8 @@ import '../widgets/home_details_app_bar.dart';
 class _MenuOption {
   final String id;
   final String label;
-  final int? serviceId;
 
-  const _MenuOption({required this.id, required this.label, this.serviceId});
+  const _MenuOption({required this.id, required this.label});
 }
 
 @AutoRoutePage()
@@ -32,6 +30,16 @@ class ClMainOccasionDescriptionScreen extends StatefulWidget {
 
 class _ClMainOccasionDescriptionScreenState
     extends State<ClMainOccasionDescriptionScreen> {
+  static const List<_MenuOption> _helpTypeOptions = <_MenuOption>[
+    _MenuOption(
+      id: 'hospitality_setup',
+      label: 'تجهيز طاولات الضيافة وتنظيف بعد المناسبة',
+    ),
+    _MenuOption(id: 'manual_help', label: 'مساعدة يدوية في تجهيز الضيافة'),
+    _MenuOption(id: 'serving_support', label: 'دعم إضافي لمنطقة الضيافة'),
+    _MenuOption(id: 'other', label: 'خدمة أخرى'),
+  ];
+
   static const List<_MenuOption> _specialRequirementOptions = <_MenuOption>[
     _MenuOption(id: 'none', label: 'لا يوجد'),
     _MenuOption(id: 'quick_setup', label: 'تجهيز سريع قبل المناسبة'),
@@ -39,14 +47,19 @@ class _ClMainOccasionDescriptionScreenState
     _MenuOption(id: 'separate_teams', label: 'توزيع فريق العمل على أقسام'),
   ];
 
+  final TextEditingController _customServiceController =
+      TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   int _guestsCount = 15;
+  int _hoursCount = 4;
+  int _workersCount = 2;
   bool _enableNotes = false;
   ClMainOccasionDescriptionArgs? _routeArgs;
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
   _MenuOption? _selectedHelpType;
   _MenuOption? _selectedSpecialRequirement;
+  bool _didNavigateToSchedule = false;
 
   @override
   void didChangeDependencies() {
@@ -59,15 +72,11 @@ class _ClMainOccasionDescriptionScreenState
       _routeArgs = args;
       _bloc = args.bloc;
     }
-    _bloc?.add(
-      GetCleaningServicesEvent(
-        params: GetCleaningServicesParams(category: 'event_assisent'),
-      ),
-    );
   }
 
   @override
   void dispose() {
+    _customServiceController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -85,6 +94,12 @@ class _ClMainOccasionDescriptionScreenState
       default:
         return 'other';
     }
+  }
+
+  String get _customServiceValue {
+    final typed = _customServiceController.text.trim();
+    if (typed.isNotEmpty) return typed;
+    return _selectedHelpType?.label ?? '';
   }
 
   Future<_MenuOption?> _showOptionsBottomSheet({
@@ -139,16 +154,18 @@ class _ClMainOccasionDescriptionScreenState
     );
   }
 
-  Future<void> _selectHelpType(List<_MenuOption> serviceOptions) async {
-    if (serviceOptions.isEmpty) return;
+  Future<void> _selectHelpType() async {
     final value = await _showOptionsBottomSheet(
       title: 'ما هي طبيعة المساعدة المطلوبة؟',
-      options: serviceOptions,
+      options: _helpTypeOptions,
       currentValue: _selectedHelpType,
     );
     if (!mounted || value == null) return;
     setState(() {
       _selectedHelpType = value;
+      if (value.id != 'other') {
+        _customServiceController.text = value.label;
+      }
     });
   }
 
@@ -172,9 +189,17 @@ class _ClMainOccasionDescriptionScreenState
       );
       return;
     }
-    if (_selectedHelpType == null || _selectedHelpType?.serviceId == null) {
+
+    final customService = _customServiceValue;
+    if (customService.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار طبيعة المساعدة المطلوبة')),
+        const SnackBar(content: Text('يرجى إدخال طبيعة المساعدة المطلوبة')),
+      );
+      return;
+    }
+    if (customService.length > 255) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('وصف المساعدة يجب ألا يتجاوز 255 حرفاً')),
       );
       return;
     }
@@ -196,7 +221,9 @@ class _ClMainOccasionDescriptionScreenState
           eventType: eventType,
           guestCount: _guestsCount,
           venueType: 'apartment',
-          serviceIds: <int>[_selectedHelpType!.serviceId!],
+          customService: customService,
+          hours: _hoursCount.toDouble(),
+          numberOfWorkers: _workersCount,
           specialRequirement: specialRequirement,
           notes: _enableNotes ? _notesController.text.trim() : null,
         ),
@@ -222,34 +249,44 @@ class _ClMainOccasionDescriptionScreenState
             previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
           if (state.estimatePriceStatus == BlocStatus.loading) return;
-          if (state.estimatePriceStatus == BlocStatus.success &&
+          if ((_routeArgs?.navigateToScheduleOnEstimate ?? true) &&
+              !_didNavigateToSchedule &&
+              state.estimatePriceStatus == BlocStatus.success &&
               state.estimatePrice != null &&
               _routeArgs != null &&
-              _selectedHelpType != null &&
               _selectedSpecialRequirement != null) {
+            _didNavigateToSchedule = true;
             final eventType = _eventTypeFromOption(_routeArgs!.option);
+            final customService = _customServiceValue;
             final specialRequirement = _selectedSpecialRequirement!.id == 'none'
                 ? null
                 : _selectedSpecialRequirement!.label;
-            context.pushRoute(
-              '/clmainoccasionschedule',
-              arguments: ClMainOccasionScheduleArgs(
-                option: _routeArgs!.option,
-                bloc: bloc,
-                estimate: state.estimatePrice!,
-                guestsCount: _guestsCount,
-                eventType: eventType,
-                venueType: 'apartment',
-                serviceIds: <int>[_selectedHelpType!.serviceId!],
-                suggestedTeamSize:
-                    state.estimatePrice?.recommendation?.suggestedTeamSize,
-                helpTypeId: _selectedHelpType!.id,
-                helpTypeLabel: _selectedHelpType!.label,
-                specialRequirementId: _selectedSpecialRequirement!.id,
-                specialRequirementLabel: specialRequirement ?? 'لا يوجد',
-                notes: _enableNotes ? _notesController.text.trim() : null,
-              ),
+            final suggestedTeamSize =
+                state.estimatePrice?.suggestedTeamSize ?? _workersCount;
+            final scheduleArgs = ClMainOccasionScheduleArgs(
+              option: _routeArgs!.option,
+              bloc: bloc,
+              estimate: state.estimatePrice!,
+              guestsCount: _guestsCount,
+              eventType: eventType,
+              venueType: 'apartment',
+              customService: customService,
+              hours: _hoursCount.toDouble(),
+              numberOfWorkers: _workersCount,
+              suggestedTeamSize: suggestedTeamSize,
+              helpTypeId: _selectedHelpType?.id ?? 'custom',
+              helpTypeLabel: customService,
+              specialRequirementId: _selectedSpecialRequirement!.id,
+              specialRequirementLabel: specialRequirement ?? 'لا يوجد',
+              notes: _enableNotes ? _notesController.text.trim() : null,
             );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) return;
+              context.pushRoute(
+                '/clmainoccasionschedule',
+                arguments: scheduleArgs,
+              );
+            });
           } else if (state.estimatePriceStatus == BlocStatus.failed) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -261,24 +298,6 @@ class _ClMainOccasionDescriptionScreenState
           }
         },
         builder: (context, state) {
-          final serviceOptions = state.cleaningServices
-              .where((service) => service.id != null)
-              .map(
-                (service) => _MenuOption(
-                  id: 'service_${service.id}',
-                  label: service.name ?? 'خدمة رقم ${service.id}',
-                  serviceId: service.id,
-                ),
-              )
-              .toList(growable: false);
-
-          final isLoadingServices =
-              state.cleaningServicesStatus == BlocStatus.loading;
-          final servicesError =
-              state.cleaningServicesStatus == BlocStatus.failed
-              ? state.errorMessage
-              : null;
-
           return Scaffold(
             backgroundColor: const Color(0xFFF2F2F2),
             body: SafeArea(
@@ -332,8 +351,9 @@ class _ClMainOccasionDescriptionScreenState
                             step: 1,
                             title: 'عدد الضيوف',
                             subtitle: 'حدد العدد التقريبي للضيوف',
-                            child: _GuestsCounter(
-                              guestsCount: _guestsCount,
+                            child: _CounterField(
+                              value: _guestsCount,
+                              minValue: 1,
                               onAdd: () => setState(() => _guestsCount += 1),
                               onSubtract: () {
                                 if (_guestsCount <= 1) return;
@@ -345,31 +365,88 @@ class _ClMainOccasionDescriptionScreenState
                           ClHomeDescriptionTitleCardWidget(
                             step: 2,
                             title: 'ما هي طبيعة المساعدة المطلوبة؟',
-                            subtitle: 'اختر نوع المساعدة من القائمة',
+                            subtitle: 'اكتب أو اختر نوع المساعدة المطلوبة',
                             child: Column(
                               children: [
                                 ClSelectableMenuFieldWidget(
                                   key: const Key('occasion_help_type_field'),
                                   value: _selectedHelpType?.label,
-                                  hint: isLoadingServices
-                                      ? 'جاري تحميل الخدمات...'
-                                      : 'اختر طبيعة المساعدة المطلوبة',
-                                  onTap: () => _selectHelpType(serviceOptions),
+                                  hint: 'اختر اقتراحاً سريعاً (اختياري)',
+                                  onTap: _selectHelpType,
                                 ),
-                                if (servicesError != null &&
-                                    servicesError.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  AppText.bodySmall(
-                                    servicesError,
-                                    color: Colors.redAccent,
+                                const SizedBox(height: 10),
+                                TextField(
+                                  controller: _customServiceController,
+                                  maxLength: 255,
+                                  minLines: 2,
+                                  maxLines: 3,
+                                  decoration: InputDecoration(
+                                    hintText: 'اكتب وصف المساعدة المطلوبة',
+                                    hintStyle: const TextStyle(
+                                      color: Color(0xFF9CA3AF),
+                                      fontSize: 12,
+                                    ),
+                                    filled: true,
+                                    fillColor: const Color(0xFFF9FAFB),
+                                    contentPadding:
+                                        const EdgeInsetsDirectional.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFE5E7EB),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF11B9C8),
+                                      ),
+                                    ),
                                   ),
-                                ],
+                                ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 10),
                           ClHomeDescriptionTitleCardWidget(
                             step: 3,
+                            title: 'مدة الخدمة بالساعات',
+                            subtitle: 'حدد عدد الساعات المطلوبة (1 - 24)',
+                            child: _CounterField(
+                              value: _hoursCount,
+                              minValue: 1,
+                              maxValue: 24,
+                              onAdd: () {
+                                if (_hoursCount >= 24) return;
+                                setState(() => _hoursCount += 1);
+                              },
+                              onSubtract: () {
+                                if (_hoursCount <= 1) return;
+                                setState(() => _hoursCount -= 1);
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ClHomeDescriptionTitleCardWidget(
+                            step: 4,
+                            title: 'عدد العمال المطلوبين',
+                            subtitle: 'حدد عدد العمال الذي تحتاجه للمناسبة',
+                            child: _CounterField(
+                              value: _workersCount,
+                              minValue: 1,
+                              onAdd: () => setState(() => _workersCount += 1),
+                              onSubtract: () {
+                                if (_workersCount <= 1) return;
+                                setState(() => _workersCount -= 1);
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ClHomeDescriptionTitleCardWidget(
+                            step: 5,
                             title: 'هل لديك أي متطلبات خاصة؟',
                             subtitle: 'اختر المتطلبات الخاصة إن وجدت',
                             child: ClSelectableMenuFieldWidget(
@@ -383,7 +460,7 @@ class _ClMainOccasionDescriptionScreenState
                           ),
                           const SizedBox(height: 10),
                           ClHomeDescriptionTitleCardWidget(
-                            step: 4,
+                            step: 6,
                             title: 'ملاحظات الطلب',
                             subtitle: 'يمكنك إضافة ملاحظات إضافية (اختياري)',
                             child: Column(
@@ -453,9 +530,7 @@ class _ClMainOccasionDescriptionScreenState
                             key: const Key(
                               'occasion_description_continue_button',
                             ),
-                            onPressed: isLoadingServices
-                                ? null
-                                : () => _onContinue(bloc),
+                            onPressed: () => _onContinue(bloc),
                           ),
                         ],
                       ),
@@ -471,14 +546,18 @@ class _ClMainOccasionDescriptionScreenState
   }
 }
 
-class _GuestsCounter extends StatelessWidget {
-  const _GuestsCounter({
-    required this.guestsCount,
+class _CounterField extends StatelessWidget {
+  const _CounterField({
+    required this.value,
     required this.onAdd,
     required this.onSubtract,
+    this.minValue = 1,
+    this.maxValue,
   });
 
-  final int guestsCount;
+  final int value;
+  final int minValue;
+  final int? maxValue;
   final VoidCallback onAdd;
   final VoidCallback onSubtract;
 
@@ -508,7 +587,7 @@ class _GuestsCounter extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: AppText.bodyMedium(
-                '$guestsCount',
+                '$value',
                 color: const Color(0xFF1F2937),
                 fontWeight: FontWeight.w700,
               ),

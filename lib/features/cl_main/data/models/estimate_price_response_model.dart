@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 
 double? _toDouble(dynamic value) {
@@ -44,6 +45,8 @@ class EstimatePriceResponseModel {
   final EstimatePricingModel? pricing;
   final EstimateQuoteModel? quote;
   final EstimateRecommendationModel? recommendation;
+  final EstimateWorkerAcceptanceModel? workerAcceptance;
+  final CleaningAssignmentMode? assignmentMode;
   final List<CleaningWorkerRoomAssignment> workerRoomAssignments;
 
   const EstimatePriceResponseModel({
@@ -51,10 +54,17 @@ class EstimatePriceResponseModel {
     this.pricing,
     this.quote,
     this.recommendation,
+    this.workerAcceptance,
+    this.assignmentMode,
     this.workerRoomAssignments = const [],
   });
 
+  int? get suggestedTeamSize =>
+      recommendation?.suggestedTeamSize ?? workerAcceptance?.required;
+
   factory EstimatePriceResponseModel.fromJson(Map<String, dynamic> json) {
+    final assignmentModeRaw =
+        (json['assignmentMode'] ?? json['assignment_mode']) as String?;
     return EstimatePriceResponseModel(
       size: json['size'] is Map<String, dynamic>
           ? EstimateSizeModel.fromJson(json['size'] as Map<String, dynamic>)
@@ -72,9 +82,43 @@ class EstimatePriceResponseModel {
               json['recommendation'] as Map<String, dynamic>,
             )
           : null,
+      workerAcceptance:
+          json['workerAcceptance'] is Map<String, dynamic> ||
+              json['worker_acceptance'] is Map<String, dynamic>
+          ? EstimateWorkerAcceptanceModel.fromJson(
+              (json['workerAcceptance'] ?? json['worker_acceptance'])
+                  as Map<String, dynamic>,
+            )
+          : null,
+      assignmentMode: assignmentModeRaw == null
+          ? null
+          : CleaningAssignmentModeX.fromApi(assignmentModeRaw),
       workerRoomAssignments: parseWorkerRoomAssignments(
         json['workerRoomAssignments'] ?? json['worker_room_assignments'],
       ),
+    );
+  }
+}
+
+class EstimateWorkerAcceptanceModel {
+  final int? required;
+  final int? accepted;
+  final int? remaining;
+  final bool? isFulfilled;
+
+  const EstimateWorkerAcceptanceModel({
+    this.required,
+    this.accepted,
+    this.remaining,
+    this.isFulfilled,
+  });
+
+  factory EstimateWorkerAcceptanceModel.fromJson(Map<String, dynamic> json) {
+    return EstimateWorkerAcceptanceModel(
+      required: _toInt(json['required']),
+      accepted: _toInt(json['accepted']),
+      remaining: _toInt(json['remaining']),
+      isFulfilled: _toBool(json['isFulfilled'] ?? json['is_fulfilled']),
     );
   }
 }
@@ -108,6 +152,8 @@ class EstimatePricingModel {
   final double? adminMargin;
   final bool? isPricingFinal;
   final String? currency;
+  final double? eventHourlyRate;
+  final double? eventHours;
   final List<EstimateServiceLineModel> serviceLines;
 
   const EstimatePricingModel({
@@ -119,6 +165,8 @@ class EstimatePricingModel {
     this.adminMargin,
     this.isPricingFinal,
     this.currency,
+    this.eventHourlyRate,
+    this.eventHours,
     this.serviceLines = const <EstimateServiceLineModel>[],
   });
 
@@ -142,6 +190,10 @@ class EstimatePricingModel {
         json['isPricingFinal'] ?? json['is_pricing_final'],
       ),
       currency: json['currency'] as String?,
+      eventHourlyRate: _toDouble(
+        json['eventHourlyRate'] ?? json['event_hourly_rate'],
+      ),
+      eventHours: _toDouble(json['eventHours'] ?? json['event_hours']),
       serviceLines: serviceLines,
     );
   }
@@ -182,6 +234,8 @@ class EstimateRecommendationModel {
   final String? eventType;
   final int? guestCount;
   final String? venueType;
+  final String? customService;
+  final double? hours;
   final int? selectedServiceCount;
   final int? suggestedTeamSize;
 
@@ -189,6 +243,8 @@ class EstimateRecommendationModel {
     this.eventType,
     this.guestCount,
     this.venueType,
+    this.customService,
+    this.hours,
     this.selectedServiceCount,
     this.suggestedTeamSize,
   });
@@ -198,6 +254,9 @@ class EstimateRecommendationModel {
       eventType: (json['eventType'] ?? json['event_type']) as String?,
       guestCount: _toInt(json['guestCount'] ?? json['guest_count']),
       venueType: (json['venueType'] ?? json['venue_type']) as String?,
+      customService:
+          (json['customService'] ?? json['custom_service']) as String?,
+      hours: _toDouble(json['hours']),
       selectedServiceCount: _toInt(
         json['selectedServiceCount'] ?? json['selected_service_count'],
       ),

@@ -2,85 +2,42 @@ import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_room_size
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('CleaningRoomSizeBreakdown legacy mapping', () {
-    test(
-      'derives legacy counters from room bucket totals while excluding balconies',
-      () {
-        const breakdown = CleaningRoomSizeBreakdown(
-          bedroom: CleaningRoomSizeBucket(small: 1, medium: 2, large: 0),
-          bathroom: CleaningRoomSizeBucket(small: 2, medium: 0, large: 1),
-          kitchen: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
-          livingRoom: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
-          balcony: CleaningRoomSizeBucket(small: 1, medium: 1, large: 1),
-        );
-
-        expect(breakdown.totalRooms, 8);
-        expect(breakdown.legacyBedroomsCount, 8);
-        expect(breakdown.legacyRoomsCount, 3);
-        expect(breakdown.legacyBathroomsCount, 3);
-        expect(breakdown.legacyBalconiesCount, 3);
-      },
-    );
-
-    test('counts corridor in totalRooms and includes it in toJson', () {
+  group('CleaningRoomSizeBreakdown.toBackendJson', () {
+    test('omits corridor and zero-count room buckets', () {
       const breakdown = CleaningRoomSizeBreakdown(
         bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
         corridor: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
       );
 
-      expect(breakdown.totalRooms, 2);
-      expect(breakdown.toJson(), {
-        'bedroom': {'small': 1, 'medium': 0, 'large': 0},
-        'bathroom': {'small': 0, 'medium': 0, 'large': 0},
-        'kitchen': {'small': 0, 'medium': 0, 'large': 0},
-        'living_room': {'small': 0, 'medium': 0, 'large': 0},
-        'balcony': {'small': 0, 'medium': 0, 'large': 0},
-        'corridor': {'small': 0, 'medium': 1, 'large': 0},
+      final json = breakdown.toBackendJson();
+
+      expect(json.keys, {'bedroom'});
+      expect(json.containsKey('corridor'), isFalse);
+      expect(json['bedroom'], {
+        'small': 1,
+        'medium': 0,
+        'large': 0,
       });
-      expect(breakdown.toJson().containsKey('corridor'), isTrue);
     });
 
-    test('serializes balcony buckets inside room_size_breakdown', () {
+    test('includes only backend-accepted types with total > 0', () {
       const breakdown = CleaningRoomSizeBreakdown(
-        balcony: CleaningRoomSizeBucket(small: 2, medium: 1, large: 0),
+        bedroom: CleaningRoomSizeBucket(small: 2, medium: 1, large: 0),
+        bathroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+        kitchen: CleaningRoomSizeBucket(small: 1, medium: 1, large: 0),
+        livingRoom: CleaningRoomSizeBucket(small: 0, medium: 2, large: 0),
+        balcony: CleaningRoomSizeBucket(small: 1, medium: 0, large: 2),
       );
 
-      expect(breakdown.toJson(), {
-        'bedroom': {'small': 0, 'medium': 0, 'large': 0},
-        'bathroom': {'small': 0, 'medium': 0, 'large': 0},
-        'kitchen': {'small': 0, 'medium': 0, 'large': 0},
-        'living_room': {'small': 0, 'medium': 0, 'large': 0},
-        'balcony': {'small': 2, 'medium': 1, 'large': 0},
-        'corridor': {'small': 0, 'medium': 0, 'large': 0},
+      final json = breakdown.toBackendJson();
+
+      expect(json.keys, {
+        'bedroom',
+        'bathroom',
+        'kitchen',
+        'living_room',
+        'balcony',
       });
-      expect(breakdown.toJson().containsKey('corridor'), isTrue);
-    });
-
-    test('balcony-only input does not satisfy hasAnyRoom', () {
-      const breakdown = CleaningRoomSizeBreakdown(
-        balcony: CleaningRoomSizeBucket(small: 2, medium: 0, large: 1),
-      );
-
-      expect(breakdown.totalRooms, 0);
-      expect(breakdown.hasAnyRoom, isFalse);
-    });
-
-    test('living room fallback prefers large over medium over small', () {
-      const withLarge = CleaningRoomSizeBreakdown(
-        livingRoom: CleaningRoomSizeBucket(small: 3, medium: 2, large: 1),
-      );
-      const withMedium = CleaningRoomSizeBreakdown(
-        livingRoom: CleaningRoomSizeBucket(small: 3, medium: 2, large: 0),
-      );
-      const withSmallOnly = CleaningRoomSizeBreakdown(
-        livingRoom: CleaningRoomSizeBucket(small: 2, medium: 0, large: 0),
-      );
-      const withoutLivingRoom = CleaningRoomSizeBreakdown();
-
-      expect(withLarge.legacyLivingRoomSize, 'large');
-      expect(withMedium.legacyLivingRoomSize, 'medium');
-      expect(withSmallOnly.legacyLivingRoomSize, 'small');
-      expect(withoutLivingRoom.legacyLivingRoomSize, 'small');
     });
   });
 }
