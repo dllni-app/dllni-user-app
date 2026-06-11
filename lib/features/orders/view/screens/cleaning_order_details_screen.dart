@@ -150,12 +150,14 @@ class _CleaningOrderDetailsScreenState
   bool _blocksCancel(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
     return s == CleaningBookingStatus.awaitingStartVerification ||
+        s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
         s == CleaningBookingStatus.awaitingCustomerCompletion;
   }
 
   bool _blocksReschedule(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
     return s == CleaningBookingStatus.awaitingStartVerification ||
+        s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
         s == CleaningBookingStatus.awaitingCustomerCompletion ||
         s == CleaningBookingStatus.inProgress ||
         s == CleaningBookingStatus.timeExtensionRequested;
@@ -621,6 +623,7 @@ class _CleaningOrderDetailsScreenState
     );
     if (!mounted) return 'تعذر تحديث الحالة';
     String? errorMessage;
+    String? successMessage;
     response.fold(
       (failure) => setState(() {
         _gateSubmitting = false;
@@ -638,16 +641,52 @@ class _CleaningOrderDetailsScreenState
         if (updatedOrder != null) {
           _syncGateSessionWithOrder(updatedOrder);
         }
+        successMessage = _extensionRequestSuccessMessage(
+          result.extensionPricing,
+        );
       }),
     );
     if (errorMessage == null && mounted) {
       AppToast.showToast(
         context: context,
-        message: 'تم إرسال طلب تمديد الوقت إلى العامل',
+        message: successMessage ?? 'تم إرسال طلب تمديد الوقت إلى العامل',
         type: ToastificationType.success,
       );
     }
     return errorMessage;
+  }
+
+  String? _extensionRequestSuccessMessage(
+    CleaningExtensionPricingModel? pricing,
+  ) {
+    final price = pricing?.calculatedExtensionPrice;
+    if (price == null) return null;
+    final currency = switch ((pricing?.currency ?? '').toUpperCase()) {
+      'SYP' => 'ل.س',
+      final value when value.isNotEmpty => value,
+      _ => 'ل.س',
+    };
+    return 'تم إرسال طلب تمديد الوقت إلى العامل. الرسوم المحسوبة: ${price.formatWithComma()} $currency';
+  }
+
+  Future<List<CleaningExtensionRangeModel>> _fetchExtensionTimeRanges(
+    int orderId,
+  ) async {
+    final response = await getIt<FetchCleaningOrderDetailsUseCase>()(
+      FetchCleaningOrderDetailsParams(orderId: orderId),
+    );
+    return response.fold((failure) => throw Exception(failure.message), (
+      result,
+    ) {
+      final updatedOrder = result.data;
+      if (updatedOrder != null && mounted) {
+        setState(() {
+          _order = updatedOrder;
+          _syncGateSessionWithOrder(updatedOrder);
+        });
+      }
+      return result.extendedTimeRanges;
+    });
   }
 
   Future<void> _openCompletionSheet({bool force = false}) async {
@@ -671,6 +710,7 @@ class _CleaningOrderDetailsScreenState
       onConfirm: () => _submitCompletionConfirm(order),
       onReject: (reason) => _submitCompletionReject(order, reason),
       onExtend: (minutes) => _submitExtendTime(order, minutes),
+      fetchExtensionTimeRanges: () => _fetchExtensionTimeRanges(orderId),
     );
     if (!mounted) return;
     _completionSheetOpen = false;
@@ -1340,9 +1380,10 @@ class _CleaningOrderDetailsScreenState
                             const SizedBox(height: 10),
                             _SummaryRow(
                               title: 'نوع المناسبة',
-                              value: CleaningEventAssistanceHelper.eventTypeLabelAr(
-                                order.propertyDetails?.eventType,
-                              ),
+                              value:
+                                  CleaningEventAssistanceHelper.eventTypeLabelAr(
+                                    order.propertyDetails?.eventType,
+                                  ),
                             ),
                             const SizedBox(height: 6),
                             _SummaryRow(
@@ -1353,9 +1394,10 @@ class _CleaningOrderDetailsScreenState
                             const SizedBox(height: 6),
                             _SummaryRow(
                               title: 'نوع المكان',
-                              value: CleaningEventAssistanceHelper.venueTypeLabelAr(
-                                order.propertyDetails?.venueType,
-                              ),
+                              value:
+                                  CleaningEventAssistanceHelper.venueTypeLabelAr(
+                                    order.propertyDetails?.venueType,
+                                  ),
                             ),
                             const SizedBox(height: 6),
                             _SummaryRow(
@@ -1482,6 +1524,33 @@ class _CleaningOrderDetailsScreenState
                               child: const Text(
                                 'فتح نافذة إدخال الرمز',
                                 style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (statusNorm ==
+                        CleaningBookingStatus
+                            .awaitingWorkerStartConfirmation) ...[
+                      const SizedBox(height: 12),
+                      _card(
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'تم تأكيد رمز الأمان',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xff1F2937),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'بانتظار مقدم الخدمة لتأكيد بدء العمل. لا تحتاج إلى إدخال رمز آخر.',
+                              style: TextStyle(
+                                color: Color(0xff6B7280),
+                                fontSize: 13,
                               ),
                             ),
                           ],

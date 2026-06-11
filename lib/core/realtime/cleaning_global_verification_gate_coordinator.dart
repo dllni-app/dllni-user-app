@@ -21,6 +21,7 @@ import '../../features/orders/view/screens/cleaning_worker_rating_screen.dart';
 import '../../features/orders/view/widgets/cleaning_completion_decision_sheet.dart';
 import '../../features/orders/view/widgets/cleaning_start_verification_dialog.dart';
 import '../di/injection.dart';
+import '../extensions/num_extensions.dart';
 import 'cleaning_booking_pusher_service.dart';
 import 'cleaning_gate_session_store.dart';
 import 'cleaning_realtime_contract.dart';
@@ -45,6 +46,7 @@ class CleaningGlobalVerificationGateCoordinator {
   bool _useUnfilteredPollingFallback = false;
   int? _listeningCustomerId;
   bool _customerChannelAuthWarningShown = false;
+  String? _lastExtensionRequestSuccessMessage;
 
   static const int _pollPageSize = 25;
   static const int _pollMaxPagesPerStatus = 6;
@@ -499,6 +501,7 @@ class CleaningGlobalVerificationGateCoordinator {
     _gatePromptOpen = true;
     CleaningCompletionDecision? sheetDecision;
     try {
+      _lastExtensionRequestSuccessMessage = null;
       sheetDecision = await CleaningCompletionDecisionSheet.show(
         navContext,
         useRootNavigator: true,
@@ -509,6 +512,7 @@ class CleaningGlobalVerificationGateCoordinator {
           orderId: orderId,
           additionalMinutes: minutes,
         ),
+        fetchExtensionTimeRanges: () => _fetchExtensionTimeRanges(orderId),
       );
     } finally {
       _gatePromptOpen = false;
@@ -538,7 +542,9 @@ class CleaningGlobalVerificationGateCoordinator {
         navContext.mounted) {
       AppToast.showToast(
         context: navContext,
-        message: 'تم إرسال طلب تمديد الوقت إلى العامل',
+        message:
+            _lastExtensionRequestSuccessMessage ??
+            'تم إرسال طلب تمديد الوقت إلى العامل',
         type: ToastificationType.success,
       );
     }
@@ -738,9 +744,42 @@ class CleaningGlobalVerificationGateCoordinator {
         if (details != null) {
           _syncGateSessionWithDetails(details);
         }
+        _lastExtensionRequestSuccessMessage = _extensionRequestSuccessMessage(
+          result.extensionPricing,
+        );
         return null;
       },
     );
+  }
+
+  String? _extensionRequestSuccessMessage(
+    CleaningExtensionPricingModel? pricing,
+  ) {
+    final price = pricing?.calculatedExtensionPrice;
+    if (price == null) return null;
+    final currency = switch ((pricing?.currency ?? '').toUpperCase()) {
+      'SYP' => 'ل.س',
+      final value when value.isNotEmpty => value,
+      _ => 'ل.س',
+    };
+    return 'تم إرسال طلب تمديد الوقت إلى العامل. الرسوم المحسوبة: ${price.formatWithComma()} $currency';
+  }
+
+  Future<List<CleaningExtensionRangeModel>> _fetchExtensionTimeRanges(
+    int orderId,
+  ) async {
+    final response = await getIt<FetchCleaningOrderDetailsUseCase>()(
+      FetchCleaningOrderDetailsParams(orderId: orderId),
+    );
+    return response.fold((failure) => throw Exception(failure.message), (
+      result,
+    ) {
+      final details = result.data;
+      if (details != null) {
+        _syncGateSessionWithDetails(details);
+      }
+      return result.extendedTimeRanges;
+    });
   }
 
   int? _readCustomerId() {

@@ -85,6 +85,8 @@ String cleaningOrderStatusLabelAr(String? status) {
       return 'تم تعيين مقدم الخدمة';
     case CleaningBookingStatus.awaitingStartVerification:
       return 'بانتظار رمز التحقق';
+    case CleaningBookingStatus.awaitingWorkerStartConfirmation:
+      return 'بانتظار تأكيد مقدم الخدمة لبدء العمل';
     case CleaningBookingStatus.inProgress:
       return 'قيد التنفيذ';
     case CleaningBookingStatus.awaitingCustomerCompletion:
@@ -132,16 +134,111 @@ class FetchCleaningOrdersModel {
 
 class FetchCleaningOrderDetailsModel {
   final CleaningOrderDetailModel? data;
+  final CleaningExtensionPricingModel? extensionPricing;
+  final List<CleaningExtensionRangeModel> extendedTimeRanges;
 
-  FetchCleaningOrderDetailsModel({this.data});
+  FetchCleaningOrderDetailsModel({
+    this.data,
+    this.extensionPricing,
+    this.extendedTimeRanges = const <CleaningExtensionRangeModel>[],
+  });
 
   factory FetchCleaningOrderDetailsModel.fromJson(Map<String, dynamic> json) {
+    final data = _toMap(json['data']);
     return FetchCleaningOrderDetailsModel(
-      data: json['data'] == null
+      data: data.isEmpty ? null : CleaningOrderDetailModel.fromJson(data),
+      extensionPricing:
+          json['extensionPricing'] == null && json['extension_pricing'] == null
           ? null
-          : CleaningOrderDetailModel.fromJson(_toMap(json['data'])),
+          : CleaningExtensionPricingModel.fromJson(
+              _toMap(json['extensionPricing'] ?? json['extension_pricing']),
+            ),
+      extendedTimeRanges: _parseExtensionRanges(
+        json['extendedTimeRanges'] ??
+            json['extended_time_ranges'] ??
+            data['extendedTimeRanges'] ??
+            data['extended_time_ranges'],
+      ),
     );
   }
+}
+
+List<CleaningExtensionRangeModel> _parseExtensionRanges(dynamic value) {
+  if (value is! List) return const <CleaningExtensionRangeModel>[];
+  return value
+      .map((item) => CleaningExtensionRangeModel.fromJson(_toMap(item)))
+      .where((item) => item.requestMinutes != null)
+      .toList(growable: false);
+}
+
+class CleaningExtensionPricingModel {
+  final int? requestedMinutes;
+  final CleaningExtensionRangeModel? matchedRange;
+  final double? calculatedExtensionPrice;
+  final String? currency;
+
+  CleaningExtensionPricingModel({
+    this.requestedMinutes,
+    this.matchedRange,
+    this.calculatedExtensionPrice,
+    this.currency,
+  });
+
+  factory CleaningExtensionPricingModel.fromJson(Map<String, dynamic> json) {
+    return CleaningExtensionPricingModel(
+      requestedMinutes: _toInt(
+        _pick(json, const <String>['requestedMinutes', 'requested_minutes']),
+      ),
+      matchedRange:
+          json['matchedRange'] == null && json['matched_range'] == null
+          ? null
+          : CleaningExtensionRangeModel.fromJson(
+              _toMap(json['matchedRange'] ?? json['matched_range']),
+            ),
+      calculatedExtensionPrice: _toDouble(
+        _pick(json, const <String>[
+          'calculatedExtensionPrice',
+          'calculated_extension_price',
+        ]),
+      ),
+      currency: _toStringValue(_pick(json, const <String>['currency'])),
+    );
+  }
+}
+
+class CleaningExtensionRangeModel {
+  final int? id;
+  final int? startMinutes;
+  final int? endMinutes;
+  final String? label;
+  final double? price;
+  final String? currency;
+
+  CleaningExtensionRangeModel({
+    this.id,
+    this.startMinutes,
+    this.endMinutes,
+    this.label,
+    this.price,
+    this.currency,
+  });
+
+  factory CleaningExtensionRangeModel.fromJson(Map<String, dynamic> json) {
+    return CleaningExtensionRangeModel(
+      id: _toInt(_pick(json, const <String>['id'])),
+      startMinutes: _toInt(
+        _pick(json, const <String>['startMinutes', 'start_minutes']),
+      ),
+      endMinutes: _toInt(
+        _pick(json, const <String>['endMinutes', 'end_minutes']),
+      ),
+      label: _toStringValue(_pick(json, const <String>['label'])),
+      price: _toDouble(_pick(json, const <String>['price'])),
+      currency: _toStringValue(_pick(json, const <String>['currency'])),
+    );
+  }
+
+  int? get requestMinutes => endMinutes ?? startMinutes;
 }
 
 class CleaningOrderModel {
@@ -346,8 +443,8 @@ class CleaningOrderModel {
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
-      workerAcceptance: m['workerAcceptance'] == null &&
-              m['worker_acceptance'] == null
+      workerAcceptance:
+          m['workerAcceptance'] == null && m['worker_acceptance'] == null
           ? null
           : CleaningWorkerAcceptanceModel.fromJson(
               _toMap(m['workerAcceptance'] ?? m['worker_acceptance']),
@@ -588,28 +685,24 @@ class CleaningOrderDetailModel {
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
-      workerAcceptance: m['workerAcceptance'] == null &&
-              m['worker_acceptance'] == null
+      workerAcceptance:
+          m['workerAcceptance'] == null && m['worker_acceptance'] == null
           ? null
           : CleaningWorkerAcceptanceModel.fromJson(
               _toMap(m['workerAcceptance'] ?? m['worker_acceptance']),
             ),
-      preferredWorker: m['preferredWorker'] == null &&
-              m['preferred_worker'] == null
+      preferredWorker:
+          m['preferredWorker'] == null && m['preferred_worker'] == null
           ? null
           : CleaningOrderWorkerModel.fromJson(
               _toMap(m['preferredWorker'] ?? m['preferred_worker']),
             ),
       workerAssignments: _toMapList(
         m['workerAssignments'] ?? m['worker_assignments'],
-      )
-          .map(CleaningWorkerAssignmentModel.fromJson)
-          .toList(growable: false),
+      ).map(CleaningWorkerAssignmentModel.fromJson).toList(growable: false),
       roomAssignments: _toMapList(
         m['roomAssignments'] ?? m['room_assignments'],
-      )
-          .map(CleaningRoomAssignmentModel.fromJson)
-          .toList(growable: false),
+      ).map(CleaningRoomAssignmentModel.fromJson).toList(growable: false),
       myAssignment: m['myAssignment'] == null && m['my_assignment'] == null
           ? null
           : CleaningMyAssignmentModel.fromJson(
@@ -730,12 +823,14 @@ class CleaningMyAssignmentModel {
         _pick(json, const <String>['roomsWeight', 'rooms_weight']),
       ),
       serviceShareAmount: _toDouble(
-        _pick(
-          json,
-          const <String>['serviceShareAmount', 'service_share_amount'],
-        ),
+        _pick(json, const <String>[
+          'serviceShareAmount',
+          'service_share_amount',
+        ]),
       ),
-      travelFee: _toDouble(_pick(json, const <String>['travelFee', 'travel_fee'])),
+      travelFee: _toDouble(
+        _pick(json, const <String>['travelFee', 'travel_fee']),
+      ),
       adminMarginAmount: _toDouble(
         _pick(json, const <String>['adminMarginAmount', 'admin_margin_amount']),
       ),
@@ -822,12 +917,14 @@ class CleaningWorkerAssignmentModel {
         _pick(json, const <String>['roomsWeight', 'rooms_weight']),
       ),
       serviceShareAmount: _toDouble(
-        _pick(
-          json,
-          const <String>['serviceShareAmount', 'service_share_amount'],
-        ),
+        _pick(json, const <String>[
+          'serviceShareAmount',
+          'service_share_amount',
+        ]),
       ),
-      travelFee: _toDouble(_pick(json, const <String>['travelFee', 'travel_fee'])),
+      travelFee: _toDouble(
+        _pick(json, const <String>['travelFee', 'travel_fee']),
+      ),
       adminMarginAmount: _toDouble(
         _pick(json, const <String>['adminMarginAmount', 'admin_margin_amount']),
       ),
@@ -887,10 +984,7 @@ class CleaningRoomAssignmentModel {
       ),
       weight: _toDouble(_pick(json, const <String>['weight'])),
       plannedWorkerSlot: _toInt(
-        _pick(json, const <String>[
-          'plannedWorkerSlot',
-          'planned_worker_slot',
-        ]),
+        _pick(json, const <String>['plannedWorkerSlot', 'planned_worker_slot']),
       ),
       plannedPreferredWorkerId: _toInt(
         _pick(json, const <String>[
@@ -904,8 +998,8 @@ class CleaningRoomAssignmentModel {
       assignmentSource: _toStringValue(
         _pick(json, const <String>['assignmentSource', 'assignment_source']),
       ),
-      assignedWorker: json['assignedWorker'] == null &&
-              json['assigned_worker'] == null
+      assignedWorker:
+          json['assignedWorker'] == null && json['assigned_worker'] == null
           ? null
           : CleaningOrderWorkerModel.fromJson(
               _toMap(json['assignedWorker'] ?? json['assigned_worker']),
@@ -1042,7 +1136,10 @@ class CleaningPropertyDetailsModel {
       ),
       hours: _toDouble(_pick(json, const <String>['hours'])),
       specialRequirement: _toStringValue(
-        _pick(json, const <String>['special_requirement', 'specialRequirement']),
+        _pick(json, const <String>[
+          'special_requirement',
+          'specialRequirement',
+        ]),
       ),
       notes: _toStringValue(_pick(json, const <String>['notes'])),
     );

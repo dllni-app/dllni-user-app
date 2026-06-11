@@ -30,7 +30,7 @@ The Flutter app already calls cleaning order REST endpoints; new flows need **br
 | Flow | Who triggers | Customer UI | Real-time (to customer) | Write API (customer) | Resulting state (proposal) |
 |------|----------------|-------------|-------------------------|----------------------|----------------------------|
 | **A — Completion confirmation** | Worker marks work finished, pending customer | Modal: extend time / confirm done / not done yet | Event: awaiting customer completion | POST confirm, reject, or request extension | `COMPLETED`, `IN_PROGRESS` (reopened), or `TIME_EXTENSION_REQUESTED` / billing-pending |
-| **B — Start verification** | Worker arrives / requests start | Modal: enter **4-digit** security code from worker | Event: awaiting start verification | POST verify code | `IN_PROGRESS` (work started) on success |
+| **B — Start verification + worker start confirmation** | Worker arrives / requests start | Modal: enter **4-digit** security code from worker | Event: awaiting start verification | POST verify code | `AWAITING_WORKER_START_CONFIRMATION`; worker must confirm before `IN_PROGRESS` |
 
 ---
 
@@ -72,7 +72,7 @@ Use namespaced routes under the existing API prefix, e.g.:
 
 ---
 
-## 4. Flow B — Worker arrival; customer verifies 4-digit code
+## 4. Flow B — Worker arrival; customer verifies 4-digit code, then worker confirms start
 
 ### 4.1 UX reference (customer)
 
@@ -86,12 +86,23 @@ Use namespaced routes under the existing API prefix, e.g.:
 2. Server generates a **4-digit numeric code** bound to **`(cleaning_order_id, worker_id)`** with a **TTL**; store a **hash** (e.g. bcrypt/argon) or HMAC secret comparison — avoid logging plaintext codes.
 3. Code is delivered to the **worker** (worker app API or worker channel) — **not** returned on `GET` cleaning order details for the customer.
 4. **Broadcast** to customer: show the verification modal (`cleaning_order.awaiting_start_verification`).
-5. Customer submits code → **`POST` verify** → on match, transition to **`IN_PROGRESS`** (or your canonical “started” status) and broadcast as needed.
+5. Customer submits code → **`POST` verify** → on match, transition to **`AWAITING_WORKER_START_CONFIRMATION`** (illustrative) instead of starting the order immediately.
+6. Backend broadcasts to the **worker app** that the customer verified the code and the worker must confirm starting the job.
+7. Worker taps confirm/start in the worker app → backend validates the state and transitions to **`IN_PROGRESS`** (or the canonical “started” status), then broadcasts refresh events to both apps.
 
 ### 4.3 Suggested REST
 
 - `POST /api/v1/user/cleaning/orders/{id}/start-verification/confirm`  
   Body: `{ "code": "1234" }` — validate with Laravel **Form Request** (`regex:/^[0-9]{4}$/`, `required`).
+
+On success, return the updated order/details envelope with `status = "awaiting_worker_start_confirmation"` (or the agreed canonical value). This response means: **the customer code is correct, but work has not started until the worker confirms**.
+
+Worker app route (backend/worker app contract):
+
+- `POST /api/v1/cleaning-bookings/{id}/start-work`  
+  Body: `{}` or `{ "confirmed_at": "2026-06-11T18:49:00Z" }` if backend wants client timestamp metadata. Prefer server time for the authoritative `work_started_at`.
+
+Worker confirm should only succeed while the order is in `AWAITING_WORKER_START_CONFIRMATION`. If the order is already `IN_PROGRESS`, return either idempotent `200` with the current order or a documented `409` error code.
 
 **Rate limiting:** Apply **strict** `throttle` middleware (per user + per order id if possible). After N failures, temporary lockout or require support — document limits in API error responses (`429`, structured `errors`).
 
@@ -101,6 +112,24 @@ Use namespaced routes under the existing API prefix, e.g.:
 |-------|-------------|
 | Suggested name | `cleaning_order.awaiting_start_verification` |
 | Payload (minimum) | `cleaning_order_id`, `worker_id`, `status`. **Do not** include the code. |
+
+### 4.5 Suggested broadcast events after customer code success
+
+Customer refresh event:
+
+| Field | Description |
+|-------|-------------|
+| Suggested name | `cleaning_order.arrival_verified` or legacy `ArrivalVerified` |
+| Payload (minimum) | `cleaning_order_id`, `worker_id`, `status: "awaiting_worker_start_confirmation"`, optional `verified_at`. **Do not** include the code. |
+
+Worker action-required event:
+
+| Field | Description |
+|-------|-------------|
+| Suggested name | `cleaning_order.awaiting_worker_start_confirmation` |
+| Payload (minimum) | `cleaning_order_id`, `customer_id`, `worker_id`, `status: "awaiting_worker_start_confirmation"`, optional `verified_at`. **Do not** include the code. |
+
+After the worker confirms start, broadcast a normal tracking/lifecycle refresh to both customer and worker channels with `status: "in_progress"` and authoritative `work_started_at`.
 
 ---
 
@@ -114,7 +143,8 @@ stateDiagram-v2
   [*] --> Assigned
   Assigned --> WorkerEnRoute: workerAssigned
   WorkerEnRoute --> AwaitingStartCode: workerArrived
-  AwaitingStartCode --> InProgress: codeVerified
+  AwaitingStartCode --> AwaitingWorkerStartConfirmation: codeVerifiedByCustomer
+  AwaitingWorkerStartConfirmation --> InProgress: workerConfirmsStart
   InProgress --> AwaitingCustomerCompletion: workerReportsFinished
   AwaitingCustomerCompletion --> Completed: customerConfirms
   AwaitingCustomerCompletion --> InProgress: customerRejectsCompletion
@@ -126,7 +156,7 @@ stateDiagram-v2
 
 **Actors:**
 
-- **Worker:** transitions into `AwaitingStartCode`, `AwaitingCustomerCompletion`.
+- **Worker:** transitions into `AwaitingStartCode`, confirms start after customer code verification, and later transitions into `AwaitingCustomerCompletion`.
 - **Customer:** code verification, confirm/reject/extend.
 - **System / admin / cron:** may handle extension approval or timeouts (not specified here).
 
@@ -134,12 +164,12 @@ stateDiagram-v2
 
 ## 6. Broadcasting & channels (Laravel)
 
-**Goal:** Only the **customer who owns the order** receives private order updates.
+**Goal:** Only the **customer who owns the order** and the **assigned worker** receive private order updates/action-required events.
 
 ### 6.1 Implementation notes
 
 - Use Laravel events implementing **`ShouldBroadcast`** / **`ShouldBroadcastNow`**. Dispatch **after** the database transaction commits so Pusher never sees stale state.
-- Use **`PrivateChannel`**, e.g. `private-user.{customer_id}` **or** `private-cleaning-order.{id}` with authorization that checks the authenticated user owns the order.
+- Use **`PrivateChannel`**, e.g. `private-user.{customer_id}`, `private-cleaning-worker.{worker_id}`, or `private-cleaning-order.{id}` with authorization that checks the authenticated user owns or is assigned to the order.
 - Authorize in **`routes/channels.php`** (e.g. `Broadcast::channel('private-user.{id}', …)`).
 - Configure **`broadcastAs()`** so the Flutter client can subscribe to predictable event names (e.g. `cleaning_order.awaiting_start_verification`).
 - **Queues:** Default **queued** broadcast is acceptable unless you require sub-second latency; then document **`ShouldBroadcastNow`** and operational requirements (workers, retries).
@@ -166,7 +196,10 @@ sequenceDiagram
   Pusher->>CustomerApp: cleaning_order.* event
   CustomerApp->>API: POST confirm / reject / extend / verify code
   API->>DB: Update status transaction
-  API->>Pusher: Optional broadcast to worker channel
+  API->>Pusher: Broadcast worker action-required event when code is verified
+  WorkerApp->>API: POST confirm start
+  API->>DB: Update status to in_progress
+  API->>Pusher: Broadcast refresh to customer and worker channels
 ```
 
 ---
@@ -187,7 +220,7 @@ Optional: append-only **`cleaning_order_events`** table (`order_id`, `type`, `me
 
 1. **Extend time:** Pricing, payment capture, and whether extension requires **admin approval** or is automatic within limits.
 2. **Reject completion:** Does the job return to **`IN_PROGRESS`** with the same worker? Escalation? Partial refunds?
-3. **Worker app:** Should workers receive **real-time** events when the customer confirms, rejects, or verifies the code (separate private channel per worker or per order)?
+3. **Worker app channel:** Use a private worker channel or private order channel for `cleaning_order.awaiting_worker_start_confirmation`; backend should document the exact authorized channel name.
 4. **Timeouts:** What happens if the customer never responds while in **`AWAITING_CUSTOMER_COMPLETION`** or never enters the code?
 5. **Status strings:** Final enum list and whether to expose them in `GET /api/v1/user/cleaning/orders/{id}` for the UI to poll as a fallback when Pusher is disconnected.
 
@@ -198,6 +231,8 @@ Optional: append-only **`cleaning_order_events`** table (`order_id`, `type`, `me
 - [ ] Channel naming + `channels.php` authorization.
 - [ ] Broadcast event classes + documented **client event names** and JSON payloads.
 - [ ] REST routes + Form Requests + throttling for verify-code and sensitive actions.
+- [ ] Worker confirm-start route that moves `AWAITING_WORKER_START_CONFIRMATION` to `IN_PROGRESS`.
 - [ ] DB transactions around status changes + broadcast.
+- [ ] Worker-facing broadcast when the customer enters the correct security code.
 - [ ] Documented **status** values for cleaning orders (aligned with mobile models).
 - [ ] Agreed error codes / HTTP status for invalid state, wrong code, and rate limits.

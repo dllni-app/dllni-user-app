@@ -15,6 +15,8 @@ class CleaningRealtimeContract {
   static const String awaitingStartVerification =
       'cleaning_order.awaiting_start_verification';
   static const String arrivalVerified = 'ArrivalVerified';
+  static const String awaitingWorkerStartConfirmation =
+      'cleaning_order.awaiting_worker_start_confirmation';
   static const String awaitingCustomerCompletion =
       'cleaning_order.awaiting_customer_completion';
   static const String completionDecisionMade = 'CompletionDecisionMade';
@@ -31,6 +33,7 @@ class CleaningRealtimeContract {
     'worker_arrived': workerArrived,
     'cleaning_order.worker_arrived': workerArrived,
     'cleaning_order.arrival_verified': arrivalVerified,
+    'awaiting_worker_start_confirmation': awaitingWorkerStartConfirmation,
     'CompletionReviewRequested': awaitingCustomerCompletion,
     'completion_review_requested': awaitingCustomerCompletion,
     'cleaning_order.completion_review_requested': awaitingCustomerCompletion,
@@ -70,6 +73,7 @@ class CleaningRealtimeContract {
       securityCodeIssuedScoped,
       awaitingStartVerification,
       arrivalVerified,
+      awaitingWorkerStartConfirmation,
       awaitingCustomerCompletion,
       completionDecisionMade,
       serviceExtensionRequested,
@@ -99,6 +103,7 @@ class CleaningRealtimeContract {
     return normalized == workerArrived ||
         normalized == awaitingStartVerification ||
         normalized == arrivalVerified ||
+        normalized == awaitingWorkerStartConfirmation ||
         normalized == awaitingCustomerCompletion ||
         normalized == completionDecisionMade ||
         normalized == serviceExtensionRequested ||

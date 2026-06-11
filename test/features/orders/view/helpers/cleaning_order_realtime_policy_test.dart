@@ -36,6 +36,20 @@ void main() {
       expect(action.reopenCompletionAfterRefresh, isFalse);
     });
 
+    test(
+      'awaiting worker start confirmation event resolves to refresh action',
+      () {
+        final action = CleaningOrderRealtimePolicy.resolve(
+          eventName: 'cleaning_order.awaiting_worker_start_confirmation',
+          payload: const <String, dynamic>{},
+          currentStatus: CleaningBookingStatus.awaitingStartVerification,
+        );
+
+        expect(action.type, CleaningOrderRealtimeActionType.refreshDetails);
+        expect(action.reopenCompletionAfterRefresh, isFalse);
+      },
+    );
+
     test('awaiting-customer event requests completion sheet reopen', () {
       final action = CleaningOrderRealtimePolicy.resolve(
         eventName: 'CompletionReviewRequested',

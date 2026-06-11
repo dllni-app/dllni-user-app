@@ -2,23 +2,34 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
 
+import '../../data/models/cleaning_orders_api_models.dart';
+
 enum CleaningCompletionDecision { confirmed, rejected, extensionRequested }
 
 class _ExtensionTimeOption {
-  const _ExtensionTimeOption({required this.minutes, required this.price});
+  const _ExtensionTimeOption({
+    required this.minutes,
+    required this.label,
+    this.price,
+    this.currency,
+  });
 
   final int minutes;
-  final int price;
+  final String label;
+  final double? price;
+  final String? currency;
 
-  String get label => '$minutes دقيقة - ${price.formatWithComma()} ل.س';
+  String get formattedPrice {
+    final amount = price;
+    if (amount == null) return '';
+    final resolvedCurrency = switch ((currency ?? '').toUpperCase()) {
+      'SYP' => 'ل.س',
+      final value when value.isNotEmpty => value,
+      _ => 'ل.س',
+    };
+    return '${amount.formatWithComma()} $resolvedCurrency';
+  }
 }
-
-const List<_ExtensionTimeOption> _mockExtensionOptions = <_ExtensionTimeOption>[
-  _ExtensionTimeOption(minutes: 30, price: 10000),
-  _ExtensionTimeOption(minutes: 60, price: 18000),
-  _ExtensionTimeOption(minutes: 90, price: 25000),
-  _ExtensionTimeOption(minutes: 120, price: 32000),
-];
 
 class CleaningCompletionDecisionSheet {
   static Future<CleaningCompletionDecision?> show(
@@ -26,6 +37,8 @@ class CleaningCompletionDecisionSheet {
     required Future<String?> Function() onConfirm,
     required Future<String?> Function(String? reason) onReject,
     required Future<String?> Function(int minutes) onExtend,
+    required Future<List<CleaningExtensionRangeModel>> Function()
+    fetchExtensionTimeRanges,
     bool useRootNavigator = true,
   }) async {
     return showModalBottomSheet<CleaningCompletionDecision>(
@@ -42,6 +55,7 @@ class CleaningCompletionDecisionSheet {
         onConfirm: onConfirm,
         onReject: onReject,
         onExtend: onExtend,
+        fetchExtensionTimeRanges: fetchExtensionTimeRanges,
       ),
     );
   }
@@ -52,11 +66,14 @@ class _CleaningCompletionDecisionSheetBody extends StatefulWidget {
     required this.onConfirm,
     required this.onReject,
     required this.onExtend,
+    required this.fetchExtensionTimeRanges,
   });
 
   final Future<String?> Function() onConfirm;
   final Future<String?> Function(String? reason) onReject;
   final Future<String?> Function(int minutes) onExtend;
+  final Future<List<CleaningExtensionRangeModel>> Function()
+  fetchExtensionTimeRanges;
 
   @override
   State<_CleaningCompletionDecisionSheetBody> createState() =>
@@ -93,8 +110,9 @@ class _CleaningCompletionDecisionSheetBodyState
     final selected = await showDialog<_ExtensionTimeOption>(
       context: context,
       useRootNavigator: true,
-      builder: (_) =>
-          const _ExtensionTimePickerDialog(options: _mockExtensionOptions),
+      builder: (_) => _ExtensionTimePickerDialog(
+        fetchExtensionTimeRanges: widget.fetchExtensionTimeRanges,
+      ),
     );
     if (selected == null) return;
     await _run(
@@ -256,9 +274,10 @@ class _CleaningCompletionDecisionSheetBodyState
 }
 
 class _ExtensionTimePickerDialog extends StatefulWidget {
-  const _ExtensionTimePickerDialog({required this.options});
+  const _ExtensionTimePickerDialog({required this.fetchExtensionTimeRanges});
 
-  final List<_ExtensionTimeOption> options;
+  final Future<List<CleaningExtensionRangeModel>> Function()
+  fetchExtensionTimeRanges;
 
   @override
   State<_ExtensionTimePickerDialog> createState() =>
@@ -268,12 +287,42 @@ class _ExtensionTimePickerDialog extends StatefulWidget {
 class _ExtensionTimePickerDialogState
     extends State<_ExtensionTimePickerDialog> {
   _ExtensionTimeOption? _selected;
+  List<_ExtensionTimeOption> _options = const <_ExtensionTimeOption>[];
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    if (widget.options.isNotEmpty) {
-      _selected = widget.options.first;
+    _loadOptions();
+  }
+
+  Future<void> _loadOptions() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final ranges = await widget.fetchExtensionTimeRanges();
+      if (!mounted) return;
+      final options = ranges
+          .map(_ExtensionTimeOptionMapper.fromRange)
+          .where((option) => option != null)
+          .cast<_ExtensionTimeOption>()
+          .toList(growable: false);
+      setState(() {
+        _options = options;
+        _selected = options.isEmpty ? null : options.first;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _options = const <_ExtensionTimeOption>[];
+        _selected = null;
+        _loading = false;
+        _error = 'تعذر تحميل خيارات التمديد';
+      });
     }
   }
 
@@ -284,53 +333,101 @@ class _ExtensionTimePickerDialogState
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: widget.options.map((option) {
-            final isSelected = _selected == option;
-            return InkWell(
-              key: Key('extension_option_${option.minutes}'),
-              onTap: () => setState(() => _selected = option),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xffE6F9FB)
-                      : const Color(0xffF9FAFB),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xff20B7C4)
-                        : const Color(0xffE5E7EB),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppText.bodySmall(
+              'اختر مدة التمديد من الخيارات المتاحة من الخادم.',
+              color: const Color(0xff6B7280),
+            ),
+            const SizedBox(height: 12),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_error != null)
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppText.bodySmall(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    color: context.error,
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isSelected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_off,
-                      color: isSelected
-                          ? const Color(0xff20B7C4)
-                          : const Color(0xff9CA3AF),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _loadOptions,
+                    child: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              )
+            else if (_options.isEmpty)
+              AppText.bodySmall(
+                'لا توجد خيارات تمديد متاحة حالياً.',
+                textAlign: TextAlign.center,
+                color: const Color(0xff6B7280),
+              )
+            else
+              ..._options.map((option) {
+                final isSelected = _selected == option;
+                return InkWell(
+                  key: Key('extension_option_${option.minutes}'),
+                  onTap: () => setState(() => _selected = option),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: AppText.bodyMedium(
-                        option.label,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xff374151),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xffE6F9FB)
+                          : const Color(0xffF9FAFB),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xff20B7C4)
+                            : const Color(0xffE5E7EB),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: isSelected
+                              ? const Color(0xff20B7C4)
+                              : const Color(0xff9CA3AF),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppText.bodyMedium(
+                                option.label,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xff374151),
+                              ),
+                              if (option.formattedPrice.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                AppText.bodySmall(
+                                  option.formattedPrice,
+                                  color: const Color(0xff6B7280),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          ],
         ),
       ),
       actions: [
@@ -341,12 +438,36 @@ class _ExtensionTimePickerDialogState
         ),
         FilledButton(
           key: const Key('extension_submit'),
-          onPressed: _selected == null
+          onPressed: _loading || _selected == null
               ? null
               : () => Navigator.pop(context, _selected),
           child: const Text('إرسال'),
         ),
       ],
     );
+  }
+}
+
+class _ExtensionTimeOptionMapper {
+  const _ExtensionTimeOptionMapper._();
+
+  static _ExtensionTimeOption? fromRange(CleaningExtensionRangeModel range) {
+    final minutes = range.requestMinutes;
+    if (minutes == null || minutes < 0 || minutes > 90) return null;
+    return _ExtensionTimeOption(
+      minutes: minutes,
+      label: _rangeLabel(range, minutes),
+      price: range.price,
+      currency: range.currency,
+    );
+  }
+
+  static String _rangeLabel(CleaningExtensionRangeModel range, int minutes) {
+    final label = range.label?.trim();
+    if (label != null && label.isNotEmpty) return label;
+    final start = range.startMinutes;
+    final end = range.endMinutes;
+    if (start != null && end != null) return '$start - $end دقيقة';
+    return '$minutes دقيقة';
   }
 }

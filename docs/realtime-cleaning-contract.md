@@ -22,6 +22,8 @@ This contract captures the event/channel names currently consumed by the user ap
 - `cleaning_order.security_code_issued`
 - `cleaning_order.awaiting_customer_completion`
 - `ArrivalVerified`
+- `cleaning_order.arrival_verified`
+- `cleaning_order.awaiting_worker_start_confirmation` (worker-app action required after customer verifies the code)
 - `CompletionDecisionMade`
 - `ServiceExtensionRequested`
 - `WorkerLocationUpdated`
@@ -41,3 +43,7 @@ This contract captures the event/channel names currently consumed by the user ap
 - Service extension:
   - warning id: `warningId` or `warning_id`
   - requested minutes: `requestedMinutes` or `requested_minutes`
+- Start verification success:
+  - Customer app may receive `ArrivalVerified` / `cleaning_order.arrival_verified` after the customer enters the correct 4-digit code.
+  - Backend should return/broadcast status `awaiting_worker_start_confirmation` until the worker confirms start.
+  - Worker app should receive `cleaning_order.awaiting_worker_start_confirmation` and then call the worker confirm-start endpoint before the order moves to `in_progress`.

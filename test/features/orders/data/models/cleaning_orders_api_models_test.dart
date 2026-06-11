@@ -237,5 +237,14 @@ void main() {
       expect(snakeCase.data?.travelFee, 0);
       expect(snakeCase.data?.isPricingFinal, isFalse);
     });
+
+    test('labels awaiting worker start confirmation status', () {
+      expect(
+        cleaningOrderStatusLabelAr(
+          CleaningBookingStatus.awaitingWorkerStartConfirmation,
+        ),
+        'بانتظار تأكيد مقدم الخدمة لبدء العمل',
+      );
+    });
   });
 }

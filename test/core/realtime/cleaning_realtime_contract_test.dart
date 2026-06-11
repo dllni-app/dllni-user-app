@@ -39,6 +39,27 @@ void main() {
       );
     });
 
+    test('normalizes awaiting worker start confirmation event', () {
+      expect(
+        CleaningRealtimeContract.normalizeEventName(
+          'cleaning_order.awaiting_worker_start_confirmation',
+        ),
+        CleaningRealtimeContract.awaitingWorkerStartConfirmation,
+      );
+      expect(
+        CleaningRealtimeContract.normalizeEventName(
+          'awaiting_worker_start_confirmation',
+        ),
+        CleaningRealtimeContract.awaitingWorkerStartConfirmation,
+      );
+      expect(
+        CleaningRealtimeContract.isLifecycleRefreshEvent(
+          'cleaning_order.awaiting_worker_start_confirmation',
+        ),
+        isTrue,
+      );
+    });
+
     test('identifies security-code reissue raw events only', () {
       expect(
         CleaningRealtimeContract.isSecurityCodeReissuedEvent(
@@ -119,9 +140,7 @@ void main() {
       expect(
         CleaningRealtimeContract.extractBookingId(const <String, dynamic>{
           'data': <String, dynamic>{
-            'team': <String, dynamic>{
-              'requiredWorkers': 2,
-            },
+            'team': <String, dynamic>{'requiredWorkers': 2},
             'cleaning_order_id': 55,
           },
         }),
@@ -132,10 +151,7 @@ void main() {
     test('parseLocation reads coordinates from nested data payload', () {
       final location = CleaningRealtimeContract.parseLocation(
         const <String, dynamic>{
-          'data': <String, dynamic>{
-            'latitude': 33.5,
-            'longitude': 36.3,
-          },
+          'data': <String, dynamic>{'latitude': 33.5, 'longitude': 36.3},
         },
       );
 

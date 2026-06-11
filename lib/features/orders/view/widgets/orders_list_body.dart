@@ -146,6 +146,22 @@ class OrdersListBody extends StatelessWidget {
   }
 }
 
+bool _blocksCleaningListCancel(String? status) {
+  final normalized = (status ?? '').toLowerCase();
+  return normalized == CleaningBookingStatus.awaitingStartVerification ||
+      normalized == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
+      normalized == CleaningBookingStatus.awaitingCustomerCompletion;
+}
+
+bool _blocksCleaningListReschedule(String? status) {
+  final normalized = (status ?? '').toLowerCase();
+  return normalized == CleaningBookingStatus.awaitingStartVerification ||
+      normalized == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
+      normalized == CleaningBookingStatus.awaitingCustomerCompletion ||
+      normalized == CleaningBookingStatus.inProgress ||
+      normalized == CleaningBookingStatus.timeExtensionRequested;
+}
+
 class _CleaningOrderListItem extends StatelessWidget {
   const _CleaningOrderListItem({super.key, required this.orderId});
 
@@ -175,6 +191,14 @@ class _CleaningOrderListItem extends StatelessWidget {
             );
           },
           onRescheduleTap: () {
+            if (_blocksCleaningListReschedule(cleaningOrder.status)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('لا يمكن تغيير موعد الخدمة في هذه المرحلة'),
+                ),
+              );
+              return;
+            }
             context
                 .pushRoute(
                   '/cleaning-order-reschedule',
@@ -197,6 +221,16 @@ class _CleaningOrderListItem extends StatelessWidget {
             );
           },
           onCancelTap: () {
+            if (_blocksCleaningListCancel(cleaningOrder.status)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'أكمل خطوة التحقق أو تأكيد الإكمال قبل الإلغاء',
+                  ),
+                ),
+              );
+              return;
+            }
             showDialog<bool>(
               context: context,
               barrierDismissible: false,

@@ -26,6 +26,27 @@ void main() {
       expect(ids, <int>[2, 3]);
     });
 
+    test(
+      'findAwaitingVerificationOrderIds ignores awaiting worker start confirmation',
+      () {
+        final ids =
+            CleaningGlobalVerificationGateCoordinator.findAwaitingVerificationOrderIds(
+              <CleaningOrderModel>[
+                CleaningOrderModel(
+                  id: 10,
+                  status: CleaningBookingStatus.awaitingWorkerStartConfirmation,
+                ),
+                CleaningOrderModel(
+                  id: 11,
+                  status: CleaningBookingStatus.awaitingStartVerification,
+                ),
+              ],
+            );
+
+        expect(ids, <int>[11]);
+      },
+    );
+
     test('findAwaitingCompletionOrderIds filters by status', () {
       final ids =
           CleaningGlobalVerificationGateCoordinator.findAwaitingCompletionOrderIds(
