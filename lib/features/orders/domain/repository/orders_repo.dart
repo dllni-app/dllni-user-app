@@ -103,13 +103,9 @@ abstract class OrdersRepo {
     FetchRestaurantOrderTrackingParams params,
   );
 
-  DataResponse<CreateUserSosResponseModel> createUserSos(
-    CreateUserSosParams params,
-  );
+  DataResponse<UserSosResponseModel> createUserSos(CreateUserSosParams params);
 
-  DataResponse<FetchSosAlertsModel> fetchSosAlerts(
-    FetchSosAlertsParams params,
-  );
+  DataResponse<FetchSosAlertsModel> fetchSosAlerts(FetchSosAlertsParams params);
 
   DataResponse<SosAlertModel> fetchSosAlertDetails(
     FetchSosAlertDetailsParams params,

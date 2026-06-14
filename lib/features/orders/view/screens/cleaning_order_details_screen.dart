@@ -1281,13 +1281,20 @@ class _CleaningOrderDetailsScreenState
 
     Widget? sosTrailing;
     if (!isTerminalStatus) {
-      sosTrailing = IconButton(
-        tooltip: 'SOS',
+      sosTrailing = FilledButton(
         onPressed: () => context.pushRoute(
           '/cleaning-order-sos',
           arguments: CleaningOrderSosArgs(orderId: _activeOrderId),
         ),
-        icon: Icon(Icons.sos, color: context.error, size: 28),
+        style: FilledButton.styleFrom(
+          backgroundColor: context.error,
+          foregroundColor: context.onError,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: const Text('SOS'),
       );
     }
 
@@ -1296,10 +1303,7 @@ class _CleaningOrderDetailsScreenState
       body: SafeArea(
         child: Column(
           children: [
-            PersonalDetailsAppBar(
-              title: 'تفاصيل الطلب',
-              trailing: sosTrailing,
-            ),
+            PersonalDetailsAppBar(title: 'تفاصيل الطلب', trailing: sosTrailing),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () =>

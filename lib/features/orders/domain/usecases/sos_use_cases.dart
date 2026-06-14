@@ -6,35 +6,47 @@ import '../repository/orders_repo.dart';
 
 @lazySingleton
 class CreateUserSosUseCase
-    implements UseCase<CreateUserSosResponseModel, CreateUserSosParams> {
+    implements UseCase<UserSosResponseModel, CreateUserSosParams> {
   final OrdersRepo ordersRepo;
 
   CreateUserSosUseCase({required this.ordersRepo});
 
   @override
-  DataResponse<CreateUserSosResponseModel> call(CreateUserSosParams params) {
+  DataResponse<UserSosResponseModel> call(CreateUserSosParams params) {
     return ordersRepo.createUserSos(params);
   }
 }
 
 class CreateUserSosParams with Params {
   final int orderId;
-  final List<String> reasons;
-  final String? notes;
+  final String message;
+  final String? emergencyType;
+  final double? latitude;
+  final double? longitude;
 
   CreateUserSosParams({
     required this.orderId,
-    required this.reasons,
-    this.notes,
+    required this.message,
+    this.emergencyType,
+    this.latitude,
+    this.longitude,
   });
 
   @override
   BodyMap getBody() {
-    return <String, dynamic>{
+    final body = <String, dynamic>{
       'order_id': orderId,
-      'reasons': reasons,
-      if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
+      'message': message.trim(),
     };
+    final trimmedEmergencyType = emergencyType?.trim();
+    if (trimmedEmergencyType != null && trimmedEmergencyType.isNotEmpty) {
+      body['emergency_type'] = trimmedEmergencyType;
+    }
+    if (latitude != null && longitude != null) {
+      body['lat'] = latitude;
+      body['lng'] = longitude;
+    }
+    return body;
   }
 }
 
@@ -87,9 +99,7 @@ class CreateCleaningUserSosUseCase
   CreateCleaningUserSosUseCase({required this.ordersRepo});
 
   @override
-  DataResponse<CleaningSosAlertModel> call(
-    CreateCleaningUserSosParams params,
-  ) {
+  DataResponse<CleaningSosAlertModel> call(CreateCleaningUserSosParams params) {
     return ordersRepo.createCleaningUserSos(params);
   }
 }
@@ -97,30 +107,24 @@ class CreateCleaningUserSosUseCase
 class CreateCleaningUserSosParams with Params {
   final int orderId;
   final String emergencyType;
-  final String? message;
+  final String message;
   final double? latitude;
   final double? longitude;
-  final String clientRequestId;
 
   CreateCleaningUserSosParams({
     required this.orderId,
     required this.emergencyType,
-    this.message,
+    required this.message,
     this.latitude,
     this.longitude,
-    required this.clientRequestId,
   });
 
   @override
   BodyMap getBody() {
     final body = <String, dynamic>{
-      'emergencyType': emergencyType,
-      'clientRequestId': clientRequestId,
+      'emergency_type': emergencyType,
+      'message': message.trim(),
     };
-    final trimmedMessage = message?.trim();
-    if (trimmedMessage != null && trimmedMessage.isNotEmpty) {
-      body['message'] = trimmedMessage;
-    }
     if (latitude != null && longitude != null) {
       body['latitude'] = latitude;
       body['longitude'] = longitude;

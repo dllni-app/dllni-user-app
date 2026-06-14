@@ -252,9 +252,7 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   }
 
   @override
-  DataResponse<CreateUserSosResponseModel> createUserSos(
-    CreateUserSosParams params,
-  ) {
+  DataResponse<UserSosResponseModel> createUserSos(CreateUserSosParams params) {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.createUserSos(params),
     );

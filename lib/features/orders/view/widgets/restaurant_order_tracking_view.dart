@@ -48,7 +48,8 @@ class RestaurantOrderTrackingView extends StatelessWidget {
     final deliveryFee = amounts?.serviceFee ?? 0;
     final total = amounts?.total ?? subtotal + deliveryFee;
 
-    final merchantName = tracking?.merchant?.name ?? order.merchant?.name ?? 'المطعم';
+    final merchantName =
+        tracking?.merchant?.name ?? order.merchant?.name ?? 'المطعم';
     final merchantImage = tracking?.merchant?.primaryImageUrl;
 
     return Column(
@@ -61,9 +62,20 @@ class RestaurantOrderTrackingView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
-                  Expanded(child: Text(loadError!, style: const TextStyle(color: Color(0xff991B1B), fontSize: 13))),
+                  Expanded(
+                    child: Text(
+                      loadError!,
+                      style: const TextStyle(
+                        color: Color(0xff991B1B),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
                   if (onRetry != null)
-                    TextButton(onPressed: onRetry, child: const Text('إعادة المحاولة')),
+                    TextButton(
+                      onPressed: onRetry,
+                      child: const Text('إعادة المحاولة'),
+                    ),
                 ],
               ),
             ),
@@ -76,7 +88,9 @@ class RestaurantOrderTrackingView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      RestaurantOrderNumberChip(orderNumber: order.orderNumber ?? '—'),
+                      RestaurantOrderNumberChip(
+                        orderNumber: order.orderNumber ?? '—',
+                      ),
                       const SizedBox(height: 12),
                       RestaurantOrderEtaCard(etaText: _etaLabel()),
                       if (tracking?.map?.enabled == true) ...[
@@ -84,7 +98,10 @@ class RestaurantOrderTrackingView extends StatelessWidget {
                         RestaurantOrderTrackingMapSection(map: tracking!.map!),
                       ],
                       const SizedBox(height: 14),
-                      RestaurantOrderStatusStepper(order: order, tracking: tracking),
+                      RestaurantOrderStatusStepper(
+                        order: order,
+                        tracking: tracking,
+                      ),
                       const SizedBox(height: 14),
                       RestaurantTrackingRestaurantInfoCard(
                         name: merchantName,
@@ -127,6 +144,8 @@ class RestaurantOrderTrackingView extends StatelessWidget {
   }
 
   static void _showSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('قريباً')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('قريباً')));
   }
 }

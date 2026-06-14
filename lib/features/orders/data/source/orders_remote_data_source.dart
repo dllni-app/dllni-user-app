@@ -312,15 +312,13 @@ class OrdersRemoteDataSource with HandlingApiManager {
     );
   }
 
-  Future<CreateUserSosResponseModel> createUserSos(
-    CreateUserSosParams params,
-  ) {
+  Future<UserSosResponseModel> createUserSos(CreateUserSosParams params) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
         endPoint: '/api/v1/user/sos',
         data: params.getBody(),
       ),
-      jsonConvert: createUserSosResponseModelFromJson,
+      jsonConvert: userSosResponseModelFromJson,
     );
   }
 
@@ -338,9 +336,8 @@ class OrdersRemoteDataSource with HandlingApiManager {
     FetchSosAlertDetailsParams params,
   ) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/sos-alerts/${params.alertId}',
-      ),
+      tryCall: () =>
+          dioNetwork.getData(endPoint: '/api/v1/sos-alerts/${params.alertId}'),
       jsonConvert: sosAlertModelFromJson,
     );
   }
@@ -350,8 +347,7 @@ class OrdersRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
-        endPoint:
-            '/api/v1/user/cleaning/orders/${params.orderId}/sos',
+        endPoint: '/api/v1/user/cleaning/orders/${params.orderId}/sos',
         data: params.getBody(),
       ),
       jsonConvert: cleaningSosAlertModelFromJson,

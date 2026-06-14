@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -8,6 +6,7 @@ import 'package:dllni_user_app/features/orders/domain/usecases/sos_use_cases.dar
 import 'package:dllni_user_app/features/profile/domain/services/user_location_service.dart';
 import 'package:dllni_user_app/features/profile/view/widgets/personal_details_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CleaningOrderSosArgs {
   const CleaningOrderSosArgs({required this.orderId});
@@ -28,40 +27,21 @@ class CleaningOrderSosScreen extends StatefulWidget {
 class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   static const List<({String type, String label})> _options =
       <({String type, String label})>[
-    (type: 'safety_threat', label: 'أشعر بعدم الأمان / تهديد'),
-    (type: 'medical_emergency', label: 'حدثت حالة طبية طارئة'),
-    (type: 'severe_conflict', label: 'هنالك خلاف حاد'),
-  ];
+        (type: 'safety_threat', label: 'أشعر بعدم الأمان / تهديد'),
+        (type: 'medical_emergency', label: 'حدثت حالة طبية طارئة'),
+        (type: 'severe_conflict', label: 'هنالك خلاف حاد'),
+      ];
 
   final TextEditingController _messageController = TextEditingController();
-  late final String _clientRequestId;
   String? _selectedEmergencyType;
+  String? _messageError;
   bool _submitting = false;
   CleaningSosAlertModel? _submittedAlert;
-
-  @override
-  void initState() {
-    super.initState();
-    _clientRequestId = _generateClientRequestId();
-  }
 
   @override
   void dispose() {
     _messageController.dispose();
     super.dispose();
-  }
-
-  String _generateClientRequestId() {
-    final random = Random.secure();
-    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    String hex(int index) => bytes[index].toRadixString(16).padLeft(2, '0');
-    return '${hex(0)}${hex(1)}${hex(2)}${hex(3)}-'
-        '${hex(4)}${hex(5)}-'
-        '${hex(6)}${hex(7)}-'
-        '${hex(8)}${hex(9)}-'
-        '${hex(10)}${hex(11)}${hex(12)}${hex(13)}${hex(14)}${hex(15)}';
   }
 
   String _statusLabel(String? status) {
@@ -76,41 +56,104 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
     }
   }
 
+  String? _validateMessage() {
+    final message = _messageController.text.trim();
+    if (message.isEmpty) {
+      return 'يرجى وصف المشكلة قبل إرسال SOS';
+    }
+    if (message.length < 3) {
+      return 'يرجى كتابة 3 أحرف على الأقل';
+    }
+    if (message.length > 1000) {
+      return 'يجب ألا تتجاوز الرسالة 1000 حرف';
+    }
+    return null;
+  }
+
+  Future<void> _showLocationServiceSettingsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('خدمة الموقع غير مفعّلة'),
+        content: const Text(
+          'يرجى تفعيل الموقع (GPS) من إعدادات الجهاز ثم إعادة إرسال SOS.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await Geolocator.openLocationSettings();
+            },
+            child: const Text('فتح إعدادات الموقع'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     final emergencyType = _selectedEmergencyType;
     if (emergencyType == null || _submitting) {
       if (emergencyType == null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('يرجى تحديد نوع الطوارئ')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('يرجى تحديد نوع الطوارئ')));
       }
       return;
     }
 
+    final validationError = _validateMessage();
+    setState(() => _messageError = validationError);
+    if (validationError != null) return;
+
     setState(() => _submitting = true);
 
+    final isLocationServiceEnabled =
+        await Geolocator.isLocationServiceEnabled();
+    if (!mounted) return;
+    if (!isLocationServiceEnabled) {
+      setState(() => _submitting = false);
+      await _showLocationServiceSettingsDialog();
+      return;
+    }
+
     final location = await getIt<UserLocationService>().getCurrentPosition();
+    if (!mounted) return;
+    if (location.latitude == null || location.longitude == null) {
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'يرجى تفعيل الموقع ومنح التطبيق الإذن لتحديد موقعك قبل إرسال SOS',
+          ),
+        ),
+      );
+      return;
+    }
 
     final Either<Failure, CleaningSosAlertModel> result =
         await getIt<CreateCleaningUserSosUseCase>()(
-      CreateCleaningUserSosParams(
-        orderId: widget.args.orderId,
-        emergencyType: emergencyType,
-        message: _messageController.text,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        clientRequestId: _clientRequestId,
-      ),
-    );
+          CreateCleaningUserSosParams(
+            orderId: widget.args.orderId,
+            emergencyType: emergencyType,
+            message: _messageController.text,
+            latitude: location.latitude,
+            longitude: location.longitude,
+          ),
+        );
 
     if (!mounted) return;
 
     result.fold(
       (failure) {
         setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(failure.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
       },
       (alert) {
         setState(() {
@@ -282,7 +325,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
               }),
               const SizedBox(height: 8),
               AppText.bodyMedium(
-                'رسالة اختيارية',
+                'رسالة الطوارئ',
                 textAlign: TextAlign.start,
                 fontWeight: FontWeight.w600,
               ),
@@ -292,8 +335,14 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                 enabled: !_submitting,
                 maxLength: 1000,
                 maxLines: 3,
+                onChanged: (_) {
+                  if (_messageError != null) {
+                    setState(() => _messageError = _validateMessage());
+                  }
+                },
                 decoration: InputDecoration(
-                  hintText: 'صف الموقف باختصار (اختياري)',
+                  hintText: 'صف الموقف باختصار',
+                  errorText: _messageError,
                   filled: true,
                   fillColor: const Color(0xffF3F4F6),
                   border: OutlineInputBorder(
@@ -341,9 +390,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
               ),
             ),
             Icon(
-              isSelected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_off,
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
               color: isSelected ? context.error : Colors.grey,
             ),
           ],

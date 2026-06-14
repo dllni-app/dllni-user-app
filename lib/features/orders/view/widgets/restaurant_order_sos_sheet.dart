@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/orders/data/models/sos_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/sos_use_cases.dart';
+import 'package:dllni_user_app/features/profile/domain/services/user_location_service.dart';
 import 'package:flutter/material.dart';
 
 class RestaurantOrderSosSheet extends StatefulWidget {
@@ -22,44 +23,81 @@ class RestaurantOrderSosSheet extends StatefulWidget {
   }
 
   @override
-  State<RestaurantOrderSosSheet> createState() => _RestaurantOrderSosSheetState();
+  State<RestaurantOrderSosSheet> createState() =>
+      _RestaurantOrderSosSheetState();
 }
 
 class _RestaurantOrderSosSheetState extends State<RestaurantOrderSosSheet> {
-  static const _options = <({String id, String label})>[
-    (id: 'unsafe', label: 'أشعر بعدم الأمان / تهديد'),
-    (id: 'medical', label: 'حدثت حالة طبية طارئة'),
-    (id: 'dispute', label: 'هنالك خلاف حاد'),
+  static const _options = <({String type, String label})>[
+    (type: 'safety_threat', label: 'أشعر بعدم الأمان / تهديد'),
+    (type: 'medical_emergency', label: 'حدثت حالة طبية طارئة'),
+    (type: 'severe_conflict', label: 'هنالك خلاف حاد'),
   ];
 
-  final Set<String> _selected = <String>{};
+  final TextEditingController _messageController = TextEditingController();
+  String _selectedEmergencyType = 'safety_threat';
+  String? _messageError;
   bool _submitting = false;
 
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  String? _validateMessage() {
+    final message = _messageController.text.trim();
+    if (message.isEmpty) {
+      return 'يرجى وصف المشكلة قبل إرسال SOS';
+    }
+    if (message.length < 3) {
+      return 'يرجى كتابة 3 أحرف على الأقل';
+    }
+    if (message.length > 1000) {
+      return 'يجب ألا تتجاوز الرسالة 1000 حرف';
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
-    if (_selected.isEmpty || _submitting) return;
+    if (_submitting) return;
+    final validationError = _validateMessage();
+    setState(() => _messageError = validationError);
+    if (validationError != null) return;
+
     setState(() => _submitting = true);
 
-    final Either<Failure, CreateUserSosResponseModel> result =
+    final location = await getIt<UserLocationService>().getCurrentPosition();
+    final Either<Failure, UserSosResponseModel> result =
         await getIt<CreateUserSosUseCase>()(
           CreateUserSosParams(
             orderId: widget.orderId,
-            reasons: _selected.toList(growable: false),
+            message: _messageController.text,
+            emergencyType: _selectedEmergencyType,
+            latitude: location.latitude,
+            longitude: location.longitude,
           ),
         );
 
     if (!mounted) return;
-    setState(() => _submitting = false);
 
     result.fold(
       (failure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(failure.message)),
-        );
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
       },
-      (_) {
+      (response) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال تنبيه SOS بنجاح')),
+          SnackBar(
+            content: Text(
+              response.message.isNotEmpty
+                  ? response.message
+                  : 'تم إرسال طلب SOS بنجاح. تم إبلاغ فريق الدعم.',
+            ),
+          ),
         );
       },
     );
@@ -74,48 +112,70 @@ class _RestaurantOrderSosSheetState extends State<RestaurantOrderSosSheet> {
         top: 20,
         bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppText.titleMedium('طلب SOS', fontWeight: FontWeight.bold),
-          const SizedBox(height: 8),
-          AppText.bodySmall(
-            'اختر سبب الطوارئ وسيتم إرسال تنبيه فوري.',
-            color: const Color(0xff6B7280),
-          ),
-          const SizedBox(height: 16),
-          ..._options.map((option) {
-            final checked = _selected.contains(option.id);
-            return CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: checked,
-              onChanged: _submitting
-                  ? null
-                  : (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selected.add(option.id);
-                        } else {
-                          _selected.remove(option.id);
-                        }
-                      });
-                    },
-              title: AppText.bodyMedium(option.label, textAlign: TextAlign.start),
-            );
-          }),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: _selected.isEmpty || _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : AppText.labelLarge('إرسال SOS', color: Colors.white),
-          ),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppText.titleMedium('طلب SOS', fontWeight: FontWeight.bold),
+            const SizedBox(height: 8),
+            AppText.bodySmall(
+              'صف المشكلة وسيتم إرسال تنبيه فوري لفريق الدعم.',
+              color: const Color(0xff6B7280),
+            ),
+            const SizedBox(height: 16),
+            ..._options.map((option) {
+              return RadioListTile<String>(
+                contentPadding: EdgeInsets.zero,
+                value: option.type,
+                groupValue: _selectedEmergencyType,
+                onChanged: _submitting
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        setState(() => _selectedEmergencyType = value);
+                      },
+                title: AppText.bodyMedium(
+                  option.label,
+                  textAlign: TextAlign.start,
+                ),
+              );
+            }),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _messageController,
+              enabled: !_submitting,
+              maxLength: 1000,
+              maxLines: 4,
+              onChanged: (_) {
+                if (_messageError != null) {
+                  setState(() => _messageError = _validateMessage());
+                }
+              },
+              decoration: InputDecoration(
+                hintText: 'صف المشكلة باختصار',
+                errorText: _messageError,
+                filled: true,
+                fillColor: const Color(0xffF3F4F6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: _submitting ? null : _submit,
+              child: _submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : AppText.labelLarge('إرسال SOS', color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }

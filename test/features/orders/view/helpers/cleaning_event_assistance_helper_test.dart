@@ -1,6 +1,7 @@
 import 'package:dllni_user_app/features/orders/data/models/cleaning_booking_status.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_orders_api_models.dart';
 import 'package:dllni_user_app/features/orders/data/models/sos_api_models.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/sos_use_cases.dart';
 import 'package:dllni_user_app/features/orders/view/helpers/cleaning_event_assistance_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,9 +19,7 @@ void main() {
 
     test('falls back to regular cleaning title for home orders', () {
       expect(
-        CleaningEventAssistanceHelper.serviceTitle(
-          propertyType: 'apartment',
-        ),
+        CleaningEventAssistanceHelper.serviceTitle(propertyType: 'apartment'),
         'خدمة تنظيف شقة',
       );
     });
@@ -76,16 +75,59 @@ void main() {
   });
 
   group('Sos API models', () {
-    test('parses create response created_at as ISO 8601', () {
-      final model = createUserSosResponseModelFromJson(<String, dynamic>{
+    test('parses user SOS response contract', () {
+      final model = userSosResponseModelFromJson(<String, dynamic>{
+        'success': true,
+        'message': 'SOS request sent successfully.',
         'data': <String, dynamic>{
           'id': 9,
-          'created_at': '2026-06-11T18:30:00.000000Z',
+          'order_id': 12,
+          'message': 'Need urgent help',
+          'status': 'pending',
+          'created_at': '2026-06-14T18:30:00.000000Z',
         },
       });
 
-      expect(model.id, 9);
-      expect(model.createdAt, '2026-06-11T18:30:00.000000Z');
+      expect(model.success, isTrue);
+      expect(model.message, 'SOS request sent successfully.');
+      expect(model.data?.id, 9);
+      expect(model.data?.orderId, 12);
+      expect(model.data?.status, 'pending');
+    });
+
+    test('builds SOS body with contract field names', () {
+      final body = CreateUserSosParams(
+        orderId: 12,
+        message: '  Need urgent help  ',
+        emergencyType: 'medical_emergency',
+        latitude: 33.5138,
+        longitude: 36.2765,
+      ).getBody();
+
+      expect(body, <String, dynamic>{
+        'order_id': 12,
+        'message': 'Need urgent help',
+        'emergency_type': 'medical_emergency',
+        'lat': 33.5138,
+        'lng': 36.2765,
+      });
+    });
+
+    test('builds cleaning SOS body with contract field names', () {
+      final body = CreateCleaningUserSosParams(
+        orderId: 44,
+        emergencyType: 'safety_threat',
+        message: '  Need urgent help  ',
+        latitude: 33.5138,
+        longitude: 36.2765,
+      ).getBody();
+
+      expect(body, <String, dynamic>{
+        'emergency_type': 'safety_threat',
+        'message': 'Need urgent help',
+        'latitude': 33.5138,
+        'longitude': 36.2765,
+      });
     });
 
     test('parses alert list timestamps as yyyy-MM-dd HH:mm:ss', () {

@@ -34,8 +34,8 @@ dynamic _pick(Map<String, dynamic> map, List<String> keys) {
   return null;
 }
 
-CreateUserSosResponseModel createUserSosResponseModelFromJson(dynamic json) {
-  return CreateUserSosResponseModel.fromJson(_toMap(json));
+UserSosResponseModel userSosResponseModelFromJson(dynamic json) {
+  return UserSosResponseModel.fromJson(_toMap(json));
 }
 
 CleaningSosAlertModel cleaningSosAlertModelFromJson(dynamic json) {
@@ -50,18 +50,51 @@ SosAlertModel sosAlertModelFromJson(dynamic json) {
   return SosAlertModel.fromJson(_toMap(json));
 }
 
-class CreateUserSosResponseModel {
+class UserSosResponseModel {
+  final bool success;
+  final String message;
+  final UserSosDataModel? data;
+
+  UserSosResponseModel({
+    required this.success,
+    required this.message,
+    required this.data,
+  });
+
+  factory UserSosResponseModel.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] == null ? null : _toMap(json['data']);
+    return UserSosResponseModel(
+      success: json['success'] == true,
+      message: _toStringValue(_pick(json, const <String>['message'])) ?? '',
+      data: data == null ? null : UserSosDataModel.fromJson(data),
+    );
+  }
+}
+
+class UserSosDataModel {
   final int? id;
+  final int? orderId;
+  final String message;
+  final String status;
   final String? createdAt;
 
-  CreateUserSosResponseModel({this.id, this.createdAt});
+  UserSosDataModel({
+    required this.id,
+    required this.orderId,
+    required this.message,
+    required this.status,
+    required this.createdAt,
+  });
 
-  factory CreateUserSosResponseModel.fromJson(Map<String, dynamic> json) {
-    final data = json.containsKey('data') ? _toMap(json['data']) : json;
-    return CreateUserSosResponseModel(
-      id: _toInt(_pick(data, const <String>['id'])),
+  factory UserSosDataModel.fromJson(Map<String, dynamic> json) {
+    return UserSosDataModel(
+      id: _toInt(_pick(json, const <String>['id'])),
+      orderId: _toInt(_pick(json, const <String>['order_id', 'orderId'])),
+      message: _toStringValue(_pick(json, const <String>['message'])) ?? '',
+      status:
+          _toStringValue(_pick(json, const <String>['status'])) ?? 'pending',
       createdAt: _toStringValue(
-        _pick(data, const <String>['created_at', 'createdAt']),
+        _pick(json, const <String>['created_at', 'createdAt']),
       ),
     );
   }
@@ -102,15 +135,17 @@ class CleaningSosAlertModel {
     final data = json.containsKey('data') ? _toMap(json['data']) : json;
     return CleaningSosAlertModel(
       id: _toInt(_pick(data, const <String>['id'])),
-      bookingId: _toInt(_pick(data, const <String>['bookingId', 'booking_id'])),
+      bookingId: _toInt(
+        _pick(data, const <String>['bookingId', 'booking_id', 'order_id']),
+      ),
       emergencyType: _toStringValue(
         _pick(data, const <String>['emergencyType', 'emergency_type']),
       ),
       message: _toStringValue(_pick(data, const <String>['message'])),
       source: _toStringValue(_pick(data, const <String>['source'])),
       status: _toStringValue(_pick(data, const <String>['status'])),
-      latitude: _toDouble(_pick(data, const <String>['latitude'])),
-      longitude: _toDouble(_pick(data, const <String>['longitude'])),
+      latitude: _toDouble(_pick(data, const <String>['latitude', 'lat'])),
+      longitude: _toDouble(_pick(data, const <String>['longitude', 'lng'])),
       triggeredAt: _toStringValue(
         _pick(data, const <String>['triggeredAt', 'triggered_at']),
       ),
