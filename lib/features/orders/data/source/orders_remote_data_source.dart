@@ -344,4 +344,17 @@ class OrdersRemoteDataSource with HandlingApiManager {
       jsonConvert: sosAlertModelFromJson,
     );
   }
+
+  Future<CleaningSosAlertModel> createCleaningUserSos(
+    CreateCleaningUserSosParams params,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/${params.orderId}/sos',
+        data: params.getBody(),
+      ),
+      jsonConvert: cleaningSosAlertModelFromJson,
+    );
+  }
 }

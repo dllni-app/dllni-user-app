@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'app.dart';
 import 'core/deeplink/deep_link_service.dart';
 import 'core/di/injection.dart';
+import 'core/notifications/fcm_token_registrar.dart';
 import 'core/session/session_expired_handler.dart';
 import 'core/utils/app_date_time_locale.dart';
 
@@ -37,6 +38,7 @@ Future<void> main() async {
       supportedLocales: const <Locale>[AppDateTimeLocale.locale, Locale('ar')],
       translationsAssetPath: 'assets/translations',
       fcmTokenKey: 'fcm_token',
+      onFcmTokenAvailable: FcmTokenRegistrar.registerIfAuthenticated,
     ),
   );
 

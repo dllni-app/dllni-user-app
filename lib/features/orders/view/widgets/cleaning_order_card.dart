@@ -200,26 +200,28 @@ class CleaningOrderCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onRescheduleTap,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: context.primary.withAlpha(30),
-                    ),
-                    padding: EdgeInsetsDirectional.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    child: AppText.labelLarge(
-                      'تغيير موعد الخدمة',
-                      fontWeight: FontWeight.bold,
-                      color: context.primary,
+                if (!_isTerminalStatus) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onRescheduleTap,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: context.primary.withAlpha(30),
+                      ),
+                      padding: EdgeInsetsDirectional.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      child: AppText.labelLarge(
+                        'تغيير موعد الخدمة',
+                        fontWeight: FontWeight.bold,
+                        color: context.primary,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
             if (!_isTerminalStatus) ...[

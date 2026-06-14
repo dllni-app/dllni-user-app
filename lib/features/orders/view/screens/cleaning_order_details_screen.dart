@@ -41,6 +41,7 @@ import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../widgets/cleaning_cancel_reason_dialog.dart';
 import 'cleaning_order_reschedule_screen.dart';
+import 'cleaning_order_sos_screen.dart';
 import 'cleaning_worker_rating_screen.dart';
 import '../widgets/cleaning_accepted_workers_section_widget.dart';
 import '../widgets/cleaning_preferred_worker_card_widget.dart';
@@ -1247,11 +1248,13 @@ class _CleaningOrderDetailsScreenState
     if (order == null) {
       return Scaffold(
         backgroundColor: const Color(0xffF3F4F6),
-        body: const SafeArea(
+        body: SafeArea(
           child: Column(
             children: [
               PersonalDetailsAppBar(title: 'تفاصيل الطلب'),
-              Expanded(child: Center(child: Text('تعذر تحميل تفاصيل الطلب'))),
+              const Expanded(
+                child: Center(child: Text('تعذر تحميل تفاصيل الطلب')),
+              ),
             ],
           ),
         ),
@@ -1276,12 +1279,27 @@ class _CleaningOrderDetailsScreenState
     final liveAcceptance = _effectiveWorkerAcceptance(order);
     final searchingForWorkers = _isSearchingForWorkers(order, liveAcceptance);
 
+    Widget? sosTrailing;
+    if (!isTerminalStatus) {
+      sosTrailing = IconButton(
+        tooltip: 'SOS',
+        onPressed: () => context.pushRoute(
+          '/cleaning-order-sos',
+          arguments: CleaningOrderSosArgs(orderId: _activeOrderId),
+        ),
+        icon: Icon(Icons.sos, color: context.error, size: 28),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xffF3F4F6),
       body: SafeArea(
         child: Column(
           children: [
-            const PersonalDetailsAppBar(title: 'تفاصيل الطلب'),
+            PersonalDetailsAppBar(
+              title: 'تفاصيل الطلب',
+              trailing: sosTrailing,
+            ),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () =>

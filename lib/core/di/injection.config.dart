@@ -706,6 +706,10 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i988.FetchSosAlertDetailsUseCase>(
     () => _i988.FetchSosAlertDetailsUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
+  gh.lazySingleton<_i988.CreateCleaningUserSosUseCase>(
+    () =>
+        _i988.CreateCleaningUserSosUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
+  );
   gh.lazySingleton<_i642.SubmitCleaningReviewUseCase>(
     () => _i642.SubmitCleaningReviewUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );

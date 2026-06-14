@@ -277,4 +277,13 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
       tryCall: () => ordersRemoteDataSource.fetchSosAlertDetails(params),
     );
   }
+
+  @override
+  DataResponse<CleaningSosAlertModel> createCleaningUserSos(
+    CreateCleaningUserSosParams params,
+  ) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.createCleaningUserSos(params),
+    );
+  }
 }

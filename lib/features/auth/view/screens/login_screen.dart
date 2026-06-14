@@ -6,6 +6,7 @@ import 'package:dllni_user_app/core/session/user_session_prefs.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
+import 'package:dllni_user_app/features/auth/domain/usecases/login_params.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,9 @@ Future<void> persistLoginSessionData(LoginResponseModel result) async {
     phone: result.data?.phone,
     avatarUrl: _resolveLoginAvatarUrl(result.data),
     phoneVerifiedAt: result.data?.phoneVerifiedAt,
+  );
+  await NotificationHelper.syncStoredToken(
+    tokenKey: LoginParams.fcmTokenPrefsKey,
   );
 }
 

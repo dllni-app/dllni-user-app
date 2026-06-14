@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:toastification/toastification.dart';
 
 import '../helpers/cleaning_security_code_display.dart';
 
@@ -94,6 +95,11 @@ class _CleaningStartVerificationDialogContentState
     final failureMessage = await widget.onSubmit(code);
     if (!mounted) return;
     if (failureMessage != null) {
+      AppToast.showToast(
+        context: context,
+        message: failureMessage,
+        type: ToastificationType.error,
+      );
       setState(() {
         _submitting = false;
         _error = failureMessage;
@@ -101,6 +107,11 @@ class _CleaningStartVerificationDialogContentState
       _scrollToFeedback();
       return;
     }
+    AppToast.showToast(
+      context: context,
+      message: 'تم تأكيد رمز الأمان بنجاح',
+      type: ToastificationType.success,
+    );
     Navigator.of(context).pop(true);
   }
 

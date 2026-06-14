@@ -89,6 +89,37 @@ class _ClMainServiceScheduleScreenState
     });
   }
 
+  String _arabicWeekdayLabel(DateTime date) {
+    const days = <String>[
+      'الاثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت',
+      'الأحد',
+    ];
+    return days[date.weekday - 1];
+  }
+
+  String _arabicDayDateLabel(DateTime date) {
+    const months = <String>[
+      'كانون الثاني',
+      'شباط',
+      'آذار',
+      'نيسان',
+      'أيار',
+      'حزيران',
+      'تموز',
+      'آب',
+      'أيلول',
+      'تشرين الأول',
+      'تشرين الثاني',
+      'كانون الأول',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
   void _syncToTime() {
     final estimatedHours =
         _currentEstimate?.size?.estimatedHours ??
@@ -254,10 +285,8 @@ class _ClMainServiceScheduleScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = AppDateTimeLocale.dateFormat('EEEE').format(_selectedDate);
-    final dayDate = AppDateTimeLocale.dateFormat(
-      'd MMM yyyy',
-    ).format(_selectedDate);
+    final dayAr = _arabicWeekdayLabel(_selectedDate);
+    final dayDate = _arabicDayDateLabel(_selectedDate);
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final bloc = _bloc;
 

@@ -78,3 +78,53 @@ class FetchSosAlertDetailsParams with Params {
 
   FetchSosAlertDetailsParams({required this.alertId});
 }
+
+@lazySingleton
+class CreateCleaningUserSosUseCase
+    implements UseCase<CleaningSosAlertModel, CreateCleaningUserSosParams> {
+  final OrdersRepo ordersRepo;
+
+  CreateCleaningUserSosUseCase({required this.ordersRepo});
+
+  @override
+  DataResponse<CleaningSosAlertModel> call(
+    CreateCleaningUserSosParams params,
+  ) {
+    return ordersRepo.createCleaningUserSos(params);
+  }
+}
+
+class CreateCleaningUserSosParams with Params {
+  final int orderId;
+  final String emergencyType;
+  final String? message;
+  final double? latitude;
+  final double? longitude;
+  final String clientRequestId;
+
+  CreateCleaningUserSosParams({
+    required this.orderId,
+    required this.emergencyType,
+    this.message,
+    this.latitude,
+    this.longitude,
+    required this.clientRequestId,
+  });
+
+  @override
+  BodyMap getBody() {
+    final body = <String, dynamic>{
+      'emergencyType': emergencyType,
+      'clientRequestId': clientRequestId,
+    };
+    final trimmedMessage = message?.trim();
+    if (trimmedMessage != null && trimmedMessage.isNotEmpty) {
+      body['message'] = trimmedMessage;
+    }
+    if (latitude != null && longitude != null) {
+      body['latitude'] = latitude;
+      body['longitude'] = longitude;
+    }
+    return body;
+  }
+}

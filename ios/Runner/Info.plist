@@ -47,6 +47,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>نستخدم موقعك لاقتراح مطاعم قريبة في صندوق الحظ.</string>
 	<key>NSMicrophoneUsageDescription</key>

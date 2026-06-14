@@ -7,5 +7,7 @@
 		<string>applinks:dllni.mustafafares.com</string>
 		<string>applinks:www.dllni.mustafafares.com</string>
 	</array>
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

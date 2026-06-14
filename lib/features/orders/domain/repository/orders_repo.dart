@@ -114,4 +114,8 @@ abstract class OrdersRepo {
   DataResponse<SosAlertModel> fetchSosAlertDetails(
     FetchSosAlertDetailsParams params,
   );
+
+  DataResponse<CleaningSosAlertModel> createCleaningUserSos(
+    CreateCleaningUserSosParams params,
+  );
 }
