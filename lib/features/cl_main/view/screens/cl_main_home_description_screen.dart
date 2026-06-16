@@ -33,11 +33,14 @@ class ClMainHomeDescriptionScreen extends StatefulWidget {
   const ClMainHomeDescriptionScreen({super.key});
 
   @override
-  State<ClMainHomeDescriptionScreen> createState() => _ClMainHomeDescriptionScreenState();
+  State<ClMainHomeDescriptionScreen> createState() =>
+      _ClMainHomeDescriptionScreenState();
 }
 
-class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScreen> {
-  CleaningRoomSizeBreakdown _roomSizeBreakdown = const CleaningRoomSizeBreakdown();
+class _ClMainHomeDescriptionScreenState
+    extends State<ClMainHomeDescriptionScreen> {
+  CleaningRoomSizeBreakdown _roomSizeBreakdown =
+      const CleaningRoomSizeBreakdown();
   CleaningType _selectedCleaningType = CleaningType.regularCleaning;
 
   String _propertyType = 'apartment';
@@ -45,6 +48,19 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
   bool _didReadArgs = false;
   double? _lastLatitude;
   double? _lastLongitude;
+  bool _isLoadingOverlayVisible = false;
+
+  void _showLoadingOverlay() {
+    if (_isLoadingOverlayVisible || !mounted) return;
+    _isLoadingOverlayVisible = true;
+    Loading.show(context);
+  }
+
+  void _closeLoadingOverlay() {
+    if (!_isLoadingOverlayVisible) return;
+    _isLoadingOverlayVisible = false;
+    Loading.close();
+  }
 
   @override
   void didChangeDependencies() {
@@ -55,14 +71,27 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
     if (args is ClMainHomeDescriptionArgs) {
       _propertyType = args.propertyType;
       _bloc = args.bloc;
-      _bloc?.add(GetPreviousCleaningWorkersEvent(params: GetPreviousCleaningWorkersParams(page: 1), isReload: true));
+      _bloc?.add(
+        GetPreviousCleaningWorkersEvent(
+          params: GetPreviousCleaningWorkersParams(page: 1),
+          isReload: true,
+        ),
+      );
     }
   }
 
-  void _changeRoomBucketCount(CleaningRoomType roomType, CleaningRoomSize roomSize, int delta) {
+  void _changeRoomBucketCount(
+    CleaningRoomType roomType,
+    CleaningRoomSize roomSize,
+    int delta,
+  ) {
     final currentCount = _roomSizeBreakdown.countFor(roomType, roomSize);
     setState(() {
-      _roomSizeBreakdown = _roomSizeBreakdown.setCount(roomType, roomSize, currentCount + delta);
+      _roomSizeBreakdown = _roomSizeBreakdown.setCount(
+        roomType,
+        roomSize,
+        currentCount + delta,
+      );
     });
   }
 
@@ -83,9 +112,14 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('إذن الموقع مطلوب'),
-        content: const Text('يرجى منح التطبيق إذن الوصول إلى الموقع من إعدادات التطبيق.'),
+        content: const Text(
+          'يرجى منح التطبيق إذن الوصول إلى الموقع من إعدادات التطبيق.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('إلغاء'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
@@ -103,9 +137,14 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('خدمة الموقع غير مفعّلة'),
-        content: const Text('يرجى تفعيل الموقع (GPS) من إعدادات الجهاز ثم الضغط على متابعة مرة أخرى.'),
+        content: const Text(
+          'يرجى تفعيل الموقع (GPS) من إعدادات الجهاز ثم الضغط على متابعة مرة أخرى.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('إلغاء'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
@@ -120,27 +159,43 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
 
   Future<void> _onContinuePressed(ClMainBloc bloc, ClMainState state) async {
     if (!_roomSizeBreakdown.hasAnyRoom) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى إدخال غرفة واحدة على الأقل قبل المتابعة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى إدخال غرفة واحدة على الأقل قبل المتابعة'),
+        ),
+      );
       return;
     }
+
+    _showLoadingOverlay();
 
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    if (!mounted) return;
+    if (!mounted) {
+      _closeLoadingOverlay();
+      return;
+    }
 
     if (permission == LocationPermission.deniedForever) {
+      _closeLoadingOverlay();
       await _showLocationPermissionSettingsDialog();
       return;
     }
     if (permission == LocationPermission.denied) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى منح إذن الوصول إلى الموقع للمتابعة')));
+      _closeLoadingOverlay();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى منح إذن الوصول إلى الموقع للمتابعة'),
+        ),
+      );
       return;
     }
 
     final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!isServiceEnabled) {
+      _closeLoadingOverlay();
       await _showLocationServiceSettingsDialog();
       return;
     }
@@ -149,11 +204,17 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
     try {
       position = await Geolocator.getCurrentPosition();
     } catch (_) {
+      _closeLoadingOverlay();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر الحصول على الموقع الحالي')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر الحصول على الموقع الحالي')),
+      );
       return;
     }
-    if (!mounted) return;
+    if (!mounted) {
+      _closeLoadingOverlay();
+      return;
+    }
 
     _lastLatitude = position.latitude;
     _lastLongitude = position.longitude;
@@ -180,9 +241,17 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
           addressLatitude: position.latitude,
           addressLongitude: position.longitude,
           assignmentMode: state.assignmentMode,
-          numberOfWorkers: state.assignmentMode == CleaningAssignmentMode.openCount ? state.numberOfWorkers : 1,
-          preferredWorkerId: state.assignmentMode == CleaningAssignmentMode.preferredWorker ? state.selectedWorkerId : null,
-          workerRoomAssignments: workerRoomAssignments.isEmpty ? null : workerRoomAssignments,
+          numberOfWorkers:
+              state.assignmentMode == CleaningAssignmentMode.openCount
+              ? state.numberOfWorkers
+              : 1,
+          preferredWorkerId:
+              state.assignmentMode == CleaningAssignmentMode.preferredWorker
+              ? state.selectedWorkerId
+              : null,
+          workerRoomAssignments: workerRoomAssignments.isEmpty
+              ? null
+              : workerRoomAssignments,
         ),
       ),
     );
@@ -190,14 +259,39 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
 
   @override
   Widget build(BuildContext context) {
-    const roomTypeOptions = <({CleaningRoomType type, String title, IconData icon})>[
-      (type: CleaningRoomType.bedroom, title: 'غرف النوم', icon: Icons.bedroom_parent_outlined),
-      (type: CleaningRoomType.bathroom, title: 'الحمامات', icon: Icons.bathtub_outlined),
-      (type: CleaningRoomType.kitchen, title: 'المطابخ', icon: Icons.soup_kitchen_outlined),
-      (type: CleaningRoomType.livingRoom, title: 'الصالون / غرفة المعيشة', icon: Icons.chair_alt_outlined),
-      (type: CleaningRoomType.balcony, title: 'البلكونات', icon: Icons.balcony_outlined),
-      (type: CleaningRoomType.corridor, title: 'الموزع', icon: Icons.meeting_room_outlined),
-    ];
+    const roomTypeOptions =
+        <({CleaningRoomType type, String title, IconData icon})>[
+          (
+            type: CleaningRoomType.bedroom,
+            title: 'غرف النوم',
+            icon: Icons.bedroom_parent_outlined,
+          ),
+          (
+            type: CleaningRoomType.bathroom,
+            title: 'الحمامات',
+            icon: Icons.bathtub_outlined,
+          ),
+          (
+            type: CleaningRoomType.kitchen,
+            title: 'المطابخ',
+            icon: Icons.soup_kitchen_outlined,
+          ),
+          (
+            type: CleaningRoomType.livingRoom,
+            title: 'الصالون / غرفة المعيشة',
+            icon: Icons.chair_alt_outlined,
+          ),
+          (
+            type: CleaningRoomType.balcony,
+            title: 'البلكونات',
+            icon: Icons.balcony_outlined,
+          ),
+          (
+            type: CleaningRoomType.corridor,
+            title: 'الموزع',
+            icon: Icons.meeting_room_outlined,
+          ),
+        ];
 
     const sizeOptions = <({CleaningRoomSize size, String label})>[
       (size: CleaningRoomSize.small, label: 'صغير'),
@@ -211,12 +305,14 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
     return BlocProvider.value(
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
-        listenWhen: (previous, current) => previous.estimatePriceStatus != current.estimatePriceStatus,
+        listenWhen: (previous, current) =>
+            previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
           if (state.estimatePriceStatus == BlocStatus.loading) {
-            Loading.show(context);
-          } else if (state.estimatePriceStatus == BlocStatus.success && state.estimatePrice != null) {
-            Loading.close();
+            _showLoadingOverlay();
+          } else if (state.estimatePriceStatus == BlocStatus.success &&
+              state.estimatePrice != null) {
+            _closeLoadingOverlay();
             context.pushRoute(
               '/clmainserviceschedule',
               arguments: ClMainScheduleArgs(
@@ -234,8 +330,11 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
               ),
             );
           } else {
-            Loading.close();
-            ToastComponent.showToast(context, msg: state.errorMessage ?? 'حدث خطأ أثناء حساب التكلفة');
+            _closeLoadingOverlay();
+            ToastComponent.showToast(
+              context,
+              msg: state.errorMessage ?? 'حدث خطأ أثناء حساب التكلفة',
+            );
           }
         },
         builder: (context, state) {
@@ -247,52 +346,98 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
                   const HomeDetailsAppBar(),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 20),
+                      padding: const EdgeInsetsDirectional.symmetric(
+                        horizontal: 16,
+                        vertical: 20,
+                      ),
                       child: Column(
                         children: [
                           ClHomeDescriptionTitleCardWidget(
                             step: 1,
                             title: 'حجم الغرف لكل نوع في المنزل',
-                            subtitle: 'أدخل عدد الغرف الصغيرة والمتوسطة والكبيرة لكل نوع',
+                            subtitle:
+                                'أدخل عدد الغرف الصغيرة والمتوسطة والكبيرة لكل نوع',
                             child: Column(
                               children: [
                                 ...roomTypeOptions.map((option) {
-                                  final total = _roomSizeBreakdown.totalForType(option.type);
+                                  final total = _roomSizeBreakdown.totalForType(
+                                    option.type,
+                                  );
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 12),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF9FAFB),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                                      border: Border.all(
+                                        color: const Color(0xFFE5E7EB),
+                                      ),
                                     ),
                                     child: Column(
                                       children: [
                                         Row(
                                           children: [
-                                            Icon(option.icon, size: 20, color: const Color(0xFF0CBBC7)),
+                                            Icon(
+                                              option.icon,
+                                              size: 20,
+                                              color: const Color(0xFF0CBBC7),
+                                            ),
                                             const SizedBox(width: 8),
                                             Expanded(
-                                              child: AppText.bodyMedium(option.title, fontWeight: FontWeight.w700, textAlign: TextAlign.start),
+                                              child: AppText.bodyMedium(
+                                                option.title,
+                                                fontWeight: FontWeight.w700,
+                                                textAlign: TextAlign.start,
+                                              ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 4),
-                                              decoration: BoxDecoration(color: const Color(0xFF0CBBC7).withAlpha(26), borderRadius: BorderRadius.circular(999)),
-                                              child: AppText.labelMedium('المجموع: $total', color: const Color(0xFF0B7480), fontWeight: FontWeight.w700),
+                                              padding:
+                                                  const EdgeInsetsDirectional.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(
+                                                  0xFF0CBBC7,
+                                                ).withAlpha(26),
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              child: AppText.labelMedium(
+                                                'المجموع: $total',
+                                                color: const Color(0xFF0B7480),
+                                                fontWeight: FontWeight.w700,
+                                              ),
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 12),
                                         ...sizeOptions.map((sizeOption) {
-                                          final value = _roomSizeBreakdown.countFor(option.type, sizeOption.size);
+                                          final value = _roomSizeBreakdown
+                                              .countFor(
+                                                option.type,
+                                                sizeOption.size,
+                                              );
                                           return Padding(
-                                            padding: const EdgeInsets.only(bottom: 10),
+                                            padding: const EdgeInsets.only(
+                                              bottom: 10,
+                                            ),
                                             child: ClCounterRowWidget(
                                               label: 'حجم ${sizeOption.label}',
                                               value: value,
                                               icon: option.icon,
-                                              onIncrement: () => _changeRoomBucketCount(option.type, sizeOption.size, 1),
-                                              onDecrement: () => _changeRoomBucketCount(option.type, sizeOption.size, -1),
+                                              onIncrement: () =>
+                                                  _changeRoomBucketCount(
+                                                    option.type,
+                                                    sizeOption.size,
+                                                    1,
+                                                  ),
+                                              onDecrement: () =>
+                                                  _changeRoomBucketCount(
+                                                    option.type,
+                                                    sizeOption.size,
+                                                    -1,
+                                                  ),
                                             ),
                                           );
                                         }),
@@ -313,15 +458,26 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
                                 ClCleaningTypeOptionCardWidget(
                                   title: CleaningType.deepCleaning.title,
                                   subtitle: CleaningType.deepCleaning.subtitle,
-                                  isSelected: _selectedCleaningType == CleaningType.deepCleaning,
-                                  onTap: () => setState(() => _selectedCleaningType = CleaningType.deepCleaning),
+                                  isSelected:
+                                      _selectedCleaningType ==
+                                      CleaningType.deepCleaning,
+                                  onTap: () => setState(
+                                    () => _selectedCleaningType =
+                                        CleaningType.deepCleaning,
+                                  ),
                                 ),
                                 const SizedBox(height: 10),
                                 ClCleaningTypeOptionCardWidget(
                                   title: CleaningType.regularCleaning.title,
-                                  subtitle: CleaningType.regularCleaning.subtitle,
-                                  isSelected: _selectedCleaningType == CleaningType.regularCleaning,
-                                  onTap: () => setState(() => _selectedCleaningType = CleaningType.regularCleaning),
+                                  subtitle:
+                                      CleaningType.regularCleaning.subtitle,
+                                  isSelected:
+                                      _selectedCleaningType ==
+                                      CleaningType.regularCleaning,
+                                  onTap: () => setState(
+                                    () => _selectedCleaningType =
+                                        CleaningType.regularCleaning,
+                                  ),
                                 ),
                               ],
                             ),
@@ -334,7 +490,8 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
                             },
                           ),
                           const SizedBox(height: 10),
-                          if (state.assignmentMode == CleaningAssignmentMode.openCount) ...[
+                          if (state.assignmentMode ==
+                              CleaningAssignmentMode.openCount) ...[
                             ClServiceWorkerCountSelectorWidget(
                               count: state.numberOfWorkers,
                               maxCount: maxWorkers,
@@ -348,14 +505,20 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
                               numberOfWorkers: state.numberOfWorkers,
                               slotByRoomKey: state.workerRoomAssignments,
                               fieldErrors: state.assignmentFieldErrors,
-                              submittedAssignments: buildWorkerRoomAssignmentsJson(
-                                slotByRoomKey: state.workerRoomAssignments,
-                                units: roomUnits,
-                                preferredWorkerId: state.selectedWorkerId,
-                                assignmentMode: state.assignmentMode,
-                              ),
+                              submittedAssignments:
+                                  buildWorkerRoomAssignmentsJson(
+                                    slotByRoomKey: state.workerRoomAssignments,
+                                    units: roomUnits,
+                                    preferredWorkerId: state.selectedWorkerId,
+                                    assignmentMode: state.assignmentMode,
+                                  ),
                               onAssign: (roomKey, workerSlot) {
-                                bloc.add(SetWorkerRoomSlotEvent(roomKey: roomKey, workerSlot: workerSlot));
+                                bloc.add(
+                                  SetWorkerRoomSlotEvent(
+                                    roomKey: roomKey,
+                                    workerSlot: workerSlot,
+                                  ),
+                                );
                               },
                             ),
                             const SizedBox(height: 10),
@@ -375,20 +538,37 @@ class _ClMainHomeDescriptionScreenState extends State<ClMainHomeDescriptionScree
                                 state.genderPreference,
                               ),
                               selectedWorkerId: state.selectedWorkerId,
-                              isLoading: state.previousWorkersStatus == BlocStatus.loading,
-                              errorMessage: state.previousWorkersStatus == BlocStatus.failed ? state.errorMessage : null,
+                              isLoading:
+                                  state.previousWorkersStatus ==
+                                  BlocStatus.loading,
+                              errorMessage:
+                                  state.previousWorkersStatus ==
+                                      BlocStatus.failed
+                                  ? state.errorMessage
+                                  : null,
                               onSelectWorker: (workerId) {
-                                bloc.add(SetPreferredWorkerEvent(workerId: workerId));
+                                bloc.add(
+                                  SetPreferredWorkerEvent(workerId: workerId),
+                                );
                               },
                               onOpenWorkerProfile: (worker) {
-                                context.pushRoute('/clworkerprofiledetail', arguments: WorkerProfileRouteArgs.fromPreviousWorker(worker));
+                                context.pushRoute(
+                                  '/clworkerprofiledetail',
+                                  arguments:
+                                      WorkerProfileRouteArgs.fromPreviousWorker(
+                                        worker,
+                                      ),
+                                );
                               },
                             ),
                             const SizedBox(height: 10),
                           ],
                           ClMainContinueButtonWidget(
                             onPressed: () {
-                              _onContinuePressed(context.read<ClMainBloc>(), state);
+                              _onContinuePressed(
+                                context.read<ClMainBloc>(),
+                                state,
+                              );
                             },
                           ),
                         ],
