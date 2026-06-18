@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
@@ -12,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../auth/data/models/login_response_model.dart';
 import '../widgets/account_info_section.dart';
 import '../widgets/change_password_section.dart';
 import '../widgets/numbered_section_card.dart';
@@ -19,27 +21,13 @@ import '../widgets/personal_details_app_bar.dart';
 import '../widgets/personal_details_footer.dart';
 import '../widgets/profile_photo_section.dart';
 
-class PersonalDetailsParams {
-  const PersonalDetailsParams({
-    required this.name,
-    this.phone,
-    this.isPhoneVerified = true,
-    this.avatarUrl,
-    this.email,
-  });
 
-  final String name;
-  final String? phone;
-  final bool isPhoneVerified;
-  final String? avatarUrl;
-  final String? email;
-}
 
 @AutoRoutePage()
 class PersonalDetailsScreen extends StatefulWidget {
   const PersonalDetailsScreen({super.key, required this.params});
 
-  final PersonalDetailsParams params;
+  final LoggedInUserModel params;
 
   @override
   State<PersonalDetailsScreen> createState() => _PersonalDetailsScreenState();
@@ -162,6 +150,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
     final phoneError = await _phoneFieldKey.currentState?.validate();
     if (!mounted) return;
+
     if (phoneError != null) {
       AppToast.showToast(
         context: context,
@@ -174,6 +163,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final phone = formatPhoneForApi(_phone);
     if (phone == null) {
       if (!mounted) return;
+
       AppToast.showToast(
         context: context,
         message: 'الرجاء إدخال رقم الهاتف',
@@ -197,11 +187,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
 
     await accountRes.fold(
-      (failure) async {
+          (failure) async {
         failureMessage = failure.message;
       },
-      (account) async {
-        successMessage = account.user?.name == null
+          (account) async {
+            await SharedPreferencesHelper.saveUser(account.user);
+
+
+            successMessage = account.user?.name == null
             ? 'تم تحديث البيانات الشخصية بنجاح'
             : 'تم تحديث بيانات ${account.user!.name} بنجاح';
       },
@@ -215,11 +208,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           newPasswordConfirmation: _confirmPasswordController.text.trim(),
         ),
       );
+
       await passRes.fold(
-        (failure) async {
+            (failure) async {
           failureMessage = failure.message;
         },
-        (result) async {
+            (result) async {
           successMessage = result.message ?? 'تم تحديث كلمة المرور بنجاح';
         },
       );
@@ -242,9 +236,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       message: successMessage ?? 'تم حفظ التغييرات بنجاح',
       type: ToastificationType.success,
     );
+
     context.pop();
   }
-
   @override
   Widget build(BuildContext context) {
     final accent = context.primaryContainer;
@@ -270,7 +264,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         child: ProfilePhotoSection(
                           accentColor: accent,
                           localFile: _selectedImage,
-                          networkImageUrl: widget.params.avatarUrl,
+                          networkImageUrl: widget.params.primaryImage?.url,
                           onPickGallery: () => _pickImage(ImageSource.gallery),
                           onPickCamera: () => _pickImage(ImageSource.camera),
                         ),
@@ -286,7 +280,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                                 emailController: _emailController,
                                 phoneFieldKey: _phoneFieldKey,
                                 initialPhone: _initialPhone,
-                                isPhoneVerified: widget.params.isPhoneVerified,
                                 onPhoneChanged: (phone) => _phone = phone,
                                 emailValidator: _validateOptionalEmail,
                                 nameValidator: (v) {

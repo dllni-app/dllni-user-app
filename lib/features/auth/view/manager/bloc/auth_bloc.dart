@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -36,10 +38,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onLoginSubmitted(
-    LoginSubmittedEvent event,
-    Emitter<AuthState> emit,
-  ) async {
+      LoginSubmittedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
     await _ensurePushTokenStored();
+
     emit(
       AuthState(
         loginStatus: BlocStatus.loading,
@@ -53,36 +56,44 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         verifyAccountResult: state.verifyAccountResult,
       ),
     );
+
     final response = await loginUseCase(
       LoginParams(phone: event.phone, password: event.password),
     );
-    response.fold(
-      (failure) => emit(
-        AuthState(
-          loginStatus: BlocStatus.failed,
-          errorMessage: failure.message,
-          loginResult: null,
-          registerStatus: state.registerStatus,
-          registerErrorMessage: state.registerErrorMessage,
-          registerResult: state.registerResult,
-          verifyAccountStatus: state.verifyAccountStatus,
-          verifyAccountErrorMessage: state.verifyAccountErrorMessage,
-          verifyAccountResult: state.verifyAccountResult,
-        ),
-      ),
-      (result) => emit(
-        AuthState(
-          loginStatus: BlocStatus.success,
-          errorMessage: null,
-          loginResult: result,
-          registerStatus: state.registerStatus,
-          registerErrorMessage: state.registerErrorMessage,
-          registerResult: state.registerResult,
-          verifyAccountStatus: state.verifyAccountStatus,
-          verifyAccountErrorMessage: state.verifyAccountErrorMessage,
-          verifyAccountResult: state.verifyAccountResult,
-        ),
-      ),
+
+    await response.fold(
+          (failure) async {
+        emit(
+          AuthState(
+            loginStatus: BlocStatus.failed,
+            errorMessage: failure.message,
+            loginResult: null,
+            registerStatus: state.registerStatus,
+            registerErrorMessage: state.registerErrorMessage,
+            registerResult: state.registerResult,
+            verifyAccountStatus: state.verifyAccountStatus,
+            verifyAccountErrorMessage: state.verifyAccountErrorMessage,
+            verifyAccountResult: state.verifyAccountResult,
+          ),
+        );
+      },
+          (result) async {
+            await SharedPreferencesHelper.saveUser(result.data);
+
+            emit(
+          AuthState(
+            loginStatus: BlocStatus.success,
+            errorMessage: null,
+            loginResult: result,
+            registerStatus: state.registerStatus,
+            registerErrorMessage: state.registerErrorMessage,
+            registerResult: state.registerResult,
+            verifyAccountStatus: state.verifyAccountStatus,
+            verifyAccountErrorMessage: state.verifyAccountErrorMessage,
+            verifyAccountResult: state.verifyAccountResult,
+          ),
+        );
+      },
     );
   }
 
@@ -125,7 +136,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           verifyAccountResult: state.verifyAccountResult,
         ),
       ),
-      (result) => emit(
+      (result) {
+        emit(
         AuthState(
           loginStatus: state.loginStatus,
           errorMessage: state.errorMessage,
@@ -137,15 +149,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           verifyAccountErrorMessage: state.verifyAccountErrorMessage,
           verifyAccountResult: state.verifyAccountResult,
         ),
-      ),
+      );
+
+      },
     );
   }
 
   Future<void> _onVerifyAccountSubmitted(
-    VerifyAccountSubmittedEvent event,
-    Emitter<AuthState> emit,
-  ) async {
+      VerifyAccountSubmittedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
     await _ensurePushTokenStored();
+
     emit(
       AuthState(
         loginStatus: state.loginStatus,
@@ -159,36 +174,47 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         verifyAccountResult: null,
       ),
     );
+
     final response = await verifyAccountUseCase(
       VerifyAccountParams(phone: event.phone, otp: event.otp),
     );
-    response.fold(
-      (failure) => emit(
-        AuthState(
-          loginStatus: state.loginStatus,
-          errorMessage: state.errorMessage,
-          loginResult: state.loginResult,
-          registerStatus: state.registerStatus,
-          registerErrorMessage: state.registerErrorMessage,
-          registerResult: state.registerResult,
-          verifyAccountStatus: BlocStatus.failed,
-          verifyAccountErrorMessage: failure.message,
-          verifyAccountResult: null,
-        ),
-      ),
-      (result) => emit(
-        AuthState(
-          loginStatus: state.loginStatus,
-          errorMessage: state.errorMessage,
-          loginResult: state.loginResult,
-          registerStatus: state.registerStatus,
-          registerErrorMessage: state.registerErrorMessage,
-          registerResult: state.registerResult,
-          verifyAccountStatus: BlocStatus.success,
-          verifyAccountErrorMessage: null,
-          verifyAccountResult: result,
-        ),
-      ),
+
+    await response.fold(
+          (failure) async {
+        emit(
+          AuthState(
+            loginStatus: state.loginStatus,
+            errorMessage: state.errorMessage,
+            loginResult: state.loginResult,
+            registerStatus: state.registerStatus,
+            registerErrorMessage: state.registerErrorMessage,
+            registerResult: state.registerResult,
+            verifyAccountStatus: BlocStatus.failed,
+            verifyAccountErrorMessage: failure.message,
+            verifyAccountResult: null,
+          ),
+        );
+      },
+          (result) async {
+        await SharedPreferencesHelper.saveUser(result.data);
+
+
+
+
+        emit(
+          AuthState(
+            loginStatus: state.loginStatus,
+            errorMessage: state.errorMessage,
+            loginResult: state.loginResult,
+            registerStatus: state.registerStatus,
+            registerErrorMessage: state.registerErrorMessage,
+            registerResult: state.registerResult,
+            verifyAccountStatus: BlocStatus.success,
+            verifyAccountErrorMessage: null,
+            verifyAccountResult: result,
+          ),
+        );
+      },
     );
   }
 }

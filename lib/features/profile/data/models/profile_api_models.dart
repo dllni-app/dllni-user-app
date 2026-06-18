@@ -1,3 +1,5 @@
+import '../../../auth/data/models/login_response_model.dart';
+
 int? _asInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;
@@ -420,71 +422,16 @@ class AccountImageModel {
   }
 }
 
-class AccountUserModel {
-  final int? id;
-  final String? name;
-  final String? email;
-  final String? phone;
-  final String? phoneVerifiedAt;
-  final String? moduleType;
-  final String? emailVerifiedAt;
-  final AccountImageModel? primaryImage;
-  final List<AccountImageModel> images;
-  final String? createdAt;
-  final String? updatedAt;
-
-  const AccountUserModel({
-    this.id,
-    this.name,
-    this.email,
-    this.phone,
-    this.phoneVerifiedAt,
-    this.moduleType,
-    this.emailVerifiedAt,
-    this.primaryImage,
-    this.images = const <AccountImageModel>[],
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory AccountUserModel.fromJson(Map<String, dynamic> json) {
-    return AccountUserModel(
-      id: _asInt(json['id']),
-      name: _asString(json['name']),
-      email: _asString(json['email']),
-      phone: _asString(json['phone']),
-      phoneVerifiedAt: _asString(json['phoneVerifiedAt']),
-      moduleType: _asString(json['moduleType']),
-      emailVerifiedAt: _asString(json['emailVerifiedAt']),
-      primaryImage: json['primaryImage'] is Map
-          ? AccountImageModel.fromJson(
-              Map<String, dynamic>.from(json['primaryImage'] as Map),
-            )
-          : null,
-      images: json['images'] is List
-          ? (json['images'] as List)
-                .whereType<Map>()
-                .map(
-                  (e) =>
-                      AccountImageModel.fromJson(Map<String, dynamic>.from(e)),
-                )
-                .toList()
-          : const <AccountImageModel>[],
-      createdAt: _asString(json['createdAt']),
-      updatedAt: _asString(json['updatedAt']),
-    );
-  }
-}
 
 class UpdateAccountModel {
-  final AccountUserModel? user;
+  final LoggedInUserModel? user;
 
   const UpdateAccountModel({this.user});
 
   factory UpdateAccountModel.fromJson(Map<String, dynamic> json) {
     return UpdateAccountModel(
       user: json['user'] is Map
-          ? AccountUserModel.fromJson(
+          ? LoggedInUserModel.fromJson(
               Map<String, dynamic>.from(json['user'] as Map),
             )
           : null,

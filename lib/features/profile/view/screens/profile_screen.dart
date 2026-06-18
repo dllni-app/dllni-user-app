@@ -1,27 +1,32 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
+import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
+import '../../../auth/data/models/login_response_model.dart';
 import 'personal_details_screen.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
 import '../widgets/section_card.dart';
 import '../widgets/section_title.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  static const PersonalDetailsParams _personalDetailsParams =
-      PersonalDetailsParams(
-        name: 'مطعم البيت الحلبي',
-        phone: '+963987654321',
-        isPhoneVerified: true,
-        email: 'ahmed.m@example.com',
-      );
+
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late final ProfileBloc profileBloc = getIt<ProfileBloc>();
+  final LoggedInUserModel _personalDetailsParams =
+  SharedPreferencesHelper.getUser();
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +45,7 @@ class ProfileScreen extends StatelessWidget {
                     onEditTap: () {
                       context.pushRoute(
                         '/personaldetails',
-                        arguments: _personalDetailsParams,
+                        arguments:_personalDetailsParams,
                       );
                     },
                   ),

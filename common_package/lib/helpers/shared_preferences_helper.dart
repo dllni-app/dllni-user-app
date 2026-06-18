@@ -1,3 +1,6 @@
+
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesHelper {
@@ -7,15 +10,60 @@ class SharedPreferencesHelper {
     sharedPreferences = await SharedPreferences.getInstance();
   }
 
-  static dynamic getData({required String key}) {
-    return sharedPreferences?.get(key);
+  // =========================
+  // 🔥 USER MODEL CACHE
+  // =========================
+
+  static const String _userKey = 'user';
+
+  static Future<bool?> saveUser(LoggedInUserModel user) async {
+    if (sharedPreferences == null) return false;
+
+    return await sharedPreferences!.setString(
+      _userKey,
+      jsonEncode(user.toJson()),
+    );
   }
 
-  static Future<dynamic> saveData({required String key, required dynamic value}) async {
-    if (value is String) return await sharedPreferences?.setString(key, value);
-    if (value is int) return await sharedPreferences?.setInt(key, value);
-    if (value is bool) return await sharedPreferences?.setBool(key, value);
-    return await sharedPreferences?.setDouble(key, value);
+  static LoggedInUserModel? getUser() {
+    final raw = sharedPreferences?.getString(_userKey);
+
+    if (raw == null) return null;
+
+    try {
+      final json = jsonDecode(raw);
+      return LoggedInUserModel.fromJson(Map<String, dynamic>.from(json));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // =========================
+  // 🔥 GENERIC METHODS
+  // =========================
+
+  static Future<dynamic> saveData({
+    required String key,
+    required dynamic value,
+  }) async {
+    if (value is String) {
+      return await sharedPreferences?.setString(key, value);
+    }
+    if (value is int) {
+      return await sharedPreferences?.setInt(key, value);
+    }
+    if (value is bool) {
+      return await sharedPreferences?.setBool(key, value);
+    }
+    if (value is double) {
+      return await sharedPreferences?.setDouble(key, value);
+    }
+
+    return await sharedPreferences?.setString(key, jsonEncode(value));
+  }
+
+  static dynamic getData({required String key}) {
+    return sharedPreferences?.get(key);
   }
 
   static Future<bool?> removeData({required String key}) async {

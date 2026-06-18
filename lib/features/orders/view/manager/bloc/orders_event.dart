@@ -12,11 +12,14 @@ class FetchOrdersEvent extends OrdersEvent with EventWithReload {
   final bool loadMore;
   final bool isReload;
   final bool silentRefresh;
+  final int? orderDeletedId;
 
   FetchOrdersEvent({
     this.loadMore = false,
     this.isReload = false,
     this.silentRefresh = false,
+    this.orderDeletedId
+
   });
 }
 

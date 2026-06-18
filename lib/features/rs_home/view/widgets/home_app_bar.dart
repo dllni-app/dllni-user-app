@@ -5,13 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../auth/data/models/login_response_model.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class HomeAppBar extends StatelessWidget {
-  const HomeAppBar({super.key});
+
+  final LoggedInUserModel _personalDetailsParams =
+  SharedPreferencesHelper.getUser();
 
   @override
   Widget build(BuildContext context) {
+
+
     return Container(
       padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 16, 20, 16),
       decoration: BoxDecoration(
@@ -32,7 +37,7 @@ class HomeAppBar extends StatelessWidget {
                       style: TextStyle(color: Color(0xFF6B7280), fontSize: 12, fontWeight: FontWeight.w500, height: 16 / 12),
                     ),
                     Text(
-                      "أحمد محمد",
+                      _personalDetailsParams.name??'اسم المستخدم',
                       style: TextStyle(color: Color(0xFF1E2A78), fontSize: 18, fontWeight: FontWeight.w700, height: 28 / 18),
                     ),
                   ],

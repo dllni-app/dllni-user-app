@@ -366,7 +366,7 @@ class _ClMainServiceScheduleScreenState
                             locationName: _selectedAddress?.label ?? 'المنزل',
                             address:
                                 _selectedAddress?.line1 ??
-                                'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
+                                'العنوان غير محدد',
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 16),

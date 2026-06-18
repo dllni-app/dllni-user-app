@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -39,12 +40,14 @@ android {
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = keystoreProperties["storePassword"] as String
+    if (keystorePropertiesFile.exists()) {
+        signingConfigs {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"].toString()
+                keyPassword = keystoreProperties["keyPassword"].toString()
+                storeFile = keystoreProperties["storeFile"]?.let { file(it.toString()) }
+                storePassword = keystoreProperties["storePassword"].toString()
+            }
         }
     }
 
@@ -52,9 +55,28 @@ android {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("release")
+
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
+//    signingConfigs {
+//        create("release") {
+//            keyAlias = keystoreProperties["keyAlias"] as String
+//            keyPassword = keystoreProperties["keyPassword"] as String
+//            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+//            storePassword = keystoreProperties["storePassword"] as String
+//        }
+//    }
+
+//    buildTypes {
+//        release {
+//            isMinifyEnabled = false
+//            isShrinkResources = false
+//            signingConfig = signingConfigs.getByName("release")
+//        }
+//    }
 }
 
 flutter {

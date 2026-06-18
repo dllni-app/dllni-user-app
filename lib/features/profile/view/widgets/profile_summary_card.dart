@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../auth/data/models/login_response_model.dart';
 import '../screens/personal_details_screen.dart';
 
 class ProfileSummaryCard extends StatelessWidget {
@@ -10,13 +11,13 @@ class ProfileSummaryCard extends StatelessWidget {
     required this.onEditTap,
   });
 
-  final PersonalDetailsParams params;
+  final LoggedInUserModel params;
   final VoidCallback onEditTap;
 
   static const _subtitleGrey = Color(0xff6B7280);
 
   ImageProvider? get _avatarProvider {
-    final url = params.avatarUrl;
+    final url = params.primaryImage?.url;
     if (url != null && url.isNotEmpty) {
       return NetworkImage(url);
     }
@@ -75,7 +76,7 @@ class ProfileSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           AppText.bodyLarge(
-            params.name,
+            params.name??'مستخدم التطبيق',
             fontWeight: FontWeight.bold,
             color: context.primary,
             textAlign: TextAlign.center,

@@ -63,6 +63,8 @@ import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_tracking
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_product_details_screen.dart';
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_store_details_screen.dart';
 
+import '../features/auth/data/models/login_response_model.dart';
+
 class GeneratedAppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -279,7 +281,7 @@ class GeneratedAppRoutes {
           settings: settings,
         );
       case '/personaldetails':
-        if (args is PersonalDetailsParams) {
+        if (args is LoggedInUserModel) {
           return MaterialPageRoute(
             builder: (_) => PersonalDetailsScreen(params: args),
             settings: settings,

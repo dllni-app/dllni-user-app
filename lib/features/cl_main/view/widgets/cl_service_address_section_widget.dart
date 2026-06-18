@@ -5,7 +5,7 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
   const ClServiceAddressSectionWidget({
     super.key,
     this.locationName = 'المنزل',
-    this.address = 'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
+    this.address = 'العنوان غير محدد',
     this.showChangeAction = true,
     this.onChangeTap,
   });
@@ -57,7 +57,7 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: AppText.labelLarge(
-                      'تغيير',
+                      'عرض',
                       color: const Color(0xFF1E2A78),
                       fontWeight: FontWeight.w700,
                     ),

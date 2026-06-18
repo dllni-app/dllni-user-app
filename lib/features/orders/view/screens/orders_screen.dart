@@ -20,6 +20,9 @@ class OrdersScreen extends StatefulWidget {
 class _OrdersScreenState extends State<OrdersScreen> {
   final ScrollController _scrollController = ScrollController();
 
+  late final OrdersBloc ordersBloc;
+
+
   Future<void> _refreshOrders(BuildContext context) async {
     final bloc = context.read<OrdersBloc>();
     bloc.add(FetchOrdersEvent(isReload: true));
@@ -41,6 +44,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   void initState() {
+    ordersBloc=getIt<OrdersBloc>()..add(FetchOrdersEvent(isReload: true));
     super.initState();
   }
 

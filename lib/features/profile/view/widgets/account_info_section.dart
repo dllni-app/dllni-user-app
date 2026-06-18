@@ -13,9 +13,10 @@ class AccountInfoSection extends StatelessWidget {
     required this.phoneFieldKey,
     required this.initialPhone,
     required this.onPhoneChanged,
-    required this.isPhoneVerified,
     this.nameValidator,
     this.emailValidator,
+    this.isPhoneVerified=true,
+
   });
 
   final TextEditingController nameController;

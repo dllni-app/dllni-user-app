@@ -88,6 +88,22 @@ class LoggedInUserModel {
       updatedAt: _asString(json['updatedAt']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'phoneVerifiedAt': phoneVerifiedAt,
+      'moduleType': moduleType,
+      'emailVerifiedAt': emailVerifiedAt,
+      'primaryImage': primaryImage?.toJson(),
+      'images': images.map((e) => e.toJson()).toList(),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+    };
+  }
 }
 
 class UserPrimaryImageModel {
@@ -131,5 +147,21 @@ class UserPrimaryImageModel {
       caption: _asString(json['caption']),
       createdAt: _asString(json['createdAt']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'fileName': fileName,
+      'collection': collection,
+      'url': url,
+      'thumbnailUrl': thumbnailUrl,
+      'size': size,
+      'extension': extension,
+      'type': type,
+      'caption': caption,
+      'createdAt': createdAt,
+    };
   }
 }

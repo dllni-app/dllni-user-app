@@ -1183,13 +1183,14 @@ class _CleaningOrderDetailsScreenState
       return;
     }
     final orderId = order.id;
+    final OrdersBloc ordersBloc = getIt<OrdersBloc>();
     if (orderId == null) return;
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => CleaningCancelReasonDialog(
         orderId: orderId,
-        bloc: context.read<OrdersBloc>(),
+        bloc: ordersBloc,
         scheduledDate: order.scheduledDate,
         scheduledTime: order.scheduledTime,
       ),

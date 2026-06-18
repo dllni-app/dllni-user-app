@@ -37,8 +37,7 @@ class CleaningOrderCard extends StatelessWidget {
 
   bool get _isTerminalStatus {
     final normalizedStatus = (order.status ?? '').toLowerCase();
-    return normalizedStatus == CleaningBookingStatus.completed ||
-        normalizedStatus == CleaningBookingStatus.cancelled;
+    return normalizedStatus != CleaningBookingStatus.pending;
   }
 
   String get _bookingLabel {

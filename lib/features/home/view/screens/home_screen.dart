@@ -2,12 +2,12 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_use_case.dart';
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
-import 'package:dllni_user_app/features/home/view/widgets/home_app_bar.dart';
 import 'package:dllni_user_app/features/sm_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../generated/assets.dart';
+import '../../../rs_home/view/widgets/home_app_bar.dart';
 import '../widgets/home_cube.dart';
 
 class HomeScreen extends StatelessWidget {
