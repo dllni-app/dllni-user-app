@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -37,10 +38,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     await NotificationHelper.getToken(LoginParams.fcmTokenPrefsKey);
   }
 
+  Future<void> _saveLoggedInUser(LoggedInUserModel? user) async {
+    if (user == null) {
+      await SharedPreferencesHelper.removeData(key: UserSessionKeys.loggedInUser);
+      return;
+    }
+
+    await SharedPreferencesHelper.saveData(
+      key: UserSessionKeys.loggedInUser,
+      value: jsonEncode(user.toJson()),
+    );
+  }
+
   Future<void> _onLoginSubmitted(
-      LoginSubmittedEvent event,
-      Emitter<AuthState> emit,
-      ) async {
+    LoginSubmittedEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     await _ensurePushTokenStored();
 
     emit(
@@ -62,7 +75,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     await response.fold(
-          (failure) async {
+      (failure) async {
         emit(
           AuthState(
             loginStatus: BlocStatus.failed,
@@ -77,10 +90,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       },
-          (result) async {
-            await SharedPreferencesHelper.saveUser(result.data);
+      (result) async {
+        await _saveLoggedInUser(result.data);
 
-            emit(
+        emit(
           AuthState(
             loginStatus: BlocStatus.success,
             errorMessage: null,
@@ -138,27 +151,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ),
       (result) {
         emit(
-        AuthState(
-          loginStatus: state.loginStatus,
-          errorMessage: state.errorMessage,
-          loginResult: state.loginResult,
-          registerStatus: BlocStatus.success,
-          registerErrorMessage: null,
-          registerResult: result,
-          verifyAccountStatus: state.verifyAccountStatus,
-          verifyAccountErrorMessage: state.verifyAccountErrorMessage,
-          verifyAccountResult: state.verifyAccountResult,
-        ),
-      );
-
+          AuthState(
+            loginStatus: state.loginStatus,
+            errorMessage: state.errorMessage,
+            loginResult: state.loginResult,
+            registerStatus: BlocStatus.success,
+            registerErrorMessage: null,
+            registerResult: result,
+            verifyAccountStatus: state.verifyAccountStatus,
+            verifyAccountErrorMessage: state.verifyAccountErrorMessage,
+            verifyAccountResult: state.verifyAccountResult,
+          ),
+        );
       },
     );
   }
 
   Future<void> _onVerifyAccountSubmitted(
-      VerifyAccountSubmittedEvent event,
-      Emitter<AuthState> emit,
-      ) async {
+    VerifyAccountSubmittedEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     await _ensurePushTokenStored();
 
     emit(
@@ -180,7 +192,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     await response.fold(
-          (failure) async {
+      (failure) async {
         emit(
           AuthState(
             loginStatus: state.loginStatus,
@@ -195,11 +207,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       },
-          (result) async {
-        await SharedPreferencesHelper.saveUser(result.data);
-
-
-
+      (result) async {
+        await _saveLoggedInUser(result.data);
 
         emit(
           AuthState(
