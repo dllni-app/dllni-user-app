@@ -41,12 +41,20 @@ Future<void> persistLoginSessionData(LoginResponseModel result) async {
   } else {
     await SharedPreferencesHelper.removeData(key: UserSessionKeys.customerId);
   }
+
+  final user = result.data;
+  if (user != null) {
+    await UserSessionPrefs.saveUser(user);
+  } else {
+    await UserSessionPrefs.removeUser();
+  }
+
   await UserSessionPrefs.saveUserProfile(
-    name: result.data?.name,
-    email: result.data?.email,
-    phone: result.data?.phone,
-    avatarUrl: _resolveLoginAvatarUrl(result.data),
-    phoneVerifiedAt: result.data?.phoneVerifiedAt,
+    name: user?.name,
+    email: user?.email,
+    phone: user?.phone,
+    avatarUrl: _resolveLoginAvatarUrl(user),
+    phoneVerifiedAt: user?.phoneVerifiedAt,
   );
 }
 
