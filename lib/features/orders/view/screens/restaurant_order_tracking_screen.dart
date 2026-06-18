@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 
+import '../../../delivery/data/models/delivery_order_models.dart';
+import '../../../delivery/domain/usecases/fetch_delivery_order_details_use_case.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/fetch_store_order_tracking_use_case.dart';
@@ -25,13 +29,27 @@ class RestaurantOrderTrackingScreen extends StatefulWidget {
   final RestaurantOrderTrackingArgs args;
 
   @override
-  State<RestaurantOrderTrackingScreen> createState() => _RestaurantOrderTrackingScreenState();
+  State<RestaurantOrderTrackingScreen> createState() =>
+      _RestaurantOrderTrackingScreenState();
 }
 
-class _RestaurantOrderTrackingScreenState extends State<RestaurantOrderTrackingScreen> {
+class _RestaurantOrderTrackingScreenState
+    extends State<RestaurantOrderTrackingScreen> {
   RestaurantOrderTrackingDataModel? _tracking;
+  DeliveryOrderModel? _deliveryOrder;
   bool _loading = true;
   String? _error;
+  Timer? _pollTimer;
+  static const _pollInterval = Duration(seconds: 15);
+
+  bool get _isTerminal {
+    if (_deliveryOrder != null) return _deliveryOrder!.isTerminal;
+    final status = (_tracking?.latestToStatus ?? widget.args.order.status ?? '')
+        .toLowerCase();
+    return status.contains('delivered') ||
+        status.contains('completed') ||
+        status.contains('cancelled');
+  }
 
   @override
   void initState() {
@@ -39,7 +57,24 @@ class _RestaurantOrderTrackingScreenState extends State<RestaurantOrderTrackingS
     _fetchTracking();
   }
 
-  Future<void> _fetchTracking() async {
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  void _syncPollTimer() {
+    if (!_isTerminal) {
+      _pollTimer ??= Timer.periodic(_pollInterval, (_) {
+        _fetchTracking(silent: true);
+      });
+    } else {
+      _pollTimer?.cancel();
+      _pollTimer = null;
+    }
+  }
+
+  Future<void> _fetchTracking({bool silent = false}) async {
     final id = widget.args.order.id;
     if (id == null) {
       setState(() {
@@ -49,10 +84,39 @@ class _RestaurantOrderTrackingScreenState extends State<RestaurantOrderTrackingS
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+
+    final deliveryOrderId = widget.args.order.deliveryOrderId;
+    if (deliveryOrderId != null) {
+      final deliveryResult = await getIt<FetchDeliveryOrderDetailsUseCase>()(
+        FetchDeliveryOrderDetailsParams(orderId: deliveryOrderId),
+      );
+      if (!mounted) return;
+      deliveryResult.fold(
+        (Failure f) {
+          if (!silent) {
+            setState(() {
+              _error = f.message;
+              _loading = false;
+            });
+          }
+        },
+        (FetchDeliveryOrderDetailsModel r) {
+          setState(() {
+            _deliveryOrder = r.data;
+            _loading = false;
+            _error = null;
+          });
+          _syncPollTimer();
+        },
+      );
+      return;
+    }
 
     final Either<Failure, FetchRestaurantOrderTrackingModel> result =
         widget.args.section == 'supermarket'
@@ -77,6 +141,7 @@ class _RestaurantOrderTrackingScreenState extends State<RestaurantOrderTrackingS
           _tracking = r.data;
           _loading = false;
         });
+        _syncPollTimer();
       },
     );
   }
@@ -88,12 +153,24 @@ class _RestaurantOrderTrackingScreenState extends State<RestaurantOrderTrackingS
       child: Scaffold(
         backgroundColor: const Color(0xffF3F4F6),
         body: SafeArea(
-          child: RestaurantOrderTrackingView(
-            order: widget.args.order,
-            tracking: _tracking,
-            isLoading: _loading,
-            loadError: _error,
-            onRetry: _fetchTracking,
+          child: RefreshIndicator(
+            onRefresh: () => _fetchTracking(),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: RestaurantOrderTrackingView(
+                    order: widget.args.order,
+                    tracking: _tracking,
+                    deliveryOrder: _deliveryOrder,
+                    isLoading: _loading,
+                    loadError: _error,
+                    onRetry: () => _fetchTracking(),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

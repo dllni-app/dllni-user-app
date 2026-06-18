@@ -28,7 +28,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.bodySmall(
-            'اختر تفضيلك لجنس مقدم الخدمة',
+            'اختر تفضيلك لجنس العامل المفضل',
             color: const Color(0xFF6B7280),
             textAlign: TextAlign.right,
           ),

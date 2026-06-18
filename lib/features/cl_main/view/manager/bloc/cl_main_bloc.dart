@@ -16,6 +16,7 @@ import '../../../data/models/cleaning_services_response_model.dart';
 import '../../../data/models/create_cleaning_order_response_model.dart';
 import '../../../data/models/estimate_price_response_model.dart';
 import '../../../data/models/previous_workers_response_model.dart';
+import '../../helpers/cl_previous_workers_gender_filter.dart';
 import '../../helpers/cl_worker_room_assignment_errors.dart';
 
 part 'cl_main_event.dart';
@@ -219,7 +220,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     final shouldClearSelectedWorker =
         event.preference != CleaningGenderPreference.any &&
         selectedWorker != null &&
-        selectedWorker.gender != event.preference;
+        !selectedWorker.matchesGenderPreference(event.preference);
 
     emit(
       state.copyWith(

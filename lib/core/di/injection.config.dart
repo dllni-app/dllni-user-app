@@ -37,6 +37,19 @@ import '../../features/cl_main/domain/usecases/get_cleaning_services_use_case.da
 import '../../features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart'
     as _i491;
 import '../../features/cl_main/view/manager/bloc/cl_main_bloc.dart' as _i362;
+import '../../features/delivery/data/repository/delivery_repo_impl.dart'
+    as _i958;
+import '../../features/delivery/data/source/delivery_remote_data_source.dart'
+    as _i583;
+import '../../features/delivery/domain/repository/delivery_repo.dart' as _i830;
+import '../../features/delivery/domain/usecases/fetch_delivery_order_details_use_case.dart'
+    as _i776;
+import '../../features/delivery/domain/usecases/fetch_delivery_orders_use_case.dart'
+    as _i953;
+import '../../features/delivery/presentation/cubit/delivery_orders_cubit.dart'
+    as _i389;
+import '../../features/delivery/presentation/cubit/delivery_tracking_cubit.dart'
+    as _i535;
 import '../../features/home/data/repository/home_repo_impl.dart' as _i1013;
 import '../../features/home/data/source/home_remote_data_source.dart' as _i557;
 import '../../features/home/domain/repository/home_repo.dart' as _i396;
@@ -384,6 +397,9 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i817.ClMainRemoteDataSource>(
     () => _i817.ClMainRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
   );
+  gh.lazySingleton<_i583.DeliveryRemoteDataSource>(
+    () => _i583.DeliveryRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
+  );
   gh.lazySingleton<_i557.HomeRemoteDataSource>(
     () => _i557.HomeRemoteDataSource(dioNetwork: gh<_i497.DioNetwork>()),
   );
@@ -467,6 +483,11 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i622.RsDiscoverRepo>(
     () => _i992.RsDiscoverRepoImpl(
       rsDiscoverRemoteDataSource: gh<_i341.RsDiscoverRemoteDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i830.DeliveryRepo>(
+    () => _i958.DeliveryRepoImpl(
+      deliveryRemoteDataSource: gh<_i583.DeliveryRemoteDataSource>(),
     ),
   );
   gh.lazySingleton<_i132.OrdersRepo>(
@@ -776,6 +797,16 @@ _i174.GetIt $initGetIt(
       gh<_i973.ToggleProductFavouriteUseCase>(),
     ),
   );
+  gh.lazySingleton<_i776.FetchDeliveryOrderDetailsUseCase>(
+    () => _i776.FetchDeliveryOrderDetailsUseCase(
+      deliveryRepo: gh<_i830.DeliveryRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i953.FetchDeliveryOrdersUseCase>(
+    () => _i953.FetchDeliveryOrdersUseCase(
+      deliveryRepo: gh<_i830.DeliveryRepo>(),
+    ),
+  );
   gh.factory<_i305.OrdersBloc>(
     () => _i305.OrdersBloc(
       gh<_i250.FetchOrdersUseCase>(),
@@ -816,6 +847,9 @@ _i174.GetIt $initGetIt(
     () => _i1.FetchRestaurantProductDetailsUseCase(
       rsDiscoverRepo: gh<_i622.RsDiscoverRepo>(),
     ),
+  );
+  gh.factory<_i389.DeliveryOrdersCubit>(
+    () => _i389.DeliveryOrdersCubit(gh<_i953.FetchDeliveryOrdersUseCase>()),
   );
   gh.lazySingleton<_i620.CreateCleaningOrderUseCase>(
     () => _i620.CreateCleaningOrderUseCase(clMainRepo: gh<_i342.ClMainRepo>()),
@@ -1078,6 +1112,11 @@ _i174.GetIt $initGetIt(
       loginUseCase: gh<_i37.LoginUseCase>(),
       registerUseCase: gh<_i97.RegisterUseCase>(),
       verifyAccountUseCase: gh<_i895.VerifyAccountUseCase>(),
+    ),
+  );
+  gh.factory<_i535.DeliveryTrackingCubit>(
+    () => _i535.DeliveryTrackingCubit(
+      gh<_i776.FetchDeliveryOrderDetailsUseCase>(),
     ),
   );
   gh.factory<_i589.RsDiscoverBloc>(

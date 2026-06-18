@@ -20,6 +20,7 @@ dependencies:
 
   easy_localization: ^3.0.8
   flutter_bloc: ^9.1.1
+  equatable: ^2.0.8
   dio: ^5.9.1
   injectable: ^2.7.1+4
   get_it: ^8.2.0

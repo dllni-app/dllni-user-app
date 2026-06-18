@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
@@ -12,6 +11,7 @@ import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
+import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
@@ -49,8 +49,6 @@ class _ClMainOccasionScheduleScreenState
   bool _didReadArgs = false;
   EstimatePriceResponseModel? _currentEstimate;
   AddressListItem? _selectedAddress;
-  CleaningGenderPreference _selectedGenderPreference =
-      CleaningGenderPreference.any;
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
 
@@ -282,7 +280,7 @@ class _ClMainOccasionScheduleScreenState
           scheduledTime: _fromTimeController.text,
           addressLatitude: selectedAddress.latitude,
           addressLongitude: selectedAddress.longitude,
-          genderPreference: _selectedGenderPreference,
+          genderPreference: state.genderPreference,
           assignmentMode: assignment.assignmentMode,
           preferredWorkerId: assignment.preferredWorkerId,
           specialRequirement: specialRequirement,
@@ -434,7 +432,10 @@ class _ClMainOccasionScheduleScreenState
                           ),
                           const SizedBox(height: 16),
                           ClServicePreviousWorkersSectionWidget(
-                            workers: state.previousWorkers.list,
+                            workers: filterPreviousWorkersByGender(
+                              state.previousWorkers.list,
+                              state.genderPreference,
+                            ),
                             selectedWorkerId: state.selectedWorkerId,
                             isLoading:
                                 state.previousWorkersStatus ==
@@ -464,11 +465,11 @@ class _ClMainOccasionScheduleScreenState
                           ),
                           const SizedBox(height: 12),
                           ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: _selectedGenderPreference,
+                            selectedPreference: state.genderPreference,
                             onChanged: (value) {
-                              setState(() {
-                                _selectedGenderPreference = value;
-                              });
+                              bloc.add(
+                                SetGenderPreferenceEvent(preference: value),
+                              );
                             },
                           ),
                           const SizedBox(height: 12),

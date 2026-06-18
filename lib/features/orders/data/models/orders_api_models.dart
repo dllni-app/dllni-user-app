@@ -153,6 +153,7 @@ class OrdersLinksModel {
 
 class OrderResourceModel {
   int? id;
+  int? deliveryOrderId;
   String? section;
   String? orderNumber;
   String? status;
@@ -168,6 +169,7 @@ class OrderResourceModel {
 
   OrderResourceModel({
     this.id,
+    this.deliveryOrderId,
     this.section,
     this.orderNumber,
     this.status,
@@ -185,6 +187,7 @@ class OrderResourceModel {
   factory OrderResourceModel.fromJson(Map<String, dynamic> json) {
     return OrderResourceModel(
       id: _asInt(json['id']),
+      deliveryOrderId: _asInt(json['deliveryOrderId']),
       section: _asString(json['section']),
       orderNumber: _asString(json['orderNumber']),
       status: _asString(json['status']),

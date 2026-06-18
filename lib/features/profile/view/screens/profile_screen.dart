@@ -64,6 +64,25 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         SectionCard(
+                          containerColor: Color(0xff1E2A78).withAlpha(25),
+                          image: Icon(
+                            Icons.delivery_dining_rounded,
+                            size: 18,
+                            color: Color(0xff1E2A78),
+                          ),
+                          title: 'طلبات التوصيل',
+                          subtitle: 'تتبع حالة توصيل الطلبات',
+                          onTap: () {
+                            context.pushRoute('/delivery/orders');
+                          },
+                        ),
+                        Padding(
+                          padding: EdgeInsetsDirectional.symmetric(
+                            vertical: 16,
+                          ),
+                          child: Divider(color: context.surface, thickness: .5),
+                        ),
+                        SectionCard(
                           containerColor: Color(0xff3B82F6).withAlpha(25),
                           image: Icon(
                             Icons.location_on,

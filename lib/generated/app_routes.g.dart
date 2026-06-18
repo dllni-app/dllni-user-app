@@ -14,6 +14,8 @@ import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_service_sch
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_profile_detail_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/data/cl_worker_profile_mock_data.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_reviews_all_screen.dart';
+import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_order_tracking_screen.dart';
+import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_orders_screen.dart';
 import 'package:dllni_user_app/features/main/view/screens/main_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_details_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_problem_report_screen.dart';
@@ -134,6 +136,19 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
+      case '/delivery/orders/tracking':
+        if (args is DeliveryOrderTrackingArgs) {
+          return MaterialPageRoute(
+            builder: (_) => DeliveryOrderTrackingScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/delivery/orders':
+        return MaterialPageRoute(
+          builder: (_) => DeliveryOrdersScreen(),
+          settings: settings,
+        );
       case '/main':
         if (args is int?) {
           return MaterialPageRoute(

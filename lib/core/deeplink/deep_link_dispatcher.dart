@@ -1,5 +1,6 @@
 import 'package:dllni_user_app/core/deeplink/deep_link_models.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_parser.dart';
+import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/group_order_followup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/vote_followup_screen.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/product_preview_data.dart';
@@ -49,6 +50,8 @@ class DeepLinkDispatcher {
         return _dispatchVote(resolved);
       case 'group-order':
         return _dispatchGroupOrder(resolved);
+      case 'delivery-order':
+        return _dispatchDeliveryOrder(resolved);
       default:
         return null;
     }
@@ -137,6 +140,15 @@ class DeepLinkDispatcher {
         _synthetic(type: 'product', id: id, target: 'restaurant'),
       );
     }
+    if (segments.length >= 6 &&
+        segments[3] == 'delivery' &&
+        segments[4] == 'orders') {
+      final id = int.tryParse(segments[5]);
+      if (id == null || id <= 0) {
+        return null;
+      }
+      return _dispatchDeliveryOrder(_synthetic(type: 'delivery-order', id: id));
+    }
     return null;
   }
 
@@ -180,6 +192,8 @@ class DeepLinkDispatcher {
         return _dispatchVote(synthetic);
       case 'group-order':
         return _dispatchGroupOrder(synthetic);
+      case 'delivery-order':
+        return _dispatchDeliveryOrder(synthetic);
       default:
         return null;
     }
@@ -278,6 +292,20 @@ class DeepLinkDispatcher {
         groupOrderId: groupOrderId,
         shareToken: shareToken,
       ),
+    );
+  }
+
+  static DeepLinkDispatchTarget? _dispatchDeliveryOrder(
+    DeepLinkResolveResult r,
+  ) {
+    final orderId = r.id;
+    if (orderId == null || orderId <= 0) {
+      return null;
+    }
+
+    return DeepLinkDispatchTarget(
+      routeName: '/delivery/orders/tracking',
+      arguments: DeliveryOrderTrackingArgs(orderId: orderId),
     );
   }
 }

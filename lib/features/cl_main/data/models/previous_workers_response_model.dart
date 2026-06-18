@@ -85,22 +85,49 @@ class PreviousWorkerModel {
   });
 
   factory PreviousWorkerModel.fromJson(Map<String, dynamic> json) {
+    final ratings = json['ratings'] is Map<String, dynamic>
+        ? PreviousWorkerRatingsModel.fromJson(
+            json['ratings'] as Map<String, dynamic>,
+          )
+        : null;
+    final averageRating =
+        (json['averageRating'] as num?)?.toDouble() ??
+        (json['average_rating'] as num?)?.toDouble() ??
+        ratings?.average;
+
     return PreviousWorkerModel(
       id: _extractWorkerId(json),
       name: json['name'] as String? ?? json['full_name'] as String? ?? json['worker_name'] as String?,
       phone: json['phone'] as String?,
       gender: _extractGender(json),
-      rating: (json['rating'] as num?)?.toDouble(),
+      rating: (json['rating'] as num?)?.toDouble() ?? averageRating,
       totalJobs: (json['totalJobs'] as num?)?.toInt() ?? (json['total_jobs'] as num?)?.toInt(),
-      completedJobs: (json['completedJobs'] as num?)?.toInt() ?? (json['completed_jobs'] as num?)?.toInt(),
+      completedJobs:
+          (json['completedJobs'] as num?)?.toInt() ??
+          (json['completed_jobs'] as num?)?.toInt() ??
+          (json['completedJobsWithUser'] as num?)?.toInt() ??
+          (json['completed_jobs_with_user'] as num?)?.toInt(),
       isFavorited: json['isFavorited'] as bool? ?? json['is_favorited'] as bool?,
-      lastServiceDate: json['lastServiceDate'] as String? ?? json['last_service_date'] as String?,
-      profileImage: json['profileImage'] as String? ?? json['profile_image'] as String?,
+      lastServiceDate:
+          json['lastServiceDate'] as String? ??
+          json['last_service_date'] as String? ??
+          json['lastWorkedDate'] as String? ??
+          json['last_worked_date'] as String?,
+      profileImage:
+          json['profileImage'] as String? ??
+          json['profile_image'] as String? ??
+          json['avatarUrl'] as String? ??
+          json['avatar_url'] as String?,
       badges: (json['badges'] as List?)?.whereType<String>().toList(),
       description: json['description'] as String?,
-      ratings: json['ratings'] is Map<String, dynamic>
-          ? PreviousWorkerRatingsModel.fromJson(json['ratings'] as Map<String, dynamic>)
-          : null,
+      ratings: ratings ??
+          (averageRating == null
+              ? null
+              : PreviousWorkerRatingsModel(
+                  average: averageRating,
+                  count: (json['ratingsCount'] as num?)?.toInt() ??
+                      (json['ratings_count'] as num?)?.toInt(),
+                )),
     );
   }
 
@@ -120,6 +147,7 @@ class PreviousWorkerModel {
 
   static CleaningGenderPreference? _extractGender(Map<String, dynamic> json) {
     final nestedWorker = json['worker'];
+    final profile = json['profile'];
     final dynamic rawGender =
         json['gender'] ??
         json['sex'] ??
@@ -127,13 +155,36 @@ class PreviousWorkerModel {
         json['workerGender'] ??
         json['genderPreference'] ??
         json['gender_preference'] ??
-        (nestedWorker is Map<String, dynamic> ? nestedWorker['gender'] ?? nestedWorker['sex'] : null);
+        (nestedWorker is Map<String, dynamic>
+            ? nestedWorker['gender'] ?? nestedWorker['sex']
+            : null) ??
+        (profile is Map<String, dynamic> ? profile['gender'] : null);
 
+    return _normalizeGender(rawGender);
+  }
+
+  static CleaningGenderPreference? _normalizeGender(dynamic rawGender) {
     final normalized = rawGender?.toString().trim().toLowerCase();
-    if (normalized == 'male' || normalized == 'female') {
-      return CleaningGenderPreference.fromApi(normalized);
+    if (normalized == null || normalized.isEmpty) {
+      return null;
     }
-    return null;
+
+    switch (normalized) {
+      case 'male':
+      case 'm':
+      case 'man':
+      case 'عامل':
+        return CleaningGenderPreference.male;
+      case 'female':
+      case 'f':
+      case 'woman':
+      case 'عاملة':
+        return CleaningGenderPreference.female;
+      case 'any':
+        return CleaningGenderPreference.any;
+      default:
+        return null;
+    }
   }
 }
 

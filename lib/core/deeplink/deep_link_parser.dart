@@ -10,6 +10,7 @@ class DeepLinkParser {
     'store',
     'vote',
     'group-order',
+    'delivery-order',
   };
 
   /// Apex host only (no `www.`), for comparison with [AppConfig.deepLinkCanonicalHost].
@@ -117,6 +118,9 @@ class DeepLinkParser {
     }
     if (a == 'products' && segments.length >= 5) {
       return int.tryParse(segments[4]) != null;
+    }
+    if (a == 'delivery' && segments.length >= 6 && segments[4] == 'orders') {
+      return int.tryParse(segments[5]) != null;
     }
     return false;
   }

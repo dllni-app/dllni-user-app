@@ -37,10 +37,12 @@ class _OrdersListTabState extends State<OrdersListTab> {
   static const int _currentCleaningOrdersIndex = 0;
   static const int _previousCleaningOrdersIndex = 1;
   static const Duration _cleaningPollInterval = Duration(seconds: 10);
+  static const Duration _foodDeliveryPollInterval = Duration(seconds: 20);
 
   late int segmentIndex;
   int cleaningOrdersTabIndex = _currentCleaningOrdersIndex;
   Timer? _cleaningPollTimer;
+  Timer? _foodDeliveryPollTimer;
 
   @override
   void initState() {
@@ -55,6 +57,7 @@ class _OrdersListTabState extends State<OrdersListTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _syncCleaningPollTimer();
+      _syncFoodDeliveryPollTimer();
     });
   }
 
@@ -67,13 +70,45 @@ class _OrdersListTabState extends State<OrdersListTab> {
     }
     if (oldWidget.state.selectedTabIndex != widget.state.selectedTabIndex) {
       _syncCleaningPollTimer();
+      _syncFoodDeliveryPollTimer();
     }
   }
 
   @override
   void dispose() {
     _cleaningPollTimer?.cancel();
+    _foodDeliveryPollTimer?.cancel();
     super.dispose();
+  }
+
+  bool _hasActiveFoodDeliveryOrders() {
+    final orders = widget.state.orders.list;
+    return orders.any((order) {
+      final isDelivery =
+          (order.fulfillment?.type ?? '').toLowerCase() == 'delivery';
+      if (!isDelivery) return false;
+      final status = (order.status ?? '').toLowerCase();
+      return !status.contains('delivered') &&
+          !status.contains('completed') &&
+          !status.contains('cancelled');
+    });
+  }
+
+  void _syncFoodDeliveryPollTimer() {
+    final isFoodSection =
+        widget.state.selectedTabIndex == 0 || widget.state.selectedTabIndex == 1;
+    if (isFoodSection && _hasActiveFoodDeliveryOrders()) {
+      _foodDeliveryPollTimer ??= Timer.periodic(_foodDeliveryPollInterval, (_) {
+        if (!mounted) return;
+        if (widget.state.selectedTabIndex > 1) return;
+        context.read<OrdersBloc>().add(
+          FetchOrdersEvent(isReload: true, silentRefresh: true),
+        );
+      });
+      return;
+    }
+    _foodDeliveryPollTimer?.cancel();
+    _foodDeliveryPollTimer = null;
   }
 
   void _syncCleaningPollTimer() {
