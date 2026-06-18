@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
+import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_password_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_use_case.dart';
@@ -20,8 +21,6 @@ import '../widgets/numbered_section_card.dart';
 import '../widgets/personal_details_app_bar.dart';
 import '../widgets/personal_details_footer.dart';
 import '../widgets/profile_photo_section.dart';
-
-
 
 @AutoRoutePage()
 class PersonalDetailsScreen extends StatefulWidget {
@@ -187,16 +186,25 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
 
     await accountRes.fold(
-          (failure) async {
+      (failure) async {
         failureMessage = failure.message;
       },
-          (account) async {
-            await SharedPreferencesHelper.saveUser(account.user);
+      (account) async {
+        final user = account.user;
+        if (user != null) {
+          await SharedPreferencesHelper.saveData(
+            key: UserSessionKeys.loggedInUser,
+            value: jsonEncode(user.toJson()),
+          );
+        } else {
+          await SharedPreferencesHelper.removeData(
+            key: UserSessionKeys.loggedInUser,
+          );
+        }
 
-
-            successMessage = account.user?.name == null
+        successMessage = user?.name == null
             ? 'تم تحديث البيانات الشخصية بنجاح'
-            : 'تم تحديث بيانات ${account.user!.name} بنجاح';
+            : 'تم تحديث بيانات ${user!.name} بنجاح';
       },
     );
 
@@ -210,10 +218,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       );
 
       await passRes.fold(
-            (failure) async {
+        (failure) async {
           failureMessage = failure.message;
         },
-            (result) async {
+        (result) async {
           successMessage = result.message ?? 'تم تحديث كلمة المرور بنجاح';
         },
       );
@@ -239,6 +247,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
     context.pop();
   }
+
   @override
   Widget build(BuildContext context) {
     final accent = context.primaryContainer;
