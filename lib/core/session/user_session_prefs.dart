@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 
 import 'user_session_keys.dart';
 
@@ -11,35 +8,6 @@ class UserSessionPrefs {
     if (raw == null) return null;
     final value = '$raw'.trim();
     return value.isEmpty ? null : value;
-  }
-
-  static Future<bool> saveUser(LoggedInUserModel user) async {
-    final saved = await SharedPreferencesHelper.saveData(
-      key: UserSessionKeys.loggedInUser,
-      value: jsonEncode(user.toJson()),
-    );
-
-    return saved == true;
-  }
-
-  static LoggedInUserModel? getUser() {
-    final raw = readString(UserSessionKeys.loggedInUser);
-    if (raw == null) return null;
-
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! Map) return null;
-
-      return LoggedInUserModel.fromJson(
-        Map<String, dynamic>.from(decoded),
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
-  static Future<void> removeUser() async {
-    await SharedPreferencesHelper.removeData(key: UserSessionKeys.loggedInUser);
   }
 
   static Future<void> saveUserProfile({
