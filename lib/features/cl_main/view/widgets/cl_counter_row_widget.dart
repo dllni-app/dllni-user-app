@@ -22,27 +22,38 @@ class ClCounterRowWidget extends StatelessWidget {
     return Row(
       children: [
         CircleAvatar(
+          radius: 13,
           backgroundColor: Color(0xff0CBBC7).withAlpha(31),
-          child: Icon(icon, size: 18, color: const Color(0xff0CBBC7)),
+          child: Icon(icon, size: 14, color: const Color(0xff0CBBC7)),
         ),
-        SizedBox(width: 18,),
+        const SizedBox(width: 10),
         Expanded(
-          child: AppText.bodyMedium(
+          child: AppText.labelMedium(
             label,
             textAlign: TextAlign.start,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(width: 8),
-        _ActionCircleButton(icon: Icons.remove, onPressed: onDecrement, color: Color(0xffB2B9C1).withAlpha(80), iconColor: Colors.black,),
+        const SizedBox(width: 6),
+        _ActionCircleButton(
+          icon: Icons.remove,
+          onPressed: onDecrement,
+          color: Color(0xffB2B9C1).withAlpha(80),
+          iconColor: Colors.black,
+        ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: AppText.bodyMedium(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: AppText.labelMedium(
             '$value',
             fontWeight: FontWeight.w700,
           ),
         ),
-        _ActionCircleButton(icon: Icons.add, onPressed: onIncrement, color: Color(0xff0CBBC7), iconColor: Colors.white,),
+        _ActionCircleButton(
+          icon: Icons.add,
+          onPressed: onIncrement,
+          color: Color(0xff0CBBC7),
+          iconColor: Colors.white,
+        ),
       ],
     );
   }
@@ -62,13 +73,13 @@ class _ActionCircleButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: onPressed,
       child: Container(
-        width: 24,
-        height: 24,
+        width: 20,
+        height: 20,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, size: 14, color: iconColor),
+        child: Icon(icon, size: 12, color: iconColor),
       ),
     );
   }

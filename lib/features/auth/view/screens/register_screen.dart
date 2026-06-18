@@ -80,10 +80,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           }
           if (state.registerStatus == BlocStatus.success) {
             final r = state.registerResult;
-            if (context.mounted) {
+            final phone = formatPhoneForApi(_phone);
+            if (context.mounted && phone != null) {
               context.pushRoute(
                 '/verify-account',
-                arguments: VerifyAccountRouteArgs(message: r?.message, expiresAt: r?.expiresAt),
+                arguments: VerifyAccountRouteArgs(
+                  phone: phone,
+                  message: r?.message,
+                  expiresAt: r?.expiresAt,
+                ),
               );
             }
           }

@@ -1,4 +1,4 @@
-import 'package:common_package/helpers/typedef.dart';
+import 'package:common_package/common_package.dart';
 
 class RegisterParams with Params {
   final String name;
@@ -8,5 +8,13 @@ class RegisterParams with Params {
   RegisterParams({required this.name, required this.phone, required this.password});
 
   @override
-  BodyMap getBody() => {'name': name, 'phone': phone, 'password': password};
+  BodyMap getBody() {
+    final body = <String, dynamic>{
+      'name': name,
+      'phone': phone,
+      'password': password,
+    };
+    FcmTokenHelper.appendToBody(body);
+    return body;
+  }
 }

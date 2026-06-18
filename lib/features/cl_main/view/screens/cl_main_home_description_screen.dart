@@ -73,7 +73,10 @@ class _ClMainHomeDescriptionScreenState
       _bloc = args.bloc;
       _bloc?.add(
         GetPreviousCleaningWorkersEvent(
-          params: GetPreviousCleaningWorkersParams(page: 1),
+          params: GetPreviousCleaningWorkersParams(
+            page: 1,
+            propertyType: _propertyType,
+          ),
           isReload: true,
         ),
       );
@@ -364,11 +367,11 @@ class _ClMainHomeDescriptionScreenState
                                     option.type,
                                   );
                                   return Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    padding: const EdgeInsets.all(12),
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF9FAFB),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
                                         color: const Color(0xFFE5E7EB),
                                       ),
@@ -379,12 +382,12 @@ class _ClMainHomeDescriptionScreenState
                                           children: [
                                             Icon(
                                               option.icon,
-                                              size: 20,
+                                              size: 16,
                                               color: const Color(0xFF0CBBC7),
                                             ),
-                                            const SizedBox(width: 8),
+                                            const SizedBox(width: 6),
                                             Expanded(
-                                              child: AppText.bodyMedium(
+                                              child: AppText.labelMedium(
                                                 option.title,
                                                 fontWeight: FontWeight.w700,
                                                 textAlign: TextAlign.start,
@@ -393,8 +396,8 @@ class _ClMainHomeDescriptionScreenState
                                             Container(
                                               padding:
                                                   const EdgeInsetsDirectional.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 4,
+                                                    horizontal: 8,
+                                                    vertical: 2,
                                                   ),
                                               decoration: BoxDecoration(
                                                 color: const Color(
@@ -403,7 +406,7 @@ class _ClMainHomeDescriptionScreenState
                                                 borderRadius:
                                                     BorderRadius.circular(999),
                                               ),
-                                              child: AppText.labelMedium(
+                                              child: AppText.labelSmall(
                                                 'المجموع: $total',
                                                 color: const Color(0xFF0B7480),
                                                 fontWeight: FontWeight.w700,
@@ -411,7 +414,7 @@ class _ClMainHomeDescriptionScreenState
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 12),
+                                        const SizedBox(height: 8),
                                         ...sizeOptions.map((sizeOption) {
                                           final value = _roomSizeBreakdown
                                               .countFor(
@@ -420,7 +423,7 @@ class _ClMainHomeDescriptionScreenState
                                               );
                                           return Padding(
                                             padding: const EdgeInsets.only(
-                                              bottom: 10,
+                                              bottom: 6,
                                             ),
                                             child: ClCounterRowWidget(
                                               label: 'حجم ${sizeOption.label}',
@@ -456,18 +459,6 @@ class _ClMainHomeDescriptionScreenState
                             child: Column(
                               children: [
                                 ClCleaningTypeOptionCardWidget(
-                                  title: CleaningType.deepCleaning.title,
-                                  subtitle: CleaningType.deepCleaning.subtitle,
-                                  isSelected:
-                                      _selectedCleaningType ==
-                                      CleaningType.deepCleaning,
-                                  onTap: () => setState(
-                                    () => _selectedCleaningType =
-                                        CleaningType.deepCleaning,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                ClCleaningTypeOptionCardWidget(
                                   title: CleaningType.regularCleaning.title,
                                   subtitle:
                                       CleaningType.regularCleaning.subtitle,
@@ -477,6 +468,18 @@ class _ClMainHomeDescriptionScreenState
                                   onTap: () => setState(
                                     () => _selectedCleaningType =
                                         CleaningType.regularCleaning,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                ClCleaningTypeOptionCardWidget(
+                                  title: CleaningType.deepCleaning.title,
+                                  subtitle: CleaningType.deepCleaning.subtitle,
+                                  isSelected:
+                                      _selectedCleaningType ==
+                                      CleaningType.deepCleaning,
+                                  onTap: () => setState(
+                                    () => _selectedCleaningType =
+                                        CleaningType.deepCleaning,
                                   ),
                                 ),
                               ],

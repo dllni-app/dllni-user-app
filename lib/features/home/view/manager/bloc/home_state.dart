@@ -12,11 +12,10 @@ class HomeState {
   HomeState copyWith({
     PaginationStateModel<UserOfferItem>? userOffers,
     String? errorMessage,
-  }) =>
-      HomeState(
-        userOffers: userOffers ?? this.userOffers,
-        errorMessage: errorMessage ?? this.errorMessage,
-      );
+  }) => HomeState(
+    userOffers: userOffers ?? this.userOffers,
+    errorMessage: errorMessage ?? this.errorMessage,
+  );
 
   BlocStatus get userOffersStatus => userOffers.status;
 }

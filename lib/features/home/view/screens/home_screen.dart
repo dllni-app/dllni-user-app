@@ -17,10 +17,17 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     List<String> titles = ['مطاعم', 'تنظيف', 'تسوق'];
     List<String> screens = ['/rsmain', '/clmain', '/smmain'];
-    List<String> images = [Assets.images.restaurantServiceIcon.path, Assets.images.cleaninigServiceIcon.path, Assets.images.storeServiceIcon.path];
+    List<String> images = [
+      Assets.images.restaurantServiceIcon.path,
+      Assets.images.cleaninigServiceIcon.path,
+      Assets.images.storeServiceIcon.path,
+    ];
 
     return BlocProvider(
-      create: (_) => getIt<HomeBloc>()..add(FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true)),
+      create: (_) => getIt<HomeBloc>()
+        ..add(
+          FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
+        ),
       child: Column(
         children: [
           HomeAppBar(),
@@ -55,19 +62,30 @@ class HomeScreen extends StatelessWidget {
                         prev.userOffers != next.userOffers ||
                         prev.errorMessage != next.errorMessage,
                     builder: (context, state) {
-                      if (state.userOffersStatus == BlocStatus.loading || state.userOffersStatus == BlocStatus.init) {
+                      if (state.userOffersStatus == BlocStatus.loading ||
+                          state.userOffersStatus == BlocStatus.init) {
                         return SizedBox(
-                          height: (context.width * 0.52).clamp(180.0, 230.0) + 56,
-                          child: Center(child: CircularProgressIndicator(color: context.primaryContainer)),
+                          height:
+                              (context.width * 0.52).clamp(180.0, 230.0) + 56,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: context.primaryContainer,
+                            ),
+                          ),
                         );
                       }
                       if (state.userOffersStatus == BlocStatus.failed) {
                         return Padding(
                           padding: EdgeInsets.only(bottom: 16),
-                          child: AppText.bodyMedium(state.errorMessage ?? 'تعذر تحميل العروض', color: Color(0xffB91C1C)),
+                          child: AppText.bodyMedium(
+                            state.errorMessage ?? 'تعذر تحميل العروض',
+                            color: Color(0xffB91C1C),
+                          ),
                         );
                       }
-                      return Center(child: HomeCube(offers: state.userOffers.list));
+                      return Center(
+                        child: HomeCube(offers: state.userOffers.list),
+                      );
                     },
                   ),
                   SizedBox(height: 32),
@@ -75,10 +93,18 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       SizedBox(
                         height: 20,
-                        child: VerticalDivider(color: context.primaryContainer, thickness: 4, radius: BorderRadius.circular(9999)),
+                        child: VerticalDivider(
+                          color: context.primaryContainer,
+                          thickness: 4,
+                          radius: BorderRadius.circular(9999),
+                        ),
                       ),
                       SizedBox(width: 8),
-                      AppText.titleMedium('الخدمات', fontWeight: FontWeight.bold, color: Color(0xff212C7E)),
+                      AppText.titleMedium(
+                        'الخدمات',
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff212C7E),
+                      ),
                     ],
                   ),
                   SizedBox(height: 16),
@@ -96,19 +122,37 @@ class HomeScreen extends StatelessWidget {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () {
-                        context.pushRoute(screens[index], arguments: index == 2 ? SmMainScreenParams(initialPage: 0, expandSearch: false) : null);
+                        context.pushRoute(
+                          screens[index],
+                          arguments: index == 2
+                              ? SmMainScreenParams(
+                                  initialPage: 0,
+                                  expandSearch: false,
+                                )
+                              : null,
+                        );
                       },
                       child: Column(
                         children: [
                           Container(
                             width: 64,
                             height: 64,
-                            decoration: BoxDecoration(color: context.onPrimary, borderRadius: BorderRadius.circular(24)),
+                            decoration: BoxDecoration(
+                              color: context.onPrimary,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
                             padding: EdgeInsetsDirectional.all(15),
-                            child: AppImage.asset(images[index], color: context.primary),
+                            child: AppImage.asset(
+                              images[index],
+                              color: context.primary,
+                            ),
                           ),
                           SizedBox(height: 8),
-                          AppText.labelLarge(titles[index], color: Color(0xff6B7280), fontWeight: FontWeight.w500),
+                          AppText.labelLarge(
+                            titles[index],
+                            color: Color(0xff6B7280),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ],
                       ),
                     ),

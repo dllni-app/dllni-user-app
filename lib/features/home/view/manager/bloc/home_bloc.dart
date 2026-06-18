@@ -15,15 +15,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final FetchUserOffersUseCase fetchUserOffersUseCase;
 
   HomeBloc({required this.fetchUserOffersUseCase}) : super(HomeState()) {
-    on<FetchUserOffersEvent>(_onFetchUserOffers, transformer: paginationEventTransformer());
+    on<FetchUserOffersEvent>(
+      _onFetchUserOffers,
+      transformer: paginationEventTransformer(),
+    );
   }
 
-  FutureOr<void> _onFetchUserOffers(FetchUserOffersEvent event, Emitter<HomeState> emit) async {
+  FutureOr<void> _onFetchUserOffers(
+    FetchUserOffersEvent event,
+    Emitter<HomeState> emit,
+  ) async {
     final pagination = state.userOffers;
     final isLoadMore = event.loadMore && !event.isReload;
     if (isLoadMore && pagination.isEndPage) return;
 
-    emit(state.copyWith(userOffers: pagination.setLoading(isReload: event.isReload)));
+    emit(
+      state.copyWith(
+        userOffers: pagination.setLoading(isReload: event.isReload),
+      ),
+    );
 
     final page = isLoadMore ? pagination.pageNumber : 1;
     final perPage = pagination.perPage;

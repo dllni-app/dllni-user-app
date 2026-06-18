@@ -1,7 +1,7 @@
 import 'package:common_package/common_package.dart';
 
 class LoginParams with Params {
-  static const String fcmTokenPrefsKey = 'fcm_token';
+  static const String fcmTokenPrefsKey = FcmTokenHelper.defaultTokenKey;
 
   final String phone;
   final String password;
@@ -15,17 +15,7 @@ class LoginParams with Params {
       'password': password,
       'module': 'user',
     };
-    final fcmToken = _readStoredFcmToken();
-    if (fcmToken != null) {
-      body['fcmToken'] = fcmToken;
-    }
+    FcmTokenHelper.appendToBody(body, tokenKey: fcmTokenPrefsKey);
     return body;
-  }
-
-  static String? _readStoredFcmToken() {
-    final raw = SharedPreferencesHelper.getData(key: fcmTokenPrefsKey);
-    if (raw == null) return null;
-    final token = raw.toString().trim();
-    return token.isEmpty ? null : token;
   }
 }

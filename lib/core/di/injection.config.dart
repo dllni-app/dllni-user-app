@@ -19,6 +19,8 @@ import '../../features/auth/data/source/auth_remote_data_source.dart' as _i777;
 import '../../features/auth/domain/repository/auth_repo.dart' as _i976;
 import '../../features/auth/domain/usecases/login_use_case.dart' as _i37;
 import '../../features/auth/domain/usecases/register_use_case.dart' as _i97;
+import '../../features/auth/domain/usecases/verify_account_use_case.dart'
+    as _i895;
 import '../../features/auth/view/manager/bloc/auth_bloc.dart' as _i958;
 import '../../features/cl_main/data/repository/cl_main_repo_impl.dart' as _i466;
 import '../../features/cl_main/data/source/cl_main_remote_data_source.dart'
@@ -1068,6 +1070,16 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i97.RegisterUseCase>(
     () => _i97.RegisterUseCase(authRepo: gh<_i976.AuthRepo>()),
   );
+  gh.lazySingleton<_i895.VerifyAccountUseCase>(
+    () => _i895.VerifyAccountUseCase(authRepo: gh<_i976.AuthRepo>()),
+  );
+  gh.factory<_i958.AuthBloc>(
+    () => _i958.AuthBloc(
+      loginUseCase: gh<_i37.LoginUseCase>(),
+      registerUseCase: gh<_i97.RegisterUseCase>(),
+      verifyAccountUseCase: gh<_i895.VerifyAccountUseCase>(),
+    ),
+  );
   gh.factory<_i589.RsDiscoverBloc>(
     () => _i589.RsDiscoverBloc(
       gh<_i303.FetchDiscoverRestaurantsUseCase>(),
@@ -1109,12 +1121,6 @@ _i174.GetIt $initGetIt(
   gh.factory<_i767.CouponsCubit>(
     () => _i767.CouponsCubit(
       fetchCouponsUseCase: gh<_i879.FetchCouponsUseCase>(),
-    ),
-  );
-  gh.factory<_i958.AuthBloc>(
-    () => _i958.AuthBloc(
-      loginUseCase: gh<_i37.LoginUseCase>(),
-      registerUseCase: gh<_i97.RegisterUseCase>(),
     ),
   );
   return getIt;

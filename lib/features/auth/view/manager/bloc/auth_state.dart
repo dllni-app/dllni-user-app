@@ -9,6 +9,10 @@ class AuthState {
   final String? registerErrorMessage;
   final RegisterResponseModel? registerResult;
 
+  final BlocStatus? verifyAccountStatus;
+  final String? verifyAccountErrorMessage;
+  final LoginResponseModel? verifyAccountResult;
+
   AuthState({
     this.loginStatus,
     this.errorMessage,
@@ -16,5 +20,8 @@ class AuthState {
     this.registerStatus,
     this.registerErrorMessage,
     this.registerResult,
+    this.verifyAccountStatus,
+    this.verifyAccountErrorMessage,
+    this.verifyAccountResult,
   });
 }

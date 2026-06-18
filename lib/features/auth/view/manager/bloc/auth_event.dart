@@ -20,3 +20,10 @@ class RegisterSubmittedEvent extends AuthEvent {
     required this.password,
   });
 }
+
+class VerifyAccountSubmittedEvent extends AuthEvent {
+  final String phone;
+  final String otp;
+
+  VerifyAccountSubmittedEvent({required this.phone, required this.otp});
+}

@@ -5,6 +5,7 @@ import 'package:common_package/helpers/typedef.dart';
 import '../../domain/repository/auth_repo.dart';
 import '../../domain/usecases/login_params.dart';
 import '../../domain/usecases/register_params.dart';
+import '../../domain/usecases/verify_account_params.dart';
 import '../models/login_response_model.dart';
 import '../models/register_response_model.dart';
 import '../source/auth_remote_data_source.dart';
@@ -26,6 +27,13 @@ class AuthRepoImpl with HandlingException implements AuthRepo {
   DataResponse<RegisterResponseModel> register(RegisterParams params) {
     return wrapHandlingException(
       tryCall: () => authRemoteDataSource.register(params),
+    );
+  }
+
+  @override
+  DataResponse<LoginResponseModel> verifyAccount(VerifyAccountParams params) {
+    return wrapHandlingException(
+      tryCall: () => authRemoteDataSource.verifyAccount(params),
     );
   }
 }

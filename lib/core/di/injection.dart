@@ -59,6 +59,8 @@ abstract class InjectableModule {
         onUnauthorized: SessionExpiredHandler.handle,
         excludedPathSuffixes: const <String>[
           '/api/v1/user/login',
+          '/api/v1/user/register',
+          '/api/v1/user/verify-account',
           '/api/v1/deep-links/resolve',
           '/api/v1/deep-links/events',
         ],

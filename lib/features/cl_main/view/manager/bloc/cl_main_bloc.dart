@@ -150,7 +150,11 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     final page = isLoadMore ? pagination.pageNumber : 1;
     final perPage = pagination.perPage;
     final response = await getPreviousCleaningWorkersUseCase(
-      GetPreviousCleaningWorkersParams(page: page, perPage: perPage),
+      GetPreviousCleaningWorkersParams(
+        page: page,
+        perPage: perPage,
+        propertyType: event.params.propertyType,
+      ),
     );
     response.fold(
       (failure) {

@@ -77,7 +77,10 @@ class _ClMainOccasionScheduleScreenState
     }
     _bloc?.add(
       GetPreviousCleaningWorkersEvent(
-        params: GetPreviousCleaningWorkersParams(page: 1),
+        params: GetPreviousCleaningWorkersParams(
+          page: 1,
+          propertyType: 'event_assistance',
+        ),
         isReload: true,
       ),
     );

@@ -5,6 +5,7 @@ import '../models/login_response_model.dart';
 import '../models/register_response_model.dart';
 import '../../domain/usecases/login_params.dart';
 import '../../domain/usecases/register_params.dart';
+import '../../domain/usecases/verify_account_params.dart';
 
 @lazySingleton
 class AuthRemoteDataSource with HandlingApiManager {
@@ -29,6 +30,16 @@ class AuthRemoteDataSource with HandlingApiManager {
         data: params.getBody(),
       ),
       jsonConvert: registerResponseModelFromJson,
+    );
+  }
+
+  Future<LoginResponseModel> verifyAccount(VerifyAccountParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/verify-account',
+        data: params.getBody(),
+      ),
+      jsonConvert: loginResponseModelFromJson,
     );
   }
 }
