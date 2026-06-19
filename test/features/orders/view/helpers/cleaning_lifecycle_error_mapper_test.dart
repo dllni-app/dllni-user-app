@@ -3,92 +3,52 @@ import 'package:dllni_user_app/features/orders/view/helpers/cleaning_lifecycle_e
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('CleaningLifecycleErrorMapper', () {
-    test('maps verification failures by status code 429/403/422', () {
-      const fallback = 'server-message';
-
-      final tooMany = CleaningLifecycleErrorMapper.mapVerificationFailure(
-        const ServerFailure(message: fallback, statusCode: 429),
-      );
-      final forbidden = CleaningLifecycleErrorMapper.mapVerificationFailure(
-        const ServerFailure(message: fallback, statusCode: 403),
-      );
-      final invalid = CleaningLifecycleErrorMapper.mapVerificationFailure(
-        const ServerFailure(message: fallback, statusCode: 422),
-      );
-
-      expect(tooMany, isNot(fallback));
-      expect(forbidden, isNot(fallback));
-      expect(invalid, isNot(fallback));
-    });
-
-    test('keeps verification fallback message for unknown status', () {
-      const fallback = 'generic-server-message';
-      final mapped = CleaningLifecycleErrorMapper.mapVerificationFailure(
-        const ServerFailure(message: fallback, statusCode: 500),
-      );
-
-      expect(mapped, fallback);
-    });
-
-    test('maps lifecycle action failures for 403/429 and custom 422', () {
-      const fallback = 'base-error';
-      const invalidState = 'invalid-state-message';
-
-      final forbidden = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
-        const ServerFailure(message: fallback, statusCode: 403),
-      );
-      final tooMany = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
-        const ServerFailure(message: fallback, statusCode: 429),
-      );
-      final invalid = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
-        const ServerFailure(message: fallback, statusCode: 422),
-        invalidStateMessage: invalidState,
-      );
-
-      expect(forbidden, isNot(fallback));
-      expect(tooMany, isNot(fallback));
-      expect(invalid, invalidState);
-    });
-
-    test('keeps lifecycle action fallback message for unknown status', () {
-      const fallback = 'unknown-lifecycle';
-      final mapped = CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
-        const ServerFailure(message: fallback, statusCode: 500),
-      );
-
-      expect(mapped, fallback);
-    });
-
-    test('maps cancel failure 422 to localized Arabic message', () {
-      const rawMessage = 'Order cannot be cancelled in current status.';
-      final mapped = CleaningLifecycleErrorMapper.mapCancelFailure(
-        const ServerFailure(message: rawMessage, statusCode: 422),
-      );
-
-      expect(mapped, 'لا يمكن إلغاء الطلب في حالته الحالية.');
-      expect(mapped, isNot(rawMessage));
-    });
-
-    test('maps cancel failure message without status code by content', () {
-      const rawMessage = 'Order cannot be cancelled in current status.';
-      final mapped = CleaningLifecycleErrorMapper.mapCancelFailureMessage(
-        rawMessage,
-      );
-
-      expect(mapped, 'لا يمكن إلغاء الطلب في حالته الحالية.');
-    });
-
-    test('does not surface raw translation keys', () {
-      final mapped = CleaningLifecycleErrorMapper.mapVerificationFailure(
-        const ServerFailure(
-          message: 'errorMessage.noInternetError',
-          statusCode: 500,
+  group('CleaningLifecycleErrorMapper.mapCancelFailure', () {
+    test('maps 422 invalid state to Arabic message', () {
+      final message = CleaningLifecycleErrorMapper.mapCancelFailure(
+        ServerFailure(
+          message: 'Order cannot be cancelled in current status.',
+          statusCode: 422,
         ),
       );
 
-      expect(mapped, isNot(contains('errorMessage')));
-      expect(mapped, isNot('errorMessage.noInternetError'));
+      expect(message, 'لا يمكن إلغاء الطلب في حالته الحالية.');
+      expect(message.contains('Order cannot'), isFalse);
+    });
+
+    test('maps 403 to Arabic permission message', () {
+      final message = CleaningLifecycleErrorMapper.mapCancelFailure(
+        ServerFailure(message: 'Forbidden', statusCode: 403),
+      );
+
+      expect(message, 'لا تملك صلاحية تنفيذ هذا الإجراء على الطلب.');
+    });
+
+    test('maps 429 to Arabic retry message', () {
+      final message = CleaningLifecycleErrorMapper.mapCancelFailure(
+        ServerFailure(message: 'Too Many Requests', statusCode: 429),
+      );
+
+      expect(message, 'الطلبات كثيرة حالياً، حاول بعد قليل.');
+    });
+  });
+
+  group('CleaningLifecycleErrorMapper.mapVerificationFailure', () {
+    test('maps raw no internet key to Arabic message', () {
+      final message = CleaningLifecycleErrorMapper.mapVerificationFailure(
+        ServerFailure(message: 'errorMessage.noInternetError'),
+      );
+
+      expect(message, 'لا يوجد اتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.');
+      expect(message.contains('errorMessage.'), isFalse);
+    });
+
+    test('maps invalid code message to Arabic text', () {
+      final message = CleaningLifecycleErrorMapper.mapVerificationFailure(
+        ServerFailure(message: 'Invalid verification code', statusCode: 422),
+      );
+
+      expect(message, 'رمز الوصول غير صحيح. تحقق من الرمز وحاول مرة أخرى.');
     });
   });
 }

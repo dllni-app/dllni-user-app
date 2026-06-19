@@ -214,6 +214,18 @@ class _CleaningOrderDetailsScreenState
       }
     }
 
+    if (normalizedEvent == CleaningRealtimeContract.completionDecisionMade) {
+      final unwrapped = CleaningRealtimeContract.unwrapPayload(payload);
+      final decision = CleaningRealtimeContract.extractDecision(unwrapped);
+      if (decision == 'extension_rejected' ||
+          decision == 'extension_accepted' ||
+          decision == 'extension_requested') {
+        _reopenCompletionAfterRefresh = false;
+        _completionSheetDismissed = false;
+        _gateSession.clearCompletionAwaitingCycle(_activeOrderId);
+      }
+    }
+
     final action = CleaningOrderRealtimePolicy.resolve(
       eventName: eventName,
       payload: payload,
@@ -451,7 +463,6 @@ class _CleaningOrderDetailsScreenState
       (failure) => setState(() {
         _gateSubmitting = false;
         errorMessage = _mapVerificationError(failure);
-        _gateError = errorMessage;
       }),
       (result) {
         setState(() {
@@ -1169,6 +1180,16 @@ class _CleaningOrderDetailsScreenState
   }
 
   Future<void> _cancelOrder(CleaningOrderDetailModel order) async {
+    if (!CleaningCancelPolicy.isCancellable(order.status)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يمكن إلغاء الطلب في حالته الحالية.'),
+        ),
+      );
+      return;
+    }
+
     final orderId = order.id;
     final OrdersBloc ordersBloc = getIt<OrdersBloc>();
     if (orderId == null) return;
@@ -1565,7 +1586,7 @@ class _CleaningOrderDetailsScreenState
                             ),
                             SizedBox(height: 8),
                             Text(
-                              'بانتظار مقدم الخدمة لتأكيد بدء العمل. لا تحتاج إلى إدخال رمز آخر.',
+                              'تم تأكيد رمز الوصول. بانتظار بدء العمل من العامل.',
                               style: TextStyle(
                                 color: Color(0xff6B7280),
                                 fontSize: 13,

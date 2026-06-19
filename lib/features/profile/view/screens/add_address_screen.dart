@@ -474,7 +474,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   20,
                   20 + MediaQuery.of(context).viewInsets.bottom,
                 ),
-                child: BlocBuilder<ProfileBloc, ProfileState>(
+                child: SafeArea(
+                  top: false,
+                  child: BlocBuilder<ProfileBloc, ProfileState>(
                   bloc: widget.params.bloc,
                   builder: (context, state) {
                     final isSubmitting =
@@ -615,6 +617,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                       ],
                     );
                   },
+                ),
                 ),
               ),
             ],

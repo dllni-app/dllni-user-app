@@ -78,11 +78,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _saveLoggedInUser(LoggedInUserModel? user) async {
     if (user == null) {
-      await UserSessionStore.clear();
+      await UserSessionStore.clearUserProfile();
       return;
     }
 
-    await UserSessionStore.write(user);
+    await UserSessionStore.writeAndMirror(user);
   }
 
   Future<void> _onLoginSubmitted(

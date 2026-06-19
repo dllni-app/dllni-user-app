@@ -9,7 +9,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../auth/data/models/login_response_model.dart';
-import 'personal_details_screen.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
 import '../widgets/section_card.dart';
@@ -24,22 +23,20 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late final ProfileBloc profileBloc = getIt<ProfileBloc>();
-  LoggedInUserModel? _user;
 
   @override
   void initState() {
     super.initState();
-    _user = UserSessionStore.read();
+    UserSessionStore.reload();
   }
 
-  Future<void> _openPersonalDetails() async {
-    final updated = await context.pushRoute<bool>(
+  Future<void> _openPersonalDetails(LoggedInUserModel currentUser) async {
+    await context.pushRoute<bool>(
       '/personaldetails',
-      arguments: _user ?? LoggedInUserModel(),
+      arguments: currentUser,
     );
-    if (updated == true && mounted) {
-      setState(() => _user = UserSessionStore.read());
-    }
+    UserSessionStore.reload();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -54,9 +51,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  ProfileSummaryCard(
-                    params: _user ?? LoggedInUserModel(),
-                    onEditTap: _openPersonalDetails,
+                  ValueListenableBuilder<LoggedInUserModel?>(
+                    valueListenable: UserSessionStore.userNotifier,
+                    builder: (context, user, _) {
+                      final currentUser =
+                          user ?? UserSessionStore.read() ?? LoggedInUserModel();
+                      return ProfileSummaryCard(
+                        params: currentUser,
+                        onEditTap: () => _openPersonalDetails(currentUser),
+                      );
+                    },
                   ),
                   SizedBox(height: 16),
                   SectionTitle(title: 'إدارة الحساب'),
@@ -211,6 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       await getIt<CleaningBookingPusherService>()
                           .disposeAllForSession();
                       await SharedPreferencesHelper.clearData();
+                      UserSessionStore.reload();
                       if (!context.mounted) return;
                       context.pushRouteAndRemoveUntil('/login');
                     },

@@ -104,7 +104,7 @@ class _CleaningStartVerificationDialogContentState
     }
     AppToast.showToast(
       context: context,
-      message: 'تم تأكيد رمز الأمان بنجاح',
+      message: 'تم تأكيد رمز الوصول. بانتظار بدء العمل من العامل.',
       type: ToastificationType.success,
     );
     Navigator.of(context).pop(true);

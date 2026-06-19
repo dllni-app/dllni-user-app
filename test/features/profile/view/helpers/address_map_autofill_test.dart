@@ -6,63 +6,65 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AddressMapAutofill.applyCoreFields', () {
     test('updates only city, neighborhood, and street', () {
-      final city = TextEditingController(text: 'Old City');
-      final neighborhood = TextEditingController();
-      final street = TextEditingController(text: 'Old Street');
-      final building = TextEditingController(text: 'Tower A');
-      final floor = TextEditingController(text: '3');
+      final cityController = TextEditingController(text: 'Old City');
+      final neighborhoodController = TextEditingController(text: 'Old Area');
+      final streetController = TextEditingController(text: 'Old Street');
+      final buildingController = TextEditingController(text: 'Building 9');
+      final floorController = TextEditingController(text: '3');
 
       AddressMapAutofill.applyCoreFields(
         fields: const NominatimAddressFields(
           city: 'Damascus',
           neighborhood: 'Mazzeh',
-          street: 'Al Hamra Street',
-          building: '12',
-          directions: 'Mazzeh, Damascus, Syria',
+          street: 'Main Street',
+          building: 'Auto Building',
+          directions: 'Near park',
         ),
-        cityController: city,
-        neighborhoodController: neighborhood,
-        streetController: street,
-        buildingController: building,
-        floorController: floor,
+        cityController: cityController,
+        neighborhoodController: neighborhoodController,
+        streetController: streetController,
+        buildingController: buildingController,
+        floorController: floorController,
         cityEdited: false,
         neighborhoodEdited: false,
         streetEdited: false,
-        forceFill: false,
+        forceFill: true,
       );
 
-      expect(city.text, 'Damascus');
-      expect(neighborhood.text, 'Mazzeh');
-      expect(street.text, 'Al Hamra Street');
-      expect(building.text, 'Tower A');
-      expect(floor.text, '3');
+      expect(cityController.text, 'Damascus');
+      expect(neighborhoodController.text, 'Mazzeh');
+      expect(streetController.text, 'Main Street');
+      expect(buildingController.text, 'Building 9');
+      expect(floorController.text, '3');
     });
 
-    test('does not overwrite manually edited fields unless forceFill is true', () {
-      final city = TextEditingController(text: 'Manual City');
-      final neighborhood = TextEditingController();
-      final street = TextEditingController();
+    test('does not overwrite manually edited core fields unless forced', () {
+      final cityController = TextEditingController(text: 'Manual City');
+      final neighborhoodController = TextEditingController(text: 'Manual Area');
+      final streetController = TextEditingController(text: 'Manual Street');
+      final buildingController = TextEditingController();
+      final floorController = TextEditingController();
 
       AddressMapAutofill.applyCoreFields(
         fields: const NominatimAddressFields(
           city: 'Damascus',
           neighborhood: 'Mazzeh',
-          street: 'Al Hamra Street',
+          street: 'Main Street',
         ),
-        cityController: city,
-        neighborhoodController: neighborhood,
-        streetController: street,
-        buildingController: TextEditingController(),
-        floorController: TextEditingController(),
+        cityController: cityController,
+        neighborhoodController: neighborhoodController,
+        streetController: streetController,
+        buildingController: buildingController,
+        floorController: floorController,
         cityEdited: true,
-        neighborhoodEdited: false,
-        streetEdited: false,
+        neighborhoodEdited: true,
+        streetEdited: true,
         forceFill: false,
       );
 
-      expect(city.text, 'Manual City');
-      expect(neighborhood.text, 'Mazzeh');
-      expect(street.text, 'Al Hamra Street');
+      expect(cityController.text, 'Manual City');
+      expect(neighborhoodController.text, 'Manual Area');
+      expect(streetController.text, 'Manual Street');
     });
   });
 }

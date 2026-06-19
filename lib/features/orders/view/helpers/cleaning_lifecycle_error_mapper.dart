@@ -21,9 +21,44 @@ class CleaningLifecycleErrorMapper {
       return 'غير مسموح بتنفيذ التحقق لهذا الطلب حالياً.';
     }
     if (statusCode == _statusUnprocessable) {
-      return 'رمز التحقق غير صحيح أو منتهي الصلاحية.';
+      return _mapVerificationMessage(failure.message);
     }
-    return _fallbackFromMessage(failure.message);
+    return _mapVerificationMessage(failure.message);
+  }
+
+  static String _mapVerificationMessage(String message) {
+    final normalized = message.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return 'تعذر تأكيد رمز الوصول. حاول مرة أخرى.';
+    }
+    if (_looksLikeTranslationKey(normalized) ||
+        normalized.contains('nointernet') ||
+        normalized.contains('socketexception') ||
+        normalized.contains('connection')) {
+      if (normalized.contains('nointernet') ||
+          normalized.contains('socketexception') ||
+          normalized.contains('connection')) {
+        return 'لا يوجد اتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.';
+      }
+      return _genericFailureMessage;
+    }
+    if (normalized.contains('expired') || normalized.contains('انته')) {
+      return 'انتهت صلاحية رمز الوصول. اطلب رمزاً جديداً من العامل.';
+    }
+    if (normalized.contains('invalid') ||
+        normalized.contains('wrong') ||
+        normalized.contains('غير صحيح') ||
+        normalized.contains('incorrect')) {
+      return 'رمز الوصول غير صحيح. تحقق من الرمز وحاول مرة أخرى.';
+    }
+    if (statusCodeLike422(normalized)) {
+      return 'رمز الوصول غير صحيح أو منتهي الصلاحية.';
+    }
+    return message;
+  }
+
+  static bool statusCodeLike422(String normalized) {
+    return normalized.contains('422') || normalized.contains('verification');
   }
 
   static String mapLifecycleActionFailure(

@@ -2,12 +2,20 @@ import 'dart:convert';
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
+import 'package:flutter/foundation.dart';
 
 import 'user_session_keys.dart';
 import 'user_session_prefs.dart';
 
 class UserSessionStore {
   UserSessionStore._();
+
+  static const String defaultDisplayNamePlaceholder = 'اسم المستخدم';
+
+  static final ValueNotifier<LoggedInUserModel?> userNotifier =
+      ValueNotifier<LoggedInUserModel?>(null);
+
+  static LoggedInUserModel? get currentUser => userNotifier.value ?? read();
 
   static LoggedInUserModel? read() {
     final raw = SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser);
@@ -25,14 +33,53 @@ class UserSessionStore {
     }
   }
 
-  static String? get displayName {
-    final name = read()?.name?.trim();
-    return (name == null || name.isEmpty) ? null : name;
+  static void reload() {
+    userNotifier.value = read();
+  }
+
+  static String? displayName({String? fallback}) {
+    final name = currentUser?.name?.trim();
+    if (name == null || name.isEmpty) return fallback;
+    return name;
+  }
+
+  static String displayNameOrPlaceholder() {
+    return displayName(fallback: defaultDisplayNamePlaceholder) ??
+        defaultDisplayNamePlaceholder;
   }
 
   static String? get phone {
-    final value = read()?.phone?.trim();
+    final value = currentUser?.phone?.trim();
     return (value == null || value.isEmpty) ? null : value;
+  }
+
+  static Future<void> saveLoginResponse(LoginResponseModel result) async {
+    final token = result.token?.trim() ?? '';
+    if (token.isNotEmpty) {
+      await SharedPreferencesHelper.saveData(
+        key: UserSessionKeys.token,
+        value: token,
+      );
+    } else {
+      await SharedPreferencesHelper.removeData(key: UserSessionKeys.token);
+    }
+
+    final customerId = result.data?.id;
+    if (customerId != null) {
+      await SharedPreferencesHelper.saveData(
+        key: UserSessionKeys.customerId,
+        value: customerId,
+      );
+    } else {
+      await SharedPreferencesHelper.removeData(key: UserSessionKeys.customerId);
+    }
+
+    final user = result.data;
+    if (user != null) {
+      await writeAndMirror(user);
+    } else {
+      await clearUserProfile();
+    }
   }
 
   static Future<void> write(LoggedInUserModel user) async {
@@ -40,11 +87,22 @@ class UserSessionStore {
       key: UserSessionKeys.loggedInUser,
       value: jsonEncode(user.toJson()),
     );
+    userNotifier.value = user;
   }
 
-  static Future<void> clear() async {
+  static Future<void> clearUserProfile() async {
     await SharedPreferencesHelper.removeData(key: UserSessionKeys.loggedInUser);
+    await UserSessionPrefs.saveUserProfile(
+      name: null,
+      email: null,
+      phone: null,
+      avatarUrl: null,
+      phoneVerifiedAt: null,
+    );
+    userNotifier.value = null;
   }
+
+  static Future<void> clear() => clearUserProfile();
 
   static Future<void> writeAndMirror(LoggedInUserModel user) async {
     await write(user);

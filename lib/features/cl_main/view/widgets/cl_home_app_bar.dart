@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:dllni_user_app/core/session/user_session_store.dart';
+import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class ClHomeAppBar extends StatelessWidget {
@@ -10,9 +11,12 @@ class ClHomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = UserSessionStore.displayName ?? 'اسم المستخدم';
+    return ValueListenableBuilder<LoggedInUserModel?>(
+      valueListenable: UserSessionStore.userNotifier,
+      builder: (context, _, __) {
+        final displayName = UserSessionStore.displayNameOrPlaceholder();
 
-    return Container(
+        return Container(
       padding: EdgeInsets.fromLTRB(
         20,
         MediaQuery.paddingOf(context).top + 16,
@@ -75,6 +79,8 @@ class ClHomeAppBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+      },
     );
   }
 }

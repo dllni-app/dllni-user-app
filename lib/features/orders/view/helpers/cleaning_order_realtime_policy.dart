@@ -1,6 +1,5 @@
 import 'package:dllni_user_app/core/realtime/cleaning_realtime_contract.dart';
-
-import '../../data/models/cleaning_booking_status.dart';
+import 'package:dllni_user_app/features/orders/data/models/cleaning_booking_status.dart';
 
 enum CleaningOrderRealtimeActionType {
   ignore,
@@ -46,13 +45,55 @@ class CleaningOrderRealtimePolicy {
       );
     }
 
-    final reopenCompletionAfterRefresh =
-        normalizedEvent == CleaningRealtimeContract.awaitingCustomerCompletion;
+    final reopenCompletionAfterRefresh = _shouldReopenCompletionSheet(
+      normalizedEvent: normalizedEvent,
+      payload: payload,
+      currentStatus: currentStatus,
+    );
 
     return CleaningOrderRealtimeAction(
       type: CleaningOrderRealtimeActionType.refreshDetails,
       normalizedEvent: normalizedEvent,
       reopenCompletionAfterRefresh: reopenCompletionAfterRefresh,
     );
+  }
+
+  static bool _shouldReopenCompletionSheet({
+    required String normalizedEvent,
+    required Map<String, dynamic> payload,
+    required String? currentStatus,
+  }) {
+    final normalizedCurrent = (currentStatus ?? '').trim().toLowerCase();
+    if (normalizedCurrent == CleaningBookingStatus.timeExtensionRequested) {
+      return false;
+    }
+
+    if (normalizedEvent == CleaningRealtimeContract.awaitingCustomerCompletion) {
+      return true;
+    }
+
+    if (normalizedEvent == CleaningRealtimeContract.completionDecisionMade) {
+      final unwrapped = CleaningRealtimeContract.unwrapPayload(payload);
+      final decision = (CleaningRealtimeContract.extractDecision(unwrapped) ??
+              unwrapped['decision']?.toString())
+          ?.trim()
+          .toLowerCase();
+      if (decision == 'extension_rejected' ||
+          decision == 'extension_accepted' ||
+          decision == 'extension_requested') {
+        return false;
+      }
+      if (decision == 'rejected' &&
+          normalizedCurrent == CleaningBookingStatus.timeExtensionRequested) {
+        return false;
+      }
+    }
+
+    if (normalizedEvent == CleaningRealtimeContract.trackingUpdated &&
+        normalizedCurrent == CleaningBookingStatus.timeExtensionRequested) {
+      return false;
+    }
+
+    return false;
   }
 }

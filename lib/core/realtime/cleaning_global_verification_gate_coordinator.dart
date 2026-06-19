@@ -655,18 +655,7 @@ class CleaningGlobalVerificationGateCoordinator {
         );
 
     return response.fold<String?>(
-      (failure) {
-        switch (failure.statusCode) {
-          case 429:
-            return 'محاولات كثيرة، انتظر دقيقة ثم حاول مجددا.';
-          case 403:
-            return 'غير مصرح لك بالتحقق من هذا الطلب حاليا.';
-          case 422:
-            return 'الرمز غير صحيح أو منتهي الصلاحية.';
-          default:
-            return failure.message;
-        }
-      },
+      (failure) => CleaningLifecycleErrorMapper.mapVerificationFailure(failure),
       (result) {
         final details = result.data;
         if (details != null) {

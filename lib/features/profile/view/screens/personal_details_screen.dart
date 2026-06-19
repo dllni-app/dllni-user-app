@@ -193,7 +193,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         if (user != null) {
           await UserSessionStore.writeAndMirror(user);
         } else {
-          await UserSessionStore.clear();
+          await UserSessionStore.clearUserProfile();
         }
 
         successMessage = user?.name == null

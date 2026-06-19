@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
+import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -14,9 +15,12 @@ class HomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = UserSessionStore.displayName ?? 'اسم المستخدم';
+    return ValueListenableBuilder<LoggedInUserModel?>(
+      valueListenable: UserSessionStore.userNotifier,
+      builder: (context, _, __) {
+        final displayName = UserSessionStore.displayNameOrPlaceholder();
 
-    return Container(
+        return Container(
       padding: EdgeInsets.fromLTRB(
         20,
         MediaQuery.paddingOf(context).top + 16,
@@ -88,6 +92,8 @@ class HomeAppBar extends StatelessWidget {
           // SearchFieldWithVoice(onSearch: (search) {}, onVoiceTap: () {}),
         ],
       ),
+    );
+      },
     );
   }
 }

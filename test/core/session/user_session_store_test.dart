@@ -11,13 +11,15 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     await SharedPreferencesHelper.init();
+    UserSessionStore.reload();
   });
 
   group('UserSessionStore', () {
     test('read returns null when no user is stored', () {
       expect(UserSessionStore.read(), isNull);
-      expect(UserSessionStore.displayName, isNull);
+      expect(UserSessionStore.displayName(), isNull);
       expect(UserSessionStore.phone, isNull);
+      expect(UserSessionStore.userNotifier.value, isNull);
     });
 
     test('write and read round-trip user model', () async {
@@ -35,21 +37,35 @@ void main() {
       expect(stored?.name, 'سارة أحمد');
       expect(stored?.email, 'sara@example.com');
       expect(stored?.phone, '+963912345678');
-      expect(UserSessionStore.displayName, 'سارة أحمد');
+      expect(UserSessionStore.displayName(), 'سارة أحمد');
       expect(UserSessionStore.phone, '+963912345678');
+      expect(UserSessionStore.userNotifier.value?.name, 'سارة أحمد');
     });
 
-    test('clear removes stored user', () async {
-      await UserSessionStore.write(
-        LoggedInUserModel(name: 'Temp User'),
+    test('clearUserProfile removes stored user and mirrored fields but keeps token', () async {
+      await SharedPreferencesHelper.saveData(
+        key: UserSessionKeys.token,
+        value: 'session-token',
+      );
+      await UserSessionStore.writeAndMirror(
+        LoggedInUserModel(name: 'Temp User', phone: '+963900000000'),
       );
 
-      await UserSessionStore.clear();
+      await UserSessionStore.clearUserProfile();
 
       expect(UserSessionStore.read(), isNull);
+      expect(UserSessionStore.userNotifier.value, isNull);
       expect(
         SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser),
         isNull,
+      );
+      expect(
+        SharedPreferencesHelper.getData(key: UserSessionKeys.customerName),
+        isNull,
+      );
+      expect(
+        SharedPreferencesHelper.getData(key: UserSessionKeys.token),
+        'session-token',
       );
     });
 
@@ -84,10 +100,57 @@ void main() {
       );
     });
 
-    test('displayName ignores blank stored names', () async {
-      await UserSessionStore.write(LoggedInUserModel(name: '   '));
+    test('saveLoginResponse stores token, customer id, user, and mirrored fields', () async {
+      await UserSessionStore.saveLoginResponse(
+        LoginResponseModel(
+          token: 'abc123',
+          data: LoggedInUserModel(
+            id: 42,
+            name: 'Ali',
+            phone: '+963933333333',
+          ),
+        ),
+      );
 
-      expect(UserSessionStore.displayName, isNull);
+      expect(
+        SharedPreferencesHelper.getData(key: UserSessionKeys.token),
+        'abc123',
+      );
+      expect(
+        SharedPreferencesHelper.getData(key: UserSessionKeys.customerId),
+        42,
+      );
+      expect(UserSessionStore.read()?.name, 'Ali');
+      expect(
+        SharedPreferencesHelper.getData(key: UserSessionKeys.customerName),
+        'Ali',
+      );
+      expect(UserSessionStore.userNotifier.value?.id, 42);
+    });
+
+    test('reload rehydrates notifier from shared preferences', () async {
+      await UserSessionStore.write(LoggedInUserModel(name: 'Reload Me'));
+      UserSessionStore.userNotifier.value = null;
+
+      UserSessionStore.reload();
+
+      expect(UserSessionStore.userNotifier.value?.name, 'Reload Me');
+    });
+
+    test('displayNameOrPlaceholder returns placeholder only for blank names', () async {
+      expect(
+        UserSessionStore.displayNameOrPlaceholder(),
+        UserSessionStore.defaultDisplayNamePlaceholder,
+      );
+
+      await UserSessionStore.write(LoggedInUserModel(name: '   '));
+      expect(
+        UserSessionStore.displayNameOrPlaceholder(),
+        UserSessionStore.defaultDisplayNamePlaceholder,
+      );
+
+      await UserSessionStore.write(LoggedInUserModel(name: 'Karim'));
+      expect(UserSessionStore.displayNameOrPlaceholder(), 'Karim');
     });
   });
 }
