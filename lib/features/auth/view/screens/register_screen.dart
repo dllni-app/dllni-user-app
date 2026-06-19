@@ -75,6 +75,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         listenWhen: (prev, curr) => curr.registerStatus == BlocStatus.failed || curr.registerStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.registerStatus == BlocStatus.failed) {
+            final error = state.registerErrorMessage ?? '';
+            if (error.contains('USER_ALREADY_REGISTERED')) {
+              AppToast.showToast(context: context, message: 'لديك حساب مسجل مسبقاً. يرجى تسجيل الدخول.', type: ToastificationType.info);
+              if (context.mounted) context.pushRoute('/login');
+              return;
+            }
             AppToast.showToast(context: context, message: state.registerErrorMessage ?? 'فشل إنشاء الحساب', type: ToastificationType.error);
             return;
           }
