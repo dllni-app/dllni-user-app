@@ -3,9 +3,11 @@ import 'package:common_package/helpers/error_handler.dart';
 import 'package:common_package/helpers/typedef.dart';
 
 import '../../domain/repository/auth_repo.dart';
+import '../../domain/usecases/auth_phone_params.dart';
 import '../../domain/usecases/login_params.dart';
 import '../../domain/usecases/register_params.dart';
 import '../../domain/usecases/verify_account_params.dart';
+import '../models/auth_action_response_model.dart';
 import '../models/login_response_model.dart';
 import '../models/register_response_model.dart';
 import '../source/auth_remote_data_source.dart';
@@ -35,5 +37,22 @@ class AuthRepoImpl with HandlingException implements AuthRepo {
     return wrapHandlingException(
       tryCall: () => authRemoteDataSource.verifyAccount(params),
     );
+  }
+
+  @override
+  DataResponse<AuthActionResponseModel> resendAccountCode(AuthPhoneParams params) {
+    return wrapHandlingException(
+      tryCall: () => authRemoteDataSource.resendAccountCode(params),
+    );
+  }
+
+  @override
+  DataResponse<AuthActionResponseModel> requestAccountRecovery(AuthPhoneParams params) {
+    throw UnimplementedError();
+  }
+
+  @override
+  DataResponse<AuthActionResponseModel> confirmAccountRecovery(ResetPasswordConfirmParams params) {
+    throw UnimplementedError();
   }
 }
