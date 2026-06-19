@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
+import 'package:dllni_user_app/core/helpers/shared_user_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -121,7 +122,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void initState() {
     super.initState();
     final item = widget.params.addressItem;
-    if (item == null) return;
+    if (item == null) {
+      final authPhone = SharedUserHelper.getUser()?.phone;
+      if ((authPhone ?? '').trim().isNotEmpty) {
+        _isLoadingPhone = true;
+        _loadInitialPhone(authPhone);
+      }
+      return;
+    }
     _isLoadingPhone = true;
     _labelController.text = item.label;
     _loadInitialPhone(item.mobile);
