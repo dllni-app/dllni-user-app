@@ -48,45 +48,69 @@ class ErrorHandler implements Exception {
       case DioExceptionType.badResponse:
         switch (error.response?.statusCode) {
           case ResponseCode.unAuthorized:
-            return UnauthenticatedFailure(
-              message: error.response?.data["message"].toString() ?? error.response?.data["errors"]?.toString() ?? '',
-            );
+            return _apiFailure(error, unauthenticated: true);
+          case ResponseCode.forBidden:
+          case ResponseCode.conflict:
+          case ResponseCode.gone:
+            return _apiFailure(error);
           case ResponseCode.internalServerError:
             return DataSource.internetServerError.getFailure();
           case ResponseCode.notFound:
-            return DataSource.notFound.getFailure();
-          case ResponseCode.forBidden:
-            return DataSource.forBidden.getFailure();
-          case ResponseCode.unAuthorized:
-            final data = error.response?.data;
-            if (data is Map<String, dynamic>) {
-              return UnauthenticatedFailure(message: ErrorMessageModel.fromJson(data).statusMessage);
-            }
-            return UnauthenticatedFailure(message: ResponseMessage.unAuthorized.tr());
+            return _apiFailure(error, fallback: DataSource.notFound.getFailure());
           case ResponseCode.blocked:
             return UserBlockedFailure(message: AppConstants.blockedError.tr());
           case ResponseCode.notAllowed:
             return UserNotAllowedFailure(message: AppConstants.notAllowed.tr());
           case ResponseCode.badContent:
-            return ServerFailure(
-              message: ErrorMessageModel.fromJson(error.response?.data).statusMessage,
-              statusCode: ResponseCode.badContent,
-              fieldErrors: _parseFieldErrors(error.response?.data),
-            );
           case ResponseCode.badRequestServer:
-            return ServerFailure(
-              message: ErrorMessageModel.fromJson(error.response?.data).statusMessage,
-              statusCode: ResponseCode.badRequestServer,
-              fieldErrors: _parseFieldErrors(error.response?.data),
-            );
+            return _apiFailure(error);
           default:
-            return ServerFailure(
-              message: error.response?.data["message"].toString() ?? error.response?.data["errors"]?.toString() ?? '',
-              statusCode: error.response?.statusCode ?? ResponseCode.badRequest,
-            );
+            return _apiFailure(error);
         }
     }
   }
+}
+
+Failure _apiFailure(
+  DioException error, {
+  bool unauthenticated = false,
+  Failure? fallback,
+}) {
+  final responseData = error.response?.data;
+  final statusCode = error.response?.statusCode ?? ResponseCode.badRequest;
+
+  if (responseData is Map<String, dynamic>) {
+    final message = ErrorMessageModel.fromJson(responseData).statusMessage;
+    final code = responseData['code']?.toString();
+    final dataRaw = responseData['data'];
+    final data = dataRaw is Map ? Map<String, dynamic>.from(dataRaw) : null;
+
+    if (unauthenticated) {
+      return UnauthenticatedFailure(
+        message: message,
+        statusCode: statusCode,
+        code: code,
+        data: data,
+      );
+    }
+
+    return ServerFailure(
+      message: message,
+      statusCode: statusCode,
+      code: code,
+      data: data,
+      fieldErrors: _parseFieldErrors(responseData),
+    );
+  }
+
+  if (fallback != null) return fallback;
+
+  return ServerFailure(
+    message: responseData is Map
+        ? responseData['message']?.toString() ?? responseData['errors']?.toString() ?? ''
+        : responseData?.toString() ?? '',
+    statusCode: statusCode,
+  );
 }
 
 Map<String, List<String>>? _parseFieldErrors(dynamic data) {
@@ -150,6 +174,8 @@ class ResponseCode {
   static const int badRequest = 400;
   static const int unAuthorized = 401;
   static const int forBidden = 403;
+  static const int conflict = 409;
+  static const int gone = 410;
   static const int internalServerError = 500;
   static const int notFound = 404;
   static const int notAllowed = 405;
@@ -228,11 +254,18 @@ enum DataSource {
 abstract class Failure extends Equatable {
   final String message;
   final int? statusCode;
+  final String? code;
+  final Map<String, dynamic>? data;
 
-  const Failure({required this.message, this.statusCode = -1});
+  const Failure({
+    required this.message,
+    this.statusCode = -1,
+    this.code,
+    this.data,
+  });
 
   @override
-  List<Object?> get props => [message, statusCode];
+  List<Object?> get props => [message, statusCode, code, data];
 }
 
 class ServerFailure extends Failure {
@@ -241,15 +274,22 @@ class ServerFailure extends Failure {
   const ServerFailure({
     required super.message,
     super.statusCode,
+    super.code,
+    super.data,
     this.fieldErrors,
   });
 
   @override
-  List<Object?> get props => [message, statusCode, fieldErrors];
+  List<Object?> get props => [message, statusCode, code, data, fieldErrors];
 }
 
 class UnauthenticatedFailure extends Failure {
-  const UnauthenticatedFailure({required super.message});
+  const UnauthenticatedFailure({
+    required super.message,
+    super.statusCode,
+    super.code,
+    super.data,
+  });
 }
 
 class UserNotAllowedFailure extends Failure {
@@ -277,7 +317,7 @@ class ErrorMessageModel extends Equatable {
         error = "${error.isEmpty ? "" : "$error \n"} ${item.value}";
       }
     } else {
-      error = json["message"].toString();
+      error = json["message"]?.toString() ?? json["errors"]?.toString() ?? '';
     }
     return ErrorMessageModel(statusMessage: error, success: json["success"] ?? false);
   }
