@@ -31,6 +31,31 @@ String encodeAuthFlowFailure(Failure failure) {
       })}';
 }
 
+Map<String, dynamic>? _decodeAuthFlowPayload(String? raw) {
+  final value = raw ?? '';
+  if (!value.startsWith(authFlowErrorPrefix)) return null;
+
+  try {
+    final decoded = jsonDecode(value.substring(authFlowErrorPrefix.length));
+    return decoded is Map<String, dynamic> ? decoded : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+String authFlowMessage(String? raw, {String fallback = ''}) {
+  final payload = _decodeAuthFlowPayload(raw);
+  if (payload == null) return (raw == null || raw.isEmpty) ? fallback : raw;
+
+  final message = payload['message']?.toString() ?? '';
+  return message.isEmpty ? fallback : message;
+}
+
+bool authFlowHasCode(String? raw, String code) {
+  final payload = _decodeAuthFlowPayload(raw);
+  return payload?['code']?.toString() == code || (raw ?? '').contains(code);
+}
+
 @injectable
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LoginUseCase loginUseCase;
