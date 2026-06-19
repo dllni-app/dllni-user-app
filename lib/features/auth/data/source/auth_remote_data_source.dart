@@ -1,8 +1,10 @@
 import 'package:common_package/common_package.dart';
 import 'package:injectable/injectable.dart';
 
+import '../models/auth_action_response_model.dart';
 import '../models/login_response_model.dart';
 import '../models/register_response_model.dart';
+import '../../domain/usecases/auth_phone_params.dart';
 import '../../domain/usecases/login_params.dart';
 import '../../domain/usecases/register_params.dart';
 import '../../domain/usecases/verify_account_params.dart';
@@ -40,6 +42,17 @@ class AuthRemoteDataSource with HandlingApiManager {
         data: params.getBody(),
       ),
       jsonConvert: loginResponseModelFromJson,
+    );
+  }
+
+  Future<AuthActionResponseModel> resendAccountCode(AuthPhoneParams params) {
+    final endpoint = '/api/v1/user/verify-account' '/resend';
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: endpoint,
+        data: params.getBody(),
+      ),
+      jsonConvert: authActionResponseModelFromJson,
     );
   }
 }
