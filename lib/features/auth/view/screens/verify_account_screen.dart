@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -33,6 +35,7 @@ class VerifyAccountScreen extends StatefulWidget {
 
 class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
   static const Color _iconGray = Color(0xff6B7280);
+  static const int _resendCooldownSeconds = 60;
 
   final List<TextEditingController> _otpControllers = List.generate(
     6,
@@ -40,8 +43,14 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
   );
   final List<FocusNode> _otpFocus = List.generate(6, (_) => FocusNode());
 
+  Timer? _resendTimer;
+  int _resendSecondsLeft = 0;
+
+  bool get _canResend => _resendSecondsLeft == 0;
+
   @override
   void dispose() {
+    _resendTimer?.cancel();
     for (final c in _otpControllers) {
       c.dispose();
     }
@@ -95,6 +104,33 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     );
   }
 
+  void _handleResendPressed() {
+    if (!_canResend) return;
+
+    AppToast.showToast(
+      context: context,
+      message: 'تم استلام طلبك بنجاح',
+      type: ToastificationType.info,
+    );
+
+    setState(() => _resendSecondsLeft = _resendCooldownSeconds);
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (_resendSecondsLeft <= 1) {
+        timer.cancel();
+        setState(() => _resendSecondsLeft = 0);
+        return;
+      }
+
+      setState(() => _resendSecondsLeft--);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final hint = widget.args.message;
@@ -136,6 +172,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
         child: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             final loading = state.verifyAccountStatus == BlocStatus.loading;
+            final resendEnabled = !loading && _canResend;
             return AuthScreenChrome(
               title: 'تفعيل الحساب',
               cardChild: Column(
@@ -207,19 +244,12 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
                   Align(
                     alignment: Alignment.center,
                     child: TextButton(
-                      onPressed: loading
-                          ? null
-                          : () {
-                              AppToast.showToast(
-                                context: context,
-                                message:
-                                    'إعادة الإرسال ستُفعّل مع الخادم لاحقاً',
-                                type: ToastificationType.info,
-                              );
-                            },
+                      onPressed: resendEnabled ? _handleResendPressed : null,
                       child: AppText.bodySmall(
-                        'لم تستلم الرمز؟ إعادة الإرسال',
-                        color: context.secondary,
+                        _canResend
+                            ? 'لم تستلم الرمز؟ إعادة الإرسال'
+                            : 'يمكنك إعادة الإرسال بعد $_resendSecondsLeft ثانية',
+                        color: resendEnabled ? context.secondary : _iconGray,
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
