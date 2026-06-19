@@ -38,7 +38,7 @@ class CreateCleaningOrderParams with Params {
   final double? addressLongitude;
   final CleaningGenderPreference genderPreference;
   final int? preferredWorkerId;
-  final List<int>? serviceIds;
+  final List<String>? cleaningServices;
   final String? eventType;
   final int? guestCount;
   final String? venueType;
@@ -68,7 +68,7 @@ class CreateCleaningOrderParams with Params {
     required this.addressLongitude,
     this.genderPreference = CleaningGenderPreference.any,
     this.preferredWorkerId,
-    this.serviceIds,
+    this.cleaningServices,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.termsAccepted = true,
@@ -109,13 +109,22 @@ class CreateCleaningOrderParams with Params {
        livingRoomSize = null,
        roomSizeBreakdown = null,
        cleaningType = null,
-       serviceIds = null;
+       cleaningServices = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
-  List<int> _sanitizeServiceIds() {
-    final source = serviceIds ?? const <int>[];
-    return source.where((id) => id > 0).toSet().toList(growable: false);
+  List<String> _sanitizeCleaningServices() {
+    final source = cleaningServices ?? const <String>[];
+    final normalized = <String>[];
+
+    for (final service in source) {
+      final name = service.trim();
+      if (name.isEmpty || name.length > 255) continue;
+      if (normalized.contains(name)) continue;
+      normalized.add(name);
+    }
+
+    return normalized;
   }
 
   int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
@@ -170,9 +179,9 @@ class CreateCleaningOrderParams with Params {
       'termsAccepted': termsAccepted,
     };
     if (!_isEventAssistance) {
-      final cleanServiceIds = _sanitizeServiceIds();
-      if (cleanServiceIds.isNotEmpty) {
-        body['serviceIds'] = cleanServiceIds;
+      final cleanServices = _sanitizeCleaningServices();
+      if (cleanServices.isNotEmpty) {
+        body['cleaning_services'] = cleanServices;
       }
     }
     final resolvedWorkers = _resolvedNumberOfWorkers;
