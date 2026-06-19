@@ -59,5 +59,36 @@ void main() {
 
       expect(mapped, fallback);
     });
+
+    test('maps cancel failure 422 to localized Arabic message', () {
+      const rawMessage = 'Order cannot be cancelled in current status.';
+      final mapped = CleaningLifecycleErrorMapper.mapCancelFailure(
+        const ServerFailure(message: rawMessage, statusCode: 422),
+      );
+
+      expect(mapped, 'لا يمكن إلغاء الطلب في حالته الحالية.');
+      expect(mapped, isNot(rawMessage));
+    });
+
+    test('maps cancel failure message without status code by content', () {
+      const rawMessage = 'Order cannot be cancelled in current status.';
+      final mapped = CleaningLifecycleErrorMapper.mapCancelFailureMessage(
+        rawMessage,
+      );
+
+      expect(mapped, 'لا يمكن إلغاء الطلب في حالته الحالية.');
+    });
+
+    test('does not surface raw translation keys', () {
+      final mapped = CleaningLifecycleErrorMapper.mapVerificationFailure(
+        const ServerFailure(
+          message: 'errorMessage.noInternetError',
+          statusCode: 500,
+        ),
+      );
+
+      expect(mapped, isNot(contains('errorMessage')));
+      expect(mapped, isNot('errorMessage.noInternetError'));
+    });
   });
 }

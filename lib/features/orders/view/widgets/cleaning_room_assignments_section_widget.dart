@@ -102,7 +102,7 @@ class CleaningRoomAssignmentsSectionWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppText.bodyMedium(
-                  room.displayLabel ?? 'غرفة',
+                  room.resolvedLabel ?? 'غرفة',
                   color: const Color(0xFF1F2937),
                   fontWeight: FontWeight.w800,
                   textAlign: TextAlign.center,
@@ -207,7 +207,7 @@ class _RoomTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText.bodyMedium(
-                      room.displayLabel ?? room.roomKey ?? 'غرفة',
+                      room.resolvedLabel ?? room.displayLabel ?? room.roomKey ?? 'غرفة',
                       color: const Color(0xFF1F2937),
                       fontWeight: FontWeight.w700,
                       maxLines: 1,

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/session/user_session_keys.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -78,14 +78,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _saveLoggedInUser(LoggedInUserModel? user) async {
     if (user == null) {
-      await SharedPreferencesHelper.removeData(key: UserSessionKeys.loggedInUser);
+      await UserSessionStore.clear();
       return;
     }
 
-    await SharedPreferencesHelper.saveData(
-      key: UserSessionKeys.loggedInUser,
-      value: jsonEncode(user.toJson()),
-    );
+    await UserSessionStore.write(user);
   }
 
   Future<void> _onLoginSubmitted(

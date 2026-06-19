@@ -1,9 +1,7 @@
-import 'dart:convert';
-
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
-import 'package:dllni_user_app/core/session/user_session_keys.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -17,22 +15,6 @@ import '../widgets/profile_summary_card.dart';
 import '../widgets/section_card.dart';
 import '../widgets/section_title.dart';
 
-LoggedInUserModel? _readLoggedInUser() {
-  final raw = SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser);
-  if (raw == null) return null;
-
-  try {
-    final decoded = jsonDecode('$raw');
-    if (decoded is! Map) return null;
-
-    return LoggedInUserModel.fromJson(
-      Map<String, dynamic>.from(decoded),
-    );
-  } catch (_) {
-    return null;
-  }
-}
-
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -42,8 +24,23 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late final ProfileBloc profileBloc = getIt<ProfileBloc>();
-  final LoggedInUserModel _personalDetailsParams =
-      _readLoggedInUser() ?? LoggedInUserModel();
+  LoggedInUserModel? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = UserSessionStore.read();
+  }
+
+  Future<void> _openPersonalDetails() async {
+    final updated = await context.pushRoute<bool>(
+      '/personaldetails',
+      arguments: _user ?? LoggedInUserModel(),
+    );
+    if (updated == true && mounted) {
+      setState(() => _user = UserSessionStore.read());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,13 +55,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 children: [
                   ProfileSummaryCard(
-                    params: _personalDetailsParams,
-                    onEditTap: () {
-                      context.pushRoute(
-                        '/personaldetails',
-                        arguments: _personalDetailsParams,
-                      );
-                    },
+                    params: _user ?? LoggedInUserModel(),
+                    onEditTap: _openPersonalDetails,
                   ),
                   SizedBox(height: 16),
                   SectionTitle(title: 'إدارة الحساب'),

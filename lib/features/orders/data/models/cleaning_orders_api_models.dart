@@ -102,6 +102,160 @@ String cleaningOrderStatusLabelAr(String? status) {
   }
 }
 
+String? _roomTypeLabel(String? value) {
+  switch ((value ?? '').trim().toLowerCase()) {
+    case 'bedroom':
+      return 'غرفة نوم';
+    case 'bathroom':
+      return 'حمام';
+    case 'living_room':
+      return 'غرفة معيشة';
+    case 'kitchen':
+      return 'مطبخ';
+    case 'balcony':
+      return 'شرفة';
+    case 'hall':
+      return 'صالة';
+    default:
+      return value?.trim().isNotEmpty == true ? value!.trim() : null;
+  }
+}
+
+String? _roomSizeLabel(String? value) {
+  switch ((value ?? '').trim().toLowerCase()) {
+    case 'small':
+      return 'صغيرة';
+    case 'medium':
+      return 'متوسطة';
+    case 'large':
+      return 'كبيرة';
+    case 'none':
+      return 'لا يوجد';
+    default:
+      return value?.trim().isNotEmpty == true ? value!.trim() : null;
+  }
+}
+
+bool _isAcceptedWaitingWorkerStatus(String? status) {
+  final normalized = (status ?? '').trim().toLowerCase();
+  return normalized == CleaningBookingStatus.acceptedWaitingTeam ||
+      normalized == CleaningBookingStatus.acceptedWaitingForOrderStart;
+}
+
+String _workerProgressSuffix({
+  required int? acceptedWorkersCount,
+  required int? requiredWorkersCount,
+}) {
+  if (acceptedWorkersCount == null ||
+      requiredWorkersCount == null ||
+      requiredWorkersCount <= 0) {
+    return '';
+  }
+  return ' (${acceptedWorkersCount.toString()}/${requiredWorkersCount.toString()})';
+}
+
+bool _shouldShowSearchingBanner({
+  required String? status,
+  required String? workerOrderStatus,
+  required CleaningWorkerAcceptanceModel? workerAcceptance,
+  required int? numberOfWorkers,
+  required int? requiredWorkersCount,
+  required int? acceptedWorkersCount,
+  required int? pendingWorkersCount,
+}) {
+  final normalizedStatus = (status ?? '').trim().toLowerCase();
+  if (normalizedStatus != CleaningBookingStatus.pending) {
+    return false;
+  }
+
+  if (_isAcceptedWaitingWorkerStatus(workerOrderStatus)) {
+    return false;
+  }
+
+  final effectiveRequired =
+      requiredWorkersCount ?? workerAcceptance?.required ?? numberOfWorkers ?? 0;
+  final effectiveAccepted =
+      acceptedWorkersCount ?? workerAcceptance?.accepted ?? 0;
+  final effectivePending =
+      pendingWorkersCount ?? workerAcceptance?.remaining ?? 0;
+
+  if (workerAcceptance != null) {
+    return workerAcceptance.isFulfilled != true;
+  }
+
+  if (effectiveRequired <= 0) {
+    return true;
+  }
+
+  return effectiveAccepted < effectiveRequired || effectivePending > 0;
+}
+
+String _cleaningOrderLifecycleStatusLabelAr({
+  required String? status,
+  String? workerOrderStatus,
+  String? workerOrderStatusLabel,
+  int? requiredWorkersCount,
+  int? acceptedWorkersCount,
+  int? pendingWorkersCount,
+  CleaningWorkerAcceptanceModel? workerAcceptance,
+  int? numberOfWorkers,
+}) {
+  final normalizedStatus = (status ?? '').trim().toLowerCase();
+  final normalizedWorkerStatus = (workerOrderStatus ?? '').trim().toLowerCase();
+  final workerLabel = workerOrderStatusLabel?.trim();
+  final effectiveRequired =
+      requiredWorkersCount ?? workerAcceptance?.required ?? numberOfWorkers;
+  final effectiveAccepted =
+      acceptedWorkersCount ?? workerAcceptance?.accepted;
+
+  if (workerLabel != null && workerLabel.isNotEmpty) {
+    if (_isAcceptedWaitingWorkerStatus(normalizedWorkerStatus) ||
+        _shouldShowSearchingBanner(
+          status: normalizedStatus,
+          workerOrderStatus: normalizedWorkerStatus,
+          workerAcceptance: workerAcceptance,
+          numberOfWorkers: numberOfWorkers,
+          requiredWorkersCount: requiredWorkersCount,
+          acceptedWorkersCount: acceptedWorkersCount,
+          pendingWorkersCount: pendingWorkersCount,
+        )) {
+      return workerLabel +
+          _workerProgressSuffix(
+            acceptedWorkersCount: effectiveAccepted,
+            requiredWorkersCount: effectiveRequired,
+          );
+    }
+    return workerLabel;
+  }
+
+  if (_isAcceptedWaitingWorkerStatus(normalizedWorkerStatus)) {
+    return 'تم القبول في انتظار اكتمال الفريق' +
+        _workerProgressSuffix(
+          acceptedWorkersCount: effectiveAccepted,
+          requiredWorkersCount: effectiveRequired,
+        );
+  }
+
+  if (_shouldShowSearchingBanner(
+    status: normalizedStatus,
+    workerOrderStatus: normalizedWorkerStatus,
+    workerAcceptance: workerAcceptance,
+    numberOfWorkers: numberOfWorkers,
+    requiredWorkersCount: requiredWorkersCount,
+    acceptedWorkersCount: acceptedWorkersCount,
+    pendingWorkersCount: pendingWorkersCount,
+  )) {
+    final accepted = effectiveAccepted ?? 0;
+    final required = effectiveRequired ?? 0;
+    if (required > 0) {
+      return 'جاري البحث عن عمال (${accepted.toString()}/${required.toString()})';
+    }
+    return 'جاري البحث عن عمال';
+  }
+
+  return cleaningOrderStatusLabelAr(normalizedStatus);
+}
+
 FetchCleaningOrdersModel fetchCleaningOrdersModelFromJson(dynamic json) {
   return FetchCleaningOrdersModel.fromJson(_toMap(json));
 }
@@ -281,6 +435,11 @@ class CleaningOrderModel {
   final List<dynamic>? disputes;
   final String? assignmentMode;
   final int? numberOfWorkers;
+  final String? workerOrderStatus;
+  final String? workerOrderStatusLabel;
+  final int? requiredWorkersCount;
+  final int? acceptedWorkersCount;
+  final int? pendingWorkersCount;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
 
   CleaningOrderModel({
@@ -323,6 +482,11 @@ class CleaningOrderModel {
     this.disputes,
     this.assignmentMode,
     this.numberOfWorkers,
+    this.workerOrderStatus,
+    this.workerOrderStatusLabel,
+    this.requiredWorkersCount,
+    this.acceptedWorkersCount,
+    this.pendingWorkersCount,
     this.workerAcceptance,
   });
 
@@ -443,6 +607,36 @@ class CleaningOrderModel {
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
+      workerOrderStatus: _toStringValue(
+        _pick(m, const <String>[
+          'worker_order_status',
+          'workerOrderStatus',
+        ]),
+      ),
+      workerOrderStatusLabel: _toStringValue(
+        _pick(m, const <String>[
+          'worker_order_status_label',
+          'workerOrderStatusLabel',
+        ]),
+      ),
+      requiredWorkersCount: _toInt(
+        _pick(m, const <String>[
+          'required_workers_count',
+          'requiredWorkersCount',
+        ]),
+      ),
+      acceptedWorkersCount: _toInt(
+        _pick(m, const <String>[
+          'accepted_workers_count',
+          'acceptedWorkersCount',
+        ]),
+      ),
+      pendingWorkersCount: _toInt(
+        _pick(m, const <String>[
+          'pending_workers_count',
+          'pendingWorkersCount',
+        ]),
+      ),
       workerAcceptance:
           m['workerAcceptance'] == null && m['worker_acceptance'] == null
           ? null
@@ -456,12 +650,29 @@ class CleaningOrderModel {
       (assignmentMode ?? '').toLowerCase() == 'open_count' ||
       (numberOfWorkers ?? 1) > 1;
 
+  bool get isAcceptedWaitingState => _isAcceptedWaitingWorkerStatus(workerOrderStatus);
+
+  String get displayStatusLabelAr => _cleaningOrderLifecycleStatusLabelAr(
+    status: status,
+    workerOrderStatus: workerOrderStatus,
+    workerOrderStatusLabel: workerOrderStatusLabel,
+    requiredWorkersCount: requiredWorkersCount,
+    acceptedWorkersCount: acceptedWorkersCount,
+    pendingWorkersCount: pendingWorkersCount,
+    workerAcceptance: workerAcceptance,
+    numberOfWorkers: numberOfWorkers,
+  );
+
   bool get isSearchingForWorkers {
-    final statusNorm = (status ?? '').toLowerCase();
-    if (statusNorm != CleaningBookingStatus.pending) return false;
-    final acceptance = workerAcceptance;
-    if (acceptance == null) return isMultiWorkerTeam;
-    return acceptance.isFulfilled != true;
+    return _shouldShowSearchingBanner(
+      status: status,
+      workerOrderStatus: workerOrderStatus,
+      workerAcceptance: workerAcceptance,
+      numberOfWorkers: numberOfWorkers,
+      requiredWorkersCount: requiredWorkersCount,
+      acceptedWorkersCount: acceptedWorkersCount,
+      pendingWorkersCount: pendingWorkersCount,
+    );
   }
 }
 
@@ -507,6 +718,11 @@ class CleaningOrderDetailModel {
   final List<dynamic>? disputes;
   final String? assignmentMode;
   final int? numberOfWorkers;
+  final String? workerOrderStatus;
+  final String? workerOrderStatusLabel;
+  final int? requiredWorkersCount;
+  final int? acceptedWorkersCount;
+  final int? pendingWorkersCount;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
   final CleaningOrderWorkerModel? preferredWorker;
   final List<CleaningWorkerAssignmentModel>? workerAssignments;
@@ -555,6 +771,11 @@ class CleaningOrderDetailModel {
     this.disputes,
     this.assignmentMode,
     this.numberOfWorkers,
+    this.workerOrderStatus,
+    this.workerOrderStatusLabel,
+    this.requiredWorkersCount,
+    this.acceptedWorkersCount,
+    this.pendingWorkersCount,
     this.workerAcceptance,
     this.preferredWorker,
     this.workerAssignments,
@@ -685,6 +906,36 @@ class CleaningOrderDetailModel {
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
+      workerOrderStatus: _toStringValue(
+        _pick(m, const <String>[
+          'worker_order_status',
+          'workerOrderStatus',
+        ]),
+      ),
+      workerOrderStatusLabel: _toStringValue(
+        _pick(m, const <String>[
+          'worker_order_status_label',
+          'workerOrderStatusLabel',
+        ]),
+      ),
+      requiredWorkersCount: _toInt(
+        _pick(m, const <String>[
+          'required_workers_count',
+          'requiredWorkersCount',
+        ]),
+      ),
+      acceptedWorkersCount: _toInt(
+        _pick(m, const <String>[
+          'accepted_workers_count',
+          'acceptedWorkersCount',
+        ]),
+      ),
+      pendingWorkersCount: _toInt(
+        _pick(m, const <String>[
+          'pending_workers_count',
+          'pendingWorkersCount',
+        ]),
+      ),
       workerAcceptance:
           m['workerAcceptance'] == null && m['worker_acceptance'] == null
           ? null
@@ -715,12 +966,30 @@ class CleaningOrderDetailModel {
       (assignmentMode ?? '').toLowerCase() == 'open_count' ||
       (numberOfWorkers ?? 1) > 1;
 
+  bool get isAcceptedWaitingState =>
+      _isAcceptedWaitingWorkerStatus(workerOrderStatus);
+
+  String get displayStatusLabelAr => _cleaningOrderLifecycleStatusLabelAr(
+    status: status,
+    workerOrderStatus: workerOrderStatus,
+    workerOrderStatusLabel: workerOrderStatusLabel,
+    requiredWorkersCount: requiredWorkersCount,
+    acceptedWorkersCount: acceptedWorkersCount,
+    pendingWorkersCount: pendingWorkersCount,
+    workerAcceptance: workerAcceptance,
+    numberOfWorkers: numberOfWorkers,
+  );
+
   bool get isSearchingForWorkers {
-    final statusNorm = (status ?? '').toLowerCase();
-    if (statusNorm != CleaningBookingStatus.pending) return false;
-    final acceptance = workerAcceptance;
-    if (acceptance == null) return isMultiWorkerTeam;
-    return acceptance.isFulfilled != true;
+    return _shouldShowSearchingBanner(
+      status: status,
+      workerOrderStatus: workerOrderStatus,
+      workerAcceptance: workerAcceptance,
+      numberOfWorkers: numberOfWorkers,
+      requiredWorkersCount: requiredWorkersCount,
+      acceptedWorkersCount: acceptedWorkersCount,
+      pendingWorkersCount: pendingWorkersCount,
+    );
   }
 
   List<CleaningWorkerAssignmentModel> get acceptedWorkerAssignments {
@@ -771,6 +1040,11 @@ class CleaningOrderDetailModel {
       disputes: disputes,
       assignmentMode: assignmentMode,
       numberOfWorkers: numberOfWorkers,
+      workerOrderStatus: workerOrderStatus,
+      workerOrderStatusLabel: workerOrderStatusLabel,
+      requiredWorkersCount: requiredWorkersCount,
+      acceptedWorkersCount: acceptedWorkersCount,
+      pendingWorkersCount: pendingWorkersCount,
       workerAcceptance: workerAcceptance,
     );
   }
@@ -944,26 +1218,32 @@ class CleaningRoomAssignmentModel {
   final int? id;
   final String? roomKey;
   final String? roomType;
+  final String? roomTypeLabel;
   final String? roomSize;
+  final String? roomSizeLabel;
   final String? displayLabel;
   final double? weight;
   final int? plannedWorkerSlot;
   final int? plannedPreferredWorkerId;
   final int? assignedWorkerId;
   final String? assignmentSource;
+  final String? assignmentSourceLabel;
   final CleaningOrderWorkerModel? assignedWorker;
 
   CleaningRoomAssignmentModel({
     this.id,
     this.roomKey,
     this.roomType,
+    this.roomTypeLabel,
     this.roomSize,
+    this.roomSizeLabel,
     this.displayLabel,
     this.weight,
     this.plannedWorkerSlot,
     this.plannedPreferredWorkerId,
     this.assignedWorkerId,
     this.assignmentSource,
+    this.assignmentSourceLabel,
     this.assignedWorker,
   });
 
@@ -976,8 +1256,14 @@ class CleaningRoomAssignmentModel {
       roomType: _toStringValue(
         _pick(json, const <String>['roomType', 'room_type']),
       ),
+      roomTypeLabel: _toStringValue(
+        _pick(json, const <String>['roomTypeLabel', 'room_type_label']),
+      ),
       roomSize: _toStringValue(
         _pick(json, const <String>['roomSize', 'room_size']),
+      ),
+      roomSizeLabel: _toStringValue(
+        _pick(json, const <String>['roomSizeLabel', 'room_size_label']),
       ),
       displayLabel: _toStringValue(
         _pick(json, const <String>['displayLabel', 'display_label']),
@@ -998,6 +1284,12 @@ class CleaningRoomAssignmentModel {
       assignmentSource: _toStringValue(
         _pick(json, const <String>['assignmentSource', 'assignment_source']),
       ),
+      assignmentSourceLabel: _toStringValue(
+        _pick(json, const <String>[
+          'assignmentSourceLabel',
+          'assignment_source_label',
+        ]),
+      ),
       assignedWorker:
           json['assignedWorker'] == null && json['assigned_worker'] == null
           ? null
@@ -1005,6 +1297,28 @@ class CleaningRoomAssignmentModel {
               _toMap(json['assignedWorker'] ?? json['assigned_worker']),
             ),
     );
+  }
+
+  String? get resolvedLabel {
+    final typeLabel = roomTypeLabel?.trim().isNotEmpty == true
+        ? roomTypeLabel!.trim()
+        : _roomTypeLabel(roomType);
+    final sizeLabel = roomSizeLabel?.trim().isNotEmpty == true
+        ? roomSizeLabel!.trim()
+        : _roomSizeLabel(roomSize);
+    final parts = <String>[];
+    if (typeLabel != null && typeLabel.isNotEmpty) {
+      parts.add(typeLabel);
+    }
+    if (sizeLabel != null && sizeLabel.isNotEmpty) {
+      parts.add(sizeLabel);
+    }
+    if (parts.isNotEmpty) {
+      return parts.join(' - ');
+    }
+    return displayLabel?.trim().isNotEmpty == true
+        ? displayLabel!.trim()
+        : roomKey;
   }
 }
 

@@ -1,5 +1,7 @@
 abstract class CleaningBookingStatus {
   static const pending = 'pending';
+  static const acceptedWaitingTeam = 'accepted_waiting_team';
+  static const acceptedWaitingForOrderStart = 'accepted_waiting_for_order_start';
   static const workerAssigned = 'worker_assigned';
   static const awaitingStartVerification = 'awaiting_start_verification';
   static const awaitingWorkerStartConfirmation =

@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class ClHomeAppBar extends StatelessWidget {
@@ -9,6 +10,8 @@ class ClHomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = UserSessionStore.displayName ?? 'اسم المستخدم';
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -39,7 +42,7 @@ class ClHomeAppBar extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "أحمد محمد",
+                      displayName,
                       style: TextStyle(
                         color: Color(0xFF1E2A78),
                         fontSize: 18,

@@ -23,21 +23,25 @@ class CleaningOrderCard extends StatelessWidget {
   final VoidCallback? onCancelTap;
 
   String get _statusLabel {
-    if (order.isSearchingForWorkers) {
-      final accepted = order.workerAcceptance?.accepted ?? 0;
-      final required =
-          order.workerAcceptance?.required ?? order.numberOfWorkers ?? 0;
-      if (required > 0) {
-        return 'جاري البحث عن عمال ($accepted/$required)';
-      }
-      return 'جاري البحث عن عمال';
-    }
-    return cleaningOrderStatusLabelAr(order.status);
+    return order.displayStatusLabelAr;
   }
 
   bool get _isTerminalStatus {
     final normalizedStatus = (order.status ?? '').toLowerCase();
-    return normalizedStatus != CleaningBookingStatus.pending;
+    if (normalizedStatus != CleaningBookingStatus.pending) {
+      return true;
+    }
+    return order.isAcceptedWaitingState;
+  }
+
+  Color get _statusColor {
+    if (order.isAcceptedWaitingState) {
+      return const Color(0xffD97706);
+    }
+    if (order.isSearchingForWorkers) {
+      return const Color(0xff0CBBC7);
+    }
+    return const Color(0xff0CBBC7);
   }
 
   String get _bookingLabel {
@@ -135,12 +139,12 @@ class CleaningOrderCard extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE2F5F4),
+                    color: _statusColor.withAlpha(28),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: AppText.labelLarge(
                     _statusLabel,
-                    color: const Color(0xff0CBBC7),
+                    color: _statusColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

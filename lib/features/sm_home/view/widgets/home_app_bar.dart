@@ -2,7 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/themes/app_colors.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import '../../../../core/widgets/search_field_with_voice.dart';
 import '../../../sm_main_page.dart';
 
@@ -11,6 +11,8 @@ class HomeAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = UserSessionStore.displayName ?? 'اسم المستخدم';
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -41,7 +43,7 @@ class HomeAppBar extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "أحمد محمد",
+                      displayName,
                       style: TextStyle(
                         color: Color(0xFF1E2A78),
                         fontSize: 18,
