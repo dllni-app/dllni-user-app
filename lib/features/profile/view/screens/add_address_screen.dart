@@ -239,8 +239,26 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
     final shouldFill = forceFill || !wasEdited || controller.text.trim().isEmpty;
     if (shouldFill) {
-      controller.text = normalized;
+      _setTextFieldValueAtEnd(controller, normalized);
     }
+  }
+
+  void _setTextFieldValueAtEnd(
+    TextEditingController controller,
+    String value,
+  ) {
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
+  void _moveCursorToTextEnd(TextEditingController controller) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final textLength = controller.text.length;
+      controller.selection = TextSelection.collapsed(offset: textLength);
+    });
   }
 
   void _showReverseGeocodingMessage(NominatimAddressFields? fields) {
@@ -364,6 +382,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _labelController,
                             validator: _requiredValidator,
+                            onTap: () => _moveCursorToTextEnd(
+                              _labelController,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           if (_isLoadingPhone)
@@ -427,6 +448,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _neighborhoodController,
                             validator: _requiredValidator,
+                            onTap: () => _moveCursorToTextEnd(
+                              _neighborhoodController,
+                            ),
                             onChanged: (_) => _neighborhoodEdited = true,
                           ),
                           const SizedBox(height: 12),
@@ -435,12 +459,18 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _streetController,
                             validator: _requiredValidator,
+                            onTap: () => _moveCursorToTextEnd(
+                              _streetController,
+                            ),
                             onChanged: (_) => _streetEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'اسم البناء',
                             controller: _buildingController,
+                            onTap: () => _moveCursorToTextEnd(
+                              _buildingController,
+                            ),
                             onChanged: (_) => _buildingEdited = true,
                           ),
                           const SizedBox(height: 12),
@@ -450,6 +480,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             controller: _floorController,
                             keyboardType: TextInputType.number,
                             validator: _requiredValidator,
+                            onTap: () => _moveCursorToTextEnd(
+                              _floorController,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -457,12 +490,18 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _cityController,
                             validator: _requiredValidator,
+                            onTap: () => _moveCursorToTextEnd(
+                              _cityController,
+                            ),
                             onChanged: (_) => _cityEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'تفاصيل أخرى',
                             controller: _directionsController,
+                            onTap: () => _moveCursorToTextEnd(
+                              _directionsController,
+                            ),
                             onChanged: (_) => _directionsEdited = true,
                           ),
                           const SizedBox(height: 8),
