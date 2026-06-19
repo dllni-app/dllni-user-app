@@ -116,13 +116,12 @@ class _LoginScreenState extends State<LoginScreen> {
             curr.loginStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.loginStatus == BlocStatus.failed) {
-            final error = state.errorMessage ?? '';
-            if (error.contains('PHONE_VERIFICATION_REQUIRED')) {
+            if (authFlowHasCode(state.errorMessage, 'PHONE_VERIFICATION_REQUIRED')) {
               final phone = formatPhoneForApi(_phone);
               if (phone != null && context.mounted) {
                 AppToast.showToast(
                   context: context,
-                  message: 'يرجى تأكيد رقم الهاتف للمتابعة',
+                  message: authFlowMessage(state.errorMessage, fallback: 'يرجى تأكيد رقم الهاتف للمتابعة'),
                   type: ToastificationType.info,
                 );
                 context.pushRoute(
@@ -138,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             AppToast.showToast(
               context: context,
-              message: state.errorMessage ?? 'فشل تسجيل الدخول',
+              message: authFlowMessage(state.errorMessage, fallback: 'فشل تسجيل الدخول'),
               type: ToastificationType.error,
             );
             return;
