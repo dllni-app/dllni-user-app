@@ -54,7 +54,9 @@ class NominatimReverseGeocoding {
           'format': 'jsonv2',
           'lat': latitude,
           'lon': longitude,
+          'zoom': 18,
           'addressdetails': 1,
+          'layer': 'address',
           'accept-language': acceptLanguage,
         },
       );
@@ -67,12 +69,16 @@ class NominatimReverseGeocoding {
   }
 
   static NominatimAddressFields parse(Map<String, dynamic> payload) {
+    String? normalizeValue(dynamic value) {
+      if (value == null) return null;
+      final normalized = '$value'.trim();
+      return normalized.isEmpty ? null : normalized;
+    }
+
     String? pickFirst(Map<String, dynamic> map, List<String> keys) {
       for (final key in keys) {
-        final value = map[key];
-        if (value == null) continue;
-        final normalized = '$value'.trim();
-        if (normalized.isNotEmpty) return normalized;
+        final normalized = normalizeValue(map[key]);
+        if (normalized != null) return normalized;
       }
       return null;
     }
@@ -93,13 +99,14 @@ class NominatimReverseGeocoding {
       'state',
     ]);
     final neighborhood = pickFirst(address, const <String>[
-      'suburb',
       'neighbourhood',
       'neighborhood',
+      'suburb',
       'quarter',
       'city_district',
       'district',
       'residential',
+      'locality',
     ]);
     final street = pickFirst(address, const <String>[
       'road',
@@ -107,17 +114,23 @@ class NominatimReverseGeocoding {
       'pedestrian',
       'footway',
       'path',
+      'residential',
     ]);
     final building = pickFirst(address, const <String>[
-      'house_number',
       'building',
       'house_name',
+      'house_number',
+      'amenity',
+      'shop',
+      'office',
+      'tourism',
       'block',
+    ]) ?? normalizeValue(payload['name']);
+    final displayName = normalizeValue(payload['display_name']);
+    final directions = displayName ?? pickFirst(address, const <String>[
+      'postcode',
+      'country',
     ]);
-    final displayName = payload['display_name']?.toString().trim();
-    final directions = displayName?.isNotEmpty == true
-        ? displayName
-        : pickFirst(address, const <String>['postcode', 'country']);
 
     return NominatimAddressFields(
       city: city,
@@ -125,7 +138,7 @@ class NominatimReverseGeocoding {
       street: street,
       building: building,
       directions: directions,
-      displayName: displayName?.isEmpty == true ? null : displayName,
+      displayName: displayName,
     );
   }
 }

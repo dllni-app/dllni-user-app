@@ -82,6 +82,12 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   bool _isDefault = true;
   bool _isResolvingMap = false;
 
+  bool _cityEdited = false;
+  bool _neighborhoodEdited = false;
+  bool _streetEdited = false;
+  bool _buildingEdited = false;
+  bool _directionsEdited = false;
+
   double? _latitude;
   double? _longitude;
 
@@ -159,48 +165,89 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     setState(() {
       _latitude = selected.latitude;
       _longitude = selected.longitude;
-      _isResolvingMap = true;
     });
 
+    await _reverseGeocodeSelectedLocation();
+  }
+
+  Future<void> _reverseGeocodeSelectedLocation({bool forceFill = false}) async {
+    if (_latitude == null || _longitude == null) return;
+
+    setState(() => _isResolvingMap = true);
+
     final fields = await NominatimReverseGeocoding().reverse(
-      latitude: selected.latitude,
-      longitude: selected.longitude,
+      latitude: _latitude!,
+      longitude: _longitude!,
     );
     if (!mounted) return;
 
     setState(() {
       _isResolvingMap = false;
       if (fields == null) return;
-      if ((fields.city ?? '').isNotEmpty) {
-        _cityController.text = fields.city!;
-      }
-      if ((fields.neighborhood ?? '').isNotEmpty) {
-        _neighborhoodController.text = fields.neighborhood!;
-      }
-      if ((fields.street ?? '').isNotEmpty) {
-        _streetController.text = fields.street!;
-      }
-      if ((fields.building ?? '').isNotEmpty) {
-        _buildingController.text = fields.building!;
-      }
-      if ((fields.directions ?? '').isNotEmpty) {
-        _directionsController.text = fields.directions!;
-      }
+
+      _autofillTextField(
+        controller: _cityController,
+        value: fields.city,
+        wasEdited: _cityEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _neighborhoodController,
+        value: fields.neighborhood,
+        wasEdited: _neighborhoodEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _streetController,
+        value: fields.street,
+        wasEdited: _streetEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _buildingController,
+        value: fields.building,
+        wasEdited: _buildingEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _directionsController,
+        value: fields.directions,
+        wasEdited: _directionsEdited,
+        forceFill: forceFill,
+      );
     });
 
-    if (fields == null || !fields.hasAnyData) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم تحديد الموقع، يرجى إدخال بيانات العنوان يدويًا.'),
-        ),
-      );
-      return;
+    _showReverseGeocodingMessage(fields);
+  }
+
+  void _autofillTextField({
+    required TextEditingController controller,
+    required String? value,
+    required bool wasEdited,
+    required bool forceFill,
+  }) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return;
+
+    final shouldFill = forceFill || !wasEdited || controller.text.trim().isEmpty;
+    if (shouldFill) {
+      controller.text = normalized;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تم تحديد الموقع وتعبئة البيانات المتاحة من الخريطة.'),
-      ),
-    );
+  }
+
+  void _showReverseGeocodingMessage(NominatimAddressFields? fields) {
+    if (!mounted) return;
+
+    final message = fields == null || !fields.hasAnyData
+        ? 'تم تحديد الموقع، لكن لم نتمكن من جلب تفاصيل العنوان. يرجى إدخال البيانات يدويًا.'
+        : (fields.street ?? '').trim().isEmpty ||
+              (fields.neighborhood ?? '').trim().isEmpty
+        ? 'تم تعبئة بيانات العنوان المتاحة من الخريطة. يرجى إكمال الحقول الناقصة يدويًا.'
+        : 'تم تعبئة بيانات العنوان المتاحة من الخريطة، ويمكنك تعديلها قبل الحفظ.';
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool _validateLocationBeforeSubmit() {
@@ -271,6 +318,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: const Color(0xffF9FAFB),
         body: SafeArea(
           child: Column(
@@ -281,7 +329,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               const SizedBox(height: 20),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 24),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    20,
+                    0,
+                    20,
+                    24 + MediaQuery.of(context).viewInsets.bottom,
+                  ),
                   child: Form(
                     key: _formKey,
                     child: NumberedSectionCard(
@@ -345,6 +400,18 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                 fontSize: 12,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            TextButton.icon(
+                              onPressed: _isResolvingMap
+                                  ? null
+                                  : () => _reverseGeocodeSelectedLocation(
+                                        forceFill: true,
+                                      ),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text(
+                                'تحديث بيانات العنوان من الخريطة',
+                              ),
+                            ),
                           ],
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -352,6 +419,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _neighborhoodController,
                             validator: _requiredValidator,
+                            onChanged: (_) => _neighborhoodEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -359,11 +427,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _streetController,
                             validator: _requiredValidator,
+                            onChanged: (_) => _streetEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'اسم البناء',
                             controller: _buildingController,
+                            onChanged: (_) => _buildingEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -379,11 +449,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _cityController,
                             validator: _requiredValidator,
+                            onChanged: (_) => _cityEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'تفاصيل أخرى',
                             controller: _directionsController,
+                            onChanged: (_) => _directionsEdited = true,
                           ),
                           const SizedBox(height: 8),
                           SwitchListTile(
@@ -399,8 +471,15 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 20),
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  20,
+                  8,
+                  20,
+                  20 + MediaQuery.of(context).viewInsets.bottom,
+                ),
                 child: BlocBuilder<ProfileBloc, ProfileState>(
                   bloc: widget.params.bloc,
                   builder: (context, state) {
@@ -422,8 +501,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                       return;
                                     }
 
-                                    final phoneError =
-                                        await _phoneFieldKey.currentState?.validate();
+                                    final phoneError = await _phoneFieldKey
+                                        .currentState
+                                        ?.validate();
                                     if (!context.mounted) return;
                                     if (phoneError != null) {
                                       AppToast.showToast(
@@ -492,20 +572,18 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                               .text
                                               .trim(),
                                           street: _streetController.text.trim(),
-                                          building:
-                                              _buildingController.text
+                                          building: _buildingController.text
                                                   .trim()
                                                   .isEmpty
                                               ? null
                                               : _buildingController.text.trim(),
                                           floor: _floorController.text.trim(),
-                                          directions:
-                                              _directionsController.text
+                                          directions: _directionsController.text
                                                   .trim()
                                                   .isEmpty
                                               ? null
                                               : _directionsController.text
-                                                    .trim(),
+                                                  .trim(),
                                           isDefault: _isDefault,
                                           latitude: _latitude!,
                                           longitude: _longitude!,
