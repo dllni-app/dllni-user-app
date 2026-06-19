@@ -7,6 +7,7 @@ import 'package:dllni_user_app/features/auth/data/models/login_response_model.da
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
+import 'package:dllni_user_app/features/auth/view/screens/login_help_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
 import 'package:flutter/material.dart';
@@ -103,6 +104,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     bloc.add(
       LoginSubmittedEvent(phone: phone, password: _passwordController.text),
+    );
+  }
+
+  void _openLoginHelp() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LoginHelpScreen()),
     );
   }
 
@@ -228,6 +235,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: _iconGray,
                             size: 22,
                           ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton(
+                        onPressed: loading ? null : _openLoginHelp,
+                        child: AppText.bodySmall(
+                          'استعادة الحساب',
+                          color: context.secondary,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
