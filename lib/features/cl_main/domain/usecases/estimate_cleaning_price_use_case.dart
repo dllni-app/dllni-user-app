@@ -32,7 +32,6 @@ class EstimateCleaningPriceParams with Params {
   final double? addressLatitude;
   final double? addressLongitude;
   final int? preferredWorkerId;
-  final List<int>? serviceIds;
   final String? eventType;
   final int? guestCount;
   final String? venueType;
@@ -56,7 +55,6 @@ class EstimateCleaningPriceParams with Params {
     required this.addressLatitude,
     required this.addressLongitude,
     this.preferredWorkerId,
-    this.serviceIds,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.workerRoomAssignments,
@@ -89,15 +87,9 @@ class EstimateCleaningPriceParams with Params {
        balconies = null,
        livingRoomSize = null,
        roomSizeBreakdown = null,
-       cleaningType = null,
-       serviceIds = null;
+       cleaningType = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
-
-  List<int> _sanitizeServiceIds() {
-    final source = serviceIds ?? const <int>[];
-    return source.where((id) => id > 0).toSet().toList(growable: false);
-  }
 
   int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
 
@@ -141,12 +133,6 @@ class EstimateCleaningPriceParams with Params {
       'assignmentMode': assignmentMode.apiValue,
       if (preferredWorkerId != null && assignmentMode == CleaningAssignmentMode.preferredWorker) 'preferredWorkerId': preferredWorkerId,
     };
-    if (!_isEventAssistance) {
-      final cleanServiceIds = _sanitizeServiceIds();
-      if (cleanServiceIds.isNotEmpty) {
-        body['serviceIds'] = cleanServiceIds;
-      }
-    }
     final resolvedWorkers = _resolvedNumberOfWorkers;
     if (resolvedWorkers != null && resolvedWorkers > 0) {
       body['numberOfWorkers'] = resolvedWorkers;
