@@ -7,6 +7,7 @@ import 'package:dllni_user_app/features/auth/data/models/login_response_model.da
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
+import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -115,6 +116,26 @@ class _LoginScreenState extends State<LoginScreen> {
             curr.loginStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.loginStatus == BlocStatus.failed) {
+            final error = state.errorMessage ?? '';
+            if (error.contains('PHONE_VERIFICATION_REQUIRED')) {
+              final phone = formatPhoneForApi(_phone);
+              if (phone != null && context.mounted) {
+                AppToast.showToast(
+                  context: context,
+                  message: 'يرجى تأكيد رقم الهاتف للمتابعة',
+                  type: ToastificationType.info,
+                );
+                context.pushRoute(
+                  '/verify-account',
+                  arguments: VerifyAccountRouteArgs(
+                    phone: phone,
+                    message: 'تم إرسال رمز التحقق إلى رقم الهاتف.',
+                  ),
+                );
+              }
+              return;
+            }
+
             AppToast.showToast(
               context: context,
               message: state.errorMessage ?? 'فشل تسجيل الدخول',
