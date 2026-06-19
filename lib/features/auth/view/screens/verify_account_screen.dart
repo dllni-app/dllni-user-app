@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/features/auth/domain/repository/auth_repo.dart';
+import 'package:dllni_user_app/features/auth/domain/usecases/auth_phone_params.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
@@ -45,6 +47,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
 
   Timer? _resendTimer;
   int _resendSecondsLeft = 0;
+  bool _resendLoading = false;
 
   bool get _canResend => _resendSecondsLeft == 0;
 
@@ -104,15 +107,37 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     );
   }
 
-  void _handleResendPressed() {
-    if (!_canResend) return;
+  Future<void> _handleResendPressed() async {
+    if (!_canResend || _resendLoading) return;
 
-    AppToast.showToast(
-      context: context,
-      message: 'تم استلام طلبك بنجاح',
-      type: ToastificationType.info,
+    setState(() => _resendLoading = true);
+    final response = await getIt<AuthRepo>().resendAccountCode(
+      AuthPhoneParams(phone: widget.args.phone),
     );
 
+    if (!mounted) return;
+    setState(() => _resendLoading = false);
+
+    response.fold(
+      (failure) {
+        AppToast.showToast(
+          context: context,
+          message: authFlowMessage(failure.message, fallback: 'تعذر إرسال رمز التحقق'),
+          type: ToastificationType.error,
+        );
+      },
+      (result) {
+        AppToast.showToast(
+          context: context,
+          message: result.message ?? 'تم استلام طلبك بنجاح',
+          type: ToastificationType.info,
+        );
+        _startResendCooldown();
+      },
+    );
+  }
+
+  void _startResendCooldown() {
     setState(() => _resendSecondsLeft = _resendCooldownSeconds);
     _resendTimer?.cancel();
     _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -145,7 +170,10 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
           if (state.verifyAccountStatus == BlocStatus.failed) {
             AppToast.showToast(
               context: context,
-              message: state.verifyAccountErrorMessage ?? 'فشل التحقق من الحساب',
+              message: authFlowMessage(
+                state.verifyAccountErrorMessage,
+                fallback: 'فشل التحقق من الحساب',
+              ),
               type: ToastificationType.error,
             );
             return;
@@ -172,7 +200,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
         child: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             final loading = state.verifyAccountStatus == BlocStatus.loading;
-            final resendEnabled = !loading && _canResend;
+            final resendEnabled = !loading && _canResend && !_resendLoading;
             return AuthScreenChrome(
               title: 'تفعيل الحساب',
               cardChild: Column(
@@ -246,9 +274,11 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
                     child: TextButton(
                       onPressed: resendEnabled ? _handleResendPressed : null,
                       child: AppText.bodySmall(
-                        _canResend
-                            ? 'لم تستلم الرمز؟ إعادة الإرسال'
-                            : 'يمكنك إعادة الإرسال بعد $_resendSecondsLeft ثانية',
+                        _resendLoading
+                            ? 'جاري الإرسال...'
+                            : _canResend
+                                ? 'لم تستلم الرمز؟ إعادة الإرسال'
+                                : 'يمكنك إعادة الإرسال بعد $_resendSecondsLeft ثانية',
                         color: resendEnabled ? context.secondary : _iconGray,
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
