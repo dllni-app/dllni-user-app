@@ -19,6 +19,7 @@ final GetIt getIt = GetIt.instance;
 )
 Future<GetIt> configureInjection() async {
   await SharedPreferencesHelper.init();
+  await SharedPreferencesHelper.init();
   $initGetIt(getIt);
   if (!getIt.isRegistered<PusherManager>()) {
     getIt.registerLazySingleton<PusherManager>(() => PusherManager());

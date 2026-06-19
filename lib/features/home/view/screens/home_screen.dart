@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
         ),
       child: Column(
         children: [
-          HomeAppBar(),
+          HomeAppBar(isHome: true),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsetsDirectional.symmetric(horizontal: 20),

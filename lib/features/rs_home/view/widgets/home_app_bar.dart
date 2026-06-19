@@ -28,7 +28,8 @@ LoggedInUserModel? _readLoggedInUser() {
 }
 
 class HomeAppBar extends StatelessWidget {
-  HomeAppBar({super.key});
+  final bool isHome;
+  HomeAppBar({super.key,this.isHome=false});
 
   final LoggedInUserModel _personalDetailsParams =
       _readLoggedInUser() ?? LoggedInUserModel();
@@ -82,6 +83,7 @@ class HomeAppBar extends StatelessWidget {
                   return _AppBarAction(
                     badgeCount: cartCount,
                     icon: FontAwesomeIcons.cartShopping,
+                    isHome: isHome,
                     onTap: () {
                       context.pushRoute(
                         "/cart",
@@ -95,6 +97,7 @@ class HomeAppBar extends StatelessWidget {
               _AppBarAction(
                 hasNew: true,
                 icon: FontAwesomeIcons.bell,
+                isHome: isHome,
                 onTap: () {
                   context.pushRoute("/notifications");
                 },
@@ -115,9 +118,11 @@ class _AppBarAction extends StatelessWidget {
     this.badgeCount,
     required this.icon,
     required this.onTap,
+    required this.isHome,
   });
 
   final bool hasNew;
+  final bool isHome;
   final int? badgeCount;
   final FaIconData icon;
   final void Function() onTap;
@@ -141,7 +146,7 @@ class _AppBarAction extends StatelessWidget {
             ),
             child: FaIcon(icon, size: 20, color: Color(0xFF1A1A1A)),
           ),
-          if (badgeCount != null)
+          if (badgeCount != null && isHome==false)
             Positioned(
               top: 2,
               right: 0,

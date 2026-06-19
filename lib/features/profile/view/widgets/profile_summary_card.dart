@@ -81,13 +81,14 @@ class ProfileSummaryCard extends StatelessWidget {
             color: context.primary,
             textAlign: TextAlign.center,
           ),
-          if (params.email != null && params.email!.isNotEmpty) ...[
+          if (params.phone != null && params.phone!.isNotEmpty) ...[
             const SizedBox(height: 6),
-            AppText.bodySmall(
-              params.email!,
-              color: _subtitleGrey,
+
+            PhoneNumberText(
+              phone:  params.phone!,
               textAlign: TextAlign.center,
-            ),
+
+            )
           ],
           const SizedBox(height: 20),
           Material(
@@ -118,6 +119,37 @@ class ProfileSummaryCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class PhoneNumberText extends StatelessWidget {
+  final String phone;
+  final TextStyle? style;
+  final TextAlign textAlign;
+  final int? maxLines;
+  final TextOverflow? overflow;
+
+  const PhoneNumberText({
+    super.key,
+    required this.phone,
+    this.style,
+    this.textAlign = TextAlign.start,
+    this.maxLines = 1,
+    this.overflow,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Text(
+        '\u200E$phone',
+        style: style,
+        textAlign: textAlign,
+        maxLines: maxLines,
+        overflow: overflow,
       ),
     );
   }

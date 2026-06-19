@@ -88,28 +88,32 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                                 ),
                               ),
                         const SizedBox(height: 12),
-                        Row(
-                          spacing: 10,
-                          children: [
-                            Expanded(child: AppText.bodyMedium(widget.title, fontWeight: FontWeight.bold, maxLines: 1, scrollText: true)),
-                            if (widget.offer?.badgeText != null)
-                              Container(
-                                decoration: BoxDecoration(color: context.primaryContainer.withAlpha(51), borderRadius: BorderRadius.circular(16)),
-                                padding: EdgeInsetsDirectional.symmetric(horizontal: 4),
-                                child: AppText.labelMedium(widget.offer!.badgeText!, color: context.primaryContainer, fontWeight: FontWeight.bold,),
-                              ),
-                          ],
+                        Expanded(
+                          child: Row(
+                            spacing: 10,
+                            children: [
+                              Expanded(child: AppText.bodyMedium(widget.title, fontWeight: FontWeight.bold, maxLines: 1, scrollText: true)),
+                              if (widget.offer?.badgeText != null)
+                                Container(
+                                  decoration: BoxDecoration(color: context.primaryContainer.withAlpha(51), borderRadius: BorderRadius.circular(16)),
+                                  padding: EdgeInsetsDirectional.symmetric(horizontal: 4),
+                                  child: AppText.labelMedium(widget.offer!.badgeText!, color: context.primaryContainer, fontWeight: FontWeight.bold,),
+                                ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 4),
-                        AppText.bodyMedium(
-                          widget.restaurant,
-                          fontWeight: FontWeight.w400,
-                          maxLines: 1,
-                          scrollText: true,
-                          color: const Color(0xff6B7280),
+                        Expanded(
+                          child: AppText.bodyMedium(
+                            widget.restaurant,
+                            fontWeight: FontWeight.w400,
+                            maxLines: 1,
+                            scrollText: true,
+                            color: const Color(0xff6B7280),
+                          ),
                         ),
                         const SizedBox(height: 6),
-                        AppText.bodyMedium(widget.price, fontWeight: FontWeight.bold, maxLines: 1, color: const Color(0xff1E2A78)),
+                        Expanded(child: AppText.bodyMedium(widget.price, fontWeight: FontWeight.bold, maxLines: 1, color: const Color(0xff1E2A78))),
                       ],
                     ),
                   ),

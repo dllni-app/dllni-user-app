@@ -1,21 +1,53 @@
 
 import 'dart:convert';
 
+import '../../features/auth/data/models/login_response_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SharedPreferencesHelper {
+
+class SharedUserHelper {
   static SharedPreferences? sharedPreferences;
 
   static Future<void> init() async {
     sharedPreferences = await SharedPreferences.getInstance();
   }
 
+  // =========================
+  // 🔥 USER MODEL CACHE
+  // =========================
+
+  static const String _userKey = 'user';
+
+  static Future<bool?> saveUser(LoggedInUserModel user) async {
+    if (sharedPreferences == null) return false;
+
+    return await sharedPreferences!.setString(
+      _userKey,
+      jsonEncode(user.toJson()),
+    );
+  }
+
+  static LoggedInUserModel? getUser() {
+    final raw = sharedPreferences?.getString(_userKey);
+
+    if (raw == null) return null;
+
+    try {
+      final json = jsonDecode(raw);
+      return LoggedInUserModel.fromJson(Map<String, dynamic>.from(json));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // =========================
+  // 🔥 GENERIC METHODS
+  // =========================
 
   static Future<dynamic> saveData({
     required String key,
     required dynamic value,
-  })
-  async {
+  }) async {
     if (value is String) {
       return await sharedPreferences?.setString(key, value);
     }
