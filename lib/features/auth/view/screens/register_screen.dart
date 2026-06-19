@@ -81,6 +81,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
               if (context.mounted) context.pushRoute('/login');
               return;
             }
+            if (error.contains('VERIFICATION_REQUIRED')) {
+              final phone = formatPhoneForApi(_phone);
+              if (phone != null && context.mounted) {
+                AppToast.showToast(context: context, message: 'تم إرسال رمز التحقق إلى رقم الهاتف.', type: ToastificationType.info);
+                context.pushRoute(
+                  '/verify-account',
+                  arguments: VerifyAccountRouteArgs(
+                    phone: phone,
+                    message: 'تم إرسال رمز التحقق إلى رقم الهاتف.',
+                  ),
+                );
+              }
+              return;
+            }
             AppToast.showToast(context: context, message: state.registerErrorMessage ?? 'فشل إنشاء الحساب', type: ToastificationType.error);
             return;
           }
