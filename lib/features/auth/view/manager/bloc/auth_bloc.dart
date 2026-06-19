@@ -18,6 +18,19 @@ part 'auth_event.dart';
 
 part 'auth_state.dart';
 
+const String authFlowErrorPrefix = 'AUTH_FLOW::';
+
+String encodeAuthFlowFailure(Failure failure) {
+  final code = failure.code;
+  if (code == null || code.isEmpty) return failure.message;
+
+  return '$authFlowErrorPrefix${jsonEncode({
+        'code': code,
+        'message': failure.message,
+        'data': failure.data ?? <String, dynamic>{},
+      })}';
+}
+
 @injectable
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LoginUseCase loginUseCase;
@@ -79,7 +92,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(
           AuthState(
             loginStatus: BlocStatus.failed,
-            errorMessage: failure.message,
+            errorMessage: encodeAuthFlowFailure(failure),
             loginResult: null,
             registerStatus: state.registerStatus,
             registerErrorMessage: state.registerErrorMessage,
@@ -142,7 +155,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           errorMessage: state.errorMessage,
           loginResult: state.loginResult,
           registerStatus: BlocStatus.failed,
-          registerErrorMessage: failure.message,
+          registerErrorMessage: encodeAuthFlowFailure(failure),
           registerResult: null,
           verifyAccountStatus: state.verifyAccountStatus,
           verifyAccountErrorMessage: state.verifyAccountErrorMessage,
@@ -202,7 +215,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             registerErrorMessage: state.registerErrorMessage,
             registerResult: state.registerResult,
             verifyAccountStatus: BlocStatus.failed,
-            verifyAccountErrorMessage: failure.message,
+            verifyAccountErrorMessage: encodeAuthFlowFailure(failure),
             verifyAccountResult: null,
           ),
         );
