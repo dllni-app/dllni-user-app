@@ -11,7 +11,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../auth/data/models/login_response_model.dart';
-import 'personal_details_screen.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
 import '../widgets/section_card.dart';
@@ -219,6 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       await getIt<CleaningBookingPusherService>()
                           .disposeAllForSession();
                       await SharedPreferencesHelper.clearData();
+                      UserSessionStore.reload();
                       if (!context.mounted) return;
                       context.pushRouteAndRemoveUntil('/login');
                     },

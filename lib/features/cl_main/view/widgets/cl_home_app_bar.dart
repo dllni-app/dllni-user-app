@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -30,7 +31,7 @@ class ClHomeAppBar extends StatelessWidget {
                   spacing: 2,
                   children: [
                     Text(
-                      "مرحباً بعودتك 👋",
+                      'مرحباً بعودتك 👋',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 12,
@@ -38,14 +39,19 @@ class ClHomeAppBar extends StatelessWidget {
                         height: 16 / 12,
                       ),
                     ),
-                    Text(
-                      "أحمد محمد",
-                      style: TextStyle(
-                        color: Color(0xFF1E2A78),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        height: 28 / 18,
-                      ),
+                    ValueListenableBuilder(
+                      valueListenable: UserSessionStore.userNotifier,
+                      builder: (context, user, _) {
+                        return Text(
+                          UserSessionStore.displayName(user),
+                          style: TextStyle(
+                            color: Color(0xFF1E2A78),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            height: 28 / 18,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -55,7 +61,7 @@ class ClHomeAppBar extends StatelessWidget {
                 icon: FontAwesomeIcons.cartShopping,
                 onTap: () {
                   context.pushRoute(
-                    "/cart",
+                    '/cart',
                     arguments: SmCartScreenParams(initialSectionIndex: 2),
                   );
                 },
@@ -65,7 +71,7 @@ class ClHomeAppBar extends StatelessWidget {
                 hasNew: true,
                 icon: FontAwesomeIcons.bell,
                 onTap: () {
-                  context.pushRoute("/notifications");
+                  context.pushRoute('/notifications');
                 },
               ),
             ],

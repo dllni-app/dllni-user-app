@@ -48,11 +48,15 @@ class AuthRepoImpl with HandlingException implements AuthRepo {
 
   @override
   DataResponse<AuthActionResponseModel> requestAccountRecovery(AuthPhoneParams params) {
-    throw UnimplementedError();
+    return wrapHandlingException(
+      tryCall: () => authRemoteDataSource.requestAccountRecovery(params),
+    );
   }
 
   @override
   DataResponse<AuthActionResponseModel> confirmAccountRecovery(ResetPasswordConfirmParams params) {
-    throw UnimplementedError();
+    return wrapHandlingException(
+      tryCall: () => authRemoteDataSource.confirmAccountRecovery(params),
+    );
   }
 }

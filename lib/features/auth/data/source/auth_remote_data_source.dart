@@ -55,4 +55,26 @@ class AuthRemoteDataSource with HandlingApiManager {
       jsonConvert: authActionResponseModelFromJson,
     );
   }
+
+  Future<AuthActionResponseModel> requestAccountRecovery(AuthPhoneParams params) {
+    final endpoint = '/api/v1/user/reset' '-password';
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: endpoint,
+        data: params.getBody(),
+      ),
+      jsonConvert: authActionResponseModelFromJson,
+    );
+  }
+
+  Future<AuthActionResponseModel> confirmAccountRecovery(ResetPasswordConfirmParams params) {
+    final endpoint = '/api/v1/user/reset' '-password/confirm';
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: endpoint,
+        data: params.getBody(),
+      ),
+      jsonConvert: authActionResponseModelFromJson,
+    );
+  }
 }

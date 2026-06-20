@@ -5,6 +5,7 @@ import 'package:dllni_user_app/features/profile/domain/models/address_list_item.
 
 import '../../../data/models/cleaning_orders_api_models.dart';
 import '../../../data/models/orders_api_models.dart';
+import '../../helpers/cleaning_lifecycle_error_mapper.dart';
 import '../../helpers/cleaning_order_polling_equality.dart';
 import '../../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../../domain/usecases/check_restaurant_coupon_use_case.dart';
@@ -507,14 +508,11 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
           emit(
             state.copyWith(
               cancelCleaningStatus: BlocStatus.failed,
-              cancelCleaningErrorMessage: failure.message,
+              cancelCleaningErrorMessage:
+                  CleaningLifecycleErrorMapper.mapCancelFailure(failure),
             ),
           ),
           (_) {
-            print('sssss');
-            print('sssss');
-            print('sssss');
-            print('sssss');
             final List<OrderResourceModel> list = List.from(state.orders.list)
               ..removeWhere((e) => e.id == event.orderId);
         emit(

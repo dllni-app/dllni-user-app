@@ -122,6 +122,42 @@ class CleaningRealtimeContract {
     return <String, dynamic>{...nested, ...payload};
   }
 
+  static String? extractDecision(Map<String, dynamic> payload) {
+    final unwrapped = unwrapPayload(payload);
+    final raw = unwrapped['decision'] ??
+        unwrapped['customerDecision'] ??
+        unwrapped['customer_decision'];
+    final text = raw?.toString().trim().toLowerCase();
+    return text == null || text.isEmpty ? null : text;
+  }
+
+  static String? extractTrackingStatus(Map<String, dynamic> payload) {
+    final unwrapped = unwrapPayload(payload);
+    final trackingMap = _asStringMap(unwrapped['tracking']);
+    final bookingMap = _asStringMap(unwrapped['booking']);
+    final cleaningOrderMap = _asStringMap(
+      unwrapped['cleaningOrder'] ??
+          unwrapped['cleaning_order'] ??
+          unwrapped['cleaningBooking'] ??
+          unwrapped['cleaning_booking'],
+    );
+    final raw = trackingMap['status'] ??
+        bookingMap['status'] ??
+        cleaningOrderMap['status'] ??
+        unwrapped['status'];
+    if (raw == null) return null;
+    final normalized = raw.toString().trim().toLowerCase();
+    return normalized.isEmpty ? null : normalized;
+  }
+
+  static String? resolveStatusFromPayload(Map<String, dynamic> payload) {
+    final explicitStatus = extractTrackingStatus(payload);
+    if (explicitStatus != null && explicitStatus.isNotEmpty) {
+      return explicitStatus;
+    }
+    return statusFromDecision(extractDecision(payload));
+  }
+
   static int? extractBookingId(Map<String, dynamic> payload) {
     final unwrapped = unwrapPayload(payload);
     final dataMap = _asStringMap(unwrapped['data']);

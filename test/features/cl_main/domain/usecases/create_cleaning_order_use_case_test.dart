@@ -103,6 +103,33 @@ void main() {
     expect(details['cleaning_mode'], 'regular');
   });
 
+  test('getBody sends cleaning_services as sanitized strings', () {
+    final params = CreateCleaningOrderParams(
+      propertyType: 'apartment',
+      bedrooms: 1,
+      rooms: 1,
+      bathrooms: 1,
+      livingRoomSize: 'small',
+      address: 'Address',
+      locationName: 'Home',
+      scheduledDate: '2026-05-30',
+      scheduledTime: '10:00',
+      addressLatitude: 33.5,
+      addressLongitude: 36.3,
+      cleaningServices: const [
+        ' تنظيف النوافذ ',
+        '',
+        'تنظيف المطبخ',
+        'تنظيف النوافذ',
+      ],
+    );
+
+    final body = params.getBody();
+
+    expect(body['cleaning_services'], ['تنظيف النوافذ', 'تنظيف المطبخ']);
+    expect(body.containsKey('serviceIds'), isFalse);
+  });
+
   test('getBody omits balconies for event assistance flow', () {
     final params = CreateCleaningOrderParams.eventAssistance(
       scheduledDate: '2026-05-30',
@@ -147,6 +174,7 @@ void main() {
     expect(body['preferredWorkerId'], 77);
     expect(body['numberOfWorkers'], 1);
     expect(body.containsKey('serviceIds'), isFalse);
+    expect(body.containsKey('cleaning_services'), isFalse);
     expect(body.containsKey('workerRoomAssignments'), isFalse);
   });
 
@@ -175,6 +203,7 @@ void main() {
     expect(body['assignmentMode'], 'open_count');
     expect(body['numberOfWorkers'], 2);
     expect(body.containsKey('serviceIds'), isFalse);
+    expect(body.containsKey('cleaning_services'), isFalse);
     expect(details.containsKey('room_size_breakdown'), isFalse);
     expect(details.containsKey('cleaning_mode'), isFalse);
     expect(body.containsKey('workerRoomAssignments'), isFalse);
@@ -244,5 +273,6 @@ void main() {
     expect(createBody['numberOfWorkers'], estimateBody['numberOfWorkers']);
     expect(createBody['cleaningType'], isNull);
     expect(estimateBody['cleaningType'], isNull);
+    expect(estimateBody.containsKey('serviceIds'), isFalse);
   });
 }

@@ -2,11 +2,12 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
-import 'package:dllni_user_app/core/session/user_session_prefs.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
+import 'package:dllni_user_app/features/auth/view/screens/login_help_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
 import 'package:flutter/material.dart';
@@ -42,29 +43,10 @@ Future<void> persistLoginSessionData(LoginResponseModel result) async {
   } else {
     await SharedPreferencesHelper.removeData(key: UserSessionKeys.customerId);
   }
-  await UserSessionPrefs.saveUserProfile(
-    name: result.data?.name,
-    email: result.data?.email,
-    phone: result.data?.phone,
-    avatarUrl: _resolveLoginAvatarUrl(result.data),
-    phoneVerifiedAt: result.data?.phoneVerifiedAt,
-  );
-}
-
-String? _resolveLoginAvatarUrl(LoggedInUserModel? user) {
-  if (user == null) return null;
-  final primary = user.primaryImage;
-  final primaryUrl = (primary?.url ?? primary?.thumbnailUrl)?.trim();
-  if (primaryUrl != null && primaryUrl.isNotEmpty) {
-    return primaryUrl;
+  final user = result.data;
+  if (user != null) {
+    await UserSessionStore.writeAndMirror(user);
   }
-  for (final image in user.images) {
-    final imageUrl = (image.url ?? image.thumbnailUrl)?.trim();
-    if (imageUrl != null && imageUrl.isNotEmpty) {
-      return imageUrl;
-    }
-  }
-  return null;
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -103,6 +85,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     bloc.add(
       LoginSubmittedEvent(phone: phone, password: _passwordController.text),
+    );
+  }
+
+  void _openLoginHelp() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LoginHelpScreen()),
     );
   }
 
@@ -228,6 +216,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: _iconGray,
                             size: 22,
                           ),
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton(
+                        onPressed: loading ? null : _openLoginHelp,
+                        child: AppText.bodySmall(
+                          'استعادة الحساب',
+                          color: context.secondary,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),

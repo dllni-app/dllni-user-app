@@ -78,14 +78,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _saveLoggedInUser(LoggedInUserModel? user) async {
     if (user == null) {
-      await SharedPreferencesHelper.removeData(key: UserSessionKeys.loggedInUser);
+      await UserSessionStore.clear();
       return;
     }
 
-    await SharedPreferencesHelper.saveData(
-      key: UserSessionKeys.loggedInUser,
-      value: jsonEncode(user.toJson()),
-    );
+    await UserSessionStore.write(user);
   }
 
   Future<void> _onLoginSubmitted(

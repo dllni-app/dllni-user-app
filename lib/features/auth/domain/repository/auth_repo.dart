@@ -16,4 +16,8 @@ abstract class AuthRepo {
   DataResponse<LoginResponseModel> verifyAccount(VerifyAccountParams params);
 
   DataResponse<AuthActionResponseModel> resendAccountCode(AuthPhoneParams params);
+
+  DataResponse<AuthActionResponseModel> requestAccountRecovery(AuthPhoneParams params);
+
+  DataResponse<AuthActionResponseModel> confirmAccountRecovery(ResetPasswordConfirmParams params);
 }

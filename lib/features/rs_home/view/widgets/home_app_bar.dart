@@ -1,38 +1,13 @@
-import 'dart:convert';
-
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
-import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dllni_user_app/core/session/user_session_keys.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../auth/data/models/login_response_model.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
-
-LoggedInUserModel? _readLoggedInUser() {
-  final raw = SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser);
-  if (raw == null) return null;
-
-  try {
-    final decoded = jsonDecode('$raw');
-    if (decoded is! Map) return null;
-
-    return LoggedInUserModel.fromJson(
-      Map<String, dynamic>.from(decoded),
-    );
-  } catch (_) {
-    return null;
-  }
-}
 
 class HomeAppBar extends StatelessWidget {
   final bool isHome;
-  HomeAppBar({super.key,this.isHome=false});
-
-  final LoggedInUserModel _personalDetailsParams =
-      _readLoggedInUser() ?? LoggedInUserModel();
+  const HomeAppBar({super.key, this.isHome = false});
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +32,7 @@ class HomeAppBar extends StatelessWidget {
                   spacing: 2,
                   children: [
                     Text(
-                      "مرحباً بعودتك 👋",
+                      'مرحباً بعودتك 👋',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 12,
@@ -65,31 +40,29 @@ class HomeAppBar extends StatelessWidget {
                         height: 16 / 12,
                       ),
                     ),
-                    Text(
-                      _personalDetailsParams.name ?? 'اسم المستخدم',
-                      style: TextStyle(
-                        color: Color(0xFF1E2A78),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        height: 28 / 18,
-                      ),
+                    ValueListenableBuilder(
+                      valueListenable: UserSessionStore.userNotifier,
+                      builder: (context, user, _) {
+                        return Text(
+                          UserSessionStore.displayName(user),
+                          style: TextStyle(
+                            color: Color(0xFF1E2A78),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            height: 28 / 18,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
-              BlocBuilder<CartProductsCountCubit, int>(
-                bloc: getIt<CartProductsCountCubit>(),
-                builder: (context, cartCount) {
-                  return _AppBarAction(
-                    badgeCount: cartCount,
-                    icon: FontAwesomeIcons.cartShopping,
-                    isHome: isHome,
-                    onTap: () {
-                      context.pushRoute(
-                        "/cart",
-                        arguments: SmCartScreenParams(initialSectionIndex: 1),
-                      );
-                    },
+              _AppBarAction(
+                icon: FontAwesomeIcons.cartShopping,
+                onTap: () {
+                  context.pushRoute(
+                    '/cart',
+                    arguments: SmCartScreenParams(initialSectionIndex: 1),
                   );
                 },
               ),
@@ -97,15 +70,13 @@ class HomeAppBar extends StatelessWidget {
               _AppBarAction(
                 hasNew: true,
                 icon: FontAwesomeIcons.bell,
-                isHome: isHome,
                 onTap: () {
-                  context.pushRoute("/notifications");
+                  context.pushRoute('/notifications');
                 },
-              )
+              ),
             ],
           ),
           SizedBox(height: 16),
-          // SearchFieldWithVoice(onSearch: (search) {}, onVoiceTap: () {}),
         ],
       ),
     );
@@ -115,15 +86,11 @@ class HomeAppBar extends StatelessWidget {
 class _AppBarAction extends StatelessWidget {
   const _AppBarAction({
     this.hasNew = false,
-    this.badgeCount,
     required this.icon,
     required this.onTap,
-    required this.isHome,
   });
 
   final bool hasNew;
-  final bool isHome;
-  final int? badgeCount;
   final FaIconData icon;
   final void Function() onTap;
 
@@ -146,24 +113,7 @@ class _AppBarAction extends StatelessWidget {
             ),
             child: FaIcon(icon, size: 20, color: Color(0xFF1A1A1A)),
           ),
-          if (badgeCount != null && isHome==false)
-            Positioned(
-              top: 2,
-              right: 0,
-              child: CircleAvatar(
-                radius: 9,
-                backgroundColor: const Color(0xFFFF7A00),
-                child: Text(
-                  '$badgeCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            )
-          else if (hasNew)
+          if (hasNew)
             Positioned(
               top: 10,
               right: 8,
