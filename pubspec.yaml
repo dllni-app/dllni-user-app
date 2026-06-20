@@ -53,6 +53,8 @@ dependencies:
   intl_phone_number_input: ^0.7.5
   flutter_launcher_icons: ^0.14.4
   shared_preferences:
+  in_app_update: ^4.2.5
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:

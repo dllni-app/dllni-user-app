@@ -13,6 +13,7 @@ import 'core/di/injection.dart';
 import 'core/notifications/fcm_token_registrar.dart';
 import 'core/session/session_expired_handler.dart';
 import 'core/utils/app_date_time_locale.dart';
+import 'core/utils/update_service.dart';
 
 Future<void> main() async {
   Intl.defaultLocale = AppDateTimeLocale.languageCode;
@@ -44,5 +45,6 @@ Future<void> main() async {
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(getIt<DeepLinkService>().init(navigatorKey: navigatorKey));
+    unawaited(UpdateService.checkOnStartup(navigatorKey: navigatorKey));
   });
 }
