@@ -6,6 +6,8 @@ class CleaningLifecycleErrorMapper {
   static const int _statusForbidden = 403;
   static const int _statusUnprocessable = 422;
   static const int _statusTooManyRequests = 429;
+  static const String _genericFailureMessage =
+      'تعذر تنفيذ الإجراء حالياً. تحقق من حالة الطلب وحاول مرة أخرى.';
 
   static String mapVerificationFailure(Failure failure) {
     final statusCode = failure.statusCode;
@@ -56,6 +58,24 @@ class CleaningLifecycleErrorMapper {
     return normalized.contains('422') || normalized.contains('verification');
   }
 
+  static String mapCancelFailure(Failure failure) {
+    final statusCode = failure.statusCode;
+    final normalized = failure.message.trim().toLowerCase();
+    if (statusCode == _statusForbidden) {
+      return 'لا تملك صلاحية إلغاء هذا الطلب.';
+    }
+    if (statusCode == _statusTooManyRequests) {
+      return 'الطلبات كثيرة حالياً، حاول بعد قليل.';
+    }
+    if (statusCode == _statusUnprocessable ||
+        normalized.contains('cannot be cancelled') ||
+        normalized.contains('current status') ||
+        normalized.contains('cancelled in current status')) {
+      return 'لا يمكن إلغاء الطلب في الحالة الحالية.';
+    }
+    return _fallbackFromMessage(failure.message);
+  }
+
   static String mapLifecycleActionFailure(
     Failure failure, {
     String? invalidStateMessage,
@@ -76,6 +96,9 @@ class CleaningLifecycleErrorMapper {
 
   static String _fallbackFromMessage(String message) {
     final normalized = message.toLowerCase();
+    if (_looksLikeTranslationKey(normalized)) {
+      return _genericFailureMessage;
+    }
     if (normalized.contains('too many') || normalized.contains('429')) {
       return 'الطلبات كثيرة حالياً، حاول بعد قليل.';
     }
@@ -85,6 +108,10 @@ class CleaningLifecycleErrorMapper {
         normalized.contains('not allowed')) {
       return 'لا تملك صلاحية تنفيذ هذا الإجراء على الطلب.';
     }
+    if (normalized.contains('cannot be cancelled') ||
+        normalized.contains('current status')) {
+      return 'لا يمكن تنفيذ الإجراء بسبب حالة الطلب الحالية.';
+    }
     if (normalized.contains('verification') ||
         normalized.contains('code') ||
         normalized.contains('422') ||
@@ -92,5 +119,9 @@ class CleaningLifecycleErrorMapper {
       return 'تعذر تنفيذ الإجراء بسبب حالة الطلب الحالية.';
     }
     return message;
+  }
+
+  static bool _looksLikeTranslationKey(String value) {
+    return value.contains('errormessage.') || value.contains('error_message.');
   }
 }
