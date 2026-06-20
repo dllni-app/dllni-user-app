@@ -15,6 +15,14 @@ int? _asInt(dynamic value) {
   return null;
 }
 
+String? _firstString(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final value = _asString(json[key]);
+    if (value != null && value.trim().isNotEmpty) return value;
+  }
+  return null;
+}
+
 LoginResponseModel loginResponseModelFromJson(dynamic json) => LoginResponseModel.fromJson(
       json is Map<String, dynamic> ? json : Map<String, dynamic>.from(json as Map),
     );
@@ -74,18 +82,24 @@ class LoggedInUserModel {
     }
     return LoggedInUserModel(
       id: _asInt(json['id']),
-      name: _asString(json['name']),
+      name: _firstString(json, const <String>[
+        'name',
+        'fullName',
+        'full_name',
+        'displayName',
+        'display_name',
+      ]),
       email: _asString(json['email']),
       phone: _asString(json['phone']),
-      phoneVerifiedAt: _asString(json['phoneVerifiedAt']),
-      moduleType: _asString(json['moduleType']),
-      emailVerifiedAt: _asString(json['emailVerifiedAt']),
+      phoneVerifiedAt: _asString(json['phoneVerifiedAt'] ?? json['phone_verified_at']),
+      moduleType: _asString(json['moduleType'] ?? json['module_type']),
+      emailVerifiedAt: _asString(json['emailVerifiedAt'] ?? json['email_verified_at']),
       primaryImage: json['primaryImage'] != null
           ? UserPrimaryImageModel.fromJson(Map<String, dynamic>.from(json['primaryImage'] as Map))
           : null,
       images: images,
-      createdAt: _asString(json['createdAt']),
-      updatedAt: _asString(json['updatedAt']),
+      createdAt: _asString(json['createdAt'] ?? json['created_at']),
+      updatedAt: _asString(json['updatedAt'] ?? json['updated_at']),
     );
   }
 
@@ -137,15 +151,15 @@ class UserPrimaryImageModel {
     return UserPrimaryImageModel(
       id: _asInt(json['id']),
       name: _asString(json['name']),
-      fileName: _asString(json['fileName']),
+      fileName: _asString(json['fileName'] ?? json['file_name']),
       collection: _asString(json['collection']),
       url: _asString(json['url']),
-      thumbnailUrl: _asString(json['thumbnailUrl']),
+      thumbnailUrl: _asString(json['thumbnailUrl'] ?? json['thumbnail_url']),
       size: _asString(json['size']),
       extension: _asString(json['extension']),
       type: _asString(json['type']),
       caption: _asString(json['caption']),
-      createdAt: _asString(json['createdAt']),
+      createdAt: _asString(json['createdAt'] ?? json['created_at']),
     );
   }
 
