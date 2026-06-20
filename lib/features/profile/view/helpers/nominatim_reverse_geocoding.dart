@@ -50,6 +50,11 @@ class NominatimReverseGeocoding {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/reverse',
+        options: Options(
+          headers: {
+            'Accept-Language': acceptLanguage,
+          },
+        ),
         queryParameters: <String, dynamic>{
           'format': 'jsonv2',
           'lat': latitude,

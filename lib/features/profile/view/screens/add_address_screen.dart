@@ -1,15 +1,18 @@
+import 'dart:convert';
+
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
-import 'package:dllni_user_app/core/helpers/shared_user_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../../core/session/user_session_keys.dart';
+import '../../../auth/data/models/login_response_model.dart';
 import '../../domain/models/address_list_item.dart';
 import '../../domain/services/user_location_service.dart';
 import '../../domain/usecases/create_address_use_case.dart';
@@ -20,19 +23,28 @@ import '../widgets/filled_text_field.dart';
 import '../widgets/numbered_section_card.dart';
 import '../widgets/personal_details_app_bar.dart';
 
-class MyAddressesScreenParams {
-  final ProfileBloc bloc;
-  final AddressListItem? addressItem;
-  final bool selectMode;
+@AutoRoutePage()
+class AddAddressScreen extends StatefulWidget {
+  final MyAddressesScreenParams params;
 
-  MyAddressesScreenParams({
-    required this.bloc,
-    this.addressItem,
-    this.selectMode = false,
-  });
+  const AddAddressScreen({super.key, required this.params});
+
+  @override
+  State<AddAddressScreen> createState() => _AddAddressScreenState();
 }
 
 class CreatedAddressSelectionHint {
+  final String label;
+
+  final String mobile;
+  final String city;
+  final String neighborhood;
+  final String street;
+  final String floor;
+  final double latitude;
+  final double longitude;
+  final String? building;
+  final String? directions;
   const CreatedAddressSelectionHint({
     required this.label,
     required this.mobile,
@@ -45,27 +57,18 @@ class CreatedAddressSelectionHint {
     this.building,
     this.directions,
   });
-
-  final String label;
-  final String mobile;
-  final String city;
-  final String neighborhood;
-  final String street;
-  final String floor;
-  final double latitude;
-  final double longitude;
-  final String? building;
-  final String? directions;
 }
 
-@AutoRoutePage()
-class AddAddressScreen extends StatefulWidget {
-  const AddAddressScreen({super.key, required this.params});
+class MyAddressesScreenParams {
+  final ProfileBloc bloc;
+  final AddressListItem? addressItem;
+  final bool selectMode;
 
-  final MyAddressesScreenParams params;
-
-  @override
-  State<AddAddressScreen> createState() => _AddAddressScreenState();
+  MyAddressesScreenParams({
+    required this.bloc,
+    this.addressItem,
+    this.selectMode = false,
+  });
 }
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
@@ -96,214 +99,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   PhoneNumber? _initialPhone;
   bool _isLoadingPhone = false;
 
-  bool get _isEditMode => widget.params.addressItem != null;
   bool get _hasSelectedLocation => _latitude != null && _longitude != null;
-
-  @override
-  void dispose() {
-    _labelController.dispose();
-    _cityController.dispose();
-    _neighborhoodController.dispose();
-    _streetController.dispose();
-    _buildingController.dispose();
-    _floorController.dispose();
-    _directionsController.dispose();
-    super.dispose();
-  }
-
-  String? _requiredValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'هذا الحقل مطلوب';
-    }
-    return null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final item = widget.params.addressItem;
-    if (item == null) {
-      final authPhone = SharedUserHelper.getUser()?.phone;
-      if ((authPhone ?? '').trim().isNotEmpty) {
-        _isLoadingPhone = true;
-        _loadInitialPhone(authPhone);
-      }
-      return;
-    }
-    _isLoadingPhone = true;
-    _labelController.text = item.label;
-    _loadInitialPhone(item.mobile);
-    _cityController.text = item.city ?? '';
-    _neighborhoodController.text = item.neighborhood ?? '';
-    _streetController.text = item.street ?? '';
-    _buildingController.text = item.building ?? '';
-    _floorController.text = item.floor ?? '';
-    _directionsController.text = item.directions ?? item.landmark ?? '';
-    _isDefault = item.isDefault;
-    _latitude = item.latitude;
-    _longitude = item.longitude;
-    _selectedType = switch (item.type) {
-      AddressType.work => 'العمل',
-      AddressType.family => 'العائلة',
-      AddressType.home => 'المنزل',
-    };
-  }
-
-  Future<void> _loadInitialPhone(String? mobile) async {
-    final parsed = await parseInitialPhone(mobile);
-    if (!mounted) return;
-    setState(() {
-      _initialPhone = parsed;
-      _phone = parsed;
-      _isLoadingPhone = false;
-    });
-  }
-
-  Future<void> _pickAddressFromMap() async {
-    final selected = await Navigator.of(context).push<_AddressMapSelection>(
-      MaterialPageRoute<_AddressMapSelection>(
-        builder: (_) => _AddressMapPickerScreen(
-          initialLatitude: _latitude,
-          initialLongitude: _longitude,
-        ),
-      ),
-    );
-    if (!mounted || selected == null) return;
-
-    setState(() {
-      _latitude = selected.latitude;
-      _longitude = selected.longitude;
-    });
-
-    await _reverseGeocodeSelectedLocation();
-  }
-
-  Future<void> _reverseGeocodeSelectedLocation({bool forceFill = false}) async {
-    if (_latitude == null || _longitude == null) return;
-
-    setState(() => _isResolvingMap = true);
-
-    final fields = await NominatimReverseGeocoding().reverse(
-      latitude: _latitude!,
-      longitude: _longitude!,
-    );
-    if (!mounted) return;
-
-    setState(() {
-      _isResolvingMap = false;
-      if (fields == null) return;
-
-      _autofillTextField(
-        controller: _cityController,
-        value: fields.city,
-        wasEdited: _cityEdited,
-        forceFill: forceFill,
-      );
-      _autofillTextField(
-        controller: _neighborhoodController,
-        value: fields.neighborhood,
-        wasEdited: _neighborhoodEdited,
-        forceFill: forceFill,
-      );
-      _autofillTextField(
-        controller: _streetController,
-        value: fields.street,
-        wasEdited: _streetEdited,
-        forceFill: forceFill,
-      );
-      _autofillTextField(
-        controller: _buildingController,
-        value: fields.building,
-        wasEdited: _buildingEdited,
-        forceFill: forceFill,
-      );
-      _autofillTextField(
-        controller: _directionsController,
-        value: fields.directions,
-        wasEdited: _directionsEdited,
-        forceFill: forceFill,
-      );
-    });
-
-    _showReverseGeocodingMessage(fields);
-  }
-
-  void _autofillTextField({
-    required TextEditingController controller,
-    required String? value,
-    required bool wasEdited,
-    required bool forceFill,
-  }) {
-    final normalized = value?.trim();
-    if (normalized == null || normalized.isEmpty) return;
-
-    final shouldFill = forceFill || !wasEdited || controller.text.trim().isEmpty;
-    if (shouldFill) {
-      _setTextFieldValueAtEnd(controller, normalized);
-    }
-  }
-
-  void _setTextFieldValueAtEnd(
-    TextEditingController controller,
-    String value,
-  ) {
-    controller.value = TextEditingValue(
-      text: value,
-      selection: TextSelection.collapsed(offset: value.length),
-    );
-  }
-
-  void _moveCursorToTextEnd(TextEditingController controller) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final textLength = controller.text.length;
-      controller.selection = TextSelection.collapsed(offset: textLength);
-    });
-  }
-
-  void _showReverseGeocodingMessage(NominatimAddressFields? fields) {
-    if (!mounted) return;
-
-    final message = fields == null || !fields.hasAnyData
-        ? 'تم تحديد الموقع، لكن لم نتمكن من جلب تفاصيل العنوان. يرجى إدخال البيانات يدويًا.'
-        : (fields.street ?? '').trim().isEmpty ||
-              (fields.neighborhood ?? '').trim().isEmpty
-        ? 'تم تعبئة بيانات العنوان المتاحة من الخريطة. يرجى إكمال الحقول الناقصة يدويًا.'
-        : 'تم تعبئة بيانات العنوان المتاحة من الخريطة، ويمكنك تعديلها قبل الحفظ.';
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  bool _validateLocationBeforeSubmit() {
-    if (_hasSelectedLocation) return true;
-    AppToast.showToast(
-      context: context,
-      message: 'يرجى تحديد العنوان على الخريطة أولًا',
-      type: ToastificationType.error,
-    );
-    return false;
-  }
-
-  CreatedAddressSelectionHint _buildCreatedAddressHint() {
-    return CreatedAddressSelectionHint(
-      label: _labelController.text.trim(),
-      mobile: formatPhoneForApi(_phone) ?? '',
-      city: _cityController.text.trim(),
-      neighborhood: _neighborhoodController.text.trim(),
-      street: _streetController.text.trim(),
-      floor: _floorController.text.trim(),
-      latitude: _latitude!,
-      longitude: _longitude!,
-      building: _buildingController.text.trim().isEmpty
-          ? null
-          : _buildingController.text.trim(),
-      directions: _directionsController.text.trim().isEmpty
-          ? null
-          : _directionsController.text.trim(),
-    );
-  }
+  bool get _isEditMode => widget.params.addressItem != null;
 
   @override
   Widget build(BuildContext context) {
@@ -382,9 +179,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _labelController,
                             validator: _requiredValidator,
-                            onTap: () => _moveCursorToTextEnd(
-                              _labelController,
-                            ),
+                            onTap: () => _moveCursorToTextEnd(_labelController),
                           ),
                           const SizedBox(height: 12),
                           if (_isLoadingPhone)
@@ -434,8 +229,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               onPressed: _isResolvingMap
                                   ? null
                                   : () => _reverseGeocodeSelectedLocation(
-                                        forceFill: true,
-                                      ),
+                                      forceFill: true,
+                                    ),
                               icon: const Icon(Icons.refresh, size: 18),
                               label: const Text(
                                 'تحديث بيانات العنوان من الخريطة',
@@ -448,9 +243,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _neighborhoodController,
                             validator: _requiredValidator,
-                            onTap: () => _moveCursorToTextEnd(
-                              _neighborhoodController,
-                            ),
+                            onTap: () =>
+                                _moveCursorToTextEnd(_neighborhoodController),
                             onChanged: (_) => _neighborhoodEdited = true,
                           ),
                           const SizedBox(height: 12),
@@ -459,18 +253,16 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _streetController,
                             validator: _requiredValidator,
-                            onTap: () => _moveCursorToTextEnd(
-                              _streetController,
-                            ),
+                            onTap: () =>
+                                _moveCursorToTextEnd(_streetController),
                             onChanged: (_) => _streetEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'اسم البناء',
                             controller: _buildingController,
-                            onTap: () => _moveCursorToTextEnd(
-                              _buildingController,
-                            ),
+                            onTap: () =>
+                                _moveCursorToTextEnd(_buildingController),
                             onChanged: (_) => _buildingEdited = true,
                           ),
                           const SizedBox(height: 12),
@@ -480,9 +272,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             controller: _floorController,
                             keyboardType: TextInputType.number,
                             validator: _requiredValidator,
-                            onTap: () => _moveCursorToTextEnd(
-                              _floorController,
-                            ),
+                            onTap: () => _moveCursorToTextEnd(_floorController),
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -490,18 +280,15 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             controller: _cityController,
                             validator: _requiredValidator,
-                            onTap: () => _moveCursorToTextEnd(
-                              _cityController,
-                            ),
+                            onTap: () => _moveCursorToTextEnd(_cityController),
                             onChanged: (_) => _cityEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'تفاصيل أخرى',
                             controller: _directionsController,
-                            onTap: () => _moveCursorToTextEnd(
-                              _directionsController,
-                            ),
+                            onTap: () =>
+                                _moveCursorToTextEnd(_directionsController),
                             onChanged: (_) => _directionsEdited = true,
                           ),
                           const SizedBox(height: 8),
@@ -525,7 +312,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   20,
                   8,
                   20,
-                  20 + MediaQuery.of(context).viewInsets.bottom,
+                  20,
+                  // 20 + MediaQuery.of(context).viewInsets.bottom,
                 ),
                 child: BlocBuilder<ProfileBloc, ProfileState>(
                   bloc: widget.params.bloc,
@@ -619,18 +407,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                               .text
                                               .trim(),
                                           street: _streetController.text.trim(),
-                                          building: _buildingController.text
+                                          building:
+                                              _buildingController.text
                                                   .trim()
                                                   .isEmpty
                                               ? null
                                               : _buildingController.text.trim(),
                                           floor: _floorController.text.trim(),
-                                          directions: _directionsController.text
+                                          directions:
+                                              _directionsController.text
                                                   .trim()
                                                   .isEmpty
                                               ? null
                                               : _directionsController.text
-                                                  .trim(),
+                                                    .trim(),
                                           isDefault: _isDefault,
                                           latitude: _latitude!,
                                           longitude: _longitude!,
@@ -684,77 +474,231 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       ),
     );
   }
-}
-
-class _AddressTypeSelector extends StatelessWidget {
-  const _AddressTypeSelector({required this.value, required this.onChanged});
-
-  final String value;
-  final ValueChanged<String> onChanged;
-
-  static const _types = ['المنزل', 'العمل', 'العائلة'];
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppText.bodyMedium('أيقونة العنوان', fontWeight: FontWeight.w500),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          initialValue: value,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color(0xffF9FAFB),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 8,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: context.primary, width: 1.2),
-            ),
-          ),
-          items: _types
-              .map(
-                (item) => DropdownMenuItem<String>(
-                  value: item,
-                  child: AppText.bodyMedium(item),
-                ),
-              )
-              .toList(),
-          onChanged: (selected) {
-            if (selected != null) onChanged(selected);
-          },
-        ),
-      ],
+  void dispose() {
+    _labelController.dispose();
+    _cityController.dispose();
+    _neighborhoodController.dispose();
+    _streetController.dispose();
+    _buildingController.dispose();
+    _floorController.dispose();
+    _directionsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.params.addressItem;
+    if (item == null) {
+      Map<String, dynamic> json = jsonDecode(
+        SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser)
+            as String,
+      );
+      final user = LoggedInUserModel.fromJson(json);
+      final authPhone = user.phone;
+      _isLoadingPhone = true;
+      _loadInitialPhone(authPhone);
+      return;
+    }
+    _isLoadingPhone = true;
+    _labelController.text = item.label;
+    _loadInitialPhone(item.mobile);
+    _cityController.text = item.city ?? '';
+    _neighborhoodController.text = item.neighborhood ?? '';
+    _streetController.text = item.street ?? '';
+    _buildingController.text = item.building ?? '';
+    _floorController.text = item.floor ?? '';
+    _directionsController.text = item.directions ?? item.landmark ?? '';
+    _isDefault = item.isDefault;
+    _latitude = item.latitude;
+    _longitude = item.longitude;
+    _selectedType = switch (item.type) {
+      AddressType.work => 'العمل',
+      AddressType.family => 'العائلة',
+      AddressType.home => 'المنزل',
+    };
+  }
+
+  void _autofillTextField({
+    required TextEditingController controller,
+    required String? value,
+    required bool wasEdited,
+    required bool forceFill,
+  }) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return;
+
+    final shouldFill =
+        forceFill || !wasEdited || controller.text.trim().isEmpty;
+    if (shouldFill) {
+      _setTextFieldValueAtEnd(controller, normalized);
+    }
+  }
+
+  CreatedAddressSelectionHint _buildCreatedAddressHint() {
+    return CreatedAddressSelectionHint(
+      label: _labelController.text.trim(),
+      mobile: formatPhoneForApi(_phone) ?? '',
+      city: _cityController.text.trim(),
+      neighborhood: _neighborhoodController.text.trim(),
+      street: _streetController.text.trim(),
+      floor: _floorController.text.trim(),
+      latitude: _latitude!,
+      longitude: _longitude!,
+      building: _buildingController.text.trim().isEmpty
+          ? null
+          : _buildingController.text.trim(),
+      directions: _directionsController.text.trim().isEmpty
+          ? null
+          : _directionsController.text.trim(),
     );
+  }
+
+  Future<void> _loadInitialPhone(String? mobile) async {
+    final parsed = await parseInitialPhone(mobile);
+    if (!mounted) return;
+    setState(() {
+      _initialPhone = parsed;
+      _phone = parsed;
+      _isLoadingPhone = false;
+    });
+  }
+
+  void _moveCursorToTextEnd(TextEditingController controller) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final textLength = controller.text.length;
+      controller.selection = TextSelection.collapsed(offset: textLength);
+    });
+  }
+
+  Future<void> _pickAddressFromMap() async {
+    final selected = await Navigator.of(context).push<_AddressMapSelection>(
+      MaterialPageRoute<_AddressMapSelection>(
+        builder: (_) => _AddressMapPickerScreen(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+        ),
+      ),
+    );
+    if (!mounted || selected == null) return;
+
+    setState(() {
+      _latitude = selected.latitude;
+      _longitude = selected.longitude;
+    });
+
+    await _reverseGeocodeSelectedLocation();
+  }
+
+  String? _requiredValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'هذا الحقل مطلوب';
+    }
+    return null;
+  }
+
+  Future<void> _reverseGeocodeSelectedLocation({bool forceFill = false}) async {
+    if (_latitude == null || _longitude == null) return;
+
+    setState(() => _isResolvingMap = true);
+
+    final fields = await NominatimReverseGeocoding().reverse(
+      latitude: _latitude!,
+      longitude: _longitude!,
+      acceptLanguage: 'ar',
+    );
+    print(fields?.building);
+    print(fields?.directions);
+    print(fields?.city);
+    print(fields?.neighborhood);
+    print(fields?.street);
+    print(fields?.displayName);
+    print(fields?.hasAnyData);
+    if (!mounted) return;
+
+    setState(() {
+      _isResolvingMap = false;
+      if (fields == null) return;
+
+      _autofillTextField(
+        controller: _cityController,
+        value: fields.city,
+        wasEdited: _cityEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _neighborhoodController,
+        value: fields.neighborhood,
+        wasEdited: _neighborhoodEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _streetController,
+        value: fields.street,
+        wasEdited: _streetEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _buildingController,
+        value: fields.building,
+        wasEdited: _buildingEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _directionsController,
+        value: fields.directions,
+        wasEdited: _directionsEdited,
+        forceFill: forceFill,
+      );
+    });
+
+    _showReverseGeocodingMessage(fields);
+  }
+
+  void _setTextFieldValueAtEnd(TextEditingController controller, String value) {
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
+  void _showReverseGeocodingMessage(NominatimAddressFields? fields) {
+    if (!mounted) return;
+
+    final message = fields == null || !fields.hasAnyData
+        ? 'تم تحديد الموقع، لكن لم نتمكن من جلب تفاصيل العنوان. يرجى إدخال البيانات يدويًا.'
+        : (fields.street ?? '').trim().isEmpty ||
+              (fields.neighborhood ?? '').trim().isEmpty
+        ? 'تم تعبئة بيانات العنوان المتاحة من الخريطة. يرجى إكمال الحقول الناقصة يدويًا.'
+        : 'تم تعبئة بيانات العنوان المتاحة من الخريطة، ويمكنك تعديلها قبل الحفظ.';
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool _validateLocationBeforeSubmit() {
+    if (_hasSelectedLocation) return true;
+    AppToast.showToast(
+      context: context,
+      message: 'يرجى تحديد العنوان على الخريطة أولًا',
+      type: ToastificationType.error,
+    );
+    return false;
   }
 }
 
-class _AddressMapSelection {
-  const _AddressMapSelection({required this.latitude, required this.longitude});
-
-  final double latitude;
-  final double longitude;
-}
-
 class _AddressMapPickerScreen extends StatefulWidget {
+  final double? initialLatitude;
+
+  final double? initialLongitude;
   const _AddressMapPickerScreen({
     required this.initialLatitude,
     required this.initialLongitude,
   });
-
-  final double? initialLatitude;
-  final double? initialLongitude;
 
   @override
   State<_AddressMapPickerScreen> createState() =>
@@ -771,31 +715,6 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
       widget.initialLatitude != null && widget.initialLongitude != null;
 
   @override
-  void initState() {
-    super.initState();
-    if (_hasInitialCoordinates) {
-      _selected = LatLng(widget.initialLatitude!, widget.initialLongitude!);
-      return;
-    }
-    _isResolvingInitialLocation = true;
-    _resolveInitialLocation();
-  }
-
-  Future<void> _resolveInitialLocation() async {
-    final location = await getIt<UserLocationService>().getCurrentPosition();
-    if (!mounted) return;
-
-    setState(() {
-      _isResolvingInitialLocation = false;
-      if (location.latitude != null && location.longitude != null) {
-        _selected = LatLng(location.latitude!, location.longitude!);
-      } else {
-        _selected = _defaultCenter;
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final selected = _selected;
 
@@ -809,7 +728,7 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
                 : FlutterMap(
                     options: MapOptions(
                       initialCenter: selected,
-                      initialZoom: 15,
+                      initialZoom: 17,
                       onTap: (_, point) {
                         setState(() => _selected = point);
                       },
@@ -871,6 +790,92 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_hasInitialCoordinates) {
+      _selected = LatLng(widget.initialLatitude!, widget.initialLongitude!);
+      return;
+    }
+    _isResolvingInitialLocation = true;
+    _resolveInitialLocation();
+  }
+
+  Future<void> _resolveInitialLocation() async {
+    final location = await getIt<UserLocationService>().getCurrentPosition();
+    if (!mounted) return;
+
+    setState(() {
+      _isResolvingInitialLocation = false;
+      if (location.latitude != null && location.longitude != null) {
+        _selected = LatLng(location.latitude!, location.longitude!);
+      } else {
+        _selected = _defaultCenter;
+      }
+    });
+  }
+}
+
+class _AddressMapSelection {
+  final double latitude;
+
+  final double longitude;
+  const _AddressMapSelection({required this.latitude, required this.longitude});
+}
+
+class _AddressTypeSelector extends StatelessWidget {
+  static const _types = ['المنزل', 'العمل', 'العائلة'];
+
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  const _AddressTypeSelector({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppText.bodyMedium('أيقونة العنوان', fontWeight: FontWeight.w500),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: value,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xffF9FAFB),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 8,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: context.primary, width: 1.2),
+            ),
+          ),
+          items: _types
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: AppText.bodyMedium(item),
+                ),
+              )
+              .toList(),
+          onChanged: (selected) {
+            if (selected != null) onChanged(selected);
+          },
+        ),
+      ],
     );
   }
 }

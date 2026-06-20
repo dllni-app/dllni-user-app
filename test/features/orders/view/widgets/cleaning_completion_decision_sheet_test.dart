@@ -17,6 +17,7 @@ Future<void> _openSheet(
                 onPressed: () {
                   CleaningCompletionDecisionSheet.show(
                     context,
+                    fetchExtensionTimeRanges: () async => const [],
                     onConfirm: () async => null,
                     onReject: (_) async => null,
                     onExtend: onExtend,
