@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class FilledTextField extends StatelessWidget {
@@ -6,6 +7,7 @@ class FilledTextField extends StatelessWidget {
     super.key,
     required this.label,
     required this.controller,
+    this.hintText,
     this.isRequired = false,
     this.keyboardType,
     this.obscureText = false,
@@ -19,6 +21,7 @@ class FilledTextField extends StatelessWidget {
   });
 
   final String label;
+  final String? hintText;
   final TextEditingController controller;
   final bool isRequired;
   final TextInputType? keyboardType;
@@ -63,6 +66,12 @@ class FilledTextField extends StatelessWidget {
             fontWeight: FontWeight.w400,
           ),
           decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: AppColors.hintText,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
             filled: true,
             fillColor: const Color(0xffF9FAFB),
             contentPadding: const EdgeInsets.symmetric(

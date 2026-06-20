@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/themes/app_colors.dart';
 import 'package:dllni_user_app/features/orders/data/models/sos_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/sos_use_cases.dart';
 import 'package:dllni_user_app/features/profile/domain/services/user_location_service.dart';
@@ -342,6 +343,11 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                 },
                 decoration: InputDecoration(
                   hintText: 'صف الموقف باختصار',
+                  hintStyle: const TextStyle(
+                    color: AppColors.hintText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
                   errorText: _messageError,
                   filled: true,
                   fillColor: const Color(0xffF3F4F6),

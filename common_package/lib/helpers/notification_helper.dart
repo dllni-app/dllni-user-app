@@ -24,6 +24,8 @@ class _ResolvedRoute {
 
 const String _lifecycleMarkerKey = '_notification_lifecycle';
 const String _basicChannelKey = 'basic_channel';
+const String _notificationIcon = 'resource://drawable/notification_icon';
+const String _notificationLargeIcon = 'resource://mipmap/launcher_icon';
 
 List<NotificationChannel> get _basicNotificationChannels => [
   NotificationChannel(
@@ -38,7 +40,10 @@ List<NotificationChannel> get _basicNotificationChannels => [
 ];
 
 Future<void> _initializeAwesomeNotificationsInIsolate() async {
-  await AwesomeNotifications().initialize(null, _basicNotificationChannels);
+  await AwesomeNotifications().initialize(
+    _notificationIcon,
+    _basicNotificationChannels,
+  );
 }
 
 @pragma('vm:entry-point')
@@ -61,6 +66,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           'New Notification',
       body: message.notification?.body ?? message.data['body'] ?? '',
       payload: payload,
+      icon: _notificationIcon,
+      largeIcon: _notificationLargeIcon,
     ),
   );
 }
@@ -246,7 +253,7 @@ class NotificationHelper {
   }
 
   static Future<void> _initAwesomeNotifications() async {
-    await _awesome.initialize(null, _basicNotificationChannels);
+    await _awesome.initialize(_notificationIcon, _basicNotificationChannels);
   }
 
   static Future<void> _ensurePermission() async {
@@ -285,6 +292,8 @@ class NotificationHelper {
         title: message.notification?.title ?? message.data['title'] ?? '',
         body: message.notification?.body ?? message.data['body'] ?? '',
         payload: payload,
+        icon: _notificationIcon,
+        largeIcon: _notificationLargeIcon,
       ),
     );
   }

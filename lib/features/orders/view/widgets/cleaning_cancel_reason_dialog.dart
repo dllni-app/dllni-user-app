@@ -138,10 +138,10 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
                     hintText: 'اكتب سبب الإلغاء',
                     errorText: _reasonValidationError,
                     filled: true,
-                    hintStyle: TextStyle(
-                      color: Colors.black,
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF9CA3AF),
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                     ),
                     fillColor: const Color(0xffF9FAFB),
                     border: OutlineInputBorder(

@@ -2,7 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/app_date_time_locale.dart';
-import '../../../../core/themes/app_colors.dart';
+import '../themes/app_colors.dart';
 import '../../../../core/themes/app_gradients.dart';
 import '../../../../core/themes/app_shadows.dart';
 
@@ -72,7 +72,7 @@ class AppTextField extends StatelessWidget {
             filled: true,
             fillColor: Color(0xFFF9FAFB),
             hintText: hintText,
-            hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+            hintStyle: TextStyle(color: AppColors.hintText, fontSize: 14),
             border: OutlineInputBorder(
               borderSide: BorderSide(color: Color(0xFFE5E7EB)),
               borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -142,10 +142,11 @@ class ProductMenuField<T> extends StatelessWidget {
           style: TextStyle(color: Color(0xB22F2B3D), fontSize: 14),
           hint: AppText(
             hintText ?? "",
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: "Cairo",
-              color: Color(0xFF111827),
-              fontSize: 16,
+              color: AppColors.hintText,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
               height: 1.5,
             ),
           ),
@@ -263,7 +264,7 @@ class _AppDatePickerState extends State<AppDatePicker> {
             filled: true,
             fillColor: Color(0xFFF9FAFB),
             hintText: "01 - 01 - 2030",
-            hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+            hintStyle: TextStyle(color: AppColors.hintText, fontSize: 14),
             border: OutlineInputBorder(
               borderSide: BorderSide(color: Color(0xFFE5E7EB)),
               borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -393,7 +394,7 @@ class _ProductUnitState extends State<ProductUnit> {
             filled: true,
             fillColor: Color(0xFFF9FAFB),
             hintText: "أو اكتب وحدة مخصصة",
-            hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+            hintStyle: TextStyle(color: AppColors.hintText, fontSize: 14),
             border: OutlineInputBorder(
               borderSide: BorderSide(color: Color(0xFFE5E7EB)),
               borderRadius: BorderRadius.all(Radius.circular(16)),

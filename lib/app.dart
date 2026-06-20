@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 
 import 'core/di/injection.dart';
+import 'core/themes/app_colors.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/realtime/cleaning_global_verification_gate_coordinator.dart';
 import 'core/routes/app_router.dart';
@@ -57,6 +58,13 @@ class _AppState extends State<App> {
         home: _hasSavedToken ? const MainScreen() : const LoginScreen(),
         theme: ThemeData(
           fontFamily: 'cairo',
+          inputDecorationTheme: const InputDecorationTheme(
+            hintStyle: TextStyle(
+              color: AppColors.hintText,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
           colorScheme: ColorScheme(
             brightness: Brightness.light,
             primary: Color(0xff1E2A78),

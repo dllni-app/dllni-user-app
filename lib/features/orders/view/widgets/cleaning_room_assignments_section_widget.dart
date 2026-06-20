@@ -6,6 +6,49 @@ import '../../data/models/cleaning_orders_api_models.dart';
 typedef CleaningRoomAssignmentChanged =
     void Function(int roomId, int? workerId);
 
+String _translateRoomType(String? roomType) {
+  if (roomType == null || roomType.isEmpty) return '';
+  switch (roomType.toLowerCase()) {
+    case 'balcony':
+      return 'بكونة';
+    case 'bathroom':
+      return 'غرفة الحمام';
+    case 'bedroom':
+      return 'غرفة نوم';
+    case 'kitchen':
+      return 'مطبخ';
+    default:
+      return roomType;
+  }
+}
+
+String _translateRoomSize(String? roomSize) {
+  if (roomSize == null || roomSize.isEmpty) return '';
+  switch (roomSize.toLowerCase()) {
+    case 'small':
+      return 'صغير';
+    case 'medium':
+      return 'متوسط';
+    case 'large':
+      return 'كبير';
+    default:
+      return roomSize;
+  }
+}
+
+String _roomDisplayLabel(CleaningRoomAssignmentModel room) {
+  final roomType = _translateRoomType(room.roomType);
+  final roomSize = _translateRoomSize(room.roomSize);
+
+  if (roomType.isNotEmpty && roomSize.isNotEmpty) {
+    return '$roomType - $roomSize';
+  }
+  if (roomType.isNotEmpty) return roomType;
+  if (roomSize.isNotEmpty) return roomSize;
+
+  return room.displayLabel ?? room.roomKey ?? 'غرفة';
+}
+
 class CleaningRoomAssignmentsSectionWidget extends StatelessWidget {
   const CleaningRoomAssignmentsSectionWidget({
     required this.roomAssignments,
@@ -102,7 +145,7 @@ class CleaningRoomAssignmentsSectionWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppText.bodyMedium(
-                  room.displayLabel ?? 'غرفة',
+                  _roomDisplayLabel(room),
                   color: const Color(0xFF1F2937),
                   fontWeight: FontWeight.w800,
                   textAlign: TextAlign.center,
@@ -162,11 +205,7 @@ class CleaningRoomAssignmentsSectionWidget extends StatelessWidget {
 }
 
 class _RoomTile extends StatelessWidget {
-  const _RoomTile({
-    required this.room,
-    required this.isEditable,
-    this.onTap,
-  });
+  const _RoomTile({required this.room, required this.isEditable, this.onTap});
 
   final CleaningRoomAssignmentModel room;
   final bool isEditable;
@@ -176,7 +215,6 @@ class _RoomTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final assignedName = room.assignedWorker?.name;
     final isAssigned = assignedName != null && assignedName.isNotEmpty;
-
     return Material(
       color: const Color(0xFFF9FAFB),
       borderRadius: BorderRadius.circular(12),
@@ -207,7 +245,7 @@ class _RoomTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText.bodyMedium(
-                      room.displayLabel ?? room.roomKey ?? 'غرفة',
+                      _roomDisplayLabel(room),
                       color: const Color(0xFF1F2937),
                       fontWeight: FontWeight.w700,
                       maxLines: 1,
@@ -215,9 +253,7 @@ class _RoomTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     AppText.bodySmall(
-                      isAssigned
-                          ? 'مع: $assignedName'
-                          : 'غير معيّنة',
+                      isAssigned ? 'مع: $assignedName' : 'غير معيّنة',
                       color: isAssigned
                           ? const Color(0xFF047857)
                           : const Color(0xFF6B7280),
@@ -226,10 +262,7 @@ class _RoomTile extends StatelessWidget {
                 ),
               ),
               if (isEditable)
-                const Icon(
-                  Icons.chevron_left,
-                  color: Color(0xFF9CA3AF),
-                ),
+                const Icon(Icons.chevron_left, color: Color(0xFF9CA3AF)),
             ],
           ),
         ),

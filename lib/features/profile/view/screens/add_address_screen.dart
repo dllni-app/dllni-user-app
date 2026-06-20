@@ -13,6 +13,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/session/user_session_keys.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../auth/data/models/login_response_model.dart';
 import '../../domain/models/address_list_item.dart';
 import '../../domain/services/user_location_service.dart';
@@ -365,6 +366,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           FilledTextField(
                             label: 'اسم العنوان',
                             isRequired: true,
+                            hintText: 'مثال: المنزل، العمل، بيت العائلة',
                             controller: _labelController,
                             validator: _requiredValidator,
                             onTap: () => _moveCursorToTextEnd(_labelController),
@@ -380,6 +382,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               key: _phoneFieldKey,
                               label: 'رقم الجوال',
                               isRequired: true,
+                              hintText: 'أدخل رقم الجوال المرتبط بالعنوان',
                               initialValue: _initialPhone,
                               variant: AppPhoneFieldVariant.profile,
                               onChanged: (phone) => _phone = phone,
@@ -429,6 +432,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           FilledTextField(
                             label: 'اسم الحي',
                             isRequired: true,
+                            hintText: 'مثال: المزة، الروضة',
                             controller: _neighborhoodController,
                             validator: _requiredValidator,
                             onTap: () =>
@@ -439,6 +443,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           FilledTextField(
                             label: 'اسم الشارع',
                             isRequired: true,
+                            hintText: 'مثال: شارع الجلاء',
                             controller: _streetController,
                             validator: _requiredValidator,
                             onTap: () =>
@@ -448,13 +453,16 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'اسم البناء',
+                            hintText: 'مثال: برج السلام (اختياري)',
                             controller: _buildingController,
                             onTap: () =>
                                 _moveCursorToTextEnd(_buildingController),
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
-                            label: 'رقم الطابق',
+                            label: 'عنوان الطابق',
+                            hintText: 'طابق أول تاني باب عل اليمين',
+                            isRequired: true,
                             controller: _floorController,
                             keyboardType: TextInputType.number,
                             validator: _requiredValidator,
@@ -464,6 +472,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           FilledTextField(
                             label: 'المدينة',
                             isRequired: true,
+                            hintText: 'مثال: دمشق',
                             controller: _cityController,
                             validator: _requiredValidator,
                             onTap: () => _moveCursorToTextEnd(_cityController),
@@ -472,6 +481,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'تفاصيل أخرى',
+                            hintText:
+                                'مثال: بجانب الصيدلية، رقم الشقة (اختياري)',
                             controller: _directionsController,
                             onTap: () =>
                                 _moveCursorToTextEnd(_directionsController),
@@ -813,6 +824,12 @@ class _AddressTypeSelector extends StatelessWidget {
         DropdownButtonFormField<String>(
           initialValue: value,
           decoration: InputDecoration(
+            hintText: 'اختر نوع العنوان',
+            hintStyle: const TextStyle(
+              color: AppColors.hintText,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
             filled: true,
             fillColor: const Color(0xffF9FAFB),
             contentPadding: const EdgeInsets.symmetric(

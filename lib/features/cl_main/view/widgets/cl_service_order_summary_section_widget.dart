@@ -62,11 +62,6 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
             label: 'رسوم التنقل',
             value: _formatMoney(travelFee),
           ),
-          const SizedBox(height: 8),
-          _SummaryRowWidget(
-            label: 'الإضافات',
-            value: _formatMoney(addonsTotal),
-          ),
           if (distanceKm != null) ...[
             const SizedBox(height: 8),
             _SummaryRowWidget(
