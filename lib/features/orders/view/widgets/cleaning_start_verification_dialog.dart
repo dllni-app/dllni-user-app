@@ -30,6 +30,12 @@ class CleaningStartVerificationDialog {
 }
 
 class _CleaningStartVerificationDialogContent extends StatefulWidget {
+  final Future<String?> Function(String code) onSubmit;
+
+  final int? bookingId;
+  final String? bookingNumber;
+  final String? dateTime;
+  final String? workerAvatarUrl;
   const _CleaningStartVerificationDialogContent({
     required this.onSubmit,
     this.bookingId,
@@ -37,12 +43,6 @@ class _CleaningStartVerificationDialogContent extends StatefulWidget {
     this.dateTime,
     this.workerAvatarUrl,
   });
-
-  final Future<String?> Function(String code) onSubmit;
-  final int? bookingId;
-  final String? bookingNumber;
-  final String? dateTime;
-  final String? workerAvatarUrl;
 
   @override
   State<_CleaningStartVerificationDialogContent> createState() =>
@@ -56,75 +56,6 @@ class _CleaningStartVerificationDialogContentState
   late final ScrollController _scrollController;
   bool _submitting = false;
   String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = List<TextEditingController>.generate(
-      4,
-      (_) => TextEditingController(),
-    );
-    _focusNodes = List<FocusNode>.generate(4, (_) => FocusNode());
-    _scrollController = ScrollController();
-  }
-
-  @override
-  void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    for (final node in _focusNodes) {
-      node.dispose();
-    }
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (_submitting) return;
-    final code = _controllers.map((e) => e.text).join();
-    if (code.length != 4 || int.tryParse(code) == null) {
-      setState(() => _error = 'الرجاء إدخال 4 أرقام');
-      _scrollToFeedback();
-      return;
-    }
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
-    final failureMessage = await widget.onSubmit(code);
-    if (!mounted) return;
-    if (failureMessage != null) {
-      AppToast.showToast(
-        context: context,
-        message: failureMessage,
-        type: ToastificationType.error,
-      );
-      setState(() {
-        _submitting = false;
-        _error = failureMessage;
-      });
-      _scrollToFeedback();
-      return;
-    }
-    AppToast.showToast(
-      context: context,
-      message: 'تم تأكيد رمز الوصول. بانتظار بدء العمل من العامل.',
-      type: ToastificationType.success,
-    );
-    Navigator.of(context).pop(true);
-  }
-
-  void _scrollToFeedback() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-      );
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,29 +97,39 @@ class _CleaningStartVerificationDialogContentState
                   color: const Color(0xff1DBCC8),
                   fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 8),
-                AppText.bodyMedium(
+                const SizedBox(height: 10),
+                AppText(
                   'رمز الأمان تحصل عليه من العامل للتأكد من أن هويته\n'
                   'إذا بدأ المهمة لم يتم إعطاؤه رمز الأمان',
                   textAlign: TextAlign.center,
-                  color: const Color(0xff6B7280),
+                  style: TextStyle(
+                    color: const Color(0xff6B7280),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 if (widget.bookingId != null ||
                     (widget.bookingNumber ?? '').trim().isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  AppText.bodySmall(
+                  const SizedBox(height: 20),
+                  AppText(
                     'رقم الحجز: ${formatCleaningBookingLabel(bookingId: widget.bookingId, bookingNumber: widget.bookingNumber)}',
                     textAlign: TextAlign.center,
-                    color: const Color(0xff374151),
-                    fontWeight: FontWeight.w600,
+                    style: TextStyle(
+                      fontSize: 12,
+
+                      color: const Color(0xff374151),
+                    ),
                   ),
                 ],
                 if ((widget.dateTime ?? '').trim().isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  AppText.bodySmall(
+                  const SizedBox(height: 2),
+                  AppText(
                     formatCleaningSecurityCodeDateTime(widget.dateTime),
                     textAlign: TextAlign.center,
-                    color: const Color(0xff6B7280),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: const Color(0xff6B7280),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 18),
@@ -259,18 +200,87 @@ class _CleaningStartVerificationDialogContentState
       ),
     );
   }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    for (final node in _focusNodes) {
+      node.dispose();
+    }
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = List<TextEditingController>.generate(
+      4,
+      (_) => TextEditingController(),
+    );
+    _focusNodes = List<FocusNode>.generate(4, (_) => FocusNode());
+    _scrollController = ScrollController();
+  }
+
+  void _scrollToFeedback() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
+    final code = _controllers.map((e) => e.text).join();
+    if (code.length != 4 || int.tryParse(code) == null) {
+      setState(() => _error = 'الرجاء إدخال 4 أرقام');
+      _scrollToFeedback();
+      return;
+    }
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    final failureMessage = await widget.onSubmit(code);
+    if (!mounted) return;
+    if (failureMessage != null) {
+      AppToast.showToast(
+        context: context,
+        message: failureMessage,
+        type: ToastificationType.error,
+      );
+      setState(() {
+        _submitting = false;
+        _error = failureMessage;
+      });
+      _scrollToFeedback();
+      return;
+    }
+    AppToast.showToast(
+      context: context,
+      message: 'تم تأكيد رمز الوصول. بانتظار بدء العمل من العامل.',
+      type: ToastificationType.success,
+    );
+    Navigator.of(context).pop(true);
+  }
 }
 
 class _DialogWorkerAvatar extends StatelessWidget {
-  const _DialogWorkerAvatar({this.workerAvatarUrl});
-
-  final String? workerAvatarUrl;
-
   static const _fallbackIcon = Icon(
     Icons.mark_chat_read_outlined,
     size: 74,
     color: Color(0xff1DBCC8),
   );
+
+  final String? workerAvatarUrl;
+
+  const _DialogWorkerAvatar({this.workerAvatarUrl});
 
   @override
   Widget build(BuildContext context) {

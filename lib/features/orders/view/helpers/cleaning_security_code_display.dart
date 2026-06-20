@@ -2,12 +2,23 @@ import '../../../../core/utils/app_date_time_locale.dart';
 
 const String cleaningSecurityCodeDateTimePattern = 'yy-MM-dd HH:mm a';
 
+// String formatCleaningSecurityCodeDateTime(String? raw) {
+//   if (raw == null || raw.trim().isEmpty) return '';
+//   final parsed = DateTime.tryParse(raw.trim());
+//   if (parsed == null) return raw.trim();
+//   return AppDateTimeLocale.dateFormat(
+//     cleaningSecurityCodeDateTimePattern,
+//   ).format(parsed.toLocal());
+// }
+
 String formatCleaningSecurityCodeDateTime(String? raw) {
   if (raw == null || raw.trim().isEmpty) return '';
+
   final parsed = DateTime.tryParse(raw.trim());
   if (parsed == null) return raw.trim();
+
   return AppDateTimeLocale.dateFormat(
-    cleaningSecurityCodeDateTimePattern,
+    'yyyy-MM-dd hh:mm a',
   ).format(parsed.toLocal());
 }
 

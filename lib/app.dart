@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 
 import 'core/di/injection.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
@@ -44,29 +45,31 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: widget.navigatorKey,
-      title: 'دللني',
-      debugShowCheckedModeBanner: false,
-      locale: context.locale,
-      supportedLocales: context.supportedLocales,
-      localizationsDelegates: context.localizationDelegates,
-      onGenerateRoute: AppRouter.onGenerateRoute,
-      home: _hasSavedToken ? const MainScreen() : const LoginScreen(),
-      theme: ThemeData(
-        fontFamily: 'cairo',
-        colorScheme: ColorScheme(
-          brightness: Brightness.light,
-          primary: Color(0xff1E2A78),
-          onPrimary: Color(0xffFFFFFF),
-          secondary: Color(0xff6C63FF),
-          onSecondary: Color(0xffFFFFFF),
-          error: Color(0xffBF393D),
-          onError: Color(0xffFFFFFF),
-          surface: Color(0xffF0F0F0),
-          onSurface: Colors.black,
-          primaryContainer: Color(0xffFF7A00),
-          onPrimaryContainer: Color(0xffFFFFFF),
+    return ToastificationWrapper(
+      child: MaterialApp(
+        navigatorKey: widget.navigatorKey,
+        title: 'دللني',
+        debugShowCheckedModeBanner: false,
+        locale: context.locale,
+        supportedLocales: context.supportedLocales,
+        localizationsDelegates: context.localizationDelegates,
+        onGenerateRoute: AppRouter.onGenerateRoute,
+        home: _hasSavedToken ? const MainScreen() : const LoginScreen(),
+        theme: ThemeData(
+          fontFamily: 'cairo',
+          colorScheme: ColorScheme(
+            brightness: Brightness.light,
+            primary: Color(0xff1E2A78),
+            onPrimary: Color(0xffFFFFFF),
+            secondary: Color(0xff6C63FF),
+            onSecondary: Color(0xffFFFFFF),
+            error: Color(0xffBF393D),
+            onError: Color(0xffFFFFFF),
+            surface: Color(0xffF0F0F0),
+            onSurface: Colors.black,
+            primaryContainer: Color(0xffFF7A00),
+            onPrimaryContainer: Color(0xffFFFFFF),
+          ),
         ),
       ),
     );

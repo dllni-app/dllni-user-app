@@ -122,12 +122,14 @@ class _ClMainScreenState extends State<ClMainScreen> {
       await getIt<DeepLinkService>().handleIncomingUri(uri);
       return;
     }
-
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر فتح الرابط')));
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تعذر فتح الرابط')));
+      }
     }
   }
 

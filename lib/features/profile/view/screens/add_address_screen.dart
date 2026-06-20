@@ -81,12 +81,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   final _streetController = TextEditingController();
   final _buildingController = TextEditingController();
   final _floorController = TextEditingController();
+  final _directionsController = TextEditingController();
 
   String _selectedType = 'المنزل';
   bool _isDefault = true;
   bool _isResolvingMap = false;
 
   bool _cityEdited = false;
+  bool _directionsEdited = false;
   bool _neighborhoodEdited = false;
   bool _streetEdited = false;
 
@@ -108,6 +110,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _streetController.dispose();
     _buildingController.dispose();
     _floorController.dispose();
+    _directionsController.dispose();
     super.dispose();
   }
 
@@ -452,7 +455,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'رقم الطابق',
-                            isRequired: true,
                             controller: _floorController,
                             keyboardType: TextInputType.number,
                             validator: _requiredValidator,
@@ -466,6 +468,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             validator: _requiredValidator,
                             onTap: () => _moveCursorToTextEnd(_cityController),
                             onChanged: (_) => _cityEdited = true,
+                          ),
+                          const SizedBox(height: 12),
+                          FilledTextField(
+                            label: 'تفاصيل أخرى',
+                            controller: _directionsController,
+                            onTap: () =>
+                                _moveCursorToTextEnd(_directionsController),
+                            onChanged: (_) => _directionsEdited = true,
                           ),
                           const SizedBox(height: 8),
                           SwitchListTile(
@@ -488,8 +498,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   20,
                   8,
                   20,
-                  20,
-                  // 12 + MediaQuery.viewInsetsOf(context).bottom,
+                  12 + MediaQuery.viewInsetsOf(context).bottom,
                 ),
                 child: SafeArea(
                   top: false,
@@ -566,7 +575,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                                   .trim(),
                                               floor: _floorController.text
                                                   .trim(),
-                                              directions: '',
+                                              directions: _directionsController.text.trim(),
                                               isDefault: _isDefault,
                                               latitude: _latitude,
                                               longitude: _longitude,
@@ -594,7 +603,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                                 : _buildingController.text
                                                       .trim(),
                                             floor: _floorController.text.trim(),
-                                            directions: null,
+                                            directions: _directionsController.text.trim(),
                                             isDefault: _isDefault,
                                             latitude: _latitude!,
                                             longitude: _longitude!,

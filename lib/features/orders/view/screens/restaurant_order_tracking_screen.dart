@@ -155,21 +155,13 @@ class _RestaurantOrderTrackingScreenState
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: () => _fetchTracking(),
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: RestaurantOrderTrackingView(
-                    order: widget.args.order,
-                    tracking: _tracking,
-                    deliveryOrder: _deliveryOrder,
-                    isLoading: _loading,
-                    loadError: _error,
-                    onRetry: () => _fetchTracking(),
-                  ),
-                ),
-              ],
+            child:  RestaurantOrderTrackingView(
+              order: widget.args.order,
+              tracking: _tracking,
+              deliveryOrder: _deliveryOrder,
+              isLoading: _loading,
+              loadError: _error,
+              onRetry: () => _fetchTracking(),
             ),
           ),
         ),

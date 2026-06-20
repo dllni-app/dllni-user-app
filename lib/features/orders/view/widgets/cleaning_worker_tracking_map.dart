@@ -43,6 +43,9 @@ class CleaningWorkerTrackingMap extends StatelessWidget {
             height: 220,
             child: FlutterMap(
               options: MapOptions(
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
                 initialCenter: center,
                 initialZoom: points.length == 1 ? 15 : 13,
               ),

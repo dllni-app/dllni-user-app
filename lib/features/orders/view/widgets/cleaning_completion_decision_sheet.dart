@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../data/models/cleaning_orders_api_models.dart';
 
@@ -148,13 +149,13 @@ class _CleaningCompletionDecisionSheetBodyState
       ),
     );
     final reason = reasonController.text.trim();
-    reasonController.dispose();
     if (accepted != true) return;
     await _run(
       () => widget.onReject(reason.isEmpty ? null : reason),
       CleaningCompletionDecision.rejected,
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
