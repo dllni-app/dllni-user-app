@@ -1,7 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
-import 'package:dllni_user_app/core/helpers/shared_user_helper.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -77,7 +77,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   final _streetController = TextEditingController();
   final _buildingController = TextEditingController();
   final _floorController = TextEditingController();
-  final _directionsController = TextEditingController();
 
   String _selectedType = 'المنزل';
   bool _isDefault = true;
@@ -86,8 +85,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   bool _cityEdited = false;
   bool _neighborhoodEdited = false;
   bool _streetEdited = false;
-  bool _buildingEdited = false;
-  bool _directionsEdited = false;
 
   double? _latitude;
   double? _longitude;
@@ -107,7 +104,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _streetController.dispose();
     _buildingController.dispose();
     _floorController.dispose();
-    _directionsController.dispose();
     super.dispose();
   }
 
@@ -123,7 +119,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     super.initState();
     final item = widget.params.addressItem;
     if (item == null) {
-      final authPhone = SharedUserHelper.getUser()?.phone;
+      final authPhone = UserSessionStore.phone();
       if ((authPhone ?? '').trim().isNotEmpty) {
         _isLoadingPhone = true;
         _loadInitialPhone(authPhone);
@@ -138,7 +134,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _streetController.text = item.street ?? '';
     _buildingController.text = item.building ?? '';
     _floorController.text = item.floor ?? '';
-    _directionsController.text = item.directions ?? item.landmark ?? '';
     _isDefault = item.isDefault;
     _latitude = item.latitude;
     _longitude = item.longitude;
@@ -211,18 +206,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         wasEdited: _streetEdited,
         forceFill: forceFill,
       );
-      _autofillTextField(
-        controller: _buildingController,
-        value: fields.building,
-        wasEdited: _buildingEdited,
-        forceFill: forceFill,
-      );
-      _autofillTextField(
-        controller: _directionsController,
-        value: fields.directions,
-        wasEdited: _directionsEdited,
-        forceFill: forceFill,
-      );
     });
 
     _showReverseGeocodingMessage(fields);
@@ -268,8 +251,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         ? 'تم تحديد الموقع، لكن لم نتمكن من جلب تفاصيل العنوان. يرجى إدخال البيانات يدويًا.'
         : (fields.street ?? '').trim().isEmpty ||
               (fields.neighborhood ?? '').trim().isEmpty
-        ? 'تم تعبئة بيانات العنوان المتاحة من الخريطة. يرجى إكمال الحقول الناقصة يدويًا.'
-        : 'تم تعبئة بيانات العنوان المتاحة من الخريطة، ويمكنك تعديلها قبل الحفظ.';
+        ? 'تم تعبئة بيانات العنوان الأساسية من الخريطة. يرجى إكمال الحقول الناقصة يدويًا.'
+        : 'تم تعبئة المدينة والحي والشارع من الخريطة، ويمكنك تعديلها قبل الحفظ.';
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -299,9 +282,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       building: _buildingController.text.trim().isEmpty
           ? null
           : _buildingController.text.trim(),
-      directions: _directionsController.text.trim().isEmpty
-          ? null
-          : _directionsController.text.trim(),
     );
   }
 
@@ -344,7 +324,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         }
       },
       child: Scaffold(
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xffF9FAFB),
         body: SafeArea(
           child: Column(
@@ -357,11 +337,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: EdgeInsetsDirectional.fromSTEB(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
                     20,
                     0,
                     20,
-                    24 + MediaQuery.of(context).viewInsets.bottom,
+                    132,
                   ),
                   child: Form(
                     key: _formKey,
@@ -471,7 +451,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             onTap: () => _moveCursorToTextEnd(
                               _buildingController,
                             ),
-                            onChanged: (_) => _buildingEdited = true,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -495,15 +474,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             ),
                             onChanged: (_) => _cityEdited = true,
                           ),
-                          const SizedBox(height: 12),
-                          FilledTextField(
-                            label: 'تفاصيل أخرى',
-                            controller: _directionsController,
-                            onTap: () => _moveCursorToTextEnd(
-                              _directionsController,
-                            ),
-                            onChanged: (_) => _directionsEdited = true,
-                          ),
                           const SizedBox(height: 8),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
@@ -525,160 +495,153 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   20,
                   8,
                   20,
-                  20 + MediaQuery.of(context).viewInsets.bottom,
+                  12 + MediaQuery.viewInsetsOf(context).bottom,
                 ),
                 child: SafeArea(
                   top: false,
                   child: BlocBuilder<ProfileBloc, ProfileState>(
-                  bloc: widget.params.bloc,
-                  builder: (context, state) {
-                    final isSubmitting =
-                        state.createAddressStatus == BlocStatus.loading ||
-                        state.updateAddressStatus == BlocStatus.loading;
-                    return Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: ElevatedButton(
-                            onPressed: isSubmitting
-                                ? null
-                                : () async {
-                                    if (!_formKey.currentState!.validate()) {
-                                      return;
-                                    }
-                                    if (!_validateLocationBeforeSubmit()) {
-                                      return;
-                                    }
+                    bloc: widget.params.bloc,
+                    builder: (context, state) {
+                      final isSubmitting =
+                          state.createAddressStatus == BlocStatus.loading ||
+                          state.updateAddressStatus == BlocStatus.loading;
+                      return Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton(
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () async {
+                                      if (!_formKey.currentState!.validate()) {
+                                        return;
+                                      }
+                                      if (!_validateLocationBeforeSubmit()) {
+                                        return;
+                                      }
 
-                                    final phoneError = await _phoneFieldKey
-                                        .currentState
-                                        ?.validate();
-                                    if (!context.mounted) return;
-                                    if (phoneError != null) {
-                                      AppToast.showToast(
-                                        context: context,
-                                        message: phoneError,
-                                        type: ToastificationType.error,
-                                      );
-                                      return;
-                                    }
-
-                                    final mobile = formatPhoneForApi(_phone);
-                                    if (mobile == null) {
-                                      AppToast.showToast(
-                                        context: context,
-                                        message: 'يرجى إدخال رقم الجوال',
-                                        type: ToastificationType.error,
-                                      );
-                                      return;
-                                    }
-
-                                    if (_isEditMode) {
-                                      final addressId = int.tryParse(
-                                        widget.params.addressItem!.id,
-                                      );
-                                      if (addressId == null) {
+                                      final phoneError = await _phoneFieldKey
+                                          .currentState
+                                          ?.validate();
+                                      if (!context.mounted) return;
+                                      if (phoneError != null) {
                                         AppToast.showToast(
                                           context: context,
-                                          message: 'معرف العنوان غير صالح',
+                                          message: phoneError,
                                           type: ToastificationType.error,
                                         );
                                         return;
                                       }
+
+                                      final mobile = formatPhoneForApi(_phone);
+                                      if (mobile == null) {
+                                        AppToast.showToast(
+                                          context: context,
+                                          message: 'يرجى إدخال رقم الجوال',
+                                          type: ToastificationType.error,
+                                        );
+                                        return;
+                                      }
+
+                                      if (_isEditMode) {
+                                        final addressId = int.tryParse(
+                                          widget.params.addressItem!.id,
+                                        );
+                                        if (addressId == null) {
+                                          AppToast.showToast(
+                                            context: context,
+                                            message: 'معرف العنوان غير صالح',
+                                            type: ToastificationType.error,
+                                          );
+                                          return;
+                                        }
+                                        widget.params.bloc.add(
+                                          UpdateAddressEvent(
+                                            params: UpdateAddressParams(
+                                              addressId: addressId,
+                                              label: _labelController.text.trim(),
+                                              mobile: mobile,
+                                              city: _cityController.text.trim(),
+                                              neighborhood:
+                                                  _neighborhoodController.text
+                                                      .trim(),
+                                              street: _streetController.text
+                                                  .trim(),
+                                              building: _buildingController.text
+                                                  .trim(),
+                                              floor: _floorController.text.trim(),
+                                              directions: '',
+                                              isDefault: _isDefault,
+                                              latitude: _latitude,
+                                              longitude: _longitude,
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
                                       widget.params.bloc.add(
-                                        UpdateAddressEvent(
-                                          params: UpdateAddressParams(
-                                            addressId: addressId,
+                                        CreateAddressEvent(
+                                          params: CreateAddressParams(
                                             label: _labelController.text.trim(),
                                             mobile: mobile,
                                             city: _cityController.text.trim(),
                                             neighborhood:
                                                 _neighborhoodController.text
                                                     .trim(),
-                                            street: _streetController.text
-                                                .trim(),
+                                            street: _streetController.text.trim(),
                                             building: _buildingController.text
-                                                .trim(),
+                                                    .trim()
+                                                    .isEmpty
+                                                ? null
+                                                : _buildingController.text.trim(),
                                             floor: _floorController.text.trim(),
-                                            directions: _directionsController
-                                                .text
-                                                .trim(),
+                                            directions: null,
                                             isDefault: _isDefault,
-                                            latitude: _latitude,
-                                            longitude: _longitude,
+                                            latitude: _latitude!,
+                                            longitude: _longitude!,
                                           ),
                                         ),
                                       );
-                                      return;
-                                    }
-                                    widget.params.bloc.add(
-                                      CreateAddressEvent(
-                                        params: CreateAddressParams(
-                                          label: _labelController.text.trim(),
-                                          mobile: mobile,
-                                          city: _cityController.text.trim(),
-                                          neighborhood: _neighborhoodController
-                                              .text
-                                              .trim(),
-                                          street: _streetController.text.trim(),
-                                          building: _buildingController.text
-                                                  .trim()
-                                                  .isEmpty
-                                              ? null
-                                              : _buildingController.text.trim(),
-                                          floor: _floorController.text.trim(),
-                                          directions: _directionsController.text
-                                                  .trim()
-                                                  .isEmpty
-                                              ? null
-                                              : _directionsController.text
-                                                  .trim(),
-                                          isDefault: _isDefault,
-                                          latitude: _latitude!,
-                                          longitude: _longitude!,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              elevation: 0,
-                              backgroundColor: context.primary,
-                              foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                elevation: 0,
+                                backgroundColor: context.primary,
+                                foregroundColor: context.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                minimumSize: const Size.fromHeight(42),
                               ),
-                              minimumSize: const Size.fromHeight(42),
-                            ),
-                            child: AppText.labelLarge(
-                              _isEditMode ? 'حفظ التعديلات' : 'أضف العنوان',
-                              color: context.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: isSubmitting
-                                ? null
-                                : () => context.pop(false),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: context.error),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                              child: AppText.labelLarge(
+                                _isEditMode ? 'حفظ التعديلات' : 'أضف العنوان',
+                                color: context.onPrimary,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            child: AppText.labelLarge(
-                              'إلغاء',
-                              color: context.error,
-                              fontWeight: FontWeight.w700,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () => context.pop(false),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: context.error),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: AppText.labelLarge(
+                                'إلغاء',
+                                color: context.error,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
