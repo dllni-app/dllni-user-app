@@ -21,7 +21,7 @@ void main() {
             onPrimaryContainer: Color(0xffffffff),
           ),
         ),
-        home: const Directionality(
+        home: Directionality(
           textDirection: TextDirection.rtl,
           child: Scaffold(
             body: Center(
