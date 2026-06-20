@@ -10,6 +10,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
+import '../../../../core/session/user_session_store.dart';
 import '../../../auth/data/models/login_response_model.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
@@ -218,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       await getIt<CleaningBookingPusherService>()
                           .disposeAllForSession();
                       await SharedPreferencesHelper.clearData();
-                      UserSessionStore.reload();
+                      await UserSessionStore.clear();
                       if (!context.mounted) return;
                       context.pushRouteAndRemoveUntil('/login');
                     },

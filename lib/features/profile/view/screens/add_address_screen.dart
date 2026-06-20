@@ -123,11 +123,15 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     super.initState();
     final item = widget.params.addressItem;
     if (item == null) {
-      final authPhone = UserSessionStore.phone();
-      if ((authPhone ?? '').trim().isNotEmpty) {
-        _isLoadingPhone = true;
-        _loadInitialPhone(authPhone);
-      }
+     final json = SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser);
+     final user = LoggedInUserModel.fromJson(jsonDecode(json));
+     _isLoadingPhone = true;
+     _loadInitialPhone(user.phone);
+      // final authPhone = UserSessionStore.phone();
+      // if ((authPhone ?? '').trim().isNotEmpty) {
+      //   _isLoadingPhone = true;
+      //   _loadInitialPhone(authPhone);
+      // }
       return;
     }
     _isLoadingPhone = true;
@@ -185,7 +189,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     final fields = await NominatimReverseGeocoding().reverse(
       latitude: _latitude!,
       longitude: _longitude!,
-      acceptLanguage: "ar"
+      acceptLanguage: "ar",
     );
     if (!mounted) return;
 
@@ -225,16 +229,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     final normalized = value?.trim();
     if (normalized == null || normalized.isEmpty) return;
 
-    final shouldFill = forceFill || !wasEdited || controller.text.trim().isEmpty;
+    final shouldFill =
+        forceFill || !wasEdited || controller.text.trim().isEmpty;
     if (shouldFill) {
       _setTextFieldValueAtEnd(controller, normalized);
     }
   }
 
-  void _setTextFieldValueAtEnd(
-    TextEditingController controller,
-    String value,
-  ) {
+  void _setTextFieldValueAtEnd(TextEditingController controller, String value) {
     controller.value = TextEditingValue(
       text: value,
       selection: TextSelection.collapsed(offset: value.length),
@@ -342,12 +344,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    20,
-                    0,
-                    20,
-                    132,
-                  ),
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 132),
                   child: Form(
                     key: _formKey,
                     child: NumberedSectionCard(
@@ -449,9 +446,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           FilledTextField(
                             label: 'اسم البناء',
                             controller: _buildingController,
-                            onTap: () => _moveCursorToTextEnd(
-                              _buildingController,
-                            ),
+                            onTap: () =>
+                                _moveCursorToTextEnd(_buildingController),
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -557,7 +553,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                           UpdateAddressEvent(
                                             params: UpdateAddressParams(
                                               addressId: addressId,
-                                              label: _labelController.text.trim(),
+                                              label: _labelController.text
+                                                  .trim(),
                                               mobile: mobile,
                                               city: _cityController.text.trim(),
                                               neighborhood:
@@ -567,7 +564,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                                   .trim(),
                                               building: _buildingController.text
                                                   .trim(),
-                                              floor: _floorController.text.trim(),
+                                              floor: _floorController.text
+                                                  .trim(),
                                               directions: '',
                                               isDefault: _isDefault,
                                               latitude: _latitude,
@@ -586,12 +584,15 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                             neighborhood:
                                                 _neighborhoodController.text
                                                     .trim(),
-                                            street: _streetController.text.trim(),
-                                            building: _buildingController.text
+                                            street: _streetController.text
+                                                .trim(),
+                                            building:
+                                                _buildingController.text
                                                     .trim()
                                                     .isEmpty
                                                 ? null
-                                                : _buildingController.text.trim(),
+                                                : _buildingController.text
+                                                      .trim(),
                                             floor: _floorController.text.trim(),
                                             directions: null,
                                             isDefault: _isDefault,
