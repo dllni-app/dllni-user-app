@@ -45,11 +45,38 @@ class CleaningOrderRealtimePolicy {
       );
     }
 
-    final reopenCompletionAfterRefresh = _shouldReopenCompletionSheet(
-      normalizedEvent: normalizedEvent,
-      payload: payload,
-      currentStatus: currentStatus,
-    );
+    final normalizedStatus = (currentStatus ?? '').toLowerCase();
+    var reopenCompletionAfterRefresh =
+        normalizedEvent == CleaningRealtimeContract.awaitingCustomerCompletion;
+
+    if (normalizedEvent == CleaningRealtimeContract.completionDecisionMade) {
+      final decision = (payload['decision'] ?? payload['status'] ?? '')
+          .toString()
+          .toLowerCase();
+      if (decision == 'rejected' &&
+          normalizedStatus == CleaningBookingStatus.timeExtensionRequested) {
+        reopenCompletionAfterRefresh = true;
+      }
+      if (decision == 'extension_rejected' ||
+          decision == 'extension_declined' ||
+          decision == 'worker_rejected_extension') {
+        reopenCompletionAfterRefresh = true;
+      }
+    }
+
+    if (normalizedEvent == CleaningRealtimeContract.trackingUpdated) {
+      final tracking = payload['tracking'];
+      final trackingMap = tracking is Map
+          ? Map<String, dynamic>.from(tracking)
+          : null;
+      final nextStatus = (trackingMap?['status'] ?? '')
+          .toString()
+          .toLowerCase();
+      if (nextStatus == CleaningBookingStatus.awaitingCustomerCompletion &&
+          normalizedStatus == CleaningBookingStatus.timeExtensionRequested) {
+        reopenCompletionAfterRefresh = true;
+      }
+    }
 
     return CleaningOrderRealtimeAction(
       type: CleaningOrderRealtimeActionType.refreshDetails,

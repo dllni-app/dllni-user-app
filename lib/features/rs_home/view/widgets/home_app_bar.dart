@@ -1,26 +1,42 @@
+import 'dart:convert';
+
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dllni_user_app/core/session/user_session_store.dart';
-import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
+import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../auth/data/models/login_response_model.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
+
+LoggedInUserModel? _readLoggedInUser() {
+  final raw = SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser);
+  if (raw == null) return null;
+
+  try {
+    final decoded = jsonDecode('$raw');
+    if (decoded is! Map) return null;
+
+    return LoggedInUserModel.fromJson(
+      Map<String, dynamic>.from(decoded),
+    );
+  } catch (_) {
+    return null;
+  }
+}
 
 class HomeAppBar extends StatelessWidget {
   final bool isHome;
   HomeAppBar({super.key,this.isHome=false});
 
+  final LoggedInUserModel _personalDetailsParams =
+      _readLoggedInUser() ?? LoggedInUserModel();
+
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<LoggedInUserModel?>(
-      valueListenable: UserSessionStore.userNotifier,
-      builder: (context, _, __) {
-        final displayName = UserSessionStore.displayNameOrPlaceholder();
-
-        return Container(
+    return Container(
       padding: EdgeInsets.fromLTRB(
         20,
         MediaQuery.paddingOf(context).top + 16,
@@ -50,7 +66,7 @@ class HomeAppBar extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      displayName,
+                      _personalDetailsParams.name ?? 'اسم المستخدم',
                       style: TextStyle(
                         color: Color(0xFF1E2A78),
                         fontSize: 18,

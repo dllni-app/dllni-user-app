@@ -1,7 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
-import 'package:dllni_user_app/core/session/user_session_store.dart';
+import 'package:dllni_user_app/core/helpers/shared_user_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +14,6 @@ import '../../domain/models/address_list_item.dart';
 import '../../domain/services/user_location_service.dart';
 import '../../domain/usecases/create_address_use_case.dart';
 import '../../domain/usecases/update_address_use_case.dart';
-import '../helpers/address_map_autofill.dart';
 import '../helpers/nominatim_reverse_geocoding.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/filled_text_field.dart';
@@ -70,8 +69,6 @@ class AddAddressScreen extends StatefulWidget {
 }
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
-  static const double _stickyFooterHeight = 120;
-
   final _formKey = GlobalKey<FormState>();
   final _labelController = TextEditingController();
   final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
@@ -80,9 +77,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   final _streetController = TextEditingController();
   final _buildingController = TextEditingController();
   final _floorController = TextEditingController();
+  final _directionsController = TextEditingController();
 
   String _selectedType = 'المنزل';
-  String _preservedDirections = '';
   bool _isDefault = true;
   bool _isResolvingMap = false;
 
@@ -90,6 +87,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   bool _neighborhoodEdited = false;
   bool _streetEdited = false;
   bool _buildingEdited = false;
+  bool _directionsEdited = false;
 
   double? _latitude;
   double? _longitude;
@@ -109,6 +107,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _streetController.dispose();
     _buildingController.dispose();
     _floorController.dispose();
+    _directionsController.dispose();
     super.dispose();
   }
 
@@ -124,7 +123,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     super.initState();
     final item = widget.params.addressItem;
     if (item == null) {
-      final authPhone = UserSessionStore.phone;
+      final authPhone = SharedUserHelper.getUser()?.phone;
       if ((authPhone ?? '').trim().isNotEmpty) {
         _isLoadingPhone = true;
         _loadInitialPhone(authPhone);
@@ -139,7 +138,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _streetController.text = item.street ?? '';
     _buildingController.text = item.building ?? '';
     _floorController.text = item.floor ?? '';
-    _preservedDirections = item.directions ?? item.landmark ?? '';
+    _directionsController.text = item.directions ?? item.landmark ?? '';
     _isDefault = item.isDefault;
     _latitude = item.latitude;
     _longitude = item.longitude;
@@ -194,21 +193,64 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       _isResolvingMap = false;
       if (fields == null) return;
 
-      AddressMapAutofill.applyCoreFields(
-        fields: fields,
-        cityController: _cityController,
-        neighborhoodController: _neighborhoodController,
-        streetController: _streetController,
-        buildingController: _buildingController,
-        floorController: _floorController,
-        cityEdited: _cityEdited,
-        neighborhoodEdited: _neighborhoodEdited,
-        streetEdited: _streetEdited,
+      _autofillTextField(
+        controller: _cityController,
+        value: fields.city,
+        wasEdited: _cityEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _neighborhoodController,
+        value: fields.neighborhood,
+        wasEdited: _neighborhoodEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _streetController,
+        value: fields.street,
+        wasEdited: _streetEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _buildingController,
+        value: fields.building,
+        wasEdited: _buildingEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _directionsController,
+        value: fields.directions,
+        wasEdited: _directionsEdited,
         forceFill: forceFill,
       );
     });
 
     _showReverseGeocodingMessage(fields);
+  }
+
+  void _autofillTextField({
+    required TextEditingController controller,
+    required String? value,
+    required bool wasEdited,
+    required bool forceFill,
+  }) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return;
+
+    final shouldFill = forceFill || !wasEdited || controller.text.trim().isEmpty;
+    if (shouldFill) {
+      _setTextFieldValueAtEnd(controller, normalized);
+    }
+  }
+
+  void _setTextFieldValueAtEnd(
+    TextEditingController controller,
+    String value,
+  ) {
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
   }
 
   void _moveCursorToTextEnd(TextEditingController controller) {
@@ -257,6 +299,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       building: _buildingController.text.trim().isEmpty
           ? null
           : _buildingController.text.trim(),
+      directions: _directionsController.text.trim().isEmpty
+          ? null
+          : _directionsController.text.trim(),
     );
   }
 
@@ -316,8 +361,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     20,
                     0,
                     20,
-                    _stickyFooterHeight +
-                        MediaQuery.of(context).viewInsets.bottom,
+                    24 + MediaQuery.of(context).viewInsets.bottom,
                   ),
                   child: Form(
                     key: _formKey,
@@ -451,6 +495,15 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             ),
                             onChanged: (_) => _cityEdited = true,
                           ),
+                          const SizedBox(height: 12),
+                          FilledTextField(
+                            label: 'تفاصيل أخرى',
+                            controller: _directionsController,
+                            onTap: () => _moveCursorToTextEnd(
+                              _directionsController,
+                            ),
+                            onChanged: (_) => _directionsEdited = true,
+                          ),
                           const SizedBox(height: 8),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
@@ -547,7 +600,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                             building: _buildingController.text
                                                 .trim(),
                                             floor: _floorController.text.trim(),
-                                            directions: _preservedDirections,
+                                            directions: _directionsController
+                                                .text
+                                                .trim(),
                                             isDefault: _isDefault,
                                             latitude: _latitude,
                                             longitude: _longitude,
@@ -572,6 +627,12 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                               ? null
                                               : _buildingController.text.trim(),
                                           floor: _floorController.text.trim(),
+                                          directions: _directionsController.text
+                                                  .trim()
+                                                  .isEmpty
+                                              ? null
+                                              : _directionsController.text
+                                                  .trim(),
                                           isDefault: _isDefault,
                                           latitude: _latitude!,
                                           longitude: _longitude!,

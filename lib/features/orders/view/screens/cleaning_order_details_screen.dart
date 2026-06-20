@@ -21,7 +21,6 @@ import '../../../cl_main/view/widgets/cl_service_section_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_time_picker_field_widget.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/cleaning_booking_status.dart';
-import '../helpers/cleaning_cancel_policy.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
@@ -149,21 +148,26 @@ class _CleaningOrderDetailsScreenState
 
   String _normStatus(String? status) => (status ?? '').toLowerCase();
 
+  bool _blocksCancel(CleaningOrderDetailModel order) {
+    final s = _normStatus(order.status);
+    return s == CleaningBookingStatus.awaitingStartVerification ||
+        s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
+        s == CleaningBookingStatus.awaitingCustomerCompletion;
+  }
+
   bool _blocksReschedule(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
     return s == CleaningBookingStatus.awaitingStartVerification ||
         s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
         s == CleaningBookingStatus.awaitingCustomerCompletion ||
         s == CleaningBookingStatus.inProgress ||
-        s == CleaningBookingStatus.timeExtensionRequested ||
-        order.isAcceptedWaitingState;
+        s == CleaningBookingStatus.timeExtensionRequested;
   }
 
   bool _canEditRoomAssignments(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
     return s == CleaningBookingStatus.pending ||
-        s == CleaningBookingStatus.workerAssigned &&
-        !order.isAcceptedWaitingState;
+        s == CleaningBookingStatus.workerAssigned;
   }
 
   void _connectCleaningPusher() {
@@ -1180,16 +1184,15 @@ class _CleaningOrderDetailsScreenState
   }
 
   Future<void> _cancelOrder(CleaningOrderDetailModel order) async {
-    if (!CleaningCancelPolicy.isCancellable(order.status)) {
+    if (_blocksCancel(order)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('لا يمكن إلغاء الطلب في حالته الحالية.'),
+          content: Text('أكمل خطوة التحقق أو تأكيد الإكمال قبل الإلغاء'),
         ),
       );
       return;
     }
-
     final orderId = order.id;
     final OrdersBloc ordersBloc = getIt<OrdersBloc>();
     if (orderId == null) return;
@@ -1279,7 +1282,6 @@ class _CleaningOrderDetailsScreenState
     final isTerminalStatus =
         statusNorm == CleaningBookingStatus.completed ||
         statusNorm == CleaningBookingStatus.cancelled;
-    final canCancel = CleaningCancelPolicy.isCancellable(order.status);
     final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
       scheduledDate: order.scheduledDate,
       scheduledTime: order.scheduledTime,
@@ -1288,8 +1290,6 @@ class _CleaningOrderDetailsScreenState
         _blocksReschedule(order) || _isRebooking || !leadTimeCheck.allowed;
     final liveAcceptance = _effectiveWorkerAcceptance(order);
     final searchingForWorkers = _isSearchingForWorkers(order, liveAcceptance);
-    final showWorkerLifecycleBanner =
-        searchingForWorkers || order.isAcceptedWaitingState;
 
     Widget? sosTrailing;
     if (!isTerminalStatus) {
@@ -1375,7 +1375,7 @@ class _CleaningOrderDetailsScreenState
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
-                                  order.displayStatusLabelAr,
+                                  cleaningOrderStatusLabelAr(order.status),
                                   style: const TextStyle(
                                     color: Color(0xff0CBBC7),
                                     fontWeight: FontWeight.w700,
@@ -1450,16 +1450,11 @@ class _CleaningOrderDetailsScreenState
                         ),
                       ),
                     ],
-                    if (showWorkerLifecycleBanner) ...[
+                    if (searchingForWorkers) ...[
                       const SizedBox(height: 12),
                       CleaningTeamSearchBannerWidget(
                         acceptance: liveAcceptance,
                         numberOfWorkers: order.numberOfWorkers,
-                        workerOrderStatus: order.workerOrderStatus,
-                        workerOrderStatusLabel: order.workerOrderStatusLabel,
-                        requiredWorkersCount: order.requiredWorkersCount,
-                        acceptedWorkersCount: order.acceptedWorkersCount,
-                        pendingWorkersCount: order.pendingWorkersCount,
                       ),
                     ],
                     if (searchingForWorkers &&
@@ -1953,7 +1948,7 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
-                    if (canCancel) ...[
+                    if (!isTerminalStatus) ...[
                       const SizedBox(height: 14),
                       SizedBox(
                         height: 52,

@@ -95,6 +95,11 @@ class _CleaningStartVerificationDialogContentState
     final failureMessage = await widget.onSubmit(code);
     if (!mounted) return;
     if (failureMessage != null) {
+      AppToast.showToast(
+        context: context,
+        message: failureMessage,
+        type: ToastificationType.error,
+      );
       setState(() {
         _submitting = false;
         _error = failureMessage;

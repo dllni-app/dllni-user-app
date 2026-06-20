@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
@@ -24,7 +25,28 @@ class LoginScreen extends StatefulWidget {
 }
 
 Future<void> persistLoginSessionData(LoginResponseModel result) async {
-  await UserSessionStore.saveLoginResponse(result);
+  final token = result.token?.trim() ?? '';
+  if (token.isNotEmpty) {
+    await SharedPreferencesHelper.saveData(
+      key: UserSessionKeys.token,
+      value: token,
+    );
+  } else {
+    await SharedPreferencesHelper.removeData(key: UserSessionKeys.token);
+  }
+  final customerId = result.data?.id;
+  if (customerId != null) {
+    await SharedPreferencesHelper.saveData(
+      key: UserSessionKeys.customerId,
+      value: customerId,
+    );
+  } else {
+    await SharedPreferencesHelper.removeData(key: UserSessionKeys.customerId);
+  }
+  final user = result.data;
+  if (user != null) {
+    await UserSessionStore.writeAndMirror(user);
+  }
 }
 
 class _LoginScreenState extends State<LoginScreen> {

@@ -167,38 +167,6 @@ void main() {
       expect(data.acceptedWorkerAssignments.length, 1);
     });
 
-    test('treats accepted waiting worker states as non-searching and labels rooms', () {
-      final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
-        'data': <String, dynamic>{
-          'id': 124,
-          'status': CleaningBookingStatus.pending,
-          'worker_order_status': CleaningBookingStatus.acceptedWaitingForOrderStart,
-          'worker_order_status_label': 'بانتظار تأكيد مقدم الخدمة لبدء العمل',
-          'required_workers_count': 2,
-          'accepted_workers_count': 1,
-          'pending_workers_count': 1,
-          'roomAssignments': <Map<String, dynamic>>[
-            <String, dynamic>{
-              'id': 601,
-              'roomKey': 'bedroom.small.1',
-              'roomType': 'bedroom',
-              'roomSize': 'small',
-            },
-          ],
-        },
-      });
-
-      final data = model.data;
-      expect(data, isNotNull);
-      expect(data!.isAcceptedWaitingState, isTrue);
-      expect(data.isSearchingForWorkers, isFalse);
-      expect(
-        data.displayStatusLabelAr,
-        'بانتظار تأكيد مقدم الخدمة لبدء العمل (1/2)',
-      );
-      expect(data.roomAssignments?.first.resolvedLabel, 'غرفة نوم - صغيرة');
-    });
-
     test('parses multi-worker team fields on list payload', () {
       final model = fetchCleaningOrdersModelFromJson(<String, dynamic>{
         'data': <Map<String, dynamic>>[

@@ -1,54 +1,23 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 
 class CleaningTeamSearchBannerWidget extends StatelessWidget {
   const CleaningTeamSearchBannerWidget({
     required this.acceptance,
     required this.numberOfWorkers,
-    this.workerOrderStatus,
-    this.workerOrderStatusLabel,
-    this.requiredWorkersCount,
-    this.acceptedWorkersCount,
-    this.pendingWorkersCount,
     super.key,
   });
 
   final CleaningWorkerAcceptanceModel? acceptance;
   final int? numberOfWorkers;
-  final String? workerOrderStatus;
-  final String? workerOrderStatusLabel;
-  final int? requiredWorkersCount;
-  final int? acceptedWorkersCount;
-  final int? pendingWorkersCount;
 
   @override
   Widget build(BuildContext context) {
-    final normalizedWorkerStatus = (workerOrderStatus ?? '').trim().toLowerCase();
-    final isAcceptedWaitingState =
-        normalizedWorkerStatus == CleaningBookingStatus.acceptedWaitingTeam ||
-        normalizedWorkerStatus ==
-            CleaningBookingStatus.acceptedWaitingForOrderStart;
-    final required =
-        requiredWorkersCount ?? acceptance?.required ?? numberOfWorkers ?? 0;
-    final accepted =
-        acceptedWorkersCount ?? acceptance?.accepted ?? 0;
-    final remaining =
-        pendingWorkersCount ?? acceptance?.remaining ?? (required - accepted);
-    final title = workerOrderStatusLabel?.trim().isNotEmpty == true
-        ? workerOrderStatusLabel!.trim()
-        : isAcceptedWaitingState
-            ? 'تم قبول الطلب بانتظار اكتمال الفريق'
-            : 'جاري البحث عن عمال';
-    final message = isAcceptedWaitingState
-        ? (remaining > 0
-            ? 'تم قبول $accepted عامل من أصل $required. بانتظار $remaining عامل إضافي.'
-            : 'تم قبول الطلب. بانتظار تحديث الحالة من النظام.')
-        : (remaining > 0
-            ? 'تم قبول $accepted عامل. بانتظار $remaining عامل إضافي.'
-            : 'يتم تجميع الفريق المطلوب للخدمة.');
+    final required = acceptance?.required ?? numberOfWorkers ?? 0;
+    final accepted = acceptance?.accepted ?? 0;
+    final remaining = acceptance?.remaining ?? (required - accepted);
 
     return Container(
       width: double.infinity,
@@ -70,7 +39,7 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppText.bodyMedium(
-                  title,
+                  'جاري البحث عن عمال',
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                 ),
@@ -89,13 +58,15 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
                     '$accepted / $required',
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 10),
           AppText.bodySmall(
-            message,
+            remaining > 0
+                ? 'تم قبول $accepted عامل. بانتظار $remaining عامل إضافي.'
+                : 'يتم تجميع الفريق المطلوب للخدمة.',
             color: Colors.white.withValues(alpha: 0.92),
             textAlign: TextAlign.right,
           ),

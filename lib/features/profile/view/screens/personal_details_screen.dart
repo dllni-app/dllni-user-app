@@ -1,10 +1,11 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
-import 'package:dllni_user_app/core/session/user_session_store.dart';
+import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_password_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_use_case.dart';
@@ -191,9 +192,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       (account) async {
         final user = account.user;
         if (user != null) {
-          await UserSessionStore.writeAndMirror(user);
+          await SharedPreferencesHelper.saveData(
+            key: UserSessionKeys.loggedInUser,
+            value: jsonEncode(user.toJson()),
+          );
         } else {
-          await UserSessionStore.clearUserProfile();
+          await SharedPreferencesHelper.removeData(
+            key: UserSessionKeys.loggedInUser,
+          );
         }
 
         successMessage = user?.name == null
@@ -239,7 +245,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       type: ToastificationType.success,
     );
 
-    context.pop(true);
+    context.pop();
   }
 
   @override

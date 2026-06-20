@@ -3,7 +3,6 @@ import 'package:dllni_user_app/core/realtime/cleaning_gate_session_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../helpers/cleaning_lifecycle_error_mapper.dart';
 import '../manager/bloc/orders_bloc.dart';
 
 class CleaningCancelReasonDialog extends StatefulWidget {
@@ -109,9 +108,7 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
           final isLoading = state.cancelCleaningStatus == BlocStatus.loading;
           final blocError =
               (_hasSubmitted && state.cancelCleaningStatus == BlocStatus.failed)
-              ? CleaningLifecycleErrorMapper.mapCancelFailureMessage(
-                  state.cancelCleaningErrorMessage,
-                )
+              ? state.cancelCleaningErrorMessage
               : null;
           return Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 14),

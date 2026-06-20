@@ -1,4 +1,3 @@
-import 'package:dllni_user_app/core/realtime/cleaning_realtime_contract.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_booking_status.dart';
 import 'package:dllni_user_app/features/orders/view/helpers/cleaning_order_realtime_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,7 +62,7 @@ void main() {
     });
 
     test(
-      'rejected decision does not reopen completion when extension was requested',
+      'rejected decision reopens completion when extension was requested',
       () {
         final action = CleaningOrderRealtimePolicy.resolve(
           eventName: 'CompletionDecisionMade',
@@ -72,33 +71,22 @@ void main() {
         );
 
         expect(action.type, CleaningOrderRealtimeActionType.refreshDetails);
-        expect(action.reopenCompletionAfterRefresh, isFalse);
+        expect(action.reopenCompletionAfterRefresh, isTrue);
       },
     );
 
-    test('extension_rejected decision does not reopen completion sheet', () {
+    test('extension_rejected decision reopens completion sheet', () {
       final action = CleaningOrderRealtimePolicy.resolve(
         eventName: 'CompletionDecisionMade',
         payload: const <String, dynamic>{'decision': 'extension_rejected'},
         currentStatus: CleaningBookingStatus.timeExtensionRequested,
       );
 
-      expect(action.reopenCompletionAfterRefresh, isFalse);
-    });
-
-    test('extension_accepted decision refreshes without reopening completion', () {
-      final action = CleaningOrderRealtimePolicy.resolve(
-        eventName: 'CompletionDecisionMade',
-        payload: const <String, dynamic>{'decision': 'extension_accepted'},
-        currentStatus: CleaningBookingStatus.timeExtensionRequested,
-      );
-
-      expect(action.type, CleaningOrderRealtimeActionType.refreshDetails);
-      expect(action.reopenCompletionAfterRefresh, isFalse);
+      expect(action.reopenCompletionAfterRefresh, isTrue);
     });
 
     test(
-      'tracking update from extension requested does not reopen completion',
+      'tracking update to awaiting_customer_completion reopens completion',
       () {
         final action = CleaningOrderRealtimePolicy.resolve(
           eventName: 'CleaningBookingTrackingUpdated',
@@ -110,21 +98,8 @@ void main() {
           currentStatus: CleaningBookingStatus.timeExtensionRequested,
         );
 
-        expect(action.reopenCompletionAfterRefresh, isFalse);
+        expect(action.reopenCompletionAfterRefresh, isTrue);
       },
     );
-  });
-
-  group('CleaningRealtimeContract.statusFromDecision', () {
-    test('maps worker extension decisions', () {
-      expect(
-        CleaningRealtimeContract.statusFromDecision('extension_accepted'),
-        CleaningBookingStatus.inProgress,
-      );
-      expect(
-        CleaningRealtimeContract.statusFromDecision('extension_rejected'),
-        CleaningBookingStatus.completed,
-      );
-    });
   });
 }
