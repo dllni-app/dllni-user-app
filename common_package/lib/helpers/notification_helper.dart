@@ -32,7 +32,7 @@ List<NotificationChannel> get _basicNotificationChannels => [
     channelKey: _basicChannelKey,
     channelName: 'Basic Notifications',
     importance: NotificationImportance.High,
-    defaultColor: const Color(0xffBF956B),
+    defaultColor: const Color(0xff1E2A7B),
     onlyAlertOnce: false,
     channelShowBadge: true,
     channelDescription: 'Basic Instant Notification',
