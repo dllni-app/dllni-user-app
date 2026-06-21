@@ -8,6 +8,8 @@ import '../models/cleaning_type.dart';
 import '../models/cl_worker_room_assignment_result.dart';
 import '../repository/cl_main_repo.dart';
 
+export '../../data/models/estimate_price_response_model.dart';
+
 @lazySingleton
 class EstimateCleaningPriceUseCase implements UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
   final ClMainRepo clMainRepo;
