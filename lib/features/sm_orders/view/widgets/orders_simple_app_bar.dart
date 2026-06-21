@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import '../../../../core/themes/app_colors.dart';
 
 class SimpleAppBarWithTabBar extends StatefulWidget {
+  final String title;
+  final void Function(int index) onChanged;
+  final List<String> items;
   const SimpleAppBarWithTabBar({
     super.key,
     required this.title,
     required this.onChanged,
     required this.items,
   });
-  final String title;
-  final void Function(int index) onChanged;
-  final List<String> items;
 
   @override
   State<SimpleAppBarWithTabBar> createState() => _SimpleAppBarWithTabBarState();
@@ -20,11 +20,6 @@ class SimpleAppBarWithTabBar extends StatefulWidget {
 
 class _SimpleAppBarWithTabBarState extends State<SimpleAppBarWithTabBar> {
   int selectedTab = 0;
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -73,6 +68,7 @@ class _SimpleAppBarWithTabBarState extends State<SimpleAppBarWithTabBar> {
                       },
                       child: AppText(
                         widget.items[index],
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           color: selectedTab == index
                               ? AppColors.primary
@@ -103,5 +99,10 @@ class _SimpleAppBarWithTabBarState extends State<SimpleAppBarWithTabBar> {
         ),
       ],
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 }
