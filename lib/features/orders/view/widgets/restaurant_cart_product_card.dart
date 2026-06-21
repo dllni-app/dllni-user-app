@@ -20,7 +20,8 @@ class RestaurantCartProductCard extends StatefulWidget {
   final String Function(double) money;
 
   @override
-  State<RestaurantCartProductCard> createState() => _RestaurantCartProductCardState();
+  State<RestaurantCartProductCard> createState() =>
+      _RestaurantCartProductCardState();
 }
 
 class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
@@ -38,19 +39,31 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
+              AppImage.network(
+                widget.item.name ?? '',
+                loadingBuilder: (context) =>
+                    const Center(child: CircularProgressIndicator()),
+                errorWidget: const Center(child: Icon(Icons.error)),
                 width: 96,
                 height: 96,
-                decoration: BoxDecoration(color: const Color(0xffF3F4F6), borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText.titleMedium(widget.item.name ?? '-', color: const Color(0xff1F2937), fontWeight: FontWeight.bold),
+                    AppText.titleMedium(
+                      widget.item.name ?? '-',
+                      color: const Color(0xff1F2937),
+                      fontWeight: FontWeight.bold,
+                    ),
                     const SizedBox(height: 4),
-                    AppText.labelLarge('الإضافات: ${widget.item.note ?? '-'}', fontWeight: FontWeight.w400, color: const Color(0xff6B7280)),
+                    AppText.labelLarge(
+                      'الإضافات: ${widget.item.note ?? '-'}',
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xff6B7280),
+                    ),
                   ],
                 ),
               ),
@@ -77,9 +90,17 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                                 widget.item.quantity++;
                               });
                             },
-                      icon: const Icon(Icons.add, color: Color(0xff1A237E), size: 15),
+                      icon: const Icon(
+                        Icons.add,
+                        color: Color(0xff1A237E),
+                        size: 15,
+                      ),
                     ),
-                    AppText.labelLarge('${widget.item.quantity}', color: const Color(0xff1A237E), fontWeight: FontWeight.bold),
+                    AppText.labelLarge(
+                      '${widget.item.quantity}',
+                      color: const Color(0xff1A237E),
+                      fontWeight: FontWeight.bold,
+                    ),
                     IconButton(
                       onPressed: widget.isMutating
                           ? null
@@ -89,12 +110,20 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                                 widget.item.quantity--;
                               });
                             },
-                      icon: const Icon(Icons.remove, color: Color(0xff1A237E), size: 15),
+                      icon: const Icon(
+                        Icons.remove,
+                        color: Color(0xff1A237E),
+                        size: 15,
+                      ),
                     ),
                   ],
                 ),
               ),
-              AppText.bodyLarge(widget.money(widget.item.totalPrice), fontWeight: FontWeight.bold, color: const Color(0xff1A237E)),
+              AppText.bodyLarge(
+                widget.money(widget.item.totalPrice),
+                fontWeight: FontWeight.bold,
+                color: const Color(0xff1A237E),
+              ),
             ],
           ),
           Row(
@@ -102,14 +131,28 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
             children: [
               TextButton.icon(
                 onPressed: widget.isMutating ? null : widget.onDelete,
-                icon: const Icon(Icons.delete_outline, color: Color(0xffEF4444), size: 15),
-                label: AppText.labelLarge('حذف', color: const Color(0xffEF4444)),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Color(0xffEF4444),
+                  size: 15,
+                ),
+                label: AppText.labelLarge(
+                  'حذف',
+                  color: const Color(0xffEF4444),
+                ),
               ),
               const SizedBox(width: 14),
               TextButton.icon(
                 onPressed: widget.isMutating ? null : widget.onEdit,
-                icon: const Icon(Icons.edit, color: Color(0xff1E2A78), size: 15),
-                label: AppText.labelLarge('تعديل', color: const Color(0xff1E2A78)),
+                icon: const Icon(
+                  Icons.edit,
+                  color: Color(0xff1E2A78),
+                  size: 15,
+                ),
+                label: AppText.labelLarge(
+                  'تعديل',
+                  color: const Color(0xff1E2A78),
+                ),
               ),
             ],
           ),

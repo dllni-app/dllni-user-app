@@ -511,6 +511,7 @@ class RestaurantCartItemModel {
   List<int> modifierIds;
   int? substituteProductId;
   String? note;
+  String? imageUrl;
 
   RestaurantCartItemModel({
     this.id,
@@ -522,6 +523,7 @@ class RestaurantCartItemModel {
     this.modifierIds = const <int>[],
     this.substituteProductId,
     this.note,
+    this.imageUrl,
   });
 
   factory RestaurantCartItemModel.fromJson(Map<String, dynamic> json) {
@@ -535,6 +537,7 @@ class RestaurantCartItemModel {
       modifierIds: _asIntList(json['modifierIds']),
       substituteProductId: _asInt(json['substituteProductId']),
       note: _asString(json['note']),
+      imageUrl: _asString(json['imageUrl']),
     );
   }
 }

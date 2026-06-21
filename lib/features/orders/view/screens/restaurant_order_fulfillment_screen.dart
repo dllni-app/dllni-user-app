@@ -55,6 +55,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('تم تاكيد الطلب بنجاح')),
                 );
+
                 context.pop(true);
               } else if (status == BlocStatus.failed) {
                 ScaffoldMessenger.of(context).showSnackBar(
