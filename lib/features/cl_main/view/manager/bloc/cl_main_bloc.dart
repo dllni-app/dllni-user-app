@@ -141,9 +141,10 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     final isLoadMore = event.loadMore && !event.isReload;
     if (isLoadMore && pagination.isEndPage) return;
 
+    final shouldResetList = event.isReload || !isLoadMore;
     emit(
       state.copyWith(
-        previousWorkers: pagination.setLoading(isReload: event.isReload),
+        previousWorkers: pagination.setLoading(isReload: shouldResetList),
         clearErrorMessage: true,
       ),
     );
@@ -161,7 +162,9 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       (failure) {
         emit(
           state.copyWith(
-            previousWorkers: pagination.setFaild(errorMessage: failure.message),
+            previousWorkers: state.previousWorkers.setFaild(
+              errorMessage: failure.message,
+            ),
             errorMessage: failure.message,
           ),
         );
@@ -170,9 +173,9 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         final workers = result.data ?? const <PreviousWorkerModel>[];
         emit(
           state.copyWith(
-            previousWorkers: pagination.setSuccess(
+            previousWorkers: state.previousWorkers.setSuccess(
               data: workers,
-              total: result.meta?.total ?? pagination.total,
+              total: result.meta?.total ?? state.previousWorkers.total,
               perPage: result.meta?.perPage ?? perPage,
             ),
           ),

@@ -328,6 +328,7 @@ class _ClMainHomeDescriptionScreenState
           }
         },
         builder: (context, state) {
+          print("عدد العمال: ${state.previousWorkers.list.length}");
           return Scaffold(
             backgroundColor: const Color(0xFFF2F2F2),
             body: SafeArea(

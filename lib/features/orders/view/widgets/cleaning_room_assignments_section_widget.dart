@@ -17,6 +17,16 @@ String _translateRoomType(String? roomType) {
       return 'غرفة نوم';
     case 'kitchen':
       return 'مطبخ';
+    case 'living_room':
+      return 'غرفة المعيشة';
+    case 'dining room':
+      return 'غرفة الطعام';
+    case 'office':
+      return 'مكتب';
+    case 'study room':
+      return 'غرفة الدراسة';
+    case 'guest room':
+      return 'غرفة الضيوف';
     default:
       return roomType;
   }
