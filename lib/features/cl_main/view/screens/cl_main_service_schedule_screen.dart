@@ -29,7 +29,8 @@ import '../widgets/home_details_app_bar.dart';
 
 @AutoRoutePage()
 class ClMainServiceScheduleScreen extends StatefulWidget {
-  const ClMainServiceScheduleScreen({super.key});
+  const ClMainServiceScheduleScreen({super.key, required this.item});
+  final AddressListItem item;
 
   @override
   State<ClMainServiceScheduleScreen> createState() =>
@@ -145,9 +146,9 @@ class _ClMainServiceScheduleScreenState
       return;
     }
     if (normalized.length > 255) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('اسم الخدمة طويل جداً')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('اسم الخدمة طويل جداً')));
       return;
     }
     setState(() {
@@ -455,8 +456,7 @@ class _ClMainServiceScheduleScreenState
                           ClServiceAddressSectionWidget(
                             locationName: _selectedAddress?.label ?? 'المنزل',
                             address:
-                                _selectedAddress?.line1 ??
-                                'العنوان غير محدد',
+                                _selectedAddress?.line1 ?? 'العنوان غير محدد',
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 12),

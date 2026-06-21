@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/toast_component.dart';
+import '../../../profile/domain/models/address_list_item.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
@@ -305,19 +306,19 @@ class _ClMainHomeDescriptionScreenState
             _closeLoadingOverlay();
             context.pushRoute(
               '/clmainserviceschedule',
-              arguments: ClMainScheduleArgs(
-                propertyType: _propertyType,
-                bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
-                rooms: _roomSizeBreakdown.legacyRoomsCount,
-                bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
-                livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
-                roomSizeBreakdown: _roomSizeBreakdown,
-                addressLatitude: _lastLatitude ?? 0,
-                addressLongitude: _lastLongitude ?? 0,
-                estimate: state.estimatePrice!,
-                cleaningType: _selectedCleaningType,
-                bloc: bloc,
-              ),
+              // arguments: ClMainScheduleArgs(
+              //   propertyType: _propertyType,
+              //   bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
+              //   rooms: _roomSizeBreakdown.legacyRoomsCount,
+              //   bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
+              //   livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
+              //   roomSizeBreakdown: _roomSizeBreakdown,
+              //   addressLatitude: _lastLatitude ?? 0,
+              //   addressLongitude: _lastLongitude ?? 0,
+              //   estimate: state.estimatePrice!,
+              //   cleaningType: _selectedCleaningType,
+              //   bloc: bloc,
+              // ),
             );
           } else {
             _closeLoadingOverlay();

@@ -65,6 +65,8 @@ import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_tracking
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_product_details_screen.dart';
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_store_details_screen.dart';
 
+import '../features/profile/domain/models/address_list_item.dart';
+
 class GeneratedAppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -123,10 +125,13 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/clmainserviceschedule':
-        return MaterialPageRoute(
-          builder: (_) => ClMainServiceScheduleScreen(),
-          settings: settings,
-        );
+        if (args is AddressListItem) {
+          return MaterialPageRoute(
+            builder: (_) => ClMainServiceScheduleScreen(item: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
       case '/clworkerprofiledetail':
         if (args is WorkerProfileRouteArgs) {
           return MaterialPageRoute(
@@ -468,7 +473,6 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
-
     }
 
     return null;
@@ -476,9 +480,7 @@ class GeneratedAppRoutes {
 
   static Route<dynamic> _errorRoute(RouteSettings settings) {
     return MaterialPageRoute(
-      builder: (_) => const Scaffold(
-        body: Center(child: Text('Route Error')),
-      ),
+      builder: (_) => const Scaffold(body: Center(child: Text('Route Error'))),
       settings: settings,
     );
   }
