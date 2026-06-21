@@ -44,6 +44,7 @@ class _ClMainHomeDescriptionScreenState
   CleaningType _selectedCleaningType = CleaningType.regularCleaning;
 
   String _propertyType = 'apartment';
+  AddressListItem? _defaultAddress;
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
   double? _lastLatitude;
@@ -70,6 +71,7 @@ class _ClMainHomeDescriptionScreenState
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is ClMainHomeDescriptionArgs) {
       _propertyType = args.propertyType;
+      _defaultAddress = args.defaultAddress;
       _bloc = args.bloc;
       _bloc?.add(
         GetPreviousCleaningWorkersEvent(
@@ -306,19 +308,21 @@ class _ClMainHomeDescriptionScreenState
             _closeLoadingOverlay();
             context.pushRoute(
               '/clmainserviceschedule',
-              // arguments: ClMainScheduleArgs(
-              //   propertyType: _propertyType,
-              //   bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
-              //   rooms: _roomSizeBreakdown.legacyRoomsCount,
-              //   bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
-              //   livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
-              //   roomSizeBreakdown: _roomSizeBreakdown,
-              //   addressLatitude: _lastLatitude ?? 0,
-              //   addressLongitude: _lastLongitude ?? 0,
-              //   estimate: state.estimatePrice!,
-              //   cleaningType: _selectedCleaningType,
-              //   bloc: bloc,
-              // ),
+              arguments: ClMainScheduleArgs(
+                propertyType: _propertyType,
+                bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
+                rooms: _roomSizeBreakdown.legacyRoomsCount,
+                bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
+                livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
+                roomSizeBreakdown: _roomSizeBreakdown,
+                addressLatitude: _lastLatitude ?? _defaultAddress?.latitude ?? 0,
+                addressLongitude:
+                    _lastLongitude ?? _defaultAddress?.longitude ?? 0,
+                estimate: state.estimatePrice!,
+                cleaningType: _selectedCleaningType,
+                bloc: bloc,
+                defaultAddress: _defaultAddress,
+              ),
             );
           } else {
             _closeLoadingOverlay();
