@@ -1,3 +1,4 @@
+import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
@@ -6,10 +7,12 @@ import '../manager/bloc/cl_main_bloc.dart';
 class ClMainHomeDescriptionArgs {
   final String propertyType;
   final ClMainBloc bloc;
+  final AddressListItem? defaultAddress;
 
   const ClMainHomeDescriptionArgs({
     required this.propertyType,
     required this.bloc,
+    this.defaultAddress,
   });
 }
 
@@ -85,6 +88,7 @@ class ClMainScheduleArgs {
   final EstimatePriceResponseModel estimate;
   final CleaningType cleaningType;
   final ClMainBloc bloc;
+  final AddressListItem? defaultAddress;
 
   const ClMainScheduleArgs({
     required this.propertyType,
@@ -98,5 +102,6 @@ class ClMainScheduleArgs {
     required this.estimate,
     required this.cleaningType,
     required this.bloc,
+    this.defaultAddress,
   });
 }
