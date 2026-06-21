@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CleaningRoomSizeBreakdown.toBackendJson', () {
-    test('omits corridor and zero-count room buckets', () {
+    test('includes corridor and omits zero-count room buckets', () {
       const breakdown = CleaningRoomSizeBreakdown(
         bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
         corridor: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
@@ -11,11 +11,15 @@ void main() {
 
       final json = breakdown.toBackendJson();
 
-      expect(json.keys, {'bedroom'});
-      expect(json.containsKey('corridor'), isFalse);
+      expect(json.keys, {'bedroom', 'corridor'});
       expect(json['bedroom'], {
         'small': 1,
         'medium': 0,
+        'large': 0,
+      });
+      expect(json['corridor'], {
+        'small': 0,
+        'medium': 1,
         'large': 0,
       });
     });

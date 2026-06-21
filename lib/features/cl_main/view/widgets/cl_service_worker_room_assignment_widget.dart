@@ -17,6 +17,7 @@ class ClServiceWorkerRoomAssignmentWidget extends StatelessWidget {
   });
 
   static const Color _screenBlue = Color(0xFF1E2A78);
+  static const String _autoAssignLabel = 'تلقائي';
 
   final List<CleaningRoomUnit> units;
   final int numberOfWorkers;
@@ -43,7 +44,11 @@ class ClServiceWorkerRoomAssignmentWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText.bodySmall('اختر العامل المسؤول عن كل غرفة (اختياري)', color: const Color(0xFF6B7280), textAlign: TextAlign.right),
+          AppText.bodySmall(
+            'يمكنك تعيين عامل محدد لكل غرفة، أو اختيار «$_autoAssignLabel» ليتولّى النظام التوزيع (اختياري)',
+            color: const Color(0xFF6B7280),
+            textAlign: TextAlign.right,
+          ),
           if (_generalAssignmentErrors(fieldErrors).isNotEmpty) ...[
             const SizedBox(height: 10),
             _FieldErrorsBanner(messages: _generalAssignmentErrors(fieldErrors)),
@@ -109,7 +114,7 @@ class _RoomAssignmentRow extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _SlotChip(label: 'بدون', isSelected: selectedSlot == null, onTap: () => onAssign(unit.roomKey, 0)),
+              _SlotChip(label: ClServiceWorkerRoomAssignmentWidget._autoAssignLabel, isSelected: selectedSlot == null, onTap: () => onAssign(unit.roomKey, 0)),
               for (var slot = 1; slot <= numberOfWorkers; slot++) _SlotChip(label: 'عامل $slot', isSelected: selectedSlot == slot, onTap: () => onAssign(unit.roomKey, slot)),
             ],
           ),

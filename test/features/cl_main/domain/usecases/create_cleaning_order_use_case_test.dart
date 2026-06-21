@@ -79,7 +79,6 @@ void main() {
     final breakdownJson =
         details['room_size_breakdown'] as Map<String, dynamic>;
     expect(breakdownJson, breakdown.toBackendJson());
-    expect(breakdownJson.containsKey('corridor'), isFalse);
   });
 
   test('getBody includes propertyDetails.cleaning_mode when provided', () {

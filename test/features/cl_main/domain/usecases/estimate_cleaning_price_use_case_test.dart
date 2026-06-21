@@ -43,11 +43,10 @@ void main() {
       'living_room',
       'balcony',
     });
-    expect(breakdownJson.containsKey('corridor'), isFalse);
   });
 
   test(
-    'getBody omits corridor from room_size_breakdown when present locally',
+    'getBody includes corridor in room_size_breakdown when present locally',
     () {
       const breakdown = CleaningRoomSizeBreakdown(
         bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
@@ -70,8 +69,12 @@ void main() {
       final breakdownJson =
           details['room_size_breakdown'] as Map<String, dynamic>;
 
-      expect(breakdownJson.containsKey('corridor'), isFalse);
-      expect(breakdownJson.keys, {'bedroom'});
+      expect(breakdownJson.keys, {'bedroom', 'corridor'});
+      expect(breakdownJson['corridor'], {
+        'small': 0,
+        'medium': 1,
+        'large': 0,
+      });
     },
   );
 

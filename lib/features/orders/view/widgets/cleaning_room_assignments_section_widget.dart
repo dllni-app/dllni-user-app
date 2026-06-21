@@ -19,6 +19,8 @@ String _translateRoomType(String? roomType) {
       return 'مطبخ';
     case 'living_room':
       return 'غرفة المعيشة';
+    case 'corridor':
+      return 'موزع';
     case 'dining room':
       return 'غرفة الطعام';
     case 'office':

@@ -15,13 +15,11 @@ const backendAcceptedRoomSizeBreakdownTypes = <CleaningRoomType>[
   CleaningRoomType.kitchen,
   CleaningRoomType.livingRoom,
   CleaningRoomType.balcony,
-];
-
-/// All room types supported in the local UI (includes corridor until backend ships it).
-const allCleaningRoomTypes = <CleaningRoomType>[
-  ...backendAcceptedRoomSizeBreakdownTypes,
   CleaningRoomType.corridor,
 ];
+
+/// All room types supported in the local UI.
+const allCleaningRoomTypes = backendAcceptedRoomSizeBreakdownTypes;
 
 extension CleaningRoomTypeX on CleaningRoomType {
   String get apiKey {
