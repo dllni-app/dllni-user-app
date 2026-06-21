@@ -20,4 +20,6 @@ abstract class AuthRepo {
   DataResponse<AuthActionResponseModel> requestAccountRecovery(AuthPhoneParams params);
 
   DataResponse<AuthActionResponseModel> confirmAccountRecovery(ResetPasswordConfirmParams params);
+
+  DataResponse<CurrentUserModel> fetchCurrentUser();
 }

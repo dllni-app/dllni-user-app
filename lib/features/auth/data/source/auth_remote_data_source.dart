@@ -77,4 +77,11 @@ class AuthRemoteDataSource with HandlingApiManager {
       jsonConvert: authActionResponseModelFromJson,
     );
   }
+
+  Future<CurrentUserModel> fetchCurrentUser() {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(endPoint: '/api/v1/user/me'),
+      jsonConvert: currentUserModelFromJson,
+    );
+  }
 }

@@ -17,8 +17,12 @@ import 'package:injectable/injectable.dart' as _i526;
 import '../../features/auth/data/repository/auth_repo_impl.dart' as _i751;
 import '../../features/auth/data/source/auth_remote_data_source.dart' as _i777;
 import '../../features/auth/domain/repository/auth_repo.dart' as _i976;
+import '../../features/auth/domain/usecases/fetch_current_user_use_case.dart'
+    as _i194;
 import '../../features/auth/domain/usecases/login_use_case.dart' as _i37;
 import '../../features/auth/domain/usecases/register_use_case.dart' as _i97;
+import '../../features/auth/domain/usecases/resend_account_code_use_case.dart'
+    as _i308;
 import '../../features/auth/domain/usecases/verify_account_use_case.dart'
     as _i895;
 import '../../features/auth/view/manager/bloc/auth_bloc.dart' as _i958;
@@ -1098,11 +1102,17 @@ _i174.GetIt $initGetIt(
       gh<_i992.AddShoppingListToCartUseCase>(),
     ),
   );
+  gh.lazySingleton<_i194.FetchCurrentUserUseCase>(
+    () => _i194.FetchCurrentUserUseCase(authRepo: gh<_i976.AuthRepo>()),
+  );
   gh.lazySingleton<_i37.LoginUseCase>(
     () => _i37.LoginUseCase(authRepo: gh<_i976.AuthRepo>()),
   );
   gh.lazySingleton<_i97.RegisterUseCase>(
     () => _i97.RegisterUseCase(authRepo: gh<_i976.AuthRepo>()),
+  );
+  gh.lazySingleton<_i308.ResendAccountCodeUseCase>(
+    () => _i308.ResendAccountCodeUseCase(authRepo: gh<_i976.AuthRepo>()),
   );
   gh.lazySingleton<_i895.VerifyAccountUseCase>(
     () => _i895.VerifyAccountUseCase(authRepo: gh<_i976.AuthRepo>()),

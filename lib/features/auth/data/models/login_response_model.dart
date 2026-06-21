@@ -27,6 +27,10 @@ LoginResponseModel loginResponseModelFromJson(dynamic json) => LoginResponseMode
       json is Map<String, dynamic> ? json : Map<String, dynamic>.from(json as Map),
     );
 
+CurrentUserModel currentUserModelFromJson(dynamic json) => CurrentUserModel.fromJson(
+      json is Map<String, dynamic> ? json : Map<String, dynamic>.from(json as Map),
+    );
+
 class LoginResponseModel {
   final LoggedInUserModel? data;
   final String? token;
@@ -39,6 +43,21 @@ class LoginResponseModel {
           ? LoggedInUserModel.fromJson(Map<String, dynamic>.from(json['data'] as Map))
           : null,
       token: _asString(json['token']),
+    );
+  }
+}
+
+class CurrentUserModel {
+  final LoggedInUserModel? user;
+
+  const CurrentUserModel({this.user});
+
+  factory CurrentUserModel.fromJson(Map<String, dynamic> json) {
+    final rawUser = json['user'] ?? json['data'];
+    return CurrentUserModel(
+      user: rawUser is Map
+          ? LoggedInUserModel.fromJson(Map<String, dynamic>.from(rawUser))
+          : null,
     );
   }
 }

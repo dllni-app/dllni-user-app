@@ -59,4 +59,11 @@ class AuthRepoImpl with HandlingException implements AuthRepo {
       tryCall: () => authRemoteDataSource.confirmAccountRecovery(params),
     );
   }
+
+  @override
+  DataResponse<CurrentUserModel> fetchCurrentUser() {
+    return wrapHandlingException(
+      tryCall: () => authRemoteDataSource.fetchCurrentUser(),
+    );
+  }
 }

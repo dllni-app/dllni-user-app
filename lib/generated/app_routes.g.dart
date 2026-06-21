@@ -1,6 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 import 'package:flutter/material.dart';
+import 'package:dllni_user_app/features/auth/view/screens/account_recovery_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/register_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
@@ -36,6 +37,7 @@ import 'package:dllni_user_app/features/profile/view/screens/my_addresses_screen
 import 'package:dllni_user_app/features/profile/view/screens/notifications_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/order_voting_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/personal_details_screen.dart';
+import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import 'package:dllni_user_app/features/profile/view/screens/shopping_list_details_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/shopping_list_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/vote_followup_screen.dart';
@@ -63,13 +65,16 @@ import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_tracking
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_product_details_screen.dart';
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_store_details_screen.dart';
 
-import '../features/auth/data/models/login_response_model.dart';
-
 class GeneratedAppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
 
     switch (settings.name) {
+      case '/account-recovery':
+        return MaterialPageRoute(
+          builder: (_) => AccountRecoveryScreen(),
+          settings: settings,
+        );
       case '/login':
         return MaterialPageRoute(
           builder: (_) => LoginScreen(),

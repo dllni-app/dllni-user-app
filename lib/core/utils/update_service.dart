@@ -64,7 +64,7 @@ class UpdateService {
       if (context != null && context.mounted) {
         AppToast.showToast(
           context: context,
-          message: _mapErrorMessage(error),
+          message: "يجب تثبيت التطبيق من المتجر الرسمي للتمتع بتجربة أفضل",
           type: ToastificationType.error,
         );
       }
