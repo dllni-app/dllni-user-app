@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../core/session/user_session_store.dart';
+import '../../../../core/session/user_session_sync_service.dart';
 import '../../../auth/data/models/login_response_model.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
@@ -18,16 +19,16 @@ import '../widgets/section_card.dart';
 import '../widgets/section_title.dart';
 
 LoggedInUserModel? _readLoggedInUser() {
-  final raw = SharedPreferencesHelper.getData(key: UserSessionKeys.loggedInUser);
+  final raw = SharedPreferencesHelper.getData(
+    key: UserSessionKeys.loggedInUser,
+  );
   if (raw == null) return null;
 
   try {
     final decoded = jsonDecode('$raw');
     if (decoded is! Map) return null;
 
-    return LoggedInUserModel.fromJson(
-      Map<String, dynamic>.from(decoded),
-    );
+    return LoggedInUserModel.fromJson(Map<String, dynamic>.from(decoded));
   } catch (_) {
     return null;
   }
@@ -59,11 +60,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   ProfileSummaryCard(
                     params: _personalDetailsParams,
-                    onEditTap: () {
-                      context.pushRoute(
+                    onEditTap: () async {
+                      await context.pushRoute(
                         '/personaldetails',
                         arguments: _personalDetailsParams,
                       );
+                      setState(() {});
                     },
                   ),
                   SizedBox(height: 16),

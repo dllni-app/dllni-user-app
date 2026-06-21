@@ -14,6 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../../core/session/user_session_store.dart';
 import '../../../auth/data/models/login_response_model.dart';
 import '../widgets/account_info_section.dart';
 import '../widgets/change_password_section.dart';
@@ -196,6 +197,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             key: UserSessionKeys.loggedInUser,
             value: jsonEncode(user.toJson()),
           );
+          UserSessionStore.userNotifier.value = user;
         } else {
           await SharedPreferencesHelper.removeData(
             key: UserSessionKeys.loggedInUser,
