@@ -29,8 +29,10 @@ import '../widgets/home_details_app_bar.dart';
 
 @AutoRoutePage()
 class ClMainServiceScheduleScreen extends StatefulWidget {
-  const ClMainServiceScheduleScreen({super.key, required this.item});
-  final AddressListItem item;
+  const ClMainServiceScheduleScreen({super.key, this.item, this.args});
+
+  final AddressListItem? item;
+  final ClMainScheduleArgs? args;
 
   @override
   State<ClMainServiceScheduleScreen> createState() =>
@@ -58,6 +60,9 @@ class _ClMainServiceScheduleScreenState
       const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
 
+  AddressListItem? get _activeAddress =>
+      _selectedAddress ?? _routeArgs?.defaultAddress ?? widget.item;
+
   @override
   void initState() {
     super.initState();
@@ -73,13 +78,16 @@ class _ClMainServiceScheduleScreenState
     super.didChangeDependencies();
     if (_didReadArgs) return;
     _didReadArgs = true;
-    final args = ModalRoute.of(context)?.settings.arguments;
+    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
     if (args is ClMainScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
       _currentEstimate = args.estimate;
+      _selectedAddress = args.defaultAddress ?? widget.item;
       _syncToTime();
       _loadCleaningServices();
+    } else if (args is AddressListItem) {
+      _selectedAddress = args;
     }
   }
 
@@ -321,7 +329,14 @@ class _ClMainServiceScheduleScreenState
     final acceptedPledge = await _showPersonalPropertyPledgeDialog();
     if (!mounted || !acceptedPledge) return;
 
-    final selectedAddress = _selectedAddress;
+    final selectedAddress = _activeAddress;
+    if (selectedAddress == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final normalizedAssignments = estimate?.workerRoomAssignments ?? const [];
     final workerRoomAssignments = normalizedAssignments.isNotEmpty
@@ -344,16 +359,14 @@ class _ClMainServiceScheduleScreenState
           livingRoomSize: args.livingRoomSize,
           roomSizeBreakdown: args.roomSizeBreakdown,
           cleaningType: args.cleaningType,
-          address:
-              selectedAddress?.line1 ??
-              'العزيزية، شارع الكتاب المقدس، جانب محل مميز 2b',
-          locationName: selectedAddress?.label ?? 'المنزل',
+          address: selectedAddress.line1,
+          locationName: selectedAddress.label,
           scheduledDate: AppDateTimeLocale.dateFormat(
             'yyyy-MM-dd',
           ).format(_selectedDate),
           scheduledTime: _fromTimeController.text,
-          addressLatitude: args.addressLatitude,
-          addressLongitude: args.addressLongitude,
+          addressLatitude: selectedAddress.latitude ?? args.addressLatitude,
+          addressLongitude: selectedAddress.longitude ?? args.addressLongitude,
           genderPreference: state.genderPreference,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
@@ -380,6 +393,7 @@ class _ClMainServiceScheduleScreenState
     final dayDate = _arabicDayDateLabel(_selectedDate);
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final bloc = _bloc;
+    final activeAddress = _activeAddress;
 
     if (bloc == null) {
       return const Scaffold(
@@ -454,9 +468,10 @@ class _ClMainServiceScheduleScreenState
                           ),
                           const SizedBox(height: 10),
                           ClServiceAddressSectionWidget(
-                            locationName: _selectedAddress?.label ?? 'المنزل',
+                            locationName:
+                                activeAddress?.label ?? 'اختر عنوان الخدمة',
                             address:
-                                _selectedAddress?.line1 ?? 'العنوان غير محدد',
+                                activeAddress?.line1 ?? 'اضغط لتغيير العنوان',
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 12),
