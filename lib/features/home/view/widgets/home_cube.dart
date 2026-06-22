@@ -32,7 +32,7 @@ class _HomeCubeState extends State<HomeCube> {
     final base = _themeColor(offer.theme);
     final imageUrl = offer.imageUrl;
     return CubeFaceData(
-      color: Colors.transparent,
+      color: Colors.grey.shade200,
       text: offer.discountLabel ?? offer.title ?? '',
       borderRadius: BorderRadius.circular(16),
       child: imageUrl != null && imageUrl.isNotEmpty

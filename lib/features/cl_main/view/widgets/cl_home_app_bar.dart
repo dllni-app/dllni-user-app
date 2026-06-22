@@ -57,7 +57,7 @@ class ClHomeAppBar extends StatelessWidget {
                 ),
               ),
               _AppBarAction(
-                hasNew: true,
+                hasNew: false,
                 icon: FontAwesomeIcons.cartShopping,
                 onTap: () {
                   context.pushRoute(
@@ -68,7 +68,7 @@ class ClHomeAppBar extends StatelessWidget {
               ),
               SizedBox(width: 12),
               _AppBarAction(
-                hasNew: true,
+                hasNew: false,
                 icon: FontAwesomeIcons.bell,
                 onTap: () {
                   context.pushRoute('/notifications');

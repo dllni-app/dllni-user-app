@@ -45,13 +45,13 @@ class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProvider
   @override
   Widget build(BuildContext context) {
     return TabBar(
-      isScrollable: true,
+      // isScrollable: true,
       onTap: (i) {
         widget.onChanged(i);
       },
       physics: const BouncingScrollPhysics(),
       dividerHeight: .2,
-      tabAlignment: TabAlignment.start,
+      // tabAlignment: TabAlignment.start,
       indicatorColor: Color(0xff1E2A78),
       controller: _tabController1,
       labelPadding: EdgeInsetsDirectional.symmetric(vertical: 3, horizontal: 15),

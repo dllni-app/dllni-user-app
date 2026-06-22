@@ -50,7 +50,7 @@ class _ClMainServiceScheduleScreenState
   ClMainScheduleArgs? _routeArgs;
   bool _didReadArgs = false;
   EstimatePriceResponseModel? _currentEstimate;
-  AddressListItem? _selectedAddress;
+  ValueNotifier<AddressListItem?> selectedAddress=ValueNotifier(null);
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
   String? _appliedCouponCode;
@@ -60,8 +60,6 @@ class _ClMainServiceScheduleScreenState
       const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
 
-  AddressListItem? get _activeAddress =>
-      _selectedAddress ?? _routeArgs?.defaultAddress ?? widget.item;
 
   @override
   void initState() {
@@ -83,11 +81,11 @@ class _ClMainServiceScheduleScreenState
       _routeArgs = args;
       _bloc = args.bloc;
       _currentEstimate = args.estimate;
-      _selectedAddress = args.defaultAddress ?? widget.item;
+      selectedAddress = ValueNotifier(args.defaultAddress ?? widget.item);
       _syncToTime();
       _loadCleaningServices();
     } else if (args is AddressListItem) {
-      _selectedAddress = args;
+      selectedAddress = ValueNotifier(args);
     }
   }
 
@@ -239,16 +237,14 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _selectAddress() async {
-    final selectedAddress = await context.pushRoute(
+    final selectedAddressVal = await context.pushRoute(
       '/myaddresses',
       arguments: true,
     );
-    if (!mounted) return;
-    if (selectedAddress is AddressListItem) {
-      setState(() {
-        _selectedAddress = selectedAddress;
-      });
-    }
+    // if (!mounted) return;
+    // if (selectedAddress is AddressListItem) {
+    //     selectedAddress?.value = selectedAddressVal;
+    // }
   }
 
   Future<void> _applyCoupon(String code) async {
@@ -329,7 +325,6 @@ class _ClMainServiceScheduleScreenState
     final acceptedPledge = await _showPersonalPropertyPledgeDialog();
     if (!mounted || !acceptedPledge) return;
 
-    final selectedAddress = _activeAddress;
     if (selectedAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
@@ -359,14 +354,14 @@ class _ClMainServiceScheduleScreenState
           livingRoomSize: args.livingRoomSize,
           roomSizeBreakdown: args.roomSizeBreakdown,
           cleaningType: args.cleaningType,
-          address: selectedAddress.line1,
-          locationName: selectedAddress.label,
+          address: selectedAddress?.value?.line1,
+          locationName: selectedAddress?.value?.label,
           scheduledDate: AppDateTimeLocale.dateFormat(
             'yyyy-MM-dd',
           ).format(_selectedDate),
           scheduledTime: _fromTimeController.text,
-          addressLatitude: selectedAddress.latitude ?? args.addressLatitude,
-          addressLongitude: selectedAddress.longitude ?? args.addressLongitude,
+          addressLatitude: selectedAddress?.value?.latitude ?? args.addressLatitude,
+          addressLongitude: selectedAddress?.value?.longitude ?? args.addressLongitude,
           genderPreference: state.genderPreference,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
@@ -393,7 +388,7 @@ class _ClMainServiceScheduleScreenState
     final dayDate = _arabicDayDateLabel(_selectedDate);
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final bloc = _bloc;
-    final activeAddress = _activeAddress;
+
 
     if (bloc == null) {
       return const Scaffold(
@@ -421,7 +416,8 @@ class _ClMainServiceScheduleScreenState
               type: ToastificationType.success,
             );
             context.pushRoute('/clmain');
-          } else if (state.createOrderStatus == BlocStatus.failed) {
+          }
+          else if (state.createOrderStatus == BlocStatus.failed) {
             AppToast.showToast(
               context: context,
               message: state.errorMessage ?? 'فشل تنفيذ الطلب',
@@ -467,11 +463,12 @@ class _ClMainServiceScheduleScreenState
                             onPickFromTime: _pickFromTime,
                           ),
                           const SizedBox(height: 10),
-                          ClServiceAddressSectionWidget(
-                            locationName:
-                                activeAddress?.label ?? 'اختر عنوان الخدمة',
-                            address:
-                                activeAddress?.line1 ?? 'اضغط لتغيير العنوان',
+                          CleaningAddressSelectWidget(
+                            selectedAddress: selectedAddress,
+                            // locationName:
+                            //     activeAddress?.label ?? 'اختر عنوان الخدمة',
+                            // address:
+                            //     activeAddress?.line1 ?? 'اضغط لتغيير العنوان',
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 12),

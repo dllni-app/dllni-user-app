@@ -375,13 +375,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           }
         }
         final fallbackDefault = addresses.isNotEmpty
-            ? addresses.first.id
+            ? addresses.first
             : null;
         emit(
           state.copyWith(
             addressesStatus: BlocStatus.success,
             addresses: addresses,
-            defaultAddressId: defaultAddress?.id ?? fallbackDefault,
+            defaultAddress: defaultAddress ?? fallbackDefault,
           ),
         );
       },

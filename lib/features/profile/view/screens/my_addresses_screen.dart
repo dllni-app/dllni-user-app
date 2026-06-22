@@ -32,7 +32,8 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
   Future<void> _confirmDeleteAddress(
     AddressListItem item,
     ProfileBloc bloc,
-  ) async {
+  )
+  async {
     final id = int.tryParse(item.id);
     if (id == null) return;
     final confirmed = await showDialog<bool>(
@@ -90,7 +91,8 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
   AddressListItem? _resolveCreatedAddress(
     List<AddressListItem> addresses,
     CreatedAddressSelectionHint hint,
-  ) {
+  )
+  {
     bool closeEnough(double? a, double? b) {
       if (a == null || b == null) return false;
       return (a - b).abs() < 0.00001;
@@ -254,7 +256,7 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
                             const SizedBox(height: 16),
                             ...addresses.map((item) {
                               final isDefault =
-                                  state.defaultAddressId == item.id;
+                                  state.defaultAddress?.id == item.id;
                               return Padding(
                                 padding: const EdgeInsetsDirectional.only(
                                   bottom: 12,

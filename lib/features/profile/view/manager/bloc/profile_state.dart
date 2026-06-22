@@ -12,7 +12,7 @@ class ProfileState {
   String? quantityPatchError;
   final BlocStatus? addressesStatus;
   final List<AddressListItem> addresses;
-  final String? defaultAddressId;
+  final AddressListItem? defaultAddress;
   final BlocStatus? setDefaultAddressStatus;
 
   final PaginationStateModel<FetchNotificationsModelDataItem> notificationsPagination;
@@ -59,7 +59,7 @@ class ProfileState {
   ProfileState({
     this.addressesStatus,
     this.addresses = const <AddressListItem>[],
-    this.defaultAddressId,
+    this.defaultAddress,
     this.setDefaultAddressStatus,
     this.notificationsPagination = const PaginationStateModel<FetchNotificationsModelDataItem>(perPage: 10),
     this.markAllNotificationsReadStatus,
@@ -111,7 +111,7 @@ class ProfileState {
   ProfileState copyWith({
     BlocStatus? addressesStatus,
     List<AddressListItem>? addresses,
-    String? defaultAddressId,
+    AddressListItem? defaultAddress,
     BlocStatus? setDefaultAddressStatus,
     PaginationStateModel<FetchNotificationsModelDataItem>? notificationsPagination,
     BlocStatus? markAllNotificationsReadStatus,
@@ -165,7 +165,7 @@ class ProfileState {
   }) => ProfileState(
     addressesStatus: addressesStatus ?? this.addressesStatus,
     addresses: addresses ?? this.addresses,
-    defaultAddressId: defaultAddressId ?? this.defaultAddressId,
+    defaultAddress: defaultAddress ?? this.defaultAddress,
     setDefaultAddressStatus: setDefaultAddressStatus ?? this.setDefaultAddressStatus,
     notificationsPagination: notificationsPagination ?? this.notificationsPagination,
     markAllNotificationsReadStatus: clearMarkAllNotificationsReadStatus

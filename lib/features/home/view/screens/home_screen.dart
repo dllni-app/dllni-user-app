@@ -24,7 +24,8 @@ class HomeScreen extends StatelessWidget {
     ];
 
     return BlocProvider(
-      create: (_) => getIt<HomeBloc>()
+      create: (_) =>
+      getIt<HomeBloc>()
         ..add(
           FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
         ),
@@ -38,27 +39,9 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 24),
-                  /*Row(
-                    children: [
-                      SizedBox(
-                        height: 20,
-                        child: VerticalDivider(color: context.primaryContainer, thickness: 4, radius: BorderRadius.circular(9999)),
-                      ),
-                      SizedBox(width: 8),
-                      AppText.titleMedium('عروض مميزة لك', fontWeight: FontWeight.bold, color: Color(0xff212C7E)),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  AppText.bodyMedium(
-                    'اكتشف أفضل العروض والخدمات المختارة \nخصيصا لك، بتجربة سريعة وسهلة بضغطة واحدة',
-                    color: Color(0xff6B7280),
-                    textAlign: TextAlign.start,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  SizedBox(height: 32),*/
                   BlocBuilder<HomeBloc, HomeState>(
                     buildWhen: (prev, next) =>
-                        prev.userOffersStatus != next.userOffersStatus ||
+                    prev.userOffersStatus != next.userOffersStatus ||
                         prev.userOffers != next.userOffers ||
                         prev.errorMessage != next.errorMessage,
                     builder: (context, state) {
@@ -66,7 +49,7 @@ class HomeScreen extends StatelessWidget {
                           state.userOffersStatus == BlocStatus.init) {
                         return SizedBox(
                           height:
-                              (context.width * 0.52).clamp(180.0, 230.0) + 56,
+                          (context.width * 0.52).clamp(180.0, 230.0) + 56,
                           child: Center(
                             child: CircularProgressIndicator(
                               color: context.primaryContainer,
@@ -118,44 +101,45 @@ class HomeScreen extends StatelessWidget {
                       crossAxisSpacing: 12,
                       childAspectRatio: .8,
                     ),
-                    itemBuilder: (context, index) => InkWell(
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () {
-                        context.pushRoute(
-                          screens[index],
-                          arguments: index == 2
-                              ? SmMainScreenParams(
-                                  initialPage: 0,
-                                  expandSearch: false,
-                                )
-                              : null,
-                        );
-                      },
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: context.onPrimary,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            padding: EdgeInsetsDirectional.all(15),
-                            child: AppImage.asset(
-                              images[index],
-                              color: context.primary,
-                            ),
+                    itemBuilder: (context, index) =>
+                        InkWell(
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                          onTap: () {
+                            context.pushRoute(
+                              screens[index],
+                              arguments: index == 2
+                                  ? SmMainScreenParams(
+                                initialPage: 0,
+                                expandSearch: false,
+                              )
+                                  : null,
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: context.onPrimary,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                padding: EdgeInsetsDirectional.all(15),
+                                child: AppImage.asset(
+                                  images[index],
+                                  color: context.primary,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              AppText.labelLarge(
+                                titles[index],
+                                color: Color(0xff6B7280),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 8),
-                          AppText.labelLarge(
-                            titles[index],
-                            color: Color(0xff6B7280),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
                   ),
                 ],
               ),

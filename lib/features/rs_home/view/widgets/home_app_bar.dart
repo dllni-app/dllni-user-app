@@ -113,23 +113,23 @@ class _AppBarAction extends StatelessWidget {
             ),
             child: FaIcon(icon, size: 20, color: Color(0xFF1A1A1A)),
           ),
-          if (hasNew)
-            Positioned(
-              top: 10,
-              right: 8,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: context.primaryContainer,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: context.onPrimaryContainer,
-                    width: 2,
-                  ),
-                ),
-              ),
-            ),
+          // if (hasNew)
+          //   Positioned(
+          //     top: 10,
+          //     right: 8,
+          //     child: Container(
+          //       width: 8,
+          //       height: 8,
+          //       decoration: BoxDecoration(
+          //         color: context.primaryContainer,
+          //         shape: BoxShape.circle,
+          //         border: Border.all(
+          //           color: context.onPrimaryContainer,
+          //           width: 2,
+          //         ),
+          //       ),
+          //     ),
+          //   ),
         ],
       ),
     );

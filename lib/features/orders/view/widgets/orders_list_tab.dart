@@ -152,7 +152,8 @@ class _OrdersListTabState extends State<OrdersListTab> {
               }
             },
           ),
-        ] else ...[
+        ] else
+          ...[
           const SizedBox(height: 14),
           Padding(
             padding: const EdgeInsetsDirectional.symmetric(horizontal: 20),
@@ -165,6 +166,8 @@ class _OrdersListTabState extends State<OrdersListTab> {
           ),
           const SizedBox(height: 14),
         ],
+
+        /////////////////////////////////////
         Expanded(
           child: IndexedStack(
             index: effectiveSegmentIndex,
