@@ -329,14 +329,16 @@ class PaginationMetaModel {
   final int? currentPage;
   final int? perPage;
   final int? total;
+  final int? countUnread;
 
-  const PaginationMetaModel({this.currentPage, this.perPage, this.total});
+  const PaginationMetaModel({this.currentPage, this.perPage, this.total,this.countUnread});
 
   factory PaginationMetaModel.fromJson(Map<String, dynamic> json) {
     return PaginationMetaModel(
       currentPage: _asInt(json['current_page']),
       perPage: _asInt(json['per_page']),
       total: _asInt(json['total']),
+      countUnread: _asInt(json['countUnread']),
     );
   }
 }
@@ -344,8 +346,10 @@ class PaginationMetaModel {
 class FetchNotificationsPageModel {
   final List<NotificationResourceModel>? data;
   final PaginationMetaModel? meta;
+  final int? countUnread;
 
-  const FetchNotificationsPageModel({this.data, this.meta});
+
+  const FetchNotificationsPageModel({this.data, this.meta,this.countUnread});
 
   factory FetchNotificationsPageModel.fromJson(Map<String, dynamic> json) {
     return FetchNotificationsPageModel(
@@ -364,6 +368,9 @@ class FetchNotificationsPageModel {
               Map<String, dynamic>.from(json['meta'] as Map),
             )
           : null,
+
+      countUnread: _asInt(json['countUnread']),
+
     );
   }
 }

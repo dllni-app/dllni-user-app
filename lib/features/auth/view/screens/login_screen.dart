@@ -15,6 +15,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../../core/widgets/phone_number_widget/my_phone_number_field_widget.dart';
+
 /// Reference auth layout shared with [RegisterScreen]. Route: `/login`.
 @AutoRoutePage(path: '/login')
 class LoginScreen extends StatefulWidget {
@@ -54,10 +56,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
   final _passwordController = TextEditingController();
 
-  PhoneNumber? _phone;
   bool _obscurePassword = true;
 
   static const Color _iconGray = Color(0xff6B7280);
+
+  late final ValueNotifier<String> phoneValue;
+
+  late final FocusNode phoneFocusNode;
+  late final FocusNode passwordFocus;
+
+  @override
+  void initState() {
+    phoneValue = ValueNotifier('');
+    phoneFocusNode=FocusNode();
+    passwordFocus=FocusNode();
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -80,18 +95,16 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final phone = formatPhoneForApi(_phone);
-    if (phone == null) return;
 
     bloc.add(
-      LoginSubmittedEvent(phone: phone, password: _passwordController.text),
+      LoginSubmittedEvent(phone: phoneValue.value, password: _passwordController.text),
     );
   }
 
   void _openLoginHelp() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LoginHelpScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LoginHelpScreen()));
   }
 
   @override
@@ -104,18 +117,24 @@ class _LoginScreenState extends State<LoginScreen> {
             curr.loginStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.loginStatus == BlocStatus.failed) {
-            if (authFlowHasCode(state.errorMessage, 'PHONE_VERIFICATION_REQUIRED')) {
-              final phone = formatPhoneForApi(_phone);
-              if (phone != null && context.mounted) {
+            if (authFlowHasCode(
+              state.errorMessage,
+              'PHONE_VERIFICATION_REQUIRED',
+            )) {
+
+              if (phoneValue.value != null && context.mounted) {
                 AppToast.showToast(
                   context: context,
-                  message: authFlowMessage(state.errorMessage, fallback: 'يرجى تأكيد رقم الهاتف للمتابعة'),
+                  message: authFlowMessage(
+                    state.errorMessage,
+                    fallback: 'يرجى تأكيد رقم الهاتف للمتابعة',
+                  ),
                   type: ToastificationType.info,
                 );
                 context.pushRoute(
                   '/verify-account',
                   arguments: VerifyAccountRouteArgs(
-                    phone: phone,
+                    phone: phoneValue.value,
                     message: 'تم إرسال رمز التحقق إلى رقم الهاتف.',
                   ),
                 );
@@ -125,7 +144,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
             AppToast.showToast(
               context: context,
-              message: authFlowMessage(state.errorMessage, fallback: 'فشل تسجيل الدخول'),
+              message: authFlowMessage(
+                state.errorMessage,
+                fallback: 'فشل تسجيل الدخول',
+              ),
               type: ToastificationType.error,
             );
             return;
@@ -158,13 +180,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    AppPhoneNumberField(
-                      key: _phoneFieldKey,
-                      label: 'رقم الجوال',
-                      isRequired: true,
-                      enabled: !loading,
-                      variant: AppPhoneFieldVariant.auth,
-                      onChanged: (number) => _phone = number,
+                    // AppPhoneNumberField(
+                    //   key: _phoneFieldKey,
+                    //   label: 'رقم الجوال',
+                    //   isRequired: true,
+                    //   enabled: !loading,
+                    //   variant: AppPhoneFieldVariant.auth,
+                    //   onChanged: (number) => _phone = number,
+                    // ),
+                    MyPhoneNumberField(
+                      internationalPhoneValue: phoneValue,
+                      hintText: 'رقم الجوال',
+                      isMargin: false,
+                      textInputAction: TextInputAction.next,
+                      focusNode: phoneFocusNode,
+                      onSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(passwordFocus);
+                      },
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -182,6 +214,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
+                      focusNode: passwordFocus,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) {
+                        passwordFocus.unfocus();
+                      },
+
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       enabled: !loading,
@@ -226,7 +264,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: AppText.bodySmall(
                           'استعادة الحساب',
                           color: context.secondary,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),

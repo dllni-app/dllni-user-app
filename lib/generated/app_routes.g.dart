@@ -12,6 +12,7 @@ import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_sc
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_service_schedule_screen.dart';
+import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_profile_detail_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/data/cl_worker_profile_mock_data.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_reviews_all_screen.dart';
@@ -64,8 +65,6 @@ import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_details_
 import 'package:dllni_user_app/features/sm_orders/view/screens/sm_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_product_details_screen.dart';
 import 'package:dllni_user_app/features/sm_stores/view/screens/sm_store_details_screen.dart';
-
-import '../features/profile/domain/models/address_list_item.dart';
 
 class GeneratedAppRoutes {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
@@ -125,9 +124,9 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/clmainserviceschedule':
-        if (args is AddressListItem) {
+        if (args is ClMainScheduleArgs?) {
           return MaterialPageRoute(
-            builder: (_) => ClMainServiceScheduleScreen(item: args),
+            builder: (_) => ClMainServiceScheduleScreen(item: args, args: args),
             settings: settings,
           );
         }
@@ -480,7 +479,10 @@ class GeneratedAppRoutes {
 
   static Route<dynamic> _errorRoute(RouteSettings settings) {
     return MaterialPageRoute(
-      builder: (_) => const Scaffold(body: Center(child: Text('Route Error'))),
+      builder: (_) =>
+      const Scaffold(
+        body: Center(child: Text('Route Error')),
+      ),
       settings: settings,
     );
   }

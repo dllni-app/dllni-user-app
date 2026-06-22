@@ -31,7 +31,7 @@ import '../widgets/home_details_app_bar.dart';
 class ClMainServiceScheduleScreen extends StatefulWidget {
   const ClMainServiceScheduleScreen({super.key, this.item, this.args});
 
-  final AddressListItem? item;
+  final ClMainScheduleArgs? item;
   final ClMainScheduleArgs? args;
 
   @override
@@ -81,7 +81,7 @@ class _ClMainServiceScheduleScreenState
       _routeArgs = args;
       _bloc = args.bloc;
       _currentEstimate = args.estimate;
-      selectedAddress = ValueNotifier(args.defaultAddress ?? widget.item);
+      selectedAddress = ValueNotifier(args.defaultAddress ?? widget.item?.defaultAddress);
       _syncToTime();
       _loadCleaningServices();
     } else if (args is AddressListItem) {

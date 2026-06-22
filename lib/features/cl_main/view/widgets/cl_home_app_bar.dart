@@ -1,13 +1,36 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../../core/di/injection.dart';
+import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
+import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
-class ClHomeAppBar extends StatelessWidget {
+class ClHomeAppBar extends StatefulWidget {
   const ClHomeAppBar({super.key});
 
+  @override
+  State<ClHomeAppBar> createState() => _ClHomeAppBarState();
+}
+
+class _ClHomeAppBarState extends State<ClHomeAppBar> {
+
+  late final ProfileBloc profileBloc;
+
+  @override
+  void initState() {
+    profileBloc = getIt<ProfileBloc>()
+      ..add(
+        FetchNotificationsEvent(
+          params: FetchNotificationsParams(),
+          isReload: true,
+        ),
+      );
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -67,8 +90,8 @@ class ClHomeAppBar extends StatelessWidget {
                 },
               ),
               SizedBox(width: 12),
-              _AppBarAction(
-                hasNew: false,
+              _AppBarNotificationWidget(
+                profileBloc: profileBloc,
                 icon: FontAwesomeIcons.bell,
                 onTap: () {
                   context.pushRoute('/notifications');
@@ -130,6 +153,73 @@ class _AppBarAction extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _AppBarNotificationWidget extends StatelessWidget {
+  const _AppBarNotificationWidget({
+    required this.icon,
+    required this.onTap,
+    required this.profileBloc,
+  });
+
+  final FaIconData icon;
+  final ProfileBloc profileBloc;
+  final void Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      customBorder: CircleBorder(),
+      child: BlocBuilder<ProfileBloc, ProfileState>(
+        bloc: profileBloc,
+        builder: (context, state) {
+          return Stack(
+            fit: StackFit.loose,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color(0xFFF9FAFB),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Color(0xFFF3F4F6)),
+                ),
+                child: FaIcon(icon, size: 20, color: Color(0xFF1A1A1A)),
+              ),
+              if (state.unreadNotification != null &&
+                  state.unreadNotification! > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+
+                  child: Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: context.primaryContainer,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: context.onPrimaryContainer,
+                        width: 2,
+                      ),
+                    ),
+                    child: Text(
+                      state.unreadNotification.toString(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

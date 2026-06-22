@@ -382,6 +382,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             addressesStatus: BlocStatus.success,
             addresses: addresses,
             defaultAddress: defaultAddress ?? fallbackDefault,
+
           ),
         );
       },
@@ -470,7 +471,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
               data: mapped,
               total: result.meta?.total ?? pagination.total,
               perPage: result.meta?.perPage ?? perPage,
+
             ),
+            unreadNotification: result.countUnread
           ),
         );
       },

@@ -1,9 +1,14 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../../core/di/injection.dart';
 import '../helpers/cleaning_security_code_display.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../manager/bloc/orders_bloc.dart';
 
 class CleaningStartVerificationDialog {
   static Future<bool> show(
@@ -36,6 +41,7 @@ class _CleaningStartVerificationDialogContent extends StatefulWidget {
   final String? bookingNumber;
   final String? dateTime;
   final String? workerAvatarUrl;
+
   const _CleaningStartVerificationDialogContent({
     required this.onSubmit,
     this.bookingId,
@@ -246,6 +252,18 @@ class _CleaningStartVerificationDialogContentState
                   ),
                 ),
               ],
+              TextButton(
+                child: AppText.labelMedium(
+                  'إلغاء الطلب',
+                  textAlign: TextAlign.center,
+                  color: const Color(0xffE51C28),
+                  fontWeight: FontWeight.w600,
+                ),
+                onPressed: () async {
+                  await showCancelOrderWarningDialog(context,orderId: widget.bookingId!);
+                },
+              ),
+
               if (_submitting) ...[
                 const SizedBox(height: 16),
                 const SizedBox(
@@ -377,6 +395,266 @@ class _DialogWorkerAvatar extends StatelessWidget {
       child: avatarUrl == null || avatarUrl.isEmpty
           ? child
           : SizedBox(width: 72, height: 72, child: child),
+    );
+  }
+}
+
+Future<bool?> showCancelOrderWarningDialog(
+  BuildContext context, {
+  required int orderId,
+}) {
+
+
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return AlertDialog(
+        title: AppText.titleMedium(
+          'تنبيه هام',
+          textAlign: TextAlign.center,
+          color: Color(0xffE51C28),
+          fontWeight: FontWeight.w700,
+        ),
+        content: CancelOrderWaringWidget(
+          orderId: orderId,
+        ),
+
+
+      );
+    },
+  );
+}
+
+
+class CancelOrderWaringWidget extends StatefulWidget {
+  const CancelOrderWaringWidget({
+    super.key,
+    required this.orderId,
+  });
+
+  final int orderId;
+
+  @override
+  State<CancelOrderWaringWidget> createState() =>
+      _CancelOrderWaringWidgetState();
+}
+
+class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
+  late final OrdersBloc orderBloc;
+
+  final TextEditingController reason = TextEditingController();
+
+  String? _reasonValidationError;
+  bool _hasSubmitted = false;
+
+  @override
+  void initState() {
+    orderBloc = getIt<OrdersBloc>();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    reason.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final reasons = reason.text.trim();
+
+    setState(() {
+      _hasSubmitted = true;
+    });
+
+    if (reasons.length < 3) {
+      setState(() {
+        _reasonValidationError =
+        'يرجى إدخال سبب إلغاء صالح (3 أحرف على الأقل)';
+      });
+      return;
+    }
+
+    setState(() {
+      _reasonValidationError = null;
+    });
+
+    orderBloc.add(
+      CancelCleaningOrderEvent(
+        orderId: widget.orderId,
+        reason: reasons,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<OrdersBloc, OrdersState>(
+      bloc: orderBloc,
+      listenWhen: (previous, current) =>
+      previous.cancelCleaningStatus != current.cancelCleaningStatus,
+      listener: (context, state) {
+        if (state.cancelCleaningStatus == BlocStatus.success) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم إلغاء الطلب بنجاح'),
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final isLoading =
+            state.cancelCleaningStatus == BlocStatus.loading;
+
+        final blocError = (_hasSubmitted &&
+            state.cancelCleaningStatus == BlocStatus.failed)
+            ? state.cancelCleaningErrorMessage
+            : null;
+
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppText.bodyMedium(
+                'يرجى العلم أن إلغاء الطلب في هذه المرحلة قد يترتب عليه مراجعة من قبل فريقنا المختص، وقد يتم اتخاذ الإجراءات المناسبة وفقاً لسياسة الشركة وشروط الاستخدام المعتمدة.',
+                textAlign: TextAlign.center,
+                color: const Color(0xff6B7280),
+                fontWeight: FontWeight.w500,
+              ),
+          
+              const SizedBox(height: 12),
+          
+              TextField(
+                controller: reason,
+                minLines: 3,
+                maxLines: 4,
+                enabled: !isLoading,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+                textInputAction: TextInputAction.newline,
+                decoration: InputDecoration(
+                  hintText: 'اكتب سبب الإلغاء',
+                  errorText: _reasonValidationError,
+                  filled: true,
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  fillColor: const Color(0xffF9FAFB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(color: Color(0xffD1D5DB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(color: Color(0xffD1D5DB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(color: Color(0xff9CA3AF)),
+                  ),
+                ),
+              ),
+          
+              if (blocError != null && blocError.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                AppText.labelMedium(
+                  blocError,
+                  color: const Color(0xffB91C1C),
+                  textAlign: TextAlign.start,
+                ),
+              ],
+          
+              const SizedBox(height: 12),
+          
+              TextButton(
+                onPressed: () async {
+                  final uri = Uri.parse(
+                    'https://your-company.com/terms',
+                  );
+          
+                  await launchUrl(
+                    uri,
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+                child: const Text(
+                  'الاطلاع على الشروط والأحكام',
+                  style: TextStyle(
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+          
+              const SizedBox(height: 24),
+          
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor:
+                          const Color(0xffA3A9C6),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: AppText.bodySmall(
+                          'تراجع',
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+          
+                  const SizedBox(width: 12),
+          
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                            : AppText.bodySmall(
+                          'متابعة الإلغاء',
+                          color: Color(0xffE51C28),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

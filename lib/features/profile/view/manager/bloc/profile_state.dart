@@ -16,6 +16,7 @@ class ProfileState {
   final BlocStatus? setDefaultAddressStatus;
 
   final PaginationStateModel<FetchNotificationsModelDataItem> notificationsPagination;
+  final int? unreadNotification;
   final BlocStatus? markAllNotificationsReadStatus;
   final String? notificationActionError;
 
@@ -61,6 +62,7 @@ class ProfileState {
     this.addresses = const <AddressListItem>[],
     this.defaultAddress,
     this.setDefaultAddressStatus,
+    this.unreadNotification,
     this.notificationsPagination = const PaginationStateModel<FetchNotificationsModelDataItem>(perPage: 10),
     this.markAllNotificationsReadStatus,
     this.notificationActionError,
@@ -162,8 +164,10 @@ class ProfileState {
     bool clearQuantityPatchError = false,
     AddShoppingListToCartModel? addShoppingListToCart,
     BlocStatus? addShoppingListToCartStatus,
+    int? unreadNotification
   }) => ProfileState(
     addressesStatus: addressesStatus ?? this.addressesStatus,
+    unreadNotification: unreadNotification ?? this.unreadNotification,
     addresses: addresses ?? this.addresses,
     defaultAddress: defaultAddress ?? this.defaultAddress,
     setDefaultAddressStatus: setDefaultAddressStatus ?? this.setDefaultAddressStatus,
