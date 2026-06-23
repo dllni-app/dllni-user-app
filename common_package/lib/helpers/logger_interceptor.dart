@@ -137,7 +137,9 @@ class LoggerInterceptor extends Interceptor {
   }
 
   dynamic _normalizePayload(dynamic payload) {
-    if (payload == null) return null;
+    if (payload == null || payload is num || payload is bool || payload is String) {
+      return payload;
+    }
 
     if (payload is FormData) {
       final fields = <String, dynamic>{};
@@ -168,7 +170,7 @@ class LoggerInterceptor extends Interceptor {
       );
     }
 
-    if (payload is List) {
+    if (payload is Iterable) {
       return payload.map(_normalizePayload).toList();
     }
 
@@ -188,7 +190,7 @@ class LoggerInterceptor extends Interceptor {
       return payload.toString();
     }
 
-    return payload;
+    return payload.toString();
   }
 
   void _appendValue(Map<String, dynamic> target, String key, dynamic value) {
