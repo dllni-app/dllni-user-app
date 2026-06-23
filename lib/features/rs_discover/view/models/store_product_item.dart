@@ -11,6 +11,8 @@ class StoreProductItem {
     this.oldPriceValue,
     this.currency,
     this.isTop = false,
+    this.cartProductsCount = 0,
+    this.cartItemId,
     this.imageUrl,
     this.restaurantName,
     this.offerName,
@@ -33,6 +35,8 @@ class StoreProductItem {
   final num? oldPriceValue;
   final String? currency;
   final bool isTop;
+  final int cartProductsCount;
+  final int? cartItemId;
   final String? imageUrl;
   final String? restaurantName;
   final String? offerName;
