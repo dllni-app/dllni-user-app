@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../features/rs_discover/data/models/fetch_restaurant_products_search_model.dart';
 import '../../features/rs_discover/domain/usecases/add_restaurant_cart_item_use_case.dart';
+import '../cart/cart_products_count_cubit.dart';
 import '../di/injection.dart';
 
 class RsAppProductCard extends StatefulWidget {
@@ -34,6 +35,7 @@ class RsAppProductCard extends StatefulWidget {
 
 class _RsAppProductCardState extends State<RsAppProductCard> {
   bool isInCart = false;
+  bool isAddingToCart = false;
 
   @override
   void initState() {
@@ -137,12 +139,7 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: InkWell(
-              onTap: () {
-                setState(() {
-                  isInCart = true;
-                });
-                _onAddToCartPressed(widget.productId);
-              },
+              onTap: isAddingToCart ? null : () => _onAddToCartPressed(widget.productId),
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 width: double.infinity,
@@ -154,7 +151,7 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: AppText.bodyMedium(
-                  isInCart ? 'تم الطلب' : 'طلب الوجبة',
+                  isAddingToCart ? '...' : (isInCart ? 'تم الطلب' : 'طلب الوجبة'),
                   color: isInCart ? context.primary : context.onPrimary,
                   fontWeight: FontWeight.w700,
                   maxLines: 1,
@@ -168,6 +165,30 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
   }
 
   Future<void> _onAddToCartPressed(int id) async {
-    await getIt<AddRestaurantCartItemUseCase>()(AddRestaurantCartItemParams(productId: id, quantity: 1));
+    if (isAddingToCart) return;
+    setState(() {
+      isAddingToCart = true;
+    });
+
+    final result = await getIt<AddRestaurantCartItemUseCase>()(
+      AddRestaurantCartItemParams(productId: id, quantity: 1, quantityMode: 'increment'),
+    );
+
+    if (!mounted) return;
+
+    result.fold(
+      (_) {
+        setState(() {
+          isAddingToCart = false;
+        });
+      },
+      (_) {
+        setState(() {
+          isAddingToCart = false;
+          isInCart = true;
+        });
+        getIt<CartProductsCountCubit>().refreshAfterAdd();
+      },
+    );
   }
 }
