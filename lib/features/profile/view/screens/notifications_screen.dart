@@ -11,13 +11,26 @@ import '../widgets/notification_navigation.dart';
 
 @AutoRoutePage()
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+
+  final NotificationsScreenParams args;
+
+  const NotificationsScreen({super.key, required this.args});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+
+  late final ProfileBloc profileBloc;
+  @override
+  void initState() {
+
+    profileBloc=getIt<ProfileBloc>()..add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
+    // TODO: implement initState
+    super.initState();
+  }
+
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
@@ -49,119 +62,119 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _refreshNotifications(BuildContext context) async {
-    context.read<ProfileBloc>().add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
-    await context.read<ProfileBloc>().stream.firstWhere((state) => state.notificationsStatus != BlocStatus.loading);
+    profileBloc.add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
+    await profileBloc.stream.firstWhere((state) => state.notificationsStatus != BlocStatus.loading);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<ProfileBloc>(
-      lazy: false,
-      create: (_) => getIt<ProfileBloc>()..add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true)),
-      child: BlocListener<ProfileBloc, ProfileState>(
-        listenWhen: (previous, current) {
-          final listFailed = previous.notificationsStatus != current.notificationsStatus && current.notificationsStatus == BlocStatus.failed;
-          final actionErr = (current.notificationActionError ?? '').isNotEmpty && current.notificationActionError != previous.notificationActionError;
-          return listFailed || actionErr;
-        },
-        listener: (context, state) {
-          final action = state.notificationActionError;
-          if (action != null && action.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(action)));
-            return;
-          }
-          if (state.errorMessage == null || state.errorMessage!.isEmpty) {
-            return;
-          }
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
-        },
-        child: Scaffold(
-          backgroundColor: const Color(0xffF9FAFB),
-          body: SafeArea(
-            child: Column(
-              children: [
-                _NotificationsAppBar(),
-                Expanded(
-                  child: BlocBuilder<ProfileBloc, ProfileState>(
-                    builder: (context, state) {
-                      final notifications = state.notifications;
-                      final pagination = state.notificationsPagination;
-                      final groups = _groupNotifications(state.notifications);
-                      const sections = ['اليوم', 'أمس', 'الأسبوع الماضي', 'الأقدم'];
-                      if (state.notificationsStatus == BlocStatus.loading && notifications.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (notifications.isEmpty) {
-                        return const Center(child: Text('لا توجد إشعارات'));
-                      }
-                      return RefreshIndicator(
-                        onRefresh: () async => await _refreshNotifications(context),
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (notification) {
-                            if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 180) {
-                              return false;
-                            }
-                            if (pagination.isEndPage || pagination.status == BlocStatus.loading) {
-                              return false;
-                            }
-                            context.read<ProfileBloc>().add(
-                              FetchNotificationsEvent(params: FetchNotificationsParams(perPage: pagination.perPage), loadMore: true),
-                            );
+    return BlocListener<ProfileBloc, ProfileState>(
+      bloc:profileBloc,
+      listenWhen: (previous, current) {
+        final listFailed = previous.notificationsStatus != current.notificationsStatus && current.notificationsStatus == BlocStatus.failed;
+        final actionErr = (current.notificationActionError ?? '').isNotEmpty && current.notificationActionError != previous.notificationActionError;
+        return listFailed || actionErr;
+      },
+      listener: (context, state) {
+        final action = state.notificationActionError;
+        if (action != null && action.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(action)));
+          return;
+        }
+        if (state.errorMessage == null || state.errorMessage!.isEmpty) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xffF9FAFB),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _NotificationsAppBar(
+                profileBloc: profileBloc,
+              ),
+              Expanded(
+                child: BlocBuilder<ProfileBloc, ProfileState>(
+                  bloc: profileBloc,
+                  builder: (context, state) {
+                    final notifications = state.notifications;
+                    final pagination = state.notificationsPagination;
+                    final groups = _groupNotifications(state.notifications);
+                    const sections = ['اليوم', 'أمس', 'الأسبوع الماضي', 'الأقدم'];
+                    if (state.notificationsStatus == BlocStatus.loading && notifications.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (notifications.isEmpty) {
+                      return const Center(child: Text('لا توجد إشعارات'));
+                    }
+                    return RefreshIndicator(
+                      onRefresh: () async => await _refreshNotifications(context),
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 180) {
                             return false;
-                          },
-                          child: ListView(
-                            padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
-                            children: [
-                              for (final section in sections)
-                                if (groups[section]!.isNotEmpty) ...[
-                                  Padding(
-                                    padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 8),
-                                    child: AppText.labelLarge(
-                                      section,
-                                      color: const Color(0xff9CA3AF),
-                                      fontWeight: FontWeight.w700,
-                                      textAlign: TextAlign.start,
-                                    ),
+                          }
+                          if (pagination.isEndPage || pagination.status == BlocStatus.loading) {
+                            return false;
+                          }
+                          profileBloc.add(
+                            FetchNotificationsEvent(params: FetchNotificationsParams(perPage: pagination.perPage), loadMore: true),
+                          );
+                          return false;
+                        },
+                        child: ListView(
+                          padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
+                          children: [
+                            for (final section in sections)
+                              if (groups[section]!.isNotEmpty) ...[
+                                Padding(
+                                  padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 8),
+                                  child: AppText.labelLarge(
+                                    section,
+                                    color: const Color(0xff9CA3AF),
+                                    fontWeight: FontWeight.w700,
+                                    textAlign: TextAlign.start,
                                   ),
-                                  Container(
-                                    color: context.onPrimary,
-                                    child: Column(
-                                      children: [
-                                        for (var i = 0; i < groups[section]!.length; i++) ...[
-                                          Material(
-                                            color: Colors.transparent,
-                                            child: InkWell(
-                                              onTap: () {
-                                                final item = groups[section]![i];
-                                                final id = item.id;
-                                                if (id != null && id.isNotEmpty && item.isRead != true) {
-                                                  context.read<ProfileBloc>().add(MarkNotificationReadEvent(id: id));
-                                                }
-                                                tryNavigateFromNotificationPayload(context, module: item.module, data: item.data);
-                                              },
-                                              child: NotificationFeedItem(notification: groups[section]![i]),
-                                            ),
-                                          ),
-                                          if (i != groups[section]!.length - 1) const Divider(height: 1, thickness: 1, color: Color(0xffF3F4F6)),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              if (!pagination.isEndPage && pagination.status == BlocStatus.loading)
-                                const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Center(child: CircularProgressIndicator()),
                                 ),
-                            ],
-                          ),
+                                Container(
+                                  color: context.onPrimary,
+                                  child: Column(
+                                    children: [
+                                      for (var i = 0; i < groups[section]!.length; i++) ...[
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () {
+                                              final item = groups[section]![i];
+                                              final id = item.id;
+                                              if (id != null && id.isNotEmpty && item.isRead != true) {
+                                               profileBloc.add(MarkNotificationReadEvent(id: id));
+                                              }
+                                              tryNavigateFromNotificationPayload(context, module: item.module, data: item.data);
+                                            },
+                                            child: NotificationFeedItem(notification: groups[section]![i]),
+                                          ),
+                                        ),
+                                        if (i != groups[section]!.length - 1) const Divider(height: 1, thickness: 1, color: Color(0xffF3F4F6)),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            if (!pagination.isEndPage && pagination.status == BlocStatus.loading)
+                              const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Center(child: CircularProgressIndicator()),
+                              ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -170,7 +183,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 class _NotificationsAppBar extends StatelessWidget {
-  const _NotificationsAppBar();
+ final ProfileBloc profileBloc;
+
+  const _NotificationsAppBar({super.key, required this.profileBloc});
 
   @override
   Widget build(BuildContext context) {
@@ -205,13 +220,14 @@ class _NotificationsAppBar extends StatelessWidget {
             child: AppText.headlineMedium('الإشعارات', color: context.primary, fontWeight: FontWeight.w700),
           ),
           BlocBuilder<ProfileBloc, ProfileState>(
+            bloc: profileBloc,
             buildWhen: (previous, current) =>
                 previous.notifications != current.notifications || previous.markAllNotificationsReadStatus != current.markAllNotificationsReadStatus,
             builder: (context, state) {
               final hasUnread = state.notifications.any((e) => e.isRead != true);
               final loading = state.markAllNotificationsReadStatus == BlocStatus.loading;
               return TextButton(
-                onPressed: !hasUnread || loading ? null : () => context.read<ProfileBloc>().add(MarkAllNotificationsReadEvent()),
+                onPressed: !hasUnread || loading ? null : () =>profileBloc.add(MarkAllNotificationsReadEvent()),
                 child: loading
                     ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: context.primary))
                     : AppText.labelLarge(
@@ -226,4 +242,13 @@ class _NotificationsAppBar extends StatelessWidget {
       ),
     );
   }
+}
+
+
+
+class  NotificationsScreenParams{
+
+  final ProfileBloc profileBloc;
+
+  NotificationsScreenParams({required this.profileBloc});
 }

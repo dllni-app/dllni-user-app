@@ -28,7 +28,7 @@ class RsOffersProductCardWidget extends StatelessWidget {
         badgeText: mapped.offerBadgeText,
         discountType: mapped.offerDiscountType,
         discountValue: mapped.offerDiscountValue,
-        title: mapped.name,
+        title: mapped.offerName,
 
       ),
       onTap: () {
@@ -38,6 +38,7 @@ class RsOffersProductCardWidget extends StatelessWidget {
           arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(mapped, fallbackRestaurantName: mapped.restaurantName)),
         );
       },
+      cartProductsCount: product.cartQuantity??0,
     );
   }
 }
@@ -68,7 +69,7 @@ StoreProductItem _toStoreProductItem(FetchRsOffersProductsModelDataItem product)
     imageUrl: product.primaryImageUrl,
     restaurantName: product.restaurant?.name,
     offer: activeOffer?.badgeText,
-    offerName: 'activeOffer?.name',
+    offerName: activeOffer?.name,
     offerBadgeText: activeOffer?.badgeText,
     offerUrgencyTag: activeOffer?.urgencyTag,
     offerDiscountType: activeOffer?.discountType,

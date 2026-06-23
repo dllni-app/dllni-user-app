@@ -245,8 +245,9 @@ class _MealSearchCard extends StatelessWidget {
         badgeText: mapped.offerBadgeText,
         discountType: mapped.offerDiscountType,
         discountValue: mapped.offerDiscountValue,
-        title: mapped.offerUrgencyTag,
+        title: mapped.offerName,
       ),
+      cartProductsCount: product.cartProductsCount,
       onTap: () {
         if (productId <= 0) return;
         context.pushRoute(
@@ -364,9 +365,9 @@ StoreProductItem _toStoreProductItem(FetchRestaurantProductsSearchModelDataItem 
     currency: currency.isEmpty ? null : currency,
     imageUrl: product.primaryImageUrl,
     restaurantName: product.restaurant?.name,
-    offer: activeOffer?.title,
-    offerName: activeOffer?.title,
-    offerBadgeText: activeOffer?.title,
+    offer: activeOffer?.offerType,
+    offerName: activeOffer?.offerType,
+    offerBadgeText: activeOffer?.offerType,
     offerDiscountType: activeOffer?.discountType,
     offerDiscountValue: activeOffer?.discountValue,
     isFavorited: product.isFavorite ?? false,

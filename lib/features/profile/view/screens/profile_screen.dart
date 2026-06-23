@@ -17,6 +17,7 @@ import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
 import '../widgets/section_card.dart';
 import '../widgets/section_title.dart';
+import 'notifications_screen.dart';
 
 LoggedInUserModel? _readLoggedInUser() {
   final raw = SharedPreferencesHelper.getData(
@@ -153,7 +154,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: 'الإشعارات',
                           subtitle: 'إشعارات الطلبات والعروض',
                           onTap: () {
-                            context.pushRoute('/notifications');
+
+                            context.pushRoute('/notifications',arguments: NotificationsScreenParams(
+                                profileBloc: profileBloc
+                            ));
                           },
                         ),
                         Padding(

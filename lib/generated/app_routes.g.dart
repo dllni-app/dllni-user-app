@@ -277,10 +277,15 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/notifications':
-        return MaterialPageRoute(
-          builder: (_) => NotificationsScreen(),
-          settings: settings,
-        );
+        if (args is NotificationsScreenParams) {
+          return MaterialPageRoute(
+            builder: (_) =>
+                NotificationsScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+
       case '/ordervoting':
         return MaterialPageRoute(
           builder: (_) => OrderVotingScreen(),
@@ -371,19 +376,17 @@ class GeneratedAppRoutes {
       case '/home':
         if (args is RsHomeScreenParams) {
           return MaterialPageRoute(
-            builder: (_) => RsHomeScreen(args: args,),
+            builder: (_) => RsHomeScreen(args: args),
 
             settings: settings,
           );
         }
         return _errorRoute(settings);
 
-
       case '/rsmain':
-
         if (args is RsMainScreenParams) {
           return MaterialPageRoute(
-            builder: (_) => RsMainScreen(args: args,),
+            builder: (_) => RsMainScreen(args: args),
 
             settings: settings,
           );
@@ -488,10 +491,7 @@ class GeneratedAppRoutes {
 
   static Route<dynamic> _errorRoute(RouteSettings settings) {
     return MaterialPageRoute(
-      builder: (_) =>
-      const Scaffold(
-        body: Center(child: Text('Route Error')),
-      ),
+      builder: (_) => const Scaffold(body: Center(child: Text('Route Error'))),
       settings: settings,
     );
   }

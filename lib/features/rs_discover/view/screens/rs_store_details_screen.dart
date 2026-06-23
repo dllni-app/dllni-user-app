@@ -163,7 +163,7 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
   Map<int, int> _countsFromReviews(List<RestaurantDetailsReview> reviews) {
     final counts = <int, int>{1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
     for (final review in reviews) {
-      final value = review.rating.clamp(1, 5);
+      final value = (review.rating ?? 1).clamp(1, 5);
       counts[value] = (counts[value] ?? 0) + 1;
     }
     return counts;
@@ -173,7 +173,7 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
     FetchRestaurantDetailsModel? details,
     List<RestaurantDetailsReview> reviews,
   ) {
-    final summaryCounts = details?.ratingSummary?.counts ?? const {};
+    final summaryCounts = details?.ratingSummary?.distribution ?? const {};
     if (summaryCounts.isNotEmpty) {
       return {
         5: summaryCounts[5] ?? 0,

@@ -9,6 +9,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/search_field_with_voice.dart';
 import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
+import '../../../profile/view/screens/notifications_screen.dart';
 import '../../../sm_main_page.dart';
 
 class HomeAppBar extends StatefulWidget {
@@ -92,7 +93,9 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 profileBloc: profileBloc,
                 icon: FontAwesomeIcons.bell,
                 onTap: () {
-                  context.pushRoute('/notifications');
+                  context.pushRoute('/notifications',arguments: NotificationsScreenParams(
+                      profileBloc: profileBloc
+                  ));
                 },
               ),
             ],

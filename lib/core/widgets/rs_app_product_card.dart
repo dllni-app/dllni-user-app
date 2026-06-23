@@ -164,22 +164,58 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: InkWell(
-              onTap: _isMutatingCart ? null : (isDeleteState ? _onDeleteFromCartPressed : () => _onAddToCartPressed(widget.productId)),
+              onTap: _isMutatingCart
+                  ? null
+                  : (isDeleteState
+                  ? _onDeleteFromCartPressed
+                  : () => _onAddToCartPressed(widget.productId)),
               borderRadius: BorderRadius.circular(10),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
                 width: double.infinity,
+                height: 44,
                 alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDeleteState ? context.onPrimary : context.primary,
-                  border: isDeleteState ? Border.all(color: const Color(0xFFEF4444)) : null,
+                  color: _isMutatingCart
+                      ? const Color(0xFFF3F4F6)
+                      : (isDeleteState ? context.onPrimary : context.primary),
+                  border: isDeleteState
+                      ? Border.all(color: const Color(0xFFEF4444))
+                      : null,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: AppText.bodyMedium(
-                  _isMutatingCart ? '...' : (isDeleteState ? 'حذف من السلة' : 'طلب الوجبة'),
-                  color: isDeleteState ? const Color(0xFFEF4444) : context.onPrimary,
-                  fontWeight: FontWeight.w700,
-                  maxLines: 1,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 350),
+                  switchInCurve: Curves.easeOutBack,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: animation,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _isMutatingCart
+                      ? SizedBox(
+                    key: const ValueKey('loading'),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                    ),
+                  )
+                      : AppText.bodyMedium(
+                    isDeleteState ? 'حذف من السلة' : 'طلب الوجبة',
+                    key: ValueKey(isDeleteState),
+                    color: isDeleteState
+                        ? const Color(0xFFEF4444)
+                        : context.onPrimary,
+                    fontWeight: FontWeight.w700,
+                    maxLines: 1,
+                  ),
                 ),
               ),
             ),

@@ -452,14 +452,14 @@ class StoreReviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText(
-                      review.reviewerName ?? 'مستخدم',
+                      review.userName ?? 'مستخدم',
                       textAlign: TextAlign.start,
                       style: TextStyle(color: Color(0xFF111827), fontSize: 13, fontWeight: FontWeight.w700, height: 20 / 13),
                     ),
                     SizedBox(height: 8),
                     Row(
                       children: List.generate(
-                        review.rating == 0 ? 1 : review.rating,
+                       ( review.rating==null ||  review.rating == 0) ? 1 : review.rating!,
                         (_) => Padding(
                           padding: const EdgeInsets.only(left: 2),
                           child: FaIcon(FontAwesomeIcons.solidStar, size: 12, color: Color(0xFFFBBF24)),

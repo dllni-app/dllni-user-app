@@ -95,6 +95,7 @@ class FetchRsOffersProductsModelDataItem {
   bool? isAvailable;
   bool? isFavorite;
   String? primaryImageUrl;
+  int? cartQuantity;
   FetchRsOffersProductsModelRestaurant? restaurant;
   FetchRsOffersProductsModelCategory? category;
   List<FetchRsOffersProductsModelActiveOffer>? activeOffers;
@@ -114,6 +115,7 @@ class FetchRsOffersProductsModelDataItem {
     this.category,
     this.activeOffers,
     this.createdAt,
+    this.cartQuantity,
   });
 
   factory FetchRsOffersProductsModelDataItem.fromJson(Map<String, dynamic> json) {
@@ -125,6 +127,7 @@ class FetchRsOffersProductsModelDataItem {
       originalPrice: _asNum(json['originalPrice']),
       currency: _asString(json['currency']),
       isAvailable: _asBool(json['isAvailable']),
+      cartQuantity: _asInt(json['cartQuantity']),
       isFavorite: _asBool(json['isFavorite']),
       primaryImageUrl: _asString(json['primaryImageUrl']),
       restaurant: json['restaurant'] is Map
