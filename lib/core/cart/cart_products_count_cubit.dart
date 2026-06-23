@@ -7,6 +7,11 @@ class CartProductsCountCubit extends Cubit<int> {
 
   final FetchRestaurantCartProductsCountUseCase fetchRestaurantCartProductsCountUseCase;
 
+  void setCount(int count) {
+    if (isClosed) return;
+    emit(count < 0 ? 0 : count);
+  }
+
   Future<void> fetchCount() async {
     final res = await fetchRestaurantCartProductsCountUseCase(FetchRestaurantCartProductsCountParams());
     if (isClosed) return;
