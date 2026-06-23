@@ -1,17 +1,17 @@
 import 'dart:async';
-
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../../../core/deeplink/deep_link_parser.dart';
 import '../../../../core/deeplink/deep_link_service.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../generated/assets.dart';
+import '../../../rs_home/view/widgets/home_app_bar.dart';
 import '../../data/models/cleaning_banners_response_model.dart';
 import '../../domain/usecases/get_cleaning_banners_use_case.dart';
 import '../data/cl_main_route_args.dart';
@@ -21,11 +21,20 @@ import '../widgets/cl_main_service_tabs_widget.dart';
 import '../widgets/cl_occasion_type_card_widget.dart';
 import '../widgets/cl_property_type_card_widget.dart';
 
+class ClMainScreenParams {
+  final ProfileBloc profileBloc;
+  final ClMainBloc? bloc;
+
+  ClMainScreenParams({required this.profileBloc,this.bloc});
+}
+
 @AutoRoutePage()
 class ClMainScreen extends StatefulWidget {
-  const ClMainScreen({this.bloc, super.key});
+ final ClMainScreenParams params;
 
-  final ClMainBloc? bloc;
+  const ClMainScreen({super.key, required this.params});
+
+
 
   @override
   State<ClMainScreen> createState() => _ClMainScreenState();
@@ -243,7 +252,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const ClHomeAppBar(),
+            HomeAppBar(isHome: true,profileBloc: widget.params.profileBloc),
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 0),
               child: ClMainServiceTabsWidget(
@@ -314,9 +323,9 @@ class _ClMainScreenState extends State<ClMainScreen> {
   @override
   Widget build(BuildContext context) {
     final screenContent = Builder(builder: _buildScreenBody);
-    final screenBody = widget.bloc != null
+    final screenBody = widget.params.bloc != null
         ? BlocProvider<ClMainBloc>.value(
-            value: widget.bloc!,
+            value: widget.params.bloc!,
             child: screenContent,
           )
         : BlocProvider<ClMainBloc>(

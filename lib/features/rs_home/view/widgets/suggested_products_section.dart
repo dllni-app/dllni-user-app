@@ -68,6 +68,8 @@ class SuggestedProductsSection extends StatelessWidget {
                     offer: null,
                     price: '${item.displayPrice} ل.س',
                     restaurant: item.restaurantName ?? 'restaurant',
+                    cartProductsCount: item.cartProductsCount,
+                    cartItemId: item.cartItemId,
                   );
                 },
                 separatorBuilder: (context, _) => const SizedBox(width: 12),

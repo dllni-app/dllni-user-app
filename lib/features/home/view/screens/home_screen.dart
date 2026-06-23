@@ -7,9 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../generated/assets.dart';
+import '../../../cl_main/view/screens/cl_main_screen.dart';
 import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../rs_home/view/widgets/home_app_bar.dart';
+import '../../../rs_main/view/rs_main_screen.dart';
 import '../widgets/home_cube.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,6 +22,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late final ProfileBloc profileBloc;
+
+  @override
+  initState(){
+
+    profileBloc=   getIt<ProfileBloc>()
+      ..add(
+        FetchNotificationsEvent(
+          params: FetchNotificationsParams(),
+          isReload: true,
+        ),
+      );
+
+    super.initState();
+
+  }
+
   @override
   Widget build(BuildContext context) {
     List<String> titles = ['مطاعم', 'تنظيف', 'تسوق'];
@@ -40,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       child: Column(
         children: [
-          HomeAppBar(isHome: true),
+          HomeAppBar(isHome: true,profileBloc: profileBloc,),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsetsDirectional.symmetric(horizontal: 20),
@@ -120,8 +139,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               ? SmMainScreenParams(
                                   initialPage: 0,
                                   expandSearch: false,
+
                                 )
-                              : null,
+                              : index==0?
+                          RsMainScreenParams(
+                            profileBloc: profileBloc
+                          )
+                              :ClMainScreenParams(
+                            profileBloc: profileBloc
+                          )
                         );
                       },
                       child: Column(

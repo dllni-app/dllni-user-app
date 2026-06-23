@@ -28,7 +28,8 @@ class RsOffersProductCardWidget extends StatelessWidget {
         badgeText: mapped.offerBadgeText,
         discountType: mapped.offerDiscountType,
         discountValue: mapped.offerDiscountValue,
-        title: mapped.offerUrgencyTag,
+        title: mapped.name,
+
       ),
       onTap: () {
         if (productId <= 0) return;
@@ -50,7 +51,7 @@ StoreProductItem _toStoreProductItem(FetchRsOffersProductsModelDataItem product)
 
   String? formatPrice(num? value) {
     if (value == null) return null;
-    final normalized = value % 1 == 0 ? value.toInt().toString() : value.toString();
+    final normalized = value % 1 == 0 ? value.toInt().toString() : value.toInt().toString();
     return '$normalized ل.س'.trim();
   }
 
@@ -67,7 +68,7 @@ StoreProductItem _toStoreProductItem(FetchRsOffersProductsModelDataItem product)
     imageUrl: product.primaryImageUrl,
     restaurantName: product.restaurant?.name,
     offer: activeOffer?.badgeText,
-    offerName: activeOffer?.name,
+    offerName: 'activeOffer?.name',
     offerBadgeText: activeOffer?.badgeText,
     offerUrgencyTag: activeOffer?.urgencyTag,
     offerDiscountType: activeOffer?.discountType,

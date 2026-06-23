@@ -27,6 +27,8 @@ class RestaurantHomeSuggestedProductItem {
   final num? displayPrice;
   final num? originalPrice;
   final String? currency;
+  final int cartProductsCount;
+  final int? cartItemId;
   final String? primaryImageUrl;
   final String? restaurantName;
   final String? location;
@@ -39,6 +41,8 @@ class RestaurantHomeSuggestedProductItem {
     this.displayPrice,
     this.originalPrice,
     this.currency,
+    this.cartProductsCount = 0,
+    this.cartItemId,
     this.primaryImageUrl,
     this.restaurantName,
     this.location,
@@ -53,6 +57,8 @@ class RestaurantHomeSuggestedProductItem {
       displayPrice: _firstNum(json, const ['displayPrice', 'display_price', 'price']),
       originalPrice: _firstNum(json, const ['originalPrice', 'original_price']),
       currency: _firstString(json, const ['currency']),
+      cartProductsCount: _firstInt(json, const ['cartProductsCount', 'cartQuantity', 'cart_products_count', 'cart_quantity']) ?? 0,
+      cartItemId: _firstInt(json, const ['cartItemId', 'cart_item_id', 'itemId']),
       primaryImageUrl: _firstString(json, const ['primaryImageUrl', 'primary_image_url', 'imageUrl', 'image_url', 'primaryImage']),
       restaurantName: _firstString(
         json,

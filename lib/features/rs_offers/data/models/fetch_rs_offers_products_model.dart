@@ -199,6 +199,7 @@ class FetchRsOffersProductsModelCategory {
 class FetchRsOffersProductsModelActiveOffer {
   int? id;
   String? name;
+  String? offerType;
   String? discountType;
   num? discountValue;
   String? badgeText;
@@ -210,6 +211,7 @@ class FetchRsOffersProductsModelActiveOffer {
   FetchRsOffersProductsModelActiveOffer({
     this.id,
     this.name,
+    this.offerType,
     this.discountType,
     this.discountValue,
     this.badgeText,
@@ -219,10 +221,15 @@ class FetchRsOffersProductsModelActiveOffer {
     this.isActive,
   });
 
-  factory FetchRsOffersProductsModelActiveOffer.fromJson(Map<String, dynamic> json) {
+  factory FetchRsOffersProductsModelActiveOffer.fromJson(
+      Map<String, dynamic> json,
+      ) {
+    final offerType = _asString(json['name']);
+
     return FetchRsOffersProductsModelActiveOffer(
       id: _asInt(json['id']),
-      name: _asString(json['name']),
+      offerType: offerType,
+      name: _getArabicName(offerType),
       discountType: _asString(json['discountType']),
       discountValue: _asNum(json['discountValue']),
       badgeText: _asString(json['badgeText']),
@@ -233,19 +240,34 @@ class FetchRsOffersProductsModelActiveOffer {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'discountType': discountType,
-        'discountValue': discountValue,
-        'badgeText': badgeText,
-        'startsAt': startsAt,
-        'endsAt': endsAt,
-        'urgencyTag': urgencyTag,
-        'isActive': isActive,
-      };
-}
+  static String? _getArabicName(String? value) {
+    switch (value) {
+      case 'limited_time':
+        return 'لفترة محدودة';
 
+      case 'ending_soon':
+        return 'ينتهي قريباً';
+
+      case 'todays_offer':
+        return 'عرض اليوم';
+
+      default:
+        return value;
+    }
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': offerType,
+    'discountType': discountType,
+    'discountValue': discountValue,
+    'badgeText': badgeText,
+    'startsAt': startsAt,
+    'endsAt': endsAt,
+    'urgencyTag': urgencyTag,
+    'isActive': isActive,
+  };
+}
 class FetchRsOffersProductsModelLinks {
   String? first;
   String? last;

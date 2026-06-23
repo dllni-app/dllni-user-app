@@ -41,6 +41,8 @@ class _RsHomeCategoryProductsScreenState extends State<RsHomeCategoryProductsScr
     super.initState();
     final tabTitleSet = <String>{...widget.params.categories.map((e) => (e.name ?? '').trim()).where((e) => e.isNotEmpty)};
     _tabTitles = tabTitleSet.toList();
+
+    _selectedTabIndex=  widget.params.initialCategoryIndex ;
   }
 
   @override
@@ -125,7 +127,7 @@ class _RsHomeCategoryProductsScreenState extends State<RsHomeCategoryProductsScr
                         title: visibleProducts[index].name ?? '',
                         image: visibleProducts[index].primaryImageUrl ?? '',
                         offer: null,
-                        price: '${visibleProducts[index].displayPrice} ${visibleProducts[index].currency}',
+                        price: '${visibleProducts[index].displayPrice} ${'ل.س'}',
                         restaurant: visibleProducts[index].restaurantName ?? 'restaurant',
                       );
                     },

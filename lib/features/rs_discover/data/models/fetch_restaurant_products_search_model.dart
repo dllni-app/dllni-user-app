@@ -113,6 +113,8 @@ class FetchRestaurantProductsSearchModelDataItem {
   bool? isFavorite;
   bool? isMostOrdered;
   int? popularOrdersCount;
+  int cartProductsCount;
+  int? cartItemId;
   String? primaryImageUrl;
   FetchRestaurantProductsSearchModelRestaurant? restaurant;
   FetchRestaurantProductsSearchModelCategory? category;
@@ -130,6 +132,8 @@ class FetchRestaurantProductsSearchModelDataItem {
     this.isFavorite,
     this.isMostOrdered,
     this.popularOrdersCount,
+    this.cartProductsCount = 0,
+    this.cartItemId,
     this.primaryImageUrl,
     this.restaurant,
     this.category,
@@ -151,6 +155,8 @@ class FetchRestaurantProductsSearchModelDataItem {
       isFavorite: _asBool(json['isFavorite']),
       isMostOrdered: _asBool(json['isMostOrdered']),
       popularOrdersCount: _asInt(json['popularOrdersCount']),
+      cartProductsCount: _asInt(json['cartProductsCount'] ?? json['cartQuantity'] ?? json['cart_products_count'] ?? json['cart_quantity']) ?? 0,
+      cartItemId: _asInt(json['cartItemId'] ?? json['cart_item_id'] ?? json['itemId']),
       primaryImageUrl: _asString(json['primaryImageUrl']),
       restaurant: json['restaurant'] is Map
           ? FetchRestaurantProductsSearchModelRestaurant.fromJson(
@@ -188,6 +194,8 @@ class FetchRestaurantProductsSearchModelDataItem {
     'isFavorite': isFavorite,
     'isMostOrdered': isMostOrdered,
     'popularOrdersCount': popularOrdersCount,
+    'cartProductsCount': cartProductsCount,
+    'cartItemId': cartItemId,
     'primaryImageUrl': primaryImageUrl,
     'restaurant': restaurant?.toJson(),
     'category': category?.toJson(),
@@ -249,6 +257,7 @@ class FetchRestaurantProductsSearchModelCategory {
 class FetchRestaurantProductsSearchModelActiveOffer {
   int? id;
   String? title;
+  String? offerType;
   String? discountType;
   num? discountValue;
   String? badgeText;
@@ -258,6 +267,7 @@ class FetchRestaurantProductsSearchModelActiveOffer {
   FetchRestaurantProductsSearchModelActiveOffer({
     this.id,
     this.title,
+    this.offerType,
     this.discountType,
     this.discountValue,
     this.startsAt,
@@ -266,11 +276,14 @@ class FetchRestaurantProductsSearchModelActiveOffer {
   });
 
   factory FetchRestaurantProductsSearchModelActiveOffer.fromJson(
-    Map<String, dynamic> json,
-  ) {
+      Map<String, dynamic> json,
+      ) {
+    final offerType = _asString(json['title']);
+
     return FetchRestaurantProductsSearchModelActiveOffer(
       id: _asInt(json['id']),
-      title: _asString(json['title']),
+      offerType: offerType,
+      title: _getArabicTitle(offerType),
       badgeText: _asString(json['badgeText']),
       discountType: _asString(json['discountType']),
       discountValue: _asNum(json['discountValue']),
@@ -279,11 +292,27 @@ class FetchRestaurantProductsSearchModelActiveOffer {
     );
   }
 
+  static String? _getArabicTitle(String? value) {
+    switch (value) {
+      case 'limited_time':
+        return 'لفترة محدودة';
+
+      case 'ending_soon':
+        return 'ينتهي قريباً';
+
+      case 'todays_offer':
+        return 'عرض اليوم';
+
+      default:
+        return value;
+    }
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
-    'title': title,
-    'discountType': discountType,
+    'title': offerType,
     'badgeText': badgeText,
+    'discountType': discountType,
     'discountValue': discountValue,
     'startsAt': startsAt,
     'endsAt': endsAt,
@@ -359,8 +388,8 @@ class FetchRestaurantProductsSearchModelMeta {
     'current_page': currentPage,
     'from': from,
     'last_page': lastPage,
-    'path': path,
     'per_page': perPage,
+    'path': path,
     'to': to,
     'total': total,
   };

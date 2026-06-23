@@ -181,6 +181,8 @@ class ProductBottomBar extends StatelessWidget {
     required this.onIncrease,
     required this.onAddPressed,
     this.isSubmitting = false,
+    this.actionLabel = 'إضافة إلى السلة',
+    this.submittingLabel = 'جاري الإضافة...',
   });
 
   final int quantity;
@@ -188,6 +190,8 @@ class ProductBottomBar extends StatelessWidget {
   final VoidCallback onIncrease;
   final VoidCallback onAddPressed;
   final bool isSubmitting;
+  final String actionLabel;
+  final String submittingLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -226,7 +230,7 @@ class ProductBottomBar extends StatelessWidget {
                   FaIcon(FontAwesomeIcons.cartShopping, size: 13, color: context.onPrimary),
                   SizedBox(width: 8),
                   AppText(
-                    isSubmitting ? "جاري الإضافة..." : "إضافة إلى السلة",
+                    isSubmitting ? submittingLabel : actionLabel,
                     style: TextStyle(color: context.onPrimary, fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
                   ),
                 ],

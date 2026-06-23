@@ -11,8 +11,10 @@ import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class HomeAppBar extends StatefulWidget {
   final bool isHome;
+  final ProfileBloc profileBloc;
 
-  const HomeAppBar({super.key, this.isHome = false});
+  const HomeAppBar({super.key,  this.isHome=false, required this.profileBloc});
+
 
   @override
   State<HomeAppBar> createState() => _HomeAppBarState();
@@ -23,13 +25,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
 
   @override
   void initState() {
-    profileBloc = getIt<ProfileBloc>()
-      ..add(
-        FetchNotificationsEvent(
-          params: FetchNotificationsParams(),
-          isReload: true,
-        ),
-      );
+    profileBloc =widget.profileBloc;
     super.initState();
   }
 

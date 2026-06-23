@@ -19,6 +19,7 @@ class AddRestaurantCartItemUseCase implements UseCase<AddRestaurantCartItemModel
 class AddRestaurantCartItemParams with Params {
   final int productId;
   final int quantity;
+  final String quantityMode;
   final List<int> modifierIds;
   final int? substituteProductId;
   final String specialInstructions;
@@ -26,6 +27,7 @@ class AddRestaurantCartItemParams with Params {
   AddRestaurantCartItemParams({
     required this.productId,
     this.quantity = 1,
+    this.quantityMode = 'increment',
     this.modifierIds = const [],
     this.substituteProductId,
     this.specialInstructions = '',
@@ -35,6 +37,7 @@ class AddRestaurantCartItemParams with Params {
   BodyMap getBody() => {
         'productId': productId,
         'quantity': quantity,
+        'quantityMode': quantityMode,
         'modifierIds': modifierIds,
         'substituteProductId': substituteProductId,
         'specialInstructions': specialInstructions,
