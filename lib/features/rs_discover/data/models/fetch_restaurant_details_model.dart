@@ -159,6 +159,8 @@ class RestaurantDetailsProduct {
   final num? price;
   final num? discountedPrice;
   final bool? isFeatured;
+  final int cartProductsCount;
+  final int? cartItemId;
   final String? categoryName;
   final String? primaryImage;
   final String? image;
@@ -172,6 +174,8 @@ class RestaurantDetailsProduct {
     this.price,
     this.discountedPrice,
     this.isFeatured,
+    this.cartProductsCount = 0,
+    this.cartItemId,
     this.categoryName,
     this.primaryImage,
     this.image,
@@ -190,6 +194,8 @@ class RestaurantDetailsProduct {
         json['discountedPrice'] ?? json['discounted_price'],
       ),
       isFeatured: _asBool(json['isFeatured'] ?? json['is_featured']),
+      cartProductsCount: _asInt(json['cartProductsCount'] ?? json['cartQuantity'] ?? json['cart_products_count'] ?? json['cart_quantity']) ?? 0,
+      cartItemId: _asInt(json['cartItemId'] ?? json['cart_item_id'] ?? json['itemId']),
       categoryName: _asString(category?['name']),
       primaryImage: _asString(json['primaryImage'] ?? json['primary_image']),
       image: _asString(json['image']),
@@ -268,63 +274,66 @@ class RestaurantDetailsOperatingHour {
 
   factory RestaurantDetailsOperatingHour.fromJson(Map<String, dynamic> json) {
     return RestaurantDetailsOperatingHour(
-      dayOfWeek: _asString(json['day_of_week'] ?? json['dayOfWeek']),
-      openTime: _asString(json['open_time'] ?? json['openTime']),
-      closeTime: _asString(json['close_time'] ?? json['closeTime']),
-      isClosed: _asBool(json['is_closed'] ?? json['isClosed']),
+      dayOfWeek: _asString(json['dayOfWeek']),
+      openTime: _asString(json['openTime']),
+      closeTime: _asString(json['closeTime']),
+      isClosed: _asBool(json['isClosed']),
     );
   }
 }
 
 class RestaurantRatingSummary {
-  final double average;
-  final int total;
-  final Map<int, int> counts;
+  final double? average;
+  final int? total;
+  final Map<int, int> distribution;
 
   RestaurantRatingSummary({
-    this.average = 0,
-    this.total = 0,
-    this.counts = const {},
+    this.average,
+    this.total,
+    this.distribution = const {},
   });
 
   factory RestaurantRatingSummary.fromJson(Map<String, dynamic> json) {
-    final rawCounts = _asMap(json['counts']) ?? const <String, dynamic>{};
-    final parsedCounts = <int, int>{};
-    rawCounts.forEach((key, value) {
-      final star = _asInt(key);
-      if (star == null) return;
-      parsedCounts[star] = _asInt(value) ?? 0;
+    final rawDist = _asMap(json['distribution']) ?? const <String, dynamic>{};
+    final dist = <int, int>{};
+    rawDist.forEach((key, value) {
+      final parsedKey = int.tryParse('$key');
+      final parsedValue = _asInt(value);
+      if (parsedKey != null && parsedValue != null) {
+        dist[parsedKey] = parsedValue;
+      }
     });
-
     return RestaurantRatingSummary(
-      average: _asDouble(json['average']) ?? 0,
-      total: _asInt(json['total']) ?? 0,
-      counts: parsedCounts,
+      average: _asDouble(json['average']),
+      total: _asInt(json['total']),
+      distribution: dist,
     );
   }
 }
 
 class RestaurantDetailsReview {
-  final String? reviewerName;
-  final int rating;
+  final int? id;
+  final int? rating;
   final String? comment;
   final String? createdAt;
+  final String? userName;
 
   RestaurantDetailsReview({
-    this.reviewerName,
-    this.rating = 0,
+    this.id,
+    this.rating,
     this.comment,
     this.createdAt,
+    this.userName,
   });
 
   factory RestaurantDetailsReview.fromJson(Map<String, dynamic> json) {
     final user = _asMap(json['user']);
     return RestaurantDetailsReview(
-      reviewerName:
-          _asString(json['name']) ?? _asString(user?['name']) ?? 'مستخدم',
-      rating: _asInt(json['rating']) ?? 0,
-      comment: _asString(json['comment'] ?? json['review']),
-      createdAt: _asString(json['createdAt'] ?? json['created_at']),
+      id: _asInt(json['id']),
+      rating: _asInt(json['rating']),
+      comment: _asString(json['comment']),
+      createdAt: _asString(json['createdAt']),
+      userName: _asString(user?['name'] ?? json['userName']),
     );
   }
 }
