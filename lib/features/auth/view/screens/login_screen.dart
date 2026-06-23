@@ -188,6 +188,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     //   variant: AppPhoneFieldVariant.auth,
                     //   onChanged: (number) => _phone = number,
                     // ),
+                    Row(
+                      children: [
+                        AppText.bodyMedium(
+                          'رقم الجوال',
+                          fontWeight: FontWeight.w500,
+                        ),
+                        AppText.bodyMedium(
+                          '*',
+                          color: context.error,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     MyPhoneNumberField(
                       internationalPhoneValue: phoneValue,
                       hintText: 'رقم الجوال',

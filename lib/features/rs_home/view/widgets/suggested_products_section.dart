@@ -66,7 +66,7 @@ class SuggestedProductsSection extends StatelessWidget {
                     title: item.name ?? '',
                     image: item.primaryImageUrl ?? '',
                     offer: null,
-                    price: '${item.displayPrice} ${item.currency}',
+                    price: '${item.displayPrice} ل.س',
                     restaurant: item.restaurantName ?? 'restaurant',
                   );
                 },

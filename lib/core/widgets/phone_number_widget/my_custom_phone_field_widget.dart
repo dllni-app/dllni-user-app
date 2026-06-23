@@ -216,7 +216,7 @@ class _IntlPhoneFieldState extends State<MyCustomIntlField> {
   }
   Widget _buildFlagsButton() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: const Color(0xffF9FAFB),
@@ -295,7 +295,7 @@ class _IntlPhoneFieldState extends State<MyCustomIntlField> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height:kMinInteractiveDimension+12 ,
+      height:kMinInteractiveDimension+16 ,
 
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

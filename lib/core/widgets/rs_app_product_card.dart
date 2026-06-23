@@ -102,7 +102,6 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 4),
                         Expanded(
                           child: AppText.bodyMedium(
                             widget.restaurant,
@@ -112,7 +111,6 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                             color: const Color(0xff6B7280),
                           ),
                         ),
-                        const SizedBox(height: 6),
                         Expanded(child: AppText.bodyMedium(widget.price, fontWeight: FontWeight.bold, maxLines: 1, color: const Color(0xff1E2A78))),
                       ],
                     ),
