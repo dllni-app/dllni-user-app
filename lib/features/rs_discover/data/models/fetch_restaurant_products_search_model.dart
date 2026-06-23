@@ -113,6 +113,8 @@ class FetchRestaurantProductsSearchModelDataItem {
   bool? isFavorite;
   bool? isMostOrdered;
   int? popularOrdersCount;
+  int cartProductsCount;
+  int? cartItemId;
   String? primaryImageUrl;
   FetchRestaurantProductsSearchModelRestaurant? restaurant;
   FetchRestaurantProductsSearchModelCategory? category;
@@ -130,6 +132,8 @@ class FetchRestaurantProductsSearchModelDataItem {
     this.isFavorite,
     this.isMostOrdered,
     this.popularOrdersCount,
+    this.cartProductsCount = 0,
+    this.cartItemId,
     this.primaryImageUrl,
     this.restaurant,
     this.category,
@@ -151,6 +155,8 @@ class FetchRestaurantProductsSearchModelDataItem {
       isFavorite: _asBool(json['isFavorite']),
       isMostOrdered: _asBool(json['isMostOrdered']),
       popularOrdersCount: _asInt(json['popularOrdersCount']),
+      cartProductsCount: _asInt(json['cartProductsCount'] ?? json['cartQuantity'] ?? json['cart_products_count'] ?? json['cart_quantity']) ?? 0,
+      cartItemId: _asInt(json['cartItemId'] ?? json['cart_item_id'] ?? json['itemId']),
       primaryImageUrl: _asString(json['primaryImageUrl']),
       restaurant: json['restaurant'] is Map
           ? FetchRestaurantProductsSearchModelRestaurant.fromJson(
@@ -188,6 +194,8 @@ class FetchRestaurantProductsSearchModelDataItem {
     'isFavorite': isFavorite,
     'isMostOrdered': isMostOrdered,
     'popularOrdersCount': popularOrdersCount,
+    'cartProductsCount': cartProductsCount,
+    'cartItemId': cartItemId,
     'primaryImageUrl': primaryImageUrl,
     'restaurant': restaurant?.toJson(),
     'category': category?.toJson(),
@@ -380,8 +388,8 @@ class FetchRestaurantProductsSearchModelMeta {
     'current_page': currentPage,
     'from': from,
     'last_page': lastPage,
-    'path': path,
     'per_page': perPage,
+    'path': path,
     'to': to,
     'total': total,
   };
