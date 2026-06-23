@@ -34,7 +34,6 @@ class RsProductDetailsScreen extends StatefulWidget {
 
 class _CartAppBarAction extends StatelessWidget {
   final int cartCount;
-
   final VoidCallback onTap;
 
   const _CartAppBarAction({required this.cartCount, required this.onTap});
@@ -82,12 +81,14 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
   final PageController _imagePageController = PageController();
   int _quantity = 1;
   int _currentImagePage = 0;
+  int _cartQuantity = 0;
   final List<String> _savedNotes = [];
   final Map<int, Set<int>> _selectedModifierIdsByGroup = {};
   bool _isSubmittingAddToCart = false;
   late bool _isFavorited;
   bool _isUpdatingFavourite = false;
   bool _didSyncRemoteFavourite = false;
+  bool _didApplyInitialCartQuantity = false;
 
   String get _restaurantName {
     final preview = widget.params.product.restaurantName.trim();
@@ -107,6 +108,8 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
           final oldPrice = _oldPrice(details);
           final modifierGroups = details?.modifierGroups ?? const <RestaurantProductDetailsModifierGroup>[];
           final remoteFavorited = details?.product?.isFavorite;
+          final remoteCartQuantity = details?.product?.cartQuantity;
+
           if (!_didSyncRemoteFavourite && remoteFavorited != null && remoteFavorited != _isFavorited && !_isUpdatingFavourite) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
@@ -118,6 +121,18 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
           } else if (!_didSyncRemoteFavourite && remoteFavorited != null) {
             _didSyncRemoteFavourite = true;
           }
+
+          if (!_didApplyInitialCartQuantity && remoteCartQuantity != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted || _didApplyInitialCartQuantity) return;
+              setState(() {
+                _cartQuantity = remoteCartQuantity;
+                _quantity = remoteCartQuantity > 0 ? remoteCartQuantity : 1;
+                _didApplyInitialCartQuantity = true;
+              });
+            });
+          }
+
           return Scaffold(
             backgroundColor: const Color(0xFFF9FAFB),
             appBar: AppBar(
@@ -191,24 +206,6 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                     },
                                   ),
                           ),
-                          // Positioned(
-                          //   top: 20,
-                          //   right: 16,
-                          //   child: Column(
-                          //     crossAxisAlignment: CrossAxisAlignment.end,
-                          //     children: [
-                          //       ProductBadge(
-                          //         title: "الأكثر طلباً",
-                          //         color: Color(0xFFEF4444),
-                          //       ),
-                          //       SizedBox(height: 8),
-                          //       ProductBadge(
-                          //         title: "عرض خاص",
-                          //         color: Color(0xFF22C55E),
-                          //       ),
-                          //     ],
-                          //   ),
-                          // ),
                           if (imageUrls.length > 1)
                             Positioned(
                               bottom: 20,
@@ -537,6 +534,7 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
       AddRestaurantCartItemParams(
         productId: productId,
         quantity: _quantity,
+        quantityMode: 'set',
         modifierIds: modifierIds,
         substituteProductId: null,
         specialInstructions: specialInstructions,
@@ -555,11 +553,13 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
       (result) {
         setState(() {
           _isSubmittingAddToCart = false;
+          _cartQuantity = result.quantity ?? _quantity;
+          _quantity = result.quantity ?? _quantity;
         });
         getIt<CartProductsCountCubit>().refreshAfterAdd();
         AppToast.showToast(
           context: context,
-          message: (result.message ?? '').trim().isNotEmpty ? result.message! : 'تمت إضافة المنتج إلى السلة',
+          message: (result.message ?? '').trim().isNotEmpty ? result.message! : (_cartQuantity > 0 ? 'تم تحديث السلة' : 'تمت إضافة المنتج إلى السلة'),
           type: ToastificationType.success,
         );
       },
