@@ -22,11 +22,17 @@ class AddRestaurantCartItemModel {
   final String? message;
   final int? cartId;
   final int? itemId;
+  final int? quantity;
+  final int? cartProductsCount;
+  final String? operation;
 
   AddRestaurantCartItemModel({
     this.message,
     this.cartId,
     this.itemId,
+    this.quantity,
+    this.cartProductsCount,
+    this.operation,
   });
 
   factory AddRestaurantCartItemModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +40,9 @@ class AddRestaurantCartItemModel {
       message: _asString(json['message']),
       cartId: _asInt(json['cartId']),
       itemId: _asInt(json['itemId']),
+      quantity: _asInt(json['quantity']),
+      cartProductsCount: _asInt(json['cartProductsCount'] ?? json['cart_products_count']),
+      operation: _asString(json['operation']),
     );
   }
 
@@ -41,5 +50,8 @@ class AddRestaurantCartItemModel {
         'message': message,
         'cartId': cartId,
         'itemId': itemId,
+        'quantity': quantity,
+        'cartProductsCount': cartProductsCount,
+        'operation': operation,
       };
 }
