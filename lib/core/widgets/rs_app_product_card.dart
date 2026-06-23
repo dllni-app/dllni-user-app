@@ -1,7 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../features/orders/domain/usecases/delete_cart_item_use_case.dart';
+import '../../features/orders/domain/usecases/fetch_restaurant_cart_use_case.dart';
 import '../../features/rs_discover/data/models/fetch_restaurant_products_search_model.dart';
 import '../../features/rs_discover/domain/usecases/add_restaurant_cart_item_use_case.dart';
 import '../cart/cart_products_count_cubit.dart';
@@ -16,6 +17,8 @@ class RsAppProductCard extends StatefulWidget {
     required this.price,
     required this.onTap,
     this.isInCart = false,
+    this.cartProductsCount = 0,
+    this.cartItemId,
     required this.productId,
     required this.offer,
   });
@@ -27,6 +30,8 @@ class RsAppProductCard extends StatefulWidget {
   final int productId;
   final Function() onTap;
   final bool isInCart;
+  final int cartProductsCount;
+  final int? cartItemId;
   final FetchRestaurantProductsSearchModelActiveOffer? offer;
 
   @override
@@ -34,18 +39,38 @@ class RsAppProductCard extends StatefulWidget {
 }
 
 class _RsAppProductCardState extends State<RsAppProductCard> {
-  bool isInCart = false;
-  bool isAddingToCart = false;
+  int _cartProductsCount = 0;
+  int? _cartItemId;
+  bool _isMutatingCart = false;
+
+  bool get _hasCartQuantity => _cartProductsCount >= 1;
 
   @override
   void initState() {
     super.initState();
-    isInCart = widget.isInCart;
+    _syncInitialCartState();
+  }
+
+  @override
+  void didUpdateWidget(covariant RsAppProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.productId != widget.productId ||
+        oldWidget.cartProductsCount != widget.cartProductsCount ||
+        oldWidget.cartItemId != widget.cartItemId ||
+        oldWidget.isInCart != widget.isInCart) {
+      _syncInitialCartState();
+    }
+  }
+
+  void _syncInitialCartState() {
+    _cartProductsCount = widget.cartProductsCount > 0 ? widget.cartProductsCount : (widget.isInCart ? 1 : 0);
+    _cartItemId = widget.cartItemId;
   }
 
   @override
   Widget build(BuildContext context) {
     final safeImage = widget.image.trim();
+    final isDeleteState = _hasCartQuantity;
     return Container(
       width: 166,
       decoration: BoxDecoration(
@@ -139,20 +164,20 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: InkWell(
-              onTap: isAddingToCart ? null : () => _onAddToCartPressed(widget.productId),
+              onTap: _isMutatingCart ? null : (isDeleteState ? _onDeleteFromCartPressed : () => _onAddToCartPressed(widget.productId)),
               borderRadius: BorderRadius.circular(10),
               child: Container(
                 width: double.infinity,
                 alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: isInCart ? context.onPrimary : context.primary,
-                  border: isInCart ? Border.all(color: context.primary) : null,
+                  color: isDeleteState ? context.onPrimary : context.primary,
+                  border: isDeleteState ? Border.all(color: const Color(0xFFEF4444)) : null,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: AppText.bodyMedium(
-                  isAddingToCart ? '...' : (isInCart ? 'تم الطلب' : 'طلب الوجبة'),
-                  color: isInCart ? context.primary : context.onPrimary,
+                  _isMutatingCart ? '...' : (isDeleteState ? 'حذف من السلة' : 'طلب الوجبة'),
+                  color: isDeleteState ? const Color(0xFFEF4444) : context.onPrimary,
                   fontWeight: FontWeight.w700,
                   maxLines: 1,
                 ),
@@ -165,9 +190,13 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
   }
 
   Future<void> _onAddToCartPressed(int id) async {
-    if (isAddingToCart) return;
+    if (_isMutatingCart) return;
+    final previousCount = _cartProductsCount;
+    final previousItemId = _cartItemId;
+
     setState(() {
-      isAddingToCart = true;
+      _isMutatingCart = true;
+      _cartProductsCount = 1;
     });
 
     final result = await getIt<AddRestaurantCartItemUseCase>()(
@@ -179,15 +208,91 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
     result.fold(
       (_) {
         setState(() {
-          isAddingToCart = false;
+          _isMutatingCart = false;
+          _cartProductsCount = previousCount;
+          _cartItemId = previousItemId;
+        });
+      },
+      (response) {
+        setState(() {
+          _isMutatingCart = false;
+          _cartProductsCount = response.quantity ?? 1;
+          _cartItemId = response.itemId ?? previousItemId;
+        });
+        final totalCount = response.cartProductsCount;
+        if (totalCount != null) {
+          getIt<CartProductsCountCubit>().setCount(totalCount);
+        } else {
+          getIt<CartProductsCountCubit>().refreshAfterAdd();
+        }
+      },
+    );
+  }
+
+  Future<void> _onDeleteFromCartPressed() async {
+    if (_isMutatingCart) return;
+    final previousCount = _cartProductsCount;
+    final previousItemId = _cartItemId;
+
+    setState(() {
+      _isMutatingCart = true;
+      _cartProductsCount = 0;
+    });
+
+    final itemId = previousItemId ?? await _resolveCartItemId();
+    if (!mounted) return;
+
+    if (itemId == null) {
+      setState(() {
+        _isMutatingCart = false;
+        _cartProductsCount = previousCount;
+        _cartItemId = previousItemId;
+      });
+      await getIt<CartProductsCountCubit>().refreshAfterAdd();
+      return;
+    }
+
+    final result = await getIt<DeleteCartItemUseCase>()(DeleteCartItemParams(itemId: itemId));
+
+    if (!mounted) return;
+
+    result.fold(
+      (_) {
+        setState(() {
+          _isMutatingCart = false;
+          _cartProductsCount = previousCount;
+          _cartItemId = previousItemId;
         });
       },
       (_) {
         setState(() {
-          isAddingToCart = false;
-          isInCart = true;
+          _isMutatingCart = false;
+          _cartProductsCount = 0;
+          _cartItemId = null;
         });
         getIt<CartProductsCountCubit>().refreshAfterAdd();
+      },
+    );
+  }
+
+  Future<int?> _resolveCartItemId() async {
+    final result = await getIt<FetchRestaurantCartUseCase>()(NoParams());
+
+    return result.fold(
+      (_) => null,
+      (cart) {
+        final items = cart.data?.items ?? const [];
+        for (final item in items) {
+          if (item.productId == widget.productId && item.modifierIds.isEmpty && item.substituteProductId == null) {
+            return item.id;
+          }
+        }
+        for (final item in items) {
+          if (item.productId == widget.productId) {
+            return item.id;
+          }
+        }
+        return null;
       },
     );
   }
