@@ -43,14 +43,14 @@ class _SmStoreAllReviewsScreenState extends State<SmStoreAllReviewsScreen> {
   Map<int, int> _countsFromReviews(List<RestaurantDetailsReview> reviews) {
     final counts = <int, int>{1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
     for (final review in reviews) {
-      final value = review.rating.clamp(1, 5);
+      final value = review.rating?.clamp(1, 5) ?? 0;
       counts[value] = (counts[value] ?? 0) + 1;
     }
     return counts;
   }
 
   Map<int, int> _resolveCounts(FetchRestaurantDetailsModel? details, List<RestaurantDetailsReview> reviews) {
-    final summaryCounts = details?.ratingSummary?.counts ?? const {};
+    final summaryCounts = details?.ratingSummary?.distribution ?? const {};
     if (summaryCounts.isNotEmpty) {
       return {5: summaryCounts[5] ?? 0, 4: summaryCounts[4] ?? 0, 3: summaryCounts[3] ?? 0, 2: summaryCounts[2] ?? 0, 1: summaryCounts[1] ?? 0};
     }
@@ -180,7 +180,7 @@ class _ReviewTile extends StatelessWidget {
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: AppText(
-                    review.reviewerName ?? 'مستخدم',
+                    review.userName ?? 'مستخدم',
                     textAlign: TextAlign.start,
                     style: TextStyle(color: Color(0xFF111827), fontSize: 13, fontWeight: FontWeight.w700),
                   ),
@@ -195,7 +195,7 @@ class _ReviewTile extends StatelessWidget {
           SizedBox(height: 8),
           Row(
             children: List.generate(
-              review.rating == 0 ? 1 : review.rating,
+              review.rating?.clamp(1, 5) ?? 1,
               (_) => Padding(
                 padding: const EdgeInsets.only(left: 2),
                 child: FaIcon(FontAwesomeIcons.solidStar, size: 12, color: Color(0xFFFBBF24)),
