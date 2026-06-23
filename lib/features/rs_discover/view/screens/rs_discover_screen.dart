@@ -348,8 +348,8 @@ StoreProductItem _toStoreProductItem(FetchRestaurantProductsSearchModelDataItem 
 
   String? formatPrice(num? value) {
     if (value == null) return null;
-    final normalized = value % 1 == 0 ? value.toInt().toString() : value.toString();
-    return '$normalized $currency'.trim();
+    final normalized = value % 1 == 0 ? value.toInt().toString() : value.toInt().toString();
+    return '$normalized  $currency'.trim();
   }
 
   return StoreProductItem(

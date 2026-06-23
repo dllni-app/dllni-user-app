@@ -512,6 +512,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             notificationsPagination: state.notificationsPagination.copyWith(
               list: updatedNotifications,
             ),
+            unreadNotification: 0
           ),
         );
       },

@@ -129,7 +129,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                 // widget.money(widget.item.totalPrice),
                 // widget.money()
 
-    '${widget.item.totalPrice.toStringAsFixed(1)} ل.س',
+    '${widget.item.totalPrice.toStringAsFixed(0)} ل.س',
 
                 fontWeight: FontWeight.bold,
                 color: const Color(0xff1A237E),

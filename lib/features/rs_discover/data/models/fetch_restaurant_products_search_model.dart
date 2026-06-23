@@ -249,6 +249,7 @@ class FetchRestaurantProductsSearchModelCategory {
 class FetchRestaurantProductsSearchModelActiveOffer {
   int? id;
   String? title;
+  String? offerType;
   String? discountType;
   num? discountValue;
   String? badgeText;
@@ -258,6 +259,7 @@ class FetchRestaurantProductsSearchModelActiveOffer {
   FetchRestaurantProductsSearchModelActiveOffer({
     this.id,
     this.title,
+    this.offerType,
     this.discountType,
     this.discountValue,
     this.startsAt,
@@ -266,11 +268,14 @@ class FetchRestaurantProductsSearchModelActiveOffer {
   });
 
   factory FetchRestaurantProductsSearchModelActiveOffer.fromJson(
-    Map<String, dynamic> json,
-  ) {
+      Map<String, dynamic> json,
+      ) {
+    final offerType = _asString(json['title']);
+
     return FetchRestaurantProductsSearchModelActiveOffer(
       id: _asInt(json['id']),
-      title: _asString(json['title']),
+      offerType: offerType,
+      title: _getArabicTitle(offerType),
       badgeText: _asString(json['badgeText']),
       discountType: _asString(json['discountType']),
       discountValue: _asNum(json['discountValue']),
@@ -279,11 +284,27 @@ class FetchRestaurantProductsSearchModelActiveOffer {
     );
   }
 
+  static String? _getArabicTitle(String? value) {
+    switch (value) {
+      case 'limited_time':
+        return 'لفترة محدودة';
+
+      case 'ending_soon':
+        return 'ينتهي قريباً';
+
+      case 'todays_offer':
+        return 'عرض اليوم';
+
+      default:
+        return value;
+    }
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
-    'title': title,
-    'discountType': discountType,
+    'title': offerType,
     'badgeText': badgeText,
+    'discountType': discountType,
     'discountValue': discountValue,
     'startsAt': startsAt,
     'endsAt': endsAt,

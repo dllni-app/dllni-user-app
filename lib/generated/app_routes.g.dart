@@ -12,9 +12,7 @@ import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_sc
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_service_schedule_screen.dart';
-import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_profile_detail_screen.dart';
-import 'package:dllni_user_app/features/cl_main/view/data/cl_worker_profile_mock_data.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_reviews_all_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_orders_screen.dart';
@@ -33,7 +31,6 @@ import 'package:dllni_user_app/features/profile/view/screens/group_order_followu
 import 'package:dllni_user_app/features/profile/view/screens/group_order_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_screen.dart';
-import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_args.dart';
 import 'package:dllni_user_app/features/profile/view/screens/my_addresses_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/notifications_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/order_voting_screen.dart';
@@ -116,9 +113,9 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/clmain':
-        if (args is ClMainBloc?) {
+        if (args is ClMainScreenParams) {
           return MaterialPageRoute(
-            builder: (_) => ClMainScreen(bloc: args),
+            builder: (_) => ClMainScreen(params: args),
             settings: settings,
           );
         }
@@ -372,15 +369,27 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/home':
-        return MaterialPageRoute(
-          builder: (_) => RsHomeScreen(),
-          settings: settings,
-        );
+        if (args is RsHomeScreenParams) {
+          return MaterialPageRoute(
+            builder: (_) => RsHomeScreen(args: args,),
+
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+
+
       case '/rsmain':
-        return MaterialPageRoute(
-          builder: (_) => RsMainScreen(),
-          settings: settings,
-        );
+
+        if (args is RsMainScreenParams) {
+          return MaterialPageRoute(
+            builder: (_) => RsMainScreen(args: args,),
+
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+
       case '/cart_details':
         return MaterialPageRoute(
           builder: (_) => SmCartDetailsScreen(),

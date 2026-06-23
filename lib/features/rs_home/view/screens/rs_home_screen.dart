@@ -4,6 +4,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/themes/app_colors.dart';
 import 'package:dllni_user_app/core/widgets/failure_widget.dart';
+import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:dllni_user_app/features/rs_home/data/models/fetch_featured_offers_model.dart';
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_featured_offers_use_case.dart';
 import 'package:flutter/material.dart';
@@ -29,9 +30,18 @@ import '../widgets/near_stores_section.dart';
 import '../widgets/suggested_products_section.dart';
 import 'rs_home_category_products_screen.dart';
 
+class RsHomeScreenParams{
+  final  ProfileBloc profileBloc;
+
+  RsHomeScreenParams({required this.profileBloc});
+}
+
 @AutoRoutePage(path: "/home")
 class RsHomeScreen extends StatefulWidget {
-  const RsHomeScreen({super.key});
+
+  final RsHomeScreenParams args;
+
+  const RsHomeScreen({super.key, required this.args});
 
   @override
   State<RsHomeScreen> createState() => _RsHomeScreenState();
@@ -136,7 +146,9 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
         child: Scaffold(
           body: Column(
             children: [
-              HomeAppBar(),
+              HomeAppBar(
+                profileBloc:widget.args. profileBloc,
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   padding: EdgeInsetsDirectional.symmetric(horizontal: 20),
@@ -318,6 +330,7 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                           InkWell(
                             borderRadius: BorderRadius.circular(24),
                             onTap: () {
+                            context.pushRoute('/group-order/create');
 
                             },
                             child: Container(

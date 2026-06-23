@@ -108,10 +108,7 @@ class _RestaurantCartCheckoutBodyState extends State<RestaurantCartCheckoutBody>
                           if (item.id == null) return;
                           context.read<OrdersBloc>().add(DeleteRestaurantCartItemEvent(itemId: item.id!));
                         },
-                        // onEdit: () {
-                        //   if (item.id == null) return;
-                        //   context.read<OrdersBloc>().add(UpdateRestaurantCartItemEvent(itemId: item.id!, quantity: item.quantity + 1));
-                        // },
+
                         money: _money,
                       ),
                     ),
