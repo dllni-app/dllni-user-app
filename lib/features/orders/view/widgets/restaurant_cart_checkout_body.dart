@@ -40,8 +40,9 @@ class _RestaurantCartCheckoutBodyState extends State<RestaurantCartCheckoutBody>
     super.dispose();
   }
 
-  String _money(double value) => '${value.toStringAsFixed(0)} ل.س';
+  // String _money(double value) => '${value.toStringAsFixed(0)} ل.س';
 
+  String _money(double value) => '${value.toStringAsFixed(0)} ل.س';
   String _couponUnavailableMessage(CouponCheckDataModel? couponData) {
     switch (couponData?.reason) {
       case 'not_found':
@@ -107,10 +108,10 @@ class _RestaurantCartCheckoutBodyState extends State<RestaurantCartCheckoutBody>
                           if (item.id == null) return;
                           context.read<OrdersBloc>().add(DeleteRestaurantCartItemEvent(itemId: item.id!));
                         },
-                        onEdit: () {
-                          if (item.id == null) return;
-                          context.read<OrdersBloc>().add(UpdateRestaurantCartItemEvent(itemId: item.id!, quantity: item.quantity + 1));
-                        },
+                        // onEdit: () {
+                        //   if (item.id == null) return;
+                        //   context.read<OrdersBloc>().add(UpdateRestaurantCartItemEvent(itemId: item.id!, quantity: item.quantity + 1));
+                        // },
                         money: _money,
                       ),
                     ),

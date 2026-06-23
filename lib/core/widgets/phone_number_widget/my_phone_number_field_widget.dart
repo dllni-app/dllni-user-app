@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:common_package/common_package.dart';
 import 'package:common_package/extensions/size_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/countries.dart';
@@ -239,16 +240,16 @@ class MyPhoneNumberField extends StatelessWidget {
 
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(
-                color: Colors.red,
+              borderSide:  BorderSide(
+                color: context.error,
                 width: 1,
               ),
             ),
 
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(
-                color: Colors.red,
+              borderSide:  BorderSide(
+                color: context.error,
                 width: 1.2,
               ),
             ),

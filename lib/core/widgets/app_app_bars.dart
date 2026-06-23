@@ -262,35 +262,29 @@ class _RsAppSimpleAppBarWithSearchState extends State<RsAppSimpleAppBarWithSearc
             BlocBuilder<RsDiscoverBloc, RsDiscoverState>(
               buildWhen: (p, c) => p.activeSearchMode != c.activeSearchMode,
               builder: (context, state) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      Expanded(
-                        child: _SearchModeChip(
-                          label: "الوجبات",
-                          icon: FontAwesomeIcons.bowlFood,
-                          isSelected: state.activeSearchMode == RsDiscoverSearchMode.meal,
-                          onTap: () => _onModeSelected(RsDiscoverSearchMode.meal),
-                        ),
+                      _SearchModeChip(
+                        label: "الوجبات",
+                        icon: FontAwesomeIcons.bowlFood,
+                        isSelected: state.activeSearchMode == RsDiscoverSearchMode.meal,
+                        onTap: () => _onModeSelected(RsDiscoverSearchMode.meal),
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: _SearchModeChip(
-                          label: "المطاعم",
-                          icon: FontAwesomeIcons.store,
-                          isSelected: state.activeSearchMode == RsDiscoverSearchMode.restaurant,
-                          onTap: () => _onModeSelected(RsDiscoverSearchMode.restaurant),
-                        ),
+                      _SearchModeChip(
+                        label: "المطاعم",
+                        icon: FontAwesomeIcons.store,
+                        isSelected: state.activeSearchMode == RsDiscoverSearchMode.restaurant,
+                        onTap: () => _onModeSelected(RsDiscoverSearchMode.restaurant),
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: _SearchModeChip(
-                          label: "بحث ذكي",
-                          icon: FontAwesomeIcons.microphone,
-                          isSelected: state.activeSearchMode == RsDiscoverSearchMode.smart,
-                          onTap: () => _onModeSelected(RsDiscoverSearchMode.smart),
-                        ),
+                      _SearchModeChip(
+                        label: "بحث ذكي",
+                        icon: FontAwesomeIcons.microphone,
+                        isSelected: state.activeSearchMode == RsDiscoverSearchMode.smart,
+                        onTap: () => _onModeSelected(RsDiscoverSearchMode.smart),
                       ),
                     ],
                   ),

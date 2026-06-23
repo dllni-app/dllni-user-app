@@ -31,12 +31,15 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
             child: AppText.bodyLarge('ملخص الطلب', fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-          RestaurantCartSummaryRow(title: 'مجموع المنتجات ($itemsCount عناصر)', value: money(subtotal)),
+          RestaurantCartSummaryRow(
+            title: 'مجموع المنتجات ($itemsCount عناصر)',
+            value: '${subtotal.toStringAsFixed(1)} ل.س',
+          ),
           if (discount > 0) ...[
             const SizedBox(height: 8),
             RestaurantCartSummaryRow(
               title: 'الخصم (كوبون)',
-              value: '- ${money(discount)}',
+              value: '- ${discount.toStringAsFixed(1)} ل.س',
               valueColor: const Color(0xff10B981),
             ),
           ],
@@ -46,9 +49,17 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
           ),
           RestaurantCartSummaryRow(
             title: 'الإجمالي النهائي',
-            value: money(total),
-            titleStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xff1F2937)),
-            valueStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xff1E2A78)),
+            value: '${total.toStringAsFixed(1)} ل.س',
+            titleStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xff1F2937),
+            ),
+            valueStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xff1E2A78),
+            ),
           ),
         ],
       ),

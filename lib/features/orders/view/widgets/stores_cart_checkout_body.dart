@@ -40,7 +40,7 @@ class _StoresCartCheckoutBodyState extends State<StoresCartCheckoutBody> {
     super.dispose();
   }
 
-  String _money(double value) => '${value.toStringAsFixed(0)} ل.س';
+  String _money(double value) => '${value.toStringAsFixed(1)} ل.س';
 
   String _couponUnavailableMessage(CouponCheckDataModel? couponData) {
     switch (couponData?.reason) {
@@ -107,10 +107,10 @@ class _StoresCartCheckoutBodyState extends State<StoresCartCheckoutBody> {
                           if (item.id == null) return;
                           context.read<OrdersBloc>().add(DeleteStoreCartItemEvent(itemId: item.id!));
                         },
-                        onEdit: () {
-                          if (item.id == null) return;
-                          context.read<OrdersBloc>().add(UpdateStoreCartItemEvent(itemId: item.id!, quantity: item.quantity + 1));
-                        },
+                        // onEdit: () {
+                        //   if (item.id == null) return;
+                        //   context.read<OrdersBloc>().add(UpdateStoreCartItemEvent(itemId: item.id!, quantity: item.quantity + 1));
+                        // },
                         money: _money,
                       ),
                     ),

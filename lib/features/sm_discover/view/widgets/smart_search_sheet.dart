@@ -155,6 +155,20 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
                 height: 26 / 14,
               ),
               decoration: InputDecoration(
+                suffixIcon: _controller.text.trim().isEmpty
+                    ? null
+                    : IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    size: 18,
+                    color: _SmartSearchColors.hint,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _controller.clear();
+                    });
+                  },
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 11),
                 filled: true,
                 fillColor: _SmartSearchColors.fieldFill,
@@ -197,6 +211,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
                   ),
                 ),
               ),
+
             ),
           ),
           const SizedBox(width: 10),
@@ -206,7 +221,19 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
             child: InkWell(
               onTap: _isSubmitting
                   ? null
-                  : (_listening ? _stopListen : _startListen),
+                  : () async {
+                if (_listening) {
+                  await _stopListen();
+                  return;
+                }
+
+                if (_controller.text.trim().isNotEmpty) {
+                  await _fetchNormalizedWords();
+                  return;
+                }
+
+                await _startListen();
+              },
               borderRadius: BorderRadius.circular(12),
               child: SizedBox(
                 width: 48,
@@ -387,35 +414,37 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     );
   }
 
-  /// Re-open [SpeechToText.listen] after the platform stops mid-session (Android often
-  /// cuts after short silence). [listenFor]/[pauseFor] null disables plugin timers only.
   Future<void> _maybeRestartListenAfterEngineStop() async {
-    await Future<void>.delayed(const Duration(milliseconds: 100));
-    if (!mounted ||
-        !_openMicSession ||
-        _phase != _SmartSearchPhase.input ||
-        _isSubmitting) {
-      return;
-    }
-    if (_speech.isListening) return;
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+    if (!_openMicSession) return;
+    if (_phase != _SmartSearchPhase.input) return;
+    if (_isSubmitting) return;
+
+    try {
+      await _speech.stop();
+    } catch (_) {}
 
     final localeId = _activeListenLocaleId ?? await _pickSpeechLocale();
+
     if (!mounted || localeId == null) return;
+
     _activeListenLocaleId = localeId;
 
     try {
       await _runListen(localeId);
     } catch (_) {
       if (!mounted) return;
+
       _openMicSession = false;
+
       setState(() {
         _listening = false;
         _voiceEnergy = 0;
       });
+
       _setListeningVisuals(false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر مواصلة الاستماع. حاول مرة أخرى.')),
-      );
     }
   }
 
@@ -442,20 +471,30 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
         status != SpeechToText.notListeningStatus) {
       return;
     }
+
     if (!mounted) return;
 
-    // OS/engine ended a segment; keep the mic "on" until the user taps stop.
+    final recentlySpoken =
+        _lastRecognizedAt != null &&
+            DateTime.now().difference(_lastRecognizedAt!) <
+                const Duration(seconds: 5);
+
     if (_openMicSession &&
+        _hasRecognizedSpeech &&
+        recentlySpoken &&
         _phase == _SmartSearchPhase.input &&
         !_isSubmitting) {
       unawaited(_maybeRestartListenAfterEngineStop());
       return;
     }
 
+    _openMicSession = false;
+
     setState(() {
       _listening = false;
       _voiceEnergy = 0;
     });
+
     _setListeningVisuals(false);
   }
 
@@ -469,13 +508,21 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     // return 'ar_SA';
     return "ar";
   }
-
+  DateTime? _lastRecognizedAt;
   Future<void> _runListen(String localeId) async {
     _listenTranscriptPrefix = _controller.text.trim();
     await _speech.listen(
       onResult: (result) {
+
         if (!mounted) return;
         final live = result.recognizedWords.trim();
+        if (live.isNotEmpty) {
+          _hasRecognizedSpeech = true;
+          _lastRecognizedAt = DateTime.now();
+        }
+        if (live.isNotEmpty) {
+          _hasRecognizedSpeech = true;
+        }
         final composed = _listenTranscriptPrefix.isEmpty
             ? live
             : live.isEmpty
@@ -490,8 +537,11 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
       },
       onSoundLevelChange: _onSoundLevel,
       localeId: localeId,
-      listenFor: null,
-      pauseFor: null,
+      // listenFor: null,
+      // pauseFor: const Duration(seconds: 5),
+      listenFor: const Duration(minutes: 10),
+      pauseFor: const Duration(seconds: 30),
+
       listenOptions: SpeechListenOptions(
         listenMode: ListenMode.dictation,
         partialResults: true,
@@ -515,9 +565,10 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
       });
     });
   }
-
+  bool _hasRecognizedSpeech = false;
   Future<void> _startListen() async {
     var status = await Permission.microphone.status;
+
     if (status.isPermanentlyDenied) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -531,9 +582,11 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
       );
       return;
     }
+
     if (!status.isGranted) {
       status = await Permission.microphone.request();
     }
+
     if (!status.isGranted) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -545,19 +598,26 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     }
 
     await _ensureSpeech();
+
     if (!_speechReady) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('التعرف الصوتي غير متاح على هذا الجهاز.')),
+        const SnackBar(
+          content: Text('التعرف الصوتي غير متاح على هذا الجهاز.'),
+        ),
       );
       return;
     }
 
     final localeId = await _pickSpeechLocale();
+
     if (!mounted || localeId == null) return;
 
     _activeListenLocaleId = localeId;
     _openMicSession = true;
+
+    // مهم
+    _hasRecognizedSpeech = false;
 
     _levelBoundsReady = false;
     _levelMin = 0;
@@ -568,6 +628,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
       _listening = true;
       _voiceEnergy = 0;
     });
+
     _setListeningVisuals(true);
 
     if (_speech.isListening) return;
@@ -576,14 +637,20 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
       await _runListen(localeId);
     } catch (_) {
       if (!mounted) return;
+
       _openMicSession = false;
+
       setState(() {
         _listening = false;
         _voiceEnergy = 0;
       });
+
       _setListeningVisuals(false);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر بدء الاستماع. حاول مرة أخرى.')),
+        const SnackBar(
+          content: Text('تعذّر بدء الاستماع. حاول مرة أخرى.'),
+        ),
       );
     }
   }
@@ -605,7 +672,8 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
   List<String> _wordsFromModel(
     NormalizeProductTextModel model,
     String trimmedFallback,
-  ) {
+  )
+  {
     if (model.items.isNotEmpty) {
       return List<String>.from(model.items);
     }

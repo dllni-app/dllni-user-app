@@ -1,21 +1,23 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/models/orders_api_models.dart';
+import '../manager/bloc/orders_bloc.dart';
 
 class RestaurantCartProductCard extends StatefulWidget {
   const RestaurantCartProductCard({
     super.key,
     required this.item,
     required this.onDelete,
-    required this.onEdit,
+    // required this.onEdit,
     required this.isMutating,
     required this.money,
   });
 
   final RestaurantCartItemModel item;
   final VoidCallback onDelete;
-  final VoidCallback onEdit;
+  // final VoidCallback onEdit;
   final bool isMutating;
   final String Function(double) money;
 
@@ -86,9 +88,11 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                           ? null
                           : () {
                               if (widget.item.id == null) return;
-                              setState(() {
-                                widget.item.quantity++;
-                              });
+                              context.read<OrdersBloc>().add(UpdateRestaurantCartItemEvent(itemId: widget.item.id!, quantity:widget. item.quantity + 1));
+
+                              // setState(() {
+                              //   widget.item.quantity++;
+                              // });
                             },
                       icon: const Icon(
                         Icons.add,
@@ -106,9 +110,11 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                           ? null
                           : () {
                               if (widget.item.quantity <= 1) return;
-                              setState(() {
-                                widget.item.quantity--;
-                              });
+                              context.read<OrdersBloc>().add(UpdateRestaurantCartItemEvent(itemId: widget.item.id!, quantity:widget. item.quantity -1));
+
+                              // setState(() {
+                              //   widget.item.quantity--;
+                              // });
                             },
                       icon: const Icon(
                         Icons.remove,
@@ -120,42 +126,58 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                 ),
               ),
               AppText.bodyLarge(
-                widget.money(widget.item.totalPrice),
+                // widget.money(widget.item.totalPrice),
+                // widget.money()
+
+    '${widget.item.totalPrice.toStringAsFixed(1)} ل.س',
+
                 fontWeight: FontWeight.bold,
                 color: const Color(0xff1A237E),
               ),
             ],
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton.icon(
-                onPressed: widget.isMutating ? null : widget.onDelete,
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: Color(0xffEF4444),
-                  size: 15,
-                ),
-                label: AppText.labelLarge(
-                  'حذف',
-                  color: const Color(0xffEF4444),
-                ),
-              ),
-              const SizedBox(width: 14),
-              TextButton.icon(
-                onPressed: widget.isMutating ? null : widget.onEdit,
-                icon: const Icon(
-                  Icons.edit,
-                  color: Color(0xff1E2A78),
-                  size: 15,
-                ),
-                label: AppText.labelLarge(
-                  'تعديل',
-                  color: const Color(0xff1E2A78),
-                ),
-              ),
-            ],
+          TextButton.icon(
+            onPressed: widget.isMutating ? null : widget.onDelete,
+            icon: const Icon(
+              Icons.delete_outline,
+              color: Color(0xffEF4444),
+              size: 15,
+            ),
+            label: AppText.labelLarge(
+              'حذف',
+              color: const Color(0xffEF4444),
+            ),
           ),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: [
+          //     TextButton.icon(
+          //       onPressed: widget.isMutating ? null : widget.onDelete,
+          //       icon: const Icon(
+          //         Icons.delete_outline,
+          //         color: Color(0xffEF4444),
+          //         size: 15,
+          //       ),
+          //       label: AppText.labelLarge(
+          //         'حذف',
+          //         color: const Color(0xffEF4444),
+          //       ),
+          //     ),
+          //     const SizedBox(width: 14),
+          //     TextButton.icon(
+          //       onPressed: widget.isMutating ? null : widget.onEdit,
+          //       icon: const Icon(
+          //         Icons.edit,
+          //         color: Color(0xff1E2A78),
+          //         size: 15,
+          //       ),
+          //       label: AppText.labelLarge(
+          //         'تعديل',
+          //         color: const Color(0xff1E2A78),
+          //       ),
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );

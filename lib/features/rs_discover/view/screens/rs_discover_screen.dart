@@ -344,7 +344,7 @@ class _SearchChip extends StatelessWidget {
 
 StoreProductItem _toStoreProductItem(FetchRestaurantProductsSearchModelDataItem product) {
   final activeOffer = (product.activeOffers ?? []).isNotEmpty ? product.activeOffers!.first : null;
-  final currency = (product.currency ?? '').trim();
+  final currency = 'ل.س';
 
   String? formatPrice(num? value) {
     if (value == null) return null;

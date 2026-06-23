@@ -117,10 +117,10 @@ class _SupermarketCartCheckoutBodyState extends State<SupermarketCartCheckoutBod
                           if (item.id == null) return;
                           context.read<OrdersBloc>().add(DeleteStoreCartItemEvent(itemId: item.id!));
                         },
-                        onEdit: () {
-                          if (item.id == null) return;
-                          context.read<OrdersBloc>().add(UpdateStoreCartItemEvent(itemId: item.id!, quantity: item.quantity + 1));
-                        },
+                        // onEdit: () {
+                        //   if (item.id == null) return;
+                        //   context.read<OrdersBloc>().add(UpdateStoreCartItemEvent(itemId: item.id!, quantity: item.quantity + 1));
+                        // },
                         money: _money,
                       ),
                     ),
