@@ -6,9 +6,11 @@ class OrdersState {
   final int selectedTabIndex;
   final String? errorMessage;
   final BlocStatus? restaurantCartStatus;
+  final List<RestaurantCartDataModel> restaurantCarts;
   final RestaurantCartDataModel? restaurantCart;
   final String? restaurantCartErrorMessage;
   final BlocStatus? storeCartStatus;
+  final List<RestaurantCartDataModel> storeCarts;
   final RestaurantCartDataModel? storeCart;
   final String? storeCartErrorMessage;
   final bool isMutatingCartItem;
@@ -37,9 +39,11 @@ class OrdersState {
     this.selectedTabIndex = 0,
     this.errorMessage,
     this.restaurantCartStatus,
+    this.restaurantCarts = const <RestaurantCartDataModel>[],
     this.restaurantCart,
     this.restaurantCartErrorMessage,
     this.storeCartStatus,
+    this.storeCarts = const <RestaurantCartDataModel>[],
     this.storeCart,
     this.storeCartErrorMessage,
     this.isMutatingCartItem = false,
@@ -70,12 +74,16 @@ class OrdersState {
     String? errorMessage,
     bool clearError = false,
     BlocStatus? restaurantCartStatus,
+    List<RestaurantCartDataModel>? restaurantCarts,
+    bool replaceRestaurantCarts = false,
     RestaurantCartDataModel? restaurantCart,
     bool replaceRestaurantCart = false,
     String? restaurantCartErrorMessage,
     bool clearRestaurantCartError = false,
     bool clearRestaurantCart = false,
     BlocStatus? storeCartStatus,
+    List<RestaurantCartDataModel>? storeCarts,
+    bool replaceStoreCarts = false,
     RestaurantCartDataModel? storeCart,
     bool replaceStoreCart = false,
     String? storeCartErrorMessage,
@@ -108,17 +116,40 @@ class OrdersState {
     AddressListItem? selectedAddress,
     bool replaceSelectedAddress = false,
   }) {
+    final resolvedRestaurantCarts = replaceRestaurantCarts
+        ? (restaurantCarts ?? const <RestaurantCartDataModel>[])
+        : (restaurantCarts ?? this.restaurantCarts);
+    final resolvedStoreCarts = replaceStoreCarts
+        ? (storeCarts ?? const <RestaurantCartDataModel>[])
+        : (storeCarts ?? this.storeCarts);
+
     return OrdersState(
       orders: orders ?? this.orders,
       cleaningOrders: cleaningOrders ?? this.cleaningOrders,
       selectedTabIndex: selectedTabIndex ?? this.selectedTabIndex,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       restaurantCartStatus: restaurantCartStatus ?? this.restaurantCartStatus,
-      restaurantCart: clearRestaurantCart ? null : (replaceRestaurantCart ? restaurantCart : (restaurantCart ?? this.restaurantCart)),
-      restaurantCartErrorMessage: clearRestaurantCartError ? null : (restaurantCartErrorMessage ?? this.restaurantCartErrorMessage),
+      restaurantCarts: resolvedRestaurantCarts,
+      restaurantCart: clearRestaurantCart
+          ? null
+          : (replaceRestaurantCart
+              ? restaurantCart
+              : (restaurantCart ?? this.restaurantCart ??
+                  (resolvedRestaurantCarts.isEmpty ? null : resolvedRestaurantCarts.first))),
+      restaurantCartErrorMessage: clearRestaurantCartError
+          ? null
+          : (restaurantCartErrorMessage ?? this.restaurantCartErrorMessage),
       storeCartStatus: storeCartStatus ?? this.storeCartStatus,
-      storeCart: clearStoreCart ? null : (replaceStoreCart ? storeCart : (storeCart ?? this.storeCart)),
-      storeCartErrorMessage: clearStoreCartError ? null : (storeCartErrorMessage ?? this.storeCartErrorMessage),
+      storeCarts: resolvedStoreCarts,
+      storeCart: clearStoreCart
+          ? null
+          : (replaceStoreCart
+              ? storeCart
+              : (storeCart ?? this.storeCart ??
+                  (resolvedStoreCarts.isEmpty ? null : resolvedStoreCarts.first))),
+      storeCartErrorMessage: clearStoreCartError
+          ? null
+          : (storeCartErrorMessage ?? this.storeCartErrorMessage),
       isMutatingCartItem: isMutatingCartItem ?? this.isMutatingCartItem,
       isMutatingStoreCartItem: isMutatingStoreCartItem ?? this.isMutatingStoreCartItem,
       couponStatus: couponStatus ?? this.couponStatus,
@@ -145,6 +176,8 @@ class OrdersState {
 
   RestaurantCartDataModel? activeCart() => isStoresSection() ? storeCart : restaurantCart;
 
+  List<RestaurantCartDataModel> activeCarts() => isStoresSection() ? storeCarts : restaurantCarts;
+
   BlocStatus? activeCartStatus() => isStoresSection() ? storeCartStatus : restaurantCartStatus;
 
   String? activeCartError() => isStoresSection() ? storeCartErrorMessage : restaurantCartErrorMessage;
@@ -160,4 +193,8 @@ class OrdersState {
   BlocStatus? activePlaceOrderStatus() => isStoresSection() ? placeStoreOrderStatus : placeOrderStatus;
 
   String? activePlaceOrderError() => isStoresSection() ? placeStoreOrderErrorMessage : placeOrderErrorMessage;
+
+  int get totalCartBadgeCount =>
+      restaurantCarts.fold<int>(0, (sum, cart) => sum + cart.productsCount) +
+      storeCarts.fold<int>(0, (sum, cart) => sum + cart.productsCount);
 }
