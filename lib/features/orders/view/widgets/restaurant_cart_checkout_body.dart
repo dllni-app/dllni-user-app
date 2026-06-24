@@ -56,7 +56,6 @@ class RestaurantCartCheckoutBody extends StatelessWidget {
                   ...carts.map(
                     (cart) => _MerchantCartCard(
                       cart: cart,
-                      isStore: false,
                       isMutating: state.isMutatingCartItem,
                       money: _money,
                     ),
@@ -82,13 +81,11 @@ class RestaurantCartCheckoutBody extends StatelessWidget {
 class _MerchantCartCard extends StatelessWidget {
   const _MerchantCartCard({
     required this.cart,
-    required this.isStore,
     required this.isMutating,
     required this.money,
   });
 
   final RestaurantCartDataModel cart;
-  final bool isStore;
   final bool isMutating;
   final String Function(double value) money;
 
@@ -127,6 +124,7 @@ class _MerchantCartCard extends StatelessWidget {
               padding: const EdgeInsetsDirectional.only(bottom: 12),
               child: RestaurantCartProductCard(
                 item: item,
+                cartId: cartId,
                 isMutating: isMutating,
                 onDelete: () {
                   if (cartId == null || item.id == null) return;
