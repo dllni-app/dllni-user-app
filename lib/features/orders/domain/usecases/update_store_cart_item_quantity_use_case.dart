@@ -7,13 +7,15 @@ import 'update_cart_item_quantity_use_case.dart';
 
 @lazySingleton
 class UpdateStoreCartItemQuantityUseCase
-    implements UseCase<OrdersActionResultModel, UpdateCartItemQuantityParams> {
+    implements UseCase<FetchRestaurantCartModel, UpdateCartItemQuantityParams> {
   final OrdersRepo ordersRepo;
 
   UpdateStoreCartItemQuantityUseCase({required this.ordersRepo});
 
   @override
-  DataResponse<OrdersActionResultModel> call(UpdateCartItemQuantityParams params) {
+  DataResponse<FetchRestaurantCartModel> call(
+    UpdateCartItemQuantityParams params,
+  ) {
     return ordersRepo.updateStoreCartItemQuantity(params);
   }
 }
