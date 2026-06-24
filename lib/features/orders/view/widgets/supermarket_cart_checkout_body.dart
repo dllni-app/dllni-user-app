@@ -124,6 +124,8 @@ class _StoreCartCard extends StatelessWidget {
               padding: const EdgeInsetsDirectional.only(bottom: 12),
               child: RestaurantCartProductCard(
                 item: item,
+                cartId: cartId,
+                isStore: true,
                 isMutating: isMutating,
                 onDelete: () {
                   if (cartId == null || item.id == null) return;
