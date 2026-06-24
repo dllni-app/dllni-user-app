@@ -16,7 +16,6 @@ import '../../data/models/cleaning_banners_response_model.dart';
 import '../../domain/usecases/get_cleaning_banners_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../manager/bloc/cl_main_bloc.dart';
-import '../widgets/cl_home_app_bar.dart';
 import '../widgets/cl_main_service_tabs_widget.dart';
 import '../widgets/cl_occasion_type_card_widget.dart';
 import '../widgets/cl_property_type_card_widget.dart';
@@ -25,16 +24,15 @@ class ClMainScreenParams {
   final ProfileBloc profileBloc;
   final ClMainBloc? bloc;
 
-  ClMainScreenParams({required this.profileBloc,this.bloc});
+  ClMainScreenParams({required this.profileBloc, this.bloc});
 }
 
 @AutoRoutePage()
 class ClMainScreen extends StatefulWidget {
- final ClMainScreenParams params;
+  final ClMainScreenParams? params;
+  final ClMainBloc? bloc;
 
-  const ClMainScreen({super.key, required this.params});
-
-
+  const ClMainScreen({super.key, this.params, this.bloc});
 
   @override
   State<ClMainScreen> createState() => _ClMainScreenState();
@@ -50,6 +48,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
   BlocStatus _cleaningBannersStatus = BlocStatus.init;
   String? _cleaningBannersErrorMessage;
   int _lengthOfBanners = 0;
+
+  ClMainBloc? get _injectedBloc => widget.params?.bloc ?? widget.bloc;
 
   @override
   void initState() {
@@ -125,7 +125,6 @@ class _ClMainScreenState extends State<ClMainScreen> {
 
     final uri = Uri.tryParse(value);
     if (uri == null) return;
-
     if (getIt.isRegistered<DeepLinkService>() &&
         DeepLinkParser.isSupportedDeepLink(uri)) {
       await getIt<DeepLinkService>().handleIncomingUri(uri);
@@ -133,12 +132,10 @@ class _ClMainScreenState extends State<ClMainScreen> {
     }
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('تعذر فتح الرابط')));
-      }
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر فتح الرابط')),
+      );
     }
   }
 
@@ -215,36 +212,16 @@ class _ClMainScreenState extends State<ClMainScreen> {
   Widget _buildScreenBody(BuildContext context) {
     final bloc = context.read<ClMainBloc>();
     final propertyTypes = <({String title, String icon, String value})>[
-      (
-        title: 'فيلا دوبلكس',
-        icon: Assets.images.villaImage.path,
-        value: 'villa',
-      ),
+      (title: 'فيلا دوبلكس', icon: Assets.images.villaImage.path, value: 'villa'),
       (title: 'مكتب', icon: Assets.images.officeImage.path, value: 'office'),
       (title: 'شقة', icon: Assets.images.homeImage.path, value: 'apartment'),
       (title: 'استديو', icon: Assets.images.studioImage.path, value: 'studio'),
     ];
     final occasionOptions = <ClMainOccasionOption>[
-      ClMainOccasionOption(
-        id: 'family_dinner',
-        title: 'عشاء عائلي',
-        imagePath: Assets.images.familyDinner.path,
-      ),
-      ClMainOccasionOption(
-        id: 'birthday_party',
-        title: 'حفلة عيد ميلاد',
-        imagePath: Assets.images.party.path,
-      ),
-      ClMainOccasionOption(
-        id: 'large_gathering',
-        title: 'عزيمة كبيرة',
-        imagePath: Assets.images.bigLaunch.path,
-      ),
-      ClMainOccasionOption(
-        id: 'condolences',
-        title: 'عزاء',
-        imagePath: Assets.images.aza.path,
-      ),
+      ClMainOccasionOption(id: 'family_dinner', title: 'عشاء عائلي', imagePath: Assets.images.familyDinner.path),
+      ClMainOccasionOption(id: 'birthday_party', title: 'حفلة عيد ميلاد', imagePath: Assets.images.party.path),
+      ClMainOccasionOption(id: 'large_gathering', title: 'عزيمة كبيرة', imagePath: Assets.images.bigLaunch.path),
+      ClMainOccasionOption(id: 'condolences', title: 'عزاء', imagePath: Assets.images.aza.path),
     ];
 
     return Scaffold(
@@ -252,7 +229,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            HomeAppBar(isHome: true,profileBloc: widget.params.profileBloc),
+            if (widget.params != null)
+              HomeAppBar(isHome: true, profileBloc: widget.params!.profileBloc),
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 0),
               child: ClMainServiceTabsWidget(
@@ -270,10 +248,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
               child: _selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex
                   ? ListView.separated(
                       key: const Key('cl_main_cleaning_list'),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 20,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 20),
                       itemCount: propertyTypes.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
@@ -281,19 +256,13 @@ class _ClMainScreenState extends State<ClMainScreen> {
                         return ClPropertyTypeCardWidget(
                           title: item.title,
                           icon: item.icon,
-                          args: ClMainHomeDescriptionArgs(
-                            propertyType: item.value,
-                            bloc: bloc,
-                          ),
+                          args: ClMainHomeDescriptionArgs(propertyType: item.value, bloc: bloc),
                         );
                       },
                     )
                   : ListView.separated(
                       key: const Key('cl_main_occasions_list'),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 20,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 20),
                       itemCount: occasionOptions.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
@@ -304,10 +273,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
                           onTap: () {
                             context.pushRoute(
                               '/clmainoccasiondescription',
-                              arguments: ClMainOccasionDescriptionArgs(
-                                option: option,
-                                bloc: bloc,
-                              ),
+                              arguments: ClMainOccasionDescriptionArgs(option: option, bloc: bloc),
                             );
                           },
                         );
@@ -323,15 +289,10 @@ class _ClMainScreenState extends State<ClMainScreen> {
   @override
   Widget build(BuildContext context) {
     final screenContent = Builder(builder: _buildScreenBody);
-    final screenBody = widget.params.bloc != null
-        ? BlocProvider<ClMainBloc>.value(
-            value: widget.params.bloc!,
-            child: screenContent,
-          )
-        : BlocProvider<ClMainBloc>(
-            create: (_) => getIt<ClMainBloc>(),
-            child: screenContent,
-          );
+    final injectedBloc = _injectedBloc;
+    final screenBody = injectedBloc != null
+        ? BlocProvider<ClMainBloc>.value(value: injectedBloc, child: screenContent)
+        : BlocProvider<ClMainBloc>(create: (_) => getIt<ClMainBloc>(), child: screenContent);
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
@@ -358,109 +319,19 @@ class _ClMainBannerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = banner.imageUrl?.trim();
-    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
-
-    final card = Container(
-      height: 130,
-      width: context.width,
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
-      child: Stack(
-        children: [
-          if (hasImage)
-            Positioned.fill(
-              child: AppImage.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorWidget: const ColoredBox(color: AppColors.primary),
-              ),
-            ),
-          if (hasImage)
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft,
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.92),
-                      AppColors.primary.withValues(alpha: 0.55),
-                      AppColors.primary.withValues(alpha: 0.15),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(hasImage ? 100 : 24, 16, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  banner.title ?? '',
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    height: 20 / 16,
-                  ),
-                ),
-                if (banner.subtitle?.trim().isNotEmpty == true) ...[
-                  const SizedBox(height: 12),
-                  AppText(
-                    banner.subtitle!,
-                    textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      height: 24 / 13,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+    return Semantics(
+      button: _hasTargetUrl,
+      child: GestureDetector(
+        onTap: _hasTargetUrl ? () => onTap(banner.targetUrl) : null,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AppImage.network(
+            banner.imageUrl ?? '',
+            width: double.infinity,
+            height: 130,
+            fit: BoxFit.cover,
           ),
-          if (hasImage)
-            Positioned(
-              left: -36,
-              top: 16,
-              child: CircleAvatar(
-                backgroundColor: AppColors.white,
-                radius: 68,
-                child: AppImage.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  size: 136,
-                  errorWidget: const Icon(
-                    Icons.error_outline,
-                    color: Colors.black,
-                  ),
-                  borderRadius: const BorderRadius.all(Radius.circular(68)),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-
-    if (!_hasTargetUrl) {
-      return card;
-    }
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onTap(banner.targetUrl),
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
-        child: card,
+        ),
       ),
     );
   }
