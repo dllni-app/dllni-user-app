@@ -9,17 +9,19 @@ class RestaurantCartProductCard extends StatefulWidget {
   const RestaurantCartProductCard({
     super.key,
     required this.item,
+    required this.cartId,
     required this.onDelete,
-    // required this.onEdit,
     required this.isMutating,
     required this.money,
+    this.isStore = false,
   });
 
   final RestaurantCartItemModel item;
+  final int? cartId;
   final VoidCallback onDelete;
-  // final VoidCallback onEdit;
   final bool isMutating;
   final String Function(double) money;
+  final bool isStore;
 
   @override
   State<RestaurantCartProductCard> createState() =>
@@ -27,6 +29,26 @@ class RestaurantCartProductCard extends StatefulWidget {
 }
 
 class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
+  void _updateQuantity(int quantity) {
+    final cartId = widget.cartId;
+    final itemId = widget.item.id;
+    if (cartId == null || itemId == null) return;
+
+    final event = widget.isStore
+        ? UpdateStoreCartItemEvent(
+            cartId: cartId,
+            itemId: itemId,
+            quantity: quantity,
+          )
+        : UpdateRestaurantCartItemEvent(
+            cartId: cartId,
+            itemId: itemId,
+            quantity: quantity,
+          );
+
+    context.read<OrdersBloc>().add(event);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -42,7 +64,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppImage.network(
-                widget.item.name ?? '',
+                widget.item.imageUrl ?? widget.item.name ?? '',
                 loadingBuilder: (context) =>
                     const Center(child: CircularProgressIndicator()),
                 errorWidget: const Center(child: Icon(Icons.error)),
@@ -86,14 +108,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                     IconButton(
                       onPressed: widget.isMutating
                           ? null
-                          : () {
-                              if (widget.item.id == null) return;
-                              context.read<OrdersBloc>().add(UpdateRestaurantCartItemEvent(itemId: widget.item.id!, quantity:widget. item.quantity + 1));
-
-                              // setState(() {
-                              //   widget.item.quantity++;
-                              // });
-                            },
+                          : () => _updateQuantity(widget.item.quantity + 1),
                       icon: const Icon(
                         Icons.add,
                         color: Color(0xff1A237E),
@@ -106,16 +121,9 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                       fontWeight: FontWeight.bold,
                     ),
                     IconButton(
-                      onPressed: widget.isMutating
+                      onPressed: widget.isMutating || widget.item.quantity <= 1
                           ? null
-                          : () {
-                              if (widget.item.quantity <= 1) return;
-                              context.read<OrdersBloc>().add(UpdateRestaurantCartItemEvent(itemId: widget.item.id!, quantity:widget. item.quantity -1));
-
-                              // setState(() {
-                              //   widget.item.quantity--;
-                              // });
-                            },
+                          : () => _updateQuantity(widget.item.quantity - 1),
                       icon: const Icon(
                         Icons.remove,
                         color: Color(0xff1A237E),
@@ -126,11 +134,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                 ),
               ),
               AppText.bodyLarge(
-                // widget.money(widget.item.totalPrice),
-                // widget.money()
-
-    '${widget.item.totalPrice.toStringAsFixed(0)} ل.س',
-
+                widget.money(widget.item.totalPrice),
                 fontWeight: FontWeight.bold,
                 color: const Color(0xff1A237E),
               ),
@@ -148,36 +152,6 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
               color: const Color(0xffEF4444),
             ),
           ),
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: [
-          //     TextButton.icon(
-          //       onPressed: widget.isMutating ? null : widget.onDelete,
-          //       icon: const Icon(
-          //         Icons.delete_outline,
-          //         color: Color(0xffEF4444),
-          //         size: 15,
-          //       ),
-          //       label: AppText.labelLarge(
-          //         'حذف',
-          //         color: const Color(0xffEF4444),
-          //       ),
-          //     ),
-          //     const SizedBox(width: 14),
-          //     TextButton.icon(
-          //       onPressed: widget.isMutating ? null : widget.onEdit,
-          //       icon: const Icon(
-          //         Icons.edit,
-          //         color: Color(0xff1E2A78),
-          //         size: 15,
-          //       ),
-          //       label: AppText.labelLarge(
-          //         'تعديل',
-          //         color: const Color(0xff1E2A78),
-          //       ),
-          //     ),
-          //   ],
-          // ),
         ],
       ),
     );
