@@ -3,6 +3,7 @@ import 'package:common_package/helpers/typedef.dart';
 import '../../data/models/cleaning_order_cancel_api_models.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../../data/models/cleaning_worker_profile_model.dart';
+import '../../data/models/merchant_cart_models.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../data/models/sos_api_models.dart';
 import '../../data/models/submit_cleaning_review_model.dart';
@@ -14,8 +15,6 @@ import '../usecases/extend_cleaning_completion_time_use_case.dart';
 import '../usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../usecases/delete_cart_item_use_case.dart';
 import '../usecases/fetch_cleaning_order_details_use_case.dart';
-import '../usecases/fetch_cleaning_orders_use_case.dart';
-import '../usecases/fetch_order_details_use_case.dart';
 import '../usecases/fetch_orders_use_case.dart';
 import '../usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../usecases/place_restaurant_order_use_case.dart';
@@ -67,11 +66,11 @@ abstract class OrdersRepo {
     FetchOrderDetailsParams params,
   );
 
-  DataResponse<OrdersActionResultModel> updateCartItemQuantity(
+  DataResponse<FetchRestaurantCartModel> updateCartItemQuantity(
     UpdateCartItemQuantityParams params,
   );
 
-  DataResponse<OrdersActionResultModel> deleteCartItem(
+  DataResponse<FetchRestaurantCartModel> deleteCartItem(
     DeleteCartItemParams params,
   );
 
@@ -79,8 +78,21 @@ abstract class OrdersRepo {
     CheckRestaurantCouponParams params,
   );
 
-  DataResponse<FetchRestaurantCartModel> fetchRestaurantCart();
-  DataResponse<FetchRestaurantCartModel> fetchStoreCart();
+  DataResponse<FetchMerchantCartsModel> fetchRestaurantCarts();
+  DataResponse<FetchRestaurantCartModel> fetchRestaurantCartById(
+    FetchMerchantCartByIdParams params,
+  );
+  DataResponse<FetchMerchantCartsModel> fetchStoreCarts();
+  DataResponse<FetchRestaurantCartModel> fetchStoreCartById(
+    FetchMerchantCartByIdParams params,
+  );
+
+  DataResponse<CheckoutPreviewModel> previewRestaurantCheckout(
+    CheckoutPreviewParams params,
+  );
+  DataResponse<CheckoutPreviewModel> previewStoreCheckout(
+    CheckoutPreviewParams params,
+  );
 
   DataResponse<PlaceRestaurantOrderModel> placeRestaurantOrder(
     PlaceRestaurantOrderParams params,
@@ -89,10 +101,10 @@ abstract class OrdersRepo {
     PlaceStoreOrderParams params,
   );
 
-  DataResponse<OrdersActionResultModel> updateStoreCartItemQuantity(
+  DataResponse<FetchRestaurantCartModel> updateStoreCartItemQuantity(
     UpdateCartItemQuantityParams params,
   );
-  DataResponse<OrdersActionResultModel> deleteStoreCartItem(
+  DataResponse<FetchRestaurantCartModel> deleteStoreCartItem(
     DeleteCartItemParams params,
   );
 

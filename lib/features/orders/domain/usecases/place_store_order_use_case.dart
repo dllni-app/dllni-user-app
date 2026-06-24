@@ -18,7 +18,7 @@ class PlaceStoreOrderUseCase
 }
 
 class PlaceStoreOrderParams with Params {
-  final int merchantId;
+  final int cartId;
   final String fulfillmentType;
   final String receiveMode;
   final String? scheduledAt;
@@ -27,7 +27,7 @@ class PlaceStoreOrderParams with Params {
   final String? note;
 
   PlaceStoreOrderParams({
-    required this.merchantId,
+    required this.cartId,
     required this.fulfillmentType,
     required this.receiveMode,
     this.scheduledAt,
@@ -39,7 +39,6 @@ class PlaceStoreOrderParams with Params {
   @override
   BodyMap getBody() {
     final body = <String, dynamic>{
-      'merchantId': merchantId,
       'fulfillmentType': fulfillmentType,
       'receiveMode': receiveMode,
       'addressId': addressId,

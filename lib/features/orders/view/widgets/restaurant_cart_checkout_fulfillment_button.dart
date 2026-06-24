@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class RestaurantCartCheckoutFulfillmentButton extends StatelessWidget {
   const RestaurantCartCheckoutFulfillmentButton({super.key, required this.onTap});
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
