@@ -177,3 +177,8 @@ class CheckoutPreviewParams with Params {
     return body;
   }
 }
+
+extension RestaurantCartDataModelMerchantScoped on RestaurantCartDataModel {
+  int get productsCount =>
+      items.fold<int>(0, (sum, item) => sum + item.quantity);
+}
