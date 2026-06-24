@@ -1,3 +1,5 @@
+import 'package:common_package/helpers/typedef.dart';
+
 import 'orders_api_models.dart';
 
 Map<String, dynamic> _asMap(dynamic value) {
@@ -128,4 +130,50 @@ class FetchMerchantCartByIdParams {
   final int cartId;
 
   FetchMerchantCartByIdParams({required this.cartId});
+}
+
+class CheckoutPreviewParams with Params {
+  final int cartId;
+  final String fulfillmentType;
+  final String receiveMode;
+  final String? scheduledAt;
+  final int? addressId;
+  final String? couponCode;
+  final String? note;
+
+  CheckoutPreviewParams({
+    required this.cartId,
+    required this.fulfillmentType,
+    required this.receiveMode,
+    this.scheduledAt,
+    this.addressId,
+    this.couponCode,
+    this.note,
+  });
+
+  @override
+  BodyMap getBody() {
+    final body = <String, dynamic>{
+      'fulfillmentType': fulfillmentType,
+      'receiveMode': receiveMode,
+      'addressId': addressId,
+    };
+
+    final schedule = scheduledAt;
+    if (receiveMode == 'scheduled' && schedule != null && schedule.isNotEmpty) {
+      body['scheduledAt'] = schedule;
+    }
+
+    final coupon = couponCode;
+    if (coupon != null && coupon.trim().isNotEmpty) {
+      body['couponCode'] = coupon;
+    }
+
+    final orderNote = note;
+    if (orderNote != null && orderNote.trim().isNotEmpty) {
+      body['note'] = orderNote;
+    }
+
+    return body;
+  }
 }
