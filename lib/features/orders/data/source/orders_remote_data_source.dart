@@ -10,6 +10,7 @@ import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../domain/usecases/delete_cart_item_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
+import '../../domain/usecases/fetch_order_details_use_case.dart';
 import '../../domain/usecases/fetch_orders_use_case.dart';
 import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../../domain/usecases/place_restaurant_order_use_case.dart';
@@ -38,119 +39,125 @@ class OrdersRemoteDataSource with HandlingApiManager {
 
   Future<FetchOrdersModel> fetchOrders(FetchOrdersParams params) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/orders',
-        params: params.getParams(),
-        data: params.getBody().isEmpty ? null : params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/orders',
+            params: params.getParams(),
+            data: params
+                .getBody()
+                .isEmpty ? null : params.getBody(),
+          ),
       jsonConvert: fetchOrdersModelFromJson,
     );
   }
 
   Future<FetchCleaningOrdersModel> fetchCleaningOrders(
-    FetchCleaningOrdersParams params,
-  ) {
+      FetchCleaningOrdersParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/cleaning/orders',
-        params: params.getParams(),
-        data: params.getBody().isEmpty ? null : params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/cleaning/orders',
+            params: params.getParams(),
+            data: params
+                .getBody()
+                .isEmpty ? null : params.getBody(),
+          ),
       jsonConvert: fetchCleaningOrdersModelFromJson,
     );
   }
 
   Future<CleaningCancelResultModel> cancelCleaningOrder(
-    CancelCleaningOrderParams params,
-  ) {
+      CancelCleaningOrderParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint:
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint:
             '/api/v1/user/cleaning/orders/${params.cleaningOrderId}/cancel',
-        data: params.getBody(),
-      ),
+            data: params.getBody(),
+          ),
       jsonConvert: cleaningCancelResultModelFromJson,
     );
   }
 
   Future<FetchCleaningOrderDetailsModel> fetchCleaningOrderDetails(
-    FetchCleaningOrderDetailsParams params,
-  ) {
+      FetchCleaningOrderDetailsParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/cleaning/orders/${params.orderId}',
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/cleaning/orders/${params.orderId}',
+          ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );
   }
 
   Future<FetchCleaningOrderDetailsModel> confirmCleaningStartVerification(
-    ConfirmCleaningStartVerificationParams params,
-  ) {
+      ConfirmCleaningStartVerificationParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint:
-            '/api/v1/user/cleaning/orders/${params.orderId}/start-verification/confirm',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint:
+            '/api/v1/user/cleaning/orders/${params
+                .orderId}/start-verification/confirm',
+            data: params.getBody(),
+          ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );
   }
 
   Future<FetchCleaningOrderDetailsModel> confirmCleaningCompletion(
-    ConfirmCleaningCompletionParams params,
-  ) {
+      ConfirmCleaningCompletionParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint:
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint:
             '/api/v1/user/cleaning/orders/${params.orderId}/completion/confirm',
-        data: params.getBody(),
-      ),
+            data: params.getBody(),
+          ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );
   }
 
   Future<FetchCleaningOrderDetailsModel> rejectCleaningCompletion(
-    RejectCleaningCompletionParams params,
-  ) {
+      RejectCleaningCompletionParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint:
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint:
             '/api/v1/user/cleaning/orders/${params.orderId}/completion/reject',
-        data: params.getBody(),
-      ),
+            data: params.getBody(),
+          ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );
   }
 
   Future<FetchCleaningOrderDetailsModel> extendCleaningCompletionTime(
-    ExtendCleaningCompletionTimeParams params,
-  ) {
+      ExtendCleaningCompletionTimeParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint:
-            '/api/v1/user/cleaning/orders/${params.orderId}/completion/extend-time',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint:
+            '/api/v1/user/cleaning/orders/${params
+                .orderId}/completion/extend-time',
+            data: params.getBody(),
+          ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );
   }
 
   Future<SubmitCleaningReviewModel> submitCleaningReview(
-    SubmitCleaningReviewParams params,
-  ) {
+      SubmitCleaningReviewParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/cleaning/orders/${params.orderId}/review',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint: '/api/v1/user/cleaning/orders/${params.orderId}/review',
+            data: params.getBody(),
+          ),
       jsonConvert: submitCleaningReviewModelFromJson,
     );
   }
 
   Future<FetchCleaningWorkerProfileModel> fetchCleaningWorkerProfile(
-    FetchCleaningWorkerProfileParams params,
-  ) {
+      FetchCleaningWorkerProfileParams params,) {
     return wrapHandlingApi(
       tryCall: () =>
           dioNetwork.getData(endPoint: '/api/v1/worker/${params.workerId}'),
@@ -159,72 +166,75 @@ class OrdersRemoteDataSource with HandlingApiManager {
   }
 
   Future<OrdersActionResultModel> patchCleaningOrder(
-    PatchCleaningOrderParams params,
-  ) {
+      PatchCleaningOrderParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.patchData(
-        endPoint: '/api/v1/user/cleaning/orders/${params.cleaningOrderId}',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.patchData(
+            endPoint: '/api/v1/user/cleaning/orders/${params.cleaningOrderId}',
+            data: params.getBody(),
+          ),
       jsonConvert: ordersActionResultModelFromJson,
     );
   }
 
   Future<FetchCleaningOrderDetailsModel> patchCleaningRoomAssignments(
-    PatchCleaningRoomAssignmentsParams params,
-  ) {
+      PatchCleaningRoomAssignmentsParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.patchData(
-        endPoint:
+      tryCall: () =>
+          dioNetwork.patchData(
+            endPoint:
             '/api/v1/user/cleaning/orders/${params.orderId}/room-assignments',
-        data: params.getBody(),
-      ),
+            data: params.getBody(),
+          ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
     );
   }
 
   Future<FetchOrderDetailsModel> fetchOrderDetails(
-    FetchOrderDetailsParams params,
-  ) {
+      FetchOrderDetailsParams params) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/orders/${params.section}/${params.orderId}',
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/orders/${params.section}/${params.orderId}',
+          ),
       jsonConvert: fetchOrderDetailsModelFromJson,
     );
   }
 
   Future<FetchRestaurantCartModel> updateCartItemQuantity(
-    UpdateCartItemQuantityParams params,
-  ) {
+      UpdateCartItemQuantityParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.patchData(
-        endPoint:
-            '/api/v1/user/restaurants/carts/${params.cartId}/items/${params.itemId}',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.patchData(
+            endPoint:
+            '/api/v1/user/restaurants/carts/${params.cartId}/items/${params
+                .itemId}',
+            data: params.getBody(),
+          ),
       jsonConvert: fetchMerchantCartModelFromJson,
     );
   }
 
   Future<FetchRestaurantCartModel> deleteCartItem(DeleteCartItemParams params) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.deleteData(
-        endPoint:
-            '/api/v1/user/restaurants/carts/${params.cartId}/items/${params.itemId}',
-      ),
+      tryCall: () =>
+          dioNetwork.deleteData(
+            endPoint:
+            '/api/v1/user/restaurants/carts/${params.cartId}/items/${params
+                .itemId}',
+          ),
       jsonConvert: fetchMerchantCartModelFromJson,
     );
   }
 
   Future<CouponCheckModel> checkRestaurantCoupon(
-    CheckRestaurantCouponParams params,
-  ) {
+      CheckRestaurantCouponParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/coupons/check',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint: '/api/v1/user/coupons/check',
+            data: params.getBody(),
+          ),
       jsonConvert: couponCheckModelFromJson,
     );
   }
@@ -238,12 +248,12 @@ class OrdersRemoteDataSource with HandlingApiManager {
   }
 
   Future<FetchRestaurantCartModel> fetchRestaurantCartById(
-    FetchMerchantCartByIdParams params,
-  ) {
+      FetchMerchantCartByIdParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/restaurants/carts/${params.cartId}',
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/restaurants/carts/${params.cartId}',
+          ),
       jsonConvert: fetchMerchantCartModelFromJson,
     );
   }
@@ -257,136 +267,141 @@ class OrdersRemoteDataSource with HandlingApiManager {
   }
 
   Future<FetchRestaurantCartModel> fetchStoreCartById(
-    FetchMerchantCartByIdParams params,
-  ) {
+      FetchMerchantCartByIdParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/supermarket/carts/${params.cartId}',
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/supermarket/carts/${params.cartId}',
+          ),
       jsonConvert: fetchMerchantCartModelFromJson,
     );
   }
 
   Future<CheckoutPreviewModel> previewRestaurantCheckout(
-    CheckoutPreviewParams params,
-  ) {
+      CheckoutPreviewParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint:
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint:
             '/api/v1/user/restaurants/carts/${params.cartId}/checkout/preview',
-        data: params.getBody(),
-      ),
+            data: params.getBody(),
+          ),
       jsonConvert: checkoutPreviewModelFromJson,
     );
   }
 
   Future<CheckoutPreviewModel> previewStoreCheckout(
-    CheckoutPreviewParams params,
-  ) {
+      CheckoutPreviewParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint:
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint:
             '/api/v1/user/supermarket/carts/${params.cartId}/checkout/preview',
-        data: params.getBody(),
-      ),
+            data: params.getBody(),
+          ),
       jsonConvert: checkoutPreviewModelFromJson,
     );
   }
 
   Future<PlaceRestaurantOrderModel> placeRestaurantOrder(
-    PlaceRestaurantOrderParams params,
-  ) {
+      PlaceRestaurantOrderParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/restaurants/carts/${params.cartId}/orders',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint: '/api/v1/user/restaurants/carts/${params.cartId}/orders',
+            data: params.getBody(),
+          ),
       jsonConvert: placeRestaurantOrderModelFromJson,
     );
   }
 
   Future<PlaceRestaurantOrderModel> placeStoreOrder(
-    PlaceStoreOrderParams params,
-  ) {
+      PlaceStoreOrderParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/supermarket/carts/${params.cartId}/orders',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint: '/api/v1/user/supermarket/carts/${params.cartId}/orders',
+            data: params.getBody(),
+          ),
       jsonConvert: placeRestaurantOrderModelFromJson,
     );
   }
 
   Future<FetchRestaurantCartModel> updateStoreCartItemQuantity(
-    UpdateCartItemQuantityParams params,
-  ) {
+      UpdateCartItemQuantityParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.patchData(
-        endPoint:
-            '/api/v1/user/supermarket/carts/${params.cartId}/items/${params.itemId}',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.patchData(
+            endPoint:
+            '/api/v1/user/supermarket/carts/${params.cartId}/items/${params
+                .itemId}',
+            data: params.getBody(),
+          ),
       jsonConvert: fetchMerchantCartModelFromJson,
     );
   }
 
   Future<FetchRestaurantCartModel> deleteStoreCartItem(
-    DeleteCartItemParams params,
-  ) {
+      DeleteCartItemParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.deleteData(
-        endPoint:
-            '/api/v1/user/supermarket/carts/${params.cartId}/items/${params.itemId}',
-      ),
+      tryCall: () =>
+          dioNetwork.deleteData(
+            endPoint:
+            '/api/v1/user/supermarket/carts/${params.cartId}/items/${params
+                .itemId}',
+          ),
       jsonConvert: fetchMerchantCartModelFromJson,
     );
   }
 
   Future<FetchRestaurantOrderTrackingModel> fetchRestaurantOrderTracking(
-    FetchRestaurantOrderTrackingParams params,
-  ) {
+      FetchRestaurantOrderTrackingParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/orders/restaurant/${params.orderId}/tracking',
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/orders/restaurant/${params
+                .orderId}/tracking',
+          ),
       jsonConvert: fetchRestaurantOrderTrackingModelFromJson,
     );
   }
 
   Future<FetchRestaurantOrderTrackingModel> fetchStoreOrderTracking(
-    FetchRestaurantOrderTrackingParams params,
-  ) {
+      FetchRestaurantOrderTrackingParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/orders/supermarket/${params.orderId}/tracking',
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/user/orders/supermarket/${params
+                .orderId}/tracking',
+          ),
       jsonConvert: fetchRestaurantOrderTrackingModelFromJson,
     );
   }
 
   Future<UserSosResponseModel> createUserSos(CreateUserSosParams params) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/sos',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint: '/api/v1/user/sos',
+            data: params.getBody(),
+          ),
       jsonConvert: userSosResponseModelFromJson,
     );
   }
 
   Future<FetchSosAlertsModel> fetchSosAlerts(FetchSosAlertsParams params) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/sos-alerts',
-        params: params.getParams(),
-      ),
+      tryCall: () =>
+          dioNetwork.getData(
+            endPoint: '/api/v1/sos-alerts',
+            params: params.getParams(),
+          ),
       jsonConvert: fetchSosAlertsModelFromJson,
     );
   }
 
   Future<SosAlertModel> fetchSosAlertDetails(
-    FetchSosAlertDetailsParams params,
-  ) {
+      FetchSosAlertDetailsParams params,) {
     return wrapHandlingApi(
       tryCall: () =>
           dioNetwork.getData(endPoint: '/api/v1/sos-alerts/${params.alertId}'),
@@ -395,13 +410,13 @@ class OrdersRemoteDataSource with HandlingApiManager {
   }
 
   Future<CleaningSosAlertModel> createCleaningUserSos(
-    CreateCleaningUserSosParams params,
-  ) {
+      CreateCleaningUserSosParams params,) {
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/cleaning/orders/${params.orderId}/sos',
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(
+            endPoint: '/api/v1/user/cleaning/orders/${params.orderId}/sos',
+            data: params.getBody(),
+          ),
       jsonConvert: cleaningSosAlertModelFromJson,
     );
   }

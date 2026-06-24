@@ -15,6 +15,7 @@ import '../usecases/extend_cleaning_completion_time_use_case.dart';
 import '../usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../usecases/delete_cart_item_use_case.dart';
 import '../usecases/fetch_cleaning_order_details_use_case.dart';
+import '../usecases/fetch_order_details_use_case.dart';
 import '../usecases/fetch_orders_use_case.dart';
 import '../usecases/fetch_restaurant_order_tracking_use_case.dart';
 import '../usecases/place_restaurant_order_use_case.dart';
