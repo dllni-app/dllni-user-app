@@ -61,12 +61,17 @@ class RestaurantOrderCheckoutCubit extends Cubit<RestaurantOrderCheckoutState> {
   Future<void> updateQuantity({
     required String section,
     required int orderId,
+    required int cartId,
     required int itemId,
     required int quantity,
   }) async {
     emit(state.copyWith(isMutatingItem: true));
     final response = await updateCartItemQuantityUseCase(
-      UpdateCartItemQuantityParams(itemId: itemId, quantity: quantity),
+      UpdateCartItemQuantityParams(
+        cartId: cartId,
+        itemId: itemId,
+        quantity: quantity,
+      ),
     );
     await response.fold(
       (failure) async => emit(
@@ -85,10 +90,13 @@ class RestaurantOrderCheckoutCubit extends Cubit<RestaurantOrderCheckoutState> {
   Future<void> deleteItem({
     required String section,
     required int orderId,
+    required int cartId,
     required int itemId,
   }) async {
     emit(state.copyWith(isMutatingItem: true));
-    final response = await deleteCartItemUseCase(DeleteCartItemParams(itemId: itemId));
+    final response = await deleteCartItemUseCase(
+      DeleteCartItemParams(cartId: cartId, itemId: itemId),
+    );
     await response.fold(
       (failure) async => emit(
         state.copyWith(
