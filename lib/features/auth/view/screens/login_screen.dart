@@ -4,7 +4,6 @@ import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
-import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_help_screen.dart';
@@ -12,7 +11,6 @@ import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/widgets/phone_number_widget/my_phone_number_field_widget.dart';
@@ -68,8 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     phoneValue = ValueNotifier('');
-    phoneFocusNode=FocusNode();
-    passwordFocus=FocusNode();
+    phoneFocusNode = FocusNode();
+    passwordFocus = FocusNode();
     // TODO: implement initState
     super.initState();
   }
@@ -95,9 +93,11 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-
     bloc.add(
-      LoginSubmittedEvent(phone: phoneValue.value, password: _passwordController.text),
+      LoginSubmittedEvent(
+        phone: phoneValue.value,
+        password: _passwordController.text,
+      ),
     );
   }
 
@@ -121,8 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
               state.errorMessage,
               'PHONE_VERIFICATION_REQUIRED',
             )) {
-
-              if (phoneValue.value != null && context.mounted) {
+              if (context.mounted) {
                 AppToast.showToast(
                   context: context,
                   message: authFlowMessage(

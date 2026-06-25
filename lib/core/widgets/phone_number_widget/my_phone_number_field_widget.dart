@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:common_package/common_package.dart';
-import 'package:common_package/extensions/size_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/countries.dart';
 import 'package:intl_phone_field/phone_number.dart';
@@ -38,15 +37,12 @@ class MyPhoneNumberField extends StatelessWidget {
     this.textInputAction,
     this.enabled = true,
     this.initialCountryCode = 'SY',
-    this.internationalPhoneValue, // <— الجديد
-    // this.nextFocusNode, // <— الجديد
+    this.internationalPhoneValue,
   });
 
   final Function(Country)? onCountryChanged;
 
-  final TextEditingController controller=TextEditingController();
-
-  // final FocusNode? nextFocusNode;
+  final TextEditingController controller = TextEditingController();
 
   final String? hintText;
   final String? labelText;
@@ -85,16 +81,13 @@ class MyPhoneNumberField extends StatelessWidget {
       theme.inputDecorationTheme,
     );
 
-    // 🟢 1. نحصل على القيمة الحالية (قد تكون فارغة أو تحتوي +)
     String initialValue = internationalPhoneValue?.value.trim() ?? '';
 
-    // 🟢 2. نحدّد الدولة والرقم بناءً على القيمة
     String countryCode = '+963';
     String countryISO = 'SY';
     String localNumber = '';
 
     if (initialValue.isNotEmpty && initialValue.startsWith('+')) {
-      // مثال: +963947861234 → نستخرج الدولة والرقم
       for (final c in countries) {
         if (initialValue.startsWith('+${c.fullCountryCode}')) {
           countryCode = '+${c.dialCode}';
@@ -105,17 +98,15 @@ class MyPhoneNumberField extends StatelessWidget {
       }
     }
 
-    // 🟢 3. نضبط النص الابتدائي في الـ controller
     if (controller.text.isEmpty && localNumber.isNotEmpty) {
       controller.text = localNumber;
     }
 
-    // 🟢 4. نضبط الدولة الابتدائية على حسب ما وجدناه
-    final effectiveCountryCode =
-    initialValue.isEmpty ? initialCountryCode : countryISO;
+    final effectiveCountryCode = initialValue.isEmpty
+        ? initialCountryCode
+        : countryISO;
 
-    // دالة مساعدة: تحدّث الـ ValueNotifier بالقيمة الدولية
-    void _updateIntlByParts({required String countryCodeWithPlus}) {
+    void updateIntlByParts({required String countryCodeWithPlus}) {
       if (internationalPhoneValue == null) return;
       String raw = controller.text.trim().replaceAll(RegExp(r'\D'), '');
       if (raw.startsWith('0')) raw = raw.substring(1);
@@ -134,8 +125,7 @@ class MyPhoneNumberField extends StatelessWidget {
           textInputAction: textInputAction,
           onSubmitted: onSubmitted,
           onCountryChanged: (country) {
-            // حدّث الرقم الدولي عند تغيير الدولة
-            _updateIntlByParts(countryCodeWithPlus: '+${country.dialCode}');
+            updateIntlByParts(countryCodeWithPlus: '+${country.dialCode}');
             if (onCountryChanged != null) onCountryChanged!(country);
           },
           enabled: enabled,
@@ -155,28 +145,21 @@ class MyPhoneNumberField extends StatelessWidget {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               filled: true,
               fillColor: const Color(0xffF9FAFB),
-              labelStyle: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 14,
-              ),
+              labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
               floatingLabelStyle: const TextStyle(
                 color: Color(0xff1E2A78),
                 fontSize: 14,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(
-                  color: Color(0xffE5E7EB),
-                ),
+                borderSide: const BorderSide(color: Color(0xffE5E7EB)),
               ),
             ),
           ),
           showDropdownIcon: true,
           focusNode: focusNode,
           controller: controller,
-          // عند تغيير الرقم من المستخدم
           onChanged: (phone) {
-            // phone.countryCode مثل +963 و phone.number هو الرقم المحلي
             if (internationalPhoneValue != null) {
               String raw = phone.number.replaceAll(RegExp(r'\D'), '');
               if (raw.startsWith('0')) raw = raw.substring(1);
@@ -188,7 +171,6 @@ class MyPhoneNumberField extends StatelessWidget {
           validator: validator,
           obscureText: obscureText,
           initialCountryCode: effectiveCountryCode,
-
 
           textAlign: textAlign ?? TextAlign.start,
           keyboardType: keyboardType ?? TextInputType.phone,
@@ -204,10 +186,7 @@ class MyPhoneNumberField extends StatelessWidget {
             filled: true,
             fillColor: const Color(0xffF9FAFB),
 
-            hintStyle: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 14,
-            ),
+            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
 
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
@@ -216,18 +195,12 @@ class MyPhoneNumberField extends StatelessWidget {
 
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(
-                color: Color(0xffE5E7EB),
-                width: 1,
-              ),
+              borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
             ),
 
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(
-                color: Color(0xffE5E7EB),
-                width: 1,
-              ),
+              borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
             ),
 
             focusedBorder: OutlineInputBorder(
@@ -240,18 +213,12 @@ class MyPhoneNumberField extends StatelessWidget {
 
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:  BorderSide(
-                color: context.error,
-                width: 1,
-              ),
+              borderSide: BorderSide(color: context.error, width: 1),
             ),
 
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:  BorderSide(
-                color: context.error,
-                width: 1.2,
-              ),
+              borderSide: BorderSide(color: context.error, width: 1.2),
             ),
           ),
         ),
