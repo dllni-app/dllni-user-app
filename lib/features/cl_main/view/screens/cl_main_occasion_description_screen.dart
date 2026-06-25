@@ -371,7 +371,7 @@ class _ClMainOccasionDescriptionScreenState
                                 ClSelectableMenuFieldWidget(
                                   key: const Key('occasion_help_type_field'),
                                   value: _selectedHelpType?.label,
-                                  hint: 'اختر اقتراحاً سريعاً (اختياري)',
+                                  hint: 'اختر اقتراحاً سريعاً...',
                                   onTap: _selectHelpType,
                                 ),
                                 const SizedBox(height: 10),
