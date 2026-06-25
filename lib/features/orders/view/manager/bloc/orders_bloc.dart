@@ -4,6 +4,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 
 import '../../../data/models/cleaning_orders_api_models.dart';
+import '../../../data/models/merchant_cart_models.dart';
 import '../../../data/models/orders_api_models.dart';
 import '../../helpers/cleaning_lifecycle_error_mapper.dart';
 import '../../helpers/cleaning_order_polling_equality.dart';
@@ -61,6 +62,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<FetchCartForActiveSectionEvent>(_onFetchCartForActiveSection);
     on<FetchRestaurantCartEvent>(_onFetchRestaurantCart);
     on<FetchStoreCartEvent>(_onFetchStoreCart);
+    on<SelectRestaurantCartEvent>(_onSelectRestaurantCart);
+    on<SelectStoreCartEvent>(_onSelectStoreCart);
     on<UpdateRestaurantCartItemEvent>(_onUpdateRestaurantCartItem);
     on<UpdateStoreCartItemEvent>(_onUpdateStoreCartItem);
     on<DeleteRestaurantCartItemEvent>(_onDeleteRestaurantCartItem);
@@ -93,6 +96,34 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
 
   bool _isCleaningSection() =>
       _sectionByIndex(state.selectedTabIndex) == 'cleaning';
+
+  RestaurantCartDataModel? _cartById(
+    List<RestaurantCartDataModel> carts,
+    int cartId,
+  ) {
+    for (final cart in carts) {
+      if (cart.id == cartId) return cart;
+    }
+    return null;
+  }
+
+  List<RestaurantCartDataModel> _upsertCart(
+    List<RestaurantCartDataModel> carts,
+    RestaurantCartDataModel? cart,
+  ) {
+    if (cart?.id == null) return carts;
+    if (cart!.items.isEmpty) {
+      return carts.where((item) => item.id != cart.id).toList();
+    }
+    final next = List<RestaurantCartDataModel>.from(carts);
+    final index = next.indexWhere((item) => item.id == cart.id);
+    if (index == -1) {
+      next.add(cart);
+    } else {
+      next[index] = cart;
+    }
+    return next;
+  }
 
   Future<void> _onSectionChanged(
     OrdersSectionChangedEvent event,
@@ -257,13 +288,17 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
           restaurantCartStatus: BlocStatus.failed,
           restaurantCartErrorMessage: failure.message,
           clearRestaurantCart: true,
+          replaceRestaurantCarts: true,
+          restaurantCarts: const <RestaurantCartDataModel>[],
         ),
       ),
       (result) => emit(
         state.copyWith(
           restaurantCartStatus: BlocStatus.success,
+          replaceRestaurantCarts: true,
+          restaurantCarts: result.data,
           replaceRestaurantCart: true,
-          restaurantCart: result.data,
+          restaurantCart: result.data.isEmpty ? null : result.data.first,
           clearRestaurantCartError: true,
         ),
       ),
@@ -287,15 +322,43 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
           storeCartStatus: BlocStatus.failed,
           storeCartErrorMessage: failure.message,
           clearStoreCart: true,
+          replaceStoreCarts: true,
+          storeCarts: const <RestaurantCartDataModel>[],
         ),
       ),
       (result) => emit(
         state.copyWith(
           storeCartStatus: BlocStatus.success,
+          replaceStoreCarts: true,
+          storeCarts: result.data,
           replaceStoreCart: true,
-          storeCart: result.data,
+          storeCart: result.data.isEmpty ? null : result.data.first,
           clearStoreCartError: true,
         ),
+      ),
+    );
+  }
+
+  void _onSelectRestaurantCart(
+    SelectRestaurantCartEvent event,
+    Emitter<OrdersState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        replaceRestaurantCart: true,
+        restaurantCart: _cartById(state.restaurantCarts, event.cartId),
+      ),
+    );
+  }
+
+  void _onSelectStoreCart(
+    SelectStoreCartEvent event,
+    Emitter<OrdersState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        replaceStoreCart: true,
+        storeCart: _cartById(state.storeCarts, event.cartId),
       ),
     );
   }
@@ -307,20 +370,29 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     emit(state.copyWith(isMutatingCartItem: true));
     final response = await updateCartItemQuantityUseCase(
       UpdateCartItemQuantityParams(
+        cartId: event.cartId,
         itemId: event.itemId,
         quantity: event.quantity,
       ),
     );
-    await response.fold(
-      (failure) async => emit(
+    response.fold(
+      (failure) => emit(
         state.copyWith(
           isMutatingCartItem: false,
           restaurantCartErrorMessage: failure.message,
         ),
       ),
-      (_) async {
-        emit(state.copyWith(isMutatingCartItem: false));
-        add(FetchRestaurantCartEvent());
+      (result) {
+        final carts = _upsertCart(state.restaurantCarts, result.data);
+        emit(
+          state.copyWith(
+            isMutatingCartItem: false,
+            replaceRestaurantCarts: true,
+            restaurantCarts: carts,
+            replaceRestaurantCart: true,
+            restaurantCart: _cartById(carts, event.cartId),
+          ),
+        );
       },
     );
   }
@@ -331,18 +403,29 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
   ) async {
     emit(state.copyWith(isMutatingCartItem: true));
     final response = await deleteCartItemUseCase(
-      DeleteCartItemParams(itemId: event.itemId),
+      DeleteCartItemParams(cartId: event.cartId, itemId: event.itemId),
     );
-    await response.fold(
-      (failure) async => emit(
+    response.fold(
+      (failure) => emit(
         state.copyWith(
           isMutatingCartItem: false,
           restaurantCartErrorMessage: failure.message,
         ),
       ),
-      (_) async {
-        emit(state.copyWith(isMutatingCartItem: false));
-        add(FetchRestaurantCartEvent());
+      (result) {
+        final carts = result.data?.id == null
+            ? state.restaurantCarts.where((cart) => cart.id != event.cartId).toList()
+            : _upsertCart(state.restaurantCarts, result.data);
+        emit(
+          state.copyWith(
+            isMutatingCartItem: false,
+            replaceRestaurantCarts: true,
+            restaurantCarts: carts,
+            replaceRestaurantCart: true,
+            restaurantCart: _cartById(carts, event.cartId) ??
+                (carts.isEmpty ? null : carts.first),
+          ),
+        );
       },
     );
   }
@@ -354,20 +437,29 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     emit(state.copyWith(isMutatingStoreCartItem: true));
     final response = await updateStoreCartItemQuantityUseCase(
       UpdateCartItemQuantityParams(
+        cartId: event.cartId,
         itemId: event.itemId,
         quantity: event.quantity,
       ),
     );
-    await response.fold(
-      (failure) async => emit(
+    response.fold(
+      (failure) => emit(
         state.copyWith(
           isMutatingStoreCartItem: false,
           storeCartErrorMessage: failure.message,
         ),
       ),
-      (_) async {
-        emit(state.copyWith(isMutatingStoreCartItem: false));
-        add(FetchStoreCartEvent());
+      (result) {
+        final carts = _upsertCart(state.storeCarts, result.data);
+        emit(
+          state.copyWith(
+            isMutatingStoreCartItem: false,
+            replaceStoreCarts: true,
+            storeCarts: carts,
+            replaceStoreCart: true,
+            storeCart: _cartById(carts, event.cartId),
+          ),
+        );
       },
     );
   }
@@ -378,18 +470,29 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
   ) async {
     emit(state.copyWith(isMutatingStoreCartItem: true));
     final response = await deleteStoreCartItemUseCase(
-      DeleteCartItemParams(itemId: event.itemId),
+      DeleteCartItemParams(cartId: event.cartId, itemId: event.itemId),
     );
-    await response.fold(
-      (failure) async => emit(
+    response.fold(
+      (failure) => emit(
         state.copyWith(
           isMutatingStoreCartItem: false,
           storeCartErrorMessage: failure.message,
         ),
       ),
-      (_) async {
-        emit(state.copyWith(isMutatingStoreCartItem: false));
-        add(FetchStoreCartEvent());
+      (result) {
+        final carts = result.data?.id == null
+            ? state.storeCarts.where((cart) => cart.id != event.cartId).toList()
+            : _upsertCart(state.storeCarts, result.data);
+        emit(
+          state.copyWith(
+            isMutatingStoreCartItem: false,
+            replaceStoreCarts: true,
+            storeCarts: carts,
+            replaceStoreCart: true,
+            storeCart: _cartById(carts, event.cartId) ??
+                (carts.isEmpty ? null : carts.first),
+          ),
+        );
       },
     );
   }
@@ -398,26 +501,13 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     ApplyRestaurantCouponEvent event,
     Emitter<OrdersState> emit,
   ) async {
-    emit(
-      state.copyWith(couponStatus: BlocStatus.loading, clearCouponError: true),
-    );
+    emit(state.copyWith(couponStatus: BlocStatus.loading, clearCouponError: true));
     final response = await checkRestaurantCouponUseCase(
       CheckRestaurantCouponParams(couponCode: event.couponCode),
     );
     response.fold(
-      (failure) => emit(
-        state.copyWith(
-          couponStatus: BlocStatus.failed,
-          couponErrorMessage: failure.message,
-        ),
-      ),
-      (result) => emit(
-        state.copyWith(
-          couponStatus: BlocStatus.success,
-          couponData: result.data,
-          clearCouponError: true,
-        ),
-      ),
+      (failure) => emit(state.copyWith(couponStatus: BlocStatus.failed, couponErrorMessage: failure.message)),
+      (result) => emit(state.copyWith(couponStatus: BlocStatus.success, couponData: result.data, clearCouponError: true)),
     );
   }
 
@@ -425,110 +515,52 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     ApplyStoreCouponEvent event,
     Emitter<OrdersState> emit,
   ) async {
-    emit(
-      state.copyWith(
-        storeCouponStatus: BlocStatus.loading,
-        clearStoreCouponError: true,
-      ),
-    );
+    emit(state.copyWith(storeCouponStatus: BlocStatus.loading, clearStoreCouponError: true));
     final response = await checkRestaurantCouponUseCase(
-      CheckRestaurantCouponParams(
-        couponCode: event.couponCode,
-        section: 'supermarket',
-      ),
+      CheckRestaurantCouponParams(couponCode: event.couponCode, section: 'supermarket'),
     );
     response.fold(
-      (failure) => emit(
-        state.copyWith(
-          storeCouponStatus: BlocStatus.failed,
-          storeCouponErrorMessage: failure.message,
-        ),
-      ),
-      (result) => emit(
-        state.copyWith(
-          storeCouponStatus: BlocStatus.success,
-          storeCouponData: result.data,
-          clearStoreCouponError: true,
-        ),
-      ),
+      (failure) => emit(state.copyWith(storeCouponStatus: BlocStatus.failed, storeCouponErrorMessage: failure.message)),
+      (result) => emit(state.copyWith(storeCouponStatus: BlocStatus.success, storeCouponData: result.data, clearStoreCouponError: true)),
     );
   }
 
-  void _onCartNoteChanged(
-    CartNoteChangedEvent event,
-    Emitter<OrdersState> emit,
-  ) {
+  void _onCartNoteChanged(CartNoteChangedEvent event, Emitter<OrdersState> emit) {
     emit(state.copyWith(cartNote: event.note));
   }
 
-  void _onCartFulfillmentTypeChanged(
-    CartFulfillmentTypeChangedEvent event,
-    Emitter<OrdersState> emit,
-  ) {
+  void _onCartFulfillmentTypeChanged(CartFulfillmentTypeChangedEvent event, Emitter<OrdersState> emit) {
     emit(state.copyWith(selectedFulfillmentType: event.fulfillmentType));
   }
 
-  void _onStoreReceiveModeChanged(
-    StoreReceiveModeChangedEvent event,
-    Emitter<OrdersState> emit,
-  ) {
+  void _onStoreReceiveModeChanged(StoreReceiveModeChangedEvent event, Emitter<OrdersState> emit) {
     emit(
       state.copyWith(
         storeReceiveMode: event.receiveMode,
-        storeScheduledAt: event.receiveMode == 'immediate'
-            ? null
-            : state.storeScheduledAt,
+        storeScheduledAt: event.receiveMode == 'immediate' ? null : state.storeScheduledAt,
         replaceStoreScheduledAt: event.receiveMode == 'immediate',
       ),
     );
   }
 
-  void _onStoreScheduledAtChanged(
-    StoreScheduledAtChangedEvent event,
-    Emitter<OrdersState> emit,
-  ) {
-    emit(
-      state.copyWith(
-        storeScheduledAt: event.scheduledAt,
-        replaceStoreScheduledAt: true,
-      ),
-    );
+  void _onStoreScheduledAtChanged(StoreScheduledAtChangedEvent event, Emitter<OrdersState> emit) {
+    emit(state.copyWith(storeScheduledAt: event.scheduledAt, replaceStoreScheduledAt: true));
   }
 
-  void _onCartSelectedAddressChanged(
-    CartSelectedAddressChangedEvent event,
-    Emitter<OrdersState> emit,
-  ) {
-    emit(
-      state.copyWith(
-        selectedAddress: event.address,
-        replaceSelectedAddress: true,
-      ),
-    );
+  void _onCartSelectedAddressChanged(CartSelectedAddressChangedEvent event, Emitter<OrdersState> emit) {
+    emit(state.copyWith(selectedAddress: event.address, replaceSelectedAddress: true));
   }
 
-  Future<void> _onCancelCleaningOrder(
-    CancelCleaningOrderEvent event,
-    Emitter<OrdersState> emit,
-  ) async {
-    emit(
-      state.copyWith(
-        cancelCleaningStatus: BlocStatus.loading,
-        clearCancelCleaningError: true,
-      ),
-    );
+  Future<void> _onCancelCleaningOrder(CancelCleaningOrderEvent event, Emitter<OrdersState> emit) async {
+    emit(state.copyWith(cancelCleaningStatus: BlocStatus.loading, clearCancelCleaningError: true));
     final response = await cancelCleaningOrderUseCase(
-      CancelCleaningOrderParams(
-        cleaningOrderId: event.orderId,
-        reason: event.reason,
-      ),
+      CancelCleaningOrderParams(cleaningOrderId: event.orderId, reason: event.reason),
     );
     response.fold(
       (failure) => emit(
         state.copyWith(
           cancelCleaningStatus: BlocStatus.failed,
-          cancelCleaningErrorMessage:
-              CleaningLifecycleErrorMapper.mapCancelFailure(failure),
+          cancelCleaningErrorMessage: CleaningLifecycleErrorMapper.mapCancelFailure(failure),
         ),
       ),
       (_) {
@@ -550,45 +582,38 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     PlaceRestaurantOrderEvent event,
     Emitter<OrdersState> emit,
   ) async {
-    final isDelivery =
-        (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
+    final isDelivery = (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
     final parsedAddressId = int.tryParse(state.selectedAddress?.id ?? '');
-    final couponCode = state.couponData?.isAvailable == true
-        ? state.couponData?.couponCode
-        : null;
+    final couponCode = state.couponData?.isAvailable == true ? state.couponData?.couponCode : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
 
-    emit(
-      state.copyWith(
-        placeOrderStatus: BlocStatus.loading,
-        clearPlaceOrderError: true,
-      ),
-    );
+    emit(state.copyWith(placeOrderStatus: BlocStatus.loading, clearPlaceOrderError: true));
 
     final response = await placeRestaurantOrderUseCase(
       PlaceRestaurantOrderParams(
+        cartId: event.cartId,
         fulfillmentType: state.selectedFulfillmentType ?? 'delivery',
+        receiveMode: 'immediate',
         addressId: isDelivery ? parsedAddressId : null,
         couponCode: couponCode,
         note: note,
       ),
     );
 
-    await response.fold(
-      (failure) async => emit(
-        state.copyWith(
-          placeOrderStatus: BlocStatus.failed,
-          placeOrderErrorMessage: failure.message,
-        ),
-      ),
-      (_) async {
+    response.fold(
+      (failure) => emit(state.copyWith(placeOrderStatus: BlocStatus.failed, placeOrderErrorMessage: failure.message)),
+      (_) {
+        final carts = state.restaurantCarts.where((cart) => cart.id != event.cartId).toList();
         emit(
           state.copyWith(
             placeOrderStatus: BlocStatus.success,
             clearPlaceOrderError: true,
+            replaceRestaurantCarts: true,
+            restaurantCarts: carts,
+            replaceRestaurantCart: true,
+            restaurantCart: carts.isEmpty ? null : carts.first,
           ),
         );
-        add(FetchRestaurantCartEvent());
         add(FetchOrdersEvent(isReload: true));
       },
     );
@@ -598,59 +623,28 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     PlaceStoreOrderEvent event,
     Emitter<OrdersState> emit,
   ) async {
-    final isDelivery =
-        (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
+    final isDelivery = (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
     final mappedFulfillmentType = isDelivery ? 'delivery' : 'dine_in';
-    final merchantId = state.storeCart?.merchant?.id;
     final parsedAddressId = int.tryParse(state.selectedAddress?.id ?? '');
-    final couponCode = state.storeCouponData?.isAvailable == true
-        ? state.storeCouponData?.couponCode
-        : null;
+    final couponCode = state.storeCouponData?.isAvailable == true ? state.storeCouponData?.couponCode : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
     final receiveMode = isDelivery ? state.storeReceiveMode : 'immediate';
-    final scheduledAt = (isDelivery && receiveMode == 'scheduled')
-        ? state.storeScheduledAt
-        : null;
+    final scheduledAt = (isDelivery && receiveMode == 'scheduled') ? state.storeScheduledAt : null;
 
-    if (merchantId == null) {
-      emit(
-        state.copyWith(
-          placeStoreOrderStatus: BlocStatus.failed,
-          placeStoreOrderErrorMessage:
-              'تعذر تحديد المتجر الحالي، يرجى تحديث السلة.',
-        ),
-      );
-      return;
-    }
     if (isDelivery && parsedAddressId == null) {
-      emit(
-        state.copyWith(
-          placeStoreOrderStatus: BlocStatus.failed,
-          placeStoreOrderErrorMessage: 'يرجى اختيار عنوان توصيل صالح',
-        ),
-      );
+      emit(state.copyWith(placeStoreOrderStatus: BlocStatus.failed, placeStoreOrderErrorMessage: 'يرجى اختيار عنوان توصيل صالح'));
       return;
     }
     if (isDelivery && receiveMode == 'scheduled' && scheduledAt == null) {
-      emit(
-        state.copyWith(
-          placeStoreOrderStatus: BlocStatus.failed,
-          placeStoreOrderErrorMessage: 'يرجى تحديد موعد الاستلام.',
-        ),
-      );
+      emit(state.copyWith(placeStoreOrderStatus: BlocStatus.failed, placeStoreOrderErrorMessage: 'يرجى تحديد موعد الاستلام.'));
       return;
     }
 
-    emit(
-      state.copyWith(
-        placeStoreOrderStatus: BlocStatus.loading,
-        clearPlaceStoreOrderError: true,
-      ),
-    );
+    emit(state.copyWith(placeStoreOrderStatus: BlocStatus.loading, clearPlaceStoreOrderError: true));
 
     final response = await placeStoreOrderUseCase(
       PlaceStoreOrderParams(
-        merchantId: merchantId,
+        cartId: event.cartId,
         fulfillmentType: mappedFulfillmentType,
         receiveMode: receiveMode,
         scheduledAt: scheduledAt,
@@ -660,21 +654,20 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       ),
     );
 
-    await response.fold(
-      (failure) async => emit(
-        state.copyWith(
-          placeStoreOrderStatus: BlocStatus.failed,
-          placeStoreOrderErrorMessage: failure.message,
-        ),
-      ),
-      (_) async {
+    response.fold(
+      (failure) => emit(state.copyWith(placeStoreOrderStatus: BlocStatus.failed, placeStoreOrderErrorMessage: failure.message)),
+      (_) {
+        final carts = state.storeCarts.where((cart) => cart.id != event.cartId).toList();
         emit(
           state.copyWith(
             placeStoreOrderStatus: BlocStatus.success,
             clearPlaceStoreOrderError: true,
+            replaceStoreCarts: true,
+            storeCarts: carts,
+            replaceStoreCart: true,
+            storeCart: carts.isEmpty ? null : carts.first,
           ),
         );
-        add(FetchStoreCartEvent());
         add(FetchOrdersEvent(isReload: true));
       },
     );

@@ -43,7 +43,7 @@ class _SmStoreAllReviewsScreenState extends State<SmStoreAllReviewsScreen> {
   Map<int, int> _countsFromReviews(List<RestaurantDetailsReview> reviews) {
     final counts = <int, int>{1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
     for (final review in reviews) {
-      final value = review.rating?.clamp(1, 5) ?? 0;
+      final value = review.rating!.clamp(1, 5);
       counts[value] = (counts[value] ?? 0) + 1;
     }
     return counts;
@@ -195,7 +195,7 @@ class _ReviewTile extends StatelessWidget {
           SizedBox(height: 8),
           Row(
             children: List.generate(
-              review.rating?.clamp(1, 5) ?? 1,
+              (review.rating == null ||review.rating ==0 ) ? 1 : review.rating!,
               (_) => Padding(
                 padding: const EdgeInsets.only(left: 2),
                 child: FaIcon(FontAwesomeIcons.solidStar, size: 12, color: Color(0xFFFBBF24)),

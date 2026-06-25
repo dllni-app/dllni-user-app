@@ -6,25 +6,32 @@ import '../repository/orders_repo.dart';
 
 @lazySingleton
 class UpdateCartItemQuantityUseCase
-    implements UseCase<OrdersActionResultModel, UpdateCartItemQuantityParams> {
+    implements UseCase<FetchRestaurantCartModel, UpdateCartItemQuantityParams> {
   final OrdersRepo ordersRepo;
 
   UpdateCartItemQuantityUseCase({required this.ordersRepo});
 
   @override
-  DataResponse<OrdersActionResultModel> call(UpdateCartItemQuantityParams params) {
+  DataResponse<FetchRestaurantCartModel> call(
+    UpdateCartItemQuantityParams params,
+  ) {
     return ordersRepo.updateCartItemQuantity(params);
   }
 }
 
 class UpdateCartItemQuantityParams with Params {
+  final int cartId;
   final int itemId;
   final int quantity;
 
-  UpdateCartItemQuantityParams({required this.itemId, required this.quantity});
+  UpdateCartItemQuantityParams({
+    required this.cartId,
+    required this.itemId,
+    required this.quantity,
+  });
 
   @override
-  BodyMap getBody() => {
-        'quantity': quantity,
-      };
+  BodyMap getBody() {
+    return <String, dynamic>{'quantity': quantity};
+  }
 }

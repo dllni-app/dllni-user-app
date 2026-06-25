@@ -459,7 +459,7 @@ class StoreReviewCard extends StatelessWidget {
                     SizedBox(height: 8),
                     Row(
                       children: List.generate(
-                        review.rating?.clamp(1, 5) ?? 1,
+                       ( review.rating==null ||  review.rating == 0) ? 1 : review.rating!,
                         (_) => Padding(
                           padding: const EdgeInsets.only(left: 2),
                           child: FaIcon(FontAwesomeIcons.solidStar, size: 12, color: Color(0xFFFBBF24)),

@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/di/injection.dart';
 import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
+import '../../../profile/view/screens/notifications_screen.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class ClHomeAppBar extends StatefulWidget {
@@ -17,7 +18,6 @@ class ClHomeAppBar extends StatefulWidget {
 }
 
 class _ClHomeAppBarState extends State<ClHomeAppBar> {
-
   late final ProfileBloc profileBloc;
 
   @override
@@ -31,6 +31,7 @@ class _ClHomeAppBarState extends State<ClHomeAppBar> {
       );
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -94,7 +95,12 @@ class _ClHomeAppBarState extends State<ClHomeAppBar> {
                 profileBloc: profileBloc,
                 icon: FontAwesomeIcons.bell,
                 onTap: () {
-                  context.pushRoute('/notifications');
+                  context.pushRoute(
+                    '/notifications',
+                    arguments: NotificationsScreenParams(
+                      profileBloc: profileBloc,
+                    ),
+                  );
                 },
               ),
             ],

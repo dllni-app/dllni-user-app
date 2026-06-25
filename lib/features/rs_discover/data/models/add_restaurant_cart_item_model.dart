@@ -23,16 +23,16 @@ class AddRestaurantCartItemModel {
   final int? cartId;
   final int? itemId;
   final int? quantity;
-  final int? cartProductsCount;
   final String? operation;
+  final int? cartProductsCount;
 
   AddRestaurantCartItemModel({
     this.message,
     this.cartId,
     this.itemId,
     this.quantity,
-    this.cartProductsCount,
     this.operation,
+    this.cartProductsCount,
   });
 
   factory AddRestaurantCartItemModel.fromJson(Map<String, dynamic> json) {
@@ -41,8 +41,8 @@ class AddRestaurantCartItemModel {
       cartId: _asInt(json['cartId']),
       itemId: _asInt(json['itemId']),
       quantity: _asInt(json['quantity']),
-      cartProductsCount: _asInt(json['cartProductsCount'] ?? json['cart_products_count']),
       operation: _asString(json['operation']),
+      cartProductsCount: _asInt(json['cartProductsCount'] ?? json['cart_products_count']),
     );
   }
 
@@ -51,7 +51,7 @@ class AddRestaurantCartItemModel {
         'cartId': cartId,
         'itemId': itemId,
         'quantity': quantity,
-        'cartProductsCount': cartProductsCount,
         'operation': operation,
+        'cartProductsCount': cartProductsCount,
       };
 }

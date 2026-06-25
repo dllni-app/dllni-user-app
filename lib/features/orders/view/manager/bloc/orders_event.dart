@@ -18,8 +18,7 @@ class FetchOrdersEvent extends OrdersEvent with EventWithReload {
     this.loadMore = false,
     this.isReload = false,
     this.silentRefresh = false,
-    this.orderDeletedId
-
+    this.orderDeletedId,
   });
 }
 
@@ -29,30 +28,54 @@ class FetchRestaurantCartEvent extends OrdersEvent {}
 
 class FetchStoreCartEvent extends OrdersEvent {}
 
+class SelectRestaurantCartEvent extends OrdersEvent {
+  final int cartId;
+
+  SelectRestaurantCartEvent({required this.cartId});
+}
+
+class SelectStoreCartEvent extends OrdersEvent {
+  final int cartId;
+
+  SelectStoreCartEvent({required this.cartId});
+}
+
 class UpdateRestaurantCartItemEvent extends OrdersEvent {
+  final int cartId;
   final int itemId;
   final int quantity;
 
-  UpdateRestaurantCartItemEvent({required this.itemId, required this.quantity});
+  UpdateRestaurantCartItemEvent({
+    required this.cartId,
+    required this.itemId,
+    required this.quantity,
+  });
 }
 
 class DeleteRestaurantCartItemEvent extends OrdersEvent {
+  final int cartId;
   final int itemId;
 
-  DeleteRestaurantCartItemEvent({required this.itemId});
+  DeleteRestaurantCartItemEvent({required this.cartId, required this.itemId});
 }
 
 class UpdateStoreCartItemEvent extends OrdersEvent {
+  final int cartId;
   final int itemId;
   final int quantity;
 
-  UpdateStoreCartItemEvent({required this.itemId, required this.quantity});
+  UpdateStoreCartItemEvent({
+    required this.cartId,
+    required this.itemId,
+    required this.quantity,
+  });
 }
 
 class DeleteStoreCartItemEvent extends OrdersEvent {
+  final int cartId;
   final int itemId;
 
-  DeleteStoreCartItemEvent({required this.itemId});
+  DeleteStoreCartItemEvent({required this.cartId, required this.itemId});
 }
 
 class ApplyRestaurantCouponEvent extends OrdersEvent {
@@ -104,6 +127,14 @@ class CancelCleaningOrderEvent extends OrdersEvent {
   CancelCleaningOrderEvent({required this.orderId, required this.reason});
 }
 
-class PlaceRestaurantOrderEvent extends OrdersEvent {}
+class PlaceRestaurantOrderEvent extends OrdersEvent {
+  final int cartId;
 
-class PlaceStoreOrderEvent extends OrdersEvent {}
+  PlaceRestaurantOrderEvent({required this.cartId});
+}
+
+class PlaceStoreOrderEvent extends OrdersEvent {
+  final int cartId;
+
+  PlaceStoreOrderEvent({required this.cartId});
+}

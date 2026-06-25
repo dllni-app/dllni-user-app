@@ -11,7 +11,6 @@ import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../domain/usecases/delete_cart_item_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
-import '../../domain/usecases/fetch_cleaning_orders_use_case.dart';
 import '../../domain/usecases/fetch_order_details_use_case.dart';
 import '../../domain/usecases/fetch_orders_use_case.dart';
 import '../../domain/usecases/fetch_restaurant_order_tracking_use_case.dart';
@@ -26,6 +25,7 @@ import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/cleaning_worker_profile_model.dart';
+import '../models/merchant_cart_models.dart';
 import '../models/orders_api_models.dart';
 import '../models/sos_api_models.dart';
 import '../models/submit_cleaning_review_model.dart';
@@ -38,250 +38,186 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   OrdersRepoImpl({required this.ordersRemoteDataSource});
 
   @override
-  DataResponse<FetchOrdersModel> fetchOrders(FetchOrdersParams params) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchOrders(params),
-    );
-  }
+  DataResponse<FetchOrdersModel> fetchOrders(FetchOrdersParams params) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchOrders(params));
 
   @override
   DataResponse<FetchCleaningOrdersModel> fetchCleaningOrders(
     FetchCleaningOrdersParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchCleaningOrders(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchCleaningOrders(params));
 
   @override
   DataResponse<CleaningCancelResultModel> cancelCleaningOrder(
     CancelCleaningOrderParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.cancelCleaningOrder(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.cancelCleaningOrder(params));
 
   @override
   DataResponse<FetchCleaningOrderDetailsModel> fetchCleaningOrderDetails(
     FetchCleaningOrderDetailsParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchCleaningOrderDetails(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchCleaningOrderDetails(params));
 
   @override
   DataResponse<FetchCleaningOrderDetailsModel> confirmCleaningStartVerification(
     ConfirmCleaningStartVerificationParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () =>
-          ordersRemoteDataSource.confirmCleaningStartVerification(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.confirmCleaningStartVerification(params));
 
   @override
   DataResponse<FetchCleaningOrderDetailsModel> confirmCleaningCompletion(
     ConfirmCleaningCompletionParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.confirmCleaningCompletion(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.confirmCleaningCompletion(params));
 
   @override
   DataResponse<FetchCleaningOrderDetailsModel> rejectCleaningCompletion(
     RejectCleaningCompletionParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.rejectCleaningCompletion(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.rejectCleaningCompletion(params));
 
   @override
   DataResponse<FetchCleaningOrderDetailsModel> extendCleaningCompletionTime(
     ExtendCleaningCompletionTimeParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () =>
-          ordersRemoteDataSource.extendCleaningCompletionTime(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.extendCleaningCompletionTime(params));
 
   @override
   DataResponse<SubmitCleaningReviewModel> submitCleaningReview(
     SubmitCleaningReviewParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.submitCleaningReview(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.submitCleaningReview(params));
 
   @override
   DataResponse<FetchCleaningWorkerProfileModel> fetchCleaningWorkerProfile(
     FetchCleaningWorkerProfileParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchCleaningWorkerProfile(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchCleaningWorkerProfile(params));
 
   @override
   DataResponse<OrdersActionResultModel> patchCleaningOrder(
     PatchCleaningOrderParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.patchCleaningOrder(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.patchCleaningOrder(params));
 
   @override
   DataResponse<FetchCleaningOrderDetailsModel> patchCleaningRoomAssignments(
     PatchCleaningRoomAssignmentsParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () =>
-          ordersRemoteDataSource.patchCleaningRoomAssignments(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.patchCleaningRoomAssignments(params));
 
   @override
   DataResponse<FetchOrderDetailsModel> fetchOrderDetails(
     FetchOrderDetailsParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchOrderDetails(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchOrderDetails(params));
 
   @override
-  DataResponse<OrdersActionResultModel> updateCartItemQuantity(
+  DataResponse<FetchRestaurantCartModel> updateCartItemQuantity(
     UpdateCartItemQuantityParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.updateCartItemQuantity(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.updateCartItemQuantity(params));
 
   @override
-  DataResponse<OrdersActionResultModel> deleteCartItem(
+  DataResponse<FetchRestaurantCartModel> deleteCartItem(
     DeleteCartItemParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.deleteCartItem(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.deleteCartItem(params));
 
   @override
   DataResponse<CouponCheckModel> checkRestaurantCoupon(
     CheckRestaurantCouponParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.checkRestaurantCoupon(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.checkRestaurantCoupon(params));
 
   @override
-  DataResponse<FetchRestaurantCartModel> fetchRestaurantCart() {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchRestaurantCart(),
-    );
-  }
+  DataResponse<FetchMerchantCartsModel> fetchRestaurantCarts() =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchRestaurantCarts());
 
   @override
-  DataResponse<FetchRestaurantCartModel> fetchStoreCart() {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchStoreCart(),
-    );
-  }
+  DataResponse<FetchRestaurantCartModel> fetchRestaurantCartById(
+    FetchMerchantCartByIdParams params,
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchRestaurantCartById(params));
+
+  @override
+  DataResponse<FetchMerchantCartsModel> fetchStoreCarts() =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchStoreCarts());
+
+  @override
+  DataResponse<FetchRestaurantCartModel> fetchStoreCartById(
+    FetchMerchantCartByIdParams params,
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchStoreCartById(params));
+
+  @override
+  DataResponse<CheckoutPreviewModel> previewRestaurantCheckout(
+    CheckoutPreviewParams params,
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.previewRestaurantCheckout(params));
+
+  @override
+  DataResponse<CheckoutPreviewModel> previewStoreCheckout(
+    CheckoutPreviewParams params,
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.previewStoreCheckout(params));
 
   @override
   DataResponse<PlaceRestaurantOrderModel> placeRestaurantOrder(
     PlaceRestaurantOrderParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.placeRestaurantOrder(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.placeRestaurantOrder(params));
 
   @override
   DataResponse<PlaceRestaurantOrderModel> placeStoreOrder(
     PlaceStoreOrderParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.placeStoreOrder(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.placeStoreOrder(params));
 
   @override
-  DataResponse<OrdersActionResultModel> updateStoreCartItemQuantity(
+  DataResponse<FetchRestaurantCartModel> updateStoreCartItemQuantity(
     UpdateCartItemQuantityParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.updateStoreCartItemQuantity(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.updateStoreCartItemQuantity(params));
 
   @override
-  DataResponse<OrdersActionResultModel> deleteStoreCartItem(
+  DataResponse<FetchRestaurantCartModel> deleteStoreCartItem(
     DeleteCartItemParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.deleteStoreCartItem(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.deleteStoreCartItem(params));
 
   @override
   DataResponse<FetchRestaurantOrderTrackingModel> fetchRestaurantOrderTracking(
     FetchRestaurantOrderTrackingParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () =>
-          ordersRemoteDataSource.fetchRestaurantOrderTracking(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchRestaurantOrderTracking(params));
 
   @override
   DataResponse<FetchRestaurantOrderTrackingModel> fetchStoreOrderTracking(
     FetchRestaurantOrderTrackingParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchStoreOrderTracking(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchStoreOrderTracking(params));
 
   @override
-  DataResponse<UserSosResponseModel> createUserSos(CreateUserSosParams params) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.createUserSos(params),
-    );
-  }
+  DataResponse<UserSosResponseModel> createUserSos(CreateUserSosParams params) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.createUserSos(params));
 
   @override
   DataResponse<FetchSosAlertsModel> fetchSosAlerts(
     FetchSosAlertsParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchSosAlerts(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchSosAlerts(params));
 
   @override
   DataResponse<SosAlertModel> fetchSosAlertDetails(
     FetchSosAlertDetailsParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.fetchSosAlertDetails(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchSosAlertDetails(params));
 
   @override
   DataResponse<CleaningSosAlertModel> createCleaningUserSos(
     CreateCleaningUserSosParams params,
-  ) {
-    return wrapHandlingException(
-      tryCall: () => ordersRemoteDataSource.createCleaningUserSos(params),
-    );
-  }
+  ) =>
+      wrapHandlingException(tryCall: () => ordersRemoteDataSource.createCleaningUserSos(params));
 }

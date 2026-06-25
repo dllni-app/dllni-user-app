@@ -6,19 +6,20 @@ import '../repository/orders_repo.dart';
 
 @lazySingleton
 class DeleteCartItemUseCase
-    implements UseCase<OrdersActionResultModel, DeleteCartItemParams> {
+    implements UseCase<FetchRestaurantCartModel, DeleteCartItemParams> {
   final OrdersRepo ordersRepo;
 
   DeleteCartItemUseCase({required this.ordersRepo});
 
   @override
-  DataResponse<OrdersActionResultModel> call(DeleteCartItemParams params) {
+  DataResponse<FetchRestaurantCartModel> call(DeleteCartItemParams params) {
     return ordersRepo.deleteCartItem(params);
   }
 }
 
 class DeleteCartItemParams with Params {
+  final int cartId;
   final int itemId;
 
-  DeleteCartItemParams({required this.itemId});
+  DeleteCartItemParams({required this.cartId, required this.itemId});
 }
