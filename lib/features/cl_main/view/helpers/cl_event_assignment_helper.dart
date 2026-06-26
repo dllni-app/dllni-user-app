@@ -5,27 +5,32 @@ class EventAssignmentFields {
   const EventAssignmentFields({
     required this.assignmentMode,
     required this.numberOfWorkers,
-    this.preferredWorkerId,
+    this.preferredWorkerIds = const <int>[],
   });
 
   final CleaningAssignmentMode assignmentMode;
   final int numberOfWorkers;
-  final int? preferredWorkerId;
+  final List<int> preferredWorkerIds;
 }
 
 EventAssignmentFields resolveEventAssignmentFields({
-  required int? selectedWorkerId,
+  required List<int> selectedWorkerIds,
   required int? suggestedTeamSize,
   EstimateWorkerAcceptanceModel? workerAcceptance,
 }) {
-  final workers = (suggestedTeamSize ?? workerAcceptance?.required ?? 1).clamp(1, 999);
+  final workerIds = _normalizeWorkerIds(selectedWorkerIds);
+  final suggestedWorkers = (suggestedTeamSize ?? workerAcceptance?.required ?? 1)
+      .clamp(1, 999);
+  final workers = suggestedWorkers < workerIds.length
+      ? workerIds.length
+      : suggestedWorkers;
 
   return EventAssignmentFields(
-    assignmentMode: selectedWorkerId != null
+    assignmentMode: workerIds.length == 1
         ? CleaningAssignmentMode.preferredWorker
         : CleaningAssignmentMode.openCount,
     numberOfWorkers: workers,
-    preferredWorkerId: selectedWorkerId,
+    preferredWorkerIds: workerIds,
   );
 }
 
@@ -33,4 +38,13 @@ int resolveSuggestedTeamSize(EstimatePriceResponseModel estimate) {
   final size = estimate.suggestedTeamSize;
   if (size != null && size > 0) return size;
   return 1;
+}
+
+List<int> _normalizeWorkerIds(List<int> ids) {
+  final normalized = <int>[];
+  for (final id in ids) {
+    if (id <= 0 || normalized.contains(id)) continue;
+    normalized.add(id);
+  }
+  return normalized;
 }
