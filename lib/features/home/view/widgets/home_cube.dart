@@ -48,9 +48,11 @@ class _HomeCubeState extends State<HomeCube> {
     return Padding(
       padding: EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 10),
       child: FlutterCubeTransition(
-        width: context.width * 0.65,
-        height: context.height * 0.25,
-        secondsToSwipe: Duration(seconds: 5),
+        // width: context.width * 0.65,
+        // height: context.height * 0.25,
+        // secondsToSwipe: Duration(seconds: 5),
+          size:  context.width * 0.5,
+
         animationDuration: Duration(milliseconds: 400),
         animationCurve: Curves.easeOut,
         enableHapticFeedback: true,

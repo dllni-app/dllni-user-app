@@ -201,7 +201,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         state.copyWith(
           selectedWorkerId: event.workerId,
           assignmentMode: CleaningAssignmentMode.preferredWorker,
-          numberOfWorkers: 1,
+          // numberOfWorkers: 1,
           clearErrorMessage: true,
           clearAssignmentFieldErrors: true,
         ),

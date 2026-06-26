@@ -1,10 +1,7 @@
-import 'dart:developer' show log;
-
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
-
 import '../../../../core/di/injection.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../../../core/utils/app_date_time_locale.dart';
@@ -55,7 +52,7 @@ class _ClMainOccasionScheduleScreenState
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
   EstimatePriceResponseModel? _currentEstimate;
-  AddressListItem? _selectedAddress;
+  late final ValueNotifier<AddressListItem?> _selectedAddress;
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
 
@@ -213,14 +210,19 @@ class _ClMainOccasionScheduleScreenState
                             onPickFromTime: _pickFromTime,
                           ),
                           const SizedBox(height: 10),
-                          ClServiceAddressSectionWidget(
-                            locationName:
-                                _selectedAddress?.label ?? 'اختر عنوان الخدمة',
-                            address:
-                                _selectedAddress?.line1 ??
-                                'اضغط لتغيير العنوان',
+                          // ClServiceAddressSectionWidget(
+                          //   locationName:
+                          //       _selectedAddress?.label ?? 'اختر عنوان الخدمة',
+                          //   address:
+                          //       _selectedAddress?.line1 ??
+                          //       'اضغط لتغيير العنوان',
+                          //   onChangeTap: _selectAddress,
+                          // ),
+                          CleaningAddressSelectWidget(
+                            selectedAddress: _selectedAddress,
                             onChangeTap: _selectAddress,
                           ),
+
                           const SizedBox(height: 16),
                           ClServiceGenderPreferenceSectionWidget(
                             selectedPreference: state.genderPreference,
@@ -245,7 +247,7 @@ class _ClMainOccasionScheduleScreenState
                                 ? state.errorMessage
                                 : null,
                             onSelectWorker: (workerId) {
-                              if (_selectedAddress == null) {
+                              if (_selectedAddress.value == null) {
                                 AppToast.showToast(
                                   context: context,
                                   message: 'يرجى اختيار عنوان الخدمة أولاً',
@@ -271,13 +273,12 @@ class _ClMainOccasionScheduleScreenState
                               );
                             },
                           ),
-                          const SizedBox(height: 12),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
-                            onChanged: (value) {
-                              _handleGenderPreferenceChanged(bloc, value);
-                            },
-                          ),
+                          // ClServiceGenderPreferenceSectionWidget(
+                          //   selectedPreference: state.genderPreference,
+                          //   onChanged: (value) {
+                          //     _handleGenderPreferenceChanged(bloc, value);
+                          //   },
+                          // ),
                           const SizedBox(height: 12),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
@@ -357,6 +358,7 @@ class _ClMainOccasionScheduleScreenState
     _fromTimeController = TextEditingController(text: '09:00');
     _toTimeController = TextEditingController();
     _couponController = TextEditingController();
+    _selectedAddress = ValueNotifier(null);
   }
 
   String _arabicDayDateLabel(DateTime date) {
@@ -393,7 +395,8 @@ class _ClMainOccasionScheduleScreenState
   Future<void> _handleGenderPreferenceChanged(
     ClMainBloc bloc,
     CleaningGenderPreference preference,
-  ) async {
+  )
+  async {
     if (preference != CleaningGenderPreference.female) {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
       return;
@@ -452,9 +455,9 @@ class _ClMainOccasionScheduleScreenState
     }
 
     final selectedAddress = _selectedAddress;
-    if (selectedAddress == null ||
-        selectedAddress.latitude == null ||
-        selectedAddress.longitude == null) {
+    if (selectedAddress.value == null ||
+        selectedAddress.value?.latitude == null ||
+        selectedAddress.value?.longitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
       );
@@ -465,19 +468,17 @@ class _ClMainOccasionScheduleScreenState
         ? null
         : args.specialRequirementLabel;
     final assignment = _resolveAssignment(state);
-    log(selectedAddress.id);
-    log(state.genderPreference.toString());
     bloc.add(
       CreateCleaningOrderEvent(
         params: CreateCleaningOrderParams.eventAssistance(
-          addressId: int.parse(selectedAddress.id),
+          addressId: int.parse(selectedAddress.value!.id),
           eventType: args.eventType,
           guestCount: args.guestsCount,
           venueType: args.venueType,
           customService: args.customService,
           hours: args.hours,
-          address: selectedAddress.line1,
-          locationName: selectedAddress.label,
+          address: selectedAddress.value?.line1,
+          locationName: selectedAddress.value?.label,
           scheduledDate: AppDateTimeLocale.dateFormat(
             'yyyy-MM-dd',
           ).format(_selectedDate),
@@ -490,6 +491,9 @@ class _ClMainOccasionScheduleScreenState
           notes: args.notes,
           numberOfWorkers: assignment.numberOfWorkers,
           termsAccepted: true,
+
+          // addressLatitude: selectedAddress.latitude,
+          // addressLongitude: selectedAddress.longitude,
         ),
       ),
     );
@@ -539,8 +543,8 @@ class _ClMainOccasionScheduleScreenState
           venueType: args.venueType,
           customService: args.customService,
           hours: args.hours,
-          addressLatitude: address?.latitude,
-          addressLongitude: address?.longitude,
+          addressLatitude: address.value?.latitude,
+          addressLongitude: address.value?.longitude,
           preferredWorkerId: assignment.preferredWorkerId,
           specialRequirement: specialRequirement,
           notes: args.notes,
@@ -553,11 +557,15 @@ class _ClMainOccasionScheduleScreenState
 
   EventAssignmentFields _resolveAssignment(ClMainState state) {
     final estimate = _activeEstimate;
+
     return resolveEventAssignmentFields(
       selectedWorkerId: state.selectedWorkerId,
       suggestedTeamSize:
           _routeArgs?.numberOfWorkers ?? estimate?.suggestedTeamSize,
       workerAcceptance: estimate?.workerAcceptance,
+
+
+
     );
   }
 
@@ -569,7 +577,7 @@ class _ClMainOccasionScheduleScreenState
     if (!mounted) return;
     if (selectedAddress is AddressListItem) {
       setState(() {
-        _selectedAddress = selectedAddress;
+        _selectedAddress.value = selectedAddress;
       });
       final bloc = _bloc;
       if (bloc != null) {
@@ -590,6 +598,7 @@ class _OccasionInfoRow extends StatelessWidget {
   final String label;
 
   final String value;
+
   const _OccasionInfoRow({required this.label, required this.value});
 
   @override

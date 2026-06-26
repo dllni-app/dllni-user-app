@@ -386,8 +386,10 @@ class _ClMainHomeDescriptionScreenState
           params: GetPreviousCleaningWorkersParams(
             page: 1,
             propertyType: _propertyType,
+
           ),
           isReload: true,
+
         ),
       );
     }

@@ -18,18 +18,14 @@ EventAssignmentFields resolveEventAssignmentFields({
   required int? suggestedTeamSize,
   EstimateWorkerAcceptanceModel? workerAcceptance,
 }) {
-  if (selectedWorkerId != null) {
-    return EventAssignmentFields(
-      assignmentMode: CleaningAssignmentMode.preferredWorker,
-      numberOfWorkers: 1,
-      preferredWorkerId: selectedWorkerId,
-    );
-  }
+  final workers = (suggestedTeamSize ?? workerAcceptance?.required ?? 1).clamp(1, 999);
 
-  final workers = suggestedTeamSize ?? workerAcceptance?.required ?? 1;
   return EventAssignmentFields(
-    assignmentMode: CleaningAssignmentMode.openCount,
-    numberOfWorkers: workers < 1 ? 1 : workers,
+    assignmentMode: selectedWorkerId != null
+        ? CleaningAssignmentMode.preferredWorker
+        : CleaningAssignmentMode.openCount,
+    numberOfWorkers: workers,
+    preferredWorkerId: selectedWorkerId,
   );
 }
 
