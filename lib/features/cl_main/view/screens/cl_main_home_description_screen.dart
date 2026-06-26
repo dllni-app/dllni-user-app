@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,6 +12,7 @@ import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
+import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
@@ -18,6 +20,7 @@ import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_cleaning_type_option_card_widget.dart';
 import '../widgets/cl_counter_row_widget.dart';
+import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_home_description_title_card_widget.dart';
 import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_service_assignment_mode_section_widget.dart';
@@ -148,6 +151,43 @@ class _ClMainHomeDescriptionScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _handleGenderPreferenceChanged(
+    ClMainBloc bloc,
+    CleaningGenderPreference preference,
+  ) async {
+    if (preference.apiValue != 'fe' 'male') {
+      bloc.add(SetGenderPreferenceEvent(preference: preference));
+      return;
+    }
+
+    _showLoadingOverlay();
+    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
+    _closeLoadingOverlay();
+    if (!mounted) return;
+
+    await response.fold(
+      (failure) async {
+        ToastComponent.showToast(
+          context,
+          msg: failure.message,
+        );
+      },
+      (policy) async {
+        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
+          context: context,
+          policy: policy,
+        );
+        if (!mounted || confirmation == null) return;
+        bloc.add(
+          SetGenderPreferenceEvent(
+            preference: preference,
+            workEnvironmentConfirmation: confirmation,
+          ),
+        );
+      },
     );
   }
 
@@ -485,6 +525,13 @@ class _ClMainHomeDescriptionScreenState
                             ),
                           ),
                           const SizedBox(height: 10),
+                          ClServiceGenderPreferenceSectionWidget(
+                            selectedPreference: state.genderPreference,
+                            onChanged: (value) {
+                              _handleGenderPreferenceChanged(bloc, value);
+                            },
+                          ),
+                          const SizedBox(height: 10),
                           ClServiceAssignmentModeSectionWidget(
                             selectedMode: state.assignmentMode,
                             onModeChanged: (mode) {
@@ -525,15 +572,6 @@ class _ClMainHomeDescriptionScreenState
                             ),
                             const SizedBox(height: 10),
                           ] else ...[
-                            ClServiceGenderPreferenceSectionWidget(
-                              selectedPreference: state.genderPreference,
-                              onChanged: (value) {
-                                bloc.add(
-                                  SetGenderPreferenceEvent(preference: value),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 10),
                             ClServicePreviousWorkersSectionWidget(
                               workers: filterPreviousWorkersByGender(
                                 state.previousWorkers.list,
