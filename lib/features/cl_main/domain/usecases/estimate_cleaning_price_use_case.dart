@@ -11,13 +11,16 @@ import '../repository/cl_main_repo.dart';
 export '../../data/models/estimate_price_response_model.dart';
 
 @lazySingleton
-class EstimateCleaningPriceUseCase implements UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
+class EstimateCleaningPriceUseCase
+    implements UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
   final ClMainRepo clMainRepo;
 
   EstimateCleaningPriceUseCase({required this.clMainRepo});
 
   @override
-  DataResponse<EstimatePriceResponseModel> call(EstimateCleaningPriceParams params) {
+  DataResponse<EstimatePriceResponseModel> call(
+    EstimateCleaningPriceParams params,
+  ) {
     return clMainRepo.estimateCleaningPrice(params);
   }
 }
@@ -31,9 +34,10 @@ class EstimateCleaningPriceParams with Params {
   final String? livingRoomSize;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
   final CleaningType? cleaningType;
+  final int? addressId;
   final double? addressLatitude;
   final double? addressLongitude;
-  final int? preferredWorkerId;
+  final List<int> preferredWorkerIds;
   final String? eventType;
   final int? guestCount;
   final String? venueType;
@@ -54,9 +58,10 @@ class EstimateCleaningPriceParams with Params {
     required this.livingRoomSize,
     this.roomSizeBreakdown,
     this.cleaningType,
+    this.addressId,
     required this.addressLatitude,
     required this.addressLongitude,
-    this.preferredWorkerId,
+    this.preferredWorkerIds = const <int>[],
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.workerRoomAssignments,
@@ -75,9 +80,10 @@ class EstimateCleaningPriceParams with Params {
     required this.venueType,
     required this.customService,
     required this.hours,
+    this.addressId,
     this.addressLatitude,
     this.addressLongitude,
-    this.preferredWorkerId,
+    this.preferredWorkerIds = const <int>[],
     this.specialRequirement,
     this.notes,
     this.numberOfWorkers,
@@ -93,15 +99,30 @@ class EstimateCleaningPriceParams with Params {
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
-  int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
+  List<int> _sanitizePreferredWorkerIds() {
+    final normalized = <int>[];
+    for (final id in preferredWorkerIds) {
+      if (id <= 0 || normalized.contains(id)) continue;
+      normalized.add(id);
+    }
+    return normalized;
+  }
+
+  int? get _resolvedBedrooms =>
+      roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
 
   int? get _resolvedRooms => roomSizeBreakdown?.legacyRoomsCount ?? rooms;
 
-  int? get _resolvedBathrooms => roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
+  int? get _resolvedBathrooms =>
+      roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
 
-  int? get _resolvedBalconies => roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
+  int? get _resolvedBalconies =>
+      roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
 
-  String get _resolvedLivingRoomSize => roomSizeBreakdown?.legacyLivingRoomSize ?? livingRoomSize ?? CleaningRoomSize.small.apiValue;
+  String get _resolvedLivingRoomSize =>
+      roomSizeBreakdown?.legacyLivingRoomSize ??
+      livingRoomSize ??
+      CleaningRoomSize.small.apiValue;
 
   Map<String, dynamic> _buildPropertyDetails() {
     if (_isEventAssistance) {
@@ -111,7 +132,8 @@ class EstimateCleaningPriceParams with Params {
         'venueType': venueType,
         'customService': customService?.trim(),
         'hours': hours,
-        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty) 'specialRequirement': specialRequirement!.trim(),
+        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
+          'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       };
     }
@@ -121,19 +143,25 @@ class EstimateCleaningPriceParams with Params {
       'bathrooms': _resolvedBathrooms,
       if (_resolvedBalconies != null) 'balconies': _resolvedBalconies,
       'living_room_size': _resolvedLivingRoomSize,
-      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
+      if (roomSizeBreakdown != null)
+        'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
       if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
   Map<String, dynamic> _buildBody() {
+    final workerIds = _sanitizePreferredWorkerIds();
+    final hasAddressId = addressId != null && addressId! > 0;
     final body = <String, dynamic>{
       'propertyType': propertyType,
+      if (hasAddressId) 'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
-      if (addressLatitude != null) 'addressLatitude': addressLatitude,
-      if (addressLongitude != null) 'addressLongitude': addressLongitude,
+      if (!hasAddressId && addressLatitude != null)
+        'addressLatitude': addressLatitude,
+      if (!hasAddressId && addressLongitude != null)
+        'addressLongitude': addressLongitude,
       'assignmentMode': assignmentMode.apiValue,
-      if (preferredWorkerId != null && assignmentMode == CleaningAssignmentMode.preferredWorker) 'preferredWorkerId': preferredWorkerId,
+      if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
     };
     final resolvedWorkers = _resolvedNumberOfWorkers;
     if (resolvedWorkers != null && resolvedWorkers > 0) {
@@ -149,12 +177,16 @@ class EstimateCleaningPriceParams with Params {
   }
 
   int? get _resolvedNumberOfWorkers {
+    final preferredCount = _sanitizePreferredWorkerIds().length;
     if (_isEventAssistance) {
-      return numberOfWorkers;
+      return numberOfWorkers ?? (preferredCount > 0 ? preferredCount : null);
     }
     if (assignmentMode == CleaningAssignmentMode.openCount) {
-      return numberOfWorkers ?? 1;
+      final fallback = preferredCount > 0 ? preferredCount : 1;
+      final requested = numberOfWorkers ?? fallback;
+      return requested < preferredCount ? preferredCount : requested;
     }
+    if (preferredCount > 1) return preferredCount;
     return 1;
   }
 
