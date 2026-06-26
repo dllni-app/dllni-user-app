@@ -93,4 +93,7 @@ class ClMainState {
 
   int? get primarySelectedWorkerId =>
       selectedWorkerIds.isEmpty ? null : selectedWorkerIds.first;
+
+  @Deprecated('Use selectedWorkerIds or primarySelectedWorkerId instead.')
+  int? get selectedWorkerId => primarySelectedWorkerId;
 }
