@@ -42,6 +42,12 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       transformer: paginationEventTransformer(),
     );
     on<SetPreferredWorkerEvent>(_setPreferredWorker);
+    on<SetPreferredWorkersEvent>(_setPreferredWorkers);
+    on<AddPreferredWorkerEvent>(_addPreferredWorker);
+    on<UpdatePreferredWorkersEvent>(_updatePreferredWorkers);
+    on<RemovePreferredWorkerEvent>(_removePreferredWorker);
+    on<TogglePreferredWorkerEvent>(_togglePreferredWorker);
+    on<ClearPreferredWorkersEvent>(_clearPreferredWorkers);
     on<SetGenderPreferenceEvent>(_setGenderPreference);
     on<SetAssignmentModeEvent>(_setAssignmentMode);
     on<SetNumberOfWorkersEvent>(_setNumberOfWorkers);
@@ -184,6 +190,30 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     );
   }
 
+  List<int> _normalizeWorkerIds(List<int> ids) {
+    final normalized = <int>[];
+    for (final id in ids) {
+      if (id <= 0 || normalized.contains(id)) continue;
+      normalized.add(id);
+    }
+    return normalized;
+  }
+
+  ClMainState _stateWithPreferredWorkers(List<int> ids) {
+    final normalized = _normalizeWorkerIds(ids);
+    final resolvedCount = normalized.length > 1 ? normalized.length : 1;
+
+    return state.copyWith(
+      selectedWorkerIds: normalized,
+      assignmentMode: normalized.isEmpty
+          ? state.assignmentMode
+          : CleaningAssignmentMode.preferredWorker,
+      numberOfWorkers: normalized.isEmpty ? state.numberOfWorkers : resolvedCount,
+      clearErrorMessage: true,
+      clearAssignmentFieldErrors: true,
+    );
+  }
+
   FutureOr<void> _setPreferredWorker(
     SetPreferredWorkerEvent event,
     Emitter<ClMainState> emit,
@@ -191,40 +221,97 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     if (event.workerId == null) {
       emit(
         state.copyWith(
-          clearSelectedWorker: true,
+          clearSelectedWorkers: true,
           clearErrorMessage: true,
           clearAssignmentFieldErrors: true,
         ),
       );
-    } else {
-      emit(
-        state.copyWith(
-          selectedWorkerId: event.workerId,
-          assignmentMode: CleaningAssignmentMode.preferredWorker,
-          // numberOfWorkers: 1,
-          clearErrorMessage: true,
-          clearAssignmentFieldErrors: true,
-        ),
-      );
+      return;
     }
+
+    emit(_stateWithPreferredWorkers(<int>[event.workerId!]));
+  }
+
+  FutureOr<void> _setPreferredWorkers(
+    SetPreferredWorkersEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    emit(_stateWithPreferredWorkers(event.workerIds));
+  }
+
+  FutureOr<void> _addPreferredWorker(
+    AddPreferredWorkerEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    emit(_stateWithPreferredWorkers(<int>[
+      ...state.selectedWorkerIds,
+      event.workerId,
+    ]));
+  }
+
+  FutureOr<void> _updatePreferredWorkers(
+    UpdatePreferredWorkersEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    emit(_stateWithPreferredWorkers(event.workerIds));
+  }
+
+  FutureOr<void> _removePreferredWorker(
+    RemovePreferredWorkerEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    emit(
+      _stateWithPreferredWorkers(
+        state.selectedWorkerIds.where((id) => id != event.workerId).toList(),
+      ),
+    );
+  }
+
+  FutureOr<void> _togglePreferredWorker(
+    TogglePreferredWorkerEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    final updated = List<int>.from(state.selectedWorkerIds);
+    if (updated.contains(event.workerId)) {
+      updated.remove(event.workerId);
+    } else {
+      updated.add(event.workerId);
+    }
+    emit(_stateWithPreferredWorkers(updated));
+  }
+
+  FutureOr<void> _clearPreferredWorkers(
+    ClearPreferredWorkersEvent event,
+    Emitter<ClMainState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        clearSelectedWorkers: true,
+        clearErrorMessage: true,
+        clearAssignmentFieldErrors: true,
+      ),
+    );
   }
 
   FutureOr<void> _setGenderPreference(
     SetGenderPreferenceEvent event,
     Emitter<ClMainState> emit,
   ) {
-    PreviousWorkerModel? selectedWorker;
-    for (final worker in state.previousWorkers.list) {
-      if (worker.id == state.selectedWorkerId) {
-        selectedWorker = worker;
-        break;
-      }
-    }
-    final shouldClearSelectedWorker =
-        event.preference != CleaningGenderPreference.any &&
-        selectedWorker != null &&
-        !selectedWorker.matchesGenderPreference(event.preference);
-    final requiresSafetyConfirmation = event.preference == CleaningGenderPreference.female;
+    final filteredWorkerIds = event.preference == CleaningGenderPreference.any
+        ? state.selectedWorkerIds
+        : state.selectedWorkerIds.where((workerId) {
+            PreviousWorkerModel? selectedWorker;
+            for (final worker in state.previousWorkers.list) {
+              if (worker.id == workerId) {
+                selectedWorker = worker;
+                break;
+              }
+            }
+            return selectedWorker == null ||
+                selectedWorker.matchesGenderPreference(event.preference);
+          }).toList(growable: false);
+    final requiresSafetyConfirmation =
+        event.preference == CleaningGenderPreference.female;
 
     emit(
       state.copyWith(
@@ -234,7 +321,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
             : null,
         clearSafetyConfirmation:
             !requiresSafetyConfirmation || event.workEnvironmentConfirmation == null,
-        clearSelectedWorker: shouldClearSelectedWorker,
+        selectedWorkerIds: filteredWorkerIds,
         clearErrorMessage: true,
       ),
     );
@@ -259,7 +346,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       emit(
         state.copyWith(
           assignmentMode: event.mode,
-          clearSelectedWorker: true,
+          clearSelectedWorkers: true,
           numberOfWorkers: safeCount,
           workerRoomAssignments: _clampWorkerRoomAssignments(
             state.workerRoomAssignments,
@@ -273,7 +360,9 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       emit(
         state.copyWith(
           assignmentMode: event.mode,
-          numberOfWorkers: 1,
+          numberOfWorkers: state.selectedWorkerIds.length > 1
+              ? state.selectedWorkerIds.length
+              : 1,
           clearWorkerRoomAssignments: true,
           clearErrorMessage: true,
           clearAssignmentFieldErrors: true,
@@ -291,7 +380,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       state.copyWith(
         numberOfWorkers: safeCount,
         assignmentMode: CleaningAssignmentMode.openCount,
-        clearSelectedWorker: true,
+        clearSelectedWorkers: true,
         workerRoomAssignments: _clampWorkerRoomAssignments(
           state.workerRoomAssignments,
           safeCount,
