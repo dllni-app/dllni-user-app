@@ -11,14 +11,21 @@ class EventAssignmentFields {
   final CleaningAssignmentMode assignmentMode;
   final int numberOfWorkers;
   final List<int> preferredWorkerIds;
+
+  int? get preferredWorkerId =>
+      preferredWorkerIds.isEmpty ? null : preferredWorkerIds.first;
 }
 
 EventAssignmentFields resolveEventAssignmentFields({
-  required List<int> selectedWorkerIds,
+  List<int>? selectedWorkerIds,
+  int? selectedWorkerId,
   required int? suggestedTeamSize,
   EstimateWorkerAcceptanceModel? workerAcceptance,
 }) {
-  final workerIds = _normalizeWorkerIds(selectedWorkerIds);
+  final workerIds = _normalizeWorkerIds(
+    selectedWorkerIds ??
+        (selectedWorkerId == null ? const <int>[] : <int>[selectedWorkerId]),
+  );
   final suggestedWorkers = (suggestedTeamSize ?? workerAcceptance?.required ?? 1)
       .clamp(1, 999);
   final workers = suggestedWorkers < workerIds.length
