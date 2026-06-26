@@ -76,14 +76,16 @@ class _ClMainOccasionDescriptionScreenState
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
             previous.estimatePriceStatus != current.estimatePriceStatus,
-        listener: (context, state) {
+        listener: (context, state) async {
           print(state.estimatePriceStatus);
           if (state.estimatePriceStatus == BlocStatus.loading) return;
           if ((_routeArgs?.navigateToScheduleOnEstimate ?? true) &&
+              !_didNavigateToSchedule &&
               state.estimatePriceStatus == BlocStatus.success &&
               state.estimatePrice != null &&
               _routeArgs != null &&
               _selectedSpecialRequirement != null) {
+            _didNavigateToSchedule = true;
             final eventType = _eventTypeFromOption(_routeArgs!.option);
             final customService = _customServiceValue;
             final specialRequirement = _selectedSpecialRequirement!.id == 'none'
@@ -109,10 +111,11 @@ class _ClMainOccasionDescriptionScreenState
               notes: _enableNotes ? _notesController.text.trim() : null,
             );
             // if (!context.mounted) return;
-            context.pushRoute(
+            await context.pushRoute(
               '/clmainoccasionschedule',
               arguments: scheduleArgs,
             );
+            _didNavigateToSchedule = false;
             // WidgetsBinding.instance.addPostFrameCallback((_) {
             //   print(suggestedTeamSize)
 

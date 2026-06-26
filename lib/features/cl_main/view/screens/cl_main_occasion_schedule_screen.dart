@@ -1,3 +1,5 @@
+import 'dart:developer' show log;
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,7 +10,6 @@ import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
-import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
@@ -35,9 +36,9 @@ import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainOccasionScheduleScreen extends StatefulWidget {
-  const ClMainOccasionScheduleScreen({this.args, super.key});
-
   final ClMainOccasionScheduleArgs? args;
+
+  const ClMainOccasionScheduleScreen({this.args, super.key});
 
   @override
   State<ClMainOccasionScheduleScreen> createState() =>
@@ -58,46 +59,6 @@ class _ClMainOccasionScheduleScreenState
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedDate = DateTime.now().add(const Duration(days: 1));
-    _fromTimeController = TextEditingController(text: '09:00');
-    _toTimeController = TextEditingController();
-    _couponController = TextEditingController();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didReadArgs) return;
-    _didReadArgs = true;
-    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
-    if (args is ClMainOccasionScheduleArgs) {
-      _routeArgs = args;
-      _bloc = args.bloc;
-      _currentEstimate = args.estimate;
-      _syncToTime();
-    }
-    _bloc?.add(
-      GetPreviousCleaningWorkersEvent(
-        params: GetPreviousCleaningWorkersParams(
-          page: 1,
-          propertyType: 'event_assistance',
-        ),
-        isReload: true,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _fromTimeController.dispose();
-    _toTimeController.dispose();
-    _couponController.dispose();
-    super.dispose();
-  }
-
   EstimatePriceResponseModel? get _activeEstimate =>
       _currentEstimate ?? _routeArgs?.estimate;
 
@@ -115,231 +76,6 @@ class _ClMainOccasionScheduleScreenState
 
   int get _estimatedSqm {
     return _activeEstimate?.size?.estimatedSqm ?? 0;
-  }
-
-  void _syncToTime() {
-    _toTimeController.text = formatClServiceEndTime(
-      startTime: _fromTimeController.text,
-      durationHours: _estimatedHours,
-    );
-  }
-
-  EventAssignmentFields _resolveAssignment(ClMainState state) {
-    final estimate = _activeEstimate;
-    return resolveEventAssignmentFields(
-      selectedWorkerId: state.selectedWorkerId,
-      suggestedTeamSize:
-          _routeArgs?.numberOfWorkers ?? estimate?.suggestedTeamSize,
-      workerAcceptance: estimate?.workerAcceptance,
-    );
-  }
-
-  void _requestEventEstimate(ClMainState state, {int? selectedWorkerId}) {
-    final args = _routeArgs;
-    final bloc = _bloc;
-    if (args == null || bloc == null) return;
-
-    final specialRequirement = args.specialRequirementId == 'none'
-        ? null
-        : args.specialRequirementLabel;
-    final estimate = _activeEstimate;
-    final assignment = resolveEventAssignmentFields(
-      selectedWorkerId: selectedWorkerId ?? state.selectedWorkerId,
-      suggestedTeamSize: args.numberOfWorkers,
-      workerAcceptance: estimate?.workerAcceptance,
-    );
-    final address = _selectedAddress;
-
-    bloc.add(
-      EstimateCleaningPriceEvent(
-        params: EstimateCleaningPriceParams.eventAssistance(
-          eventType: args.eventType,
-          guestCount: args.guestsCount,
-          venueType: args.venueType,
-          customService: args.customService,
-          hours: args.hours,
-          addressLatitude: address?.latitude,
-          addressLongitude: address?.longitude,
-          preferredWorkerId: assignment.preferredWorkerId,
-          specialRequirement: specialRequirement,
-          notes: args.notes,
-          numberOfWorkers: assignment.numberOfWorkers,
-          assignmentMode: assignment.assignmentMode,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickDate() async {
-    final value = await AppPickers.showAppDatePicker(
-      context: context,
-      startDate: DateTime.now().add(const Duration(days: 1)),
-    );
-    if (value.isEmpty) return;
-    setState(() {
-      _selectedDate = AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
-    });
-  }
-
-  String _arabicWeekdayLabel(DateTime date) {
-    const days = <String>[
-      'الاثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
-    ];
-    return days[date.weekday - 1];
-  }
-
-  String _arabicDayDateLabel(DateTime date) {
-    const months = <String>[
-      'كانون الثاني',
-      'شباط',
-      'آذار',
-      'نيسان',
-      'أيار',
-      'حزيران',
-      'تموز',
-      'آب',
-      'أيلول',
-      'تشرين الأول',
-      'تشرين الثاني',
-      'كانون الأول',
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  Future<void> _pickFromTime() async {
-    final value = await AppPickers.showAppTimePicker(context: context);
-    if (value.isEmpty) return;
-    setState(() {
-      _fromTimeController.text = value;
-      _syncToTime();
-    });
-  }
-
-  Future<void> _selectAddress() async {
-    final selectedAddress = await context.pushRoute(
-      '/myaddresses',
-      arguments: true,
-    );
-    if (!mounted) return;
-    if (selectedAddress is AddressListItem) {
-      setState(() {
-        _selectedAddress = selectedAddress;
-      });
-      final bloc = _bloc;
-      if (bloc != null) {
-        _requestEventEstimate(bloc.state);
-      }
-    }
-  }
-
-  void _onApplyCoupon(String code) {
-    setState(() {
-      _couponStatus = ClCouponUiStatus.failed;
-      _couponMessage = 'الكوبونات غير متاحة لطلبات المناسبات حالياً.';
-    });
-  }
-
-  Future<void> _handleGenderPreferenceChanged(
-    ClMainBloc bloc,
-    CleaningGenderPreference preference,
-  ) async {
-    if (preference != CleaningGenderPreference.female) {
-      bloc.add(SetGenderPreferenceEvent(preference: preference));
-      return;
-    }
-
-    Loading.show(context);
-    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
-    Loading.close();
-    if (!mounted) return;
-
-    await response.fold(
-      (failure) async {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
-      },
-      (policy) async {
-        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
-          context: context,
-          policy: policy,
-        );
-        if (!mounted || confirmation == null) return;
-        bloc.add(
-          SetGenderPreferenceEvent(
-            preference: preference,
-            workEnvironmentConfirmation: confirmation,
-          ),
-        );
-      },
-    );
-  }
-
-  void _onSubmitPressed(ClMainState state) {
-    final args = _routeArgs;
-    final bloc = _bloc;
-    if (args == null || bloc == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
-      return;
-    }
-
-    if (state.genderPreference == CleaningGenderPreference.female &&
-        state.safetyConfirmation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
-      );
-      return;
-    }
-
-    final selectedAddress = _selectedAddress;
-    if (selectedAddress == null ||
-        selectedAddress.latitude == null ||
-        selectedAddress.longitude == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
-      );
-      return;
-    }
-
-    final specialRequirement = args.specialRequirementId == 'none'
-        ? null
-        : args.specialRequirementLabel;
-    final assignment = _resolveAssignment(state);
-
-    bloc.add(
-      CreateCleaningOrderEvent(
-        params: CreateCleaningOrderParams.eventAssistance(
-          eventType: args.eventType,
-          guestCount: args.guestsCount,
-          venueType: args.venueType,
-          customService: args.customService,
-          hours: args.hours,
-          address: selectedAddress.line1,
-          locationName: selectedAddress.label,
-          scheduledDate: AppDateTimeLocale.dateFormat(
-            'yyyy-MM-dd',
-          ).format(_selectedDate),
-          scheduledTime: _fromTimeController.text,
-          addressId: int.parse(selectedAddress.id),
-          genderPreference: state.genderPreference,
-          workEnvironmentConfirmation: state.safetyConfirmation,
-          assignmentMode: assignment.assignmentMode,
-          preferredWorkerId: assignment.preferredWorkerId,
-          specialRequirement: specialRequirement,
-          notes: args.notes,
-          numberOfWorkers: assignment.numberOfWorkers,
-          termsAccepted: true,
-        ),
-      ),
-    );
   }
 
   @override
@@ -509,6 +245,14 @@ class _ClMainOccasionScheduleScreenState
                                 ? state.errorMessage
                                 : null,
                             onSelectWorker: (workerId) {
+                              if (_selectedAddress == null) {
+                                AppToast.showToast(
+                                  context: context,
+                                  message: 'يرجى اختيار عنوان الخدمة أولاً',
+                                  type: ToastificationType.error,
+                                );
+                                return;
+                              }
                               bloc.add(
                                 SetPreferredWorkerEvent(workerId: workerId),
                               );
@@ -574,13 +318,279 @@ class _ClMainOccasionScheduleScreenState
       ),
     );
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didReadArgs) return;
+    _didReadArgs = true;
+    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
+    if (args is ClMainOccasionScheduleArgs) {
+      _routeArgs = args;
+      _bloc = args.bloc;
+      _currentEstimate = args.estimate;
+      _syncToTime();
+    }
+    _bloc?.add(
+      GetPreviousCleaningWorkersEvent(
+        params: GetPreviousCleaningWorkersParams(
+          page: 1,
+          propertyType: 'event_assistance',
+        ),
+        isReload: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fromTimeController.dispose();
+    _toTimeController.dispose();
+    _couponController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime.now().add(const Duration(days: 1));
+    _fromTimeController = TextEditingController(text: '09:00');
+    _toTimeController = TextEditingController();
+    _couponController = TextEditingController();
+  }
+
+  String _arabicDayDateLabel(DateTime date) {
+    const months = <String>[
+      'كانون الثاني',
+      'شباط',
+      'آذار',
+      'نيسان',
+      'أيار',
+      'حزيران',
+      'تموز',
+      'آب',
+      'أيلول',
+      'تشرين الأول',
+      'تشرين الثاني',
+      'كانون الأول',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _arabicWeekdayLabel(DateTime date) {
+    const days = <String>[
+      'الاثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت',
+      'الأحد',
+    ];
+    return days[date.weekday - 1];
+  }
+
+  Future<void> _handleGenderPreferenceChanged(
+    ClMainBloc bloc,
+    CleaningGenderPreference preference,
+  ) async {
+    if (preference != CleaningGenderPreference.female) {
+      bloc.add(SetGenderPreferenceEvent(preference: preference));
+      return;
+    }
+
+    Loading.show(context);
+    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
+    Loading.close();
+    if (!mounted) return;
+
+    await response.fold(
+      (failure) async {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+      },
+      (policy) async {
+        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
+          context: context,
+          policy: policy,
+        );
+        if (!mounted || confirmation == null) return;
+        bloc.add(
+          SetGenderPreferenceEvent(
+            preference: preference,
+            workEnvironmentConfirmation: confirmation,
+          ),
+        );
+      },
+    );
+  }
+
+  void _onApplyCoupon(String code) {
+    setState(() {
+      _couponStatus = ClCouponUiStatus.failed;
+      _couponMessage = 'الكوبونات غير متاحة لطلبات المناسبات حالياً.';
+    });
+  }
+
+  void _onSubmitPressed(ClMainState state) {
+    final args = _routeArgs;
+    final bloc = _bloc;
+    if (args == null || bloc == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
+      return;
+    }
+
+    if (state.genderPreference == CleaningGenderPreference.female &&
+        state.safetyConfirmation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
+      );
+      return;
+    }
+
+    final selectedAddress = _selectedAddress;
+    if (selectedAddress == null ||
+        selectedAddress.latitude == null ||
+        selectedAddress.longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+
+    final specialRequirement = args.specialRequirementId == 'none'
+        ? null
+        : args.specialRequirementLabel;
+    final assignment = _resolveAssignment(state);
+    log(selectedAddress.id);
+    log(state.genderPreference.toString());
+    bloc.add(
+      CreateCleaningOrderEvent(
+        params: CreateCleaningOrderParams.eventAssistance(
+          addressId: int.parse(selectedAddress.id),
+          eventType: args.eventType,
+          guestCount: args.guestsCount,
+          venueType: args.venueType,
+          customService: args.customService,
+          hours: args.hours,
+          address: selectedAddress.line1,
+          locationName: selectedAddress.label,
+          scheduledDate: AppDateTimeLocale.dateFormat(
+            'yyyy-MM-dd',
+          ).format(_selectedDate),
+          scheduledTime: _fromTimeController.text,
+          genderPreference: state.genderPreference,
+          workEnvironmentConfirmation: state.safetyConfirmation,
+          assignmentMode: assignment.assignmentMode,
+          preferredWorkerId: assignment.preferredWorkerId,
+          specialRequirement: specialRequirement,
+          notes: args.notes,
+          numberOfWorkers: assignment.numberOfWorkers,
+          termsAccepted: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final value = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (value.isEmpty) return;
+    setState(() {
+      _selectedDate = AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
+    });
+  }
+
+  Future<void> _pickFromTime() async {
+    final value = await AppPickers.showAppTimePicker(context: context);
+    if (value.isEmpty) return;
+    setState(() {
+      _fromTimeController.text = value;
+      _syncToTime();
+    });
+  }
+
+  void _requestEventEstimate(ClMainState state, {int? selectedWorkerId}) {
+    final args = _routeArgs;
+    final bloc = _bloc;
+    if (args == null || bloc == null) return;
+
+    final specialRequirement = args.specialRequirementId == 'none'
+        ? null
+        : args.specialRequirementLabel;
+    final estimate = _activeEstimate;
+    final assignment = resolveEventAssignmentFields(
+      selectedWorkerId: selectedWorkerId ?? state.selectedWorkerId,
+      suggestedTeamSize: args.numberOfWorkers,
+      workerAcceptance: estimate?.workerAcceptance,
+    );
+    final address = _selectedAddress;
+
+    bloc.add(
+      EstimateCleaningPriceEvent(
+        params: EstimateCleaningPriceParams.eventAssistance(
+          eventType: args.eventType,
+          guestCount: args.guestsCount,
+          venueType: args.venueType,
+          customService: args.customService,
+          hours: args.hours,
+          addressLatitude: address?.latitude,
+          addressLongitude: address?.longitude,
+          preferredWorkerId: assignment.preferredWorkerId,
+          specialRequirement: specialRequirement,
+          notes: args.notes,
+          numberOfWorkers: assignment.numberOfWorkers,
+          assignmentMode: assignment.assignmentMode,
+        ),
+      ),
+    );
+  }
+
+  EventAssignmentFields _resolveAssignment(ClMainState state) {
+    final estimate = _activeEstimate;
+    return resolveEventAssignmentFields(
+      selectedWorkerId: state.selectedWorkerId,
+      suggestedTeamSize:
+          _routeArgs?.numberOfWorkers ?? estimate?.suggestedTeamSize,
+      workerAcceptance: estimate?.workerAcceptance,
+    );
+  }
+
+  Future<void> _selectAddress() async {
+    final selectedAddress = await context.pushRoute(
+      '/myaddresses',
+      arguments: true,
+    );
+    if (!mounted) return;
+    if (selectedAddress is AddressListItem) {
+      setState(() {
+        _selectedAddress = selectedAddress;
+      });
+      final bloc = _bloc;
+      if (bloc != null) {
+        _requestEventEstimate(bloc.state);
+      }
+    }
+  }
+
+  void _syncToTime() {
+    _toTimeController.text = formatClServiceEndTime(
+      startTime: _fromTimeController.text,
+      durationHours: _estimatedHours,
+    );
+  }
 }
 
 class _OccasionInfoRow extends StatelessWidget {
-  const _OccasionInfoRow({required this.label, required this.value});
-
   final String label;
+
   final String value;
+  const _OccasionInfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
