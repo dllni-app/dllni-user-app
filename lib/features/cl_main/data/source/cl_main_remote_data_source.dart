@@ -11,6 +11,7 @@ import '../models/cleaning_banners_response_model.dart';
 import '../models/cleaning_services_response_model.dart';
 import '../models/create_cleaning_order_response_model.dart';
 import '../models/estimate_price_response_model.dart';
+import '../models/female_worker_safety_policy_model.dart';
 import '../models/previous_workers_response_model.dart';
 
 @lazySingleton
@@ -68,6 +69,15 @@ class ClMainRemoteDataSource with HandlingApiManager {
         params: params.getParams(),
       ),
       jsonConvert: createCleaningOrderResponseModelFromJson,
+    );
+  }
+
+  Future<FemaleWorkerSafetyPolicyModel> getFemaleWorkerSafetyPolicy() {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/cleaning/orders/female-worker-safety-policy',
+      ),
+      jsonConvert: femaleWorkerSafetyPolicyModelFromJson,
     );
   }
 
