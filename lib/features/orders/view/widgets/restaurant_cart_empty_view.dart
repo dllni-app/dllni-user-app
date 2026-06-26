@@ -1,6 +1,10 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../profile/view/manager/bloc/profile_bloc.dart';
+import '../../../rs_main/view/rs_main_screen.dart';
 import '../../../sm_main_page.dart';
 
 class RestaurantCartEmptyView extends StatelessWidget {
@@ -59,7 +63,10 @@ class RestaurantCartEmptyView extends StatelessWidget {
                         expandSearch: false,
                       ),
                     )
-                  : context.pushRoute('/rsmain'),
+                  : context.pushRoute('/rsmain',arguments: RsMainScreenParams(
+                profileBloc: getIt<ProfileBloc>(),
+
+              )),
               child: AppText.labelLarge(
                 'تصفح ${isStore ? "المتاجر" : "المطاعم"}',
                 color: Colors.white,

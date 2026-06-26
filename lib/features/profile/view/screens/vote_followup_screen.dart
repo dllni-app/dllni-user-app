@@ -355,6 +355,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     context.pushRouteAndRemoveUntil(
       '/rsmain',
       predicate: (route) => route.isFirst,
+      arguments: getIt<ProfileBloc>()
     );
     _showWinnerBottomSheetOnRoot(winnerData);
   }

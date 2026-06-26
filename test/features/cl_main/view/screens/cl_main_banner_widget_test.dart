@@ -4,6 +4,7 @@ import 'package:dllni_user_app/features/cl_main/data/models/cleaning_banners_res
 import 'package:dllni_user_app/features/cl_main/data/models/cleaning_services_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/estimate_price_response_model.dart';
+import 'package:dllni_user_app/features/cl_main/data/models/female_worker_safety_policy_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/previous_workers_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/domain/repository/cl_main_repo.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
@@ -54,6 +55,12 @@ class _FakeClMainRepo implements ClMainRepo {
     GetCleaningBannersParams params,
   ) async {
     return const Right(CleaningBannersResponseModel());
+  }
+
+  @override
+  DataResponse<FemaleWorkerSafetyPolicyModel> getFemaleWorkerSafetyPolicy() {
+    // TODO: implement getFemaleWorkerSafetyPolicy
+    throw UnimplementedError();
   }
 }
 

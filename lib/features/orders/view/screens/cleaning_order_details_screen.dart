@@ -1999,7 +1999,7 @@ class _ProvisionalPricingNotice extends StatelessWidget {
         border: Border.all(color: const Color(0xFFF3D6A1)),
       ),
       child: AppText.bodySmall(
-        'السعر المعروض تقديري وغير نهائي، وسيتم تأكيد السعر النهائي بعد قبول مقدم الخدمة للطلب.',
+        "السعر المعروض تقريبي. لمقدم الخدمة الحق في معاينة المكان عند الوصول واقتراح سعر جديد يتوافق مع حجم العمل الفعلي قبل البدء، ولن يتم اعتماد أي تعديل إلا بعد موافقتك.",
         color: const Color(0xFF8A5A12),
         fontWeight: FontWeight.w600,
         textAlign: TextAlign.right,

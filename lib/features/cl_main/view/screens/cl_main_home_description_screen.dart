@@ -571,7 +571,8 @@ class _ClMainHomeDescriptionScreenState
                               },
                             ),
                             const SizedBox(height: 10),
-                          ] else ...[
+                          ] else
+                            ...[
                             ClServicePreviousWorkersSectionWidget(
                               workers: filterPreviousWorkersByGender(
                                 state.previousWorkers.list,

@@ -33,6 +33,7 @@ Future<void> main() async {
     AppBootstrapConfig(
       navigatorKey: navigatorKey,
       app: App(navigatorKey: navigatorKey),
+
       configureDependencies: () async {},
       enableNotifications: true,
       startLocale: Locale('ar'),
