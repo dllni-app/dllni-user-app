@@ -35,8 +35,12 @@ class SetPreferredWorkerEvent extends ClMainEvent {
 
 class SetGenderPreferenceEvent extends ClMainEvent {
   final CleaningGenderPreference preference;
+  final WorkEnvironmentConfirmation? workEnvironmentConfirmation;
 
-  SetGenderPreferenceEvent({required this.preference});
+  SetGenderPreferenceEvent({
+    required this.preference,
+    this.workEnvironmentConfirmation,
+  });
 }
 
 class SetAssignmentModeEvent extends ClMainEvent {
