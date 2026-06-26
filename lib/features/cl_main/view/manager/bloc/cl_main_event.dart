@@ -33,6 +33,38 @@ class SetPreferredWorkerEvent extends ClMainEvent {
   SetPreferredWorkerEvent({required this.workerId});
 }
 
+class SetPreferredWorkersEvent extends ClMainEvent {
+  final List<int> workerIds;
+
+  SetPreferredWorkersEvent({required this.workerIds});
+}
+
+class AddPreferredWorkerEvent extends ClMainEvent {
+  final int workerId;
+
+  AddPreferredWorkerEvent({required this.workerId});
+}
+
+class UpdatePreferredWorkersEvent extends ClMainEvent {
+  final List<int> workerIds;
+
+  UpdatePreferredWorkersEvent({required this.workerIds});
+}
+
+class RemovePreferredWorkerEvent extends ClMainEvent {
+  final int workerId;
+
+  RemovePreferredWorkerEvent({required this.workerId});
+}
+
+class TogglePreferredWorkerEvent extends ClMainEvent {
+  final int workerId;
+
+  TogglePreferredWorkerEvent({required this.workerId});
+}
+
+class ClearPreferredWorkersEvent extends ClMainEvent {}
+
 class SetGenderPreferenceEvent extends ClMainEvent {
   final CleaningGenderPreference preference;
   final WorkEnvironmentConfirmation? workEnvironmentConfirmation;
