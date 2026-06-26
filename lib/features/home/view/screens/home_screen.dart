@@ -25,32 +25,14 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ProfileBloc profileBloc;
 
   @override
-  initState(){
-
-    profileBloc=   getIt<ProfileBloc>()
-      ..add(
-        FetchNotificationsEvent(
-          params: FetchNotificationsParams(),
-          isReload: true,
-        ),
-      );
-
-    super.initState();
-
-  }
-
-  @override
   Widget build(BuildContext context) {
-    List<String> titles = ['مطاعم', 'تنظيف', 'تسوق'];
-    List<String> screens = ['/rsmain', '/clmain', '/smmain'];
+    List<String> titles = ['مطاعم', 'سوبر ماركت', 'تنظيف'];
+    List<String> screens = ['/rsmain', '/smmain', '/clmain'];
     List<String> images = [
       Assets.images.restaurantServiceIcon.path,
-      Assets.images.cleaninigServiceIcon.path,
       Assets.images.storeServiceIcon.path,
+      Assets.images.cleaninigServiceIcon.path,
     ];
-
-
-
 
     return BlocProvider(
       create: (_) => getIt<HomeBloc>()
@@ -59,14 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       child: Column(
         children: [
-          HomeAppBar(isHome: true,profileBloc: profileBloc,),
+          HomeAppBar(isHome: true, profileBloc: profileBloc),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsetsDirectional.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 24),
+                  SizedBox(height: 32),
                   BlocBuilder<HomeBloc, HomeState>(
                     buildWhen: (prev, next) =>
                         prev.userOffersStatus != next.userOffersStatus ||
@@ -99,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
-                  SizedBox(height: 32),
+                  SizedBox(height: 48),
                   Row(
                     children: [
                       SizedBox(
@@ -122,7 +104,84 @@ class _HomeScreenState extends State<HomeScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: titles.length,
+                    itemCount: 1,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: .8,
+                    ),
+                    itemBuilder: (context, index) => InkWell(
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      onTap: () {
+                        // context.pushRoute(
+                        //   screens[index],
+                        //   arguments: index == 2
+                        //       ? SmMainScreenParams(
+                        //           initialPage: 0,
+                        //           expandSearch: false,
+                        //         )
+                        //       : index == 0
+                        //       ? RsMainScreenParams(profileBloc: profileBloc)
+                        //       : ClMainScreenParams(profileBloc: profileBloc),
+                        // );
+                        context.pushRoute(
+                          screens.last,
+                          arguments: ClMainScreenParams(
+                            profileBloc: profileBloc,
+                          ),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: context.onPrimary,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            padding: EdgeInsetsDirectional.all(15),
+                            child: AppImage.asset(
+                              images.last,
+                              color: context.primary,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          AppText.labelLarge(
+                            titles.last,
+                            color: Color(0xff6B7280),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      SizedBox(
+                        height: 20,
+                        child: VerticalDivider(
+                          color: context.primaryContainer,
+                          thickness: 4,
+                          radius: BorderRadius.circular(9999),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      AppText.titleMedium(
+                        'التسوق',
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff212C7E),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: 2,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       mainAxisSpacing: 12,
@@ -135,19 +194,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         context.pushRoute(
                           screens[index],
-                          arguments: index == 2
+                          arguments: index == 1
                               ? SmMainScreenParams(
                                   initialPage: 0,
                                   expandSearch: false,
-
                                 )
-                              : index==0?
-                          RsMainScreenParams(
-                            profileBloc: profileBloc
-                          )
-                              :ClMainScreenParams(
-                            profileBloc: profileBloc
-                          )
+                              : index == 0
+                              ? RsMainScreenParams(profileBloc: profileBloc)
+                              : ClMainScreenParams(profileBloc: profileBloc),
                         );
                       },
                       child: Column(
@@ -182,5 +236,18 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  initState() {
+    profileBloc = getIt<ProfileBloc>()
+      ..add(
+        FetchNotificationsEvent(
+          params: FetchNotificationsParams(),
+          isReload: true,
+        ),
+      );
+
+    super.initState();
   }
 }

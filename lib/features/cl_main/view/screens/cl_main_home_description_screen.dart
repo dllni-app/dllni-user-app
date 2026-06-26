@@ -8,10 +8,10 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/toast_component.dart';
 import '../../../profile/domain/models/address_list_item.dart';
+import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
-import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
@@ -54,265 +54,6 @@ class _ClMainHomeDescriptionScreenState
   double? _lastLatitude;
   double? _lastLongitude;
   bool _isLoadingOverlayVisible = false;
-
-  void _showLoadingOverlay() {
-    if (_isLoadingOverlayVisible || !mounted) return;
-    _isLoadingOverlayVisible = true;
-    Loading.show(context);
-  }
-
-  void _closeLoadingOverlay() {
-    if (!_isLoadingOverlayVisible) return;
-    _isLoadingOverlayVisible = false;
-    Loading.close();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didReadArgs) return;
-    _didReadArgs = true;
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is ClMainHomeDescriptionArgs) {
-      _propertyType = args.propertyType;
-      _defaultAddress = args.defaultAddress;
-      _bloc = args.bloc;
-      _bloc?.add(
-        GetPreviousCleaningWorkersEvent(
-          params: GetPreviousCleaningWorkersParams(
-            page: 1,
-            propertyType: _propertyType,
-          ),
-          isReload: true,
-        ),
-      );
-    }
-  }
-
-  void _changeRoomBucketCount(
-    CleaningRoomType roomType,
-    CleaningRoomSize roomSize,
-    int delta,
-  ) {
-    final currentCount = _roomSizeBreakdown.countFor(roomType, roomSize);
-    setState(() {
-      _roomSizeBreakdown = _roomSizeBreakdown.setCount(
-        roomType,
-        roomSize,
-        currentCount + delta,
-      );
-    });
-  }
-
-  Future<void> _showLocationPermissionSettingsDialog() async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('إذن الموقع مطلوب'),
-        content: const Text(
-          'يرجى منح التطبيق إذن الوصول إلى الموقع من إعدادات التطبيق.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await openAppSettings();
-            },
-            child: const Text('فتح الإعدادات'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showLocationServiceSettingsDialog() async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('خدمة الموقع غير مفعّلة'),
-        content: const Text(
-          'يرجى تفعيل الموقع (GPS) من إعدادات الجهاز ثم الضغط على متابعة مرة أخرى.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await Geolocator.openLocationSettings();
-            },
-            child: const Text('فتح إعدادات الموقع'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleGenderPreferenceChanged(
-    ClMainBloc bloc,
-    CleaningGenderPreference preference,
-  ) async {
-    if (preference.apiValue != 'fe' 'male') {
-      bloc.add(SetGenderPreferenceEvent(preference: preference));
-      return;
-    }
-
-    _showLoadingOverlay();
-    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
-    _closeLoadingOverlay();
-    if (!mounted) return;
-
-    await response.fold(
-      (failure) async {
-        ToastComponent.showToast(
-          context,
-          msg: failure.message,
-        );
-      },
-      (policy) async {
-        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
-          context: context,
-          policy: policy,
-        );
-        if (!mounted || confirmation == null) return;
-        bloc.add(
-          SetGenderPreferenceEvent(
-            preference: preference,
-            workEnvironmentConfirmation: confirmation,
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _onContinuePressed(ClMainBloc bloc, ClMainState state) async {
-    if (!_roomSizeBreakdown.hasAnyRoom) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى إدخال غرفة واحدة على الأقل قبل المتابعة'),
-        ),
-      );
-      return;
-    }
-
-    _showLoadingOverlay();
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (!mounted) {
-      _closeLoadingOverlay();
-      return;
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      _closeLoadingOverlay();
-      await _showLocationPermissionSettingsDialog();
-      return;
-    }
-    if (permission == LocationPermission.denied) {
-      _closeLoadingOverlay();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى منح إذن الوصول إلى الموقع للمتابعة'),
-        ),
-      );
-      return;
-    }
-
-    final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!isServiceEnabled) {
-      _closeLoadingOverlay();
-      await _showLocationServiceSettingsDialog();
-      return;
-    }
-
-    Position position;
-    try {
-      position = await Geolocator.getCurrentPosition();
-    } catch (_) {
-      _closeLoadingOverlay();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر الحصول على الموقع الحالي')),
-      );
-      return;
-    }
-    if (!mounted) {
-      _closeLoadingOverlay();
-      return;
-    }
-
-    _lastLatitude = position.latitude;
-    _lastLongitude = position.longitude;
-
-    final roomUnits = enumerateRoomUnits(_roomSizeBreakdown);
-    final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
-      slotByRoomKey: state.workerRoomAssignments,
-      units: roomUnits,
-      preferredWorkerId: state.selectedWorkerId,
-      assignmentMode: state.assignmentMode,
-    );
-
-    bloc.add(
-      EstimateCleaningPriceEvent(
-        params: EstimateCleaningPriceParams(
-          propertyType: _propertyType,
-          bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
-          rooms: _roomSizeBreakdown.legacyRoomsCount,
-          bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
-          balconies: _roomSizeBreakdown.legacyBalconiesCount,
-          livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
-          roomSizeBreakdown: _roomSizeBreakdown,
-          cleaningType: _selectedCleaningType,
-          addressLatitude: position.latitude,
-          addressLongitude: position.longitude,
-          assignmentMode: state.assignmentMode,
-          numberOfWorkers:
-              state.assignmentMode == CleaningAssignmentMode.openCount
-              ? state.numberOfWorkers
-              : 1,
-          preferredWorkerId:
-              state.assignmentMode == CleaningAssignmentMode.preferredWorker
-              ? state.selectedWorkerId
-              : null,
-          workerRoomAssignments: workerRoomAssignments.isEmpty
-              ? null
-              : workerRoomAssignments,
-        ),
-      ),
-    );
-  }
-
-  void _openScheduleScreen(ClMainBloc bloc, EstimatePriceResponseModel estimate) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ClMainServiceScheduleScreen(
-          args: ClMainScheduleArgs(
-            propertyType: _propertyType,
-            bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
-            rooms: _roomSizeBreakdown.legacyRoomsCount,
-            bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
-            livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
-            roomSizeBreakdown: _roomSizeBreakdown,
-            addressLatitude: _lastLatitude ?? _defaultAddress?.latitude ?? 0,
-            addressLongitude: _lastLongitude ?? _defaultAddress?.longitude ?? 0,
-            estimate: estimate,
-            cleaningType: _selectedCleaningType,
-            bloc: bloc,
-            defaultAddress: _defaultAddress,
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -430,6 +171,7 @@ class _ClMainHomeDescriptionScreenState
                                                 option.title,
                                                 fontWeight: FontWeight.w700,
                                                 textAlign: TextAlign.start,
+                                                style: TextStyle(fontSize: 14),
                                               ),
                                             ),
                                             Container(
@@ -447,8 +189,13 @@ class _ClMainHomeDescriptionScreenState
                                               ),
                                               child: AppText.labelSmall(
                                                 'المجموع: $total',
-                                                color: const Color(0xFF0B7480),
-                                                fontWeight: FontWeight.w700,
+                                                style: TextStyle(
+                                                  color: const Color(
+                                                    0xFF0B7480,
+                                                  ),
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -571,8 +318,7 @@ class _ClMainHomeDescriptionScreenState
                               },
                             ),
                             const SizedBox(height: 10),
-                          ] else
-                            ...[
+                          ] else ...[
                             ClServicePreviousWorkersSectionWidget(
                               workers: filterPreviousWorkersByGender(
                                 state.previousWorkers.list,
@@ -621,6 +367,267 @@ class _ClMainHomeDescriptionScreenState
             ),
           );
         },
+      ),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didReadArgs) return;
+    _didReadArgs = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is ClMainHomeDescriptionArgs) {
+      _propertyType = args.propertyType;
+      _defaultAddress = args.defaultAddress;
+      _bloc = args.bloc;
+      _bloc?.add(
+        GetPreviousCleaningWorkersEvent(
+          params: GetPreviousCleaningWorkersParams(
+            page: 1,
+            propertyType: _propertyType,
+          ),
+          isReload: true,
+        ),
+      );
+    }
+  }
+
+  void _changeRoomBucketCount(
+    CleaningRoomType roomType,
+    CleaningRoomSize roomSize,
+    int delta,
+  ) {
+    final currentCount = _roomSizeBreakdown.countFor(roomType, roomSize);
+    setState(() {
+      _roomSizeBreakdown = _roomSizeBreakdown.setCount(
+        roomType,
+        roomSize,
+        currentCount + delta,
+      );
+    });
+  }
+
+  void _closeLoadingOverlay() {
+    if (!_isLoadingOverlayVisible) return;
+    _isLoadingOverlayVisible = false;
+    Loading.close();
+  }
+
+  Future<void> _handleGenderPreferenceChanged(
+    ClMainBloc bloc,
+    CleaningGenderPreference preference,
+  ) async {
+    if (preference.apiValue !=
+        'fe'
+            'male') {
+      bloc.add(SetGenderPreferenceEvent(preference: preference));
+      return;
+    }
+
+    _showLoadingOverlay();
+    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
+    _closeLoadingOverlay();
+    if (!mounted) return;
+
+    await response.fold(
+      (failure) async {
+        ToastComponent.showToast(context, msg: failure.message);
+      },
+      (policy) async {
+        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
+          context: context,
+          policy: policy,
+        );
+        if (!mounted || confirmation == null) return;
+        bloc.add(
+          SetGenderPreferenceEvent(
+            preference: preference,
+            workEnvironmentConfirmation: confirmation,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _onContinuePressed(ClMainBloc bloc, ClMainState state) async {
+    if (!_roomSizeBreakdown.hasAnyRoom) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى إدخال غرفة واحدة على الأقل قبل المتابعة'),
+        ),
+      );
+      return;
+    }
+
+    _showLoadingOverlay();
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (!mounted) {
+      _closeLoadingOverlay();
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _closeLoadingOverlay();
+      await _showLocationPermissionSettingsDialog();
+      return;
+    }
+    if (permission == LocationPermission.denied) {
+      _closeLoadingOverlay();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى منح إذن الوصول إلى الموقع للمتابعة'),
+        ),
+      );
+      return;
+    }
+
+    final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!isServiceEnabled) {
+      _closeLoadingOverlay();
+      await _showLocationServiceSettingsDialog();
+      return;
+    }
+
+    Position position;
+    try {
+      position = await Geolocator.getCurrentPosition();
+    } catch (_) {
+      _closeLoadingOverlay();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر الحصول على الموقع الحالي')),
+      );
+      return;
+    }
+    if (!mounted) {
+      _closeLoadingOverlay();
+      return;
+    }
+
+    _lastLatitude = position.latitude;
+    _lastLongitude = position.longitude;
+
+    final roomUnits = enumerateRoomUnits(_roomSizeBreakdown);
+    final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
+      slotByRoomKey: state.workerRoomAssignments,
+      units: roomUnits,
+      preferredWorkerId: state.selectedWorkerId,
+      assignmentMode: state.assignmentMode,
+    );
+
+    bloc.add(
+      EstimateCleaningPriceEvent(
+        params: EstimateCleaningPriceParams(
+          propertyType: _propertyType,
+          bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
+          rooms: _roomSizeBreakdown.legacyRoomsCount,
+          bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
+          balconies: _roomSizeBreakdown.legacyBalconiesCount,
+          livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
+          roomSizeBreakdown: _roomSizeBreakdown,
+          cleaningType: _selectedCleaningType,
+          addressLatitude: position.latitude,
+          addressLongitude: position.longitude,
+          assignmentMode: state.assignmentMode,
+          numberOfWorkers:
+              state.assignmentMode == CleaningAssignmentMode.openCount
+              ? state.numberOfWorkers
+              : 1,
+          preferredWorkerId:
+              state.assignmentMode == CleaningAssignmentMode.preferredWorker
+              ? state.selectedWorkerId
+              : null,
+          workerRoomAssignments: workerRoomAssignments.isEmpty
+              ? null
+              : workerRoomAssignments,
+        ),
+      ),
+    );
+  }
+
+  void _openScheduleScreen(
+    ClMainBloc bloc,
+    EstimatePriceResponseModel estimate,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ClMainServiceScheduleScreen(
+          args: ClMainScheduleArgs(
+            propertyType: _propertyType,
+            bedrooms: _roomSizeBreakdown.legacyBedroomsCount,
+            rooms: _roomSizeBreakdown.legacyRoomsCount,
+            bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
+            livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
+            roomSizeBreakdown: _roomSizeBreakdown,
+            addressLatitude: _lastLatitude ?? _defaultAddress?.latitude ?? 0,
+            addressLongitude: _lastLongitude ?? _defaultAddress?.longitude ?? 0,
+            estimate: estimate,
+            cleaningType: _selectedCleaningType,
+            bloc: bloc,
+            defaultAddress: _defaultAddress,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLoadingOverlay() {
+    if (_isLoadingOverlayVisible || !mounted) return;
+    _isLoadingOverlayVisible = true;
+    Loading.show(context);
+  }
+
+  Future<void> _showLocationPermissionSettingsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('إذن الموقع مطلوب'),
+        content: const Text(
+          'يرجى منح التطبيق إذن الوصول إلى الموقع من إعدادات التطبيق.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await openAppSettings();
+            },
+            child: const Text('فتح الإعدادات'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLocationServiceSettingsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('خدمة الموقع غير مفعّلة'),
+        content: const Text(
+          'يرجى تفعيل الموقع (GPS) من إعدادات الجهاز ثم الضغط على متابعة مرة أخرى.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await Geolocator.openLocationSettings();
+            },
+            child: const Text('فتح إعدادات الموقع'),
+          ),
+        ],
       ),
     );
   }

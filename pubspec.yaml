@@ -56,6 +56,7 @@ dependencies:
   in_app_update: ^4.2.5
   package_info_plus: ^9.0.1
   intl_phone_field: ^3.2.0
+  cube_transition_plus: ^2.0.1
 
 dev_dependencies:
   flutter_test:

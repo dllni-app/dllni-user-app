@@ -75,7 +75,7 @@ class MyAddressesScreenParams {
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _labelController = TextEditingController();
+  // final _labelController = TextEditingController();
   final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
   final _cityController = TextEditingController();
   final _neighborhoodController = TextEditingController();
@@ -105,7 +105,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   @override
   void dispose() {
-    _labelController.dispose();
+    // _labelController.dispose();
     _cityController.dispose();
     _neighborhoodController.dispose();
     _streetController.dispose();
@@ -139,7 +139,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       return;
     }
     _isLoadingPhone = true;
-    _labelController.text = item.label;
+    // _labelController.text = item.label;
     _loadInitialPhone(item.mobile);
     _cityController.text = item.city ?? '';
     _neighborhoodController.text = item.neighborhood ?? '';
@@ -282,7 +282,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   CreatedAddressSelectionHint _buildCreatedAddressHint() {
     return CreatedAddressSelectionHint(
-      label: _labelController.text.trim(),
+      label: '',
       mobile: formatPhoneForApi(_phone) ?? '',
       city: _cityController.text.trim(),
       neighborhood: _neighborhoodController.text.trim(),
@@ -362,15 +362,15 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             onChanged: (value) =>
                                 setState(() => _selectedType = value),
                           ),
-                          const SizedBox(height: 12),
-                          FilledTextField(
-                            label: 'اسم العنوان',
-                            isRequired: true,
-                            hintText: 'مثال: المنزل، العمل، بيت العائلة',
-                            controller: _labelController,
-                            validator: _requiredValidator,
-                            onTap: () => _moveCursorToTextEnd(_labelController),
-                          ),
+                          // const SizedBox(height: 12),
+                          // FilledTextField(
+                          //   label: 'اسم العنوان',
+                          //   isRequired: true,
+                          //   hintText: 'مثال: المنزل، العمل، بيت العائلة',
+                          //   controller: _labelController,
+                          //   validator: _requiredValidator,
+                          //   onTap: () => _moveCursorToTextEnd(_labelController),
+                          // ),
                           const SizedBox(height: 12),
                           if (_isLoadingPhone)
                             const Padding(
@@ -573,8 +573,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                           UpdateAddressEvent(
                                             params: UpdateAddressParams(
                                               addressId: addressId,
-                                              label: _labelController.text
-                                                  .trim(),
+                                              label:_selectedType,
                                               mobile: mobile,
                                               city: _cityController.text.trim(),
                                               neighborhood:
@@ -598,7 +597,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                       widget.params.bloc.add(
                                         CreateAddressEvent(
                                           params: CreateAddressParams(
-                                            label: _labelController.text.trim(),
+                                            label: _selectedType,
                                             mobile: mobile,
                                             city: _cityController.text.trim(),
                                             neighborhood:
