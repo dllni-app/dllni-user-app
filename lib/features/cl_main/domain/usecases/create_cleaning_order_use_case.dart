@@ -178,7 +178,7 @@ class CreateCleaningOrderParams with Params {
       if (addressLatitude != null) 'addressLatitude': addressLatitude,
       if (addressLongitude != null) 'addressLongitude': addressLongitude,
       'genderPreference': genderPreference.apiValue,
-      if (genderPreference.apiValue == 'fe' 'male' && workEnvironmentConfirmation != null)
+      if (genderPreference == CleaningGenderPreference.female && workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
       'assignmentMode': assignmentMode.apiValue,
       if (preferredWorkerId != null && assignmentMode == CleaningAssignmentMode.preferredWorker) 'preferredWorkerId': preferredWorkerId,
