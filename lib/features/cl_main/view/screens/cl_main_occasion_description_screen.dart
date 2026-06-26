@@ -10,18 +10,11 @@ import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 
-class _MenuOption {
-  final String id;
-  final String label;
-
-  const _MenuOption({required this.id, required this.label});
-}
-
 @AutoRoutePage()
 class ClMainOccasionDescriptionScreen extends StatefulWidget {
-  const ClMainOccasionDescriptionScreen({this.args, super.key});
-
   final ClMainOccasionDescriptionArgs? args;
+
+  const ClMainOccasionDescriptionScreen({this.args, super.key});
 
   @override
   State<ClMainOccasionDescriptionScreen> createState() =>
@@ -61,174 +54,10 @@ class _ClMainOccasionDescriptionScreenState
   _MenuOption? _selectedSpecialRequirement;
   bool _didNavigateToSchedule = false;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didReadArgs) return;
-    _didReadArgs = true;
-
-    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
-    if (args is ClMainOccasionDescriptionArgs) {
-      _routeArgs = args;
-      _bloc = args.bloc;
-    }
-  }
-
-  @override
-  void dispose() {
-    _customServiceController.dispose();
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  String _eventTypeFromOption(ClMainOccasionOption option) {
-    switch (option.id) {
-      case 'family_dinner':
-        return 'family_dinner';
-      case 'birthday_party':
-        return 'birthday';
-      case 'large_gathering':
-        return 'large_gathering';
-      case 'condolences':
-        return 'funeral';
-      default:
-        return 'other';
-    }
-  }
-
   String get _customServiceValue {
     final typed = _customServiceController.text.trim();
     if (typed.isNotEmpty) return typed;
     return _selectedHelpType?.label ?? '';
-  }
-
-  Future<_MenuOption?> _showOptionsBottomSheet({
-    required String title,
-    required List<_MenuOption> options,
-    _MenuOption? currentValue,
-  }) {
-    return showModalBottomSheet<_MenuOption>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.bodyLarge(
-                  title,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E2A78),
-                ),
-                const SizedBox(height: 12),
-                ...options.map(
-                  (option) => ListTile(
-                    key: Key('menu_option_${option.id}'),
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: AppText.bodyMedium(
-                      option.label,
-                      color: const Color(0xFF111827),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    trailing: Radio<String>(
-                      value: option.id,
-                      groupValue: currentValue?.id,
-                      onChanged: (_) => Navigator.of(ctx).pop(option),
-                      activeColor: const Color(0xFF11B9C8),
-                    ),
-                    onTap: () => Navigator.of(ctx).pop(option),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _selectHelpType() async {
-    final value = await _showOptionsBottomSheet(
-      title: 'ما هي طبيعة المساعدة المطلوبة؟',
-      options: _helpTypeOptions,
-      currentValue: _selectedHelpType,
-    );
-    if (!mounted || value == null) return;
-    setState(() {
-      _selectedHelpType = value;
-      if (value.id != 'other') {
-        _customServiceController.text = value.label;
-      }
-    });
-  }
-
-  Future<void> _selectSpecialRequirement() async {
-    final value = await _showOptionsBottomSheet(
-      title: 'هل لديك أي متطلبات خاصة؟',
-      options: _specialRequirementOptions,
-      currentValue: _selectedSpecialRequirement,
-    );
-    if (!mounted || value == null) return;
-    setState(() {
-      _selectedSpecialRequirement = value;
-    });
-  }
-
-  void _onContinue(ClMainBloc bloc) {
-    final args = _routeArgs;
-    if (args == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر تحميل بيانات المناسبة')),
-      );
-      return;
-    }
-
-    final customService = _customServiceValue;
-    if (customService.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى إدخال طبيعة المساعدة المطلوبة')),
-      );
-      return;
-    }
-    if (customService.length > 255) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('وصف المساعدة يجب ألا يتجاوز 255 حرفاً')),
-      );
-      return;
-    }
-    if (_selectedSpecialRequirement == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار المتطلبات الخاصة')),
-      );
-      return;
-    }
-
-    final eventType = _eventTypeFromOption(args.option);
-    final specialRequirement = _selectedSpecialRequirement!.id == 'none'
-        ? null
-        : _selectedSpecialRequirement!.label;
-
-    bloc.add(
-      EstimateCleaningPriceEvent(
-        params: EstimateCleaningPriceParams.eventAssistance(
-          eventType: eventType,
-          guestCount: _guestsCount,
-          venueType: 'apartment',
-          customService: customService,
-          hours: _hoursCount.toDouble(),
-          numberOfWorkers: _workersCount,
-          specialRequirement: specialRequirement,
-          notes: _enableNotes ? _notesController.text.trim() : null,
-        ),
-      ),
-    );
   }
 
   @override
@@ -248,14 +77,13 @@ class _ClMainOccasionDescriptionScreenState
         listenWhen: (previous, current) =>
             previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
+          print(state.estimatePriceStatus);
           if (state.estimatePriceStatus == BlocStatus.loading) return;
           if ((_routeArgs?.navigateToScheduleOnEstimate ?? true) &&
-              !_didNavigateToSchedule &&
               state.estimatePriceStatus == BlocStatus.success &&
               state.estimatePrice != null &&
               _routeArgs != null &&
               _selectedSpecialRequirement != null) {
-            _didNavigateToSchedule = true;
             final eventType = _eventTypeFromOption(_routeArgs!.option);
             final customService = _customServiceValue;
             final specialRequirement = _selectedSpecialRequirement!.id == 'none'
@@ -280,13 +108,15 @@ class _ClMainOccasionDescriptionScreenState
               specialRequirementLabel: specialRequirement ?? 'لا يوجد',
               notes: _enableNotes ? _notesController.text.trim() : null,
             );
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!context.mounted) return;
-              context.pushRoute(
-                '/clmainoccasionschedule',
-                arguments: scheduleArgs,
-              );
-            });
+            // if (!context.mounted) return;
+            context.pushRoute(
+              '/clmainoccasionschedule',
+              arguments: scheduleArgs,
+            );
+            // WidgetsBinding.instance.addPostFrameCallback((_) {
+            //   print(suggestedTeamSize)
+
+            // });
           } else if (state.estimatePriceStatus == BlocStatus.failed) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -526,12 +356,15 @@ class _ClMainOccasionDescriptionScreenState
                             ),
                           ),
                           const SizedBox(height: 10),
-                          ClMainContinueButtonWidget(
-                            key: const Key(
-                              'occasion_description_continue_button',
+                          if (state.estimatePriceStatus == BlocStatus.loading)
+                            Center(child: CircularProgressIndicator())
+                          else
+                            ClMainContinueButtonWidget(
+                              key: const Key(
+                                'occasion_description_continue_button',
+                              ),
+                              onPressed: () => _onContinue(bloc),
                             ),
-                            onPressed: () => _onContinue(bloc),
-                          ),
                         ],
                       ),
                     ),
@@ -544,9 +377,207 @@ class _ClMainOccasionDescriptionScreenState
       ),
     );
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didReadArgs) return;
+    _didReadArgs = true;
+
+    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
+    if (args is ClMainOccasionDescriptionArgs) {
+      _routeArgs = args;
+      _bloc = args.bloc;
+    }
+  }
+
+  @override
+  void dispose() {
+    _customServiceController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  String _eventTypeFromOption(ClMainOccasionOption option) {
+    switch (option.id) {
+      case 'family_dinner':
+        return 'family_dinner';
+      case 'birthday_party':
+        return 'birthday';
+      case 'large_gathering':
+        return 'large_gathering';
+      case 'condolences':
+        return 'funeral';
+      default:
+        return 'other';
+    }
+  }
+
+  void _onContinue(ClMainBloc bloc) {
+    final args = _routeArgs;
+    if (args == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر تحميل بيانات المناسبة')),
+      );
+      return;
+    }
+
+    final customService = _customServiceValue;
+    if (customService.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى إدخال طبيعة المساعدة المطلوبة')),
+      );
+      return;
+    }
+    if (customService.length > 255) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('وصف المساعدة يجب ألا يتجاوز 255 حرفاً')),
+      );
+      return;
+    }
+    if (_selectedSpecialRequirement == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار المتطلبات الخاصة')),
+      );
+      return;
+    }
+
+    final eventType = _eventTypeFromOption(args.option);
+    final specialRequirement = _selectedSpecialRequirement!.id == 'none'
+        ? null
+        : _selectedSpecialRequirement!.label;
+    bloc.add(
+      EstimateCleaningPriceEvent(
+        params: EstimateCleaningPriceParams.eventAssistance(
+          eventType: eventType,
+          guestCount: _guestsCount,
+          venueType: 'apartment',
+          customService: customService,
+          hours: _hoursCount.toDouble(),
+          numberOfWorkers: _workersCount,
+          specialRequirement: specialRequirement,
+          notes: _enableNotes ? _notesController.text.trim() : null,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectHelpType() async {
+    final value = await _showOptionsBottomSheet(
+      title: 'ما هي طبيعة المساعدة المطلوبة؟',
+      options: _helpTypeOptions,
+      currentValue: _selectedHelpType,
+    );
+    if (!mounted || value == null) return;
+    setState(() {
+      _selectedHelpType = value;
+      if (value.id != 'other') {
+        _customServiceController.text = value.label;
+      }
+    });
+  }
+
+  Future<void> _selectSpecialRequirement() async {
+    final value = await _showOptionsBottomSheet(
+      title: 'هل لديك أي متطلبات خاصة؟',
+      options: _specialRequirementOptions,
+      currentValue: _selectedSpecialRequirement,
+    );
+    if (!mounted || value == null) return;
+    setState(() {
+      _selectedSpecialRequirement = value;
+    });
+  }
+
+  Future<_MenuOption?> _showOptionsBottomSheet({
+    required String title,
+    required List<_MenuOption> options,
+    _MenuOption? currentValue,
+  }) {
+    return showModalBottomSheet<_MenuOption>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.bodyLarge(
+                  title,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1E2A78),
+                ),
+                const SizedBox(height: 12),
+                ...options.map(
+                  (option) => ListTile(
+                    key: Key('menu_option_${option.id}'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: AppText.bodyMedium(
+                      option.label,
+                      color: const Color(0xFF111827),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    trailing: Radio<String>(
+                      value: option.id,
+                      groupValue: currentValue?.id,
+                      onChanged: (_) => Navigator.of(ctx).pop(option),
+                      activeColor: const Color(0xFF11B9C8),
+                    ),
+                    onTap: () => Navigator.of(ctx).pop(option),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CounterActionButton extends StatelessWidget {
+  final IconData icon;
+
+  final VoidCallback onTap;
+  final Color color;
+  const _CounterActionButton({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: Icon(icon, size: 16, color: Colors.white),
+        ),
+      ),
+    );
+  }
 }
 
 class _CounterField extends StatelessWidget {
+  final int value;
+
+  final int minValue;
+  final int? maxValue;
+  final VoidCallback onAdd;
+  final VoidCallback onSubtract;
   const _CounterField({
     required this.value,
     required this.onAdd,
@@ -554,12 +585,6 @@ class _CounterField extends StatelessWidget {
     this.minValue = 1,
     this.maxValue,
   });
-
-  final int value;
-  final int minValue;
-  final int? maxValue;
-  final VoidCallback onAdd;
-  final VoidCallback onSubtract;
 
   @override
   Widget build(BuildContext context) {
@@ -605,31 +630,9 @@ class _CounterField extends StatelessWidget {
   }
 }
 
-class _CounterActionButton extends StatelessWidget {
-  const _CounterActionButton({
-    required this.icon,
-    required this.onTap,
-    required this.color,
-  });
+class _MenuOption {
+  final String id;
+  final String label;
 
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: color,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 30,
-          height: 30,
-          child: Icon(icon, size: 16, color: Colors.white),
-        ),
-      ),
-    );
-  }
+  const _MenuOption({required this.id, required this.label});
 }

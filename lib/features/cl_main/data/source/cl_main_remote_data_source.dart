@@ -61,6 +61,7 @@ class ClMainRemoteDataSource with HandlingApiManager {
   Future<CreateCleaningOrderResponseModel> createCleaningOrder(
     CreateCleaningOrderParams params,
   ) {
+    // print(jsonEncode(params.getBody()));
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
         endPoint: '/api/v1/user/cleaning/orders',

@@ -11,13 +11,17 @@ import '../models/work_environment_confirmation.dart';
 import '../repository/cl_main_repo.dart';
 
 @lazySingleton
-class CreateCleaningOrderUseCase implements UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
+class CreateCleaningOrderUseCase
+    implements
+        UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
   final ClMainRepo clMainRepo;
 
   CreateCleaningOrderUseCase({required this.clMainRepo});
 
   @override
-  DataResponse<CreateCleaningOrderResponseModel> call(CreateCleaningOrderParams params) {
+  DataResponse<CreateCleaningOrderResponseModel> call(
+    CreateCleaningOrderParams params,
+  ) {
     return clMainRepo.createCleaningOrder(params);
   }
 }
@@ -52,8 +56,10 @@ class CreateCleaningOrderParams with Params {
   final CleaningAssignmentMode assignmentMode;
   final bool termsAccepted;
   final List<Map<String, dynamic>>? workerRoomAssignments;
+  final int addressId;
 
   CreateCleaningOrderParams({
+    required this.addressId,
     required this.propertyType,
     required this.bedrooms,
     required this.rooms,
@@ -85,6 +91,7 @@ class CreateCleaningOrderParams with Params {
        notes = null;
 
   CreateCleaningOrderParams.eventAssistance({
+    required this.addressId,
     this.propertyType = 'event_assistance',
     required this.scheduledDate,
     required this.scheduledTime,
@@ -131,31 +138,42 @@ class CreateCleaningOrderParams with Params {
     return normalized;
   }
 
-  int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
+  int? get _resolvedBedrooms =>
+      roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
 
   int? get _resolvedRooms => roomSizeBreakdown?.legacyRoomsCount ?? rooms;
 
-  int? get _resolvedBathrooms => roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
+  int? get _resolvedBathrooms =>
+      roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
 
-  int? get _resolvedBalconies => roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
+  int? get _resolvedBalconies =>
+      roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
 
-  String get _resolvedLivingRoomSize => roomSizeBreakdown?.legacyLivingRoomSize ?? livingRoomSize ?? CleaningRoomSize.small.apiValue;
+  String get _resolvedLivingRoomSize =>
+      roomSizeBreakdown?.legacyLivingRoomSize ??
+      livingRoomSize ??
+      CleaningRoomSize.small.apiValue;
 
   Map<String, dynamic> _buildPropertyDetails() {
     if (_isEventAssistance) {
       return {
-        if (address != null && address!.trim().isNotEmpty) 'address': address!.trim(),
-        if (locationName != null && locationName!.trim().isNotEmpty) 'location_name': locationName!.trim(),
+        'addressId': addressId,
+        if (address != null && address!.trim().isNotEmpty)
+          'address': address!.trim(),
+        if (locationName != null && locationName!.trim().isNotEmpty)
+          'location_name': locationName!.trim(),
         'eventType': eventType,
         'guestCount': guestCount,
         'venueType': venueType,
         'customService': customService?.trim(),
         'hours': hours,
-        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty) 'specialRequirement': specialRequirement!.trim(),
+        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
+          'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       };
     }
     return {
+      'addressId': addressId,
       'address': address,
       'location_name': locationName,
       'bedrooms': _resolvedBedrooms,
@@ -163,8 +181,10 @@ class CreateCleaningOrderParams with Params {
       'bathrooms': _resolvedBathrooms,
       if (_resolvedBalconies != null) 'balconies': _resolvedBalconies,
       'living_room_size': _resolvedLivingRoomSize,
-      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
-      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (roomSizeBreakdown != null)
+        'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
+      if (cleaningType != null)
+        'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
@@ -172,16 +192,22 @@ class CreateCleaningOrderParams with Params {
   BodyMap getBody() {
     final body = <String, dynamic>{
       'propertyType': propertyType,
+      'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
       'scheduledDate': scheduledDate,
       'scheduledTime': scheduledTime,
       if (addressLatitude != null) 'addressLatitude': addressLatitude,
       if (addressLongitude != null) 'addressLongitude': addressLongitude,
       'genderPreference': genderPreference.apiValue,
-      if (genderPreference.apiValue == 'fe' 'male' && workEnvironmentConfirmation != null)
+      if (genderPreference.apiValue ==
+              'fe'
+                  'male' &&
+          workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
       'assignmentMode': assignmentMode.apiValue,
-      if (preferredWorkerId != null && assignmentMode == CleaningAssignmentMode.preferredWorker) 'preferredWorkerId': preferredWorkerId,
+      if (preferredWorkerId != null &&
+          assignmentMode == CleaningAssignmentMode.preferredWorker)
+        'preferredWorkerId': preferredWorkerId,
       'termsAccepted': termsAccepted,
     };
     if (!_isEventAssistance) {
@@ -200,6 +226,7 @@ class CreateCleaningOrderParams with Params {
     if (assignments != null && assignments.isNotEmpty) {
       body['workerRoomAssignments'] = assignments;
     }
+    print(body);
     return body;
   }
 

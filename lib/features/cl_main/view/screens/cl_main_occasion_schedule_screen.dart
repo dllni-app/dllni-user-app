@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../profile/domain/models/address_list_item.dart';
+import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
@@ -25,6 +27,7 @@ import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/cl_service_section_card_widget.dart';
 import '../widgets/home_details_app_bar.dart';
+import 'cl_main_screen.dart';
 import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
@@ -278,8 +281,7 @@ class _ClMainOccasionScheduleScreenState
             'yyyy-MM-dd',
           ).format(_selectedDate),
           scheduledTime: _fromTimeController.text,
-          addressLatitude: selectedAddress.latitude,
-          addressLongitude: selectedAddress.longitude,
+          addressId: int.parse(selectedAddress.id),
           genderPreference: state.genderPreference,
           assignmentMode: assignment.assignmentMode,
           preferredWorkerId: assignment.preferredWorkerId,
@@ -333,13 +335,18 @@ class _ClMainOccasionScheduleScreenState
                   state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
               type: ToastificationType.success,
             );
-            context.pushRoute('/clmain');
-          } else if (state.createOrderStatus == BlocStatus.failed) {
-            AppToast.showToast(
-              context: context,
-              message: state.errorMessage ?? 'فشل إرسال طلب المناسبة',
-              type: ToastificationType.error,
+            context.pushRoute(
+              '/clmain',
+              arguments: ClMainScreenParams(profileBloc: getIt<ProfileBloc>()),
             );
+          } else if (state.createOrderStatus == BlocStatus.failed) {
+            if (state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+              AppToast.showToast(
+                context: context,
+                message: state.errorMessage ?? 'فشل إرسال طلب المناسبة',
+                type: ToastificationType.error,
+              );
+            }
           }
         },
         builder: (context, state) {
@@ -431,6 +438,15 @@ class _ClMainOccasionScheduleScreenState
                             onChangeTap: _selectAddress,
                           ),
                           const SizedBox(height: 16),
+                          ClServiceGenderPreferenceSectionWidget(
+                            selectedPreference: state.genderPreference,
+                            onChanged: (value) {
+                              bloc.add(
+                                SetGenderPreferenceEvent(preference: value),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
                           ClServicePreviousWorkersSectionWidget(
                             workers: filterPreviousWorkersByGender(
                               state.previousWorkers.list,
@@ -460,15 +476,6 @@ class _ClMainOccasionScheduleScreenState
                                     WorkerProfileRouteArgs.fromPreviousWorker(
                                       worker,
                                     ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
-                            onChanged: (value) {
-                              bloc.add(
-                                SetGenderPreferenceEvent(preference: value),
                               );
                             },
                           ),

@@ -136,6 +136,7 @@ class CleaningRebookPolicy {
     ) async {
       final createResult = await createOrder(
         CreateCleaningOrderParams(
+          addressId: int.tryParse(request.address) ?? 0,
           propertyType: request.propertyType,
           bedrooms: request.bedrooms,
           rooms: request.rooms,
