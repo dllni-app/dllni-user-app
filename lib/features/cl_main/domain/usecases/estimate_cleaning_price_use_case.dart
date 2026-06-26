@@ -37,6 +37,7 @@ class EstimateCleaningPriceParams with Params {
   final int? addressId;
   final double? addressLatitude;
   final double? addressLongitude;
+  final int? preferredWorkerId;
   final List<int> preferredWorkerIds;
   final String? eventType;
   final int? guestCount;
@@ -61,6 +62,7 @@ class EstimateCleaningPriceParams with Params {
     this.addressId,
     required this.addressLatitude,
     required this.addressLongitude,
+    this.preferredWorkerId,
     this.preferredWorkerIds = const <int>[],
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
@@ -83,6 +85,7 @@ class EstimateCleaningPriceParams with Params {
     this.addressId,
     this.addressLatitude,
     this.addressLongitude,
+    this.preferredWorkerId,
     this.preferredWorkerIds = const <int>[],
     this.specialRequirement,
     this.notes,
@@ -101,6 +104,8 @@ class EstimateCleaningPriceParams with Params {
 
   List<int> _sanitizePreferredWorkerIds() {
     final normalized = <int>[];
+    final singleId = preferredWorkerId;
+    if (singleId != null && singleId > 0) normalized.add(singleId);
     for (final id in preferredWorkerIds) {
       if (id <= 0 || normalized.contains(id)) continue;
       normalized.add(id);
