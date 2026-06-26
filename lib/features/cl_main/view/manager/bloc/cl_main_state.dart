@@ -8,6 +8,7 @@ class ClMainState {
   final PaginationStateModel<PreviousWorkerModel> previousWorkers;
   final int? selectedWorkerId;
   final CleaningGenderPreference genderPreference;
+  final WorkEnvironmentConfirmation? safetyConfirmation;
   final CleaningAssignmentMode assignmentMode;
   final int numberOfWorkers;
   final Map<String, int> workerRoomAssignments;
@@ -26,6 +27,7 @@ class ClMainState {
     ),
     this.selectedWorkerId,
     this.genderPreference = CleaningGenderPreference.any,
+    this.safetyConfirmation,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers = 1,
     this.workerRoomAssignments = const <String, int>{},
@@ -44,6 +46,8 @@ class ClMainState {
     int? selectedWorkerId,
     bool clearSelectedWorker = false,
     CleaningGenderPreference? genderPreference,
+    WorkEnvironmentConfirmation? safetyConfirmation,
+    bool clearSafetyConfirmation = false,
     CleaningAssignmentMode? assignmentMode,
     int? numberOfWorkers,
     Map<String, int>? workerRoomAssignments,
@@ -66,6 +70,9 @@ class ClMainState {
           ? null
           : (selectedWorkerId ?? this.selectedWorkerId),
       genderPreference: genderPreference ?? this.genderPreference,
+      safetyConfirmation: clearSafetyConfirmation
+          ? null
+          : (safetyConfirmation ?? this.safetyConfirmation),
       assignmentMode: assignmentMode ?? this.assignmentMode,
       numberOfWorkers: numberOfWorkers ?? this.numberOfWorkers,
       workerRoomAssignments: clearWorkerRoomAssignments
