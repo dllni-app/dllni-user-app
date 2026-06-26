@@ -224,7 +224,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         event.preference != CleaningGenderPreference.any &&
         selectedWorker != null &&
         !selectedWorker.matchesGenderPreference(event.preference);
-    final requiresSafetyConfirmation = event.preference.apiValue == 'fe' 'male';
+    final requiresSafetyConfirmation = event.preference == CleaningGenderPreference.female;
 
     emit(
       state.copyWith(
