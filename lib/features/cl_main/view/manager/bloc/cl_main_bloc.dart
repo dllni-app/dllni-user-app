@@ -12,6 +12,7 @@ import '../../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../../../domain/models/cleaning_assignment_mode.dart';
+import '../../../domain/models/work_environment_confirmation.dart';
 import '../../../data/models/cleaning_services_response_model.dart';
 import '../../../data/models/create_cleaning_order_response_model.dart';
 import '../../../data/models/estimate_price_response_model.dart';
@@ -224,10 +225,16 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         event.preference != CleaningGenderPreference.any &&
         selectedWorker != null &&
         !selectedWorker.matchesGenderPreference(event.preference);
+    final requiresSafetyConfirmation = event.preference.apiValue == 'fe' 'male';
 
     emit(
       state.copyWith(
         genderPreference: event.preference,
+        safetyConfirmation: requiresSafetyConfirmation
+            ? event.workEnvironmentConfirmation
+            : null,
+        clearSafetyConfirmation:
+            !requiresSafetyConfirmation || event.workEnvironmentConfirmation == null,
         clearSelectedWorker: shouldClearSelectedWorker,
         clearErrorMessage: true,
       ),
@@ -254,7 +261,6 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         state.copyWith(
           assignmentMode: event.mode,
           clearSelectedWorker: true,
-          genderPreference: CleaningGenderPreference.any,
           numberOfWorkers: safeCount,
           workerRoomAssignments: _clampWorkerRoomAssignments(
             state.workerRoomAssignments,
@@ -287,7 +293,6 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
         numberOfWorkers: safeCount,
         assignmentMode: CleaningAssignmentMode.openCount,
         clearSelectedWorker: true,
-        genderPreference: CleaningGenderPreference.any,
         workerRoomAssignments: _clampWorkerRoomAssignments(
           state.workerRoomAssignments,
           safeCount,
