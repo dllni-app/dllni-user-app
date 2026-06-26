@@ -52,12 +52,26 @@ class AppPickers {
     required BuildContext context,
     DateTime? startDate,
   }) async {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final requestedStartDate = startDate == null
+        ? todayDate
+        : DateTime(startDate.year, startDate.month, startDate.day);
+
+    // Cleaning booking screens previously passed tomorrow to the shared picker,
+    // which disabled same-day bookings even though the backend accepts
+    // scheduledDate >= today. When the requested start date is only near-future,
+    // normalize it to today so the current date is selectable and active.
+    final firstSelectableDate = requestedStartDate.difference(todayDate).inDays <= 1
+        ? todayDate
+        : requestedStartDate;
+
     final DateTime? res = await showDatePicker(
       context: context,
       locale: AppDateTimeLocale.locale,
-      initialDate: startDate ?? DateTime.now(),
-      firstDate: startDate ?? DateTime(1950),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+      initialDate: firstSelectableDate,
+      firstDate: firstSelectableDate,
+      lastDate: todayDate.add(const Duration(days: 365 * 5)),
       builder: (context, child) => Theme(
         data: ThemeData.light().copyWith(
           colorScheme: ColorScheme.light(
