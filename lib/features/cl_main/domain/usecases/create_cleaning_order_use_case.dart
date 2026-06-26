@@ -43,7 +43,7 @@ class CreateCleaningOrderParams with Params {
   final double? addressLongitude;
   final CleaningGenderPreference genderPreference;
   final WorkEnvironmentConfirmation? workEnvironmentConfirmation;
-  final int? preferredWorkerId;
+  final List<int> preferredWorkerIds;
   final List<String>? cleaningServices;
   final String? eventType;
   final int? guestCount;
@@ -76,7 +76,7 @@ class CreateCleaningOrderParams with Params {
     required this.addressLongitude,
     this.genderPreference = CleaningGenderPreference.any,
     this.workEnvironmentConfirmation,
-    this.preferredWorkerId,
+    this.preferredWorkerIds = const <int>[],
     this.cleaningServices,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
@@ -106,7 +106,7 @@ class CreateCleaningOrderParams with Params {
     this.addressLongitude,
     this.genderPreference = CleaningGenderPreference.any,
     this.workEnvironmentConfirmation,
-    this.preferredWorkerId,
+    this.preferredWorkerIds = const <int>[],
     this.specialRequirement,
     this.notes,
     this.numberOfWorkers,
@@ -123,6 +123,15 @@ class CreateCleaningOrderParams with Params {
        cleaningServices = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
+
+  List<int> _sanitizePreferredWorkerIds() {
+    final normalized = <int>[];
+    for (final id in preferredWorkerIds) {
+      if (id <= 0 || normalized.contains(id)) continue;
+      normalized.add(id);
+    }
+    return normalized;
+  }
 
   List<String> _sanitizeCleaningServices() {
     final source = cleaningServices ?? const <String>[];
@@ -188,22 +197,23 @@ class CreateCleaningOrderParams with Params {
 
   @override
   BodyMap getBody() {
+    final workerIds = _sanitizePreferredWorkerIds();
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
       'scheduledDate': scheduledDate,
       'scheduledTime': scheduledTime,
-      if (addressLatitude != null) 'addressLatitude': addressLatitude,
-      if (addressLongitude != null) 'addressLongitude': addressLongitude,
+      if (addressId <= 0 && addressLatitude != null)
+        'addressLatitude': addressLatitude,
+      if (addressId <= 0 && addressLongitude != null)
+        'addressLongitude': addressLongitude,
       'genderPreference': genderPreference.apiValue,
       if (genderPreference == CleaningGenderPreference.female &&
           workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
       'assignmentMode': assignmentMode.apiValue,
-      if (preferredWorkerId != null &&
-          assignmentMode == CleaningAssignmentMode.preferredWorker)
-        'preferredWorkerId': preferredWorkerId,
+      if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
     };
     if (!_isEventAssistance) {
@@ -226,12 +236,16 @@ class CreateCleaningOrderParams with Params {
   }
 
   int? get _resolvedNumberOfWorkers {
+    final preferredCount = _sanitizePreferredWorkerIds().length;
     if (_isEventAssistance) {
-      return numberOfWorkers;
+      return numberOfWorkers ?? (preferredCount > 0 ? preferredCount : null);
     }
     if (assignmentMode == CleaningAssignmentMode.openCount) {
-      return numberOfWorkers ?? 1;
+      final fallback = preferredCount > 0 ? preferredCount : 1;
+      final requested = numberOfWorkers ?? fallback;
+      return requested < preferredCount ? preferredCount : requested;
     }
+    if (preferredCount > 1) return preferredCount;
     return 1;
   }
 }
