@@ -157,7 +157,6 @@ class CreateCleaningOrderParams with Params {
   Map<String, dynamic> _buildPropertyDetails() {
     if (_isEventAssistance) {
       return {
-        'addressId': addressId,
         if (address != null && address!.trim().isNotEmpty)
           'address': address!.trim(),
         if (locationName != null && locationName!.trim().isNotEmpty)
@@ -173,7 +172,6 @@ class CreateCleaningOrderParams with Params {
       };
     }
     return {
-      'addressId': addressId,
       'address': address,
       'location_name': locationName,
       'bedrooms': _resolvedBedrooms,
