@@ -6,7 +6,7 @@ class ClMainState {
   final List<CleaningServiceModel> cleaningServices;
   final BlocStatus cleaningServicesStatus;
   final PaginationStateModel<PreviousWorkerModel> previousWorkers;
-  final int? selectedWorkerId;
+  final List<int> selectedWorkerIds;
   final CleaningGenderPreference genderPreference;
   final WorkEnvironmentConfirmation? safetyConfirmation;
   final CleaningAssignmentMode assignmentMode;
@@ -25,7 +25,7 @@ class ClMainState {
     this.previousWorkers = const PaginationStateModel<PreviousWorkerModel>(
       perPage: 10,
     ),
-    this.selectedWorkerId,
+    this.selectedWorkerIds = const <int>[],
     this.genderPreference = CleaningGenderPreference.any,
     this.safetyConfirmation,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
@@ -43,8 +43,8 @@ class ClMainState {
     List<CleaningServiceModel>? cleaningServices,
     BlocStatus? cleaningServicesStatus,
     PaginationStateModel<PreviousWorkerModel>? previousWorkers,
-    int? selectedWorkerId,
-    bool clearSelectedWorker = false,
+    List<int>? selectedWorkerIds,
+    bool clearSelectedWorkers = false,
     CleaningGenderPreference? genderPreference,
     WorkEnvironmentConfirmation? safetyConfirmation,
     bool clearSafetyConfirmation = false,
@@ -66,9 +66,9 @@ class ClMainState {
       cleaningServicesStatus:
           cleaningServicesStatus ?? this.cleaningServicesStatus,
       previousWorkers: previousWorkers ?? this.previousWorkers,
-      selectedWorkerId: clearSelectedWorker
-          ? null
-          : (selectedWorkerId ?? this.selectedWorkerId),
+      selectedWorkerIds: clearSelectedWorkers
+          ? const <int>[]
+          : (selectedWorkerIds ?? this.selectedWorkerIds),
       genderPreference: genderPreference ?? this.genderPreference,
       safetyConfirmation: clearSafetyConfirmation
           ? null
@@ -90,4 +90,7 @@ class ClMainState {
   }
 
   BlocStatus get previousWorkersStatus => previousWorkers.status;
+
+  int? get primarySelectedWorkerId =>
+      selectedWorkerIds.isEmpty ? null : selectedWorkerIds.first;
 }
