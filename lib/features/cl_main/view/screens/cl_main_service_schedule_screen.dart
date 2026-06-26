@@ -13,8 +13,11 @@ import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
+import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_cleaning_services_use_case.dart';
+import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
+import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
@@ -24,16 +27,18 @@ import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
+import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/cl_service_worker_assignment_summary_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_main_screen.dart';
+import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainServiceScheduleScreen extends StatefulWidget {
   final ClMainScheduleArgs? item;
-
   final ClMainScheduleArgs? args;
+
   const ClMainServiceScheduleScreen({super.key, this.item, this.args});
 
   @override
@@ -80,8 +85,25 @@ class _ClMainServiceScheduleScreenState
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus,
+            previous.createOrderStatus != current.createOrderStatus ||
+            previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
+          if (state.estimatePriceStatus == BlocStatus.success &&
+              state.estimatePrice != null) {
+            setState(() {
+              _currentEstimate = state.estimatePrice;
+              _syncToTime();
+            });
+          } else if (state.estimatePriceStatus == BlocStatus.failed &&
+              state.errorMessage != null &&
+              state.errorMessage!.isNotEmpty) {
+            AppToast.showToast(
+              context: context,
+              message: state.errorMessage!,
+              type: ToastificationType.error,
+            );
+          }
+
           if (state.createOrderStatus == BlocStatus.loading) {
             Loading.show(context);
             return;
@@ -146,11 +168,32 @@ class _ClMainServiceScheduleScreenState
                           const SizedBox(height: 10),
                           CleaningAddressSelectWidget(
                             selectedAddress: selectedAddress,
-                            // locationName:
-                            //     activeAddress?.label ?? 'اختر عنوان الخدمة',
-                            // address:
-                            //     activeAddress?.line1 ?? 'اضغط لتغيير العنوان',
                             onChangeTap: _selectAddress,
+                          ),
+                          const SizedBox(height: 12),
+                          ClServicePreviousWorkersSectionWidget(
+                            workers: filterPreviousWorkersByGender(
+                              state.previousWorkers.list,
+                              state.genderPreference,
+                            ),
+                            selectedWorkerIds: state.selectedWorkerIds,
+                            isLoading:
+                                state.previousWorkersStatus == BlocStatus.loading,
+                            errorMessage:
+                                state.previousWorkersStatus == BlocStatus.failed
+                                ? state.errorMessage
+                                : null,
+                            onSelectWorker: (workerId) =>
+                                _togglePreferredWorker(state, workerId),
+                            onOpenWorkerProfile: (worker) {
+                              context.pushRoute(
+                                '/clworkerprofiledetail',
+                                arguments:
+                                    WorkerProfileRouteArgs.fromPreviousWorker(
+                                  worker,
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 12),
                           ClCleaningServicesSelectorWidget(
@@ -236,6 +279,7 @@ class _ClMainServiceScheduleScreenState
       );
       _syncToTime();
       _loadCleaningServices();
+      _loadPreviousWorkers();
     } else if (args is AddressListItem) {
       selectedAddress = ValueNotifier(args);
     }
@@ -373,6 +417,21 @@ class _ClMainServiceScheduleScreenState
     );
   }
 
+  void _loadPreviousWorkers() {
+    final args = _routeArgs;
+    final bloc = _bloc;
+    if (args == null || bloc == null) return;
+    bloc.add(
+      GetPreviousCleaningWorkersEvent(
+        params: GetPreviousCleaningWorkersParams(
+          page: 1,
+          propertyType: args.propertyType,
+        ),
+        isReload: true,
+      ),
+    );
+  }
+
   Future<void> _onSubmitPressed(ClMainState state) async {
     final args = _routeArgs;
     final bloc = _bloc;
@@ -409,9 +468,11 @@ class _ClMainServiceScheduleScreenState
         : buildWorkerRoomAssignmentsJson(
             slotByRoomKey: state.workerRoomAssignments,
             units: enumerateRoomUnits(args.roomSizeBreakdown),
-            preferredWorkerId: state.selectedWorkerId,
+            preferredWorkerId: state.primarySelectedWorkerId,
             assignmentMode: state.assignmentMode,
           );
+    final selectedWorkerIds = state.selectedWorkerIds;
+    final selectedWorkerCount = selectedWorkerIds.length;
 
     bloc.add(
       CreateCleaningOrderEvent(
@@ -431,21 +492,16 @@ class _ClMainServiceScheduleScreenState
             'yyyy-MM-dd',
           ).format(_selectedDate),
           scheduledTime: _fromTimeController.text,
-          addressLatitude:
-              selectedAddress.value?.latitude ?? args.addressLatitude,
-          addressLongitude:
-              selectedAddress.value?.longitude ?? args.addressLongitude,
+          addressLatitude: null,
+          addressLongitude: null,
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
               state.assignmentMode == CleaningAssignmentMode.openCount
               ? state.numberOfWorkers
-              : 1,
-          preferredWorkerId:
-              state.assignmentMode == CleaningAssignmentMode.preferredWorker
-              ? state.selectedWorkerId
-              : null,
+              : (selectedWorkerCount > 1 ? selectedWorkerCount : 1),
+          preferredWorkerIds: selectedWorkerIds,
           cleaningServices: _selectedCleaningServicesPayload(),
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
@@ -487,10 +543,86 @@ class _ClMainServiceScheduleScreenState
       '/myaddresses',
       arguments: true,
     );
-    // if (!mounted) return;
-    // if (selectedAddress is AddressListItem) {
-    //     selectedAddress?.value = selectedAddressVal;
-    // }
+    if (!mounted) return;
+    if (selectedAddressVal is AddressListItem) {
+      setState(() {
+        selectedAddress.value = selectedAddressVal;
+      });
+      final bloc = _bloc;
+      if (bloc != null) {
+        _requestUpdatedEstimate(bloc.state);
+      }
+    }
+  }
+
+  void _togglePreferredWorker(ClMainState state, int workerId) {
+    if (selectedAddress.value == null) {
+      AppToast.showToast(
+        context: context,
+        message: 'يرجى اختيار عنوان الخدمة أولاً',
+        type: ToastificationType.error,
+      );
+      return;
+    }
+
+    final updated = List<int>.from(state.selectedWorkerIds);
+    if (updated.contains(workerId)) {
+      updated.remove(workerId);
+    } else {
+      updated.add(workerId);
+    }
+
+    _bloc?.add(SetPreferredWorkersEvent(workerIds: updated));
+    _requestUpdatedEstimate(state, selectedWorkerIds: updated);
+  }
+
+  void _requestUpdatedEstimate(
+    ClMainState state, {
+    List<int>? selectedWorkerIds,
+  }) {
+    final args = _routeArgs;
+    final bloc = _bloc;
+    final address = selectedAddress.value;
+    if (args == null || bloc == null || address == null) return;
+
+    final workerIds = selectedWorkerIds ?? state.selectedWorkerIds;
+    final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
+    final assignmentMode = workerIds.length > 1
+        ? CleaningAssignmentMode.openCount
+        : state.assignmentMode;
+    final numberOfWorkers = assignmentMode == CleaningAssignmentMode.openCount
+        ? (workerIds.length > 1 ? workerIds.length : state.numberOfWorkers)
+        : 1;
+    final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
+      slotByRoomKey: state.workerRoomAssignments,
+      units: enumerateRoomUnits(args.roomSizeBreakdown),
+      preferredWorkerId: preferredWorkerId,
+      assignmentMode: assignmentMode,
+    );
+
+    bloc.add(
+      EstimateCleaningPriceEvent(
+        params: EstimateCleaningPriceParams(
+          propertyType: args.propertyType,
+          bedrooms: args.bedrooms,
+          rooms: args.rooms,
+          bathrooms: args.bathrooms,
+          balconies: args.roomSizeBreakdown.legacyBalconiesCount,
+          livingRoomSize: args.livingRoomSize,
+          roomSizeBreakdown: args.roomSizeBreakdown,
+          cleaningType: args.cleaningType,
+          addressId: int.tryParse(address.id),
+          addressLatitude: null,
+          addressLongitude: null,
+          assignmentMode: assignmentMode,
+          numberOfWorkers: numberOfWorkers,
+          preferredWorkerIds: workerIds,
+          workerRoomAssignments: workerRoomAssignments.isEmpty
+              ? null
+              : workerRoomAssignments,
+        ),
+      ),
+    );
   }
 
   List<String> _selectedCleaningServicesPayload() {
