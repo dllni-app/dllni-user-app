@@ -4,10 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../data/models/estimate_price_response_model.dart';
+import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
@@ -17,6 +19,7 @@ import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
+import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
@@ -242,6 +245,42 @@ class _ClMainOccasionScheduleScreenState
     });
   }
 
+  Future<void> _handleGenderPreferenceChanged(
+    ClMainBloc bloc,
+    CleaningGenderPreference preference,
+  ) async {
+    if (preference != CleaningGenderPreference.female) {
+      bloc.add(SetGenderPreferenceEvent(preference: preference));
+      return;
+    }
+
+    Loading.show(context);
+    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
+    Loading.close();
+    if (!mounted) return;
+
+    await response.fold(
+      (failure) async {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+      },
+      (policy) async {
+        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
+          context: context,
+          policy: policy,
+        );
+        if (!mounted || confirmation == null) return;
+        bloc.add(
+          SetGenderPreferenceEvent(
+            preference: preference,
+            workEnvironmentConfirmation: confirmation,
+          ),
+        );
+      },
+    );
+  }
+
   void _onSubmitPressed(ClMainState state) {
     final args = _routeArgs;
     final bloc = _bloc;
@@ -249,6 +288,14 @@ class _ClMainOccasionScheduleScreenState
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
+      return;
+    }
+
+    if (state.genderPreference == CleaningGenderPreference.female &&
+        state.safetyConfirmation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
+      );
       return;
     }
 
@@ -283,6 +330,7 @@ class _ClMainOccasionScheduleScreenState
           scheduledTime: _fromTimeController.text,
           addressId: int.parse(selectedAddress.id),
           genderPreference: state.genderPreference,
+          workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: assignment.assignmentMode,
           preferredWorkerId: assignment.preferredWorkerId,
           specialRequirement: specialRequirement,
@@ -477,6 +525,13 @@ class _ClMainOccasionScheduleScreenState
                                       worker,
                                     ),
                               );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          ClServiceGenderPreferenceSectionWidget(
+                            selectedPreference: state.genderPreference,
+                            onChanged: (value) {
+                              _handleGenderPreferenceChanged(bloc, value);
                             },
                           ),
                           const SizedBox(height: 12),
