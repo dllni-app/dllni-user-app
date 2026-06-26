@@ -322,6 +322,14 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
+    if (state.genderPreference.apiValue == 'fe' 'male' &&
+        state.safetyConfirmation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
+      );
+      return;
+    }
+
     final acceptedPledge = await _showPersonalPropertyPledgeDialog();
     if (!mounted || !acceptedPledge) return;
 
@@ -363,6 +371,7 @@ class _ClMainServiceScheduleScreenState
           addressLatitude: selectedAddress?.value?.latitude ?? args.addressLatitude,
           addressLongitude: selectedAddress?.value?.longitude ?? args.addressLongitude,
           genderPreference: state.genderPreference,
+          workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
               state.assignmentMode == CleaningAssignmentMode.openCount

@@ -4,6 +4,7 @@ import '../../data/models/cleaning_banners_response_model.dart';
 import '../../data/models/cleaning_services_response_model.dart';
 import '../../data/models/create_cleaning_order_response_model.dart';
 import '../../data/models/estimate_price_response_model.dart';
+import '../../data/models/female_worker_safety_policy_model.dart';
 import '../../data/models/previous_workers_response_model.dart';
 import '../usecases/create_cleaning_order_use_case.dart';
 import '../usecases/estimate_cleaning_price_use_case.dart';
@@ -27,6 +28,8 @@ abstract class ClMainRepo {
   DataResponse<CreateCleaningOrderResponseModel> createCleaningOrder(
     CreateCleaningOrderParams params,
   );
+
+  DataResponse<FemaleWorkerSafetyPolicyModel> getFemaleWorkerSafetyPolicy();
 
   DataResponse<CleaningBannersResponseModel> getCleaningBanners(
     GetCleaningBannersParams params,
