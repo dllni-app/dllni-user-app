@@ -305,7 +305,8 @@ class _ClMainHomeDescriptionScreenState
                                   buildWorkerRoomAssignmentsJson(
                                     slotByRoomKey: state.workerRoomAssignments,
                                     units: roomUnits,
-                                    preferredWorkerId: state.selectedWorkerId,
+                                    preferredWorkerId:
+                                        state.primarySelectedWorkerId,
                                     assignmentMode: state.assignmentMode,
                                   ),
                               onAssign: (roomKey, workerSlot) {
@@ -324,7 +325,7 @@ class _ClMainHomeDescriptionScreenState
                                 state.previousWorkers.list,
                                 state.genderPreference,
                               ),
-                              selectedWorkerId: state.selectedWorkerId,
+                              selectedWorkerIds: state.selectedWorkerIds,
                               isLoading:
                                   state.previousWorkersStatus ==
                                   BlocStatus.loading,
@@ -335,7 +336,7 @@ class _ClMainHomeDescriptionScreenState
                                   : null,
                               onSelectWorker: (workerId) {
                                 bloc.add(
-                                  SetPreferredWorkerEvent(workerId: workerId),
+                                  TogglePreferredWorkerEvent(workerId: workerId),
                                 );
                               },
                               onOpenWorkerProfile: (worker) {
@@ -386,10 +387,8 @@ class _ClMainHomeDescriptionScreenState
           params: GetPreviousCleaningWorkersParams(
             page: 1,
             propertyType: _propertyType,
-
           ),
           isReload: true,
-
         ),
       );
     }
@@ -518,7 +517,7 @@ class _ClMainHomeDescriptionScreenState
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
       slotByRoomKey: state.workerRoomAssignments,
       units: roomUnits,
-      preferredWorkerId: state.selectedWorkerId,
+      preferredWorkerId: state.primarySelectedWorkerId,
       assignmentMode: state.assignmentMode,
     );
 
@@ -533,17 +532,17 @@ class _ClMainHomeDescriptionScreenState
           livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
           roomSizeBreakdown: _roomSizeBreakdown,
           cleaningType: _selectedCleaningType,
+          addressId: int.tryParse(_defaultAddress?.id ?? ''),
           addressLatitude: position.latitude,
           addressLongitude: position.longitude,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
               state.assignmentMode == CleaningAssignmentMode.openCount
               ? state.numberOfWorkers
-              : 1,
-          preferredWorkerId:
-              state.assignmentMode == CleaningAssignmentMode.preferredWorker
-              ? state.selectedWorkerId
-              : null,
+              : (state.selectedWorkerIds.length > 1
+                    ? state.selectedWorkerIds.length
+                    : 1),
+          preferredWorkerIds: state.selectedWorkerIds,
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
