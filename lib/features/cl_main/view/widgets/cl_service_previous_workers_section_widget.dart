@@ -6,7 +6,8 @@ import '../../data/models/previous_workers_response_model.dart';
 class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
   const ClServicePreviousWorkersSectionWidget({
     required this.workers,
-    required this.selectedWorkerIds,
+    this.selectedWorkerIds = const <int>[],
+    this.selectedWorkerId,
     required this.isLoading,
     required this.errorMessage,
     required this.onSelectWorker,
@@ -19,10 +20,17 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
 
   final List<PreviousWorkerModel> workers;
   final List<int> selectedWorkerIds;
+  final int? selectedWorkerId;
   final bool isLoading;
   final String? errorMessage;
   final ValueChanged<int> onSelectWorker;
   final ValueChanged<PreviousWorkerModel> onOpenWorkerProfile;
+
+  List<int> get _effectiveSelectedWorkerIds {
+    if (selectedWorkerIds.isNotEmpty) return selectedWorkerIds;
+    final single = selectedWorkerId;
+    return single == null ? const <int>[] : <int>[single];
+  }
 
   String? _workerSubtitle(PreviousWorkerModel worker) {
     final rating = worker.ratings?.average ?? worker.rating;
@@ -44,7 +52,8 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedCount = selectedWorkerIds.length;
+    final selectedIds = _effectiveSelectedWorkerIds;
+    final selectedCount = selectedIds.length;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -90,7 +99,7 @@ class ClServicePreviousWorkersSectionWidget extends StatelessWidget {
                   if (i > 0) const SizedBox(height: 8),
                   _WorkerSelectionCard(
                     worker: workers[i],
-                    isSelected: selectedWorkerIds.contains(workers[i].id),
+                    isSelected: selectedIds.contains(workers[i].id),
                     subtitle: _workerSubtitle(workers[i]),
                     onToggle: () => _toggleWorker(workers[i]),
                     onOpenDetails: () => onOpenWorkerProfile(workers[i]),
