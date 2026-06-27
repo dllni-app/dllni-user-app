@@ -135,6 +135,12 @@ class CreateCleaningOrderParams with Params {
     return normalized;
   }
 
+  CleaningAssignmentMode _effectiveAssignmentMode(List<int> workerIds) {
+    return workerIds.isEmpty
+        ? assignmentMode
+        : CleaningAssignmentMode.preferredWorker;
+  }
+
   List<String> _sanitizeCleaningServices() {
     final source = cleaningServices ?? const <String>[];
     final normalized = <String>[];
@@ -184,6 +190,7 @@ class CreateCleaningOrderParams with Params {
   @override
   BodyMap getBody() {
     final workerIds = _sanitizePreferredWorkerIds();
+    final effectiveAssignmentMode = _effectiveAssignmentMode(workerIds);
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'addressId': addressId,
@@ -195,7 +202,7 @@ class CreateCleaningOrderParams with Params {
       'genderPreference': genderPreference.apiValue,
       if (genderPreference == CleaningGenderPreference.female && workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
-      'assignmentMode': assignmentMode.apiValue,
+      'assignmentMode': effectiveAssignmentMode.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
     };
@@ -203,7 +210,10 @@ class CreateCleaningOrderParams with Params {
       final cleanServices = _sanitizeCleaningServices();
       if (cleanServices.isNotEmpty) body['cleaning_services'] = cleanServices;
     }
-    final resolvedWorkers = _resolvedNumberOfWorkers;
+    final resolvedWorkers = _resolvedNumberOfWorkers(
+      workerIds,
+      effectiveAssignmentMode,
+    );
     if (resolvedWorkers != null && resolvedWorkers > 0) body['numberOfWorkers'] = resolvedWorkers;
     final assignments = workerRoomAssignments == null
         ? null
@@ -212,15 +222,15 @@ class CreateCleaningOrderParams with Params {
     return body;
   }
 
-  int? get _resolvedNumberOfWorkers {
-    final preferredCount = _sanitizePreferredWorkerIds().length;
-    if (_isEventAssistance) return numberOfWorkers ?? (preferredCount > 0 ? preferredCount : null);
-    if (assignmentMode == CleaningAssignmentMode.openCount) {
-      final fallback = preferredCount > 0 ? preferredCount : 1;
-      final requested = numberOfWorkers ?? fallback;
-      return requested < preferredCount ? preferredCount : requested;
+  int? _resolvedNumberOfWorkers(
+    List<int> workerIds,
+    CleaningAssignmentMode effectiveAssignmentMode,
+  ) {
+    if (_isEventAssistance) return numberOfWorkers;
+    if (effectiveAssignmentMode == CleaningAssignmentMode.openCount) {
+      final requested = numberOfWorkers ?? 1;
+      return requested < 1 ? 1 : requested;
     }
-    if (preferredCount > 1) return preferredCount;
     return 1;
   }
 }
