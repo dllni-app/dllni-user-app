@@ -135,6 +135,7 @@ class _ClMainServiceScheduleScreenState
               child: Column(
                 children: [
                   const HomeDetailsAppBar(),
+
                   const SizedBox(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
@@ -579,7 +580,8 @@ class _ClMainServiceScheduleScreenState
   void _requestUpdatedEstimate(
     ClMainState state, {
     List<int>? selectedWorkerIds,
-  }) {
+  })
+  {
     final args = _routeArgs;
     final bloc = _bloc;
     final address = selectedAddress.value;

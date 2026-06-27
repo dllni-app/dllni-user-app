@@ -460,8 +460,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
-                            label: 'عنوان الطابق',
-                            hintText: 'طابق أول تاني باب عل اليمين',
+                            label: 'رقم الطابق',
+                            // hintText: 'طابق أول تاني باب عل اليمين',
                             isRequired: true,
                             controller: _floorController,
                             keyboardType: TextInputType.number,

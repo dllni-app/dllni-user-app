@@ -224,17 +224,19 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
           clearAssignmentFieldErrors: true,
         ),
       );
-      return;
+
+    }else{
+      final updated = List<int>.from(state.selectedWorkerIds);
+      if (updated.contains(event.workerId)) {
+        updated.remove(event.workerId);
+      } else {
+        updated.add(event.workerId!);
+      }
+
+      emit(_stateWithPreferredWorkers(updated));
     }
 
-    final updated = List<int>.from(state.selectedWorkerIds);
-    if (updated.contains(event.workerId)) {
-      updated.remove(event.workerId);
-    } else {
-      updated.add(event.workerId!);
-    }
 
-    emit(_stateWithPreferredWorkers(updated));
   }
 
   FutureOr<void> _setPreferredWorkers(
