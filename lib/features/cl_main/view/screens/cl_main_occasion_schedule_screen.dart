@@ -615,6 +615,7 @@ class _ClMainOccasionScheduleScreenState
       final bloc = _bloc;
       if (bloc != null) {
         _requestEventEstimate(bloc.state);
+
       }
     }
   }
