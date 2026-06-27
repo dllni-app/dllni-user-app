@@ -227,7 +227,14 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       return;
     }
 
-    emit(_stateWithPreferredWorkers(<int>[event.workerId!]));
+    final updated = List<int>.from(state.selectedWorkerIds);
+    if (updated.contains(event.workerId)) {
+      updated.remove(event.workerId);
+    } else {
+      updated.add(event.workerId!);
+    }
+
+    emit(_stateWithPreferredWorkers(updated));
   }
 
   FutureOr<void> _setPreferredWorkers(
