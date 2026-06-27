@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
-                  SizedBox(height: 48),
+                  SizedBox(height: 35),
                   Row(
                     children: [
                       SizedBox(
@@ -95,12 +95,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(width: 8),
                       AppText.titleMedium(
                         'الخدمات',
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xff212C7E),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xff212C7E),
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 8),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
@@ -172,12 +175,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(width: 8),
                       AppText.titleMedium(
                         'التسوق',
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xff212C7E),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xff212C7E),
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: 8),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
