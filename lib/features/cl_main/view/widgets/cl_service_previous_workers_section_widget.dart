@@ -255,6 +255,12 @@ class _WorkerSelectionCard extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onOpenDetails;
 
+  String get _avatarLetter {
+    final name = worker.name?.trim();
+    if (name == null || name.isEmpty) return 'ع';
+    return name.substring(0, 1).toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -299,10 +305,7 @@ class _WorkerSelectionCard extends StatelessWidget {
                     ? ClServicePreviousWorkersSectionWidget._teal.withAlpha(36)
                     : const Color(0xFFE5E7EB),
                 child: Text(
-                  (worker.name?.trim().isNotEmpty == true
-                          ? worker.name!.trim().characters.first
-                          : 'ع')
-                      .toUpperCase(),
+                  _avatarLetter,
                   style: const TextStyle(
                     color: ClServicePreviousWorkersSectionWidget._screenBlue,
                     fontWeight: FontWeight.w800,
