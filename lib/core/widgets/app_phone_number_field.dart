@@ -149,9 +149,7 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade300),
+
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
