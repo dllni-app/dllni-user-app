@@ -260,7 +260,10 @@ class _CleaningStartVerificationDialogContentState
                   fontWeight: FontWeight.w600,
                 ),
                 onPressed: () async {
-                  await showCancelOrderWarningDialog(context,orderId: widget.bookingId!);
+                  await showCancelOrderWarningDialog(
+                    context,
+                    orderId: widget.bookingId!,
+                  );
                 },
               ),
 
@@ -403,8 +406,6 @@ Future<bool?> showCancelOrderWarningDialog(
   BuildContext context, {
   required int orderId,
 }) {
-
-
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -416,22 +417,14 @@ Future<bool?> showCancelOrderWarningDialog(
           color: Color(0xffE51C28),
           fontWeight: FontWeight.w700,
         ),
-        content: CancelOrderWaringWidget(
-          orderId: orderId,
-        ),
-
-
+        content: CancelOrderWaringWidget(orderId: orderId),
       );
     },
   );
 }
 
-
 class CancelOrderWaringWidget extends StatefulWidget {
-  const CancelOrderWaringWidget({
-    super.key,
-    required this.orderId,
-  });
+  const CancelOrderWaringWidget({super.key, required this.orderId});
 
   final int orderId;
 
@@ -469,8 +462,7 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
 
     if (reasons.length < 3) {
       setState(() {
-        _reasonValidationError =
-        'يرجى إدخال سبب إلغاء صالح (3 أحرف على الأقل)';
+        _reasonValidationError = 'يرجى إدخال سبب إلغاء صالح (3 أحرف على الأقل)';
       });
       return;
     }
@@ -480,10 +472,7 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
     });
 
     orderBloc.add(
-      CancelCleaningOrderEvent(
-        orderId: widget.orderId,
-        reason: reasons,
-      ),
+      CancelCleaningOrderEvent(orderId: widget.orderId, reason: reasons),
     );
   }
 
@@ -492,23 +481,20 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
     return BlocConsumer<OrdersBloc, OrdersState>(
       bloc: orderBloc,
       listenWhen: (previous, current) =>
-      previous.cancelCleaningStatus != current.cancelCleaningStatus,
+          previous.cancelCleaningStatus != current.cancelCleaningStatus,
       listener: (context, state) {
         if (state.cancelCleaningStatus == BlocStatus.success) {
           Navigator.of(context).popUntil((route) => route.isFirst);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم إلغاء الطلب بنجاح'),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('تم إلغاء الطلب بنجاح')));
         }
       },
       builder: (context, state) {
-        final isLoading =
-            state.cancelCleaningStatus == BlocStatus.loading;
+        final isLoading = state.cancelCleaningStatus == BlocStatus.loading;
 
-        final blocError = (_hasSubmitted &&
-            state.cancelCleaningStatus == BlocStatus.failed)
+        final blocError =
+            (_hasSubmitted && state.cancelCleaningStatus == BlocStatus.failed)
             ? state.cancelCleaningErrorMessage
             : null;
 
@@ -522,9 +508,9 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
                 color: const Color(0xff6B7280),
                 fontWeight: FontWeight.w500,
               ),
-          
+
               const SizedBox(height: 12),
-          
+
               TextField(
                 controller: reason,
                 minLines: 3,
@@ -548,22 +534,19 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
                   fillColor: const Color(0xffF9FAFB),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                    const BorderSide(color: Color(0xffD1D5DB)),
+                    borderSide: const BorderSide(color: Color(0xffD1D5DB)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                    const BorderSide(color: Color(0xffD1D5DB)),
+                    borderSide: const BorderSide(color: Color(0xffD1D5DB)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                    const BorderSide(color: Color(0xff9CA3AF)),
+                    borderSide: const BorderSide(color: Color(0xff9CA3AF)),
                   ),
                 ),
               ),
-          
+
               if (blocError != null && blocError.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 AppText.labelMedium(
@@ -572,30 +555,21 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
                   textAlign: TextAlign.start,
                 ),
               ],
-          
+
               const SizedBox(height: 12),
-          
+
               TextButton(
                 onPressed: () async {
-                  final uri = Uri.parse(
-                    'https://your-company.com/terms',
-                  );
-          
-                  await launchUrl(
-                    uri,
-                    mode: LaunchMode.externalApplication,
-                  );
+                  context.pushRoute('/termsAndConditions');
                 },
                 child: const Text(
                   'الاطلاع على الشروط والأحكام',
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
-                  ),
+                  style: TextStyle(decoration: TextDecoration.underline),
                 ),
               ),
-          
+
               const SizedBox(height: 24),
-          
+
               Row(
                 children: [
                   Expanded(
@@ -607,8 +581,7 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
                             : () => Navigator.pop(context),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor:
-                          const Color(0xffA3A9C6),
+                          backgroundColor: context.primary,
                           foregroundColor: Colors.white,
                         ),
                         child: AppText.bodySmall(
@@ -619,9 +592,9 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
                       ),
                     ),
                   ),
-          
+
                   const SizedBox(width: 12),
-          
+
                   Expanded(
                     child: SizedBox(
                       height: 48,
@@ -634,18 +607,18 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
                         ),
                         child: isLoading
                             ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: Colors.white,
-                          ),
-                        )
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
+                              )
                             : AppText.bodySmall(
-                          'متابعة الإلغاء',
-                          color: Color(0xffE51C28),
-                          fontWeight: FontWeight.w600,
-                        ),
+                                'تأكيد',
+                                color: Color(0xffE51C28),
+                                fontWeight: FontWeight.w600,
+                              ),
                       ),
                     ),
                   ),

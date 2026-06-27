@@ -1,5 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+import 'package:dllni_user_app/features/main/view/screens/terms_and_conditions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:dllni_user_app/features/auth/view/screens/account_recovery_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
@@ -71,6 +72,12 @@ class GeneratedAppRoutes {
       case '/account-recovery':
         return MaterialPageRoute(
           builder: (_) => AccountRecoveryScreen(),
+          settings: settings,
+        );
+
+      case '/termsAndConditions':
+        return MaterialPageRoute(
+          builder: (_) => TermsAndConditionsScreen(),
           settings: settings,
         );
       case '/login':
