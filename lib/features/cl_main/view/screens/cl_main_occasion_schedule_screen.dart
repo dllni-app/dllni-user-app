@@ -7,6 +7,7 @@ import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
+import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
@@ -73,6 +74,11 @@ class _ClMainOccasionScheduleScreenState
 
   int get _estimatedSqm {
     return _activeEstimate?.size?.estimatedSqm ?? 0;
+  }
+
+  int get _routeNumberOfWorkers {
+    final requested = _routeArgs?.numberOfWorkers ?? 1;
+    return requested < 1 ? 1 : requested;
   }
 
   @override
@@ -238,7 +244,7 @@ class _ClMainOccasionScheduleScreenState
                               state.previousWorkers.list,
                               state.genderPreference,
                             ),
-                            selectedWorkerId: state.selectedWorkerId,
+                            selectedWorkerIds: state.selectedWorkerIds,
                             isLoading:
                                 state.previousWorkersStatus ==
                                 BlocStatus.loading,
@@ -255,12 +261,16 @@ class _ClMainOccasionScheduleScreenState
                                 );
                                 return;
                               }
+                              final updatedWorkerIds = _workerIdsAfterToggle(
+                                state,
+                                workerId,
+                              );
                               bloc.add(
                                 SetPreferredWorkerEvent(workerId: workerId),
                               );
                               _requestEventEstimate(
                                 state,
-                                selectedWorkerId: workerId,
+                                selectedWorkerIds: updatedWorkerIds,
                               );
                             },
                             onOpenWorkerProfile: (worker) {
@@ -486,7 +496,7 @@ class _ClMainOccasionScheduleScreenState
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: assignment.assignmentMode,
-          preferredWorkerId: assignment.preferredWorkerId,
+          preferredWorkerIds: assignment.preferredWorkerIds,
           specialRequirement: specialRequirement,
           notes: args.notes,
           numberOfWorkers: assignment.numberOfWorkers,
@@ -519,7 +529,20 @@ class _ClMainOccasionScheduleScreenState
     });
   }
 
-  void _requestEventEstimate(ClMainState state, {int? selectedWorkerId}) {
+  List<int> _workerIdsAfterToggle(ClMainState state, int workerId) {
+    final updated = _normalizeWorkerIds(state.selectedWorkerIds);
+    if (updated.contains(workerId)) {
+      updated.remove(workerId);
+    } else if (workerId > 0) {
+      updated.add(workerId);
+    }
+    return updated;
+  }
+
+  void _requestEventEstimate(
+    ClMainState state, {
+    List<int>? selectedWorkerIds,
+  }) {
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) return;
@@ -527,11 +550,9 @@ class _ClMainOccasionScheduleScreenState
     final specialRequirement = args.specialRequirementId == 'none'
         ? null
         : args.specialRequirementLabel;
-    final estimate = _activeEstimate;
-    final assignment = resolveEventAssignmentFields(
-      selectedWorkerId: selectedWorkerId ?? state.selectedWorkerId,
-      suggestedTeamSize: args.numberOfWorkers,
-      workerAcceptance: estimate?.workerAcceptance,
+    final assignment = _resolveAssignment(
+      state,
+      selectedWorkerIds: selectedWorkerIds,
     );
     final address = _selectedAddress;
 
@@ -545,7 +566,7 @@ class _ClMainOccasionScheduleScreenState
           hours: args.hours,
           addressLatitude: address.value?.latitude,
           addressLongitude: address.value?.longitude,
-          preferredWorkerId: assignment.preferredWorkerId,
+          preferredWorkerIds: assignment.preferredWorkerIds,
           specialRequirement: specialRequirement,
           notes: args.notes,
           numberOfWorkers: assignment.numberOfWorkers,
@@ -555,18 +576,30 @@ class _ClMainOccasionScheduleScreenState
     );
   }
 
-  EventAssignmentFields _resolveAssignment(ClMainState state) {
-    final estimate = _activeEstimate;
-
-    return resolveEventAssignmentFields(
-      selectedWorkerId: state.selectedWorkerId,
-      suggestedTeamSize:
-          _routeArgs?.numberOfWorkers ?? estimate?.suggestedTeamSize,
-      workerAcceptance: estimate?.workerAcceptance,
-
-
-
+  EventAssignmentFields _resolveAssignment(
+    ClMainState state, {
+    List<int>? selectedWorkerIds,
+  }) {
+    final workerIds = _normalizeWorkerIds(
+      selectedWorkerIds ?? state.selectedWorkerIds,
     );
+
+    return EventAssignmentFields(
+      assignmentMode: workerIds.isEmpty
+          ? CleaningAssignmentMode.openCount
+          : CleaningAssignmentMode.preferredWorker,
+      numberOfWorkers: _routeNumberOfWorkers,
+      preferredWorkerIds: workerIds,
+    );
+  }
+
+  List<int> _normalizeWorkerIds(List<int> ids) {
+    final normalized = <int>[];
+    for (final id in ids) {
+      if (id <= 0 || normalized.contains(id)) continue;
+      normalized.add(id);
+    }
+    return normalized;
   }
 
   Future<void> _selectAddress() async {
