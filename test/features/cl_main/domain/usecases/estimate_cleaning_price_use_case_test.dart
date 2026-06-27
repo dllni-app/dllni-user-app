@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_assignment_mode.dart';
 import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_room_size_breakdown.dart';
 import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_type.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
@@ -135,5 +136,26 @@ void main() {
     expect(details.containsKey('room_size_breakdown'), isFalse);
     expect(details.containsKey('cleaning_mode'), isFalse);
     expect(body.containsKey('workerRoomAssignments'), isFalse);
+  });
+
+  test('preferred worker ids do not drive open-count worker count', () {
+    final params = EstimateCleaningPriceParams(
+      propertyType: 'apartment',
+      bedrooms: 1,
+      rooms: 1,
+      bathrooms: 1,
+      livingRoomSize: 'small',
+      addressLatitude: 33.5,
+      addressLongitude: 36.3,
+      assignmentMode: CleaningAssignmentMode.openCount,
+      numberOfWorkers: 2,
+      preferredWorkerIds: const [7, 9],
+    );
+
+    final body = params.getBody();
+
+    expect(body['assignmentMode'], 'preferred_worker');
+    expect(body['numberOfWorkers'], 1);
+    expect(body['preferredWorkerIds'], [7, 9]);
   });
 }
