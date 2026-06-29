@@ -420,8 +420,7 @@ class _ClMainHomeDescriptionScreenState
     CleaningGenderPreference preference,
   ) async {
     if (preference.apiValue !=
-        'fe'
-            'male') {
+        'female') {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
       return;
     }
