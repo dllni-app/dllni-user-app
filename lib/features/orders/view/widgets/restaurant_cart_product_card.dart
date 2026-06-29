@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -134,7 +135,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                 ),
               ),
               AppText.bodyLarge(
-                widget.money(widget.item.totalPrice),
+                widget.item.totalPrice.formatMoney(),
                 fontWeight: FontWeight.bold,
                 color: const Color(0xff1A237E),
               ),

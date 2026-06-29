@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/session/user_session_store.dart';
@@ -13,7 +14,6 @@ class ProfileSummaryCard extends StatelessWidget {
 
   final LoggedInUserModel params;
   final VoidCallback onEditTap;
-
 
   ImageProvider? get _avatarProvider {
     final url = UserSessionStore.userNotifier.value?.primaryImage?.url;
@@ -87,11 +87,12 @@ class ProfileSummaryCard extends StatelessWidget {
                 color: context.primary,
                 textAlign: TextAlign.center,
               ),
-              if (user?.phone != null && (user?.phone?.isNotEmpty ?? false)) ...[
+              if (user?.phone != null &&
+                  (user?.phone?.isNotEmpty ?? false)) ...[
                 const SizedBox(height: 6),
 
                 PhoneNumberText(
-                  phone: user?.phone ?? '',
+                  phone: user?.phone?.formatAsPhoneNumber ?? '',
                   textAlign: TextAlign.center,
                 ),
               ],

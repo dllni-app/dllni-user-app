@@ -260,7 +260,7 @@ class _CleaningCompletionDecisionSheetBodyState
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: AppText.labelLarge(
-                    'نعم، أؤكد انتهاء العمل',
+                    'التأكيد و الانتهاء',
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                   ),

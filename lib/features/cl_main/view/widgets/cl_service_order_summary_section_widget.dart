@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
 class ClServiceOrderSummarySectionWidget extends StatelessWidget {
@@ -23,9 +24,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   final bool? isPricingFinal;
   final String currency;
 
-  String _formatMoney(double amount) {
-    return '${amount.toStringAsFixed(0)} $currency';
-  }
+
 
   String _formatDistance(double distance) {
     final fixed = distance.toStringAsFixed(3);
@@ -55,12 +54,12 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
           const SizedBox(height: 14),
           _SummaryRowWidget(
             label: 'قيمة الخدمة',
-            value: _formatMoney(basePrice),
+            value: basePrice.formatMoney(),
           ),
           const SizedBox(height: 8),
           _SummaryRowWidget(
             label: 'رسوم التنقل',
-            value: _formatMoney(travelFee),
+            value: travelFee.formatMoney(),
           ),
           if (distanceKm != null) ...[
             const SizedBox(height: 8),
@@ -73,7 +72,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
             const SizedBox(height: 8),
             _SummaryRowWidget(
               label: 'هامش الإدارة',
-              value: _formatMoney(adminMargin!),
+              value: adminMargin.formatMoney(),
             ),
           ],
           const SizedBox(height: 10),
@@ -81,7 +80,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
           const SizedBox(height: 8),
           _SummaryRowWidget(
             label: 'الإجمالي',
-            value: _formatMoney(totalPrice),
+            value: totalPrice.formatMoney(),
             isTotal: true,
           ),
           if (showProvisionalWarning) ...[

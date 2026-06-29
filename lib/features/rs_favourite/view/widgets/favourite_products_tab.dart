@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
 import 'package:dllni_user_app/features/rs_favourite/data/models/fetch_favourite_products_model.dart';
 import 'package:dllni_user_app/features/rs_favourite/domain/usecases/fetch_favourite_products_use_case.dart';
@@ -102,7 +103,7 @@ class FavouriteProductsTab extends StatelessWidget {
                             image: (item.imageUrl ?? '').trim(),
                             title: item.name,
                             restaurant: (item.restaurantName ?? '').trim().isEmpty ? 'مطعم' : item.restaurantName!.trim(),
-                            price: item.priceText,
+                            price: item.displayPriceValue.formatMoney(),
                             offer: FetchRestaurantProductsSearchModelActiveOffer(
                               badgeText: item.offerBadgeText,
                               discountType: item.offerDiscountType,

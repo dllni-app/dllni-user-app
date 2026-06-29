@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
@@ -8,10 +7,8 @@ import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.d
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../../../../generated/assets.dart';
 import '../../../../core/session/user_session_store.dart';
-import '../../../../core/session/user_session_sync_service.dart';
 import '../../../auth/data/models/login_response_model.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';

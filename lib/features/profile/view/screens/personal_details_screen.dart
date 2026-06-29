@@ -41,11 +41,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   late final TextEditingController _currentPasswordController;
   late final TextEditingController _newPasswordController;
   late final TextEditingController _confirmPasswordController;
-
-  final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
-  PhoneNumber? _phone;
-  PhoneNumber? _initialPhone;
-  bool _isLoadingPhone = true;
+  late final TextEditingController phoneController;
+  late final String? initPhone;
+  late final ValueNotifier<String> phoneValue;
 
   File? _selectedImage;
   bool _obscureCurrent = true;
@@ -62,17 +60,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
-    _loadInitialPhone();
-  }
-
-  Future<void> _loadInitialPhone() async {
-    final parsed = await parseInitialPhone(widget.params.phone);
-    if (!mounted) return;
-    setState(() {
-      _initialPhone = parsed;
-      _phone = parsed;
-      _isLoadingPhone = false;
-    });
+    phoneController = TextEditingController();
+    initPhone = widget.params.phone;
+    phoneValue = ValueNotifier(widget.params.phone ?? '');
   }
 
   @override
@@ -148,29 +138,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (!_validatePasswordSection()) return;
 
-    final phoneError = await _phoneFieldKey.currentState?.validate();
     if (!mounted) return;
-
-    if (phoneError != null) {
-      AppToast.showToast(
-        context: context,
-        message: phoneError,
-        type: ToastificationType.error,
-      );
-      return;
-    }
-
-    final phone = formatPhoneForApi(_phone);
-    if (phone == null) {
-      if (!mounted) return;
-
-      AppToast.showToast(
-        context: context,
-        message: 'الرجاء إدخال رقم الهاتف',
-        type: ToastificationType.error,
-      );
-      return;
-    }
 
     setState(() => isSaving = true);
 
@@ -181,7 +149,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       UpdateAccountParams(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        phone: phone,
+        phone: phoneValue.value,
         primaryImage: _selectedImage,
       ),
     );
@@ -284,22 +252,21 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       NumberedSectionCard(
                         sectionNumber: '2',
                         title: 'معلومات الحساب',
-                        child: _isLoadingPhone
-                            ? const Center(child: CircularProgressIndicator())
-                            : AccountInfoSection(
-                                nameController: _nameController,
-                                emailController: _emailController,
-                                phoneFieldKey: _phoneFieldKey,
-                                initialPhone: _initialPhone,
-                                onPhoneChanged: (phone) => _phone = phone,
-                                emailValidator: _validateOptionalEmail,
-                                nameValidator: (v) {
-                                  if (v == null || v.trim().isEmpty) {
-                                    return 'الرجاء إدخال الاسم';
-                                  }
-                                  return null;
-                                },
-                              ),
+                        child: AccountInfoSection(
+                          nameController: _nameController,
+                          emailController: _emailController,
+
+                          emailValidator: _validateOptionalEmail,
+                          nameValidator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'الرجاء إدخال الاسم';
+                            }
+                            return null;
+                          },
+                          initPhoneNumber: initPhone,
+                          phoneController: phoneController,
+                          phoneValue: phoneValue,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       NumberedSectionCard(

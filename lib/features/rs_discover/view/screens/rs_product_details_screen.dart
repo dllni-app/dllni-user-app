@@ -4,6 +4,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -308,12 +309,12 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               AppText(
-                                _priceText(displayPrice),
+                                displayPrice.formatMoney(),
                                 style: TextStyle(color: Color(0xFF16A34A), fontSize: 44 / 2, fontWeight: FontWeight.w700, height: 30 / 22),
                               ),
                               if (oldPrice != null)
                                 AppText(
-                                  _priceText(oldPrice),
+                                  oldPrice.formatMoney(),
                                   style: TextStyle(
                                     color: Color(0xFF9CA3AF),
                                     fontSize: 24 / 2,

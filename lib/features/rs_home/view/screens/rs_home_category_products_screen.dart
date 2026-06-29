@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/app_app_bars.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/product_preview_data.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_details_screen.dart';
@@ -127,7 +128,7 @@ class _RsHomeCategoryProductsScreenState extends State<RsHomeCategoryProductsScr
                         title: visibleProducts[index].name ?? '',
                         image: visibleProducts[index].primaryImageUrl ?? '',
                         offer: null,
-                        price: '${visibleProducts[index].displayPrice} ${'ل.س'}',
+                        price: visibleProducts[index].displayPrice.formatMoney(),
                         restaurant: visibleProducts[index].restaurantName ?? 'restaurant',
                       );
                     },

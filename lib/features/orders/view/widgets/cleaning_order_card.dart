@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/num_extensions.dart';
@@ -48,10 +49,7 @@ class CleaningOrderCard extends StatelessWidget {
     return '#$bookingNumber';
   }
 
-  String get _priceLabel {
-    final totalPrice = order.totalPrice ?? 0;
-    return '${totalPrice.formatWithComma()} ل.س';
-  }
+
 
   String get _serviceTitle {
     return CleaningEventAssistanceHelper.serviceTitle(
@@ -161,7 +159,7 @@ class CleaningOrderCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 AppText.bodySmall(
-                  _priceLabel,
+                  order.totalPrice.formatMoney(),
                   color: const Color(0xff1E2A78),
                   fontWeight: FontWeight.w700,
                 ),

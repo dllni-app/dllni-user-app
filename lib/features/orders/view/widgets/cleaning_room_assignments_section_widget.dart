@@ -10,7 +10,7 @@ String _translateRoomType(String? roomType) {
   if (roomType == null || roomType.isEmpty) return '';
   switch (roomType.toLowerCase()) {
     case 'balcony':
-      return 'بكونة';
+      return 'بلكونة';
     case 'bathroom':
       return 'غرفة الحمام';
     case 'bedroom':

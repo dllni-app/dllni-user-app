@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -17,7 +18,7 @@ class RestaurantCartCheckoutBody extends StatelessWidget {
 
   final Future<void> Function() onRefresh;
 
-  String _money(double value) => '${value.toStringAsFixed(0)} ل.س';
+  String _money(double value) => value.formatMoney();
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +142,6 @@ class _MerchantCartCard extends StatelessWidget {
             subtotal: cart.amounts?.subtotal ?? 0,
             discount: 0,
             total: cart.amounts?.total ?? 0,
-            money: money,
           ),
           const SizedBox(height: 12),
           RestaurantCartCheckoutFulfillmentButton(

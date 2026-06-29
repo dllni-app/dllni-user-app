@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_gate_session_store.dart';
@@ -285,7 +286,8 @@ class _CleaningOrderDetailsScreenState
                     ),
                     if (CleaningEventAssistanceHelper.isEventAssistance(
                       order.propertyType,
-                    )) ...[
+                    ))
+                      ...[
                       const SizedBox(height: 12),
                       _card(
                         child: Column(
@@ -808,20 +810,20 @@ class _CleaningOrderDetailsScreenState
                           _SummaryRow(
                             title: 'تكلفة الخدمة',
                             value:
-                                '${(order.basePrice ?? 0).formatWithComma()} ل.س',
+                            order.basePrice.formatMoney(),
                           ),
                           const SizedBox(height: 6),
                           _SummaryRow(
                             title: 'رسوم التنقل',
                             value:
-                                '${(order.travelFee ?? 0).formatWithComma()} ل.س',
+                            order.travelFee.formatMoney(),
                           ),
                           if ((order.addonsTotal ?? 0) > 0) ...[
                             const SizedBox(height: 6),
                             _SummaryRow(
                               title: 'إضافات',
                               value:
-                                  '${(order.addonsTotal ?? 0).formatWithComma()} ل.س',
+                              order.addonsTotal.formatMoney(),
                             ),
                           ],
                           const SizedBox(height: 10),
@@ -830,7 +832,7 @@ class _CleaningOrderDetailsScreenState
                           _SummaryRow(
                             title: 'الإجمالي النهائي',
                             value:
-                                '${(order.totalPrice ?? 0).formatWithComma()} ل.س',
+                            order.totalPrice.formatMoney(),
                             isTotal: true,
                           ),
                           if (order.isPricingFinal == false) ...[

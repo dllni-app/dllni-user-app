@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
 import 'restaurant_cart_card_wrapper.dart';
@@ -11,14 +12,12 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
     required this.subtotal,
     required this.discount,
     required this.total,
-    required this.money,
   });
 
   final int itemsCount;
   final double subtotal;
   final double discount;
   final double total;
-  final String Function(double) money;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +38,7 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
             const SizedBox(height: 8),
             RestaurantCartSummaryRow(
               title: 'الخصم (كوبون)',
-              value: '- ${discount.toStringAsFixed(0)} ل.س',
+              value: discount.formatMoney(),
               valueColor: const Color(0xff10B981),
             ),
           ],
@@ -49,7 +48,7 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
           ),
           RestaurantCartSummaryRow(
             title: 'الإجمالي النهائي',
-            value: '${total.toStringAsFixed(0)} ل.س',
+            value:total.formatMoney(),
             titleStyle: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,

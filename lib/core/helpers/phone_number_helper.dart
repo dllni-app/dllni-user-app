@@ -31,15 +31,15 @@ String? _normalizeToSyrianPhone(String? value) {
 }
 
 /// Parses a stored phone string (E.164 or local) into [PhoneNumber].
-Future<PhoneNumber?> parseInitialPhone(String? stored) async {
-  final normalized = _normalizeToSyrianPhone(stored);
-  if (normalized == null) return null;
-  return PhoneNumber(
-    isoCode: defaultPhoneIsoCode,
-    dialCode: syrianDialPrefix,
-    phoneNumber: normalized,
-  );
-}
+// Future<PhoneNumber?> parseInitialPhone(String? stored) async {
+//   final normalized = _normalizeToSyrianPhone(stored);
+//   if (normalized == null) return null;
+//   return PhoneNumber(
+//     isoCode: defaultPhoneIsoCode,
+//     dialCode: syrianDialPrefix,
+//     phoneNumber: normalized,
+//   );
+// }
 
 /// Returns E.164 Syrian phone string for API submission.
 String? formatPhoneForApi(PhoneNumber? number) {

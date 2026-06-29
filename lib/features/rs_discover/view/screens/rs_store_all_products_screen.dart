@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
@@ -221,7 +222,8 @@ class _AllProductsCardState extends State<_AllProductsCard> {
       productId: product.id!,
       title: product.name,
       restaurant: safeRestaurant,
-      price: product.priceText,
+      price: product.displayPriceValue.formatMoney(),
+
       offer: FetchRestaurantProductsSearchModelActiveOffer(
         badgeText: product.offerBadgeText,
         discountType: product.offerDiscountType,

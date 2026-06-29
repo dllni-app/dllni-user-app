@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/product_preview_data.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/store_product_item.dart';
@@ -23,7 +24,7 @@ class RsOffersProductCardWidget extends StatelessWidget {
       image: (mapped.imageUrl ?? '').trim(),
       title: mapped.name,
       restaurant: (mapped.restaurantName ?? '').trim().isEmpty ? 'مطعم' : mapped.restaurantName!.trim(),
-      price: mapped.priceText,
+      price: mapped.displayPriceValue.formatMoney(),
       offer: FetchRestaurantProductsSearchModelActiveOffer(
         badgeText: mapped.offerBadgeText,
         discountType: mapped.offerDiscountType,

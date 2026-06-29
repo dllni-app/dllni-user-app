@@ -142,7 +142,7 @@ class _StoreCartCard extends StatelessWidget {
             subtotal: cart.amounts?.subtotal ?? 0,
             discount: 0,
             total: cart.amounts?.total ?? 0,
-            money: money,
+
           ),
           const SizedBox(height: 12),
           RestaurantCartCheckoutFulfillmentButton(

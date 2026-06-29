@@ -5,10 +5,13 @@ import '../../../../core/utils/app_date_time_locale.dart';
 class AppPickers {
   static Future<String> showAppTimePicker({
     required BuildContext context,
+    DateTime? minimumTime,
   }) async {
     final TimeOfDay? res = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: minimumTime != null
+          ? TimeOfDay.fromDateTime(minimumTime)
+          : TimeOfDay.now(),
       builder: (context, child) => Localizations.override(
         context: context,
         locale: AppDateTimeLocale.locale,
@@ -18,7 +21,9 @@ class AppPickers {
               primary: Theme.of(context).primaryColor,
               onSurface: Colors.black,
             ),
-            dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Colors.white,
+            ),
           ),
           child: child!,
         ),
@@ -28,6 +33,7 @@ class AppPickers {
     if (res == null) return '';
 
     final now = DateTime.now();
+
     DateTime selectedTime = DateTime(
       now.year,
       now.month,
@@ -36,16 +42,47 @@ class AppPickers {
       res.minute,
     );
 
-    final minute = selectedTime.minute;
-    if (minute < 15) {
-      selectedTime = DateTime(now.year, now.month, now.day, res.hour, 0);
-    } else if (minute < 45) {
-      selectedTime = DateTime(now.year, now.month, now.day, res.hour, 30);
-    } else {
-      selectedTime = DateTime(now.year, now.month, now.day, res.hour + 1, 0);
+    selectedTime = _roundToHalfHour(selectedTime);
+
+    if (minimumTime != null) {
+      final roundedMinimum = _roundToHalfHour(minimumTime);
+
+      if (selectedTime.isBefore(roundedMinimum)) {
+        selectedTime = roundedMinimum;
+      }
     }
 
     return AppDateTimeLocale.dateFormat('HH:mm').format(selectedTime);
+  }
+
+  static DateTime _roundToHalfHour(DateTime dateTime) {
+    if (dateTime.minute < 15) {
+      return DateTime(
+        dateTime.year,
+        dateTime.month,
+        dateTime.day,
+        dateTime.hour,
+        0,
+      );
+    }
+
+    if (dateTime.minute < 45) {
+      return DateTime(
+        dateTime.year,
+        dateTime.month,
+        dateTime.day,
+        dateTime.hour,
+        30,
+      );
+    }
+
+    return DateTime(
+      dateTime.year,
+      dateTime.month,
+      dateTime.day,
+      dateTime.hour + 1,
+      0,
+    );
   }
 
   static Future<String> showAppDatePicker({
@@ -54,15 +91,17 @@ class AppPickers {
   }) async {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
+
     final requestedStartDate = startDate == null
         ? todayDate
-        : DateTime(startDate.year, startDate.month, startDate.day);
+        : DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+    );
 
-    // Cleaning booking screens previously passed tomorrow to the shared picker,
-    // which disabled same-day bookings even though the backend accepts
-    // scheduledDate >= today. When the requested start date is only near-future,
-    // normalize it to today so the current date is selectable and active.
-    final firstSelectableDate = requestedStartDate.difference(todayDate).inDays <= 1
+    final firstSelectableDate =
+    requestedStartDate.difference(todayDate).inDays <= 1
         ? todayDate
         : requestedStartDate;
 
@@ -79,7 +118,9 @@ class AppPickers {
             onPrimary: Colors.white,
             onSurface: Colors.black,
           ),
-          dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
+          dialogTheme: const DialogThemeData(
+            backgroundColor: Colors.white,
+          ),
         ),
         child: child!,
       ),
@@ -89,4 +130,5 @@ class AppPickers {
 
     return AppDateTimeLocale.dateFormat('yyyy-MM-dd').format(res);
   }
+
 }

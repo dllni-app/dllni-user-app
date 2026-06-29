@@ -64,7 +64,7 @@ class _ClMainServiceScheduleScreenState
   BlocStatus _cleaningServicesStatus = BlocStatus.init;
   String? _cleaningServicesErrorMessage;
   List<CleaningServiceModel> _availableCleaningServices =
-      const <CleaningServiceModel>[];
+  const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
 
   @override
@@ -85,7 +85,7 @@ class _ClMainServiceScheduleScreenState
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus ||
+        previous.createOrderStatus != current.createOrderStatus ||
             previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
           if (state.estimatePriceStatus == BlocStatus.success &&
@@ -113,7 +113,7 @@ class _ClMainServiceScheduleScreenState
             AppToast.showToast(
               context: context,
               message:
-                  state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
+              state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
               type: ToastificationType.success,
             );
             context.pushRoute(
@@ -179,9 +179,9 @@ class _ClMainServiceScheduleScreenState
                             ),
                             selectedWorkerIds: state.selectedWorkerIds,
                             isLoading:
-                                state.previousWorkersStatus == BlocStatus.loading,
+                            state.previousWorkersStatus == BlocStatus.loading,
                             errorMessage:
-                                state.previousWorkersStatus == BlocStatus.failed
+                            state.previousWorkersStatus == BlocStatus.failed
                                 ? state.errorMessage
                                 : null,
                             onSelectWorker: (workerId) =>
@@ -190,7 +190,7 @@ class _ClMainServiceScheduleScreenState
                               context.pushRoute(
                                 '/clworkerprofiledetail',
                                 arguments:
-                                    WorkerProfileRouteArgs.fromPreviousWorker(
+                                WorkerProfileRouteArgs.fromPreviousWorker(
                                   worker,
                                 ),
                               );
@@ -202,11 +202,11 @@ class _ClMainServiceScheduleScreenState
                             selectedServiceNames: _selectedCleaningServiceNames,
                             customServiceController: _customServiceController,
                             isLoading:
-                                _cleaningServicesStatus == BlocStatus.loading,
+                            _cleaningServicesStatus == BlocStatus.loading,
                             errorMessage:
-                                _cleaningServicesStatus == BlocStatus.failed
+                            _cleaningServicesStatus == BlocStatus.failed
                                 ? _cleaningServicesErrorMessage ??
-                                      'تعذر تحميل الخدمات'
+                                'تعذر تحميل الخدمات'
                                 : null,
                             onToggleService: _toggleCleaningService,
                             onAddCustomService: _addCustomCleaningService,
@@ -270,7 +270,10 @@ class _ClMainServiceScheduleScreenState
     super.didChangeDependencies();
     if (_didReadArgs) return;
     _didReadArgs = true;
-    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
+    final args = widget.args ?? ModalRoute
+        .of(context)
+        ?.settings
+        .arguments;
     if (args is ClMainScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
@@ -298,7 +301,7 @@ class _ClMainServiceScheduleScreenState
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now().add(Duration(days: 1));
+    _selectedDate = DateTime.now();
     _fromTimeController = TextEditingController(text: '09:00');
     _toTimeController = TextEditingController();
     _couponController = TextEditingController();
@@ -404,17 +407,22 @@ class _ClMainServiceScheduleScreenState
     if (!mounted) return;
 
     response.fold(
-      (failure) => setState(() {
-        _cleaningServicesStatus = BlocStatus.failed;
-        _cleaningServicesErrorMessage = failure.message;
-      }),
-      (result) => setState(() {
-        _cleaningServicesStatus = BlocStatus.success;
-        _cleaningServicesErrorMessage = null;
-        _availableCleaningServices = result.data
-            .where((service) => service.name?.trim().isNotEmpty == true)
-            .toList(growable: false);
-      }),
+          (failure) =>
+          setState(() {
+            _cleaningServicesStatus = BlocStatus.failed;
+            _cleaningServicesErrorMessage = failure.message;
+          }),
+          (result) =>
+          setState(() {
+            _cleaningServicesStatus = BlocStatus.success;
+            _cleaningServicesErrorMessage = null;
+            _availableCleaningServices = result.data
+                .where((service) =>
+            service.name
+                ?.trim()
+                .isNotEmpty == true)
+                .toList(growable: false);
+          }),
     );
   }
 
@@ -450,8 +458,8 @@ class _ClMainServiceScheduleScreenState
     }
 
     if (state.genderPreference.apiValue ==
-            'fe'
-                'male' &&
+        'fe'
+            'male' &&
         state.safetyConfirmation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
@@ -467,11 +475,11 @@ class _ClMainServiceScheduleScreenState
     final workerRoomAssignments = normalizedAssignments.isNotEmpty
         ? workerRoomAssignmentsToRequestJson(normalizedAssignments)
         : buildWorkerRoomAssignmentsJson(
-            slotByRoomKey: state.workerRoomAssignments,
-            units: enumerateRoomUnits(args.roomSizeBreakdown),
-            preferredWorkerId: state.primarySelectedWorkerId,
-            assignmentMode: state.assignmentMode,
-          );
+      slotByRoomKey: state.workerRoomAssignments,
+      units: enumerateRoomUnits(args.roomSizeBreakdown),
+      preferredWorkerId: state.primarySelectedWorkerId,
+      assignmentMode: state.assignmentMode,
+    );
     final selectedWorkerIds = state.selectedWorkerIds;
     final selectedWorkerCount = selectedWorkerIds.length;
 
@@ -499,7 +507,7 @@ class _ClMainServiceScheduleScreenState
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
-              state.assignmentMode == CleaningAssignmentMode.openCount
+          state.assignmentMode == CleaningAssignmentMode.openCount
               ? state.numberOfWorkers
               : (selectedWorkerCount > 1 ? selectedWorkerCount : 1),
           preferredWorkerIds: selectedWorkerIds,
@@ -516,21 +524,51 @@ class _ClMainServiceScheduleScreenState
   Future<void> _pickDate() async {
     final value = await AppPickers.showAppDatePicker(
       context: context,
-      startDate: DateTime.now().add(Duration(days: 1)),
+      startDate: DateTime.now(),
     );
+
     if (value.isEmpty) return;
+
     setState(() {
-      _selectedDate = AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
+      _selectedDate =
+          AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
+
+      // إذا أصبح التاريخ ليس اليوم فلا يوجد أي قيود على الوقت.
+      // وإذا بقي اليوم فإن showAppTimePicker سيطبق minimumTime تلقائياً.
     });
   }
 
   Future<void> _pickFromTime() async {
-    final value = await AppPickers.showAppTimePicker(context: context);
+    final now = DateTime.now();
+
+    final isToday =
+        _selectedDate.year == now.year &&
+            _selectedDate.month == now.month &&
+            _selectedDate.day == now.day;
+
+    final value = await AppPickers.showAppTimePicker(
+      context: context,
+      minimumTime: isToday ? now.add(const Duration(hours: 1)) : null,
+    );
+
     if (value.isEmpty) return;
+
     setState(() {
       _fromTimeController.text = value;
       _syncToTime();
     });
+  }
+
+  void _syncToTime() {
+    final estimatedHours =
+        _currentEstimate?.size?.estimatedHours ??
+            _routeArgs?.estimate.size?.estimatedHours ??
+            0;
+
+    _toTimeController.text = formatClServiceEndTime(
+      startTime: _fromTimeController.text,
+      durationHours: estimatedHours,
+    );
   }
 
   void _removeCleaningService(String name) {
@@ -577,11 +615,9 @@ class _ClMainServiceScheduleScreenState
     _requestUpdatedEstimate(state, selectedWorkerIds: updated);
   }
 
-  void _requestUpdatedEstimate(
-    ClMainState state, {
+  void _requestUpdatedEstimate(ClMainState state, {
     List<int>? selectedWorkerIds,
-  })
-  {
+  }) {
     final args = _routeArgs;
     final bloc = _bloc;
     final address = selectedAddress.value;
@@ -644,34 +680,25 @@ class _ClMainServiceScheduleScreenState
 
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        content: const Text(pledgeMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+      builder: (ctx) =>
+          AlertDialog(
+            content: const Text(pledgeMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('إلغاء'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('أوافق'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('أوافق'),
-          ),
-        ],
-      ),
     );
 
     return accepted ?? false;
   }
 
-  void _syncToTime() {
-    final estimatedHours =
-        _currentEstimate?.size?.estimatedHours ??
-        _routeArgs?.estimate.size?.estimatedHours ??
-        0;
-    _toTimeController.text = formatClServiceEndTime(
-      startTime: _fromTimeController.text,
-      durationHours: estimatedHours,
-    );
-  }
 
   void _toggleCleaningService(String name) {
     final normalized = name.trim();

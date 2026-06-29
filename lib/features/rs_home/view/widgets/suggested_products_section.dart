@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -66,7 +67,7 @@ class SuggestedProductsSection extends StatelessWidget {
                     title: item.name ?? '',
                     image: item.primaryImageUrl ?? '',
                     offer: null,
-                    price: '${item.displayPrice} ل.س',
+                    price: item.displayPrice.formatMoney(),
                     restaurant: item.restaurantName ?? 'restaurant',
                     cartProductsCount: item.cartProductsCount,
                     cartItemId: item.cartItemId,
