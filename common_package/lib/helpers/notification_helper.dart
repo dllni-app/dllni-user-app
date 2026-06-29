@@ -39,37 +39,37 @@ List<NotificationChannel> get _basicNotificationChannels => [
   ),
 ];
 
-Future<void> _initializeAwesomeNotificationsInIsolate() async {
-  await AwesomeNotifications().initialize(
-    _notificationIcon,
-    _basicNotificationChannels,
-  );
-}
+// Future<void> _initializeAwesomeNotificationsInIsolate() async {
+//   await AwesomeNotifications().initialize(
+//     _notificationIcon,
+//     _basicNotificationChannels,
+//   );
+// }
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  await _initializeAwesomeNotificationsInIsolate();
-  final payload = message.data.map(
-    (k, v) => MapEntry(k.toString(), v.toString()),
-  );
-  // Store lifecycle marker to indicate this notification was created in background
-  payload[_lifecycleMarkerKey] = NotificationLifeCycle.Background.name;
-
-  await AwesomeNotifications().createNotification(
-    content: NotificationContent(
-      id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      channelKey: _basicChannelKey,
-      title:
-          message.notification?.title ??
-          message.data['title'] ??
-          'New Notification',
-      body: message.notification?.body ?? message.data['body'] ?? '',
-      payload: payload,
-      icon: _notificationIcon,
-      largeIcon: _notificationLargeIcon,
-    ),
-  );
+  // await _initializeAwesomeNotificationsInIsolate();
+  // final payload = message.data.map(
+  //   (k, v) => MapEntry(k.toString(), v.toString()),
+  // );
+  // // Store lifecycle marker to indicate this notification was created in background
+  // payload[_lifecycleMarkerKey] = NotificationLifeCycle.Background.name;
+  //
+  // await AwesomeNotifications().createNotification(
+  //   content: NotificationContent(
+  //     id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+  //     channelKey: _basicChannelKey,
+  //     title:
+  //         message.notification?.title ??
+  //         message.data['title'] ??
+  //         'New Notification',
+  //     body: message.notification?.body ?? message.data['body'] ?? '',
+  //     payload: payload,
+  //     icon: _notificationIcon,
+  //     largeIcon: _notificationLargeIcon,
+  //   ),
+  // );
 }
 
 @pragma('vm:entry-point')
