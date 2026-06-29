@@ -66,7 +66,8 @@ class RestaurantCartEmptyView extends StatelessWidget {
                   : context.pushRoute('/rsmain',arguments: RsMainScreenParams(
                 profileBloc: getIt<ProfileBloc>(),
 
-              )),
+              )
+              ),
               child: AppText.labelLarge(
                 'تصفح ${isStore ? "المتاجر" : "المطاعم"}',
                 color: Colors.white,

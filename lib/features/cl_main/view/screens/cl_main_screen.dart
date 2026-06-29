@@ -230,7 +230,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
         child: Column(
           children: [
             if (widget.params != null)
-              HomeAppBar(isHome: true, profileBloc: widget.params!.profileBloc),
+              HomeAppBar(isCleaning: true, profileBloc: widget.params!.profileBloc),
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 0),
               child: ClMainServiceTabsWidget(

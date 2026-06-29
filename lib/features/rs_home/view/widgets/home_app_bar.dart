@@ -11,10 +11,10 @@ import '../../../profile/view/screens/notifications_screen.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class HomeAppBar extends StatefulWidget {
-  final bool isHome;
+  final bool isCleaning;
   final ProfileBloc profileBloc;
 
-  const HomeAppBar({super.key,  this.isHome=false, required this.profileBloc});
+  const HomeAppBar({super.key,  this.isCleaning=false, required this.profileBloc});
 
 
   @override
@@ -81,6 +81,14 @@ class _HomeAppBarState extends State<HomeAppBar> {
               _AppBarAction(
                 icon: FontAwesomeIcons.cartShopping,
                 onTap: () {
+                  widget.isCleaning?
+                  context.pushRoute(
+                    '/cart',
+                    arguments: SmCartScreenParams(initialSectionIndex: 2),
+                  )
+                      :
+
+
                   context.pushRoute(
                     '/cart',
                     arguments: SmCartScreenParams(initialSectionIndex: 1),
