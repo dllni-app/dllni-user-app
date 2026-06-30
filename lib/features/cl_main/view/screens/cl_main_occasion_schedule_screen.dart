@@ -227,6 +227,12 @@ class _ClMainOccasionScheduleScreenState
                           CleaningAddressSelectWidget(
                             selectedAddress: _selectedAddress,
                             onChangeTap: _selectAddress,
+                            afterBringDefault:(){
+
+
+                              _requestEventEstimate(bloc.state);
+
+                            } ,
                           ),
 
                           const SizedBox(height: 16),
@@ -347,7 +353,9 @@ class _ClMainOccasionScheduleScreenState
         params: GetPreviousCleaningWorkersParams(
           page: 1,
           propertyType: 'event_assistance',
+
         ),
+
         isReload: true,
       ),
     );
@@ -499,7 +507,7 @@ class _ClMainOccasionScheduleScreenState
           preferredWorkerIds: assignment.preferredWorkerIds,
           specialRequirement: specialRequirement,
           notes: args.notes,
-          numberOfWorkers: assignment.numberOfWorkers,
+          numberOfWorkers:_routeNumberOfWorkers,
           termsAccepted: true,
 
           // addressLatitude: selectedAddress.latitude,
@@ -569,7 +577,7 @@ class _ClMainOccasionScheduleScreenState
           preferredWorkerIds: assignment.preferredWorkerIds,
           specialRequirement: specialRequirement,
           notes: args.notes,
-          numberOfWorkers: assignment.numberOfWorkers,
+          numberOfWorkers:_routeNumberOfWorkers,
           assignmentMode: assignment.assignmentMode,
         ),
       ),

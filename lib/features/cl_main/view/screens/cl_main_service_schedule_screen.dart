@@ -170,6 +170,9 @@ class _ClMainServiceScheduleScreenState
                           CleaningAddressSelectWidget(
                             selectedAddress: selectedAddress,
                             onChangeTap: _selectAddress,
+                            afterBringDefault: () {
+                              _requestUpdatedEstimate(state);
+                            },
                           ),
                           const SizedBox(height: 12),
                           ClServicePreviousWorkersSectionWidget(
@@ -507,9 +510,7 @@ class _ClMainServiceScheduleScreenState
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
-          state.assignmentMode == CleaningAssignmentMode.openCount
-              ? state.numberOfWorkers
-              : (selectedWorkerCount > 1 ? selectedWorkerCount : 1),
+          state.numberOfWorkers,
           preferredWorkerIds: selectedWorkerIds,
           cleaningServices: _selectedCleaningServicesPayload(),
           workerRoomAssignments: workerRoomAssignments.isEmpty
@@ -628,9 +629,7 @@ class _ClMainServiceScheduleScreenState
     final assignmentMode = workerIds.length > 1
         ? CleaningAssignmentMode.openCount
         : state.assignmentMode;
-    final numberOfWorkers = assignmentMode == CleaningAssignmentMode.openCount
-        ? (workerIds.length > 1 ? workerIds.length : state.numberOfWorkers)
-        : 1;
+    final numberOfWorkers = state.numberOfWorkers;
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
       slotByRoomKey: state.workerRoomAssignments,
       units: enumerateRoomUnits(args.roomSizeBreakdown),

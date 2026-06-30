@@ -210,11 +210,12 @@ class CreateCleaningOrderParams with Params {
       final cleanServices = _sanitizeCleaningServices();
       if (cleanServices.isNotEmpty) body['cleaning_services'] = cleanServices;
     }
-    final resolvedWorkers = _resolvedNumberOfWorkers(
-      workerIds,
-      effectiveAssignmentMode,
-    );
-    if (resolvedWorkers != null && resolvedWorkers > 0) body['numberOfWorkers'] = resolvedWorkers;
+    // final resolvedWorkers = _resolvedNumberOfWorkers(
+    //   workerIds,
+    //   effectiveAssignmentMode,
+    // );
+    // if (resolvedWorkers != null && resolvedWorkers > 0)
+      body['numberOfWorkers'] = numberOfWorkers;
     final assignments = workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
@@ -222,15 +223,15 @@ class CreateCleaningOrderParams with Params {
     return body;
   }
 
-  int? _resolvedNumberOfWorkers(
-    List<int> workerIds,
-    CleaningAssignmentMode effectiveAssignmentMode,
-  ) {
-    if (_isEventAssistance) return numberOfWorkers;
-    if (effectiveAssignmentMode == CleaningAssignmentMode.openCount) {
-      final requested = numberOfWorkers ?? 1;
-      return requested < 1 ? 1 : requested;
-    }
-    return 1;
-  }
+  // int? _resolvedNumberOfWorkers(
+  //   List<int> workerIds,
+  //   CleaningAssignmentMode effectiveAssignmentMode,
+  // ) {
+  //   if (_isEventAssistance) return numberOfWorkers;
+  //   if (effectiveAssignmentMode == CleaningAssignmentMode.openCount) {
+  //     final requested = numberOfWorkers ?? 1;
+  //     return requested < 1 ? 1 : requested;
+  //   }
+  //   return 1;
+  // }
 }

@@ -175,13 +175,9 @@ class EstimateCleaningPriceParams with Params {
       'assignmentMode': effectiveAssignmentMode.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
     };
-    final resolvedWorkers = _resolvedNumberOfWorkers(
-      workerIds,
-      effectiveAssignmentMode,
-    );
-    if (resolvedWorkers != null && resolvedWorkers > 0) {
-      body['numberOfWorkers'] = resolvedWorkers;
-    }
+
+      body['numberOfWorkers'] = numberOfWorkers??1;
+
     final assignments = workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
@@ -191,19 +187,19 @@ class EstimateCleaningPriceParams with Params {
     return body;
   }
 
-  int? _resolvedNumberOfWorkers(
-    List<int> workerIds,
-    CleaningAssignmentMode effectiveAssignmentMode,
-  ) {
-    if (_isEventAssistance) {
-      return numberOfWorkers;
-    }
-    if (effectiveAssignmentMode == CleaningAssignmentMode.openCount) {
-      final requested = numberOfWorkers ?? 1;
-      return requested < 1 ? 1 : requested;
-    }
-    return 1;
-  }
+  // int? _resolvedNumberOfWorkers(
+  //   List<int> workerIds,
+  //   CleaningAssignmentMode effectiveAssignmentMode,
+  // ) {
+  //   if (_isEventAssistance) {
+  //     return numberOfWorkers;
+  //   }
+  //   if (effectiveAssignmentMode == CleaningAssignmentMode.openCount) {
+  //     final requested = numberOfWorkers ?? 1;
+  //     return requested < 1 ? 1 : requested;
+  //   }
+  //   return 1;
+  // }
 
   @override
   BodyMap getBody() {

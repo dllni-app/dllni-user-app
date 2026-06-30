@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:injectable/injectable.dart';
 
@@ -86,10 +88,16 @@ class CleaningBookingPusherService {
   }
 
   Future<void> subscribeBookingChannel(int bookingId) async {
+    if (_bookingListenerHandles.containsKey(bookingId)) {
+      log('⚠️ Attempted to subscribe to already active channel: $bookingId');
+      return; // هذا يمنع الاشتراك المتكرر
+    }
+
     if (_bookingListenerHandles.containsKey(bookingId)) return;
     final handle = await _pusherManager.listen(
       channelName: 'private-cleaning-booking.$bookingId',
       onEvent: (event) {
+        log('🚀 Pusher Event Received: ${event.eventName}');
         final handler = _bookingHandlers[bookingId];
         if (handler == null) return;
         handler(event.eventName, event.payload);

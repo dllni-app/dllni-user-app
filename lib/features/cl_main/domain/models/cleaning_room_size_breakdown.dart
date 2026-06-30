@@ -109,20 +109,23 @@ class CleaningRoomSizeBreakdown {
       bathroom.total +
       kitchen.total +
       livingRoom.total +
-      corridor.total;
+      corridor.total+
+      balcony.total
+  ;
 
   /// Sum of all room units including balconies (max worker count cap).
   int get totalUnits => totalRooms + balcony.total;
 
   bool get hasAnyRoom => totalRooms > 0;
 
-  int get legacyBedroomsCount => totalRooms;
+  int get legacyBedroomsCount => bedroom.total;//bedRooms
 
-  int get legacyRoomsCount => bedroom.total;
+  int get legacyRoomsCount =>  totalRooms;//all
 
   int get legacyBathroomsCount => bathroom.total;
 
   int get legacyBalconiesCount => balcony.total;
+  int get legacyCorridorCount => corridor.total;
 
   String get legacyLivingRoomSize {
     if (livingRoom.large > 0) return CleaningRoomSize.large.apiValue;

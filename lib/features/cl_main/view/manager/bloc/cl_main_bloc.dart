@@ -204,9 +204,9 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
 
     return state.copyWith(
       selectedWorkerIds: normalized,
-      assignmentMode: normalized.isEmpty
-          ? state.assignmentMode
-          : CleaningAssignmentMode.preferredWorker,
+      // assignmentMode: normalized.isEmpty
+      //     ? state.assignmentMode
+      //     : CleaningAssignmentMode.preferredWorker,
       clearErrorMessage: true,
       clearAssignmentFieldErrors: true,
     );
@@ -349,7 +349,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     Emitter<ClMainState> emit,
   ) {
     if (event.mode == CleaningAssignmentMode.openCount) {
-      final safeCount = state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers;
+      final safeCount = state.numberOfWorkers ==0 ? 1 : state.numberOfWorkers;
       emit(
         state.copyWith(
           assignmentMode: event.mode,

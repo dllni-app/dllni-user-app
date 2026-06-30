@@ -15,12 +15,14 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
     this.address = 'العنوان غير محدد',
     this.showChangeAction = true,
     this.onChangeTap,
+    this.afterBringDefault,
   });
 
   final String locationName;
   final String address;
   final bool showChangeAction;
   final VoidCallback? onChangeTap;
+  final void afterBringDefault;
 
   @override
   Widget build(BuildContext context) {
@@ -174,12 +176,16 @@ class CleaningAddressSelectWidget extends StatelessWidget {
     required this.selectedAddress,
     this.showChangeAction = true,
     this.onChangeTap,
+    this.afterBringDefault,
+
   });
 
   final ValueNotifier<AddressListItem?> selectedAddress;
 
   final bool showChangeAction;
   final VoidCallback? onChangeTap;
+  final VoidCallback? afterBringDefault;
+
 
   @override
   Widget build(BuildContext context) {
@@ -194,6 +200,14 @@ class CleaningAddressSelectWidget extends StatelessWidget {
         listener: (context,state){
           if(state.addressesStatus==BlocStatus.success){
             selectedAddress.value=state.defaultAddress;
+            if(selectedAddress.value !=null){
+              if(afterBringDefault !=null){
+                print('asdasdf');
+                afterBringDefault!();
+
+              }
+            }
+
           }
         },
         listenWhen: (pre,cur)=>pre.addressesStatus!=cur.addressesStatus,
