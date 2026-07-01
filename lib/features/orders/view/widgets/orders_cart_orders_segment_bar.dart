@@ -10,7 +10,7 @@ class OrdersCartOrdersSegmentBar extends StatelessWidget {
   static const int cartIndex = 0;
   static const int ordersIndex = 1;
 
-  static const _labels = <String>['قائمة المشتريات', 'الطلبيات'];
+  static const _labels = <String>['السلات', 'الطلبيات'];
 
   @override
   Widget build(BuildContext context) {

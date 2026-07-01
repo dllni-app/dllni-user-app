@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
@@ -286,8 +287,7 @@ class _CleaningOrderDetailsScreenState
                     ),
                     if (CleaningEventAssistanceHelper.isEventAssistance(
                       order.propertyType,
-                    ))
-                      ...[
+                    )) ...[
                       const SizedBox(height: 12),
                       _card(
                         child: Column(
@@ -630,9 +630,10 @@ class _CleaningOrderDetailsScreenState
                                         child: ClServiceTimePickerFieldWidget(
                                           title: 'من',
                                           controller: _fromTimeController,
-                                          onTap: editLocked
-                                              ? () {}
-                                              : () => _goToReschedule(order),
+                                          onTap: () {
+                                            if (editLocked) return;
+                                            _goToReschedule(order);
+                                          },
                                         ),
                                       ),
                                       const SizedBox(width: 10),
@@ -640,9 +641,10 @@ class _CleaningOrderDetailsScreenState
                                         child: ClServiceTimePickerFieldWidget(
                                           title: 'إلى',
                                           controller: _toTimeController,
-                                          onTap: editLocked
-                                              ? () {}
-                                              : () => _goToReschedule(order),
+                                          onTap: () {
+                                            if (editLocked) return;
+                                            _goToReschedule(order);
+                                          },
                                         ),
                                       ),
                                     ],
@@ -809,21 +811,18 @@ class _CleaningOrderDetailsScreenState
                           const SizedBox(height: 10),
                           _SummaryRow(
                             title: 'تكلفة الخدمة',
-                            value:
-                            order.basePrice.formatMoney(),
+                            value: order.basePrice.formatMoney(),
                           ),
                           const SizedBox(height: 6),
                           _SummaryRow(
                             title: 'رسوم التنقل',
-                            value:
-                            order.travelFee.formatMoney(),
+                            value: order.travelFee.formatMoney(),
                           ),
                           if ((order.addonsTotal ?? 0) > 0) ...[
                             const SizedBox(height: 6),
                             _SummaryRow(
                               title: 'إضافات',
-                              value:
-                              order.addonsTotal.formatMoney(),
+                              value: order.addonsTotal.formatMoney(),
                             ),
                           ],
                           const SizedBox(height: 10),
@@ -831,8 +830,7 @@ class _CleaningOrderDetailsScreenState
                           const SizedBox(height: 10),
                           _SummaryRow(
                             title: 'الإجمالي النهائي',
-                            value:
-                            order.totalPrice.formatMoney(),
+                            value: order.totalPrice.formatMoney(),
                             isTotal: true,
                           ),
                           if (order.isPricingFinal == false) ...[

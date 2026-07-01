@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../sm_cart/view/widgets/cart_card.dart';
 import '../../data/models/orders_api_models.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../screens/restaurant_order_fulfillment_screen.dart';
@@ -38,7 +39,8 @@ class SupermarketCartCheckoutBody extends StatelessWidget {
         if (failed && carts.isEmpty) {
           return RestaurantCartLoadFailedView(
             errorMessage: state.storeCartErrorMessage,
-            onRetry: () => context.read<OrdersBloc>().add(FetchStoreCartEvent()),
+            onRetry: () =>
+                context.read<OrdersBloc>().add(FetchStoreCartEvent()),
           );
         }
         if (carts.isEmpty) {
@@ -54,13 +56,17 @@ class SupermarketCartCheckoutBody extends StatelessWidget {
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
                 children: [
                   ...carts.map(
-                    (cart) => _StoreCartCard(
-                      cart: cart,
-                      isMutating: state.isMutatingStoreCartItem,
-                      money: _money,
-                    ),
+                    (cart) =>
+                        CartCard(cart: cart, onTap: () {}, onDeleteTap: () {}),
+                    // _StoreCartCard(
+                    //   cart: cart,
+                    //   isMutating: state.isMutatingStoreCartItem,
+                    //   money: _money,
+                    // ),
                   ),
-                  const RestaurantCartAddMoreProductsButton(isRestaurant: false),
+                  const RestaurantCartAddMoreProductsButton(
+                    isRestaurant: false,
+                  ),
                 ],
               ),
             ),
@@ -142,13 +148,14 @@ class _StoreCartCard extends StatelessWidget {
             subtotal: cart.amounts?.subtotal ?? 0,
             discount: 0,
             total: cart.amounts?.total ?? 0,
-
           ),
           const SizedBox(height: 12),
           RestaurantCartCheckoutFulfillmentButton(
             onTap: () {
               if (cartId == null) return;
-              context.read<OrdersBloc>().add(SelectStoreCartEvent(cartId: cartId));
+              context.read<OrdersBloc>().add(
+                SelectStoreCartEvent(cartId: cartId),
+              );
               context.pushRoute(
                 '/restaurant-order-fulfillment',
                 arguments: RestaurantOrderFulfillmentArgs(

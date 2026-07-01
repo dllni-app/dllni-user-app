@@ -8,7 +8,6 @@ import '../manager/bloc/orders_bloc.dart';
 import 'orders_app_bar.dart';
 import 'orders_cart_orders_segment_bar.dart';
 import 'orders_list_body.dart';
-import 'orders_screen_segment_section.dart';
 import 'orders_shopping_list_tab.dart';
 
 class OrdersListTab extends StatefulWidget {
@@ -96,7 +95,8 @@ class _OrdersListTabState extends State<OrdersListTab> {
 
   void _syncFoodDeliveryPollTimer() {
     final isFoodSection =
-        widget.state.selectedTabIndex == 0 || widget.state.selectedTabIndex == 1;
+        widget.state.selectedTabIndex == 0 ||
+        widget.state.selectedTabIndex == 1;
     if (isFoodSection && _hasActiveFoodDeliveryOrders()) {
       _foodDeliveryPollTimer ??= Timer.periodic(_foodDeliveryPollInterval, (_) {
         if (!mounted) return;
@@ -139,24 +139,27 @@ class _OrdersListTabState extends State<OrdersListTab> {
           selectedIndex: widget.state.selectedTabIndex,
           onChanged: widget.onSectionChanged,
         ),
-        if (!isCleaningSection) ...[
-          const SizedBox(height: 14),
-          OrdersScreenSegmentSection(
-            selectedIndex: segmentIndex,
-            onChanged: (index) {
-              setState(() => segmentIndex = index);
-              if (index == OrdersCartOrdersSegmentBar.cartIndex) {
-                context.read<OrdersBloc>().add(
-                  FetchCartForActiveSectionEvent(),
-                );
-              }
-            },
-          ),
-        ] else
-          ...[
-          const SizedBox(height: 14),
+        if (!isCleaningSection)
           Padding(
-            padding: const EdgeInsetsDirectional.symmetric(horizontal: 20),
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 26, 20, 14),
+            child: OrdersCartOrdersSegmentBar(
+              selectedIndex: segmentIndex,
+              onChanged: (index) {
+                setState(() => segmentIndex = index);
+                if (index == OrdersCartOrdersSegmentBar.cartIndex) {
+                  context.read<OrdersBloc>().add(
+                    FetchCartForActiveSectionEvent(),
+                  );
+                }
+              },
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: 20,
+              vertical: 14,
+            ),
             child: _CleaningOrdersTabBar(
               selectedIndex: cleaningOrdersTabIndex,
               onChanged: (index) {
@@ -164,10 +167,6 @@ class _OrdersListTabState extends State<OrdersListTab> {
               },
             ),
           ),
-          const SizedBox(height: 14),
-        ],
-
-        /////////////////////////////////////
         Expanded(
           child: IndexedStack(
             index: effectiveSegmentIndex,

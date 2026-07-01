@@ -9,6 +9,7 @@ import 'package:dllni_user_app/core/utils/app_date_time_locale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/extensions/date_time_extensions.dart';
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../../cl_main/view/manager/bloc/cl_main_bloc.dart';
@@ -68,13 +69,30 @@ class _CleaningOrderRescheduleScreenState
     _fromTimeController = TextEditingController(
       text: _resolveInitialTime(
         widget.args.order.scheduledTime,
-        fallback: '09:00',
+        fallback: getNextHourCeil(),
       ),
     );
     _toTimeController = TextEditingController();
     _selectedGenderPreference = widget.args.order.genderPreference;
     _syncToTime(_parseOrderEstimatedHours());
     _requestEstimate();
+  }
+
+  String getNextHourCeil() {
+    DateTime time = DateTime.now();
+    DateTime result;
+
+    if (time.minute == 0 && time.second == 0 && time.millisecond == 0) {
+      result = time.add(const Duration(hours: 1));
+    } else {
+      result = DateTime(time.year, time.month, time.day, time.hour + 2);
+    }
+
+    // Format the output to HH:mm string structure
+    String hour = result.hour.toString().padLeft(2, '0');
+    String minute = result.minute.toString().padLeft(2, '0');
+
+    return "$hour:$minute";
   }
 
   @override
@@ -86,8 +104,8 @@ class _CleaningOrderRescheduleScreenState
   }
 
   DateTime _resolveInitialDate(String? value) {
-    if (value == null || value.isEmpty) return DateTime.now();
-    return DateTime.tryParse(value) ?? DateTime.now();
+    if (value == null || value.isEmpty) return DateTime.now().add(const Duration(hours: 1));
+    return DateTime.tryParse(value) ?? DateTime.now().add(const Duration(hours: 1));
   }
 
   String _resolveInitialTime(String? value, {required String fallback}) {
@@ -162,7 +180,10 @@ class _CleaningOrderRescheduleScreenState
   }
 
   Future<void> _pickFromTime() async {
-    final value = await AppPickers.showAppTimePicker(context: context);
+    final value = await AppPickers.showAppTimePicker(
+      context: context,
+      minimumTime: DateTime.now().add(const Duration(hours: 1)),
+    );
     if (value.isEmpty) return;
     setState(() {
       _fromTimeController.text = value;

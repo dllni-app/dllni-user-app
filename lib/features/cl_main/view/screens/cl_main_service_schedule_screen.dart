@@ -304,12 +304,28 @@ class _ClMainServiceScheduleScreenState
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
-    _fromTimeController = TextEditingController(text: '09:00');
+    _selectedDate = DateTime.now().add(const Duration(hours: 1));
+    _fromTimeController = TextEditingController(text: getNextHourCeil());
     _toTimeController = TextEditingController();
     _couponController = TextEditingController();
     _customServiceController = TextEditingController();
   }
+  String getNextHourCeil() {
+    DateTime time = DateTime.now();
+    DateTime result;
+
+    if (time.minute == 0 && time.second == 0 && time.millisecond == 0) {
+      result = time.add(const Duration(hours: 1));
+    } else {
+      result = DateTime(time.year, time.month, time.day, time.hour + 2);
+    }
+
+    String hour = result.hour.toString().padLeft(2, '0');
+    String minute = result.minute.toString().padLeft(2, '0');
+
+    return "$hour:$minute";
+  }
+
 
   void _addCustomCleaningService() {
     final normalized = _customServiceController.text.trim();
