@@ -1,8 +1,9 @@
-
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/home/data/models/fetch_user_offers_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cube_transition/flutter_cube_transition.dart';
+
+import '../../../../core/themes/app_colors.dart';
 
 class HomeCube extends StatefulWidget {
   final List<UserOfferItem> offers;
@@ -48,10 +49,10 @@ class _HomeCubeState extends State<HomeCube> {
     return Padding(
       padding: EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 10),
       child: FlutterCubeTransition(
-        // width: context.width * 0.65,
-        // height: context.height * 0.25,
-        // secondsToSwipe: Duration(seconds: 5),
-          size:  context.width * 0.5,
+        width: context.width * 0.65,
+        height: context.height * 0.25,
+        secondsToSwipe: Duration(seconds: 5),
+        // size:  context.width * 0.5,
 
         animationDuration: Duration(milliseconds: 400),
         animationCurve: Curves.easeOut,
@@ -64,7 +65,6 @@ class _HomeCubeState extends State<HomeCube> {
         borderRadius: BorderRadius.circular(16),
         dragSensitivity: 0.006,
         dragThreshold: 0.6,
-        onRotationChanged: (_) {},
         faceTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -82,36 +82,33 @@ class _HomeCubeState extends State<HomeCube> {
   }
 
   CubeFaceData _faceForOffer(UserOfferItem offer) {
-    final base = _themeColor(offer.theme);
-    final imageUrl = offer.imageUrl;
     return CubeFaceData(
       color: Colors.grey.shade200,
       text: offer.discountLabel ?? offer.title ?? '',
       borderRadius: BorderRadius.circular(16),
-      child: imageUrl != null && imageUrl.isNotEmpty
+      child: offer.imageUrl != null && offer.imageUrl.toString().isNotEmpty
           ? SizedBox.expand(
-              child: Image.network(
-                imageUrl,
+              child: AppImage.network(
+                offer.imageUrl.toString(),
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
-                errorBuilder: (context, error, stackTrace) {
-                  return ColoredBox(
-                    color: base,
-                    child: Center(
-                      child: Icon(
-                        Icons.local_offer_outlined,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        size: 48,
-                      ),
+                errorWidget: ColoredBox(
+                  color: AppColors.primary,
+                  child: Center(
+                    child: Icon(
+                      Icons.local_offer_outlined,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      size: 48,
                     ),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
+                  ),
+                ),
+                loadingBuilder: (context) {
                   return ColoredBox(
                     color: Colors.grey.shade200,
                     child: Center(
-                      child: CircularProgressIndicator(color: base),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
                     ),
                   );
                 },
@@ -119,7 +116,7 @@ class _HomeCubeState extends State<HomeCube> {
             )
           : SizedBox.expand(
               child: ColoredBox(
-                color: base,
+                color: AppColors.primary,
                 child: Center(
                   child: Icon(
                     Icons.local_offer_outlined,
@@ -130,18 +127,5 @@ class _HomeCubeState extends State<HomeCube> {
               ),
             ),
     );
-  }
-
-  Color _themeColor(String? theme) {
-    switch (theme) {
-      case 'orange':
-        return const Color(0xFFE65100);
-      case 'gold':
-        return const Color(0xFFC6A035);
-      case 'green':
-        return const Color(0xFF2E7D32);
-      default:
-        return const Color(0xFF212C7E);
-    }
   }
 }

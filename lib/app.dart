@@ -55,7 +55,7 @@ class _AppState extends State<App> {
         supportedLocales: context.supportedLocales,
         localizationsDelegates: context.localizationDelegates,
         onGenerateRoute: AppRouter.onGenerateRoute,
-        home: _hasSavedToken ? const MainScreen() : const LoginScreen(),
+        home:  _hasSavedToken ? const MainScreen() : const LoginScreen(),
         theme: ThemeData(
           fontFamily: 'cairo',
           inputDecorationTheme: const InputDecorationTheme(
