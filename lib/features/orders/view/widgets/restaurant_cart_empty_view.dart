@@ -1,20 +1,19 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../rs_main/view/rs_main_screen.dart';
 import '../../../sm_main_page.dart';
 
-class RestaurantCartEmptyView extends StatelessWidget {
-  const RestaurantCartEmptyView({
+class CartEmptyView extends StatelessWidget {
+  final bool isStore;
+  final Future<void> Function() onRefresh;
+  const CartEmptyView({
     super.key,
     required this.onRefresh,
     required this.isStore,
   });
-  final bool isStore;
-  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +37,7 @@ class RestaurantCartEmptyView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           AppText.bodyMedium(
-            'تصفح المطاعم وأضف المنتجات إلى سلتك من هنا.',
+            'تصفح ${isStore ? "المطاعم" : "المتاجر"} وأضف المنتجات إلى سلتك من هنا.',
             color: const Color(0xFF6B7280),
             textAlign: TextAlign.center,
           ),
@@ -63,11 +62,12 @@ class RestaurantCartEmptyView extends StatelessWidget {
                         expandSearch: false,
                       ),
                     )
-                  : context.pushRoute('/rsmain',arguments: RsMainScreenParams(
-                profileBloc: getIt<ProfileBloc>(),
-
-              )
-              ),
+                  : context.pushRoute(
+                      '/rsmain',
+                      arguments: RsMainScreenParams(
+                        profileBloc: getIt<ProfileBloc>(),
+                      ),
+                    ),
               child: AppText.labelLarge(
                 'تصفح ${isStore ? "المتاجر" : "المطاعم"}',
                 color: Colors.white,

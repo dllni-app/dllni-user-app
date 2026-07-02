@@ -1,6 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-import 'package:dllni_user_app/features/main/view/screens/terms_and_conditions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:dllni_user_app/features/auth/view/screens/account_recovery_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
@@ -11,13 +10,14 @@ import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_de
 import 'package:dllni_user_app/features/cl_main/view/data/cl_main_route_args.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_screen.dart';
-import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_service_schedule_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_profile_detail_screen.dart';
+import 'package:dllni_user_app/features/cl_main/view/data/cl_worker_profile_mock_data.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_reviews_all_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_orders_screen.dart';
 import 'package:dllni_user_app/features/main/view/screens/main_screen.dart';
+import 'package:dllni_user_app/features/main/view/screens/terms_and_conditions_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_details_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_problem_report_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_reschedule_screen.dart';
@@ -25,6 +25,7 @@ import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_sos_s
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_worker_rating_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_fulfillment_screen.dart';
 import 'package:dllni_user_app/features/orders/view/screens/restaurant_order_tracking_screen.dart';
+import 'package:dllni_user_app/features/orders/view/screens/supermarket_cart_details_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/add_address_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/add_edit_shopping_list_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/coupons_screen.dart';
@@ -32,6 +33,7 @@ import 'package:dllni_user_app/features/profile/view/screens/group_order_followu
 import 'package:dllni_user_app/features/profile/view/screens/group_order_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_screen.dart';
+import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_args.dart';
 import 'package:dllni_user_app/features/profile/view/screens/my_addresses_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/notifications_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/order_voting_screen.dart';
@@ -74,12 +76,6 @@ class GeneratedAppRoutes {
           builder: (_) => AccountRecoveryScreen(),
           settings: settings,
         );
-
-      case '/termsAndConditions':
-        return MaterialPageRoute(
-          builder: (_) => TermsAndConditionsScreen(),
-          settings: settings,
-        );
       case '/login':
         return MaterialPageRoute(
           builder: (_) => LoginScreen(),
@@ -120,7 +116,7 @@ class GeneratedAppRoutes {
         }
         return _errorRoute(settings);
       case '/clmain':
-        if (args is ClMainScreenParams) {
+        if (args is ClMainScreenParams?) {
           return MaterialPageRoute(
             builder: (_) => ClMainScreen(params: args),
             settings: settings,
@@ -172,6 +168,11 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
+      case '/termsAndConditions':
+        return MaterialPageRoute(
+          builder: (_) => TermsAndConditionsScreen(),
+          settings: settings,
+        );
       case '/cleaning-order-details':
         if (args is CleaningOrderDetailsArgs) {
           return MaterialPageRoute(
@@ -224,6 +225,14 @@ class GeneratedAppRoutes {
         if (args is RestaurantOrderTrackingArgs) {
           return MaterialPageRoute(
             builder: (_) => RestaurantOrderTrackingScreen(args: args),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+      case '/supermarketcartdetails':
+        if (args is SupermarketCartDetailsArgs) {
+          return MaterialPageRoute(
+            builder: (_) => SupermarketCartDetailsScreen(args: args),
             settings: settings,
           );
         }
@@ -286,13 +295,11 @@ class GeneratedAppRoutes {
       case '/notifications':
         if (args is NotificationsScreenParams) {
           return MaterialPageRoute(
-            builder: (_) =>
-                NotificationsScreen(args: args),
+            builder: (_) => NotificationsScreen(args: args),
             settings: settings,
           );
         }
         return _errorRoute(settings);
-
       case '/ordervoting':
         return MaterialPageRoute(
           builder: (_) => OrderVotingScreen(),
@@ -384,22 +391,18 @@ class GeneratedAppRoutes {
         if (args is RsHomeScreenParams) {
           return MaterialPageRoute(
             builder: (_) => RsHomeScreen(args: args),
-
             settings: settings,
           );
         }
         return _errorRoute(settings);
-
       case '/rsmain':
         if (args is RsMainScreenParams) {
           return MaterialPageRoute(
             builder: (_) => RsMainScreen(args: args),
-
             settings: settings,
           );
         }
         return _errorRoute(settings);
-
       case '/cart_details':
         return MaterialPageRoute(
           builder: (_) => SmCartDetailsScreen(),
@@ -491,6 +494,7 @@ class GeneratedAppRoutes {
           );
         }
         return _errorRoute(settings);
+
     }
 
     return null;
@@ -498,7 +502,9 @@ class GeneratedAppRoutes {
 
   static Route<dynamic> _errorRoute(RouteSettings settings) {
     return MaterialPageRoute(
-      builder: (_) => const Scaffold(body: Center(child: Text('Route Error'))),
+      builder: (_) => const Scaffold(
+        body: Center(child: Text('Route Error')),
+      ),
       settings: settings,
     );
   }

@@ -68,6 +68,8 @@ import '../../features/orders/domain/usecases/cancel_cleaning_order_use_case.dar
     as _i172;
 import '../../features/orders/domain/usecases/check_restaurant_coupon_use_case.dart'
     as _i576;
+import '../../features/orders/domain/usecases/checkout_preview_use_case.dart'
+    as _i183;
 import '../../features/orders/domain/usecases/confirm_cleaning_completion_use_case.dart'
     as _i28;
 import '../../features/orders/domain/usecases/confirm_cleaning_start_verification_use_case.dart'
@@ -96,6 +98,8 @@ import '../../features/orders/domain/usecases/fetch_store_cart_use_case.dart'
     as _i953;
 import '../../features/orders/domain/usecases/fetch_store_order_tracking_use_case.dart'
     as _i138;
+import '../../features/orders/domain/usecases/fetch_supermarket_cart_use_case.dart'
+    as _i299;
 import '../../features/orders/domain/usecases/patch_cleaning_order_use_case.dart'
     as _i795;
 import '../../features/orders/domain/usecases/patch_cleaning_room_assignments_use_case.dart'
@@ -106,6 +110,8 @@ import '../../features/orders/domain/usecases/place_store_order_use_case.dart'
     as _i969;
 import '../../features/orders/domain/usecases/reject_cleaning_completion_use_case.dart'
     as _i51;
+import '../../features/orders/domain/usecases/remove_supermarket_cart_use_case.dart'
+    as _i518;
 import '../../features/orders/domain/usecases/sos_use_cases.dart' as _i988;
 import '../../features/orders/domain/usecases/submit_cleaning_review_use_case.dart'
     as _i642;
@@ -649,6 +655,14 @@ _i174.GetIt $initGetIt(
     () =>
         _i576.CheckRestaurantCouponUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
   );
+  gh.lazySingleton<_i183.PreviewRestaurantCheckoutUseCase>(
+    () => _i183.PreviewRestaurantCheckoutUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i183.PreviewStoreCheckoutUseCase>(
+    () => _i183.PreviewStoreCheckoutUseCase(ordersRepo: gh<_i132.OrdersRepo>()),
+  );
   gh.lazySingleton<_i28.ConfirmCleaningCompletionUseCase>(
     () => _i28.ConfirmCleaningCompletionUseCase(
       ordersRepo: gh<_i132.OrdersRepo>(),
@@ -780,6 +794,12 @@ _i174.GetIt $initGetIt(
       smDiscover: gh<_i880.SmDiscoverRepo>(),
     ),
   );
+  gh.lazySingleton<_i299.FetchSupermarketCartUseCase>(
+    () => _i299.FetchSupermarketCartUseCase(orders: gh<_i132.OrdersRepo>()),
+  );
+  gh.lazySingleton<_i518.RemoveSupermarketCartUseCase>(
+    () => _i518.RemoveSupermarketCartUseCase(orders: gh<_i132.OrdersRepo>()),
+  );
   gh.factory<_i648.HomeBloc>(
     () => _i648.HomeBloc(
       fetchUserOffersUseCase: gh<_i487.FetchUserOffersUseCase>(),
@@ -809,22 +829,6 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i953.FetchDeliveryOrdersUseCase>(
     () => _i953.FetchDeliveryOrdersUseCase(
       deliveryRepo: gh<_i830.DeliveryRepo>(),
-    ),
-  );
-  gh.factory<_i305.OrdersBloc>(
-    () => _i305.OrdersBloc(
-      gh<_i250.FetchOrdersUseCase>(),
-      gh<_i382.FetchCleaningOrdersUseCase>(),
-      gh<_i172.CancelCleaningOrderUseCase>(),
-      gh<_i335.FetchRestaurantCartUseCase>(),
-      gh<_i953.FetchStoreCartUseCase>(),
-      gh<_i925.UpdateCartItemQuantityUseCase>(),
-      gh<_i190.UpdateStoreCartItemQuantityUseCase>(),
-      gh<_i242.DeleteCartItemUseCase>(),
-      gh<_i29.DeleteStoreCartItemUseCase>(),
-      gh<_i576.CheckRestaurantCouponUseCase>(),
-      gh<_i109.PlaceRestaurantOrderUseCase>(),
-      gh<_i969.PlaceStoreOrderUseCase>(),
     ),
   );
   gh.lazySingleton<_i745.AddRestaurantCartItemUseCase>(
@@ -1052,6 +1056,24 @@ _i174.GetIt $initGetIt(
       gh<_i802.GetCompareProductsUseCase>(),
       gh<_i431.AddSupermarketCartItemUseCase>(),
       gh<_i524.FetchShoppingListsUseCase>(),
+    ),
+  );
+  gh.factory<_i305.OrdersBloc>(
+    () => _i305.OrdersBloc(
+      gh<_i250.FetchOrdersUseCase>(),
+      gh<_i250.FetchCleaningOrdersUseCase>(),
+      gh<_i172.CancelCleaningOrderUseCase>(),
+      gh<_i335.FetchRestaurantCartUseCase>(),
+      gh<_i953.FetchStoreCartUseCase>(),
+      gh<_i925.UpdateCartItemQuantityUseCase>(),
+      gh<_i190.UpdateStoreCartItemQuantityUseCase>(),
+      gh<_i242.DeleteCartItemUseCase>(),
+      gh<_i29.DeleteStoreCartItemUseCase>(),
+      gh<_i576.CheckRestaurantCouponUseCase>(),
+      gh<_i109.PlaceRestaurantOrderUseCase>(),
+      gh<_i969.PlaceStoreOrderUseCase>(),
+      gh<_i299.FetchSupermarketCartUseCase>(),
+      gh<_i518.RemoveSupermarketCartUseCase>(),
     ),
   );
   gh.factory<_i1049.RestaurantOrderCheckoutCubit>(

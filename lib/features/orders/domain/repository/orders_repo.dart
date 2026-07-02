@@ -26,6 +26,10 @@ import '../usecases/reject_cleaning_completion_use_case.dart';
 import '../usecases/submit_cleaning_review_use_case.dart';
 import '../usecases/sos_use_cases.dart';
 import '../usecases/update_cart_item_quantity_use_case.dart';
+import '../usecases/fetch_supermarket_cart_use_case.dart';
+import '../../data/models/fetch_supermarket_cart_model.dart';
+import '../usecases/remove_supermarket_cart_use_case.dart';
+import '../../data/models/remove_supermarket_cart_model.dart';
 
 abstract class OrdersRepo {
   DataResponse<FetchOrdersModel> fetchOrders(FetchOrdersParams params);
@@ -127,4 +131,9 @@ abstract class OrdersRepo {
   DataResponse<CleaningSosAlertModel> createCleaningUserSos(
     CreateCleaningUserSosParams params,
   );
+
+  DataResponse<FetchSupermarketCartModel> fetchSupermarketCart(FetchSupermarketCartParams params);
+
+
+  DataResponse<RemoveSupermarketCartModel> removeSupermarketCart(RemoveSupermarketCartParams params);
 }

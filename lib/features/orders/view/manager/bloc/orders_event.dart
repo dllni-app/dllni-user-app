@@ -138,3 +138,15 @@ class PlaceStoreOrderEvent extends OrdersEvent {
 
   PlaceStoreOrderEvent({required this.cartId});
 }
+
+class FetchSupermarketCartEvent extends OrdersEvent {
+  final FetchSupermarketCartParams params;
+
+  FetchSupermarketCartEvent({required this.params});
+}
+
+class RemoveSupermarketCartEvent extends OrdersEvent {
+  final RemoveSupermarketCartParams params;
+
+  RemoveSupermarketCartEvent({required this.params});
+}

@@ -2,10 +2,10 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/app_colors.dart';
-import '../../../orders/data/models/orders_api_models.dart';
+import '../../../orders/data/models/fetch_supermarket_cart_model.dart';
 
 class CartCard extends StatelessWidget {
-  final RestaurantCartDataModel cart;
+  final FetchSupermarketCartModelDataItemMerchantGroupsItem cart;
   final void Function()? onDeleteTap;
   final void Function()? onTap;
   const CartCard({
@@ -53,7 +53,7 @@ class CartCard extends StatelessWidget {
                         ],
                       ),
                       child: AppImage.network(
-                        cart.merchant?.name ?? "غير معروف",
+                        cart.merchant?.logo ?? "غير معروف",
                         borderRadius: BorderRadius.circular(16),
                         width: 64,
                         height: 64,
@@ -81,7 +81,7 @@ class CartCard extends StatelessWidget {
                           border: Border.all(color: Colors.white, width: 2),
                         ),
                         child: Text(
-                          "${cart.items.length}",
+                          "${cart.items?.length ?? 0}",
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -109,7 +109,7 @@ class CartCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "${cart.items.length} منتجات",
+                        "${cart.items?.length ?? 0} منتجات",
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -132,7 +132,7 @@ class CartCard extends StatelessWidget {
                 height: 70,
                 child: ListView.separated(
                   padding: EdgeInsets.zero,
-                  itemCount: cart.items.length,
+                  itemCount: cart.items?.length ?? 0,
                   separatorBuilder: (_, _) => const SizedBox(height: 6),
                   itemBuilder: (context, index) => Row(
                     children: [
@@ -147,7 +147,7 @@ class CartCard extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          cart.items[index].name ?? "غير معروف",
+                          cart.items?[index].name ?? "غير معروف",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

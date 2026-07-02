@@ -1,6 +1,10 @@
 part of 'orders_bloc.dart';
 
 class OrdersState {
+  BlocStatus? removeSupermarketCartStatus;
+  RemoveSupermarketCartModel? removeSupermarketCart;
+  BlocStatus? supermarketCartStatus;
+  FetchSupermarketCartModel? supermarketCart;
   final PaginationStateModel<OrderResourceModel> orders;
   final PaginationStateModel<CleaningOrderModel> cleaningOrders;
   final int selectedTabIndex;
@@ -65,6 +69,10 @@ class OrdersState {
     this.storeReceiveMode = 'immediate',
     this.storeScheduledAt,
     this.selectedAddress,
+    this.supermarketCartStatus,
+    this.supermarketCart,
+    this.removeSupermarketCart,
+    this.removeSupermarketCartStatus,
   });
 
   OrdersState copyWith({
@@ -115,6 +123,10 @@ class OrdersState {
     bool replaceStoreScheduledAt = false,
     AddressListItem? selectedAddress,
     bool replaceSelectedAddress = false,
+    FetchSupermarketCartModel? supermarketCart,
+    BlocStatus? supermarketCartStatus,
+    RemoveSupermarketCartModel? removeSupermarketCart,
+    BlocStatus? removeSupermarketCartStatus,
   }) {
     final resolvedRestaurantCarts = replaceRestaurantCarts
         ? (restaurantCarts ?? const <RestaurantCartDataModel>[])
@@ -169,7 +181,10 @@ class OrdersState {
       storeReceiveMode: storeReceiveMode ?? this.storeReceiveMode,
       storeScheduledAt: replaceStoreScheduledAt ? storeScheduledAt : (storeScheduledAt ?? this.storeScheduledAt),
       selectedAddress: replaceSelectedAddress ? selectedAddress : (selectedAddress ?? this.selectedAddress),
-    );
+        supermarketCart: supermarketCart ?? this.supermarketCart,
+        supermarketCartStatus: supermarketCartStatus ?? this.supermarketCartStatus,
+        removeSupermarketCart: removeSupermarketCart ?? this.removeSupermarketCart,
+        removeSupermarketCartStatus: removeSupermarketCartStatus ?? this.removeSupermarketCartStatus,);
   }
 
   bool isStoresSection() => selectedTabIndex == 0;

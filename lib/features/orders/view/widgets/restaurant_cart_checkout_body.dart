@@ -39,11 +39,12 @@ class RestaurantCartCheckoutBody extends StatelessWidget {
         if (failed && carts.isEmpty) {
           return RestaurantCartLoadFailedView(
             errorMessage: state.restaurantCartErrorMessage,
-            onRetry: () => context.read<OrdersBloc>().add(FetchRestaurantCartEvent()),
+            onRetry: () =>
+                context.read<OrdersBloc>().add(FetchRestaurantCartEvent()),
           );
         }
         if (carts.isEmpty) {
-          return RestaurantCartEmptyView(onRefresh: onRefresh, isStore: false);
+          return CartEmptyView(onRefresh: onRefresh, isStore: false);
         }
 
         return Stack(
@@ -130,7 +131,10 @@ class _MerchantCartCard extends StatelessWidget {
                 onDelete: () {
                   if (cartId == null || item.id == null) return;
                   context.read<OrdersBloc>().add(
-                    DeleteRestaurantCartItemEvent(cartId: cartId, itemId: item.id!),
+                    DeleteRestaurantCartItemEvent(
+                      cartId: cartId,
+                      itemId: item.id!,
+                    ),
                   );
                 },
                 money: money,

@@ -12,7 +12,6 @@ import '../../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../../domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../domain/usecases/delete_cart_item_use_case.dart';
 import '../../../domain/usecases/delete_store_cart_item_use_case.dart';
-import '../../../domain/usecases/fetch_cleaning_orders_use_case.dart';
 import '../../../domain/usecases/fetch_orders_use_case.dart';
 import '../../../domain/usecases/fetch_restaurant_cart_use_case.dart';
 import '../../../domain/usecases/fetch_store_cart_use_case.dart';
@@ -20,6 +19,12 @@ import '../../../domain/usecases/place_restaurant_order_use_case.dart';
 import '../../../domain/usecases/place_store_order_use_case.dart';
 import '../../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../../../domain/usecases/update_store_cart_item_quantity_use_case.dart';
+import 'dart:async';
+import '../../../domain/usecases/fetch_supermarket_cart_use_case.dart';
+import '../../../data/models/fetch_supermarket_cart_model.dart';
+import 'package:common_package/helpers/pagination_helper.dart';
+import '../../../domain/usecases/remove_supermarket_cart_use_case.dart';
+import '../../../data/models/remove_supermarket_cart_model.dart';
 
 part 'orders_event.dart';
 
@@ -27,6 +32,8 @@ part 'orders_state.dart';
 
 @injectable
 class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
+  final RemoveSupermarketCartUseCase removeSupermarketCartUseCase;
+  final FetchSupermarketCartUseCase fetchSupermarketCartUseCase;
   final FetchOrdersUseCase fetchOrdersUseCase;
   final FetchCleaningOrdersUseCase fetchCleaningOrdersUseCase;
   final CancelCleaningOrderUseCase cancelCleaningOrderUseCase;
@@ -53,7 +60,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     this.checkRestaurantCouponUseCase,
     this.placeRestaurantOrderUseCase,
     this.placeStoreOrderUseCase,
-  ) : super(OrdersState()) {
+    this.fetchSupermarketCartUseCase,
+    this.removeSupermarketCartUseCase,) : super(OrdersState()) {
     on<OrdersSectionChangedEvent>(_onSectionChanged);
     on<FetchOrdersEvent>(
       _onFetchOrders,
@@ -78,7 +86,9 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<CancelCleaningOrderEvent>(_onCancelCleaningOrder);
     on<PlaceRestaurantOrderEvent>(_onPlaceRestaurantOrder);
     on<PlaceStoreOrderEvent>(_onPlaceStoreOrder);
-  }
+  
+    on<FetchSupermarketCartEvent>(_fetchSupermarketCart);
+    on<RemoveSupermarketCartEvent>(_removeSupermarketCart);}
 
   static const List<String> _sections = <String>[
     'supermarket',
@@ -147,7 +157,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     Emitter<OrdersState> emit,
   ) async {
     if (_isStoresSection()) {
-      add(FetchStoreCartEvent());
+      add(FetchSupermarketCartEvent(params: FetchSupermarketCartParams()));
       return;
     }
     add(FetchRestaurantCartEvent());
@@ -672,4 +682,38 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       },
     );
   }
-}
+
+
+  FutureOr<void> _fetchSupermarketCart(FetchSupermarketCartEvent event, Emitter<OrdersState> emit) async {
+    emit(state.copyWith(supermarketCartStatus: BlocStatus.loading));
+    final res = await fetchSupermarketCartUseCase(event.params);
+    res.fold((l) {
+      emit(state.copyWith(
+        supermarketCartStatus: BlocStatus.failed,
+        errorMessage: l.message,
+      ));
+    }, (r) {
+      emit(state.copyWith(
+        supermarketCartStatus: BlocStatus.success,
+        supermarketCart: r,
+      ));
+    });
+  }
+
+  
+
+  FutureOr<void> _removeSupermarketCart(RemoveSupermarketCartEvent event, Emitter<OrdersState> emit) async {
+    emit(state.copyWith(removeSupermarketCartStatus: BlocStatus.loading));
+    final res = await removeSupermarketCartUseCase(event.params);
+    res.fold((l) {
+      emit(state.copyWith(
+        removeSupermarketCartStatus: BlocStatus.failed,
+        errorMessage: l.message,
+      ));
+    }, (r) {
+      emit(state.copyWith(
+        removeSupermarketCartStatus: BlocStatus.success,
+        removeSupermarketCart: r,
+      ));
+    });
+  }}

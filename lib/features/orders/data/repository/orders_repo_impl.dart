@@ -30,6 +30,10 @@ import '../models/orders_api_models.dart';
 import '../models/sos_api_models.dart';
 import '../models/submit_cleaning_review_model.dart';
 import '../source/orders_remote_data_source.dart';
+import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
+import '../models/fetch_supermarket_cart_model.dart';
+import '../../domain/usecases/remove_supermarket_cart_use_case.dart';
+import '../models/remove_supermarket_cart_model.dart';
 
 @LazySingleton(as: OrdersRepo)
 class OrdersRepoImpl with HandlingException implements OrdersRepo {
@@ -220,4 +224,19 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
     CreateCleaningUserSosParams params,
   ) =>
       wrapHandlingException(tryCall: () => ordersRemoteDataSource.createCleaningUserSos(params));
-}
+
+
+  @override
+  DataResponse<FetchSupermarketCartModel> fetchSupermarketCart(FetchSupermarketCartParams params) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.fetchSupermarketCart(params),
+    );
+  }
+
+
+  @override
+  DataResponse<RemoveSupermarketCartModel> removeSupermarketCart(RemoveSupermarketCartParams params) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.removeSupermarketCart(params),
+    );
+  }}
