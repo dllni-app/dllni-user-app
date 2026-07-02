@@ -100,10 +100,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
 
   void _onVoteRealtimeEvent(RealtimeEvent event) {
     if (!mounted) return;
-    final payload = _extractVotePayload(event.payload);
-    final hydrated = _hydrateFromVotePayload(payload);
-    if (hydrated) return;
-    _scheduleVoteFallbackRefresh(fallbackReason: 'missing_vote_payload_fields');
+    _scheduleVoteFallbackRefresh(fallbackReason: 'vote_updated');
   }
 
   Map<String, dynamic> _extractVotePayload(Map<String, dynamic> payload) {
@@ -246,15 +243,19 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           .toList();
     }
 
-    // Read the current user's voted option id from the server payload if available.
-    // The API may return it as `myVotedOptionId`, `userVoteOptionId`, or `selectedOptionId`.
     final serverSelectedId =
+        _toInt(voteMap['currentUserVote'] is Map
+            ? Map<String, dynamic>.from(voteMap['currentUserVote'] as Map)['optionId']
+            : null) ??
+        _toInt(voteMap['currentUserOptionId']) ??
+        _toInt(rawData['currentUserOptionId']) ??
         _toInt(voteMap['myVotedOptionId']) ??
         _toInt(rawData['myVotedOptionId']) ??
         _toInt(voteMap['userVoteOptionId']) ??
         _toInt(rawData['userVoteOptionId']) ??
         _toInt(voteMap['selectedOptionId']) ??
-        _toInt(rawData['selectedOptionId']);
+        _toInt(rawData['selectedOptionId']) ??
+        _selectedOptionIdFromOptions(rawData['options']);
 
     if (seconds == null &&
         nextOptions == null &&
@@ -275,12 +276,21 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       if (isCreator != null) {
         _canEndVote = isCreator;
       }
-      // Prefer server-authoritative selection; keep local optimistic value if server has none.
       if (serverSelectedId != null) {
-        _selectedOptionId = serverSelectedId;
+        _selectedOptionId = serverSelectedId <= 0 ? null : serverSelectedId;
       }
     });
     return true;
+  }
+
+  int? _selectedOptionIdFromOptions(dynamic options) {
+    if (options is! List) return null;
+    for (final option in options) {
+      if (option is Map && _toBool(option['isSelectedByCurrentUser']) == true) {
+        return _toInt(option['id']);
+      }
+    }
+    return null;
   }
 
   int? _toInt(dynamic value) {
@@ -355,7 +365,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     context.pushRouteAndRemoveUntil(
       '/rsmain',
       predicate: (route) => route.isFirst,
-      arguments: getIt<ProfileBloc>()
+      arguments: getIt<ProfileBloc>(),
     );
     _showWinnerBottomSheetOnRoot(winnerData);
   }
@@ -472,9 +482,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       lazy: false,
       create: (_) {
         final bloc = getIt<ProfileBloc>();
-        if (widget.params.initialData == null) {
-          bloc.add(ShowVoteEvent(voteId: widget.params.voteId));
-        }
+        bloc.add(ShowVoteEvent(voteId: widget.params.voteId));
         return bloc;
       },
       child: BlocListener<ProfileBloc, ProfileState>(
