@@ -232,6 +232,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             keyboardType: TextInputType.phone,
                             suffixIcon: const Icon(Icons.phone),
                           ),
+
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: _isResolvingMap
@@ -719,6 +720,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     return null;
   }
 
+// هذا هو مكان الدالة داخل الكلاس الخاص بك
   Future<void> _reverseGeocodeSelectedLocation({bool forceFill = false}) async {
     if (_latitude == null || _longitude == null) return;
 
@@ -729,65 +731,75 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       longitude: _longitude!,
       acceptLanguage: "ar",
     );
+
     if (!mounted) return;
 
-    setState(() {
-      _isResolvingMap = false;
-      if (fields == null) return;
+    setState(() => _isResolvingMap = false);
+    if (fields == null) return;
 
-      _autofillTextField(
-        controller: _cityController,
-        value: fields.city,
-        wasEdited: _cityEdited,
-        forceFill: forceFill,
-      );
-      // _autofillTextField(
-      //   controller: _neighborhoodController,
-      //   value: fields.neighborhood,
-      //   wasEdited: _neighborhoodEdited,
-      //   forceFill: forceFill,
-      // );
-      _autofillTextField(
-        controller: _streetController,
-        value: fields.street,
-        wasEdited: _streetEdited,
-        forceFill: forceFill,
-      );
+    // 1. تحديث الحقول الأساسية
+    setState(() {
+      _autofillTextField(controller: _cityController, value: fields.city, wasEdited: _cityEdited, forceFill: forceFill);
+      _autofillTextField(controller: _streetController, value: fields.street, wasEdited: _streetEdited, forceFill: forceFill);
     });
-    await getNeighborhoods("حلب")
-        .then((value) {
-          setState(() {
-            _neighborhoods = value;
-          });
-        })
-        .catchError((error) {
-          log('error: $error');
-          if (!mounted) return;
+
+    // 2. جلب الأحياء من الباك إند
+    try {
+      final neighborhoods = await getNeighborhoods("حلب");
+      if (!mounted) return;
+
+      setState(() => _neighborhoods = neighborhoods);
+
+      // 3. دالة تنظيف النص (تم دمجها هنا لتعمل داخل الدالة)
+      String normalize(String text) => text
+          .replaceAll(RegExp(r'^(حي\s+)'), '')
+          .replaceAll(RegExp(r'[ىي]'), 'ي')
+          .replaceAll(RegExp(r'[أإآا]'), 'ا')
+          .trim();
+
+      final mapNeighborhood = fields.neighborhood ?? '';
+
+      print("القيمة من الخريطة: ${fields.neighborhood}");
+      print("القيمة بعد التنظيف: ${normalize(fields.neighborhood ?? '')}");
+      print("قائمة الأحياء من الباك: $_neighborhoods");
+
+      // 4. منطق المطابقة
+      final match = _neighborhoods.firstWhere(
+            (n) => normalize(n) == normalize(mapNeighborhood),
+        orElse: () => '',
+      );
+
+      if (match.isNotEmpty) {
+        setState(() => _selectedNeighborhood = match);
+      } else {
+        final partialMatch = _neighborhoods.firstWhere(
+              (n) => normalize(n).contains(normalize(mapNeighborhood)) ||
+              normalize(mapNeighborhood).contains(normalize(n)),
+          orElse: () => '',
+        );
+
+        if (partialMatch.isNotEmpty) {
+          setState(() => _selectedNeighborhood = partialMatch);
+        } else {
           AppToast.showToast(
             context: context,
-            message: 'خطأ في جلب الأحياء ${error.toString()}',
-            type: ToastificationType.error,
+            message: "لم يتم تحديد الحي اوتوماتيكيا، يرجى تحديده يدوياً",
+            type: ToastificationType.info,
           );
-        });
-    print(_neighborhoods.contains(fields?.neighborhood));
-    print(fields?.neighborhood);
-    if (_neighborhoods.contains(fields?.neighborhood)) {
-      setState(() {
-        _selectedNeighborhood = fields?.neighborhood ?? '';
-      });
-    } else {
+        }
+      }
+    } catch (error) {
+      log('error: $error');
       if (!mounted) return;
       AppToast.showToast(
         context: context,
-        message: "لم يتم تحديد الحي اوتوماتيكيا الرجاء تحديد الحي يدويا",
-        type: ToastificationType.info,
+        message: 'خطأ في جلب الأحياء: ${error.toString()}',
+        type: ToastificationType.error,
       );
     }
-    if (!mounted) return;
 
     _showReverseGeocodingMessage(fields);
   }
-
   void _setTextFieldValueAtEnd(TextEditingController controller, String value) {
     controller.value = TextEditingValue(
       text: value,

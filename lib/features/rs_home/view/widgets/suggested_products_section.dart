@@ -30,47 +30,62 @@ class SuggestedProductsSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // العنوان والوصف
             Row(
               children: [
                 AppText(
                   "مقترح لك",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF273C8F)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF273C8F)),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 FaIcon(FontAwesomeIcons.wandMagicSparkles, size: 16, color: context.primaryContainer),
               ],
             ),
             const SizedBox(height: 6),
             AppText(
               "اخترنا لك أفضل الأطباق بناءً على ذوقك",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: Color(0xFF6B7280), height: 22 / 15),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: Color(0xFF6B7280), height: 22 / 15),
             ),
             const SizedBox(height: 16),
+
+            // القائمة الأفقية للمقترحات
             SizedBox(
               height: 270,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                // إضافة padding جانبي لتبدأ العناصر من مسافة محددة عن حافة الشاشة
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                // إضافة فيزيائية ناعمة للتمرير
+                physics: const BouncingScrollPhysics(),
                 itemCount: list.length,
                 itemBuilder: (context, index) {
                   final item = list[index];
                   final productId = item.productId;
-                  return RsAppProductCard(
-                    onTap: productId == null
-                        ? () {}
-                        : () {
-                            context.pushRoute(
-                              '/rs_product',
-                              arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromSuggestedItem(item)),
-                            );
-                          },
-                    productId: productId ?? 0,
-                    title: item.name ?? '',
-                    image: item.primaryImageUrl ?? '',
-                    offer: null,
-                    price: item.displayPrice.formatMoney(),
-                    restaurant: item.restaurantName ?? 'restaurant',
-                    cartProductsCount: item.cartProductsCount,
-                    cartItemId: item.cartItemId,
+
+                  return SizedBox(
+                    // تحديد عرض البطاقة هنا يضمن استقرارها في القائمة الأفقية
+                    // يمكنك تغيير 160 إلى العرض المناسب لتصميمك
+                    width: 170,
+                    child: RsAppProductCard(
+                      onTap: productId == null
+                          ? () {}
+                          : () {
+                        context.pushRoute(
+                          '/rs_product',
+                          arguments: ProductDetailsScreenParams(
+                              product: ProductPreviewData.fromSuggestedItem(item)
+                          ),
+                        );
+                      },
+                      productId: productId ?? 0,
+                      title: item.name ?? '',
+                      image: item.primaryImageUrl ?? '',
+                      offer: null,
+                      price: item.displayPrice.formatMoney(),
+                      restaurant: item.restaurantName ?? 'restaurant',
+                      cartProductsCount: item.cartProductsCount,
+                      cartItemId: item.cartItemId,
+                    ),
                   );
                 },
                 separatorBuilder: (context, _) => const SizedBox(width: 12),

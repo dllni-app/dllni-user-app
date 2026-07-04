@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/widgets/app_app_bars.dart';
@@ -202,24 +203,37 @@ class _SearchViewState extends State<_SearchView> {
           bloc.add(FetchDiscoverProductsEvent(isReload: true));
           await bloc.stream.firstWhere((s) => s.products.status != BlocStatus.loading);
         },
-        child: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: p.listLength(1),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.65,
-          ),
-          itemBuilder: (_, index) {
-            if (index >= p.list.length) {
-              if (index == p.list.length && !p.isEndPage && p.status != BlocStatus.loading) {
-                context.read<RsDiscoverBloc>().add(FetchDiscoverProductsEvent(loadMore: true));
-              }
-              return const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)));
-            }
-            return _MealSearchCard(product: p.list[index]);
-          },
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverAlignedGrid.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 16,
+                itemCount: p.listLength(1), // تأكد أن هذا يغطي الطول + مؤشر التحميل
+                itemBuilder: (_, index) {
+                  // منطق التحميل التلقائي (Pagination)
+                  if (index >= p.list.length) {
+                    if (index == p.list.length && !p.isEndPage && p.status != BlocStatus.loading) {
+                      // تأجيل الحدث لتجنب استدعائه أثناء بناء الـ Widget
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        context.read<RsDiscoverBloc>().add(FetchDiscoverProductsEvent(loadMore: true));
+                      });
+                    }
+                    return const Center(
+                        child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2)
+                        )
+                    );
+                  }
+                  return _MealSearchCard(product: p.list[index]);
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

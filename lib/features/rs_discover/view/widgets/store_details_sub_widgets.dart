@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../data/models/fetch_restaurant_details_model.dart';
@@ -97,18 +98,21 @@ class StoreProductsPreviewSection extends StatelessWidget {
             ),
           )
         else
-          GridView.builder(
+          AlignedGridView.count(
+            // هذا يعادل shrinkWrap: true في الـ GridView العادي
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+            // هذا يعادل physics: NeverScrollableScrollPhysics()
+            // حيث أن AlignedGridView داخل Column/ListView لا يأخذ سكرول خاص به تلقائياً
+            physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
             itemCount: products.length > 5 ? 5 : products.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 0.65,
+            itemBuilder: (_, index) => StoreProductCard(
+                product: products[index],
+                restaurantName: restaurantName
             ),
-            itemBuilder: (_, index) => StoreProductCard(product: products[index], restaurantName: restaurantName),
           ),
       ],
     );

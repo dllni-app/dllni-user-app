@@ -20,40 +20,45 @@ class _BottomNavBarState extends State<BottomNavBar> {
     List<String> images = [Assets.images.mainHome.path, Assets.images.mainOrders.path, Assets.images.mainProfile.path];
 
     return Container(
+      padding: EdgeInsets.only(bottom: context.navigationBarHeight,top: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
         boxShadow: [BoxShadow(color: Colors.black.withAlpha(27), offset: Offset(0, -2), blurRadius: 12, spreadRadius: 0)],
       ),
       width: context.width,
-      height: 70,
-      child: Row(
-        children: List.generate(
-          titles.length,
-          (i) => Expanded(
-            child: InkWell(
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              onTap: () {
-                widget.controller.animateTo(i);
-                setState(() {});
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppImage.asset(images[i], color: i == widget.controller.index ? Color(0xff1E2A78) : Color(0xff9CA3AF), width: 20, height: 20),
-                  SizedBox(height: 8),
-                  AppText.labelMedium(
-                    titles[i],
-                    fontWeight: FontWeight.w300,
-                    color: i == widget.controller.index ? Color(0xff1E2A78) : Color(0xff9CA3AF),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: List.generate(
+              titles.length,
+              (i) => Expanded(
+                child: InkWell(
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                  onTap: () {
+                    widget.controller.animateTo(i);
+                    setState(() {});
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AppImage.asset(images[i], color: i == widget.controller.index ? Color(0xff1E2A78) : Color(0xff9CA3AF), width: 20, height: 20),
+                      SizedBox(height: 8),
+                      AppText.labelMedium(
+                        titles[i],
+                        fontWeight: FontWeight.w300,
+                        color: i == widget.controller.index ? Color(0xff1E2A78) : Color(0xff9CA3AF),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

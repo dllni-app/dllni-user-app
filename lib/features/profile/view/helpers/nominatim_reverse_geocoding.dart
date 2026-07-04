@@ -46,7 +46,8 @@ class NominatimReverseGeocoding {
     required double latitude,
     required double longitude,
     String acceptLanguage = 'ar,en',
-  }) async {
+  })
+  async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/reverse',
@@ -67,6 +68,7 @@ class NominatimReverseGeocoding {
       );
       final data = response.data;
       if (data == null) return null;
+
       return parse(data);
     } catch (_) {
       return null;
