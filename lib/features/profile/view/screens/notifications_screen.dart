@@ -26,7 +26,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
 
-    profileBloc=getIt<ProfileBloc>()..add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
+    profileBloc=widget.args.profileBloc..add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
     // TODO: implement initState
     super.initState();
   }

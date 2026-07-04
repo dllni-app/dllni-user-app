@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:common_package/common_package.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../data/models/fetch_rs_offers_products_model.dart';
 import '../manager/bloc/rs_offers_bloc.dart';
@@ -40,17 +41,16 @@ class RsOffersProductsListWidget extends StatelessWidget {
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.65,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => RsOffersProductCardWidget(product: products.list[index]),
-                  childCount: products.list.length,
-                ),
+              sliver: SliverAlignedGrid.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                itemCount: products.list.length,
+                itemBuilder: (context, index) {
+                  return RsOffersProductCardWidget(
+                    product: products.list[index],
+                  );
+                },
               ),
             ),
             if (showFooter)

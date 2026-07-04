@@ -477,8 +477,7 @@ class _ClMainServiceScheduleScreenState
     }
 
     if (state.genderPreference.apiValue ==
-        'fe'
-            'male' &&
+        'female' &&
         state.safetyConfirmation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
@@ -501,6 +500,18 @@ class _ClMainServiceScheduleScreenState
     );
     final selectedWorkerIds = state.selectedWorkerIds;
     final selectedWorkerCount = selectedWorkerIds.length;
+
+    print('args');
+    print('args');
+    print('args');
+    print('args');
+    print(args.bathrooms);
+    print(args.bathrooms);
+    print(args.bathrooms);
+    print(args.rooms);
+    print(args.rooms);
+    print(args.rooms);
+    print(args.rooms);
 
     bloc.add(
       CreateCleaningOrderEvent(

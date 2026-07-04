@@ -109,8 +109,7 @@ class CleaningRoomSizeBreakdown {
       bathroom.total +
       kitchen.total +
       livingRoom.total +
-      corridor.total+
-      balcony.total
+      corridor.total
   ;
 
   /// Sum of all room units including balconies (max worker count cap).
