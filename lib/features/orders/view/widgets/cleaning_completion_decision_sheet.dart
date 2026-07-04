@@ -4,8 +4,10 @@ import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
 
+import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
+import '../../domain/usecases/fetch_cleaning_orders_use_case.dart';
 
 enum CleaningCompletionDecision { confirmed, rejected, extensionRequested }
 
@@ -178,10 +180,15 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
   }
 
   Future<void> _loadFinishedTasks() async {
-    final orderId = widget.orderId;
-    if (orderId == null) return;
     setState(() => _loadingFinishedTasks = true);
     try {
+      final orderId = widget.orderId ?? await _resolveAwaitingCompletionOrderId();
+      if (orderId == null) {
+        if (!mounted) return;
+        setState(() => _loadingFinishedTasks = false);
+        return;
+      }
+
       final snapshotGroups = await _fetchBackendFinishedTaskGroups(orderId);
       final response = await getIt<FetchCleaningOrderDetailsUseCase>()(
         FetchCleaningOrderDetailsParams(orderId: orderId),
@@ -205,6 +212,40 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
       if (!mounted) return;
       setState(() => _loadingFinishedTasks = false);
     }
+  }
+
+  Future<int?> _resolveAwaitingCompletionOrderId() async {
+    final useCase = getIt<FetchCleaningOrdersUseCase>();
+    final filteredResponse = await useCase(
+      FetchCleaningOrdersParams(
+        status: CleaningBookingStatus.awaitingCustomerCompletion,
+        page: 1,
+        perPage: 5,
+      ),
+    );
+    final filteredOrderId = filteredResponse.fold<int?>(
+      (_) => null,
+      (result) => _firstAwaitingCompletionOrderId(result.data),
+    );
+    if (filteredOrderId != null) return filteredOrderId;
+
+    final unfilteredResponse = await useCase(
+      FetchCleaningOrdersParams(page: 1, perPage: 25),
+    );
+    return unfilteredResponse.fold<int?>(
+      (_) => null,
+      (result) => _firstAwaitingCompletionOrderId(result.data),
+    );
+  }
+
+  int? _firstAwaitingCompletionOrderId(List<CleaningOrderModel> orders) {
+    for (final order in orders) {
+      final status = (order.status ?? '').trim().toLowerCase();
+      if (status != CleaningBookingStatus.awaitingCustomerCompletion) continue;
+      final id = order.id;
+      if (id != null) return id;
+    }
+    return null;
   }
 
   Future<List<_FinishedTaskGroup>> _fetchBackendFinishedTaskGroups(int orderId) async {
