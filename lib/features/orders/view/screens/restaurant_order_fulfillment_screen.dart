@@ -40,7 +40,6 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         ? state.storeCart
         : state.restaurantCart;
   }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
