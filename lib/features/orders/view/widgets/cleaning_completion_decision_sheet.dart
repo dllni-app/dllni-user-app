@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:common_package/helpers/dio_network.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,73 @@ class _FinishedTaskGroup {
 
   final String title;
   final List<String> items;
+}
+
+Map<String, dynamic> _completionAsMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map((key, nestedValue) => MapEntry(key.toString(), nestedValue));
+  }
+  return const <String, dynamic>{};
+}
+
+dynamic _completionPick(Map<String, dynamic> map, List<String> keys) {
+  for (final key in keys) {
+    if (!map.containsKey(key)) continue;
+    final value = map[key];
+    if (value != null) return value;
+  }
+  return null;
+}
+
+String? _completionText(dynamic value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
+}
+
+Map<String, dynamic> _completionPayloadData(dynamic payload) {
+  final root = _completionAsMap(payload);
+  final data = _completionAsMap(root['data']);
+  return data.isEmpty ? root : data;
+}
+
+List<String> _completionSnapshotLabels(dynamic value) {
+  if (value is! List) return const <String>[];
+
+  final labels = <String>[];
+  for (final item in value) {
+    String? label;
+    String? detail;
+
+    if (item is String) {
+      label = item.trim();
+    } else if (item is Map) {
+      final map = _completionAsMap(item);
+      label = _completionText(
+        _completionPick(map, const <String>[
+          'label',
+          'name',
+          'displayLabel',
+          'display_label',
+          'roomTypeLabel',
+          'room_type_label',
+          'roomType',
+          'room_type',
+          'roomKey',
+          'room_key',
+        ]),
+      );
+      detail = _completionText(map['detail']);
+    }
+
+    if (label == null || label.isEmpty) continue;
+    if (detail != null && detail.isNotEmpty && !label.contains(detail)) {
+      label = '$label: $detail';
+    }
+    if (!labels.contains(label)) labels.add(label);
+  }
+
+  return labels;
 }
 
 class CleaningCompletionDecisionSheet {
@@ -114,16 +182,21 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
     if (orderId == null) return;
     setState(() => _loadingFinishedTasks = true);
     try {
+      final snapshotGroups = await _fetchBackendFinishedTaskGroups(orderId);
       final response = await getIt<FetchCleaningOrderDetailsUseCase>()(
         FetchCleaningOrderDetailsParams(orderId: orderId),
       );
       if (!mounted) return;
       response.fold(
-        (_) => setState(() => _loadingFinishedTasks = false),
+        (_) => setState(() {
+          _finishedTaskGroups = snapshotGroups;
+          _loadingFinishedTasks = false;
+        }),
         (result) {
           final order = result.data;
+          final fallbackGroups = _buildFinishedTaskGroups(order);
           setState(() {
-            _finishedTaskGroups = _buildFinishedTaskGroups(order);
+            _finishedTaskGroups = snapshotGroups.isNotEmpty ? snapshotGroups : fallbackGroups;
             _loadingFinishedTasks = false;
           });
         },
@@ -132,6 +205,43 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
       if (!mounted) return;
       setState(() => _loadingFinishedTasks = false);
     }
+  }
+
+  Future<List<_FinishedTaskGroup>> _fetchBackendFinishedTaskGroups(int orderId) async {
+    try {
+      final dynamic response = await getIt<DioNetwork>().getData(
+        endPoint: '/api/v1/user/cleaning/orders/$orderId',
+      );
+      final data = _completionPayloadData(response.data);
+      return _buildFinishedSnapshotGroups(data);
+    } catch (_) {
+      return const <_FinishedTaskGroup>[];
+    }
+  }
+
+  List<_FinishedTaskGroup> _buildFinishedSnapshotGroups(Map<String, dynamic> data) {
+    if (data.isEmpty) return const <_FinishedTaskGroup>[];
+
+    final completionRequest = _completionAsMap(
+      data['completionRequest'] ?? data['completion_request'],
+    );
+    final serviceItems = _completionSnapshotLabels(
+      data['workerFinishedCleaningServices'] ??
+          data['worker_finished_cleaning_services'] ??
+          completionRequest['finishedCleaningServices'] ??
+          completionRequest['finished_cleaning_services'],
+    );
+    final roomItems = _completionSnapshotLabels(
+      data['workerFinishedPropertyRooms'] ??
+          data['worker_finished_property_rooms'] ??
+          completionRequest['finishedPropertyRooms'] ??
+          completionRequest['finished_property_rooms'],
+    );
+
+    return <_FinishedTaskGroup>[
+      if (serviceItems.isNotEmpty) _FinishedTaskGroup(title: 'الخدمات التي أنهاها العامل', items: serviceItems),
+      if (roomItems.isNotEmpty) _FinishedTaskGroup(title: 'الغرف التي أنهاها العامل', items: roomItems),
+    ];
   }
 
   List<_FinishedTaskGroup> _buildFinishedTaskGroups(CleaningOrderDetailModel? order) {
