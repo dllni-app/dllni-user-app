@@ -483,11 +483,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   Future<void> _markAllNotificationsRead(
     MarkAllNotificationsReadEvent event,
     Emitter<ProfileState> emit,
-  ) async {
+  )
+  async {
     emit(
       state.copyWith(
         markAllNotificationsReadStatus: BlocStatus.loading,
         clearNotificationActionError: true,
+        unreadNotification: 0
       ),
     );
     final response = await markAllNotificationsReadUseCase(NoParams());
