@@ -62,23 +62,28 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: availableServices.map((service) {
-                final name = service.name?.trim() ?? '';
-                if (name.isEmpty) return const SizedBox.shrink();
-                final selected = selectedServiceNames.contains(name);
-                return FilterChip(
-                  label: Text(name),
-                  selected: selected,
-                  onSelected: (_) => onToggleService(name),
-                  selectedColor: const Color(0xFFE2F5F4),
-                  checkmarkColor: const Color(0xFF0CBBC7),
-                  side: BorderSide(
-                    color: selected
-                        ? const Color(0xFF0CBBC7)
-                        : const Color(0xFFE5E7EB),
-                  ),
-                );
-              }).toList(growable: false),
+              children: availableServices
+                  .map((service) {
+                    final name = service.name?.trim() ?? '';
+                    if (name.isEmpty) return const SizedBox.shrink();
+                    final selected = selectedServiceNames.contains(name);
+                    return FilterChip(
+                      label: Text(
+                        name,
+                        style: TextStyle(color: Color(0xFF0CBBC7)),
+                      ),
+                      selected: selected,
+                      onSelected: (_) => onToggleService(name),
+                      selectedColor: const Color(0xFFE2F5F4),
+                      checkmarkColor: const Color(0xFF0CBBC7),
+                      side: BorderSide(
+                        color: selected
+                            ? const Color(0xFF0CBBC7)
+                            : const Color(0xFFE5E7EB),
+                      ),
+                    );
+                  })
+                  .toList(growable: false),
             ),
           ] else ...[
             const Text(
@@ -118,17 +123,27 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              FilledButton(
-                onPressed: onAddCustomService,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E2A78),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 15,
+              SizedBox(
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: onAddCustomService,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E2A78),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: 20,
+                    ),
+                  ),
+                  child: AppText.labelLarge(
+                    'إضافة',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: const Text('إضافة'),
               ),
             ],
           ),
@@ -144,15 +159,17 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: selectedServiceNames.map((name) {
-                return InputChip(
-                  label: Text(name),
-                  onDeleted: () => onRemoveService(name),
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  backgroundColor: const Color(0xFFF3F4F6),
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
-                );
-              }).toList(growable: false),
+              children: selectedServiceNames
+                  .map((name) {
+                    return InputChip(
+                      label: Text(name),
+                      onDeleted: () => onRemoveService(name),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    );
+                  })
+                  .toList(growable: false),
             ),
           ],
         ],
