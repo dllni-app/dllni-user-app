@@ -1,8 +1,10 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 
 enum CleaningCompletionDecision { confirmed, rejected, extensionRequested }
 
@@ -26,6 +28,13 @@ class _ExtensionTimeOption {
   }
 }
 
+class _FinishedTaskGroup {
+  const _FinishedTaskGroup({required this.title, required this.items});
+
+  final String title;
+  final List<String> items;
+}
+
 class CleaningCompletionDecisionSheet {
   static Future<CleaningCompletionDecision?> show(
     BuildContext context, {
@@ -35,6 +44,8 @@ class CleaningCompletionDecisionSheet {
     required Future<List<CleaningExtensionRangeModel>> Function() fetchExtensionTimeRanges,
     bool useRootNavigator = true,
   }) async {
+    final orderId = _resolveOrderId(context);
+
     return showModalBottomSheet<CleaningCompletionDecision>(
       context: context,
       useRootNavigator: useRootNavigator,
@@ -44,6 +55,7 @@ class CleaningCompletionDecisionSheet {
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => _CleaningCompletionDecisionSheetBody(
+        orderId: orderId,
         onConfirm: onConfirm,
         onReject: onReject,
         onExtend: onExtend,
@@ -51,11 +63,31 @@ class CleaningCompletionDecisionSheet {
       ),
     );
   }
+
+  static int? _resolveOrderId(BuildContext context) {
+    try {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is int) return args;
+      final value = (args as dynamic)?.orderId;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return int.tryParse(value?.toString() ?? '');
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 class _CleaningCompletionDecisionSheetBody extends StatefulWidget {
-  const _CleaningCompletionDecisionSheetBody({required this.onConfirm, required this.onReject, required this.onExtend, required this.fetchExtensionTimeRanges});
+  const _CleaningCompletionDecisionSheetBody({
+    required this.orderId,
+    required this.onConfirm,
+    required this.onReject,
+    required this.onExtend,
+    required this.fetchExtensionTimeRanges,
+  });
 
+  final int? orderId;
   final Future<String?> Function() onConfirm;
   final Future<String?> Function(String? reason) onReject;
   final Future<String?> Function(int minutes) onExtend;
@@ -67,7 +99,66 @@ class _CleaningCompletionDecisionSheetBody extends StatefulWidget {
 
 class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletionDecisionSheetBody> {
   bool _submitting = false;
+  bool _loadingFinishedTasks = false;
   String? _error;
+  List<_FinishedTaskGroup> _finishedTaskGroups = const <_FinishedTaskGroup>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFinishedTasks();
+  }
+
+  Future<void> _loadFinishedTasks() async {
+    final orderId = widget.orderId;
+    if (orderId == null) return;
+    setState(() => _loadingFinishedTasks = true);
+    try {
+      final response = await getIt<FetchCleaningOrderDetailsUseCase>()(
+        FetchCleaningOrderDetailsParams(orderId: orderId),
+      );
+      if (!mounted) return;
+      response.fold(
+        (_) => setState(() => _loadingFinishedTasks = false),
+        (result) {
+          final order = result.data;
+          setState(() {
+            _finishedTaskGroups = _buildFinishedTaskGroups(order);
+            _loadingFinishedTasks = false;
+          });
+        },
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingFinishedTasks = false);
+    }
+  }
+
+  List<_FinishedTaskGroup> _buildFinishedTaskGroups(CleaningOrderDetailModel? order) {
+    if (order == null) return const <_FinishedTaskGroup>[];
+    final serviceItems = <String>[];
+    for (final service in order.services ?? const <CleaningOrderLineItemModel>[]) {
+      final name = service.name?.trim();
+      if (name != null && name.isNotEmpty) serviceItems.add(name);
+    }
+    for (final addon in order.addons ?? const <CleaningOrderLineItemModel>[]) {
+      final name = addon.name?.trim();
+      if (name != null && name.isNotEmpty && !serviceItems.contains(name)) serviceItems.add(name);
+    }
+
+    final roomItems = <String>[];
+    for (final room in order.roomAssignments ?? const <CleaningRoomAssignmentModel>[]) {
+      final label = room.displayLabel?.trim();
+      final fallback = room.roomType?.trim();
+      final value = label != null && label.isNotEmpty ? label : fallback;
+      if (value != null && value.isNotEmpty) roomItems.add(value);
+    }
+
+    return <_FinishedTaskGroup>[
+      if (serviceItems.isNotEmpty) _FinishedTaskGroup(title: 'الخدمات التي أنهاها العامل', items: serviceItems),
+      if (roomItems.isNotEmpty) _FinishedTaskGroup(title: 'الغرف التي أنهاها العامل', items: roomItems),
+    ];
+  }
 
   Future<void> _run(Future<String?> Function() action, CleaningCompletionDecision decision) async {
     if (_submitting) return;
@@ -127,6 +218,53 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
     await _run(() => widget.onReject(reason.isEmpty ? null : reason), CleaningCompletionDecision.rejected);
   }
 
+  Widget _buildFinishedTasksSection() {
+    if (_loadingFinishedTasks) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    if (_finishedTaskGroups.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: const Color(0xffF9FAFB), borderRadius: BorderRadius.circular(12)),
+        child: AppText.bodySmall('لم يرسل العامل تفاصيل مهام منجزة.', color: const Color(0xff6B7280), textAlign: TextAlign.center),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xffF9FAFB), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xffE5E7EB))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppText.bodyMedium('المهام التي أبلغ العامل أنه أنهاها', fontWeight: FontWeight.w800, color: const Color(0xff374151)),
+          const SizedBox(height: 8),
+          ..._finishedTaskGroups.map((group) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppText.bodySmall(group.title, fontWeight: FontWeight.w700, color: const Color(0xff1E2A78)),
+                    const SizedBox(height: 4),
+                    ...group.items.map((item) => Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 8, bottom: 3),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_outline, size: 16, color: Color(0xff20B7C4)),
+                              const SizedBox(width: 6),
+                              Expanded(child: AppText.bodySmall(item, color: const Color(0xff4B5563))),
+                            ],
+                          ),
+                        )),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -144,6 +282,8 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
           AppText.titleLarge('مقدم الخدمة قد أنهى المهمة', textAlign: TextAlign.center, fontWeight: FontWeight.w700, color: const Color(0xff374151)),
           const SizedBox(height: 4),
           AppText.titleMedium('يرجى التأكيد', textAlign: TextAlign.center, fontWeight: FontWeight.w700, color: const Color(0xff374151)),
+          const SizedBox(height: 12),
+          _buildFinishedTasksSection(),
           if (_error != null) ...[
             const SizedBox(height: 10),
             AppText.bodySmall(_error!, textAlign: TextAlign.center, color: context.error),
