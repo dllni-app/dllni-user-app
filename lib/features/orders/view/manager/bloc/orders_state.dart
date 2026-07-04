@@ -1,6 +1,8 @@
 part of 'orders_bloc.dart';
 
 class OrdersState {
+  BlocStatus? singleSupermarketCartStatus;
+  FetchSupermarketCartModelDataItem? singleSupermarketCart;
   BlocStatus? removeSupermarketCartStatus;
   RemoveSupermarketCartModel? removeSupermarketCart;
   BlocStatus? supermarketCartStatus;
@@ -36,7 +38,7 @@ class OrdersState {
   final String storeReceiveMode;
   final String? storeScheduledAt;
   final AddressListItem? selectedAddress;
-
+  BlocStatus? deleteStoreCartItemStatus;
   OrdersState({
     this.orders = const PaginationStateModel<OrderResourceModel>(perPage: 10),
     this.cleaningOrders = const PaginationStateModel<CleaningOrderModel>(perPage: 10),
@@ -73,6 +75,9 @@ class OrdersState {
     this.supermarketCart,
     this.removeSupermarketCart,
     this.removeSupermarketCartStatus,
+    this.singleSupermarketCart,
+    this.singleSupermarketCartStatus,
+    this.deleteStoreCartItemStatus
   });
 
   OrdersState copyWith({
@@ -127,6 +132,9 @@ class OrdersState {
     BlocStatus? supermarketCartStatus,
     RemoveSupermarketCartModel? removeSupermarketCart,
     BlocStatus? removeSupermarketCartStatus,
+    FetchSupermarketCartModelDataItem? singleSupermarketCart,
+    BlocStatus? singleSupermarketCartStatus,
+    BlocStatus? deleteStoreCartItemStatus,
   }) {
     final resolvedRestaurantCarts = replaceRestaurantCarts
         ? (restaurantCarts ?? const <RestaurantCartDataModel>[])
@@ -184,7 +192,10 @@ class OrdersState {
         supermarketCart: supermarketCart ?? this.supermarketCart,
         supermarketCartStatus: supermarketCartStatus ?? this.supermarketCartStatus,
         removeSupermarketCart: removeSupermarketCart ?? this.removeSupermarketCart,
-        removeSupermarketCartStatus: removeSupermarketCartStatus ?? this.removeSupermarketCartStatus,);
+        removeSupermarketCartStatus: removeSupermarketCartStatus ?? this.removeSupermarketCartStatus,
+        singleSupermarketCart: singleSupermarketCart ?? this.singleSupermarketCart,
+        singleSupermarketCartStatus: singleSupermarketCartStatus ?? this.singleSupermarketCartStatus,
+        deleteStoreCartItemStatus: deleteStoreCartItemStatus ?? this.deleteStoreCartItemStatus,);
   }
 
   bool isStoresSection() => selectedTabIndex == 0;

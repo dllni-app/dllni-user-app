@@ -1,0 +1,23 @@
+name: flutter_cube_transition
+description: A customizable and cube transition for Flutter apps.
+version: 1.0.2
+license: MIT
+homepage: https://github.com/asseries/flutter_cube_transition
+repository: https://github.com/asseries/flutter_cube_transition
+issue_tracker: https://github.com/asseries/flutter_cube_transition/issues
+
+
+environment:
+  sdk: ">=3.1.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../sm_cart/view/widgets/cart_card.dart';
+import '../../data/models/fetch_supermarket_cart_model.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../../domain/usecases/remove_supermarket_cart_use_case.dart';
@@ -105,8 +106,6 @@ class AppLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: context.width,
-      height: context.height,
       color: Colors.black.withValues(alpha: 0.15),
       child: const Center(child: CircularProgressIndicator()),
     );
@@ -144,59 +143,95 @@ class SupermarketCartCheckoutBody extends StatelessWidget {
           children: [
             RefreshIndicator(
               onRefresh: onRefresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
+              child: ListView.separated(
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
-                children: [
-                  ...state.supermarketCart?.data?.first.merchantGroups?.map(
-                        (cart) => CartCard(
-                          cart: cart,
-                          onTap: () {
-                            context.pushRoute(
-                              '/supermarketcartdetails',
-                              arguments: SupermarketCartDetailsArgs(
-                                storeName: cart.merchant?.name,
-                                cart: cart,
-                              ),
-                            );
-                          },
-                          onDeleteTap: () async {
-                            final bool yes =
-                                await showDeleteCartDialog(
-                                  context,
-                                  cart.merchant?.name ?? "غير معروف",
-                                ) ??
-                                false;
-                            if (!yes || !context.mounted) return;
-                            context.read<OrdersBloc>().add(
-                              RemoveSupermarketCartEvent(
-                                params: RemoveSupermarketCartParams(
-                                  id: cart.merchant?.id ?? 0,
-                                ),
-                              ),
-                            );
-                          },
+                itemCount: state.supermarketCart?.data?.length ?? 0,
+                separatorBuilder: (_, _) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final cart =
+                      state.supermarketCart?.data?[index] ??
+                      FetchSupermarketCartModelDataItem();
+                  return CartCard(
+                    cart: cart,
+                    onTap: () {
+                      context.pushRoute(
+                        '/supermarketcartdetails',
+                        arguments: SupermarketCartDetailsArgs(cart: cart, bloc: context.read<OrdersBloc>()),
+                      );
+                    },
+                    onDeleteTap: () async {
+                      final bool yes =
+                          await showDeleteCartDialog(
+                            context,
+                            cart.merchant?.name ?? "غير معروف",
+                          ) ??
+                          false;
+                      if (!yes || !context.mounted) return;
+                      context.read<OrdersBloc>().add(
+                        RemoveSupermarketCartEvent(
+                          params: RemoveSupermarketCartParams(
+                            id: cart.id ?? 0,
+                          ),
                         ),
-                        // _StoreCartCard(
-                        //   cart: cart,
-                        //   isMutating: state.isMutatingStoreCartItem,
-                        //   money: '${value.toStringAsFixed(0)} ل.س',
-                        // )
-                      ) ??
-                      [],
-                  // const RestaurantCartAddMoreProductsButton(
-                  //   isRestaurant: false,
-                  // ),
-                ],
+                      );
+                    },
+                  );
+                },
               ),
+
+              // ListView(
+              //   physics: const AlwaysScrollableScrollPhysics(),
+              //   padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
+              //   children: [
+              //     ...state.supermarketCart?.data?.map(
+              //           (cart) => CartCard(
+              //             cart: cart,
+              //             onTap: () {
+              //               context.pushRoute(
+              //                 '/supermarketcartdetails',
+              //                 arguments: SupermarketCartDetailsArgs(
+              //                   storeName: cart.merchant?.name,
+              //                   cart: cart,
+              //                 ),
+              //               );
+              //             },
+              //             onDeleteTap: () async {
+              //               final bool yes =
+              //                   await showDeleteCartDialog(
+              //                     context,
+              //                     cart.merchant?.name ?? "غير معروف",
+              //                   ) ??
+              //                   false;
+              //               if (!yes || !context.mounted) return;
+              //               context.read<OrdersBloc>().add(
+              //                 RemoveSupermarketCartEvent(
+              //                   params: RemoveSupermarketCartParams(
+              //                     id: cart.merchant?.id ?? 0,
+              //                   ),
+              //                 ),
+              //               );
+              //             },
+              //           ),
+              //           // _StoreCartCard(
+              //           //   cart: cart,
+              //           //   isMutating: state.isMutatingStoreCartItem,
+              //           //   money: '${value.toStringAsFixed(0)} ل.س',
+              //           // )
+              //         ) ??
+              //         [],
+              //     // const RestaurantCartAddMoreProductsButton(
+              //     //   isRestaurant: false,
+              //     // ),
+              //   ],
+              // ),
             ),
-            if (state.supermarketCartStatus == BlocStatus.loading)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
+            // if (state.supermarketCartStatus == BlocStatus.loading)
+            //   const Positioned(
+            //     top: 0,
+            //     left: 0,
+            //     right: 0,
+            //     child: LinearProgressIndicator(minHeight: 2),
+            //   ),
             BlocConsumer<OrdersBloc, OrdersState>(
               listenWhen: (p, c) =>
                   p.removeSupermarketCartStatus !=

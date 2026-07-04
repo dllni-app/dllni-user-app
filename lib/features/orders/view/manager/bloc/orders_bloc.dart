@@ -25,6 +25,7 @@ import '../../../data/models/fetch_supermarket_cart_model.dart';
 import 'package:common_package/helpers/pagination_helper.dart';
 import '../../../domain/usecases/remove_supermarket_cart_use_case.dart';
 import '../../../data/models/remove_supermarket_cart_model.dart';
+import '../../../domain/usecases/get_single_supermarket_cart_use_case.dart';
 
 part 'orders_event.dart';
 
@@ -32,6 +33,7 @@ part 'orders_state.dart';
 
 @injectable
 class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
+  final GetSingleSupermarketCartUseCase getSingleSupermarketCartUseCase;
   final RemoveSupermarketCartUseCase removeSupermarketCartUseCase;
   final FetchSupermarketCartUseCase fetchSupermarketCartUseCase;
   final FetchOrdersUseCase fetchOrdersUseCase;
@@ -61,7 +63,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     this.placeRestaurantOrderUseCase,
     this.placeStoreOrderUseCase,
     this.fetchSupermarketCartUseCase,
-    this.removeSupermarketCartUseCase,) : super(OrdersState()) {
+    this.removeSupermarketCartUseCase,
+    this.getSingleSupermarketCartUseCase,) : super(OrdersState()) {
     on<OrdersSectionChangedEvent>(_onSectionChanged);
     on<FetchOrdersEvent>(
       _onFetchOrders,
@@ -88,7 +91,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<PlaceStoreOrderEvent>(_onPlaceStoreOrder);
   
     on<FetchSupermarketCartEvent>(_fetchSupermarketCart);
-    on<RemoveSupermarketCartEvent>(_removeSupermarketCart);}
+    on<RemoveSupermarketCartEvent>(_removeSupermarketCart);
+    on<GetSingleSupermarketCartEvent>(_getSingleSupermarketCart);}
 
   static const List<String> _sections = <String>[
     'supermarket',
@@ -478,13 +482,14 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     DeleteStoreCartItemEvent event,
     Emitter<OrdersState> emit,
   ) async {
-    emit(state.copyWith(isMutatingStoreCartItem: true));
+    emit(state.copyWith(isMutatingStoreCartItem: true, deleteStoreCartItemStatus: BlocStatus.loading));
     final response = await deleteStoreCartItemUseCase(
       DeleteCartItemParams(cartId: event.cartId, itemId: event.itemId),
     );
     response.fold(
       (failure) => emit(
         state.copyWith(
+          deleteStoreCartItemStatus: BlocStatus.failed,
           isMutatingStoreCartItem: false,
           storeCartErrorMessage: failure.message,
         ),
@@ -495,6 +500,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
             : _upsertCart(state.storeCarts, result.data);
         emit(
           state.copyWith(
+            deleteStoreCartItemStatus: BlocStatus.success,
             isMutatingStoreCartItem: false,
             replaceStoreCarts: true,
             storeCarts: carts,
@@ -714,6 +720,22 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       emit(state.copyWith(
         removeSupermarketCartStatus: BlocStatus.success,
         removeSupermarketCart: r,
+      ));
+    });
+  }
+
+  FutureOr<void> _getSingleSupermarketCart(GetSingleSupermarketCartEvent event, Emitter<OrdersState> emit) async {
+    emit(state.copyWith(singleSupermarketCartStatus: BlocStatus.loading));
+    final res = await getSingleSupermarketCartUseCase(event.params);
+    res.fold((l) {
+      emit(state.copyWith(
+        singleSupermarketCartStatus: BlocStatus.failed,
+        errorMessage: l.message,
+      ));
+    }, (r) {
+      emit(state.copyWith(
+        singleSupermarketCartStatus: BlocStatus.success,
+        singleSupermarketCart: r,
       ));
     });
   }}

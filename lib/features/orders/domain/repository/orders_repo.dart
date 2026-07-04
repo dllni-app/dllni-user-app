@@ -30,6 +30,7 @@ import '../usecases/fetch_supermarket_cart_use_case.dart';
 import '../../data/models/fetch_supermarket_cart_model.dart';
 import '../usecases/remove_supermarket_cart_use_case.dart';
 import '../../data/models/remove_supermarket_cart_model.dart';
+import '../usecases/get_single_supermarket_cart_use_case.dart';
 
 abstract class OrdersRepo {
   DataResponse<FetchOrdersModel> fetchOrders(FetchOrdersParams params);
@@ -136,4 +137,6 @@ abstract class OrdersRepo {
 
 
   DataResponse<RemoveSupermarketCartModel> removeSupermarketCart(RemoveSupermarketCartParams params);
+
+  DataResponse<FetchSupermarketCartModelDataItem> getSingleSupermarketCart(GetSingleSupermarketCartParams params);
 }
