@@ -251,7 +251,7 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
   Future<List<_FinishedTaskGroup>> _fetchBackendFinishedTaskGroups(int orderId) async {
     try {
       final dynamic response = await getIt<DioNetwork>().getData(
-        endPoint: '/api/v1/user/cleaning/orders/$orderId',
+        endPoint: '/api/v1/cleaning-bookings/$orderId',
       );
       final data = _completionPayloadData(response.data);
       return _buildFinishedSnapshotGroups(data);
