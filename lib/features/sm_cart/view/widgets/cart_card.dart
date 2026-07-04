@@ -5,7 +5,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../orders/data/models/fetch_supermarket_cart_model.dart';
 
 class CartCard extends StatelessWidget {
-  final FetchSupermarketCartModelDataItemMerchantGroupsItem cart;
+  final FetchSupermarketCartModelDataItem cart;
   final void Function()? onDeleteTap;
   final void Function()? onTap;
   const CartCard({
@@ -20,7 +20,6 @@ class CartCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,

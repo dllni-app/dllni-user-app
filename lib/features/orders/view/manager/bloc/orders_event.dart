@@ -150,3 +150,9 @@ class RemoveSupermarketCartEvent extends OrdersEvent {
 
   RemoveSupermarketCartEvent({required this.params});
 }
+
+class GetSingleSupermarketCartEvent extends OrdersEvent {
+  final GetSingleSupermarketCartParams params;
+
+  GetSingleSupermarketCartEvent({required this.params});
+}

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
+import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../manager/bloc/orders_bloc.dart';
 
 class RestaurantOrderFulfillmentArgs {
@@ -35,9 +36,10 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
     for (final cart in carts) {
       if (cart.id == args.cartId) return cart;
     }
-    return args.section == 'supermarket' ? state.storeCart : state.restaurantCart;
+    return args.section == 'supermarket'
+        ? state.storeCart
+        : state.restaurantCart;
   }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -47,7 +49,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         body: SafeArea(
           child: BlocConsumer<OrdersBloc, OrdersState>(
             listenWhen: (previous, current) => args.section == 'supermarket'
-                ? previous.placeStoreOrderStatus != current.placeStoreOrderStatus
+                ? previous.placeStoreOrderStatus !=
+                      current.placeStoreOrderStatus
                 : previous.placeOrderStatus != current.placeOrderStatus,
             listener: (context, state) {
               final status = args.section == 'supermarket'
@@ -60,10 +63,23 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('تم تاكيد الطلب بنجاح')),
                 );
-                context.pop(true);
+                if (args.section == 'supermarket') {
+                  context.read<OrdersBloc>().add(
+                    FetchSupermarketCartEvent(
+                      params: FetchSupermarketCartParams(),
+                    ),
+                  );
+                  context
+                    ..pop()
+                    ..pop();
+                } else {
+                  context.pop(true);
+                }
               } else if (status == BlocStatus.failed) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(errorMessage ?? 'تعذر تاكيد الطلب حالياً.')),
+                  SnackBar(
+                    content: Text(errorMessage ?? 'تعذر تاكيد الطلب حالياً.'),
+                  ),
                 );
               }
             },
@@ -76,9 +92,13 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   ? state.placeStoreOrderStatus == BlocStatus.loading
                   : state.placeOrderStatus == BlocStatus.loading;
               final amounts = cart?.amounts;
-              final couponData = isStoreFlow ? state.storeCouponData : state.couponData;
-              final subtotal = couponData?.amounts?.subtotal ?? amounts?.subtotal ?? 0;
-              final discount = couponData?.amounts?.discount ??
+              final couponData = isStoreFlow
+                  ? state.storeCouponData
+                  : state.couponData;
+              final subtotal =
+                  couponData?.amounts?.subtotal ?? amounts?.subtotal ?? 0;
+              final discount =
+                  couponData?.amounts?.discount ??
                   (subtotal - (amounts?.total ?? subtotal));
               final deliveryFee = isDelivery ? 0.0 : 0.0;
               final total = couponData?.amounts?.total ?? amounts?.total ?? 0;
@@ -88,7 +108,12 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   PersonalDetailsAppBar(title: 'الطلبية الحالية'),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        16,
+                        12,
+                        16,
+                        20,
+                      ),
                       child: Column(
                         children: [
                           Center(
@@ -106,19 +131,25 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                             selected: isDelivery,
                             onTap: () {
                               context.read<OrdersBloc>().add(
-                                CartFulfillmentTypeChangedEvent(fulfillmentType: 'delivery'),
+                                CartFulfillmentTypeChangedEvent(
+                                  fulfillmentType: 'delivery',
+                                ),
                               );
                             },
                           ),
                           const SizedBox(height: 24),
                           _FulfillmentCard(
-                            title: isStoreFlow ? 'استلام من المتجر' : 'استلام من المطعم',
+                            title: isStoreFlow
+                                ? 'استلام من المتجر'
+                                : 'استلام من المطعم',
                             subtitle: 'يمكنك استلام الطلب بنفسك',
                             icon: Icons.storefront_outlined,
                             selected: !isDelivery,
                             onTap: () {
                               context.read<OrdersBloc>().add(
-                                CartFulfillmentTypeChangedEvent(fulfillmentType: 'pickup'),
+                                CartFulfillmentTypeChangedEvent(
+                                  fulfillmentType: 'pickup',
+                                ),
                               );
                             },
                           ),
@@ -135,17 +166,25 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                 if (!context.mounted) return;
                                 if (selected is AddressListItem) {
                                   context.read<OrdersBloc>().add(
-                                    CartSelectedAddressChangedEvent(address: selected),
+                                    CartSelectedAddressChangedEvent(
+                                      address: selected,
+                                    ),
                                   );
                                 }
                               },
-                              line1: state.selectedAddress?.line1 ?? 'لم يتم تحديد العنوان',
+                              line1:
+                                  state.selectedAddress?.line1 ??
+                                  'لم يتم تحديد العنوان',
                               line2: state.selectedAddress?.street ?? '',
                             )
                           else
                             _LocationCard(
-                              title: isStoreFlow ? 'موقع المتجر' : 'موقع المطعم',
-                              line1: cart?.merchant?.name ?? (isStoreFlow ? 'المتجر' : 'المطعم'),
+                              title: isStoreFlow
+                                  ? 'موقع المتجر'
+                                  : 'موقع المطعم',
+                              line1:
+                                  cart?.merchant?.name ??
+                                  (isStoreFlow ? 'المتجر' : 'المطعم'),
                               line2: '${args.cartId ?? ''}',
                             ),
                           const SizedBox(height: 24),
@@ -154,7 +193,9 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xffE5E7EB)),
+                              border: Border.all(
+                                color: const Color(0xffE5E7EB),
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -168,10 +209,16 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                _SummaryRow(title: 'قيمة الطلب', value: _money(subtotal)),
+                                _SummaryRow(
+                                  title: 'قيمة الطلب',
+                                  value: _money(subtotal),
+                                ),
                                 if (isDelivery) ...[
                                   const SizedBox(height: 8),
-                                  _SummaryRow(title: 'رسوم التوصيل', value: _money(deliveryFee)),
+                                  _SummaryRow(
+                                    title: 'رسوم التوصيل',
+                                    value: _money(deliveryFee),
+                                  ),
                                 ],
                                 if (discount > 0) ...[
                                   const SizedBox(height: 8),
@@ -183,7 +230,10 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                 ],
                                 const Padding(
                                   padding: EdgeInsets.symmetric(vertical: 10),
-                                  child: Divider(height: 1, color: Color(0xffE5E7EB)),
+                                  child: Divider(
+                                    height: 1,
+                                    color: Color(0xffE5E7EB),
+                                  ),
                                 ),
                                 _SummaryRow(
                                   title: 'الإجمالي',
@@ -207,7 +257,12 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 12),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      8,
+                      16,
+                      12,
+                    ),
                     child: SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -218,26 +273,40 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                 final cartId = args.cartId;
                                 if (cartId == null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('تعذر تحديد السلة الحالية')),
+                                    const SnackBar(
+                                      content: Text('تعذر تحديد السلة الحالية'),
+                                    ),
                                   );
                                   return;
                                 }
-                                if (isDelivery && int.tryParse(state.selectedAddress?.id ?? '') == null) {
+                                if (isDelivery &&
+                                    int.tryParse(
+                                          state.selectedAddress?.id ?? '',
+                                        ) ==
+                                        null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('يرجى اختيار عنوان توصيل صالح')),
+                                    const SnackBar(
+                                      content: Text(
+                                        'يرجى اختيار عنوان توصيل صالح',
+                                      ),
+                                    ),
                                   );
                                   return;
                                 }
                                 context.read<OrdersBloc>().add(
                                   isStoreFlow
                                       ? PlaceStoreOrderEvent(cartId: cartId)
-                                      : PlaceRestaurantOrderEvent(cartId: cartId),
+                                      : PlaceRestaurantOrderEvent(
+                                          cartId: cartId,
+                                        ),
                                 );
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xff1E2A78),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: isPlacingOrder
                             ? const SizedBox(
@@ -245,7 +314,9 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : AppText.bodyLarge(
@@ -302,12 +373,16 @@ class _FulfillmentCard extends StatelessWidget {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: selected ? const Color(0xffFED7AA) : const Color(0xffF3F4F6),
+                color: selected
+                    ? const Color(0xffFED7AA)
+                    : const Color(0xffF3F4F6),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: selected ? const Color(0xffB45309) : const Color(0xff9CA3AF),
+                color: selected
+                    ? const Color(0xffB45309)
+                    : const Color(0xff9CA3AF),
               ),
             ),
             const SizedBox(width: 12),
@@ -317,12 +392,16 @@ class _FulfillmentCard extends StatelessWidget {
                 children: [
                   AppText.bodyLarge(
                     title,
-                    color: selected ? const Color(0xffB45309) : const Color(0xff374151),
+                    color: selected
+                        ? const Color(0xffB45309)
+                        : const Color(0xff374151),
                     fontWeight: FontWeight.bold,
                   ),
                   AppText.labelLarge(
                     subtitle,
-                    color: selected ? const Color(0xffC2410C) : const Color(0xff6B7280),
+                    color: selected
+                        ? const Color(0xffC2410C)
+                        : const Color(0xff6B7280),
                   ),
                 ],
               ),
@@ -330,7 +409,9 @@ class _FulfillmentCard extends StatelessWidget {
             const SizedBox(width: 12),
             Icon(
               selected ? Icons.check_circle : Icons.radio_button_off,
-              color: selected ? const Color(0xffF97316) : const Color(0xffD1D5DB),
+              color: selected
+                  ? const Color(0xffF97316)
+                  : const Color(0xffD1D5DB),
             ),
           ],
         ),
@@ -368,7 +449,11 @@ class _LocationCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.location_pin, color: Color(0xff6D28D9), size: 18),
+              const Icon(
+                Icons.location_pin,
+                color: Color(0xff6D28D9),
+                size: 18,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: AppText.bodyMedium(
@@ -432,7 +517,8 @@ class _SummaryRow extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: titleStyle ??
+            style:
+                titleStyle ??
                 const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -442,7 +528,8 @@ class _SummaryRow extends StatelessWidget {
         ),
         Text(
           value,
-          style: valueStyle ??
+          style:
+              valueStyle ??
               TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
