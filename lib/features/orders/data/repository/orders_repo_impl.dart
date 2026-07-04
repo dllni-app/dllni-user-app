@@ -34,6 +34,7 @@ import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../models/fetch_supermarket_cart_model.dart';
 import '../../domain/usecases/remove_supermarket_cart_use_case.dart';
 import '../models/remove_supermarket_cart_model.dart';
+import '../../domain/usecases/get_single_supermarket_cart_use_case.dart';
 
 @LazySingleton(as: OrdersRepo)
 class OrdersRepoImpl with HandlingException implements OrdersRepo {
@@ -238,5 +239,12 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   DataResponse<RemoveSupermarketCartModel> removeSupermarketCart(RemoveSupermarketCartParams params) {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.removeSupermarketCart(params),
+    );
+  }
+
+  @override
+  DataResponse<FetchSupermarketCartModelDataItem> getSingleSupermarketCart(GetSingleSupermarketCartParams params) {
+    return wrapHandlingException(
+      tryCall: () => ordersRemoteDataSource.getSingleSupermarketCart(params),
     );
   }}

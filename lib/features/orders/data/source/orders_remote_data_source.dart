@@ -21,8 +21,6 @@ import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/sos_use_cases.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
-import '../../domain/usecases/fetch_cleaning_orders_use_case.dart';
-import '../../domain/usecases/checkout_preview_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/cleaning_worker_profile_model.dart';
@@ -32,9 +30,9 @@ import '../models/sos_api_models.dart';
 import '../models/submit_cleaning_review_model.dart';
 import '../models/fetch_supermarket_cart_model.dart';
 import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
-import '../models/delete_supermarket_cart_model.dart';
 import '../models/remove_supermarket_cart_model.dart';
 import '../../domain/usecases/remove_supermarket_cart_use_case.dart';
+import '../../domain/usecases/get_single_supermarket_cart_use_case.dart';
 
 @lazySingleton
 class OrdersRemoteDataSource with HandlingApiManager {
@@ -440,5 +438,12 @@ class OrdersRemoteDataSource with HandlingApiManager {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.deleteData(endPoint: '/api/v1/user/supermarket/carts/${params.id}', params: params.getParams(), data: params.getBody().isEmpty ? null : params.getBody()),
       jsonConvert: removeSupermarketCartModelFromJson,
+    );
+  }
+
+  Future<FetchSupermarketCartModelDataItem> getSingleSupermarketCart(GetSingleSupermarketCartParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(endPoint: '/api/v1/user/supermarket/carts/${params.cartId}', params: params.getParams(), data: params.getBody().isEmpty ? null : params.getBody()),
+      jsonConvert:(json) =>  FetchSupermarketCartModelDataItem.fromJson(json["data"]),
     );
   }}

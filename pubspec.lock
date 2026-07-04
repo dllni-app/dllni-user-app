@@ -512,10 +512,9 @@ packages:
   flutter_cube_transition:
     dependency: "direct main"
     description:
-      name: flutter_cube_transition
-      sha256: e0fae51f1040181d10607918afb43f260c75a1e2a281bc7cb1e1a1a3d316c207
-      url: "https://pub.dev"
-    source: hosted
+      path: flutter_cube_transition_package
+      relative: true
+    source: path
     version: "1.0.2"
   flutter_launcher_icons:
     dependency: "direct main"
