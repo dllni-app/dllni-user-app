@@ -292,7 +292,10 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
     final selected = await showDialog<_ExtensionTimeOption>(
       context: context,
       useRootNavigator: true,
-      builder: (_) => _ExtensionTimePickerDialog(fetchExtensionTimeRanges: widget.fetchExtensionTimeRanges),
+      builder: (_) => _ExtensionTimePickerDialog(
+        fetchExtensionTimeRanges: widget.fetchExtensionTimeRanges,
+        finishedTaskGroups: _finishedTaskGroups,
+      ),
     );
     if (selected == null) return;
     if (selected.minutes <= 0) {
@@ -401,7 +404,7 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
           const SizedBox(height: 16),
           FilledButton(
             key: const Key('completion_extend_button'),
-            onPressed: _submitting ? null : _onExtendPressed,
+            onPressed: _submitting || _loadingFinishedTasks ? null : _onExtendPressed,
             style: FilledButton.styleFrom(backgroundColor: const Color(0xff20B7C4), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 13)),
             child: _submitting
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -434,9 +437,13 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
 }
 
 class _ExtensionTimePickerDialog extends StatefulWidget {
-  const _ExtensionTimePickerDialog({required this.fetchExtensionTimeRanges});
+  const _ExtensionTimePickerDialog({
+    required this.fetchExtensionTimeRanges,
+    required this.finishedTaskGroups,
+  });
 
   final Future<List<CleaningExtensionRangeModel>> Function() fetchExtensionTimeRanges;
+  final List<_FinishedTaskGroup> finishedTaskGroups;
 
   @override
   State<_ExtensionTimePickerDialog> createState() => _ExtensionTimePickerDialogState();
@@ -479,6 +486,74 @@ class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> 
     }
   }
 
+  Widget _buildFinishedTasksPreview() {
+    final groups = widget.finishedTaskGroups;
+    if (groups.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xffF9FAFB),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: AppText.bodySmall(
+          'لم يرسل العامل تفاصيل مهام منجزة.',
+          color: const Color(0xff6B7280),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xffF9FAFB),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppText.bodyMedium(
+            'المهام التي أبلغ العامل أنه أنهاها',
+            fontWeight: FontWeight.w800,
+            color: const Color(0xff374151),
+          ),
+          const SizedBox(height: 8),
+          ...groups.map(
+            (group) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText.bodySmall(
+                    group.title,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xff1E2A78),
+                  ),
+                  const SizedBox(height: 4),
+                  ...group.items.map(
+                    (item) => Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 8, bottom: 3),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_outline, size: 16, color: Color(0xff20B7C4)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: AppText.bodySmall(item, color: const Color(0xff4B5563)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -488,6 +563,8 @@ class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> 
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _buildFinishedTasksPreview(),
+            const SizedBox(height: 12),
             AppText.bodySmall('اختر مدة التمديد من الخيارات المتاحة من الخادم.', color: const Color(0xff6B7280)),
             const SizedBox(height: 12),
             if (_loading)
