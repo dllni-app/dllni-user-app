@@ -66,6 +66,37 @@ Map<String, dynamic> _completionPayloadData(dynamic payload) {
   return data.isEmpty ? root : data;
 }
 
+final _englishWordPattern = RegExp(r'[A-Za-z]');
+
+const _roomLabelTokensAr = <(String, String)>[
+  ('living room', 'صالون'),
+  ('living_room', 'صالون'),
+  ('dining room', 'غرفة الطعام'),
+  ('study room', 'غرفة الدراسة'),
+  ('guest room', 'غرفة الضيوف'),
+  ('bathroom', 'حمام'),
+  ('bedroom', 'غرفة نوم'),
+  ('kitchen', 'مطبخ'),
+  ('balcony', 'بلكونة'),
+  ('corridor', 'موزع'),
+  ('office', 'مكتب'),
+  ('small', 'صغير'),
+  ('medium', 'متوسط'),
+  ('large', 'كبير'),
+];
+
+String _localizeRoomLabel(String label) {
+  if (!_englishWordPattern.hasMatch(label)) return label;
+
+  var result = label;
+  for (final (english, arabic) in _roomLabelTokensAr) {
+    final tokenPattern = RegExp.escape(english).replaceAll('_', r'[_ ]');
+    final pattern = RegExp('\\b$tokenPattern\\b', caseSensitive: false);
+    result = result.replaceAll(pattern, arabic);
+  }
+  return result;
+}
+
 List<String> _completionSnapshotLabels(dynamic value) {
   if (value is! List) return const <String>[];
 
@@ -99,6 +130,7 @@ List<String> _completionSnapshotLabels(dynamic value) {
     if (detail != null && detail.isNotEmpty && !label.contains(detail)) {
       label = '$label: $detail';
     }
+    label = _localizeRoomLabel(label);
     if (!labels.contains(label)) labels.add(label);
   }
 
@@ -302,7 +334,7 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
       final label = room.displayLabel?.trim();
       final fallback = room.roomType?.trim();
       final value = label != null && label.isNotEmpty ? label : fallback;
-      if (value != null && value.isNotEmpty) roomItems.add(value);
+      if (value != null && value.isNotEmpty) roomItems.add(_localizeRoomLabel(value));
     }
 
     return <_FinishedTaskGroup>[
