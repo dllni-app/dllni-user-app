@@ -1,3 +1,5 @@
+import '../../../delivery/data/models/delivery_order_models.dart';
+
 double? _asDouble(dynamic value) {
   if (value == null) return null;
   if (value is num) return value.toDouble();
@@ -25,9 +27,11 @@ String? _asString(dynamic value) {
 bool? _asBool(dynamic value) {
   if (value == null) return null;
   if (value is bool) return value;
+  if (value is num) return value != 0;
   if (value is String) {
-    if (value.toLowerCase() == 'true') return true;
-    if (value.toLowerCase() == 'false') return false;
+    final normalized = value.toLowerCase().trim();
+    if (normalized == 'true' || normalized == '1') return true;
+    if (normalized == 'false' || normalized == '0') return false;
   }
   return null;
 }
@@ -151,9 +155,68 @@ class OrdersLinksModel {
   }
 }
 
+class DeliverySummaryModel {
+  final bool enabled;
+  final String? status;
+  final String? statusLabelAr;
+  final String? currentStage;
+  final bool isTerminal;
+  final String? pickupMode;
+  final String? readyForPickupAt;
+  final String? pickedUpAt;
+  final String? completedAt;
+  final String? cancelledAt;
+  final String? cancellationReason;
+  final List<DeliveryTimelineStageModel> timeline;
+
+  DeliverySummaryModel({
+    this.enabled = false,
+    this.status,
+    this.statusLabelAr,
+    this.currentStage,
+    this.isTerminal = false,
+    this.pickupMode,
+    this.readyForPickupAt,
+    this.pickedUpAt,
+    this.completedAt,
+    this.cancelledAt,
+    this.cancellationReason,
+    this.timeline = const <DeliveryTimelineStageModel>[],
+  });
+
+  factory DeliverySummaryModel.fromJson(Map<String, dynamic> json) {
+    return DeliverySummaryModel(
+      enabled: _asBool(json['enabled']) ?? false,
+      status: _asString(json['status']),
+      statusLabelAr: _asString(json['statusLabelAr']) ??
+          _asString(json['status_label_ar']),
+      currentStage:
+          _asString(json['currentStage']) ?? _asString(json['current_stage']),
+      isTerminal: _asBool(json['isTerminal']) ??
+          _asBool(json['is_terminal']) ??
+          false,
+      pickupMode: _asString(json['pickupMode']) ?? _asString(json['pickup_mode']),
+      readyForPickupAt: _asString(json['readyForPickupAt']) ??
+          _asString(json['ready_for_pickup_at']),
+      pickedUpAt:
+          _asString(json['pickedUpAt']) ?? _asString(json['picked_up_at']),
+      completedAt:
+          _asString(json['completedAt']) ?? _asString(json['completed_at']),
+      cancelledAt:
+          _asString(json['cancelledAt']) ?? _asString(json['cancelled_at']),
+      cancellationReason: _asString(json['cancellationReason']) ??
+          _asString(json['cancellation_reason']),
+      timeline: _asMapList(json['timeline'])
+          .map(DeliveryTimelineStageModel.fromJson)
+          .toList(),
+    );
+  }
+}
+
 class OrderResourceModel {
   int? id;
   int? deliveryOrderId;
+  DeliverySummaryModel? deliverySummary;
   String? section;
   String? orderNumber;
   String? status;
@@ -170,6 +233,7 @@ class OrderResourceModel {
   OrderResourceModel({
     this.id,
     this.deliveryOrderId,
+    this.deliverySummary,
     this.section,
     this.orderNumber,
     this.status,
@@ -185,9 +249,19 @@ class OrderResourceModel {
   });
 
   factory OrderResourceModel.fromJson(Map<String, dynamic> json) {
+    final deliveryMap = _asMap(json['delivery']);
+    final deliverySummaryJson = _asMap(json['deliverySummary']).isNotEmpty
+        ? _asMap(json['deliverySummary'])
+        : _asMap(json['delivery_summary']);
+
     return OrderResourceModel(
       id: _asInt(json['id']),
-      deliveryOrderId: _asInt(json['deliveryOrderId']),
+      deliveryOrderId: _asInt(json['deliveryOrderId']) ??
+          _asInt(json['delivery_order_id']) ??
+          _asInt(deliveryMap['id']),
+      deliverySummary: deliverySummaryJson.isEmpty
+          ? null
+          : DeliverySummaryModel.fromJson(deliverySummaryJson),
       section: _asString(json['section']),
       orderNumber: _asString(json['orderNumber']),
       status: _asString(json['status']),
@@ -209,6 +283,14 @@ class OrderResourceModel {
       createdAt: _asString(json['createdAt']),
       updatedAt: _asString(json['updatedAt']),
     );
+  }
+
+  bool get hasDeliveryTracking => deliveryOrderId != null;
+
+  String? get deliveryStatusLabel {
+    final label = deliverySummary?.statusLabelAr;
+    if (label != null && label.trim().isNotEmpty) return label;
+    return null;
   }
 }
 
@@ -576,15 +658,21 @@ class RestaurantOrderTrackingDataModel {
 
   factory RestaurantOrderTrackingDataModel.fromJson(Map<String, dynamic> json) {
     return RestaurantOrderTrackingDataModel(
-      eta: json['eta'] == null ? null : RestaurantOrderTrackingEtaModel.fromJson(_asMap(json['eta'])),
-      map: json['map'] == null ? null : RestaurantOrderTrackingMapModel.fromJson(_asMap(json['map'])),
+      eta: json['eta'] == null
+          ? null
+          : RestaurantOrderTrackingEtaModel.fromJson(_asMap(json['eta'])),
+      map: json['map'] == null
+          ? null
+          : RestaurantOrderTrackingMapModel.fromJson(_asMap(json['map'])),
       timeline: _asMapList(json['timeline'])
           .map(RestaurantOrderTrackingTimelineItemModel.fromJson)
           .toList(),
       merchant: json['merchant'] == null
           ? null
           : RestaurantOrderTrackingMerchantModel.fromJson(_asMap(json['merchant'])),
-      actions: json['actions'] == null ? null : OrderActionsModel.fromJson(_asMap(json['actions'])),
+      actions: json['actions'] == null
+          ? null
+          : OrderActionsModel.fromJson(_asMap(json['actions'])),
     );
   }
 
