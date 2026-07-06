@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/app_date_time_locale.dart';
+import '../../../delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
@@ -40,6 +41,73 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         ? state.storeCart
         : state.restaurantCart;
   }
+
+  void _showOrderSuccessSheet(
+    BuildContext context, {
+    required int deliveryOrderId,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  size: 56,
+                  color: Color(0xff10B981),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'تم إنشاء طلبك بنجاح',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'سيتم تحديث حالة التوصيل تلقائياً ويمكنك متابعة المندوب من شاشة التتبع.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      context.pushRoute(
+                        '/delivery/orders/tracking',
+                        arguments: DeliveryOrderTrackingArgs(
+                          orderId: deliveryOrderId,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.delivery_dining),
+                    label: const Text('تتبع التوصيل'),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(sheetContext).pop();
+                    context.pushRoute('/main', arguments: 1);
+                  },
+                  child: const Text('العودة للطلبات'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -49,8 +117,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         body: SafeArea(
           child: BlocConsumer<OrdersBloc, OrdersState>(
             listenWhen: (previous, current) => args.section == 'supermarket'
-                ? previous.placeStoreOrderStatus !=
-                      current.placeStoreOrderStatus
+                ? previous.placeStoreOrderStatus != current.placeStoreOrderStatus
                 : previous.placeOrderStatus != current.placeOrderStatus,
             listener: (context, state) {
               final status = args.section == 'supermarket'
@@ -69,6 +136,22 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                       params: FetchSupermarketCartParams(),
                     ),
                   );
+                }
+
+                final placedOrder = args.section == 'supermarket'
+                    ? state.placedStoreOrder
+                    : state.placedRestaurantOrder;
+                final deliveryOrderId = placedOrder?.deliveryOrderId;
+
+                if (deliveryOrderId != null) {
+                  _showOrderSuccessSheet(
+                    context,
+                    deliveryOrderId: deliveryOrderId,
+                  );
+                  return;
+                }
+
+                if (args.section == 'supermarket') {
                   context
                     ..pop()
                     ..pop();
