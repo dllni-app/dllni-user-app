@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
@@ -156,8 +157,11 @@ class _LoginScreenState extends State<LoginScreen> {
             if (token != null && token.isNotEmpty) {
               await persistLoginSessionData(state.loginResult!);
               if (context.mounted) {
-                final nav = context.pushRouteAndRemoveUntil('/main');
-                if (nav != null) await nav;
+                final resumed = await AuthGate.resumePendingActionIfAny(context);
+                if (!resumed && context.mounted) {
+                  final nav = context.pushRouteAndRemoveUntil('/main');
+                  if (nav != null) await nav;
+                }
                 await getIt<DeepLinkService>().resumePendingIfAny();
               }
             } else {

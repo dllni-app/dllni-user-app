@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +58,7 @@ class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemR
     final descriptionLength = _descriptionController.text.length;
     final booking = widget.args.order.bookingNumber ?? '#${widget.args.order.id ?? '-'}';
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xffF4F5F7),
         appBar: AppBar(

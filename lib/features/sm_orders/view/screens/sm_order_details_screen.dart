@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
@@ -168,7 +169,7 @@ class _SmOrderDetailsScreenState extends State<SmOrderDetailsScreen> {
     final deliveryDriver = deliveryTracking?.driver ?? _deliveryOrder?.driver;
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xffF3F4F6),
         body: Column(

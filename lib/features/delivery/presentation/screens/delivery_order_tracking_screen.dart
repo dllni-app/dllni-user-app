@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -6,7 +7,7 @@ import 'package:dllni_user_app/features/delivery/presentation/cubit/delivery_tra
 import 'package:dllni_user_app/features/profile/view/widgets/personal_details_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/delivery_order_models.dart';
 import '../widgets/delivery_driver_card.dart';
@@ -67,145 +68,148 @@ class _DeliveryOrderTrackingScreenState
     return BlocProvider(
       create: (_) =>
           getIt<DeliveryTrackingCubit>()..load(widget.args.orderId),
-      child: Scaffold(
-        backgroundColor: const Color(0xffF3F4F6),
-        body: SafeArea(
-          child: BlocConsumer<DeliveryTrackingCubit, DeliveryTrackingState>(
-            listener: (context, state) {
-              _syncPollTimer(
-                context.read<DeliveryTrackingCubit>(),
-                state.order,
-              );
-            },
-            builder: (context, state) {
-              if (state.loading && state.order == null) {
-                return const Column(
-                  children: [
-                    PersonalDetailsAppBar(title: 'تتبع التوصيل'),
-                    Expanded(
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  ],
+      child: Directionality(
+        textDirection: ui.TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: const Color(0xffF3F4F6),
+          body: SafeArea(
+            child: BlocConsumer<DeliveryTrackingCubit, DeliveryTrackingState>(
+              listener: (context, state) {
+                _syncPollTimer(
+                  context.read<DeliveryTrackingCubit>(),
+                  state.order,
                 );
-              }
-      
-              if (state.error != null && state.order == null) {
+              },
+              builder: (context, state) {
+                if (state.loading && state.order == null) {
+                  return const Column(
+                    children: [
+                      PersonalDetailsAppBar(title: 'تتبع التوصيل'),
+                      Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  );
+                }
+
+                if (state.error != null && state.order == null) {
+                  return Column(
+                    children: [
+                      const PersonalDetailsAppBar(title: 'تتبع التوصيل'),
+                      Expanded(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(state.error!),
+                              const SizedBox(height: 12),
+                              FilledButton(
+                                onPressed: () => context
+                                    .read<DeliveryTrackingCubit>()
+                                    .load(widget.args.orderId),
+                                child: const Text('إعادة المحاولة'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                final order = state.order;
+                if (order == null) {
+                  return const Column(
+                    children: [
+                      PersonalDetailsAppBar(title: 'تتبع التوصيل'),
+                      Expanded(child: Center(child: Text('لا توجد بيانات'))),
+                    ],
+                  );
+                }
+
+                final tracking = order.tracking;
+                final stages = tracking?.stages.isNotEmpty == true
+                    ? tracking!.stages
+                    : tracking?.timeline ?? order.timeline;
+                final driver = tracking?.driver ?? order.driver;
+                final map = tracking?.map;
+                final status = tracking?.currentStatus ?? order.status;
+
                 return Column(
                   children: [
-                    const PersonalDetailsAppBar(title: 'تتبع التوصيل'),
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(state.error!),
-                            const SizedBox(height: 12),
-                            FilledButton(
-                              onPressed: () => context
-                                  .read<DeliveryTrackingCubit>()
-                                  .load(widget.args.orderId),
-                              child: const Text('إعادة المحاولة'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-      
-              final order = state.order;
-              if (order == null) {
-                return const Column(
-                  children: [
                     PersonalDetailsAppBar(title: 'تتبع التوصيل'),
-                    Expanded(child: Center(child: Text('لا توجد بيانات'))),
-                  ],
-                );
-              }
-      
-              final tracking = order.tracking;
-              final stages = tracking?.stages.isNotEmpty == true
-                  ? tracking!.stages
-                  : tracking?.timeline ?? order.timeline;
-              final driver = tracking?.driver ?? order.driver;
-              final map = tracking?.map;
-              final status = tracking?.currentStatus ?? order.status;
-      
-              return Column(
-                children: [
-                  PersonalDetailsAppBar(title: 'تتبع التوصيل'),
-                  if (state.error != null)
-                    Material(
-                      color: const Color(0xffFEF2F2),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Text(
-                          state.error!,
-                          style: const TextStyle(color: Color(0xff991B1B)),
+                    if (state.error != null)
+                      Material(
+                        color: const Color(0xffFEF2F2),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            state.error!,
+                            style: const TextStyle(color: Color(0xff991B1B)),
+                          ),
                         ),
                       ),
-                    ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () => context
-                          .read<DeliveryTrackingCubit>()
-                          .load(widget.args.orderId),
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          _StatusHeader(
-                            orderNumber: order.orderNumber ?? '—',
-                            statusLabel: order.displayStatusLabel,
-                            etaLabel: order.etaLabel,
-                            status: status,
-                            fee: order.deliveryFee,
-                            currency: order.currency ?? 'SYP',
-                            distanceKm: order.distanceKm,
-                          ),
-                          const SizedBox(height: 14),
-                          map == null
-                              ? const _TrackingMapUnavailableCard()
-                              : DeliveryTrackingMap(map: map),
-                          const SizedBox(height: 14),
-                          DeliveryStatusStepper(stages: stages),
-                          if (driver != null) ...[
-                            const SizedBox(height: 14),
-                            DeliveryDriverCard(driver: driver),
-                          ],
-                          if (tracking?.pickup != null ||
-                              tracking?.dropoff != null) ...[
-                            const SizedBox(height: 14),
-                            _AddressCard(
-                              pickup: tracking?.pickup?.address ??
-                                  order.pickupAddress,
-                              dropoff: tracking?.dropoff?.address ??
-                                  order.dropoffAddress,
-                            ),
-                          ],
-                          if (order.events.isNotEmpty) ...[
-                            const SizedBox(height: 14),
-                            _EventsCard(events: order.events),
-                          ],
-                          if (order.deliveryFee != null) ...[
-                            const SizedBox(height: 14),
-                            _FeeCard(
-                              fee: order.deliveryFee!,
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () => context
+                            .read<DeliveryTrackingCubit>()
+                            .load(widget.args.orderId),
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            _StatusHeader(
+                              orderNumber: order.orderNumber ?? '—',
+                              statusLabel: order.displayStatusLabel,
+                              etaLabel: order.etaLabel,
+                              status: status,
+                              fee: order.deliveryFee,
                               currency: order.currency ?? 'SYP',
                               distanceKm: order.distanceKm,
                             ),
+                            const SizedBox(height: 14),
+                            map == null
+                                ? const _TrackingMapUnavailableCard()
+                                : DeliveryTrackingMap(map: map),
+                            const SizedBox(height: 14),
+                            DeliveryStatusStepper(stages: stages),
+                            if (driver != null) ...[
+                              const SizedBox(height: 14),
+                              DeliveryDriverCard(driver: driver),
+                            ],
+                            if (tracking?.pickup != null ||
+                                tracking?.dropoff != null) ...[
+                              const SizedBox(height: 14),
+                              _AddressCard(
+                                pickup: tracking?.pickup?.address ??
+                                    order.pickupAddress,
+                                dropoff: tracking?.dropoff?.address ??
+                                    order.dropoffAddress,
+                              ),
+                            ],
+                            if (order.events.isNotEmpty) ...[
+                              const SizedBox(height: 14),
+                              _EventsCard(events: order.events),
+                            ],
+                            if (order.deliveryFee != null) ...[
+                              const SizedBox(height: 14),
+                              _FeeCard(
+                                fee: order.deliveryFee!,
+                                currency: order.currency ?? 'SYP',
+                                distanceKm: order.distanceKm,
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

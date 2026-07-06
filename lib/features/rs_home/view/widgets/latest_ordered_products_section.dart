@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/product_preview_data.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_details_screen.dart';
@@ -108,7 +110,7 @@ class _LatestOrderedProductCard extends StatelessWidget {
         ),
         padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 12),
         child: Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: ui.TextDirection.rtl,
           child: Row(
             children: [
               ClipRRect(

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 import 'package:flutter/material.dart';
@@ -55,7 +57,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
       ),
       builder: (sheetContext) {
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: ui.TextDirection.rtl,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(

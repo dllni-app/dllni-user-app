@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
@@ -229,7 +230,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
                   ],
                   const SizedBox(height: 28),
                   Directionality(
-                    textDirection: TextDirection.ltr,
+                    textDirection: ui.TextDirection.ltr,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(6, (i) {
@@ -240,7 +241,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
                             focusNode: _otpFocus[i],
                             enabled: !loading,
                             keyboardType: TextInputType.number,
-                            textDirection: TextDirection.ltr,
+                            textDirection: ui.TextDirection.ltr,
                             textAlign: TextAlign.center,
                             maxLength: 1,
                             style: const TextStyle(

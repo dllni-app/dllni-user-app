@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -166,7 +168,7 @@ class _CleaningStartVerificationDialogContentState
               ),
               const SizedBox(height: 12),
               Directionality(
-                textDirection: TextDirection.ltr,
+                textDirection: ui.TextDirection.ltr,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List<Widget>.generate(4, (index) {
@@ -181,7 +183,7 @@ class _CleaningStartVerificationDialogContentState
                         controller: _controllers[index],
                         focusNode: _focusNodes[index],
                         textAlign: TextAlign.center,
-                        textDirection: TextDirection.ltr,
+                        textDirection: ui.TextDirection.ltr,
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,

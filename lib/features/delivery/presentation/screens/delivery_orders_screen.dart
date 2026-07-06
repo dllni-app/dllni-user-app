@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -43,7 +44,7 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen> {
     return BlocProvider(
       create: (_) => getIt<DeliveryOrdersCubit>()..load(),
       child: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: ui.TextDirection.rtl,
         child: Scaffold(
           backgroundColor: const Color(0xffF3F4F6),
           appBar: AppBar(

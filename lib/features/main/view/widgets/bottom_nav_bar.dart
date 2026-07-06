@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 import 'package:common_package/extensions/size_extensions.dart';
+import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../generated/assets.dart';
@@ -14,6 +15,24 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
+  void _selectTab(int index) {
+    widget.controller.animateTo(index);
+    setState(() {});
+  }
+
+  Future<void> _onTabTap(int index) async {
+    if (index == 1) {
+      await AuthGate.requireAuth(
+        context,
+        onAuthenticated: () => _selectTab(index),
+        message: 'سجّل الدخول لعرض طلباتك',
+      );
+      return;
+    }
+
+    _selectTab(index);
+  }
+
   @override
   Widget build(BuildContext context) {
     List<String> titles = ['الرئيسية', 'طلباتي', 'حسابي'];
@@ -37,10 +56,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 child: InkWell(
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,
-                  onTap: () {
-                    widget.controller.animateTo(i);
-                    setState(() {});
-                  },
+                  onTap: () => _onTabTap(i),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,

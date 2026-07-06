@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -128,7 +130,7 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
             FittedBox(
               child: Text(
                 '+963',
-                textDirection: TextDirection.ltr,
+                textDirection: ui.TextDirection.ltr,
                 style: const TextStyle(
                   color: Color(0xff2F2B3D),
                   fontSize: 14,

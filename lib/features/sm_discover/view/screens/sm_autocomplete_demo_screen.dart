@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -249,7 +251,7 @@ class _SmSpecialAutocompleteFieldState extends State<SmSpecialAutocompleteField>
                                           maxLines: 1,
                                           overflow: TextOverflow.fade,
                                           textAlign: TextAlign.right,
-                                          textDirection: TextDirection.rtl,
+                                          textDirection: ui.TextDirection.rtl,
                                           strutStyle: strutStyle,
                                           text: TextSpan(
                                             children: [
@@ -291,7 +293,7 @@ class _SmSpecialAutocompleteFieldState extends State<SmSpecialAutocompleteField>
                                     selectionColor: const Color(0x331E2A78),
                                     enableInteractiveSelection: true,
                                     textAlign: TextAlign.right,
-                                    textDirection: TextDirection.rtl,
+                                    textDirection: ui.TextDirection.rtl,
                                     keyboardType: TextInputType.text,
                                     textInputAction: TextInputAction.search,
                                     onSubmitted: (_) => _acceptHint(),
