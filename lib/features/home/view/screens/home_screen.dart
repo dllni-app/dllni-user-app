@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_use_case.dart';
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
@@ -35,10 +36,15 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return BlocProvider(
-      create: (_) => getIt<HomeBloc>()
-        ..add(
-          FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
-        ),
+      create: (_) {
+        final bloc = getIt<HomeBloc>();
+        if (AuthGate.isAuthenticated) {
+          bloc.add(
+            FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
+          );
+        }
+        return bloc;
+      },
       child: Column(
         children: [
           HomeAppBar( profileBloc: profileBloc),
@@ -49,38 +55,64 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 32),
-                  BlocBuilder<HomeBloc, HomeState>(
-                    buildWhen: (prev, next) =>
-                        prev.userOffersStatus != next.userOffersStatus ||
-                        prev.userOffers != next.userOffers ||
-                        prev.errorMessage != next.errorMessage,
-                    builder: (context, state) {
-                      if (state.userOffersStatus == BlocStatus.loading ||
-                          state.userOffersStatus == BlocStatus.init) {
-                        return SizedBox(
-                          height:
-                              (context.width * 0.52).clamp(180.0, 230.0) + 56,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: context.primaryContainer,
+                  if (!AuthGate.isAuthenticated)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xffF3F4F6)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText.titleMedium(
+                            'تصفح التطبيق كزائر',
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xff1E2A78),
+                          ),
+                          const SizedBox(height: 8),
+                          AppText.bodyMedium(
+                            'يمكنك استعراض الخدمات والمتاجر، وسنطلب تسجيل الدخول فقط عند تنفيذ طلب أو إجراء خاص بحسابك.',
+                            color: const Color(0xff6B7280),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    BlocBuilder<HomeBloc, HomeState>(
+                      buildWhen: (prev, next) =>
+                          prev.userOffersStatus != next.userOffersStatus ||
+                          prev.userOffers != next.userOffers ||
+                          prev.errorMessage != next.errorMessage,
+                      builder: (context, state) {
+                        if (state.userOffersStatus == BlocStatus.loading ||
+                            state.userOffersStatus == BlocStatus.init) {
+                          return SizedBox(
+                            height:
+                                (context.width * 0.52).clamp(180.0, 230.0) + 56,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: context.primaryContainer,
+                              ),
                             ),
-                          ),
+                          );
+                        }
+                        if (state.userOffersStatus == BlocStatus.failed) {
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 16),
+                            child: AppText.bodyMedium(
+                              state.errorMessage ?? 'تعذر تحميل العروض',
+                              color: Color(0xffB91C1C),
+                            ),
+                          );
+                        }
+                        return Center(
+                          child: HomeCube(offers: state.userOffers.list),
                         );
-                      }
-                      if (state.userOffersStatus == BlocStatus.failed) {
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 16),
-                          child: AppText.bodyMedium(
-                            state.errorMessage ?? 'تعذر تحميل العروض',
-                            color: Color(0xffB91C1C),
-                          ),
-                        );
-                      }
-                      return Center(
-                        child: HomeCube(offers: state.userOffers.list),
-                      );
-                    },
-                  ),
+                      },
+                    ),
                   SizedBox(height: 35),
                   Row(
                     children: [
@@ -246,13 +278,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   initState() {
-    profileBloc = getIt<ProfileBloc>()
-      ..add(
+    profileBloc = getIt<ProfileBloc>();
+    if (AuthGate.isAuthenticated) {
+      profileBloc.add(
         FetchNotificationsEvent(
           params: FetchNotificationsParams(),
           isReload: true,
         ),
       );
+    }
 
     super.initState();
   }
