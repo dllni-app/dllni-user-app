@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -68,7 +69,7 @@ class _DeliveryOrderTrackingScreenState
       create: (_) =>
           getIt<DeliveryTrackingCubit>()..load(widget.args.orderId),
       child: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: ui.TextDirection.rtl,
         child: Scaffold(
           backgroundColor: const Color(0xffF3F4F6),
           body: SafeArea(
