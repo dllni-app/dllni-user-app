@@ -1,11 +1,11 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../profile/view/screens/notifications_screen.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
@@ -28,6 +28,39 @@ class _HomeAppBarState extends State<HomeAppBar> {
   void initState() {
     profileBloc =widget.profileBloc;
     super.initState();
+  }
+
+  Future<void> _openCart() async {
+    await AuthGate.requireAuth(
+      context,
+      message: 'سجّل الدخول لعرض السلة',
+      onAuthenticated: () {
+        widget.isCleaning?
+        context.pushRoute(
+          '/cart',
+          arguments: SmCartScreenParams(initialSectionIndex: 2),
+        )
+            :
+
+
+        context.pushRoute(
+          '/cart',
+          arguments: SmCartScreenParams(initialSectionIndex: 1),
+        );
+      },
+    );
+  }
+
+  Future<void> _openNotifications() async {
+    await AuthGate.requireAuth(
+      context,
+      message: 'سجّل الدخول لعرض الإشعارات',
+      onAuthenticated: () {
+        context.pushRoute('/notifications',arguments: NotificationsScreenParams(
+          profileBloc: profileBloc
+        ));
+      },
+    );
   }
 
   @override
@@ -53,7 +86,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                   spacing: 2,
                   children: [
                     Text(
-                      'مرحباً بعودتك 👋',
+                      AuthGate.isAuthenticated ? 'مرحباً بعودتك 👋' : 'مرحباً بك 👋',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 12,
@@ -65,7 +98,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                       valueListenable: UserSessionStore.userNotifier,
                       builder: (context, user, _) {
                         return Text(
-                          UserSessionStore.displayName(user),
+                          AuthGate.isAuthenticated ? UserSessionStore.displayName(user) : 'زائر',
                           style: TextStyle(
                             color: Color(0xFF1E2A78),
                             fontSize: 18,
@@ -80,30 +113,13 @@ class _HomeAppBarState extends State<HomeAppBar> {
               ),
               _AppBarAction(
                 icon: FontAwesomeIcons.cartShopping,
-                onTap: () {
-                  widget.isCleaning?
-                  context.pushRoute(
-                    '/cart',
-                    arguments: SmCartScreenParams(initialSectionIndex: 2),
-                  )
-                      :
-
-
-                  context.pushRoute(
-                    '/cart',
-                    arguments: SmCartScreenParams(initialSectionIndex: 1),
-                  );
-                },
+                onTap: _openCart,
               ),
               SizedBox(width: 12),
               _AppBarNotificationWidget(
                 profileBloc: profileBloc,
                 icon: FontAwesomeIcons.bell,
-                onTap: () {
-                  context.pushRoute('/notifications',arguments: NotificationsScreenParams(
-                    profileBloc: profileBloc
-                  ));
-                },
+                onTap: _openNotifications,
               ),
             ],
           ),
@@ -200,7 +216,7 @@ class _AppBarNotificationWidget extends StatelessWidget {
                 ),
                 child: FaIcon(icon, size: 20, color: Color(0xFF1A1A1A)),
               ),
-              if (state.unreadNotification != null &&
+              if (AuthGate.isAuthenticated && state.unreadNotification != null &&
                   state.unreadNotification! > 0)
                 Positioned(
                   top: -2,
