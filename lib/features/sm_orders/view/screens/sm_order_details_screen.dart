@@ -5,6 +5,7 @@ import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/delivery/data/models/delivery_order_models.dart';
 import 'package:dllni_user_app/features/delivery/domain/usecases/fetch_delivery_order_details_use_case.dart';
+import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/widgets/delivery_driver_card.dart';
 import 'package:dllni_user_app/features/delivery/presentation/widgets/delivery_status_stepper.dart';
 import 'package:dllni_user_app/features/delivery/presentation/widgets/delivery_tracking_map.dart';
@@ -220,6 +221,19 @@ class _SmOrderDetailsScreenState extends State<SmOrderDetailsScreen> {
                               ),
                             ),
                           OrderStatus(order: order),
+                          if (order.deliveryOrderId != null) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () => context.pushRoute(
+                                '/delivery/orders/tracking',
+                                arguments: DeliveryOrderTrackingArgs(
+                                  orderId: order.deliveryOrderId!,
+                                ),
+                              ),
+                              icon: const Icon(Icons.delivery_dining),
+                              label: const Text('فتح تتبع التوصيل'),
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           if (deliveryStages.isNotEmpty)
                             DeliveryStatusStepper(stages: deliveryStages)
