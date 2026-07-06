@@ -64,7 +64,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     this.placeStoreOrderUseCase,
     this.fetchSupermarketCartUseCase,
     this.removeSupermarketCartUseCase,
-    this.getSingleSupermarketCartUseCase,) : super(OrdersState()) {
+    this.getSingleSupermarketCartUseCase,
+  ) : super(OrdersState()) {
     on<OrdersSectionChangedEvent>(_onSectionChanged);
     on<FetchOrdersEvent>(
       _onFetchOrders,
@@ -89,10 +90,10 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     on<CancelCleaningOrderEvent>(_onCancelCleaningOrder);
     on<PlaceRestaurantOrderEvent>(_onPlaceRestaurantOrder);
     on<PlaceStoreOrderEvent>(_onPlaceStoreOrder);
-  
     on<FetchSupermarketCartEvent>(_fetchSupermarketCart);
     on<RemoveSupermarketCartEvent>(_removeSupermarketCart);
-    on<GetSingleSupermarketCartEvent>(_getSingleSupermarketCart);}
+    on<GetSingleSupermarketCartEvent>(_getSingleSupermarketCart);
+  }
 
   static const List<String> _sections = <String>[
     'supermarket',
@@ -428,7 +429,9 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       ),
       (result) {
         final carts = result.data?.id == null
-            ? state.restaurantCarts.where((cart) => cart.id != event.cartId).toList()
+            ? state.restaurantCarts
+                .where((cart) => cart.id != event.cartId)
+                .toList()
             : _upsertCart(state.restaurantCarts, result.data);
         emit(
           state.copyWith(
@@ -482,7 +485,12 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     DeleteStoreCartItemEvent event,
     Emitter<OrdersState> emit,
   ) async {
-    emit(state.copyWith(isMutatingStoreCartItem: true, deleteStoreCartItemStatus: BlocStatus.loading));
+    emit(
+      state.copyWith(
+        isMutatingStoreCartItem: true,
+        deleteStoreCartItemStatus: BlocStatus.loading,
+      ),
+    );
     final response = await deleteStoreCartItemUseCase(
       DeleteCartItemParams(cartId: event.cartId, itemId: event.itemId),
     );
@@ -522,8 +530,19 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       CheckRestaurantCouponParams(couponCode: event.couponCode),
     );
     response.fold(
-      (failure) => emit(state.copyWith(couponStatus: BlocStatus.failed, couponErrorMessage: failure.message)),
-      (result) => emit(state.copyWith(couponStatus: BlocStatus.success, couponData: result.data, clearCouponError: true)),
+      (failure) => emit(
+        state.copyWith(
+          couponStatus: BlocStatus.failed,
+          couponErrorMessage: failure.message,
+        ),
+      ),
+      (result) => emit(
+        state.copyWith(
+          couponStatus: BlocStatus.success,
+          couponData: result.data,
+          clearCouponError: true,
+        ),
+      ),
     );
   }
 
@@ -531,13 +550,32 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     ApplyStoreCouponEvent event,
     Emitter<OrdersState> emit,
   ) async {
-    emit(state.copyWith(storeCouponStatus: BlocStatus.loading, clearStoreCouponError: true));
+    emit(
+      state.copyWith(
+        storeCouponStatus: BlocStatus.loading,
+        clearStoreCouponError: true,
+      ),
+    );
     final response = await checkRestaurantCouponUseCase(
-      CheckRestaurantCouponParams(couponCode: event.couponCode, section: 'supermarket'),
+      CheckRestaurantCouponParams(
+        couponCode: event.couponCode,
+        section: 'supermarket',
+      ),
     );
     response.fold(
-      (failure) => emit(state.copyWith(storeCouponStatus: BlocStatus.failed, storeCouponErrorMessage: failure.message)),
-      (result) => emit(state.copyWith(storeCouponStatus: BlocStatus.success, storeCouponData: result.data, clearStoreCouponError: true)),
+      (failure) => emit(
+        state.copyWith(
+          storeCouponStatus: BlocStatus.failed,
+          storeCouponErrorMessage: failure.message,
+        ),
+      ),
+      (result) => emit(
+        state.copyWith(
+          storeCouponStatus: BlocStatus.success,
+          storeCouponData: result.data,
+          clearStoreCouponError: true,
+        ),
+      ),
     );
   }
 
@@ -545,30 +583,56 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     emit(state.copyWith(cartNote: event.note));
   }
 
-  void _onCartFulfillmentTypeChanged(CartFulfillmentTypeChangedEvent event, Emitter<OrdersState> emit) {
+  void _onCartFulfillmentTypeChanged(
+    CartFulfillmentTypeChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
     emit(state.copyWith(selectedFulfillmentType: event.fulfillmentType));
   }
 
-  void _onStoreReceiveModeChanged(StoreReceiveModeChangedEvent event, Emitter<OrdersState> emit) {
+  void _onStoreReceiveModeChanged(
+    StoreReceiveModeChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
     emit(
       state.copyWith(
         storeReceiveMode: event.receiveMode,
-        storeScheduledAt: event.receiveMode == 'immediate' ? null : state.storeScheduledAt,
+        storeScheduledAt:
+            event.receiveMode == 'immediate' ? null : state.storeScheduledAt,
         replaceStoreScheduledAt: event.receiveMode == 'immediate',
       ),
     );
   }
 
-  void _onStoreScheduledAtChanged(StoreScheduledAtChangedEvent event, Emitter<OrdersState> emit) {
-    emit(state.copyWith(storeScheduledAt: event.scheduledAt, replaceStoreScheduledAt: true));
+  void _onStoreScheduledAtChanged(
+    StoreScheduledAtChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        storeScheduledAt: event.scheduledAt,
+        replaceStoreScheduledAt: true,
+      ),
+    );
   }
 
-  void _onCartSelectedAddressChanged(CartSelectedAddressChangedEvent event, Emitter<OrdersState> emit) {
+  void _onCartSelectedAddressChanged(
+    CartSelectedAddressChangedEvent event,
+    Emitter<OrdersState> emit,
+  ) {
     emit(state.copyWith(selectedAddress: event.address, replaceSelectedAddress: true));
   }
 
-  Future<void> _onCancelCleaningOrder(CancelCleaningOrderEvent event, Emitter<OrdersState> emit) async {
-    emit(state.copyWith(cancelCleaningStatus: BlocStatus.loading, clearCancelCleaningError: true));
+  Future<void> _onCancelCleaningOrder(
+    CancelCleaningOrderEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        cancelCleaningStatus: BlocStatus.loading,
+        clearCancelCleaningError: true,
+      ),
+    );
     final response = await cancelCleaningOrderUseCase(
       CancelCleaningOrderParams(cleaningOrderId: event.orderId, reason: event.reason),
     );
@@ -600,10 +664,18 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
   ) async {
     final isDelivery = (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
     final parsedAddressId = int.tryParse(state.selectedAddress?.id ?? '');
-    final couponCode = state.couponData?.isAvailable == true ? state.couponData?.couponCode : null;
+    final couponCode = state.couponData?.isAvailable == true
+        ? state.couponData?.couponCode
+        : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
 
-    emit(state.copyWith(placeOrderStatus: BlocStatus.loading, clearPlaceOrderError: true));
+    emit(
+      state.copyWith(
+        placeOrderStatus: BlocStatus.loading,
+        clearPlaceOrderError: true,
+        clearPlacedRestaurantOrder: true,
+      ),
+    );
 
     final response = await placeRestaurantOrderUseCase(
       PlaceRestaurantOrderParams(
@@ -617,12 +689,21 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
 
     response.fold(
-      (failure) => emit(state.copyWith(placeOrderStatus: BlocStatus.failed, placeOrderErrorMessage: failure.message)),
-      (_) {
-        final carts = state.restaurantCarts.where((cart) => cart.id != event.cartId).toList();
+      (failure) => emit(
+        state.copyWith(
+          placeOrderStatus: BlocStatus.failed,
+          placeOrderErrorMessage: failure.message,
+        ),
+      ),
+      (result) {
+        final placedOrder = result.data;
+        final carts = state.restaurantCarts
+            .where((cart) => cart.id != event.cartId)
+            .toList();
         emit(
           state.copyWith(
             placeOrderStatus: BlocStatus.success,
+            placedRestaurantOrder: placedOrder,
             clearPlaceOrderError: true,
             replaceRestaurantCarts: true,
             restaurantCarts: carts,
@@ -642,21 +723,40 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     final isDelivery = (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
     final mappedFulfillmentType = isDelivery ? 'delivery' : 'dine_in';
     final parsedAddressId = int.tryParse(state.selectedAddress?.id ?? '');
-    final couponCode = state.storeCouponData?.isAvailable == true ? state.storeCouponData?.couponCode : null;
+    final couponCode = state.storeCouponData?.isAvailable == true
+        ? state.storeCouponData?.couponCode
+        : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
     final receiveMode = isDelivery ? state.storeReceiveMode : 'immediate';
-    final scheduledAt = (isDelivery && receiveMode == 'scheduled') ? state.storeScheduledAt : null;
+    final scheduledAt =
+        (isDelivery && receiveMode == 'scheduled') ? state.storeScheduledAt : null;
 
     if (isDelivery && parsedAddressId == null) {
-      emit(state.copyWith(placeStoreOrderStatus: BlocStatus.failed, placeStoreOrderErrorMessage: 'يرجى اختيار عنوان توصيل صالح'));
+      emit(
+        state.copyWith(
+          placeStoreOrderStatus: BlocStatus.failed,
+          placeStoreOrderErrorMessage: 'يرجى اختيار عنوان توصيل صالح',
+        ),
+      );
       return;
     }
     if (isDelivery && receiveMode == 'scheduled' && scheduledAt == null) {
-      emit(state.copyWith(placeStoreOrderStatus: BlocStatus.failed, placeStoreOrderErrorMessage: 'يرجى تحديد موعد الاستلام.'));
+      emit(
+        state.copyWith(
+          placeStoreOrderStatus: BlocStatus.failed,
+          placeStoreOrderErrorMessage: 'يرجى تحديد موعد الاستلام.',
+        ),
+      );
       return;
     }
 
-    emit(state.copyWith(placeStoreOrderStatus: BlocStatus.loading, clearPlaceStoreOrderError: true));
+    emit(
+      state.copyWith(
+        placeStoreOrderStatus: BlocStatus.loading,
+        clearPlaceStoreOrderError: true,
+        clearPlacedStoreOrder: true,
+      ),
+    );
 
     final response = await placeStoreOrderUseCase(
       PlaceStoreOrderParams(
@@ -671,12 +771,21 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
 
     response.fold(
-      (failure) => emit(state.copyWith(placeStoreOrderStatus: BlocStatus.failed, placeStoreOrderErrorMessage: failure.message)),
-      (_) {
-        final carts = state.storeCarts.where((cart) => cart.id != event.cartId).toList();
+      (failure) => emit(
+        state.copyWith(
+          placeStoreOrderStatus: BlocStatus.failed,
+          placeStoreOrderErrorMessage: failure.message,
+        ),
+      ),
+      (result) {
+        final placedOrder = result.data;
+        final carts = state.storeCarts
+            .where((cart) => cart.id != event.cartId)
+            .toList();
         emit(
           state.copyWith(
             placeStoreOrderStatus: BlocStatus.success,
+            placedStoreOrder: placedOrder,
             clearPlaceStoreOrderError: true,
             replaceStoreCarts: true,
             storeCarts: carts,
@@ -689,53 +798,72 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     );
   }
 
-
-  FutureOr<void> _fetchSupermarketCart(FetchSupermarketCartEvent event, Emitter<OrdersState> emit) async {
+  FutureOr<void> _fetchSupermarketCart(
+    FetchSupermarketCartEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(state.copyWith(supermarketCartStatus: BlocStatus.loading));
     final res = await fetchSupermarketCartUseCase(event.params);
     res.fold((l) {
-      emit(state.copyWith(
-        supermarketCartStatus: BlocStatus.failed,
-        errorMessage: l.message,
-      ));
+      emit(
+        state.copyWith(
+          supermarketCartStatus: BlocStatus.failed,
+          errorMessage: l.message,
+        ),
+      );
     }, (r) {
-      emit(state.copyWith(
-        supermarketCartStatus: BlocStatus.success,
-        supermarketCart: r,
-      ));
+      emit(
+        state.copyWith(
+          supermarketCartStatus: BlocStatus.success,
+          supermarketCart: r,
+        ),
+      );
     });
   }
 
-  
-
-  FutureOr<void> _removeSupermarketCart(RemoveSupermarketCartEvent event, Emitter<OrdersState> emit) async {
+  FutureOr<void> _removeSupermarketCart(
+    RemoveSupermarketCartEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(state.copyWith(removeSupermarketCartStatus: BlocStatus.loading));
     final res = await removeSupermarketCartUseCase(event.params);
     res.fold((l) {
-      emit(state.copyWith(
-        removeSupermarketCartStatus: BlocStatus.failed,
-        errorMessage: l.message,
-      ));
+      emit(
+        state.copyWith(
+          removeSupermarketCartStatus: BlocStatus.failed,
+          errorMessage: l.message,
+        ),
+      );
     }, (r) {
-      emit(state.copyWith(
-        removeSupermarketCartStatus: BlocStatus.success,
-        removeSupermarketCart: r,
-      ));
+      emit(
+        state.copyWith(
+          removeSupermarketCartStatus: BlocStatus.success,
+          removeSupermarketCart: r,
+        ),
+      );
     });
   }
 
-  FutureOr<void> _getSingleSupermarketCart(GetSingleSupermarketCartEvent event, Emitter<OrdersState> emit) async {
+  FutureOr<void> _getSingleSupermarketCart(
+    GetSingleSupermarketCartEvent event,
+    Emitter<OrdersState> emit,
+  ) async {
     emit(state.copyWith(singleSupermarketCartStatus: BlocStatus.loading));
     final res = await getSingleSupermarketCartUseCase(event.params);
     res.fold((l) {
-      emit(state.copyWith(
-        singleSupermarketCartStatus: BlocStatus.failed,
-        errorMessage: l.message,
-      ));
+      emit(
+        state.copyWith(
+          singleSupermarketCartStatus: BlocStatus.failed,
+          errorMessage: l.message,
+        ),
+      );
     }, (r) {
-      emit(state.copyWith(
-        singleSupermarketCartStatus: BlocStatus.success,
-        singleSupermarketCart: r,
-      ));
+      emit(
+        state.copyWith(
+          singleSupermarketCartStatus: BlocStatus.success,
+          singleSupermarketCart: r,
+        ),
+      );
     });
-  }}
+  }
+}
