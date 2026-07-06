@@ -99,6 +99,7 @@ class NotificationHelper {
   static const Duration _tapDedupDuration = Duration(seconds: 3);
   static const int _maxTokenFetchAttempts = 3;
   static StreamSubscription<String>? _tokenRefreshSubscription;
+  static bool _firebaseReady = false;
 
   static Future<void> initAllNotifications({
     required String tokenKey,
@@ -118,7 +119,9 @@ class NotificationHelper {
 
     try {
       await _initFirebase(tokenKey);
+      _firebaseReady = true;
     } catch (error, stackTrace) {
+      _firebaseReady = false;
       log(
         'Firebase notification bootstrap failed. Continuing app startup: $error',
         stackTrace: stackTrace,
@@ -126,8 +129,10 @@ class NotificationHelper {
     }
     await _initAwesomeNotifications();
     await _ensurePermission();
-    _registerListeners();
-    await _checkTerminatedNotification();
+    if (_firebaseReady) {
+      _registerListeners();
+      await _checkTerminatedNotification();
+    }
     await _startAwesomeListeners();
     await _checkInitialAwesomeAction();
   }
@@ -142,7 +147,9 @@ class NotificationHelper {
   }
 
   static Future<void> _initFirebase(String tokenKey) async {
-    await Firebase.initializeApp();
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
     await _requestMessagingPermission();
     _registerTokenRefreshListener(tokenKey);
     unawaited(_fetchAndPersistToken(tokenKey));
@@ -299,6 +306,10 @@ class NotificationHelper {
   }
 
   static Future<void> _checkTerminatedNotification() async {
+    if (!_firebaseReady) {
+      return;
+    }
+
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
 
     if (initialMessage != null) {
