@@ -6,6 +6,7 @@ import 'package:dllni_user_app/features/delivery/presentation/cubit/delivery_tra
 import 'package:dllni_user_app/features/profile/view/widgets/personal_details_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../data/models/delivery_order_models.dart';
 import '../widgets/delivery_driver_card.dart';
@@ -40,8 +41,8 @@ class _DeliveryOrderTrackingScreenState
     super.dispose();
   }
 
-  void _syncPollTimer(DeliveryTrackingCubit cubit, bool isTerminal) {
-    if (!isTerminal) {
+  void _syncPollTimer(DeliveryTrackingCubit cubit, DeliveryOrderModel? order) {
+    if (!_isTerminalDeliveryStatus(order)) {
       _pollTimer ??= Timer.periodic(_pollInterval, (_) {
         cubit.load(widget.args.orderId, silent: true);
       });
@@ -49,6 +50,16 @@ class _DeliveryOrderTrackingScreenState
       _pollTimer?.cancel();
       _pollTimer = null;
     }
+  }
+
+  bool _isTerminalDeliveryStatus(DeliveryOrderModel? order) {
+    final status = (order?.status ?? order?.tracking?.currentStatus ?? '')
+        .toLowerCase();
+    return order?.isTerminal == true ||
+        status == 'completed' ||
+        status == 'stopped' ||
+        status == 'cancelled' ||
+        status == 'rejected';
   }
 
   @override
@@ -65,7 +76,7 @@ class _DeliveryOrderTrackingScreenState
               listener: (context, state) {
                 _syncPollTimer(
                   context.read<DeliveryTrackingCubit>(),
-                  state.order?.isTerminal ?? false,
+                  state.order,
                 );
               },
               builder: (context, state) {
@@ -121,6 +132,7 @@ class _DeliveryOrderTrackingScreenState
                     : tracking?.timeline ?? order.timeline;
                 final driver = tracking?.driver ?? order.driver;
                 final map = tracking?.map;
+                final status = tracking?.currentStatus ?? order.status;
 
                 return Column(
                   children: [
@@ -152,11 +164,15 @@ class _DeliveryOrderTrackingScreenState
                               orderNumber: order.orderNumber ?? '—',
                               statusLabel: order.displayStatusLabel,
                               etaLabel: order.etaLabel,
+                              status: status,
+                              fee: order.deliveryFee,
+                              currency: order.currency ?? 'SYP',
+                              distanceKm: order.distanceKm,
                             ),
-                            if (map != null && map.enabled) ...[
-                              const SizedBox(height: 14),
-                              DeliveryTrackingMap(map: map),
-                            ],
+                            const SizedBox(height: 14),
+                            map == null
+                                ? const _TrackingMapUnavailableCard()
+                                : DeliveryTrackingMap(map: map),
                             const SizedBox(height: 14),
                             DeliveryStatusStepper(stages: stages),
                             if (driver != null) ...[
@@ -205,11 +221,19 @@ class _StatusHeader extends StatelessWidget {
     required this.orderNumber,
     required this.statusLabel,
     required this.etaLabel,
+    required this.status,
+    this.fee,
+    this.currency,
+    this.distanceKm,
   });
 
   final String orderNumber;
   final String statusLabel;
   final String etaLabel;
+  final String? status;
+  final double? fee;
+  final String? currency;
+  final double? distanceKm;
 
   @override
   Widget build(BuildContext context) {
@@ -218,36 +242,176 @@ class _StatusHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            orderNumber,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xff6B7280),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            statusLabel,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: Color(0xff1E2A78),
-            ),
-          ),
-          if (etaLabel.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              etaLabel,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xff374151),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xffEEF2FF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  _statusIcon(status),
+                  color: const Color(0xff1E2A78),
+                ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      orderNumber,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xff6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      statusLabel,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xff1E2A78),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _deliveryStatusHint(status),
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xff374151),
+              fontWeight: FontWeight.w600,
             ),
-          ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (etaLabel.isNotEmpty)
+                _StatusMetric(icon: Icons.timer_outlined, text: etaLabel),
+              if (fee != null)
+                _StatusMetric(
+                  icon: Icons.payments_outlined,
+                  text: '${fee!.toStringAsFixed(0)} ${currency ?? 'SYP'}',
+                ),
+              if (distanceKm != null)
+                _StatusMetric(
+                  icon: Icons.route_outlined,
+                  text: '${distanceKm!.toStringAsFixed(1)} كم',
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _statusIcon(String? status) {
+    return switch ((status ?? '').toLowerCase()) {
+      'new' => Icons.add_task_rounded,
+      'dispatching' => Icons.search_rounded,
+      'offered' => Icons.campaign_rounded,
+      'accepted' => Icons.two_wheeler_rounded,
+      'in_progress' => Icons.near_me_rounded,
+      'picked_up' => Icons.inventory_2_rounded,
+      'delivered' => Icons.home_rounded,
+      'completed' => Icons.check_circle_rounded,
+      'cancelled' => Icons.cancel_rounded,
+      'rejected' => Icons.error_outline_rounded,
+      'stopped' => Icons.pause_circle_rounded,
+      _ => Icons.delivery_dining_rounded,
+    };
+  }
+
+  String _deliveryStatusHint(String? status) {
+    return switch ((status ?? '').toLowerCase()) {
+      'new' => 'تم إنشاء طلب التوصيل',
+      'dispatching' => 'جاري البحث عن مندوب قريب',
+      'offered' => 'تم إرسال الطلب إلى مندوب',
+      'accepted' => 'المندوب في الطريق إلى نقطة الاستلام',
+      'in_progress' => 'المندوب يقترب من نقطة الاستلام',
+      'picked_up' => 'المندوب استلم الطلب وهو في الطريق إليك',
+      'delivered' => 'تم تسليم الطلب',
+      'completed' => 'اكتمل طلب التوصيل',
+      'cancelled' => 'تم إلغاء طلب التوصيل',
+      'rejected' => 'تعذر قبول طلب التوصيل',
+      'stopped' => 'توقف طلب التوصيل',
+      _ => 'جاري تحديث حالة التوصيل',
+    };
+  }
+}
+
+class _StatusMetric extends StatelessWidget {
+  const _StatusMetric({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xffF3F4F6),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xff6B7280)),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: Color(0xff374151)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrackingMapUnavailableCard extends StatelessWidget {
+  const _TrackingMapUnavailableCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.map_outlined, color: Color(0xff6B7280)),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'سيتم عرض موقع المندوب عند توفر بيانات التتبع.',
+              style: TextStyle(color: Color(0xff6B7280)),
+            ),
+          ),
         ],
       ),
     );
@@ -318,13 +482,36 @@ class _EventsCard extends StatelessWidget {
         style: TextStyle(fontWeight: FontWeight.w700),
       ),
       children: events.map((event) {
+        final date = _formatArabicDateTime(event.createdAt);
         return ListTile(
           dense: true,
-          title: Text('${event.fromStatus ?? '—'} ← ${event.toStatus ?? '—'}'),
-          subtitle: event.createdAt != null ? Text(event.createdAt!) : null,
+          title: Text(_deliveryEventLabel(event)),
+          subtitle: date.isNotEmpty ? Text(date) : null,
         );
       }).toList(),
     );
+  }
+
+  static String _deliveryEventLabel(DeliveryEventModel event) {
+    final to = event.toStatus;
+    return switch ((to ?? '').toLowerCase()) {
+      'accepted' => 'تم قبول الطلب من المندوب',
+      'in_progress' => 'المندوب في الطريق لنقطة الاستلام',
+      'picked_up' => 'تم استلام الطلب',
+      'delivered' => 'تم تسليم الطلب',
+      'completed' => 'اكتمل التوصيل',
+      'cancelled' => 'تم إلغاء التوصيل',
+      'stopped' => 'توقف التوصيل',
+      'rejected' => 'تعذر قبول طلب التوصيل',
+      _ => event.note ?? 'تم تحديث حالة الطلب',
+    };
+  }
+
+  static String _formatArabicDateTime(String? value) {
+    if (value == null || value.isEmpty) return '';
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+    return DateFormat('yyyy/MM/dd - h:mm a', 'ar').format(parsed.toLocal());
   }
 }
 
