@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../orders/data/models/orders_api_models.dart';
+import '../../../orders/view/widgets/order_delivery_summary_card.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/app_images.dart';
 
@@ -139,6 +140,13 @@ class OrderCard extends StatelessWidget {
                 ],
               ),
             ),
+            if (order.deliverySummary?.enabled == true || order.deliveryOrderId != null) ...[
+              SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: OrderDeliverySummaryCard(order: order, onTrack: onTap),
+              ),
+            ],
             if (_isScheduled) ...[
               SizedBox(height: 12),
               Divider(color: Color(0x669CA3AF), height: 1, thickness: 1),
