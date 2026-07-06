@@ -7,7 +7,7 @@ import 'package:dllni_user_app/features/delivery/presentation/cubit/delivery_tra
 import 'package:dllni_user_app/features/profile/view/widgets/personal_details_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../data/models/delivery_order_models.dart';
 import '../widgets/delivery_driver_card.dart';

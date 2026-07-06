@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/countries.dart';
@@ -114,7 +115,7 @@ class MyPhoneNumberField extends StatelessWidget {
     }
 
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       child: Container(
         margin: isMargin
             ? EdgeInsets.symmetric(vertical: context.width * 0.04)
@@ -322,7 +323,7 @@ class MyPhoneNumberInitField extends StatelessWidget {
     }
 
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       child: MyCustomIntlField(
         textInputAction: textInputAction,
         initialCountryCode: _initialCountryDialCode != null

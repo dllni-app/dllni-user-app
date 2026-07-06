@@ -1,4 +1,4 @@
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 // 1. تحديث الـ Extension ليشمل الـ num
 extension NumberFormatting on num? {

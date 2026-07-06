@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/themes/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +40,7 @@ class FilledPhoneNumberField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       child: Row(
         spacing: 8,
         children: [

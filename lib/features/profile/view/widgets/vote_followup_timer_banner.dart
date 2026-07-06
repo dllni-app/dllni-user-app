@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +26,7 @@ class VoteFollowupTimerBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: AppText.displayMedium(
         formattedTime,
-        textDirection: TextDirection.ltr,
+        textDirection: ui.TextDirection.ltr,
         textAlign: TextAlign.center,
         color: context.primaryContainer,
         fontWeight: FontWeight.w700,
