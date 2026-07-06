@@ -29,8 +29,10 @@ class OrdersState {
   final String? storeCouponErrorMessage;
   final BlocStatus? placeOrderStatus;
   final String? placeOrderErrorMessage;
+  final OrderResourceModel? placedRestaurantOrder;
   final BlocStatus? placeStoreOrderStatus;
   final String? placeStoreOrderErrorMessage;
+  final OrderResourceModel? placedStoreOrder;
   final BlocStatus? cancelCleaningStatus;
   final String? cancelCleaningErrorMessage;
   final String cartNote;
@@ -39,6 +41,7 @@ class OrdersState {
   final String? storeScheduledAt;
   final AddressListItem? selectedAddress;
   BlocStatus? deleteStoreCartItemStatus;
+
   OrdersState({
     this.orders = const PaginationStateModel<OrderResourceModel>(perPage: 10),
     this.cleaningOrders = const PaginationStateModel<CleaningOrderModel>(perPage: 10),
@@ -62,8 +65,10 @@ class OrdersState {
     this.storeCouponErrorMessage,
     this.placeOrderStatus,
     this.placeOrderErrorMessage,
+    this.placedRestaurantOrder,
     this.placeStoreOrderStatus,
     this.placeStoreOrderErrorMessage,
+    this.placedStoreOrder,
     this.cancelCleaningStatus,
     this.cancelCleaningErrorMessage,
     this.cartNote = '',
@@ -77,7 +82,7 @@ class OrdersState {
     this.removeSupermarketCartStatus,
     this.singleSupermarketCart,
     this.singleSupermarketCartStatus,
-    this.deleteStoreCartItemStatus
+    this.deleteStoreCartItemStatus,
   });
 
   OrdersState copyWith({
@@ -115,9 +120,13 @@ class OrdersState {
     BlocStatus? placeOrderStatus,
     String? placeOrderErrorMessage,
     bool clearPlaceOrderError = false,
+    OrderResourceModel? placedRestaurantOrder,
+    bool clearPlacedRestaurantOrder = false,
     BlocStatus? placeStoreOrderStatus,
     String? placeStoreOrderErrorMessage,
     bool clearPlaceStoreOrderError = false,
+    OrderResourceModel? placedStoreOrder,
+    bool clearPlacedStoreOrder = false,
     BlocStatus? cancelCleaningStatus,
     String? cancelCleaningErrorMessage,
     bool clearCancelCleaningError = false,
@@ -154,8 +163,11 @@ class OrdersState {
           ? null
           : (replaceRestaurantCart
               ? restaurantCart
-              : (restaurantCart ?? this.restaurantCart ??
-                  (resolvedRestaurantCarts.isEmpty ? null : resolvedRestaurantCarts.first))),
+              : (restaurantCart ??
+                  this.restaurantCart ??
+                  (resolvedRestaurantCarts.isEmpty
+                      ? null
+                      : resolvedRestaurantCarts.first))),
       restaurantCartErrorMessage: clearRestaurantCartError
           ? null
           : (restaurantCartErrorMessage ?? this.restaurantCartErrorMessage),
@@ -165,60 +177,99 @@ class OrdersState {
           ? null
           : (replaceStoreCart
               ? storeCart
-              : (storeCart ?? this.storeCart ??
+              : (storeCart ??
+                  this.storeCart ??
                   (resolvedStoreCarts.isEmpty ? null : resolvedStoreCarts.first))),
       storeCartErrorMessage: clearStoreCartError
           ? null
           : (storeCartErrorMessage ?? this.storeCartErrorMessage),
       isMutatingCartItem: isMutatingCartItem ?? this.isMutatingCartItem,
-      isMutatingStoreCartItem: isMutatingStoreCartItem ?? this.isMutatingStoreCartItem,
+      isMutatingStoreCartItem:
+          isMutatingStoreCartItem ?? this.isMutatingStoreCartItem,
       couponStatus: couponStatus ?? this.couponStatus,
       couponData: couponData ?? this.couponData,
-      couponErrorMessage: clearCouponError ? null : (couponErrorMessage ?? this.couponErrorMessage),
+      couponErrorMessage:
+          clearCouponError ? null : (couponErrorMessage ?? this.couponErrorMessage),
       storeCouponStatus: storeCouponStatus ?? this.storeCouponStatus,
       storeCouponData: storeCouponData ?? this.storeCouponData,
-      storeCouponErrorMessage: clearStoreCouponError ? null : (storeCouponErrorMessage ?? this.storeCouponErrorMessage),
+      storeCouponErrorMessage: clearStoreCouponError
+          ? null
+          : (storeCouponErrorMessage ?? this.storeCouponErrorMessage),
       placeOrderStatus: placeOrderStatus ?? this.placeOrderStatus,
-      placeOrderErrorMessage: clearPlaceOrderError ? null : (placeOrderErrorMessage ?? this.placeOrderErrorMessage),
-      placeStoreOrderStatus: placeStoreOrderStatus ?? this.placeStoreOrderStatus,
-      placeStoreOrderErrorMessage: clearPlaceStoreOrderError ? null : (placeStoreOrderErrorMessage ?? this.placeStoreOrderErrorMessage),
+      placeOrderErrorMessage: clearPlaceOrderError
+          ? null
+          : (placeOrderErrorMessage ?? this.placeOrderErrorMessage),
+      placedRestaurantOrder: clearPlacedRestaurantOrder
+          ? null
+          : (placedRestaurantOrder ?? this.placedRestaurantOrder),
+      placeStoreOrderStatus:
+          placeStoreOrderStatus ?? this.placeStoreOrderStatus,
+      placeStoreOrderErrorMessage: clearPlaceStoreOrderError
+          ? null
+          : (placeStoreOrderErrorMessage ?? this.placeStoreOrderErrorMessage),
+      placedStoreOrder:
+          clearPlacedStoreOrder ? null : (placedStoreOrder ?? this.placedStoreOrder),
       cancelCleaningStatus: cancelCleaningStatus ?? this.cancelCleaningStatus,
-      cancelCleaningErrorMessage: clearCancelCleaningError ? null : (cancelCleaningErrorMessage ?? this.cancelCleaningErrorMessage),
+      cancelCleaningErrorMessage: clearCancelCleaningError
+          ? null
+          : (cancelCleaningErrorMessage ?? this.cancelCleaningErrorMessage),
       cartNote: cartNote ?? this.cartNote,
-      selectedFulfillmentType: selectedFulfillmentType ?? this.selectedFulfillmentType,
+      selectedFulfillmentType:
+          selectedFulfillmentType ?? this.selectedFulfillmentType,
       storeReceiveMode: storeReceiveMode ?? this.storeReceiveMode,
-      storeScheduledAt: replaceStoreScheduledAt ? storeScheduledAt : (storeScheduledAt ?? this.storeScheduledAt),
-      selectedAddress: replaceSelectedAddress ? selectedAddress : (selectedAddress ?? this.selectedAddress),
-        supermarketCart: supermarketCart ?? this.supermarketCart,
-        supermarketCartStatus: supermarketCartStatus ?? this.supermarketCartStatus,
-        removeSupermarketCart: removeSupermarketCart ?? this.removeSupermarketCart,
-        removeSupermarketCartStatus: removeSupermarketCartStatus ?? this.removeSupermarketCartStatus,
-        singleSupermarketCart: singleSupermarketCart ?? this.singleSupermarketCart,
-        singleSupermarketCartStatus: singleSupermarketCartStatus ?? this.singleSupermarketCartStatus,
-        deleteStoreCartItemStatus: deleteStoreCartItemStatus ?? this.deleteStoreCartItemStatus,);
+      storeScheduledAt: replaceStoreScheduledAt
+          ? storeScheduledAt
+          : (storeScheduledAt ?? this.storeScheduledAt),
+      selectedAddress: replaceSelectedAddress
+          ? selectedAddress
+          : (selectedAddress ?? this.selectedAddress),
+      supermarketCart: supermarketCart ?? this.supermarketCart,
+      supermarketCartStatus: supermarketCartStatus ?? this.supermarketCartStatus,
+      removeSupermarketCart:
+          removeSupermarketCart ?? this.removeSupermarketCart,
+      removeSupermarketCartStatus:
+          removeSupermarketCartStatus ?? this.removeSupermarketCartStatus,
+      singleSupermarketCart:
+          singleSupermarketCart ?? this.singleSupermarketCart,
+      singleSupermarketCartStatus:
+          singleSupermarketCartStatus ?? this.singleSupermarketCartStatus,
+      deleteStoreCartItemStatus:
+          deleteStoreCartItemStatus ?? this.deleteStoreCartItemStatus,
+    );
   }
 
   bool isStoresSection() => selectedTabIndex == 0;
 
-  RestaurantCartDataModel? activeCart() => isStoresSection() ? storeCart : restaurantCart;
+  RestaurantCartDataModel? activeCart() =>
+      isStoresSection() ? storeCart : restaurantCart;
 
-  List<RestaurantCartDataModel> activeCarts() => isStoresSection() ? storeCarts : restaurantCarts;
+  List<RestaurantCartDataModel> activeCarts() =>
+      isStoresSection() ? storeCarts : restaurantCarts;
 
-  BlocStatus? activeCartStatus() => isStoresSection() ? storeCartStatus : restaurantCartStatus;
+  BlocStatus? activeCartStatus() =>
+      isStoresSection() ? storeCartStatus : restaurantCartStatus;
 
-  String? activeCartError() => isStoresSection() ? storeCartErrorMessage : restaurantCartErrorMessage;
+  String? activeCartError() =>
+      isStoresSection() ? storeCartErrorMessage : restaurantCartErrorMessage;
 
-  bool activeMutatingCartItem() => isStoresSection() ? isMutatingStoreCartItem : isMutatingCartItem;
+  bool activeMutatingCartItem() =>
+      isStoresSection() ? isMutatingStoreCartItem : isMutatingCartItem;
 
-  CouponCheckDataModel? activeCouponData() => isStoresSection() ? storeCouponData : couponData;
+  CouponCheckDataModel? activeCouponData() =>
+      isStoresSection() ? storeCouponData : couponData;
 
-  BlocStatus? activeCouponStatus() => isStoresSection() ? storeCouponStatus : couponStatus;
+  BlocStatus? activeCouponStatus() =>
+      isStoresSection() ? storeCouponStatus : couponStatus;
 
-  String? activeCouponError() => isStoresSection() ? storeCouponErrorMessage : couponErrorMessage;
+  String? activeCouponError() =>
+      isStoresSection() ? storeCouponErrorMessage : couponErrorMessage;
 
-  BlocStatus? activePlaceOrderStatus() => isStoresSection() ? placeStoreOrderStatus : placeOrderStatus;
+  BlocStatus? activePlaceOrderStatus() =>
+      isStoresSection() ? placeStoreOrderStatus : placeOrderStatus;
 
-  String? activePlaceOrderError() => isStoresSection() ? placeStoreOrderErrorMessage : placeOrderErrorMessage;
+  String? activePlaceOrderError() => isStoresSection()
+      ? placeStoreOrderErrorMessage
+      : placeOrderErrorMessage;
 
   int get totalCartBadgeCount =>
       restaurantCarts.fold<int>(0, (sum, cart) => sum + cart.productsCount) +
