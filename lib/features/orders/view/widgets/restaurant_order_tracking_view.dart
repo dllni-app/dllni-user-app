@@ -1,3 +1,5 @@
+import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/widgets/delivery_driver_card.dart';
 import 'package:dllni_user_app/features/delivery/presentation/widgets/delivery_status_stepper.dart';
 import 'package:dllni_user_app/features/delivery/presentation/widgets/delivery_tracking_map.dart';
@@ -108,6 +110,19 @@ class RestaurantOrderTrackingView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       RestaurantOrderEtaCard(etaText: _etaLabel()),
+                      if (order.deliveryOrderId != null) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => context.pushRoute(
+                            '/delivery/orders/tracking',
+                            arguments: DeliveryOrderTrackingArgs(
+                              orderId: order.deliveryOrderId!,
+                            ),
+                          ),
+                          icon: const Icon(Icons.delivery_dining),
+                          label: const Text('فتح تتبع التوصيل'),
+                        ),
+                      ],
                       if (deliveryTracking?.map != null &&
                           deliveryTracking!.map!.enabled) ...[
                         const SizedBox(height: 14),

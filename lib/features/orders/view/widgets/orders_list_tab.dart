@@ -167,6 +167,19 @@ class _OrdersListTabState extends State<OrdersListTab> {
               },
             ),
           ),
+        if (!isCleaningSection &&
+            effectiveSegmentIndex == OrdersCartOrdersSegmentBar.ordersIndex)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                onPressed: () => context.pushRoute('/delivery/orders'),
+                icon: const Icon(Icons.delivery_dining, size: 18),
+                label: const Text('طلبات التوصيل'),
+              ),
+            ),
+          ),
         Expanded(
           child: IndexedStack(
             index: effectiveSegmentIndex,
