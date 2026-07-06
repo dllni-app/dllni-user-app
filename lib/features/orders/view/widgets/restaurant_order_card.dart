@@ -2,6 +2,8 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/orders_api_models.dart';
+import '../screens/restaurant_order_tracking_screen.dart';
+import 'order_delivery_summary_card.dart';
 
 class RestaurantOrderCard extends StatelessWidget {
   const RestaurantOrderCard({
@@ -68,6 +70,21 @@ class RestaurantOrderCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (order.deliverySummary?.enabled == true || order.deliveryOrderId != null) ...[
+              const SizedBox(height: 10),
+              OrderDeliverySummaryCard(
+                order: order,
+                onTrack: () {
+                  context.pushRoute(
+                    '/restaurant-order-tracking',
+                    arguments: RestaurantOrderTrackingArgs(
+                      order: order,
+                      section: 'restaurant',
+                    ),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),
