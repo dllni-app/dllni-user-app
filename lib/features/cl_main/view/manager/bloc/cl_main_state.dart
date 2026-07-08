@@ -26,7 +26,7 @@ class ClMainState {
       perPage: 10,
     ),
     this.selectedWorkerIds = const <int>[],
-    this.genderPreference = CleaningGenderPreference.any,
+    this.genderPreference = CleaningGenderPreference.male,
     this.safetyConfirmation,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers = 1,
