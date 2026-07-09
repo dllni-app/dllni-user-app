@@ -57,5 +57,9 @@
 	<string>نحتاج إلى الميكروفون لتحويل كلامك إلى نص أثناء البحث الصوتي.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>نستخدم التعرف على الكلام لعرض كلمات البحث التي تنطقها في حقل البحث.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>نستخدم الكاميرا لالتقاط صورة شخصية لحسابك.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نستخدم معرض الصور لاختيار صورة شخصية لحسابك.</string>
 </dict>
 </plist>

@@ -12,6 +12,7 @@ import 'package:dllni_user_app/features/profile/domain/usecases/update_account_u
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/session/user_session_store.dart';
@@ -115,15 +116,67 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return true;
   }
 
+  Future<bool> _ensureImagePermission(ImageSource source) async {
+    final permission = source == ImageSource.camera
+        ? Permission.camera
+        : Permission.photos;
+    final deniedMessage = source == ImageSource.camera
+        ? 'يلزم السماح بالكاميرا لالتقاط صورة شخصية.'
+        : 'يلزم السماح بالوصول إلى معرض الصور لاختيار صورة شخصية.';
+    final settingsMessage = source == ImageSource.camera
+        ? 'فعّل إذن الكاميرا من إعدادات التطبيق.'
+        : 'فعّل إذن معرض الصور من إعدادات التطبيق.';
+
+    var status = await permission.status;
+
+    if (status.isPermanentlyDenied) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(settingsMessage),
+          action: SnackBarAction(
+            label: 'الإعدادات',
+            onPressed: openAppSettings,
+          ),
+        ),
+      );
+      return false;
+    }
+
+    if (!status.isGranted) {
+      status = await permission.request();
+    }
+
+    if (!status.isGranted) {
+      if (!mounted) return false;
+      AppToast.showToast(
+        context: context,
+        message: deniedMessage,
+        type: ToastificationType.error,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> _pickImage(ImageSource source) async {
+    if (!await _ensureImagePermission(source)) return;
+
     final picker = ImagePicker();
     try {
       final file = await picker.pickImage(source: source);
-      if (file != null) {
+      if (file != null && mounted) {
         setState(() => _selectedImage = File(file.path));
       }
-    } catch (e) {
-      log('pickImage error', error: e);
+    } catch (e, stackTrace) {
+      log('pickImage error', error: e, stackTrace: stackTrace);
+      if (!mounted) return;
+      AppToast.showToast(
+        context: context,
+        message: 'تعذر اختيار الصورة. يرجى المحاولة مرة أخرى.',
+        type: ToastificationType.error,
+      );
     }
   }
 

@@ -8,7 +8,9 @@ import 'package:equatable/equatable.dart';
 import '../generated/locale_keys.g.dart';
 
 mixin HandlingException {
-  Future<Either<Failure, T>> wrapHandlingException<T>({required Future<T> Function() tryCall}) async {
+  Future<Either<Failure, T>> wrapHandlingException<T>({
+    required Future<T> Function() tryCall,
+  }) async {
     try {
       final result = await tryCall();
       return Right(result);
@@ -25,7 +27,10 @@ class ErrorHandler implements Exception {
     if (error is DioException) {
       failure = _handleError(error);
     } else {
-      failure = ServerFailure(message: error.toString(), statusCode: ResponseCode.badRequestServer);
+      failure = ServerFailure(
+        message: error.toString(),
+        statusCode: ResponseCode.badRequestServer,
+      );
     }
   }
 
@@ -56,7 +61,10 @@ class ErrorHandler implements Exception {
           case ResponseCode.internalServerError:
             return DataSource.internetServerError.getFailure();
           case ResponseCode.notFound:
-            return _apiFailure(error, fallback: DataSource.notFound.getFailure());
+            return _apiFailure(
+              error,
+              fallback: DataSource.notFound.getFailure(),
+            );
           case ResponseCode.blocked:
             return UserBlockedFailure(message: AppConstants.blockedError.tr());
           case ResponseCode.notAllowed:
@@ -67,6 +75,8 @@ class ErrorHandler implements Exception {
           default:
             return _apiFailure(error);
         }
+      case DioExceptionType.transformTimeout:
+        return DataSource.def.getFailure();
     }
   }
 }
@@ -107,7 +117,9 @@ Failure _apiFailure(
 
   return ServerFailure(
     message: responseData is Map
-        ? responseData['message']?.toString() ?? responseData['errors']?.toString() ?? ''
+        ? responseData['message']?.toString() ??
+              responseData['errors']?.toString() ??
+              ''
         : responseData?.toString() ?? '',
     statusCode: statusCode,
   );
@@ -124,7 +136,9 @@ Map<String, List<String>>? _parseFieldErrors(dynamic data) {
     final key = entry.key.toString();
     final value = entry.value;
     if (value is List) {
-      fieldErrors[key] = value.map((item) => item.toString()).toList(growable: false);
+      fieldErrors[key] = value
+          .map((item) => item.toString())
+          .toList(growable: false);
     } else if (value != null) {
       fieldErrors[key] = [value.toString()];
     }
@@ -137,33 +151,75 @@ extension DataSourceExtension on DataSource {
   Failure getFailure() {
     switch (this) {
       case DataSource.success:
-        return ServerFailure(statusCode: ResponseCode.success, message: ResponseMessage.success.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.success,
+          message: ResponseMessage.success.tr(),
+        );
       case DataSource.noInternet:
-        return ServerFailure(statusCode: ResponseCode.noContent, message: ResponseMessage.noContent.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.noContent,
+          message: ResponseMessage.noContent.tr(),
+        );
       case DataSource.badRequest:
-        return ServerFailure(statusCode: ResponseCode.badRequest, message: ResponseMessage.badRequest.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.badRequest,
+          message: ResponseMessage.badRequest.tr(),
+        );
       case DataSource.forBidden:
-        return ServerFailure(statusCode: ResponseCode.forBidden, message: ResponseMessage.forbidden.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.forBidden,
+          message: ResponseMessage.forbidden.tr(),
+        );
       case DataSource.unAuthorized:
-        return ServerFailure(statusCode: ResponseCode.unAuthorized, message: ResponseMessage.unAuthorized.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.unAuthorized,
+          message: ResponseMessage.unAuthorized.tr(),
+        );
       case DataSource.notFound:
-        return ServerFailure(statusCode: ResponseCode.notFound, message: ResponseMessage.notFound.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.notFound,
+          message: ResponseMessage.notFound.tr(),
+        );
       case DataSource.internetServerError:
-        return ServerFailure(statusCode: ResponseCode.internalServerError, message: ResponseMessage.internalServerError.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.internalServerError,
+          message: ResponseMessage.internalServerError.tr(),
+        );
       case DataSource.connectTimeOut:
-        return ServerFailure(statusCode: ResponseCode.connectTimeOut, message: ResponseMessage.connectTimeout.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.connectTimeOut,
+          message: ResponseMessage.connectTimeout.tr(),
+        );
       case DataSource.cancel:
-        return ServerFailure(statusCode: ResponseCode.cancel, message: ResponseMessage.cancel.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.cancel,
+          message: ResponseMessage.cancel.tr(),
+        );
       case DataSource.receiveTimeOut:
-        return ServerFailure(statusCode: ResponseCode.receiveTimeOut, message: ResponseMessage.receiveTime.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.receiveTimeOut,
+          message: ResponseMessage.receiveTime.tr(),
+        );
       case DataSource.sendTimeOut:
-        return ServerFailure(statusCode: ResponseCode.sendTimeOut, message: ResponseMessage.sendTimeout.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.sendTimeOut,
+          message: ResponseMessage.sendTimeout.tr(),
+        );
       case DataSource.cashError:
-        return ServerFailure(statusCode: ResponseCode.cashError, message: ResponseMessage.cacheError.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.cashError,
+          message: ResponseMessage.cacheError.tr(),
+        );
       case DataSource.noInternetConnection:
-        return ServerFailure(statusCode: ResponseCode.noInternetConnection, message: ResponseMessage.noInternetConnection.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.noInternetConnection,
+          message: ResponseMessage.noInternetConnection.tr(),
+        );
       case DataSource.def:
-        return ServerFailure(statusCode: ResponseCode.def, message: ResponseMessage.def.tr());
+        return ServerFailure(
+          statusCode: ResponseCode.def,
+          message: ResponseMessage.def.tr(),
+        );
     }
   }
 }
@@ -215,11 +271,13 @@ class AppConstants {
   static const String badRequestError = LocaleKeys.errorMessage_badRequestError;
   static const String noContent = LocaleKeys.errorMessage_noContent;
   static const String forbiddenError = LocaleKeys.errorMessage_forbiddenError;
-  static const String unauthorizedError = LocaleKeys.errorMessage_unauthorizedError;
+  static const String unauthorizedError =
+      LocaleKeys.errorMessage_unauthorizedError;
   static const String notFoundError = LocaleKeys.errorMessage_notFoundError;
   static const String conflictError = LocaleKeys.errorMessage_conflictError;
   static const String blockedError = LocaleKeys.errorMessage_blockedError;
-  static const String internalServerError = LocaleKeys.errorMessage_internalServerError;
+  static const String internalServerError =
+      LocaleKeys.errorMessage_internalServerError;
   static const String notAllowed = LocaleKeys.errorMessage_notAllowed;
 
   static const String unknownError = LocaleKeys.errorMessage_unknownError;
@@ -319,7 +377,10 @@ class ErrorMessageModel extends Equatable {
     } else {
       error = json["message"]?.toString() ?? json["errors"]?.toString() ?? '';
     }
-    return ErrorMessageModel(statusMessage: error, success: json["success"] ?? false);
+    return ErrorMessageModel(
+      statusMessage: error,
+      success: json["success"] ?? false,
+    );
   }
 
   @override
