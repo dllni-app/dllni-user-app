@@ -139,15 +139,18 @@ class _ProductCardState extends State<ProductCard> {
                         spacing: 20,
                         children: [
                           if (hasDiscount)
-                            AppText(
-                              "$priceStr ل.س",
-                              style: TextStyle(
-                                color: Color(0xFF9CA3AF),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                height: 16 / 12,
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: Color(0xFF9CA3AF),
+                            Expanded(
+                              child: AppText(
+                                "$priceStr ل.س",
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Color(0xFF9CA3AF),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  height: 16 / 12,
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationColor: Color(0xFF9CA3AF),
+                                ),
                               ),
                             ),
                           AppText(

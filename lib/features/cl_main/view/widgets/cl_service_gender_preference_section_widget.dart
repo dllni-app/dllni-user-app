@@ -13,6 +13,11 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
     super.key,
   });
 
+  static const List<CleaningGenderPreference> _selectablePreferences = [
+    CleaningGenderPreference.male,
+    CleaningGenderPreference.female,
+  ];
+
   final CleaningGenderPreference selectedPreference;
   final ValueChanged<CleaningGenderPreference> onChanged;
   final int step;
@@ -23,12 +28,12 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
     return ClServiceSectionCardWidget(
       step: step,
       showStepBadge: showStepBadge,
-      title: 'تفضيل مقدم الخدمة',
+      title: 'تفضيل مقدم الخدمة *',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.bodySmall(
-            'اختر تفضيلك لجنس العامل المفضل',
+            'اختيار جنس العامل إلزامي',
             color: const Color(0xFF6B7280),
             textAlign: TextAlign.right,
           ),
@@ -36,7 +41,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: CleaningGenderPreference.values
+            children: _selectablePreferences
                 .map(
                   (preference) => ChoiceChip(
                     key: Key('cleaning_gender_pref_${preference.apiValue}'),

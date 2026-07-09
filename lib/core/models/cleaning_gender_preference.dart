@@ -9,13 +9,12 @@ enum CleaningGenderPreference {
 
   static CleaningGenderPreference fromApi(String? value) {
     switch ((value ?? '').trim().toLowerCase()) {
-      case 'male':
-        return CleaningGenderPreference.male;
       case 'female':
         return CleaningGenderPreference.female;
+      case 'male':
       case 'any':
       default:
-        return CleaningGenderPreference.any;
+        return CleaningGenderPreference.male;
     }
   }
 }

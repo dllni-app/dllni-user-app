@@ -40,47 +40,25 @@ class _HomeScreenState extends State<HomeScreen> {
         final bloc = getIt<HomeBloc>();
         if (AuthGate.isAuthenticated) {
           bloc.add(
-            FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
+            FetchUserOffersEvent(
+              params: FetchUserOffersParams(),
+              isReload: true,
+            ),
           );
         }
         return bloc;
       },
       child: Column(
         children: [
-          HomeAppBar( profileBloc: profileBloc),
+          HomeAppBar(profileBloc: profileBloc),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsetsDirectional.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 32),
-                  if (!AuthGate.isAuthenticated)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xffF3F4F6)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText.titleMedium(
-                            'تصفح التطبيق كزائر',
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xff1E2A78),
-                          ),
-                          const SizedBox(height: 8),
-                          AppText.bodyMedium(
-                            'يمكنك استعراض الخدمات والمتاجر، وسنطلب تسجيل الدخول فقط عند تنفيذ طلب أو إجراء خاص بحسابك.',
-                            color: const Color(0xff6B7280),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
+                  if (AuthGate.isAuthenticated) SizedBox(height: 32),
+                  if (AuthGate.isAuthenticated)
                     BlocBuilder<HomeBloc, HomeState>(
                       buildWhen: (prev, next) =>
                           prev.userOffersStatus != next.userOffersStatus ||

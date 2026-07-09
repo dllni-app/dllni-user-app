@@ -20,8 +20,8 @@ class OrderDeliverySummaryCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final label = order.deliveryStatusLabel ?? 'توصيل الطلب';
-    final stage = summary?.currentStage;
+    final label = order.deliveryStatusLabel ?? _stageLabel(summary?.status ?? summary?.currentStage ?? '');
+    final stage = summary?.currentStage ?? summary?.status;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -80,7 +80,14 @@ class OrderDeliverySummaryCard extends StatelessWidget {
 
   String _stageLabel(String stage) {
     return switch (stage) {
-      'driver_en_route' => 'المندوب في الطريق',
+      'waiting_merchant_ready' => 'بانتظار تجهيز الطلب من المتجر',
+      'searching_for_driver' => 'جاري البحث عن مندوب',
+      'searching_driver' => 'جاري البحث عن مندوب',
+      'dispatching' => 'جاري البحث عن مندوب',
+      'offered' => 'تم إرسال الطلب إلى المندوب',
+      'accepted' => 'المندوب قبل الطلب',
+      'in_progress' => 'المندوب في الطريق إلى المتجر',
+      'driver_en_route' => 'المندوب في الطريق إلى المتجر',
       'arrived' => 'وصل المندوب',
       'arrived_pickup' => 'وصل لنقطة الاستلام',
       'handover_complete' => 'تم استلام الطلب',
@@ -89,7 +96,7 @@ class OrderDeliverySummaryCard extends StatelessWidget {
       'completed' => 'تم التسليم',
       'cancelled' => 'تم الإلغاء',
       'not_received' => 'لم يتم الاستلام',
-      _ => stage,
+      _ => stage.isEmpty ? 'توصيل الطلب' : stage,
     };
   }
 }

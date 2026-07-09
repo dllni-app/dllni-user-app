@@ -37,6 +37,9 @@ class RestaurantOrderTrackingView extends StatelessWidget {
   String _money(double v) => '${v.toStringAsFixed(0)} ل.س';
 
   String _etaLabel() {
+    final status = (deliveryOrder?.status ?? order.deliverySummary?.status ?? '').toLowerCase();
+    if (status == 'waiting_merchant_ready') return 'بانتظار جاهزية المتجر';
+    if (status == 'searching_for_driver' || status == 'dispatching') return 'جاري البحث عن مندوب';
     if (deliveryOrder != null && deliveryOrder!.etaLabel.isNotEmpty) {
       return deliveryOrder!.etaLabel;
     }
