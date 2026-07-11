@@ -38,7 +38,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
   final TextEditingController _controller = TextEditingController();
   final SpeechToText _speech = SpeechToText();
   final NormalizeProductTextUseCase _normalizeProductTextUseCase =
-      getIt<NormalizeProductTextUseCase>();
+  getIt<NormalizeProductTextUseCase>();
 
   _SmartSearchPhase _phase = _SmartSearchPhase.input;
   List<String> _reviewWords = [];
@@ -66,8 +66,12 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
-    final maxH = MediaQuery.sizeOf(context).height * 0.88;
+    final bottom = MediaQuery
+        .paddingOf(context)
+        .bottom;
+    final maxH = MediaQuery
+        .sizeOf(context)
+        .height * 0.88;
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
       child: DecoratedBox(
@@ -158,20 +162,22 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
                 height: 26 / 14,
               ),
               decoration: InputDecoration(
-                suffixIcon: _controller.text.trim().isEmpty
+                suffixIcon: _controller.text
+                    .trim()
+                    .isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          size: 18,
-                          color: _SmartSearchColors.hint,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _controller.clear();
-                          });
-                        },
-                      ),
+                  icon: const Icon(
+                    Icons.close,
+                    size: 18,
+                    color: _SmartSearchColors.hint,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _controller.clear();
+                    });
+                  },
+                ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 11),
                 filled: true,
                 fillColor: _SmartSearchColors.fieldFill,
@@ -245,12 +251,8 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
               ),
             ),
           ),
-
         ],
       ),
-
-
-
 
       const SizedBox(height: 14),
 
@@ -260,18 +262,18 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
           onPressed: _isSubmitting
               ? null
               : () async {
-                  if (_listening) {
-                    await _stopListen();
-                  }
+            if (_listening) {
+              await _stopListen();
+            }
 
-                  await _fetchNormalizedWords();
-                },
+            await _fetchNormalizedWords();
+          },
           icon: _isSubmitting
               ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
               : const Icon(Icons.search),
           label: const Text(
             "بحث",
@@ -427,9 +429,20 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
         }
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('اكتب أو سجّل طلبك أولاً.')));
+
+      // ScaffoldMessenger.of(
+      //
+      //   context,
+      // ).showSnackBar(const SnackBar(content: Text()));
+
+      toastification.show(
+        context: context,
+        type: ToastificationType.warning,
+        title: const Text(
+          'اكتب أو سجّل طلبك أولاً.',
+          style: TextStyle(fontFamily: 'Cairo'),
+        ),
+      );
       return;
     }
 
@@ -456,33 +469,44 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     });
 
     result.fold(
-      (failure) {
+          (failure) {
         setState(() {
           _listening = false;
           _voiceEnergy = 0;
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          title:  Text(
+            failure.message,
+            style: TextStyle(fontFamily: 'Cairo'),
+          ),
+        );
       },
-      (model) {
+          (model) {
         final words = _wordsFromModel(model, trimmed);
 
         if (words.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('لم يتم التعرف على كلمات من الطلب.')),
+          toastification.show(
+            context: context,
+            type: ToastificationType.warning,
+            title: const Text(
+              'لم يتم التعرف على كلمات من الطلب.',
+              style: TextStyle(fontFamily: 'Cairo'),
+            ),
           );
-          return;
+
+        return;
         }
 
         _activeListenLocaleId = null;
 
         setState(() {
-          _listening = false;
-          _voiceEnergy = 0;
-          _reviewWords = words;
-          _phase = _SmartSearchPhase.review;
+        _listening = false;
+        _voiceEnergy = 0;
+        _reviewWords = words;
+        _phase = _SmartSearchPhase.review;
         });
       },
     );
@@ -580,7 +604,9 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
         setState(() {
           _controller.text = composed.trim();
           _controller.selection = TextSelection.collapsed(
-            offset: composed.trim().length,
+            offset: composed
+                .trim()
+                .length,
           );
         });
       },
@@ -710,10 +736,8 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     } catch (_) {}
   }
 
-  List<String> _wordsFromModel(
-    NormalizeProductTextModel model,
-    String trimmedFallback,
-  ) {
+  List<String> _wordsFromModel(NormalizeProductTextModel model,
+      String trimmedFallback,) {
     if (model.items.isNotEmpty) {
       return List<String>.from(model.items);
     }
@@ -786,23 +810,23 @@ class _VoiceLevelLine extends StatelessWidget {
                 ),
                 boxShadow: isActive && t > 0.02
                     ? [
-                        BoxShadow(
-                          color: _SmartSearchColors.orange.withValues(
-                            alpha: 0.42 * (0.35 + t * 0.65),
-                          ),
-                          blurRadius: glow * 0.6,
-                          spreadRadius: t * 1.5,
-                          offset: const Offset(-3, 0),
-                        ),
-                        BoxShadow(
-                          color: _SmartSearchColors.blue.withValues(
-                            alpha: 0.38 * (0.35 + t * 0.65),
-                          ),
-                          blurRadius: glow * 0.6,
-                          spreadRadius: t * 1.5,
-                          offset: const Offset(3, 0),
-                        ),
-                      ]
+                  BoxShadow(
+                    color: _SmartSearchColors.orange.withValues(
+                      alpha: 0.42 * (0.35 + t * 0.65),
+                    ),
+                    blurRadius: glow * 0.6,
+                    spreadRadius: t * 1.5,
+                    offset: const Offset(-3, 0),
+                  ),
+                  BoxShadow(
+                    color: _SmartSearchColors.blue.withValues(
+                      alpha: 0.38 * (0.35 + t * 0.65),
+                    ),
+                    blurRadius: glow * 0.6,
+                    spreadRadius: t * 1.5,
+                    offset: const Offset(3, 0),
+                  ),
+                ]
                     : null,
               ),
             ),

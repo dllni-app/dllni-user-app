@@ -311,6 +311,7 @@ class _RsAppSimpleAppBarWithSearchState extends State<RsAppSimpleAppBarWithSearc
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+
       backgroundColor: Colors.transparent,
       builder: (ctx) => const SmartSearchSheet(isSupermarket: false,),
     );
