@@ -20,6 +20,7 @@
     "validationError": "Please check the entered data.",
     "tooManyRequests": "Too many requests. Please try again later.",
     "invalidSecurityCode": "The security code is invalid.",
-    "expiredSecurityCode": "The security code has expired. Ask the worker for a new code."
+    "expiredSecurityCode": "The security code has expired. Ask the worker for a new code.",
+    "internalServerError": "A server error occurred. Please try again later."
   }
 }

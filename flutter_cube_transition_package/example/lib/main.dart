@@ -35,8 +35,9 @@ class InteractiveCubePageState extends State<InteractiveCubePage> {
           children: [
             Center(
               child: FlutterCubeTransition(
-                width: 220,
-                height: 220,
+                // width: 220,
+                // height: 220,
+                //
                 backgroundColor: Colors.redAccent,
                 animationDuration: Duration(milliseconds: 200),
                 animationCurve: Curves.easeOut,
