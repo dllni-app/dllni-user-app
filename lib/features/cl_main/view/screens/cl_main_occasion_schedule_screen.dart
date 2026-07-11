@@ -239,9 +239,7 @@ class _ClMainOccasionScheduleScreenState
                           ClServiceGenderPreferenceSectionWidget(
                             selectedPreference: state.genderPreference,
                             onChanged: (value) {
-                              bloc.add(
-                                SetGenderPreferenceEvent(preference: value),
-                              );
+                              _handleGenderPreferenceChanged(bloc, value);
                             },
                           ),
                           const SizedBox(height: 12),
@@ -289,12 +287,6 @@ class _ClMainOccasionScheduleScreenState
                               );
                             },
                           ),
-                          // ClServiceGenderPreferenceSectionWidget(
-                          //   selectedPreference: state.genderPreference,
-                          //   onChanged: (value) {
-                          //     _handleGenderPreferenceChanged(bloc, value);
-                          //   },
-                          // ),
                           const SizedBox(height: 12),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
