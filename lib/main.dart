@@ -37,9 +37,8 @@ Future<void> main() async {
       AppBootstrapConfig(
         navigatorKey: navigatorKey,
         app: App(navigatorKey: navigatorKey),
-
         configureDependencies: () async {},
-        enableNotifications: true,
+        enableNotifications: false,
         startLocale: Locale('ar'),
         fallbackLocale: const Locale('ar'),
         supportedLocales: const <Locale>[
@@ -47,12 +46,17 @@ Future<void> main() async {
           Locale('ar'),
         ],
         translationsAssetPath: 'assets/translations',
-        fcmTokenKey: 'fcm_token',
-        onFcmTokenAvailable: FcmTokenRegistrar.registerIfAuthenticated,
       ),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        NotificationHelper.initAllNotifications(
+          tokenKey: 'fcm_token',
+          navigatorKey: navigatorKey,
+          onFcmTokenAvailable: FcmTokenRegistrar.registerIfAuthenticated,
+        ),
+      );
       unawaited(UserSessionSyncService.syncOnStartup());
       unawaited(getIt<DeepLinkService>().init(navigatorKey: navigatorKey));
       unawaited(UpdateService.checkOnStartup(navigatorKey: navigatorKey));
