@@ -1,22 +1,113 @@
+import 'package:dllni_user_app/core/map/osrm_route_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../data/models/delivery_order_models.dart';
 
-class DeliveryTrackingMap extends StatelessWidget {
+class DeliveryTrackingMap extends StatefulWidget {
   const DeliveryTrackingMap({super.key, required this.map});
 
   final DeliveryMapModel map;
 
   @override
+  State<DeliveryTrackingMap> createState() => _DeliveryTrackingMapState();
+}
+
+class _DeliveryTrackingMapState extends State<DeliveryTrackingMap> {
+  List<LatLng>? _roadRoutePoints;
+  bool _loadingRoute = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoadRoute();
+  }
+
+  @override
+  void didUpdateWidget(covariant DeliveryTrackingMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.map != widget.map) {
+      _loadRoadRoute();
+    }
+  }
+
+  Future<void> _loadRoadRoute() async {
+    final map = widget.map;
+    final markers = map.markers
+        .where((m) => m.latitude != null && m.longitude != null)
+        .toList(growable: false);
+
+    final apiRoutePoints = map.route
+        .where((p) => p.latitude != null && p.longitude != null)
+        .map((p) => LatLng(p.latitude!, p.longitude!))
+        .toList();
+
+    final waypoints = _resolveRouteWaypoints(markers);
+    if (apiRoutePoints.length < 2 && waypoints.length < 2) {
+      if (mounted) {
+        setState(() {
+          _roadRoutePoints = null;
+          _loadingRoute = false;
+        });
+      }
+      return;
+    }
+
+    setState(() => _loadingRoute = true);
+
+    final points = await resolveRoadRoutePoints(
+      apiRoutePoints: apiRoutePoints,
+      fallbackWaypoints: waypoints,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _roadRoutePoints = points.length >= 2 ? points : null;
+      _loadingRoute = false;
+    });
+  }
+
+  List<LatLng> _resolveRouteWaypoints(List<DeliveryMapMarkerModel> markers) {
+    final driver = _firstMarker(markers, 'driver');
+    final dropoff = _firstMarker(markers, 'dropoff');
+    final pickup = _firstMarker(markers, 'pickup');
+
+    if (driver != null && dropoff != null) {
+      return [
+        LatLng(driver.latitude!, driver.longitude!),
+        LatLng(dropoff.latitude!, dropoff.longitude!),
+      ];
+    }
+
+    if (pickup != null && dropoff != null) {
+      return [
+        LatLng(pickup.latitude!, pickup.longitude!),
+        LatLng(dropoff.latitude!, dropoff.longitude!),
+      ];
+    }
+
+    if (driver != null && pickup != null) {
+      return [
+        LatLng(driver.latitude!, driver.longitude!),
+        LatLng(pickup.latitude!, pickup.longitude!),
+      ];
+    }
+
+    return markers
+        .map((m) => LatLng(m.latitude!, m.longitude!))
+        .toList(growable: false);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final map = widget.map;
     final markers = map.markers
         .where((m) => m.latitude != null && m.longitude != null)
         .toList(growable: false);
 
     if (!map.enabled || markers.isEmpty) {
-      return _MapPlaceholder();
+      return const _MapPlaceholder();
     }
 
     final points = markers
@@ -24,11 +115,7 @@ class DeliveryTrackingMap extends StatelessWidget {
         .toList();
 
     final center = _resolveCenter(markers, points);
-
-    final routePoints = map.route
-        .where((p) => p.latitude != null && p.longitude != null)
-        .map((p) => LatLng(p.latitude!, p.longitude!))
-        .toList();
+    final routePoints = _roadRoutePoints;
 
     return Container(
       decoration: BoxDecoration(
@@ -48,66 +135,84 @@ class DeliveryTrackingMap extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: SizedBox(
               height: 220,
-              child: FlutterMap(
-                options: MapOptions(
-                  initialCenter: center,
-                  initialZoom: map.zoom,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-                  ),
-                ),
+              child: Stack(
                 children: [
-                  TileLayer(
-                    urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.dllni.user',
-                  ),
-                  if (routePoints.length >= 2)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: routePoints,
-                          color: const Color(0xff1E2A78),
-                          strokeWidth: 3,
-                        ),
-                      ],
+                  FlutterMap(
+                    options: MapOptions(
+                      initialCenter: center,
+                      initialZoom: map.zoom,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                      ),
                     ),
-                  MarkerLayer(
-                    markers: markers.map((m) {
-                      final icon = switch (m.kind) {
-                        'pickup' => Icons.store_rounded,
-                        'dropoff' => Icons.home_rounded,
-                        'driver' => Icons.delivery_dining_rounded,
-                        _ => Icons.place_rounded,
-                      };
-                      final color = _markerColor(m.kind);
-                      return Marker(
-                        point: LatLng(m.latitude!, m.longitude!),
-                        width: 70,
-                        height: 58,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(icon, color: color, size: 32),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                _markerLabel(m.kind),
-                                style: TextStyle(
-                                  color: color,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.dllni.user',
+                      ),
+                      if (routePoints != null && routePoints.length >= 2)
+                        PolylineLayer(
+                          polylines: [
+                            Polyline(
+                              points: routePoints,
+                              color: const Color(0xff1E2A78),
+                              strokeWidth: 4,
                             ),
                           ],
                         ),
-                      );
-                    }).toList(),
+                      MarkerLayer(
+                        markers: markers.map((m) {
+                          final icon = switch (m.kind) {
+                            'pickup' => Icons.store_rounded,
+                            'dropoff' => Icons.home_rounded,
+                            'driver' => Icons.delivery_dining_rounded,
+                            _ => Icons.place_rounded,
+                          };
+                          final color = _markerColor(m.kind);
+                          return Marker(
+                            point: LatLng(m.latitude!, m.longitude!),
+                            width: 70,
+                            height: 58,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(icon, color: color, size: 32),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    _markerLabel(m.kind),
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ),
+                  if (_loadingRoute)
+                    const Positioned(
+                      left: 12,
+                      top: 12,
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -143,8 +248,8 @@ class DeliveryTrackingMap extends StatelessWidget {
       );
     }
 
-    if (map.centerLatitude != null && map.centerLongitude != null) {
-      return LatLng(map.centerLatitude!, map.centerLongitude!);
+    if (widget.map.centerLatitude != null && widget.map.centerLongitude != null) {
+      return LatLng(widget.map.centerLatitude!, widget.map.centerLongitude!);
     }
 
     return LatLng(

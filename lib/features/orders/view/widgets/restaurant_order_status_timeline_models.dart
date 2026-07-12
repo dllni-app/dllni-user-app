@@ -31,10 +31,12 @@ class OrderTrackingNodePresentation {
     required this.bg,
     required this.icon,
     required this.ring,
+    this.skipped = false,
   });
 
   final Color fg;
   final Color bg;
   final IconData icon;
   final Color ring;
+  final bool skipped;
 }

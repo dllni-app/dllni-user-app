@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/app_images.dart';
 import '../../../orders/data/models/fetch_supermarket_cart_model.dart';
 
 class CartCard extends StatelessWidget {
@@ -65,7 +66,13 @@ class CartCard extends StatelessWidget {
                             color: AppColors.white,
                             borderRadius: BorderRadius.all(Radius.circular(16)),
                           ),
-                          child: Icon(Icons.error, color: AppColors.primary),
+                          child: AppImage.asset(
+                            AppImages.defaultStore,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.contain,
+                            errorWidget: Icon(Icons.store_outlined),
+                          ),
                         ),
                       ),
                     ),

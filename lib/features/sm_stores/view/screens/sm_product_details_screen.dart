@@ -11,7 +11,6 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../rs_discover/view/widgets/product_details_sub_widgets.dart';
-import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 import '../../../sm_discover/domain/usecases/change_product_favorite_use_case.dart';
 import '../../../sm_discover/view/manager/bloc/sm_discover_bloc.dart';
 import '../../data/models/get_supermarket_product_details_model.dart';
@@ -201,12 +200,8 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
           return PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) {
-              if (!didPop) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!context.mounted) return;
-                  context.pop<bool>(_favoriteLocal);
-                });
-              }
+              if (didPop) return;
+              context.pop<bool>(_favoriteLocal);
             },
             child: Scaffold(
               backgroundColor: const Color(0xFFF9FAFB),
@@ -438,43 +433,20 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 8),
-                                  AppText(
-                                    displayTitle,
-                                    textAlign: TextAlign.start,
-                                    style: const TextStyle(
-                                      color: Color(0xFF111827),
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      height: 30 / 18,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  AppText(
-                                    displayStoreLine,
-                                    textAlign: TextAlign.start,
-                                    style: const TextStyle(
-                                      color: Color(0xFF6B7280),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      height: 22 / 14,
-                                    ),
-                                  ),
-                                  if (description.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    AppText(
-                                      description,
-                                      textAlign: TextAlign.start,
-                                      style: const TextStyle(
-                                        color: Color(0xFF6B7280),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        height: 20 / 13,
-                                      ),
-                                    ),
-                                  ],
-                                  const SizedBox(height: 14),
                                   Row(
                                     children: [
+                                      Expanded(
+                                        child: AppText(
+                                          displayTitle,
+                                          textAlign: TextAlign.start,
+                                          style: const TextStyle(
+                                            color: Color(0xFF111827),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            height: 30 / 18,
+                                          ),
+                                        ),
+                                      ),
                                       Container(
                                         padding:
                                             const EdgeInsetsDirectional.all(12),
@@ -525,38 +497,68 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding:
-                                            const EdgeInsetsDirectional.all(12),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xffF9FAFB),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            FaIcon(
-                                              FontAwesomeIcons.fire,
-                                              size: 13,
-                                              color: context.primaryContainer,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            AppText(
-                                              '450 مرة طلب',
-                                              style: const TextStyle(
-                                                color: Color(0xFF6B7280),
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                height: 20 / 13,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
                                     ],
                                   ),
+                                  const SizedBox(height: 6),
+                                  AppText(
+                                    displayStoreLine,
+                                    textAlign: TextAlign.start,
+                                    style: const TextStyle(
+                                      color: Color(0xFF6B7280),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      height: 22 / 14,
+                                    ),
+                                  ),
+                                  if (description.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    AppText(
+                                      description,
+                                      textAlign: TextAlign.start,
+                                      style: const TextStyle(
+                                        color: Color(0xFF6B7280),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        height: 20 / 13,
+                                      ),
+                                    ),
+                                  ],
+                                  // const SizedBox(height: 14),
+                                  // Row(
+                                  //   children: [
+                                  //     const SizedBox(width: 6),
+
+                                  //     // Container(
+                                  //     //   padding:
+                                  //     //       const EdgeInsetsDirectional.all(12),
+                                  //     //   decoration: BoxDecoration(
+                                  //     //     color: const Color(0xffF9FAFB),
+                                  //     //     borderRadius: BorderRadius.circular(
+                                  //     //       12,
+                                  //     //     ),
+                                  //     //   ),
+                                  //     //   child: Row(
+                                  //     //     children: [
+                                  //     //       FaIcon(
+                                  //     //         FontAwesomeIcons.fire,
+                                  //     //         size: 13,
+                                  //     //         color: context.primaryContainer,
+                                  //     //       ),
+                                  //     //       const SizedBox(width: 6),
+                                  //     //       AppText(
+                                  //     //         '450 مرة طلب',
+                                  //     //         style: const TextStyle(
+                                  //     //           color: Color(0xFF6B7280),
+                                  //     //           fontSize: 13,
+                                  //     //           fontWeight: FontWeight.w500,
+                                  //     //           height: 20 / 13,
+                                  //     //         ),
+                                  //     //       ),
+                                  //     //     ],
+                                  //     //   ),
+                                  //     // ),
+                                  //   ],
+                                  // ),
                                   const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment:

@@ -10,6 +10,35 @@ class DeliveryStatusStepper extends StatelessWidget {
 
   final List<DeliveryTimelineStageModel> stages;
 
+  bool _hasCompletedLater(int index) {
+    for (var i = index + 1; i < stages.length; i++) {
+      if (stages[i].completed) return true;
+    }
+    return false;
+  }
+
+  bool _isSkipped(int index) {
+    final stage = stages[index];
+    return !stage.completed && !stage.active && _hasCompletedLater(index);
+  }
+
+  Color _nodeColor(int index) {
+    final stage = stages[index];
+    if (stage.completed) return const Color(0xff10B981);
+    if (stage.active) return const Color(0xff1E2A78);
+    if (_isSkipped(index)) return const Color(0xff6366F1);
+    return const Color(0xffD1D5DB);
+  }
+
+  Color _connectorColor(int index) {
+    final stage = stages[index];
+    if (stage.completed) return const Color(0xff10B981);
+    if (_isSkipped(index) && _hasCompletedLater(index)) {
+      return const Color(0xffA5B4FC);
+    }
+    return const Color(0xffE5E7EB);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (stages.isEmpty) {
@@ -44,11 +73,8 @@ class DeliveryStatusStepper extends StatelessWidget {
           ...List.generate(stages.length, (index) {
             final stage = stages[index];
             final isLast = index == stages.length - 1;
-            final color = stage.completed
-                ? const Color(0xff10B981)
-                : stage.active
-                    ? const Color(0xff1E2A78)
-                    : const Color(0xffD1D5DB);
+            final skipped = _isSkipped(index);
+            final color = _nodeColor(index);
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,20 +88,22 @@ class DeliveryStatusStepper extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: stage.completed || stage.active
                             ? color
-                            : Colors.white,
+                            : skipped
+                                ? const Color(0xffEEF2FF)
+                                : Colors.white,
                         border: Border.all(color: color, width: 2),
                       ),
                       child: stage.completed
                           ? const Icon(Icons.check, size: 14, color: Colors.white)
-                          : null,
+                          : skipped
+                              ? Icon(Icons.more_horiz_rounded, size: 14, color: color)
+                              : null,
                     ),
                     if (!isLast)
                       Container(
                         width: 2,
                         height: 32,
-                        color: stage.completed
-                            ? const Color(0xff10B981)
-                            : const Color(0xffE5E7EB),
+                        color: _connectorColor(index),
                       ),
                   ],
                 ),
@@ -93,9 +121,19 @@ class DeliveryStatusStepper extends StatelessWidget {
                             fontWeight: stage.active ? FontWeight.w700 : FontWeight.w500,
                             color: stage.active || stage.completed
                                 ? const Color(0xff1F2937)
-                                : const Color(0xff9CA3AF),
+                                : skipped
+                                    ? const Color(0xff6366F1)
+                                    : const Color(0xff9CA3AF),
                           ),
                         ),
+                        if (skipped)
+                          const Text(
+                            'تم تجاوز هذه الخطوة',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xff6366F1),
+                            ),
+                          ),
                         if (stage.timestamp != null && stage.timestamp!.isNotEmpty)
                           Text(
                             _formatTimestamp(stage.timestamp!),

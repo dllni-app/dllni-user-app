@@ -85,6 +85,9 @@ class SmStoreDetailsScreen extends StatefulWidget {
 }
 
 class _SmStoreDetailsScreenState extends State<SmStoreDetailsScreen> {
+  late bool _favoriteFromHeader = widget.args?.starter?.isFavorite ?? false;
+  bool _userChangedFavorite = false;
+
   SmStarterStoreDetailsData? _headerData(SmStoresState state) {
     final fromApi = state.store;
     if (fromApi != null) {
@@ -162,96 +165,114 @@ class _SmStoreDetailsScreenState extends State<SmStoreDetailsScreen> {
           final store = state.store;
           final loading = state.storeDetailsStatus == BlocStatus.loading;
           final failed = state.storeDetailsStatus == BlocStatus.failed;
-          return Scaffold(
-            body: SingleChildScrollView(
-              child: Column(
-                children: [
-                  StoreCoverSection(
-                    store: header,
-                    storeId: widget.args?.storeId ?? 0,
-                    onShareTap: () {
-                      final id = widget.args?.storeId ?? 0;
-                      if (id <= 0) return;
-                      unawaited(shareDeepLinkUrl(storeUrl(id), context: context));
-                    },
-                  ),
-                  StoreStatusSection(store: header),
-                  if (store != null) ...[
-                    StoreAddressSection(
-                      address: store.address,
-                      phone: store.phone,
-                      email: store.email,
-                      distanceKm: _parseDistanceKm(store.distanceKm),
-                      hourLines: _sortedHourLines(store),
+          if (!_userChangedFavorite) {
+            _favoriteFromHeader = header?.isFavorite ?? _favoriteFromHeader;
+          }
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) return;
+              context.pop<bool>(_favoriteFromHeader);
+            },
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    StoreCoverSection(
+                      store: header,
+                      storeId: widget.args?.storeId ?? 0,
+                      onFavoriteChanged: (isFavorite) {
+                        _userChangedFavorite = true;
+                        _favoriteFromHeader = isFavorite;
+                      },
+                      onShareTap: () {
+                        final id = widget.args?.storeId ?? 0;
+                        if (id <= 0) return;
+                        unawaited(
+                          shareDeepLinkUrl(storeUrl(id), context: context),
+                        );
+                      },
                     ),
-                    SizedBox(height: 16),
-                    SpecialOffersSection(offers: store.offers),
-                    SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        spacing: 12,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              "منتجات المتجر",
-                              style: TextStyle(
-                                color: const Color(0xFF111827),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                height: 28 / 18,
+                    StoreStatusSection(store: header),
+                    if (store != null) ...[
+                      StoreAddressSection(
+                        address: store.address,
+                        phone: store.phone,
+                        email: store.email,
+                        distanceKm: _parseDistanceKm(store.distanceKm),
+                        hourLines: _sortedHourLines(store),
+                      ),
+                      SizedBox(height: 16),
+                      SpecialOffersSection(offers: store.offers),
+                      SizedBox(height: 24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          spacing: 12,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                "منتجات المتجر",
+                                style: TextStyle(
+                                  color: const Color(0xFF111827),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  height: 28 / 18,
+                                ),
                               ),
                             ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              context.pushRoute(
-                                "/sm_store-all-products",
-                                arguments: widget.args?.storeId ?? 0,
-                              );
-                            },
-                            borderRadius: BorderRadius.all(Radius.circular(4)),
-                            child: Text(
-                              " عرض الكل ",
-                              style: TextStyle(
-                                color: Color(0xFF4CAF50),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                height: 20 / 14,
+                            InkWell(
+                              onTap: () {
+                                context.pushRoute(
+                                  "/sm_store-all-products",
+                                  arguments: widget.args?.storeId ?? 0,
+                                );
+                              },
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(4),
+                              ),
+                              child: Text(
+                                " عرض الكل ",
+                                style: TextStyle(
+                                  color: Color(0xFF4CAF50),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  height: 20 / 14,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 16),
-                    ..._productSections(store),
-                    SizedBox(height: 40),
-                    StoreInfoSection(
-                      description: store.description,
-                      hours: store.storeHours ?? [],
-                    ),
-                  ] else if (failed && store == null)
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: FailureWidget(
-                        message: state.errorMessage ?? '',
-                        onRetry: () {
-                          context.read<SmStoresBloc>().add(
-                            LoadSupermarketStoreDetailsEvent(
-                              storeId: widget.args?.storeId ?? 0,
-                            ),
-                          );
-                        },
+                      SizedBox(height: 16),
+                      ..._productSections(store),
+                      SizedBox(height: 40),
+                      StoreInfoSection(
+                        description: store.description,
+                        hours: store.storeHours ?? [],
                       ),
-                    )
-                  else if (loading)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 48),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  SizedBox(height: 155),
-                ],
+                    ] else if (failed && store == null)
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: FailureWidget(
+                          message: state.errorMessage ?? '',
+                          onRetry: () {
+                            context.read<SmStoresBloc>().add(
+                              LoadSupermarketStoreDetailsEvent(
+                                storeId: widget.args?.storeId ?? 0,
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    else if (loading)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 48),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    SizedBox(height: 155),
+                  ],
+                ),
               ),
             ),
           );

@@ -155,11 +155,25 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
     return const [received, preparing, done];
   }
 
+  Set<int> _visitedStepIndices(bool isDelivery) {
+    final visited = <int>{};
+    for (final item in tracking?.timeline ?? const []) {
+      final status = item.toStatus;
+      if (status != null && status.isNotEmpty) {
+        visited.add(_mapApiStatusToStepIndex(status, isDelivery: isDelivery));
+      }
+    }
+    return visited;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDelivery = _isDeliveryOrder(order);
     final steps = _buildSteps(isDelivery);
     final current = _currentIndex(isDelivery);
+    final visited = tracking?.timeline.isNotEmpty == true
+        ? _visitedStepIndices(isDelivery)
+        : null;
     final n = steps.length;
     final below = _computeBelowLines(current, n);
 
@@ -183,6 +197,7 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
               currentIndex: current,
               segmentTop: i > 0 ? below[i - 1] : null,
               segmentBottom: !isLast ? below[i] : null,
+              visitedStepIndices: visited,
             );
           }),
         ],

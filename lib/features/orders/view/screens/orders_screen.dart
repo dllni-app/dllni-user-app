@@ -57,7 +57,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<OrdersBloc>()..add(OrdersSectionChangedEvent(widget.initialSectionIndex)),
+      create: (_) => getIt<OrdersBloc>()
+        ..add(OrdersSectionChangedEvent(widget.initialSectionIndex))
+        ..add(FetchOrdersEvent(isReload: true)),
       child: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
           return Scaffold(

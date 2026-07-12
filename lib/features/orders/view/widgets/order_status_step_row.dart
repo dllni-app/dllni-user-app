@@ -7,17 +7,44 @@ import 'restaurant_order_status_timeline_models.dart';
 import 'restaurant_order_tracking_colors.dart';
 
 class OrderStatusStepRow extends StatelessWidget {
-  const OrderStatusStepRow({super.key, required this.step, required this.index, required this.currentIndex, this.segmentTop, this.segmentBottom});
+  const OrderStatusStepRow({
+    super.key,
+    required this.step,
+    required this.index,
+    required this.currentIndex,
+    this.segmentTop,
+    this.segmentBottom,
+    this.visitedStepIndices,
+  });
 
   final OrderTrackingStepVisual step;
   final int index;
   final int currentIndex;
   final OrderTrackingSegmentStyle? segmentTop;
   final OrderTrackingSegmentStyle? segmentBottom;
+  final Set<int>? visitedStepIndices;
+
+  bool get _isSkipped {
+    if (index >= currentIndex) return false;
+    if (visitedStepIndices == null) return false;
+    return !visitedStepIndices!.contains(index);
+  }
 
   OrderTrackingNodePresentation _presentation() {
-    final isDone = index < currentIndex;
+    final isDone = index < currentIndex && !_isSkipped;
     final isCurrent = index == currentIndex;
+    if (_isSkipped) {
+      const skippedFg = Color(0xff6366F1);
+      const skippedBg = Color(0xffEEF2FF);
+      const skippedRing = Color(0xffA5B4FC);
+      return const OrderTrackingNodePresentation(
+        fg: skippedFg,
+        bg: skippedBg,
+        icon: Icons.more_horiz_rounded,
+        ring: skippedRing,
+        skipped: true,
+      );
+    }
     if (isDone) {
       return OrderTrackingNodePresentation(
         fg: Colors.white,
@@ -41,15 +68,20 @@ class OrderStatusStepRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pres = _presentation();
-    final isDone = index < currentIndex;
+    final isDone = index < currentIndex && !_isSkipped;
     final isCurrent = index == currentIndex;
+    final isSkipped = _isSkipped;
 
     Color titleColor = RestaurantOrderTrackingColors.primary;
     Color subtitleColor = RestaurantOrderTrackingColors.grey;
     const mutedText = Color(0xff9CA3AF);
+    const skippedText = Color(0xff6366F1);
     if (isCurrent) {
       titleColor = RestaurantOrderTrackingColors.orange;
       subtitleColor = RestaurantOrderTrackingColors.orange;
+    } else if (isSkipped) {
+      titleColor = skippedText;
+      subtitleColor = skippedText;
     } else if (!isDone && !isCurrent) {
       titleColor = mutedText;
       subtitleColor = mutedText;
@@ -78,7 +110,10 @@ class OrderStatusStepRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText.bodyMedium(step.title, color: titleColor, fontWeight: FontWeight.bold, textAlign: TextAlign.start),
-                  if (step.subtitle.isNotEmpty) ...[
+                  if (isSkipped) ...[
+                    const SizedBox(height: 4),
+                    AppText.labelMedium('تم تجاوز هذه الخطوة', color: skippedText, textAlign: TextAlign.start),
+                  ] else if (step.subtitle.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     AppText.labelMedium(step.subtitle, color: subtitleColor, textAlign: TextAlign.start),
                   ],

@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/session/session_expired_handler.dart';
 import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +12,7 @@ import '../../data/models/orders_api_models.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../manager/bloc/orders_bloc.dart';
+import '../screens/restaurant_order_tracking_screen.dart';
 
 class RestaurantOrderFulfillmentArgs {
   final OrdersBloc bloc;
@@ -44,12 +46,31 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         : state.restaurantCart;
   }
 
-  void _showOrderSuccessSheet(
-    BuildContext context, {
-    required int deliveryOrderId,
+  /// Pops checkout screens only (fulfillment, cart details, etc.) and keeps
+  /// the existing home / service routes (`/main`, `/smmain`, …) in the stack.
+  void _exitCheckoutFlow(BuildContext context) {
+    Navigator.of(context).popUntil((route) {
+      final name = route.settings.name;
+      return name == '/main' ||
+          name == '/smmain' ||
+          name == '/rsmain' ||
+          name == '/clmain' ||
+          route.isFirst;
+    });
+  }
+
+  BuildContext? _rootContext() =>
+      SessionExpiredHandler.navigatorKey?.currentContext;
+
+  void _showOrderSuccessSheet({
+    required OrderResourceModel placedOrder,
+    int? deliveryOrderId,
   }) {
+    final rootContext = _rootContext();
+    if (rootContext == null || !rootContext.mounted) return;
+
     showModalBottomSheet<void>(
-      context: context,
+      context: rootContext,
       isDismissible: false,
       enableDrag: false,
       shape: const RoundedRectangleBorder(
@@ -79,26 +100,47 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(sheetContext).pop();
-                      context.pushRoute(
-                        '/delivery/orders/tracking',
-                        arguments: DeliveryOrderTrackingArgs(
-                          orderId: deliveryOrderId,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.delivery_dining),
-                    label: const Text('تتبع التوصيل'),
+                if (deliveryOrderId != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        rootContext.pushRoute(
+                          '/delivery/orders/tracking',
+                          arguments: DeliveryOrderTrackingArgs(
+                            orderId: deliveryOrderId,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.delivery_dining),
+                      label: const Text('تتبع التوصيل'),
+                    ),
                   ),
-                ),
+                if (placedOrder.id != null) ...[
+                  if (deliveryOrderId != null) const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        rootContext.pushRoute(
+                          '/restaurant-order-tracking',
+                          arguments: RestaurantOrderTrackingArgs(
+                            order: placedOrder,
+                            section: args.section,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.receipt_long_outlined),
+                      label: const Text('تتبع الطلب'),
+                    ),
+                  ),
+                ],
                 TextButton(
                   onPressed: () {
                     Navigator.of(sheetContext).pop();
-                    context.pushRoute('/main', arguments: 1);
+                    rootContext.pushRoute('/main', arguments: 1);
                   },
                   child: const Text('العودة للطلبات'),
                 ),
@@ -108,6 +150,39 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _handleOrderPlaced(
+    BuildContext context, {
+    required OrderResourceModel? placedOrder,
+  }) {
+    final rootContext = _rootContext();
+    if (rootContext != null && rootContext.mounted) {
+      ScaffoldMessenger.of(rootContext).showSnackBar(
+        const SnackBar(content: Text('تم تاكيد الطلب بنجاح')),
+      );
+    }
+
+    if (args.section == 'supermarket') {
+      context.read<OrdersBloc>().add(
+        FetchSupermarketCartEvent(
+          params: FetchSupermarketCartParams(),
+        ),
+      );
+    }
+
+    context.read<OrdersBloc>().add(FetchOrdersEvent(isReload: true));
+    _exitCheckoutFlow(context);
+
+    final order = placedOrder;
+    if (order == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showOrderSuccessSheet(
+        placedOrder: order,
+        deliveryOrderId: order.deliveryOrderId,
+      );
+    });
   }
 
   @override
@@ -129,37 +204,10 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   ? state.placeStoreOrderErrorMessage
                   : state.placeOrderErrorMessage;
               if (status == BlocStatus.success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('تم تاكيد الطلب بنجاح')),
-                );
-                if (args.section == 'supermarket') {
-                  context.read<OrdersBloc>().add(
-                    FetchSupermarketCartEvent(
-                      params: FetchSupermarketCartParams(),
-                    ),
-                  );
-                }
-
                 final placedOrder = args.section == 'supermarket'
                     ? state.placedStoreOrder
                     : state.placedRestaurantOrder;
-                final deliveryOrderId = placedOrder?.deliveryOrderId;
-
-                if (deliveryOrderId != null) {
-                  _showOrderSuccessSheet(
-                    context,
-                    deliveryOrderId: deliveryOrderId,
-                  );
-                  return;
-                }
-
-                if (args.section == 'supermarket') {
-                  context
-                    ..pop()
-                    ..pop();
-                } else {
-                  context.pop(true);
-                }
+                _handleOrderPlaced(context, placedOrder: placedOrder);
               } else if (status == BlocStatus.failed) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
