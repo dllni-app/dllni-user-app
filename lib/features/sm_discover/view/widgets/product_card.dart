@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,6 +37,7 @@ class _ProductCardState extends State<ProductCard> {
           final navImageUrl = widget.product.imageUrl?.trim().isNotEmpty == true
               ? widget.product.imageUrl!
               : (widget.product.image?.url ?? '').trim();
+          log('widget.product.masterProductId: ${widget.product.masterProductId}');
           final result = await context.pushRoute(
             "/product",
             arguments: SmProductDetailsScreenArgs(

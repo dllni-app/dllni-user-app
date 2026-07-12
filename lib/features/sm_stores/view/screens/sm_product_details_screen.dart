@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
@@ -170,6 +171,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
   }
 
   void _openShoppingListsDialog(BuildContext context) {
+    log('widget.args.starter?.masterId: ${widget.args.starter?.masterId}');
     final masterId = widget.args.starter?.masterId ??
         context.read<SmStoresBloc>().state.productDetails?.masterProductId;
     if (masterId == null || masterId <= 0) {

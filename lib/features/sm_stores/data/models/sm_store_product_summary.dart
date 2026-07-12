@@ -70,6 +70,7 @@ class SmStoreProductSummary {
   dynamic discountedPrice;
   bool? isFavorite;
   String? imageUrl;
+  int? masterProductId;
   SmStoreProductSummaryImage? image;
 
   SmStoreProductSummary({
@@ -82,6 +83,7 @@ class SmStoreProductSummary {
     this.isFavorite,
     this.imageUrl,
     this.image,
+    this.masterProductId,
   });
 
   factory SmStoreProductSummary.fromJson(Map<String, dynamic> json) {
@@ -99,6 +101,7 @@ class SmStoreProductSummary {
               Map<String, dynamic>.from(json['image'] as Map),
             )
           : null,
+      masterProductId: _smSummaryAsInt(json['masterProductId']),
     );
   }
 
@@ -114,5 +117,6 @@ class SmStoreProductSummary {
     'image': image == null
         ? null
         : {'id': image!.id, 'url': image!.url},
+    'masterProductId': masterProductId,
   };
 }

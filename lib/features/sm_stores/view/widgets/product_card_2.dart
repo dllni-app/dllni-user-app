@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:developer';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -58,6 +59,7 @@ class _ProductCard2State extends State<ProductCard2> {
         final navImageUrl = widget.item.imageUrl?.trim().isNotEmpty == true
             ? widget.item.imageUrl!
             : (widget.item.image?.url ?? '').trim();
+        log('widget.item.masterProductId: ${widget.item.masterProductId}');
         final result = await context.pushRoute(
           "/product",
           arguments: SmProductDetailsScreenArgs(
