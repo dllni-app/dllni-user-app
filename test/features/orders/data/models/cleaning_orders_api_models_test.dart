@@ -167,6 +167,40 @@ void main() {
       expect(data.acceptedWorkerAssignments.length, 1);
     });
 
+    test('parses a worker-specific completion request', () {
+      final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 777,
+          'completionRequests': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'isAwaitingCustomerConfirmation': true,
+              'assignmentId': 31,
+              'workerId': 15,
+              'message': 'Completed the assigned kitchen tasks.',
+              'finishedCleaningServices': <Map<String, dynamic>>[
+                <String, dynamic>{'label': 'Kitchen cleaning'},
+              ],
+              'finishedPropertyRooms': <Map<String, dynamic>>[
+                <String, dynamic>{'label': 'Kitchen'},
+              ],
+            },
+          ],
+        },
+      });
+
+      final completionRequest = model.data?.pendingCompletionRequest;
+      expect(completionRequest?.workerId, 15);
+      expect(completionRequest?.assignmentId, 31);
+      expect(
+        completionRequest?.message,
+        'Completed the assigned kitchen tasks.',
+      );
+      expect(
+        completionRequest?.finishedCleaningServices.first.displayText,
+        'Kitchen cleaning',
+      );
+    });
+
     test('parses multi-worker team fields on list payload', () {
       final model = fetchCleaningOrdersModelFromJson(<String, dynamic>{
         'data': <Map<String, dynamic>>[

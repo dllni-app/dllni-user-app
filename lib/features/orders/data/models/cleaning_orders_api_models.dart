@@ -512,6 +512,7 @@ class CleaningOrderDetailModel {
   final List<CleaningWorkerAssignmentModel>? workerAssignments;
   final List<CleaningRoomAssignmentModel>? roomAssignments;
   final CleaningMyAssignmentModel? myAssignment;
+  final List<CleaningCompletionRequestModel> completionRequests;
 
   CleaningOrderDetailModel({
     this.id,
@@ -560,6 +561,7 @@ class CleaningOrderDetailModel {
     this.workerAssignments,
     this.roomAssignments,
     this.myAssignment,
+    this.completionRequests = const [],
   });
 
   factory CleaningOrderDetailModel.fromJson(Map<String, dynamic> json) {
@@ -708,6 +710,9 @@ class CleaningOrderDetailModel {
           : CleaningMyAssignmentModel.fromJson(
               _toMap(m['myAssignment'] ?? m['my_assignment']),
             ),
+      completionRequests: _toMapList(
+        m['completionRequests'] ?? m['completion_requests'],
+      ).map(CleaningCompletionRequestModel.fromJson).toList(growable: false),
     );
   }
 
@@ -728,6 +733,14 @@ class CleaningOrderDetailModel {
     return assignments
         .where((item) => (item.status ?? '').toLowerCase() == 'accepted')
         .toList(growable: false);
+  }
+
+  CleaningCompletionRequestModel? get pendingCompletionRequest {
+    for (final request in completionRequests) {
+      if (request.isAwaitingCustomerConfirmation) return request;
+    }
+
+    return null;
   }
 
   CleaningOrderModel toCleaningOrderModel() {
@@ -937,6 +950,104 @@ class CleaningWorkerAssignmentModel {
           ? null
           : CleaningOrderWorkerModel.fromJson(_toMap(json['worker'])),
     );
+  }
+}
+
+class CleaningCompletionRequestModel {
+  const CleaningCompletionRequestModel({
+    this.workerId,
+    this.assignmentId,
+    this.message,
+    this.worker,
+    this.finishedCleaningServices = const [],
+    this.finishedPropertyRooms = const [],
+    this.isAwaitingCustomerConfirmation = false,
+  });
+
+  final int? workerId;
+  final int? assignmentId;
+  final String? message;
+  final CleaningOrderWorkerModel? worker;
+  final List<CleaningCompletionSnapshotItemModel> finishedCleaningServices;
+  final List<CleaningCompletionSnapshotItemModel> finishedPropertyRooms;
+  final bool isAwaitingCustomerConfirmation;
+
+  factory CleaningCompletionRequestModel.fromJson(Map<String, dynamic> json) {
+    return CleaningCompletionRequestModel(
+      workerId: _toInt(_pick(json, const <String>['workerId', 'worker_id'])),
+      assignmentId: _toInt(
+        _pick(json, const <String>['assignmentId', 'assignment_id']),
+      ),
+      message: _toStringValue(_pick(json, const <String>['message'])),
+      worker: json['worker'] == null
+          ? null
+          : CleaningOrderWorkerModel.fromJson(_toMap(json['worker'])),
+      finishedCleaningServices:
+          _toMapList(
+                json['finishedCleaningServices'] ??
+                    json['finished_cleaning_services'],
+              )
+              .map(CleaningCompletionSnapshotItemModel.fromJson)
+              .toList(growable: false),
+      finishedPropertyRooms:
+          _toMapList(
+                json['finishedPropertyRooms'] ??
+                    json['finished_property_rooms'],
+              )
+              .map(CleaningCompletionSnapshotItemModel.fromJson)
+              .toList(growable: false),
+      isAwaitingCustomerConfirmation:
+          _toBool(
+            _pick(json, const <String>[
+              'isAwaitingCustomerConfirmation',
+              'is_awaiting_customer_confirmation',
+            ]),
+          ) ??
+          false,
+    );
+  }
+}
+
+class CleaningCompletionSnapshotItemModel {
+  const CleaningCompletionSnapshotItemModel({this.label, this.detail});
+
+  final String? label;
+  final String? detail;
+
+  factory CleaningCompletionSnapshotItemModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningCompletionSnapshotItemModel(
+      label: _toStringValue(
+        _pick(json, const <String>[
+          'label',
+          'name',
+          'displayLabel',
+          'display_label',
+          'roomTypeLabel',
+          'room_type_label',
+          'roomType',
+          'room_type',
+          'roomKey',
+          'room_key',
+        ]),
+      ),
+      detail: _toStringValue(_pick(json, const <String>['detail'])),
+    );
+  }
+
+  String? get displayText {
+    final resolvedLabel = label?.trim();
+    if (resolvedLabel == null || resolvedLabel.isEmpty) return null;
+
+    final resolvedDetail = detail?.trim();
+    if (resolvedDetail == null ||
+        resolvedDetail.isEmpty ||
+        resolvedLabel.contains(resolvedDetail)) {
+      return resolvedLabel;
+    }
+
+    return '$resolvedLabel: $resolvedDetail';
   }
 }
 

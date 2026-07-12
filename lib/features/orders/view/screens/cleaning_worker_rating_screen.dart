@@ -54,6 +54,7 @@ class _CleaningWorkerRatingScreenState
         await getIt<SubmitCleaningReviewUseCase>()(
           SubmitCleaningReviewParams(
             orderId: widget.args.orderId,
+            workerId: widget.args.workerProfile.id!,
             rating: _rating,
             comment: _commentController.text.trim().isEmpty
                 ? null
@@ -128,139 +129,144 @@ class _CleaningWorkerRatingScreenState
                         ),
                       ),
                       child: SingleChildScrollView(
-                        padding: EdgeInsets.fromLTRB(14, 56, 14, 14 + bottomInset),
+                        padding: EdgeInsets.fromLTRB(
+                          14,
+                          56,
+                          14,
+                          14 + bottomInset,
+                        ),
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                          AppText.titleLarge(
-                            workerName,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          const SizedBox(height: 4),
-                          AppText.bodyMedium(
-                            'عامل تنظيف',
-                            color: const Color(0xff9CA3AF),
-                          ),
-                          const SizedBox(height: 14),
-                          AppText.bodyMedium(
-                            'كيف كانت تجربتك مع عامل التنظيفات $workerName ؟',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 6),
-                          AppText.bodySmall(
-                            'تقييمك الكلي',
-                            color: const Color(0xff9CA3AF),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List<Widget>.generate(5, (index) {
-                              final isSelected = _rating >= index + 1;
-                              return IconButton(
-                                onPressed: () {
-                                  setState(() => _rating = index + 1);
-                                },
-                                icon: Icon(
-                                  Icons.star_rounded,
-                                  size: 36,
-                                  color: isSelected
-                                      ? const Color(0xffFBBF24)
-                                      : const Color(0xffB8C0CC),
-                                ),
-                              );
-                            }),
-                          ),
-                          const SizedBox(height: 8),
-                          AppText.bodyMedium(
-                            'هل هناك ملاحظات تود أن تخبرنا بها ؟',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _commentController,
-                            maxLines: 3,
-                            decoration: InputDecoration(
-                              hintText: 'اكتب ملاحظاتك هنا',
-                              filled: true,
-                              fillColor: const Color(0xffF9FAFB),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(
-                                  color: Color(0xffD1D5DB),
+                            AppText.titleLarge(
+                              workerName,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            const SizedBox(height: 4),
+                            AppText.bodyMedium(
+                              'عامل تنظيف',
+                              color: const Color(0xff9CA3AF),
+                            ),
+                            const SizedBox(height: 14),
+                            AppText.bodyMedium(
+                              'كيف كانت تجربتك مع عامل التنظيفات $workerName ؟',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            AppText.bodySmall(
+                              'تقييمك الكلي',
+                              color: const Color(0xff9CA3AF),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List<Widget>.generate(5, (index) {
+                                final isSelected = _rating >= index + 1;
+                                return IconButton(
+                                  onPressed: () {
+                                    setState(() => _rating = index + 1);
+                                  },
+                                  icon: Icon(
+                                    Icons.star_rounded,
+                                    size: 36,
+                                    color: isSelected
+                                        ? const Color(0xffFBBF24)
+                                        : const Color(0xffB8C0CC),
+                                  ),
+                                );
+                              }),
+                            ),
+                            const SizedBox(height: 8),
+                            AppText.bodyMedium(
+                              'هل هناك ملاحظات تود أن تخبرنا بها ؟',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _commentController,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText: 'اكتب ملاحظاتك هنا',
+                                filled: true,
+                                fillColor: const Color(0xffF9FAFB),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xffD1D5DB),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            children: _quickTags.map((tag) {
-                              final selected = _selectedTags.contains(tag);
-                              return ChoiceChip(
-                                label: Text(tag),
-                                selected: selected,
-                                onSelected: (value) {
-                                  setState(() {
-                                    if (value) {
-                                      _selectedTags.add(tag);
-                                    } else {
-                                      _selectedTags.remove(tag);
-                                    }
-                                  });
-                                },
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: _submitting
-                                      ? null
-                                      : () => Navigator.of(context).pop(),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xff9CA3AF),
-                                    side: const BorderSide(
-                                      color: Color(0xffD1D5DB),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              children: _quickTags.map((tag) {
+                                final selected = _selectedTags.contains(tag);
+                                return ChoiceChip(
+                                  label: Text(tag),
+                                  selected: selected,
+                                  onSelected: (value) {
+                                    setState(() {
+                                      if (value) {
+                                        _selectedTags.add(tag);
+                                      } else {
+                                        _selectedTags.remove(tag);
+                                      }
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: _submitting
+                                        ? null
+                                        : () => Navigator.of(context).pop(),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xff9CA3AF),
+                                      side: const BorderSide(
+                                        color: Color(0xffD1D5DB),
+                                      ),
+                                    ),
+                                    child: AppText.labelLarge(
+                                      'لا أريد التقييم، شكرا',
+                                      color: const Color(0xff9CA3AF),
                                     ),
                                   ),
-                                  child: AppText.labelLarge(
-                                    'لا أريد التقييم، شكرا',
-                                    color: const Color(0xff9CA3AF),
-                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: FilledButton(
-                                  onPressed: (_rating < 1 || _submitting)
-                                      ? null
-                                      : _submit,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xff1DBCC8),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: _submitting
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: FilledButton(
+                                    onPressed: (_rating < 1 || _submitting)
+                                        ? null
+                                        : _submit,
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: const Color(0xff1DBCC8),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: _submitting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : AppText.labelLarge(
+                                            'إرسال التقييم',
                                             color: Colors.white,
                                           ),
-                                        )
-                                      : AppText.labelLarge(
-                                          'إرسال التقييم',
-                                          color: Colors.white,
-                                        ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),

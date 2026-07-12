@@ -1524,10 +1524,13 @@ class _CleaningOrderDetailsScreenState
     unawaited(_fetchDetails(showLoading: false));
   }
 
-  Future<void> _navigateToRating(CleaningOrderDetailModel order) async {
+  Future<void> _navigateToRating(
+    CleaningOrderDetailModel order, {
+    required int? workerId,
+  }) async {
     if (!mounted || order.id == null) return;
     final workerProfile = await resolveCleaningWorkerProfileForRating(
-      workerId: order.worker?.id,
+      workerId: workerId,
       fetchWorkerProfile: (params) =>
           getIt<FetchCleaningWorkerProfileUseCase>()(params),
       onError: (message) {
@@ -1642,13 +1645,18 @@ class _CleaningOrderDetailsScreenState
       }
       return;
     }
+    final completionRequest = order.pendingCompletionRequest;
+    if (completionRequest == null) return;
     _completionSheetOpen = true;
     final decision = await CleaningCompletionDecisionSheet.show(
       context,
       useRootNavigator: true,
-      onConfirm: () => _submitCompletionConfirm(order),
-      onReject: (reason) => _submitCompletionReject(order, reason),
-      onExtend: (minutes) => _submitExtendTime(order, minutes),
+      completionRequest: completionRequest,
+      onConfirm: () => _submitCompletionConfirm(order, completionRequest),
+      onReject: (reason) =>
+          _submitCompletionReject(order, completionRequest, reason),
+      onExtend: (minutes) =>
+          _submitExtendTime(order, completionRequest, minutes),
       fetchExtensionTimeRanges: () => _fetchExtensionTimeRanges(orderId),
     );
     if (!mounted) return;
@@ -1667,7 +1675,10 @@ class _CleaningOrderDetailsScreenState
     if (decision == CleaningCompletionDecision.confirmed && mounted) {
       final updatedOrder = _order;
       if (updatedOrder != null) {
-        await _navigateToRating(updatedOrder);
+        await _navigateToRating(
+          updatedOrder,
+          workerId: completionRequest.workerId,
+        );
       }
     }
     unawaited(_fetchDetails(showLoading: false));
@@ -1811,6 +1822,7 @@ class _CleaningOrderDetailsScreenState
 
   Future<String?> _submitCompletionConfirm(
     CleaningOrderDetailModel order,
+    CleaningCompletionRequestModel completionRequest,
   ) async {
     final orderId = order.id;
     if (orderId == null) return 'تعذر تحديد الطلب';
@@ -1819,7 +1831,11 @@ class _CleaningOrderDetailsScreenState
       _gateError = null;
     });
     final response = await getIt<ConfirmCleaningCompletionUseCase>()(
-      ConfirmCleaningCompletionParams(orderId: orderId),
+      ConfirmCleaningCompletionParams(
+        orderId: orderId,
+        workerId: completionRequest.workerId,
+        assignmentId: completionRequest.assignmentId,
+      ),
     );
     if (!mounted) return 'تعذر تحديث الحالة';
     String? errorMessage;
@@ -1847,6 +1863,7 @@ class _CleaningOrderDetailsScreenState
 
   Future<String?> _submitCompletionReject(
     CleaningOrderDetailModel order,
+    CleaningCompletionRequestModel completionRequest,
     String? reason,
   ) async {
     final orderId = order.id;
@@ -1856,7 +1873,12 @@ class _CleaningOrderDetailsScreenState
       _gateError = null;
     });
     final response = await getIt<RejectCleaningCompletionUseCase>()(
-      RejectCleaningCompletionParams(orderId: orderId, reason: reason),
+      RejectCleaningCompletionParams(
+        orderId: orderId,
+        reason: reason,
+        workerId: completionRequest.workerId,
+        assignmentId: completionRequest.assignmentId,
+      ),
     );
     if (!mounted) return 'تعذر تحديث الحالة';
     String? errorMessage;
@@ -1884,6 +1906,7 @@ class _CleaningOrderDetailsScreenState
 
   Future<String?> _submitExtendTime(
     CleaningOrderDetailModel order,
+    CleaningCompletionRequestModel completionRequest,
     int? additionalMinutes,
   ) async {
     final orderId = order.id;
@@ -1896,6 +1919,8 @@ class _CleaningOrderDetailsScreenState
       ExtendCleaningCompletionTimeParams(
         orderId: orderId,
         additionalMinutes: additionalMinutes,
+        workerId: completionRequest.workerId,
+        assignmentId: completionRequest.assignmentId,
       ),
     );
     if (!mounted) return 'تعذر تحديث الحالة';

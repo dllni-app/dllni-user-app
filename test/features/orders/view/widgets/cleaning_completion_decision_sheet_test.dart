@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/features/orders/data/models/cleaning_orders_api_models.dart';
 import 'package:dllni_user_app/features/orders/view/widgets/cleaning_completion_decision_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +18,39 @@ Future<void> _openSheet(
                 onPressed: () {
                   CleaningCompletionDecisionSheet.show(
                     context,
-                    fetchExtensionTimeRanges: () async => const [],
+                    completionRequest: const CleaningCompletionRequestModel(
+                      workerId: 8,
+                      assignmentId: 14,
+                      message: 'Please check the kitchen counter.',
+                      finishedCleaningServices: [
+                        CleaningCompletionSnapshotItemModel(
+                          label: 'Kitchen cleaning',
+                        ),
+                      ],
+                    ),
+                    fetchExtensionTimeRanges: () async => [
+                      CleaningExtensionRangeModel(
+                        startMinutes: 1,
+                        endMinutes: 30,
+                        label: '30 دقيقة',
+                        price: 10000,
+                        currency: 'SYP',
+                      ),
+                      CleaningExtensionRangeModel(
+                        startMinutes: 31,
+                        endMinutes: 60,
+                        label: '60 دقيقة',
+                        price: 18000,
+                        currency: 'SYP',
+                      ),
+                      CleaningExtensionRangeModel(
+                        startMinutes: 61,
+                        endMinutes: 90,
+                        label: '90 دقيقة',
+                        price: 25000,
+                        currency: 'SYP',
+                      ),
+                    ],
                     onConfirm: () async => null,
                     onReject: (_) async => null,
                     onExtend: onExtend,
@@ -57,9 +90,6 @@ void main() {
     expect(find.textContaining('18,000'), findsOneWidget);
     expect(find.textContaining('90 دقيقة'), findsOneWidget);
     expect(find.textContaining('25,000'), findsOneWidget);
-    expect(find.textContaining('120 دقيقة'), findsOneWidget);
-    expect(find.textContaining('32,000'), findsOneWidget);
-
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -110,6 +140,18 @@ void main() {
 
     expect(extendCalled, isFalse);
     expect(find.text('أرغب في تمديد الوقت'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('shows only the completing worker tasks and note', (
+    WidgetTester tester,
+  ) async {
+    await _openSheet(tester, onExtend: (_) async => null);
+
+    expect(find.text('Kitchen cleaning'), findsOneWidget);
+    expect(find.text('Please check the kitchen counter.'), findsOneWidget);
+    expect(find.text('صالون'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

@@ -26,18 +26,23 @@ class RejectCleaningCompletionUseCase
 class RejectCleaningCompletionParams with Params {
   final int orderId;
   final String? reason;
+  final int? workerId;
+  final int? assignmentId;
 
   RejectCleaningCompletionParams({
     required this.orderId,
     this.reason,
+    this.workerId,
+    this.assignmentId,
   });
 
   @override
   BodyMap getBody() {
     final r = reason?.trim();
-    if (r == null || r.isEmpty) {
-      return <String, dynamic>{};
-    }
-    return {'reason': r};
+    return <String, dynamic>{
+      if (r != null && r.isNotEmpty) 'reason': r,
+      if (workerId != null) 'workerId': workerId,
+      if (assignmentId != null) 'assignmentId': assignmentId,
+    };
   }
 }

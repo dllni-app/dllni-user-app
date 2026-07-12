@@ -1,18 +1,18 @@
 import 'package:common_package/common_package.dart';
-import 'package:common_package/helpers/dio_network.dart';
-import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
 
-import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
-import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
-import '../../domain/usecases/fetch_cleaning_orders_use_case.dart';
 
 enum CleaningCompletionDecision { confirmed, rejected, extensionRequested }
 
 class _ExtensionTimeOption {
-  const _ExtensionTimeOption({required this.minutes, required this.label, this.price, this.currency});
+  const _ExtensionTimeOption({
+    required this.minutes,
+    required this.label,
+    this.price,
+    this.currency,
+  });
 
   final int minutes;
   final String label;
@@ -38,116 +38,17 @@ class _FinishedTaskGroup {
   final List<String> items;
 }
 
-Map<String, dynamic> _completionAsMap(dynamic value) {
-  if (value is Map<String, dynamic>) return value;
-  if (value is Map) {
-    return value.map((key, nestedValue) => MapEntry(key.toString(), nestedValue));
-  }
-  return const <String, dynamic>{};
-}
-
-dynamic _completionPick(Map<String, dynamic> map, List<String> keys) {
-  for (final key in keys) {
-    if (!map.containsKey(key)) continue;
-    final value = map[key];
-    if (value != null) return value;
-  }
-  return null;
-}
-
-String? _completionText(dynamic value) {
-  final text = value?.toString().trim();
-  return text == null || text.isEmpty ? null : text;
-}
-
-Map<String, dynamic> _completionPayloadData(dynamic payload) {
-  final root = _completionAsMap(payload);
-  final data = _completionAsMap(root['data']);
-  return data.isEmpty ? root : data;
-}
-
-final _englishWordPattern = RegExp(r'[A-Za-z]');
-
-const _roomLabelTokensAr = <(String, String)>[
-  ('living room', 'صالون'),
-  ('living_room', 'صالون'),
-  ('dining room', 'غرفة الطعام'),
-  ('study room', 'غرفة الدراسة'),
-  ('guest room', 'غرفة الضيوف'),
-  ('bathroom', 'حمام'),
-  ('bedroom', 'غرفة نوم'),
-  ('kitchen', 'مطبخ'),
-  ('balcony', 'بلكونة'),
-  ('corridor', 'موزع'),
-  ('office', 'مكتب'),
-  ('small', 'صغير'),
-  ('medium', 'متوسط'),
-  ('large', 'كبير'),
-];
-
-String _localizeRoomLabel(String label) {
-  if (!_englishWordPattern.hasMatch(label)) return label;
-
-  var result = label;
-  for (final (english, arabic) in _roomLabelTokensAr) {
-    final tokenPattern = RegExp.escape(english).replaceAll('_', r'[_ ]');
-    final pattern = RegExp('\\b$tokenPattern\\b', caseSensitive: false);
-    result = result.replaceAll(pattern, arabic);
-  }
-  return result;
-}
-
-List<String> _completionSnapshotLabels(dynamic value) {
-  if (value is! List) return const <String>[];
-
-  final labels = <String>[];
-  for (final item in value) {
-    String? label;
-    String? detail;
-
-    if (item is String) {
-      label = item.trim();
-    } else if (item is Map) {
-      final map = _completionAsMap(item);
-      label = _completionText(
-        _completionPick(map, const <String>[
-          'label',
-          'name',
-          'displayLabel',
-          'display_label',
-          'roomTypeLabel',
-          'room_type_label',
-          'roomType',
-          'room_type',
-          'roomKey',
-          'room_key',
-        ]),
-      );
-      detail = _completionText(map['detail']);
-    }
-
-    if (label == null || label.isEmpty) continue;
-    if (detail != null && detail.isNotEmpty && !label.contains(detail)) {
-      label = '$label: $detail';
-    }
-    label = _localizeRoomLabel(label);
-    if (!labels.contains(label)) labels.add(label);
-  }
-
-  return labels;
-}
-
 class CleaningCompletionDecisionSheet {
   static Future<CleaningCompletionDecision?> show(
     BuildContext context, {
+    required CleaningCompletionRequestModel completionRequest,
     required Future<String?> Function() onConfirm,
     required Future<String?> Function(String? reason) onReject,
     required Future<String?> Function(int minutes) onExtend,
-    required Future<List<CleaningExtensionRangeModel>> Function() fetchExtensionTimeRanges,
+    required Future<List<CleaningExtensionRangeModel>> Function()
+    fetchExtensionTimeRanges,
     bool useRootNavigator = true,
   }) async {
-    final orderId = _resolveOrderId(context);
-
     return showModalBottomSheet<CleaningCompletionDecision>(
       context: context,
       useRootNavigator: useRootNavigator,
@@ -155,9 +56,11 @@ class CleaningCompletionDecisionSheet {
       isDismissible: false,
       enableDrag: false,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => _CleaningCompletionDecisionSheetBody(
-        orderId: orderId,
+        completionRequest: completionRequest,
         onConfirm: onConfirm,
         onReject: onReject,
         onExtend: onExtend,
@@ -165,185 +68,67 @@ class CleaningCompletionDecisionSheet {
       ),
     );
   }
-
-  static int? _resolveOrderId(BuildContext context) {
-    try {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is int) return args;
-      final value = (args as dynamic)?.orderId;
-      if (value is int) return value;
-      if (value is num) return value.toInt();
-      return int.tryParse(value?.toString() ?? '');
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 class _CleaningCompletionDecisionSheetBody extends StatefulWidget {
   const _CleaningCompletionDecisionSheetBody({
-    required this.orderId,
+    required this.completionRequest,
     required this.onConfirm,
     required this.onReject,
     required this.onExtend,
     required this.fetchExtensionTimeRanges,
   });
 
-  final int? orderId;
+  final CleaningCompletionRequestModel completionRequest;
   final Future<String?> Function() onConfirm;
   final Future<String?> Function(String? reason) onReject;
   final Future<String?> Function(int minutes) onExtend;
-  final Future<List<CleaningExtensionRangeModel>> Function() fetchExtensionTimeRanges;
+  final Future<List<CleaningExtensionRangeModel>> Function()
+  fetchExtensionTimeRanges;
 
   @override
-  State<_CleaningCompletionDecisionSheetBody> createState() => _CleaningCompletionDecisionSheetBodyState();
+  State<_CleaningCompletionDecisionSheetBody> createState() =>
+      _CleaningCompletionDecisionSheetBodyState();
 }
 
-class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletionDecisionSheetBody> {
+class _CleaningCompletionDecisionSheetBodyState
+    extends State<_CleaningCompletionDecisionSheetBody> {
   bool _submitting = false;
-  bool _loadingFinishedTasks = false;
   String? _error;
   List<_FinishedTaskGroup> _finishedTaskGroups = const <_FinishedTaskGroup>[];
 
   @override
   void initState() {
     super.initState();
-    _loadFinishedTasks();
+    _finishedTaskGroups = _buildFinishedTaskGroups(widget.completionRequest);
   }
 
-  Future<void> _loadFinishedTasks() async {
-    setState(() => _loadingFinishedTasks = true);
-    try {
-      final orderId = widget.orderId ?? await _resolveAwaitingCompletionOrderId();
-      if (orderId == null) {
-        if (!mounted) return;
-        setState(() => _loadingFinishedTasks = false);
-        return;
-      }
+  List<_FinishedTaskGroup> _buildFinishedTaskGroups(
+    CleaningCompletionRequestModel completionRequest,
+  ) {
+    final items = <String>{
+      ...completionRequest.finishedCleaningServices
+          .map((item) => item.displayText)
+          .whereType<String>(),
+      ...completionRequest.finishedPropertyRooms
+          .map((item) => item.displayText)
+          .whereType<String>(),
+    };
 
-      final snapshotGroups = await _fetchBackendFinishedTaskGroups(orderId);
-      final response = await getIt<FetchCleaningOrderDetailsUseCase>()(
-        FetchCleaningOrderDetailsParams(orderId: orderId),
-      );
-      if (!mounted) return;
-      response.fold(
-        (_) => setState(() {
-          _finishedTaskGroups = snapshotGroups;
-          _loadingFinishedTasks = false;
-        }),
-        (result) {
-          final order = result.data;
-          final fallbackGroups = _buildFinishedTaskGroups(order);
-          setState(() {
-            _finishedTaskGroups = snapshotGroups.isNotEmpty ? snapshotGroups : fallbackGroups;
-            _loadingFinishedTasks = false;
-          });
-        },
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadingFinishedTasks = false);
-    }
-  }
+    if (items.isEmpty) return const <_FinishedTaskGroup>[];
 
-  Future<int?> _resolveAwaitingCompletionOrderId() async {
-    final useCase = getIt<FetchCleaningOrdersUseCase>();
-    final filteredResponse = await useCase(
-      FetchCleaningOrdersParams(
-        status: CleaningBookingStatus.awaitingCustomerCompletion,
-        page: 1,
-        perPage: 5,
+    return [
+      _FinishedTaskGroup(
+        title: 'المهام التي تم إنهائها',
+        items: items.toList(growable: false),
       ),
-    );
-    final filteredOrderId = filteredResponse.fold<int?>(
-      (_) => null,
-      (result) => _firstAwaitingCompletionOrderId(result.data),
-    );
-    if (filteredOrderId != null) return filteredOrderId;
-
-    final unfilteredResponse = await useCase(
-      FetchCleaningOrdersParams(page: 1, perPage: 25),
-    );
-    return unfilteredResponse.fold<int?>(
-      (_) => null,
-      (result) => _firstAwaitingCompletionOrderId(result.data),
-    );
-  }
-
-  int? _firstAwaitingCompletionOrderId(List<CleaningOrderModel> orders) {
-    for (final order in orders) {
-      final status = (order.status ?? '').trim().toLowerCase();
-      if (status != CleaningBookingStatus.awaitingCustomerCompletion) continue;
-      final id = order.id;
-      if (id != null) return id;
-    }
-    return null;
-  }
-
-  Future<List<_FinishedTaskGroup>> _fetchBackendFinishedTaskGroups(int orderId) async {
-    try {
-      final dynamic response = await getIt<DioNetwork>().getData(
-        endPoint: '/api/v1/cleaning-bookings/$orderId',
-      );
-      final data = _completionPayloadData(response.data);
-      return _buildFinishedSnapshotGroups(data);
-    } catch (_) {
-      return const <_FinishedTaskGroup>[];
-    }
-  }
-
-  List<_FinishedTaskGroup> _buildFinishedSnapshotGroups(Map<String, dynamic> data) {
-    if (data.isEmpty) return const <_FinishedTaskGroup>[];
-
-    final completionRequest = _completionAsMap(
-      data['completionRequest'] ?? data['completion_request'],
-    );
-    final serviceItems = _completionSnapshotLabels(
-      data['workerFinishedCleaningServices'] ??
-          data['worker_finished_cleaning_services'] ??
-          completionRequest['finishedCleaningServices'] ??
-          completionRequest['finished_cleaning_services'],
-    );
-    final roomItems = _completionSnapshotLabels(
-      data['workerFinishedPropertyRooms'] ??
-          data['worker_finished_property_rooms'] ??
-          completionRequest['finishedPropertyRooms'] ??
-          completionRequest['finished_property_rooms'],
-    );
-
-    return <_FinishedTaskGroup>[
-      if (serviceItems.isNotEmpty) _FinishedTaskGroup(title: 'الخدمات التي أنهاها العامل', items: serviceItems),
-      if (roomItems.isNotEmpty) _FinishedTaskGroup(title: 'الغرف التي أنهاها العامل', items: roomItems),
     ];
   }
 
-  List<_FinishedTaskGroup> _buildFinishedTaskGroups(CleaningOrderDetailModel? order) {
-    if (order == null) return const <_FinishedTaskGroup>[];
-    final serviceItems = <String>[];
-    for (final service in order.services ?? const <CleaningOrderLineItemModel>[]) {
-      final name = service.name?.trim();
-      if (name != null && name.isNotEmpty) serviceItems.add(name);
-    }
-    for (final addon in order.addons ?? const <CleaningOrderLineItemModel>[]) {
-      final name = addon.name?.trim();
-      if (name != null && name.isNotEmpty && !serviceItems.contains(name)) serviceItems.add(name);
-    }
-
-    final roomItems = <String>[];
-    for (final room in order.roomAssignments ?? const <CleaningRoomAssignmentModel>[]) {
-      final label = room.displayLabel?.trim();
-      final fallback = room.roomType?.trim();
-      final value = label != null && label.isNotEmpty ? label : fallback;
-      if (value != null && value.isNotEmpty) roomItems.add(_localizeRoomLabel(value));
-    }
-
-    return <_FinishedTaskGroup>[
-      if (serviceItems.isNotEmpty) _FinishedTaskGroup(title: 'الخدمات التي أنهاها العامل', items: serviceItems),
-      if (roomItems.isNotEmpty) _FinishedTaskGroup(title: 'الغرف التي أنهاها العامل', items: roomItems),
-    ];
-  }
-
-  Future<void> _run(Future<String?> Function() action, CleaningCompletionDecision decision) async {
+  Future<void> _run(
+    Future<String?> Function() action,
+    CleaningCompletionDecision decision,
+  ) async {
     if (_submitting) return;
     setState(() {
       _submitting = true;
@@ -375,7 +160,10 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
       setState(() => _error = 'يرجى اختيار مدة تمديد صالحة.');
       return;
     }
-    await _run(() => widget.onExtend(selected.minutes), CleaningCompletionDecision.extensionRequested);
+    await _run(
+      () => widget.onExtend(selected.minutes),
+      CleaningCompletionDecision.extensionRequested,
+    );
   }
 
   Future<void> _onRejectPressed() async {
@@ -393,59 +181,112 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
           decoration: const InputDecoration(hintText: 'اكتب ملاحظتك (اختياري)'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('تأكيد')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('تأكيد'),
+          ),
         ],
       ),
     );
     final reason = reasonController.text.trim();
     reasonController.dispose();
     if (accepted != true) return;
-    await _run(() => widget.onReject(reason.isEmpty ? null : reason), CleaningCompletionDecision.rejected);
+    await _run(
+      () => widget.onReject(reason.isEmpty ? null : reason),
+      CleaningCompletionDecision.rejected,
+    );
   }
 
   Widget _buildFinishedTasksSection() {
-    if (_loadingFinishedTasks) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
-    }
-    if (_finishedTaskGroups.isEmpty) {
+    final completionMessage = widget.completionRequest.message?.trim();
+    if (_finishedTaskGroups.isEmpty &&
+        (completionMessage == null || completionMessage.isEmpty)) {
       return Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: const Color(0xffF9FAFB), borderRadius: BorderRadius.circular(12)),
-        child: AppText.bodySmall('لم يرسل العامل تفاصيل مهام منجزة.', color: const Color(0xff6B7280), textAlign: TextAlign.center),
+        decoration: BoxDecoration(
+          color: const Color(0xffF9FAFB),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: AppText.bodySmall(
+          'لم يرسل العامل تفاصيل مهام منجزة.',
+          color: const Color(0xff6B7280),
+          textAlign: TextAlign.center,
+        ),
       );
     }
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xffF9FAFB), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xffE5E7EB))),
+      decoration: BoxDecoration(
+        color: const Color(0xffF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppText.bodyMedium('المهام التي أبلغ العامل أنه أنهاها', fontWeight: FontWeight.w800, color: const Color(0xff374151)),
+          AppText.bodyMedium(
+            'المهام التي أبلغ العامل أنه أنهاها',
+            fontWeight: FontWeight.w800,
+            color: const Color(0xff374151),
+          ),
           const SizedBox(height: 8),
-          ..._finishedTaskGroups.map((group) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText.bodySmall(group.title, fontWeight: FontWeight.w700, color: const Color(0xff1E2A78)),
-                    const SizedBox(height: 4),
-                    ...group.items.map((item) => Padding(
-                          padding: const EdgeInsetsDirectional.only(start: 8, bottom: 3),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.check_circle_outline, size: 16, color: Color(0xff20B7C4)),
-                              const SizedBox(width: 6),
-                              Expanded(child: AppText.bodySmall(item, color: const Color(0xff4B5563))),
-                            ],
+          ..._finishedTaskGroups.map(
+            (group) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText.bodySmall(
+                    group.title,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xff1E2A78),
+                  ),
+                  const SizedBox(height: 4),
+                  ...group.items.map(
+                    (item) => Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        start: 8,
+                        bottom: 3,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            size: 16,
+                            color: Color(0xff20B7C4),
                           ),
-                        )),
-                  ],
-                ),
-              )),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: AppText.bodySmall(
+                              item,
+                              color: const Color(0xff4B5563),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (completionMessage != null && completionMessage.isNotEmpty) ...[
+            const Divider(height: 20),
+            AppText.bodySmall(
+              'ملاحظة مقدم الخدمة',
+              fontWeight: FontWeight.w700,
+              color: const Color(0xff1E2A78),
+            ),
+            const SizedBox(height: 4),
+            AppText.bodySmall(
+              completionMessage,
+              color: const Color(0xff4B5563),
+            ),
+          ],
         ],
       ),
     );
@@ -454,34 +295,75 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(left: 18, right: 18, top: 12, bottom: MediaQuery.viewInsetsOf(context).bottom + 18),
+      padding: EdgeInsets.only(
+        left: 18,
+        right: 18,
+        top: 12,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 18,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: IconButton(onPressed: _submitting ? null : () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
+            child: IconButton(
+              onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+            ),
           ),
-          const Icon(Icons.verified_outlined, color: Color(0xff20B7C4), size: 74),
+          const Icon(
+            Icons.verified_outlined,
+            color: Color(0xff20B7C4),
+            size: 74,
+          ),
           const SizedBox(height: 12),
-          AppText.titleLarge('مقدم الخدمة قد أنهى المهمة', textAlign: TextAlign.center, fontWeight: FontWeight.w700, color: const Color(0xff374151)),
+          AppText.titleLarge(
+            'مقدم الخدمة قد أنهى المهمة',
+            textAlign: TextAlign.center,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xff374151),
+          ),
           const SizedBox(height: 4),
-          AppText.titleMedium('يرجى التأكيد', textAlign: TextAlign.center, fontWeight: FontWeight.w700, color: const Color(0xff374151)),
+          AppText.titleMedium(
+            'يرجى التأكيد',
+            textAlign: TextAlign.center,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xff374151),
+          ),
           const SizedBox(height: 12),
           _buildFinishedTasksSection(),
           if (_error != null) ...[
             const SizedBox(height: 10),
-            AppText.bodySmall(_error!, textAlign: TextAlign.center, color: context.error),
+            AppText.bodySmall(
+              _error!,
+              textAlign: TextAlign.center,
+              color: context.error,
+            ),
           ],
           const SizedBox(height: 16),
           FilledButton(
             key: const Key('completion_extend_button'),
-            onPressed: _submitting || _loadingFinishedTasks ? null : _onExtendPressed,
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xff20B7C4), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 13)),
+            onPressed: _submitting ? null : _onExtendPressed,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xff20B7C4),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 13),
+            ),
             child: _submitting
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : AppText.labelLarge('أرغب في تمديد الوقت', color: Colors.white, fontWeight: FontWeight.w700),
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : AppText.labelLarge(
+                    'أرغب في تمديد الوقت',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -489,16 +371,36 @@ class _CleaningCompletionDecisionSheetBodyState extends State<_CleaningCompletio
               Expanded(
                 child: OutlinedButton(
                   onPressed: _submitting ? null : _onRejectPressed,
-                  style: OutlinedButton.styleFrom(foregroundColor: const Color(0xff9CA3AF), side: const BorderSide(color: Color(0xffD1D5DB)), padding: const EdgeInsets.symmetric(vertical: 12)),
-                  child: AppText.labelLarge('لا، العمل لم ينته بعد', color: const Color(0xff9CA3AF)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xff9CA3AF),
+                    side: const BorderSide(color: Color(0xffD1D5DB)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: AppText.labelLarge(
+                    'لا، العمل لم ينته بعد',
+                    color: const Color(0xff9CA3AF),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton(
-                  onPressed: _submitting ? null : () => _run(widget.onConfirm, CleaningCompletionDecision.confirmed),
-                  style: FilledButton.styleFrom(backgroundColor: const Color(0xff1E2A78), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
-                  child: AppText.labelLarge('التأكيد و الانتهاء', color: Colors.white, fontWeight: FontWeight.w700),
+                  onPressed: _submitting
+                      ? null
+                      : () => _run(
+                          widget.onConfirm,
+                          CleaningCompletionDecision.confirmed,
+                        ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xff1E2A78),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: AppText.labelLarge(
+                    'التأكيد و الانتهاء',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -515,14 +417,17 @@ class _ExtensionTimePickerDialog extends StatefulWidget {
     required this.finishedTaskGroups,
   });
 
-  final Future<List<CleaningExtensionRangeModel>> Function() fetchExtensionTimeRanges;
+  final Future<List<CleaningExtensionRangeModel>> Function()
+  fetchExtensionTimeRanges;
   final List<_FinishedTaskGroup> finishedTaskGroups;
 
   @override
-  State<_ExtensionTimePickerDialog> createState() => _ExtensionTimePickerDialogState();
+  State<_ExtensionTimePickerDialog> createState() =>
+      _ExtensionTimePickerDialogState();
 }
 
-class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> {
+class _ExtensionTimePickerDialogState
+    extends State<_ExtensionTimePickerDialog> {
   _ExtensionTimeOption? _selected;
   List<_ExtensionTimeOption> _options = const <_ExtensionTimeOption>[];
   bool _loading = true;
@@ -542,7 +447,11 @@ class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> 
     try {
       final ranges = await widget.fetchExtensionTimeRanges();
       if (!mounted) return;
-      final options = ranges.map(_ExtensionTimeOptionMapper.fromRange).where((option) => option != null).cast<_ExtensionTimeOption>().toList(growable: false);
+      final options = ranges
+          .map(_ExtensionTimeOptionMapper.fromRange)
+          .where((option) => option != null)
+          .cast<_ExtensionTimeOption>()
+          .toList(growable: false);
       setState(() {
         _options = options;
         _selected = options.isEmpty ? null : options.first;
@@ -606,13 +515,23 @@ class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> 
                   const SizedBox(height: 4),
                   ...group.items.map(
                     (item) => Padding(
-                      padding: const EdgeInsetsDirectional.only(start: 8, bottom: 3),
+                      padding: const EdgeInsetsDirectional.only(
+                        start: 8,
+                        bottom: 3,
+                      ),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle_outline, size: 16, color: Color(0xff20B7C4)),
+                          const Icon(
+                            Icons.check_circle_outline,
+                            size: 16,
+                            color: Color(0xff20B7C4),
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
-                            child: AppText.bodySmall(item, color: const Color(0xff4B5563)),
+                            child: AppText.bodySmall(
+                              item,
+                              color: const Color(0xff4B5563),
+                            ),
                           ),
                         ],
                       ),
@@ -638,18 +557,38 @@ class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> 
           children: [
             _buildFinishedTasksPreview(),
             const SizedBox(height: 12),
-            AppText.bodySmall('اختر مدة التمديد من الخيارات المتاحة من الخادم.', color: const Color(0xff6B7280)),
+            AppText.bodySmall(
+              'اختر مدة التمديد من الخيارات المتاحة من الخادم.',
+              color: const Color(0xff6B7280),
+            ),
             const SizedBox(height: 12),
             if (_loading)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 18), child: Center(child: CircularProgressIndicator()))
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Center(child: CircularProgressIndicator()),
+              )
             else if (_error != null)
-              Column(mainAxisSize: MainAxisSize.min, children: [
-                AppText.bodySmall(_error!, textAlign: TextAlign.center, color: context.error),
-                const SizedBox(height: 8),
-                TextButton(onPressed: _loadOptions, child: const Text('إعادة المحاولة')),
-              ])
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppText.bodySmall(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    color: context.error,
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _loadOptions,
+                    child: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              )
             else if (_options.isEmpty)
-              AppText.bodySmall('لا توجد خيارات تمديد متاحة حالياً.', textAlign: TextAlign.center, color: const Color(0xff6B7280))
+              AppText.bodySmall(
+                'لا توجد خيارات تمديد متاحة حالياً.',
+                textAlign: TextAlign.center,
+                color: const Color(0xff6B7280),
+              )
             else
               ..._options.map((option) {
                 final isSelected = _selected == option;
@@ -660,20 +599,53 @@ class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> 
                   child: Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xffE6F9FB) : const Color(0xffF9FAFB),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: isSelected ? const Color(0xff20B7C4) : const Color(0xffE5E7EB)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
                     ),
-                    child: Row(children: [
-                      Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: isSelected ? const Color(0xff20B7C4) : const Color(0xff9CA3AF)),
-                      const SizedBox(width: 10),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        AppText.bodyMedium(option.label, fontWeight: FontWeight.w700, color: const Color(0xff374151)),
-                        if (option.formattedPrice.isNotEmpty) ...[const SizedBox(height: 2), AppText.bodySmall(option.formattedPrice, color: const Color(0xff6B7280))],
-                      ])),
-                    ]),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xffE6F9FB)
+                          : const Color(0xffF9FAFB),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xff20B7C4)
+                            : const Color(0xffE5E7EB),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                          color: isSelected
+                              ? const Color(0xff20B7C4)
+                              : const Color(0xff9CA3AF),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppText.bodyMedium(
+                                option.label,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xff374151),
+                              ),
+                              if (option.formattedPrice.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                AppText.bodySmall(
+                                  option.formattedPrice,
+                                  color: const Color(0xff6B7280),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }),
@@ -681,10 +653,16 @@ class _ExtensionTimePickerDialogState extends State<_ExtensionTimePickerDialog> 
         ),
       ),
       actions: [
-        TextButton(key: const Key('extension_cancel'), onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+        TextButton(
+          key: const Key('extension_cancel'),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
         FilledButton(
           key: const Key('extension_submit'),
-          onPressed: _loading || _selected == null || _selected!.minutes <= 0 ? null : () => Navigator.pop(context, _selected),
+          onPressed: _loading || _selected == null || _selected!.minutes <= 0
+              ? null
+              : () => Navigator.pop(context, _selected),
           child: const Text('إرسال'),
         ),
       ],
@@ -698,7 +676,12 @@ class _ExtensionTimeOptionMapper {
   static _ExtensionTimeOption? fromRange(CleaningExtensionRangeModel range) {
     final minutes = range.requestMinutes;
     if (minutes == null || minutes <= 0 || minutes > 90) return null;
-    return _ExtensionTimeOption(minutes: minutes, label: _rangeLabel(range, minutes), price: range.price, currency: range.currency);
+    return _ExtensionTimeOption(
+      minutes: minutes,
+      label: _rangeLabel(range, minutes),
+      price: range.price,
+      currency: range.currency,
+    );
   }
 
   static String _rangeLabel(CleaningExtensionRangeModel range, int minutes) {

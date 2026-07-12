@@ -494,6 +494,9 @@ class CleaningGlobalVerificationGateCoordinator {
       return;
     }
 
+    final completionRequest = details.pendingCompletionRequest;
+    if (completionRequest == null) return;
+
     final navContext = _navigatorKey.currentContext;
     if (navContext == null || !navContext.mounted) return;
     if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
@@ -505,11 +508,19 @@ class CleaningGlobalVerificationGateCoordinator {
       sheetDecision = await CleaningCompletionDecisionSheet.show(
         navContext,
         useRootNavigator: true,
-        onConfirm: () => _submitCompletionConfirm(orderId: orderId),
-        onReject: (reason) =>
-            _submitCompletionReject(orderId: orderId, reason: reason),
+        completionRequest: completionRequest,
+        onConfirm: () => _submitCompletionConfirm(
+          orderId: orderId,
+          completionRequest: completionRequest,
+        ),
+        onReject: (reason) => _submitCompletionReject(
+          orderId: orderId,
+          completionRequest: completionRequest,
+          reason: reason,
+        ),
         onExtend: (minutes) => _submitExtendCompletionTime(
           orderId: orderId,
+          completionRequest: completionRequest,
           additionalMinutes: minutes,
         ),
         fetchExtensionTimeRanges: () => _fetchExtensionTimeRanges(orderId),
@@ -553,7 +564,7 @@ class CleaningGlobalVerificationGateCoordinator {
         navContext.mounted &&
         details.id != null) {
       final workerProfile = await resolveCleaningWorkerProfileForRating(
-        workerId: details.worker?.id,
+        workerId: completionRequest.workerId,
         fetchWorkerProfile: (params) =>
             getIt<FetchCleaningWorkerProfileUseCase>()(params),
         onError: (message) {
@@ -668,9 +679,16 @@ class CleaningGlobalVerificationGateCoordinator {
     );
   }
 
-  Future<String?> _submitCompletionConfirm({required int orderId}) async {
+  Future<String?> _submitCompletionConfirm({
+    required int orderId,
+    required CleaningCompletionRequestModel completionRequest,
+  }) async {
     final response = await getIt<ConfirmCleaningCompletionUseCase>()(
-      ConfirmCleaningCompletionParams(orderId: orderId),
+      ConfirmCleaningCompletionParams(
+        orderId: orderId,
+        workerId: completionRequest.workerId,
+        assignmentId: completionRequest.assignmentId,
+      ),
     );
     return response.fold(
       (failure) => CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
@@ -691,10 +709,16 @@ class CleaningGlobalVerificationGateCoordinator {
 
   Future<String?> _submitCompletionReject({
     required int orderId,
+    required CleaningCompletionRequestModel completionRequest,
     String? reason,
   }) async {
     final response = await getIt<RejectCleaningCompletionUseCase>()(
-      RejectCleaningCompletionParams(orderId: orderId, reason: reason),
+      RejectCleaningCompletionParams(
+        orderId: orderId,
+        reason: reason,
+        workerId: completionRequest.workerId,
+        assignmentId: completionRequest.assignmentId,
+      ),
     );
     return response.fold(
       (failure) => CleaningLifecycleErrorMapper.mapLifecycleActionFailure(
@@ -715,12 +739,15 @@ class CleaningGlobalVerificationGateCoordinator {
 
   Future<String?> _submitExtendCompletionTime({
     required int orderId,
+    required CleaningCompletionRequestModel completionRequest,
     required int additionalMinutes,
   }) async {
     final response = await getIt<ExtendCleaningCompletionTimeUseCase>()(
       ExtendCleaningCompletionTimeParams(
         orderId: orderId,
         additionalMinutes: additionalMinutes,
+        workerId: completionRequest.workerId,
+        assignmentId: completionRequest.assignmentId,
       ),
     );
     return response.fold(

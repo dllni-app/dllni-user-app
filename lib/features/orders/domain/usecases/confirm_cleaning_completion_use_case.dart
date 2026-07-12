@@ -25,9 +25,18 @@ class ConfirmCleaningCompletionUseCase
 
 class ConfirmCleaningCompletionParams with Params {
   final int orderId;
+  final int? workerId;
+  final int? assignmentId;
 
-  ConfirmCleaningCompletionParams({required this.orderId});
+  ConfirmCleaningCompletionParams({
+    required this.orderId,
+    this.workerId,
+    this.assignmentId,
+  });
 
   @override
-  BodyMap getBody() => <String, dynamic>{};
+  BodyMap getBody() => <String, dynamic>{
+    if (workerId != null) 'workerId': workerId,
+    if (assignmentId != null) 'assignmentId': assignmentId,
+  };
 }

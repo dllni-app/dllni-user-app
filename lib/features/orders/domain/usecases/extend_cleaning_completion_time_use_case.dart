@@ -26,17 +26,22 @@ class ExtendCleaningCompletionTimeUseCase
 class ExtendCleaningCompletionTimeParams with Params {
   final int orderId;
   final int? additionalMinutes;
+  final int? workerId;
+  final int? assignmentId;
 
   ExtendCleaningCompletionTimeParams({
     required this.orderId,
     this.additionalMinutes,
+    this.workerId,
+    this.assignmentId,
   });
 
   @override
   BodyMap getBody() {
-    if (additionalMinutes == null) {
-      return <String, dynamic>{};
-    }
-    return {'additionalMinutes': additionalMinutes};
+    return <String, dynamic>{
+      if (additionalMinutes != null) 'additionalMinutes': additionalMinutes,
+      if (workerId != null) 'workerId': workerId,
+      if (assignmentId != null) 'assignmentId': assignmentId,
+    };
   }
 }
