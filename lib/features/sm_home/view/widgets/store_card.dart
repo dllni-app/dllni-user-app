@@ -6,6 +6,7 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/utils/app_images.dart';
 import '../../../sm_stores/view/screens/sm_store_details_screen.dart';
 import '../../data/models/get_nearby_stores_model.dart';
 import '../../domain/usecases/change_store_favorite_use_case.dart';
@@ -99,7 +100,14 @@ class _StoreCardState extends State<StoreCard> {
               children: [
                 AppImage.network(
                   widget.store.cover.toString(),
-                  errorWidget: Icon(Icons.error_outline),
+                  errorWidget: AppImage.asset(
+                    AppImages.defaultStore,
+                    width: 80,
+                    height: 80,
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                    fit: BoxFit.contain,
+                    errorWidget: Icon(Icons.store_outlined),
+                  ),
                   height: 95,
                   width: context.width,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

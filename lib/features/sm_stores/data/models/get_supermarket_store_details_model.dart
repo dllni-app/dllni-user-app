@@ -315,9 +315,9 @@ class SupermarketStoreDetailsStore {
 class SupermarketStoreDetailsHour {
   int? id;
   int? storeId;
-  int? dayOfWeek;
-  String? opensAt;
-  String? closesAt;
+  String? dayOfWeek;
+  String? openTime;
+  String? closeTime;
   bool? isClosed;
   String? createdAt;
   String? updatedAt;
@@ -326,8 +326,8 @@ class SupermarketStoreDetailsHour {
     this.id,
     this.storeId,
     this.dayOfWeek,
-    this.opensAt,
-    this.closesAt,
+    this.openTime,
+    this.closeTime,
     this.isClosed,
     this.createdAt,
     this.updatedAt,
@@ -337,9 +337,9 @@ class SupermarketStoreDetailsHour {
     return SupermarketStoreDetailsHour(
       id: _asInt(json['id']),
       storeId: _asInt(json['storeId']),
-      dayOfWeek: _asInt(json['dayOfWeek']),
-      opensAt: _asString(json['opensAt']),
-      closesAt: _asString(json['closesAt']),
+      dayOfWeek: _parseDayOfWeek(json['dayOfWeek']),
+      openTime: _asString(json['openTime']) ?? _asString(json['opensAt']),
+      closeTime: _asString(json['closeTime']) ?? _asString(json['closesAt']),
       isClosed: _asBool(json['isClosed']),
       createdAt: _asString(json['createdAt']),
       updatedAt: _asString(json['updatedAt']),
@@ -350,8 +350,8 @@ class SupermarketStoreDetailsHour {
     'id': id,
     'storeId': storeId,
     'dayOfWeek': dayOfWeek,
-    'opensAt': opensAt,
-    'closesAt': closesAt,
+    'openTime': openTime,
+    'closeTime': closeTime,
     'isClosed': isClosed,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
@@ -470,6 +470,47 @@ class SupermarketStoreDetailsOffer {
   };
 }
 
+String? _parseDayOfWeek(dynamic value) {
+  if (value == null) return null;
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+  if (value is int) return value.toString();
+  if (value is num) return value.toInt().toString();
+  return value.toString();
+}
+
+/// Shown when the API returns no store hours.
+const String supermarketStoreDetailsHoursUnavailableMessage = 'غير متاح';
+
+/// Sunday = 0 … Saturday = 6 (supports `monday` and legacy `1`).
+int? supermarketStoreDetailsHourDayIndex(String? dayOfWeek) {
+  if (dayOfWeek == null || dayOfWeek.trim().isEmpty) return null;
+
+  final asInt = int.tryParse(dayOfWeek);
+  if (asInt != null && asInt >= 0 && asInt <= 6) return asInt;
+
+  switch (dayOfWeek.trim().toLowerCase()) {
+    case 'sunday':
+      return 0;
+    case 'monday':
+      return 1;
+    case 'tuesday':
+      return 2;
+    case 'wednesday':
+      return 3;
+    case 'thursday':
+      return 4;
+    case 'friday':
+      return 5;
+    case 'saturday':
+      return 6;
+    default:
+      return null;
+  }
+}
+
 /// Returns `HH:mm` from API values like `08:00:00` or `8:00`.
 String supermarketStoreDetailsFormatTimeHm(String? raw) {
   if (raw == null || raw.trim().isEmpty) return '';
@@ -488,10 +529,13 @@ bool _supermarketStoreDetailsHourSameSchedule(
 ) {
   if (a.isClosed != b.isClosed) return false;
   if (a.isClosed == true) return true;
-  return a.opensAt == b.opensAt && a.closesAt == b.closesAt;
+  return a.openTime == b.openTime && a.closeTime == b.closeTime;
 }
 
-String _supermarketStoreDetailsHourDayRangeLabelAr(int? startDay, int? endDay) {
+String _supermarketStoreDetailsHourDayRangeLabelAr(
+  String? startDay,
+  String? endDay,
+) {
   if (startDay == null) return '';
   if (endDay == null || startDay == endDay) {
     return supermarketStoreDetailsHourDayLabelAr(startDay);
@@ -512,7 +556,8 @@ List<({int startIdx, int endIdx})> _supermarketStoreDetailsHourGroupConsecutiveS
       final next = sorted[j + 1];
       final prev = sorted[j];
       final consecutive =
-          (next.dayOfWeek ?? -1) == (prev.dayOfWeek ?? -2) + 1;
+          (supermarketStoreDetailsHourDayIndex(next.dayOfWeek) ?? -1) ==
+          (supermarketStoreDetailsHourDayIndex(prev.dayOfWeek) ?? -2) + 1;
       if (!consecutive || !_supermarketStoreDetailsHourSameSchedule(head, next)) {
         break;
       }
@@ -532,7 +577,10 @@ List<SupermarketStoreDetailsHourUiRow> supermarketStoreDetailsGroupedHourUiRows(
   Iterable<SupermarketStoreDetailsHour>? storeHours,
 ) {
   final hours = List<SupermarketStoreDetailsHour>.from(storeHours ?? const [])
-    ..sort((a, b) => (a.dayOfWeek ?? 0).compareTo(b.dayOfWeek ?? 0));
+    ..sort(
+      (a, b) => (supermarketStoreDetailsHourDayIndex(a.dayOfWeek) ?? 0)
+          .compareTo(supermarketStoreDetailsHourDayIndex(b.dayOfWeek) ?? 0),
+    );
   if (hours.isEmpty) return [];
   return _supermarketStoreDetailsHourGroupConsecutiveSame(hours).map((range) {
     final first = hours[range.startIdx];
@@ -542,8 +590,8 @@ List<SupermarketStoreDetailsHourUiRow> supermarketStoreDetailsGroupedHourUiRows(
     if (first.isClosed == true) {
       return (dayLabel: dayLabel, timeText: 'مغلق');
     }
-    final open = supermarketStoreDetailsFormatTimeHm(first.opensAt);
-    final close = supermarketStoreDetailsFormatTimeHm(first.closesAt);
+    final open = supermarketStoreDetailsFormatTimeHm(first.openTime);
+    final close = supermarketStoreDetailsFormatTimeHm(first.closeTime);
     if (open.isEmpty && close.isEmpty) {
       return (dayLabel: dayLabel, timeText: '');
     }
@@ -562,12 +610,22 @@ String _supermarketStoreDetailsHourLineStringFromRow(
 List<String> supermarketStoreDetailsGroupedHourLines(
   Iterable<SupermarketStoreDetailsHour>? storeHours,
 ) {
-  return supermarketStoreDetailsGroupedHourUiRows(storeHours)
-      .map(_supermarketStoreDetailsHourLineStringFromRow)
-      .toList();
+  final rows = supermarketStoreDetailsGroupedHourUiRows(storeHours);
+  if (rows.isEmpty) {
+    return const [supermarketStoreDetailsHoursUnavailableMessage];
+  }
+  return rows.map(_supermarketStoreDetailsHourLineStringFromRow).toList();
 }
 
-String supermarketStoreDetailsHourDayLabelAr(int? dayOfWeek) {
+String supermarketStoreDetailsHourDayLabelAr(String? dayOfWeek) {
+  final index = supermarketStoreDetailsHourDayIndex(dayOfWeek);
+  if (index != null) {
+    return _supermarketStoreDetailsHourDayLabelArByIndex(index);
+  }
+  return dayOfWeek?.trim().isNotEmpty == true ? dayOfWeek!.trim() : '—';
+}
+
+String _supermarketStoreDetailsHourDayLabelArByIndex(int dayOfWeek) {
   switch (dayOfWeek) {
     case 0:
       return 'الأحد';
@@ -584,7 +642,7 @@ String supermarketStoreDetailsHourDayLabelAr(int? dayOfWeek) {
     case 6:
       return 'السبت';
     default:
-      return 'يوم ${dayOfWeek ?? '-'}';
+      return 'يوم $dayOfWeek';
   }
 }
 
@@ -593,8 +651,8 @@ String supermarketStoreDetailsFormatHourLine(SupermarketStoreDetailsHour h) {
   if (h.isClosed == true) {
     return '$day: مغلق';
   }
-  final open = supermarketStoreDetailsFormatTimeHm(h.opensAt);
-  final close = supermarketStoreDetailsFormatTimeHm(h.closesAt);
+  final open = supermarketStoreDetailsFormatTimeHm(h.openTime);
+  final close = supermarketStoreDetailsFormatTimeHm(h.closeTime);
   if (open.isEmpty && close.isEmpty) {
     return day;
   }

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +12,12 @@ import '../../../sm_discover/view/manager/bloc/sm_discover_bloc.dart';
 import '../screens/sm_store_details_screen.dart';
 
 class StoreCoverSection extends StatefulWidget {
-  const StoreCoverSection({super.key, this.store, this.storeId = 0, this.onShareTap});
+  const StoreCoverSection({
+    super.key,
+    this.store,
+    this.storeId = 0,
+    this.onShareTap,
+  });
   final SmStarterStoreDetailsData? store;
   final int storeId;
   final VoidCallback? onShareTap;
@@ -173,7 +176,7 @@ class _StoreCoverSectionState extends State<StoreCoverSection> {
                     ),
                     child: unknownHeader || logoUrl.isEmpty
                         ? AppImage.asset(
-                            AppImages.store,
+                            AppImages.defaultStore,
                             width: 80,
                             height: 80,
                             borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -182,7 +185,17 @@ class _StoreCoverSectionState extends State<StoreCoverSection> {
                           )
                         : AppImage.network(
                             logoUrl,
-                            errorWidget: Icon(Icons.error_outline),
+                            errorWidget: AppImage.asset(
+                              AppImages.defaultStore,
+                              width: 80,
+                              height: 80,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(16),
+                              ),
+                              fit: BoxFit.contain,
+                              errorWidget: Icon(Icons.store_outlined),
+                            )
+                            ,
                             width: 80,
                             height: 80,
                             borderRadius: BorderRadius.all(Radius.circular(16)),

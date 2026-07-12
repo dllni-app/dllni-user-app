@@ -11,7 +11,8 @@ class AppImages {
   static const String whatsapp = "assets/images/whatsapp.png";
   static const String avatar = "assets/images/avatar.png";
   static const String products = "assets/images/products.png";
-  static const String store = "assets/images/store.png";
+  static const String defaultStore = "assets/images/default_store.png";
+  static const String defaultProduct = "assets/images/default_product.png";
 
   // categories
   static const String chocolate = "assets/images/chocolate.png";

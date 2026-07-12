@@ -39,7 +39,7 @@ class StoreLocationCard extends StatelessWidget {
             child: Row(
               children: [
                 AppImage.asset(
-                  AppImages.store,
+                  AppImages.defaultStore,
                   fit: BoxFit.cover,
                   size: 56,
                   borderRadius: BorderRadius.all(Radius.circular(12)),

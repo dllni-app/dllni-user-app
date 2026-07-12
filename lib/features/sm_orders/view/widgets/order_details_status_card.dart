@@ -1,14 +1,14 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-import '../../../orders/data/models/orders_api_models.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/app_images.dart';
+import '../../../orders/data/models/orders_api_models.dart';
 
 class OrderStatus extends StatelessWidget {
-  const OrderStatus({super.key, required this.order});
-
   final OrderResourceModel order;
+
+  const OrderStatus({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class OrderStatus extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 19,
-            backgroundImage: AssetImage(AppImages.store),
+            backgroundImage: AssetImage(AppImages.defaultStore),
           ),
           Expanded(
             child: AppText(

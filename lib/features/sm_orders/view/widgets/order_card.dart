@@ -2,10 +2,10 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../orders/data/models/orders_api_models.dart';
-import '../../../orders/view/widgets/order_delivery_summary_card.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/app_images.dart';
+import '../../../orders/data/models/orders_api_models.dart';
+import '../../../orders/view/widgets/order_delivery_summary_card.dart';
 
 class OrderCard extends StatelessWidget {
   const OrderCard({super.key, required this.order, required this.onTap});
@@ -88,7 +88,7 @@ class OrderCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundImage: AssetImage(AppImages.store),
+                    backgroundImage: AssetImage(AppImages.defaultStore),
                   ),
                   SizedBox(width: 6),
                   Expanded(

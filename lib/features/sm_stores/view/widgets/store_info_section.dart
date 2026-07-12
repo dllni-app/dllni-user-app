@@ -65,7 +65,7 @@ class StoreInfoSection extends StatelessWidget {
           SizedBox(height: 8),
           if (hourRows.isEmpty)
             AppText(
-              "—",
+              supermarketStoreDetailsHoursUnavailableMessage,
               style: TextStyle(
                 color: Color(0xFF4B5563),
                 fontSize: 14,
