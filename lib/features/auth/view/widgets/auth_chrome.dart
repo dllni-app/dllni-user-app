@@ -1,8 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/widgets/support_whatsapp_launcher.dart';
 import '../../../../generated/assets.dart';
 
 /// Shared background, title, card container, and footer for auth screens.
@@ -77,9 +77,7 @@ class AuthTrailing extends StatelessWidget {
             children: [
               AppText.bodySmall('هل تواجه مشكلة في تسجيل الدخول؟', color: Color(0xff9CA3AF), style: const TextStyle(fontSize: 12)),
               GestureDetector(
-                onTap: () {
-                  launchUrl(Uri.parse('https://wa.me/message/XJOZBNT3VS5SJ1'));
-                },
+                onTap: () => launchSupportWhatsApp(context),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

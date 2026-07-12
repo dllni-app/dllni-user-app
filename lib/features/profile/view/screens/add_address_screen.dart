@@ -289,13 +289,24 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AppText.bodyMedium(
-                                'الحي',
-                                fontWeight: FontWeight.w500,
+                              Row(
+                                children: [
+                                  AppText.bodyMedium(
+                                    'الحي',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  AppText.bodyMedium(
+                                    '*',
+                                    color: context.error,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
-                                initialValue: _selectedNeighborhood,
+                                initialValue: _selectedNeighborhood?.isEmpty ?? true
+                                    ? null
+                                    : _selectedNeighborhood,
                                 decoration: InputDecoration(
                                   hintText: 'اختر الحي',
                                   hintStyle: const TextStyle(
@@ -342,6 +353,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                 onChanged: (value) => setState(
                                   () => _selectedNeighborhood = value ?? '',
                                 ),
+                                validator: _requiredValidator,
                               ),
                             ],
                           ),
@@ -449,16 +461,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                         AppToast.showToast(
                                           context: context,
                                           message: phoneError,
-                                          type: ToastificationType.error,
-                                        );
-                                        return;
-                                      }
-                                      if (_selectedNeighborhood?.isEmpty ??
-                                          true) {
-                                        AppToast.showToast(
-                                          context: context,
-                                          message:
-                                              "لم يتم تحديد الحي اوتوماتيكيا الرجاء تحديد الحي يدويا",
                                           type: ToastificationType.error,
                                         );
                                         return;

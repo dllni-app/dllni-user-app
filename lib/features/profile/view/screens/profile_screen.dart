@@ -7,9 +7,9 @@ import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../../generated/assets.dart';
 import '../../../../core/session/user_session_store.dart';
+import '../../../../core/widgets/support_whatsapp_launcher.dart';
 import '../../../auth/data/models/login_response_model.dart';
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
@@ -46,9 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   LoggedInUserModel get _personalDetailsParams =>
       _readLoggedInUser() ?? LoggedInUserModel();
 
-  Future<void> _openSupport() async {
-    await launchUrl(Uri.parse('https://wa.me/message/XJOZBNT3VS5SJ1'));
-  }
+  Future<void> _openSupport() => launchSupportWhatsApp(context);
 
   Widget _supportSection(BuildContext context) {
     return Column(
