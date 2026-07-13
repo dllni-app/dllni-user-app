@@ -1,6 +1,7 @@
+import 'dart:io';
+
 import 'package:common_package/helpers/api_handler.dart';
 import 'package:common_package/helpers/dio_network.dart';
-import 'package:dio/dio.dart';
 
 import '../../domain/usecases/sos_use_cases.dart';
 import '../models/sos_api_models.dart';
@@ -24,17 +25,16 @@ class SupportCasesRemoteDataSource with HandlingApiManager {
 
   Future<CleaningSosAlertModel> createComplaint(
     CreateCleaningComplaintParams params,
-  ) async {
-    final data = FormData.fromMap(params.getBody());
-    for (final path in params.attachmentPaths) {
-      final normalized = path.trim();
-      if (normalized.isEmpty) continue;
-      data.files.add(
-        MapEntry(
-          'attachments[]',
-          await MultipartFile.fromFile(normalized),
-        ),
-      );
+  ) {
+    final data = <String, dynamic>{...params.getBody()};
+    final files = params.attachmentPaths
+        .map((path) => path.trim())
+        .where((path) => path.isNotEmpty)
+        .map(File.new)
+        .toList(growable: false);
+
+    if (files.isNotEmpty) {
+      data['attachments'] = files;
     }
 
     return wrapHandlingApi(
