@@ -34,7 +34,7 @@ class SupportCasesRemoteDataSource with HandlingApiManager {
         .toList(growable: false);
 
     if (files.isNotEmpty) {
-      data['attachments'] = files;
+      data['attachments[]'] = files;
     }
 
     return wrapHandlingApi(
