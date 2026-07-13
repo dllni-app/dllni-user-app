@@ -30,6 +30,7 @@ import '../models/orders_api_models.dart';
 import '../models/sos_api_models.dart';
 import '../models/submit_cleaning_review_model.dart';
 import '../source/orders_remote_data_source.dart';
+import '../source/support_cases_remote_data_source.dart';
 import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../models/fetch_supermarket_cart_model.dart';
 import '../../domain/usecases/remove_supermarket_cart_use_case.dart';
@@ -41,6 +42,11 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   final OrdersRemoteDataSource ordersRemoteDataSource;
 
   OrdersRepoImpl({required this.ordersRemoteDataSource});
+
+  late final SupportCasesRemoteDataSource _supportCasesRemoteDataSource =
+      SupportCasesRemoteDataSource(
+        dioNetwork: ordersRemoteDataSource.dioNetwork,
+      );
 
   @override
   DataResponse<FetchOrdersModel> fetchOrders(FetchOrdersParams params) =>
@@ -224,8 +230,17 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
   DataResponse<CleaningSosAlertModel> createCleaningUserSos(
     CreateCleaningUserSosParams params,
   ) =>
-      wrapHandlingException(tryCall: () => ordersRemoteDataSource.createCleaningUserSos(params));
+      wrapHandlingException(
+        tryCall: () => _supportCasesRemoteDataSource.createEmergency(params),
+      );
 
+  @override
+  DataResponse<CleaningSosAlertModel> createCleaningComplaint(
+    CreateCleaningComplaintParams params,
+  ) =>
+      wrapHandlingException(
+        tryCall: () => _supportCasesRemoteDataSource.createComplaint(params),
+      );
 
   @override
   DataResponse<FetchSupermarketCartModel> fetchSupermarketCart(FetchSupermarketCartParams params) {
@@ -233,7 +248,6 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
       tryCall: () => ordersRemoteDataSource.fetchSupermarketCart(params),
     );
   }
-
 
   @override
   DataResponse<RemoveSupermarketCartModel> removeSupermarketCart(RemoveSupermarketCartParams params) {
@@ -247,4 +261,5 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
     return wrapHandlingException(
       tryCall: () => ordersRemoteDataSource.getSingleSupermarketCart(params),
     );
-  }}
+  }
+}
