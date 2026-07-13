@@ -110,6 +110,7 @@ class CreateCleaningUserSosParams with Params {
   final String message;
   final double? latitude;
   final double? longitude;
+  final String? clientRequestId;
 
   CreateCleaningUserSosParams({
     required this.orderId,
@@ -117,18 +118,65 @@ class CreateCleaningUserSosParams with Params {
     required this.message,
     this.latitude,
     this.longitude,
+    this.clientRequestId,
   });
 
   @override
   BodyMap getBody() {
     final body = <String, dynamic>{
-      'emergency_type': emergencyType,
-      'message': message.trim(),
+      'kind': 'emergency',
+      'bookingId': orderId,
+      'bookingType': 'cleaning_booking',
+      'emergencyType': emergencyType,
+      'description': message.trim(),
     };
     if (latitude != null && longitude != null) {
       body['latitude'] = latitude;
       body['longitude'] = longitude;
     }
+    final requestId = clientRequestId?.trim();
+    if (requestId != null && requestId.isNotEmpty) {
+      body['clientRequestId'] = requestId;
+    }
     return body;
   }
+}
+
+class CreateCleaningComplaintUseCase
+    implements UseCase<CleaningSosAlertModel, CreateCleaningComplaintParams> {
+  final OrdersRepo ordersRepo;
+
+  CreateCleaningComplaintUseCase({required this.ordersRepo});
+
+  @override
+  DataResponse<CleaningSosAlertModel> call(CreateCleaningComplaintParams params) {
+    return ordersRepo.createCleaningComplaint(params);
+  }
+}
+
+class CreateCleaningComplaintParams with Params {
+  final int orderId;
+  final String category;
+  final String description;
+  final List<String> attachmentPaths;
+  final String? clientRequestId;
+
+  CreateCleaningComplaintParams({
+    required this.orderId,
+    required this.category,
+    required this.description,
+    this.attachmentPaths = const <String>[],
+    this.clientRequestId,
+  });
+
+  @override
+  BodyMap getBody() => <String, dynamic>{
+        'kind': 'complaint',
+        'bookingId': orderId,
+        'bookingType': 'cleaning_booking',
+        'category': category,
+        'description': description.trim(),
+        if (clientRequestId != null && clientRequestId!.trim().isNotEmpty)
+          'clientRequestId': clientRequestId!.trim(),
+      };
 }

@@ -1,0 +1,34 @@
+name: Support Cases
+
+on:
+  pull_request:
+    paths:
+      - 'lib/features/orders/**'
+      - 'common_package/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/support-cases.yml'
+
+jobs:
+  support-cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format support case sources
+        run: dart format lib/features/orders/data/repository/orders_repo_impl.dart lib/features/orders/data/source/support_cases_remote_data_source.dart lib/features/orders/domain/repository/orders_repo.dart lib/features/orders/domain/usecases/sos_use_cases.dart lib/features/orders/view/screens/cleaning_order_problem_report_screen.dart lib/features/orders/view/screens/cleaning_order_sos_screen.dart
+
+      - name: Analyze support case changes
+        run: flutter analyze lib/features/orders/data/repository/orders_repo_impl.dart lib/features/orders/data/source/support_cases_remote_data_source.dart lib/features/orders/domain/repository/orders_repo.dart lib/features/orders/domain/usecases/sos_use_cases.dart lib/features/orders/view/screens/cleaning_order_problem_report_screen.dart lib/features/orders/view/screens/cleaning_order_sos_screen.dart

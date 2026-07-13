@@ -1,7 +1,12 @@
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/features/orders/domain/repository/orders_repo.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/sos_use_cases.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../data/models/cleaning_orders_api_models.dart';
 
@@ -18,19 +23,48 @@ class CleaningOrderProblemReportScreen extends StatefulWidget {
   final CleaningOrderProblemReportArgs args;
 
   @override
-  State<CleaningOrderProblemReportScreen> createState() => _CleaningOrderProblemReportScreenState();
+  State<CleaningOrderProblemReportScreen> createState() =>
+      _CleaningOrderProblemReportScreenState();
 }
 
-class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemReportScreen> {
-  static const int _descriptionLimit = 200;
-  final TextEditingController _descriptionController = TextEditingController();
-  int? _selectedIssueIndex;
+class _CleaningOrderProblemReportScreenState
+    extends State<CleaningOrderProblemReportScreen> {
+  static const int _descriptionLimit = 1000;
+  static const int _maxAttachments = 4;
 
-  final List<({String title, String subtitle})> _issues = const <({String title, String subtitle})>[
-    (title: 'جودة الخدمة لم تكن مرضية', subtitle: 'لم أرَ كما كنت أتوقع'),
-    (title: 'حدث ضرر لأحد الممتلكات', subtitle: 'إهمال التعامل بالممتلكات'),
-    (title: 'سلوك مقدم الخدمة كان غير لائق', subtitle: 'تحدث بأسلوب غير لائق'),
-    (title: 'مشكلة في الفاتورة', subtitle: 'المبلغ النهائي غير كما هو في تفاصيل الحجز'),
+  final TextEditingController _descriptionController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
+  final List<({XFile file, Uint8List bytes})> _attachments = [];
+
+  int? _selectedIssueIndex;
+  bool _submitting = false;
+
+  final List<({String category, String title, String subtitle})> _issues = const [
+    (
+      category: 'poor_quality',
+      title: 'جودة الخدمة لم تكن مرضية',
+      subtitle: 'لم تكن النتيجة كما كنت أتوقع',
+    ),
+    (
+      category: 'property_damage',
+      title: 'حدث ضرر لأحد الممتلكات',
+      subtitle: 'ضرر أو إهمال في التعامل مع الممتلكات',
+    ),
+    (
+      category: 'unprofessional',
+      title: 'سلوك مقدم الخدمة كان غير لائق',
+      subtitle: 'تصرف أو تحدث بأسلوب غير مناسب',
+    ),
+    (
+      category: 'billing_issue',
+      title: 'مشكلة في الفاتورة',
+      subtitle: 'المبلغ لا يطابق تفاصيل الحجز',
+    ),
+    (
+      category: 'other',
+      title: 'مشكلة أخرى',
+      subtitle: 'أي مشكلة أخرى مرتبطة بالخدمة',
+    ),
   ];
 
   @override
@@ -39,24 +73,98 @@ class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemR
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _pickImage() async {
+    if (_attachments.length >= _maxAttachments || _submitting) return;
+
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1800,
+    );
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+
+    if (bytes.lengthInBytes > 2 * 1024 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب ألا يتجاوز حجم الصورة 2 ميجابايت')),
+      );
+      return;
+    }
+
+    setState(() => _attachments.add((file: picked, bytes: bytes)));
+  }
+
+  Future<void> _submit() async {
+    final orderId = widget.args.order.id;
     final description = _descriptionController.text.trim();
+
     if (_selectedIssueIndex == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى تحديد طبيعة المشكلة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تحديد طبيعة المشكلة')),
+      );
       return;
     }
-    if (description.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى كتابة وصف المشكلة')));
+    if (orderId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر تحديد رقم الحجز')),
+      );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال المشكلة بنجاح')));
-    Navigator.of(context).pop();
+    if (description.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى كتابة وصف واضح للمشكلة')),
+      );
+      return;
+    }
+    if (_submitting) return;
+
+    setState(() => _submitting = true);
+
+    final selectedIssue = _issues[_selectedIssueIndex!];
+    final useCase = CreateCleaningComplaintUseCase(
+      ordersRepo: getIt<OrdersRepo>(),
+    );
+    final result = await useCase(
+      CreateCleaningComplaintParams(
+        orderId: orderId,
+        category: selectedIssue.category,
+        description: description,
+        attachmentPaths: _attachments.map((item) => item.file.path).toList(),
+        clientRequestId:
+            'complaint-$orderId-${DateTime.now().millisecondsSinceEpoch}',
+      ),
+    );
+
+    if (!mounted) return;
+
+    result.fold(
+      (failure) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(failure.message)),
+        );
+      },
+      (supportCase) {
+        setState(() => _submitting = false);
+        final caseLabel = supportCase.id == null
+            ? ''
+            : ' رقم البلاغ: ${supportCase.id}';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تم إرسال الشكوى بنجاح.$caseLabel')),
+        );
+        Navigator.of(context).pop(true);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final descriptionLength = _descriptionController.text.length;
-    final booking = widget.args.order.bookingNumber ?? '#${widget.args.order.id ?? '-'}';
+    final booking =
+        widget.args.order.bookingNumber ?? '#${widget.args.order.id ?? '-'}';
+
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
@@ -65,7 +173,13 @@ class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemR
           backgroundColor: const Color(0xffF4F5F7),
           elevation: 0,
           centerTitle: true,
-          title: const Text('وصف المشكلة', style: TextStyle(color: Color(0xff1F2937), fontWeight: FontWeight.w700)),
+          title: const Text(
+            'الإبلاغ عن مشكلة',
+            style: TextStyle(
+              color: Color(0xff1F2937),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           foregroundColor: const Color(0xff1F2937),
         ),
         body: SafeArea(
@@ -76,73 +190,89 @@ class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemR
                   padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 24),
                   child: Column(
                     children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xffE5E7EB)),
-                        ),
+                      _card(
                         child: Text(
-                          'رقم الطلب: $booking',
-                          style: const TextStyle(color: Color(0xff6B7280), fontWeight: FontWeight.w600, fontSize: 12),
-                          textAlign: TextAlign.start,
+                          'رقم الحجز: $booking',
+                          style: const TextStyle(
+                            color: Color(0xff6B7280),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 12),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                      _card(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: const [
-                                CircleAvatar(radius: 11, backgroundColor: Color(0xff20BFC8), child: Text('1', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11))),
-                                SizedBox(width: 8),
-                                Text('تحديد طبيعة المشكلة', style: TextStyle(color: Color(0xff1F2937), fontWeight: FontWeight.w700)),
-                              ],
+                            const _StepTitle(
+                              number: '1',
+                              title: 'تحديد طبيعة المشكلة',
+                              subtitle: 'اختر النوع الأقرب للمشكلة التي واجهتها',
                             ),
-                            const SizedBox(height: 2),
-                            const Padding(
-                              padding: EdgeInsetsDirectional.only(start: 30),
-                              child: Text('اختر نوع مشكلتك لمساعدتك', style: TextStyle(color: Color(0xff9CA3AF), fontSize: 12)),
-                            ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             ...List.generate(_issues.length, (index) {
                               final item = _issues[index];
                               final selected = _selectedIssueIndex == index;
                               return Padding(
-                                padding: const EdgeInsetsDirectional.only(bottom: 8),
+                                padding: const EdgeInsets.only(bottom: 8),
                                 child: InkWell(
-                                  onTap: () => setState(() => _selectedIssueIndex = index),
+                                  onTap: _submitting
+                                      ? null
+                                      : () => setState(
+                                            () => _selectedIssueIndex = index,
+                                          ),
                                   borderRadius: BorderRadius.circular(10),
                                   child: Container(
                                     width: double.infinity,
-                                    padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 10),
+                                    padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
-                                      color: selected ? const Color(0xffEEF6FF) : const Color(0xffF9FAFB),
-                                      border: Border.all(color: selected ? const Color(0xff20BFC8) : const Color(0xffE5E7EB)),
+                                      color: selected
+                                          ? const Color(0xffEEF6FF)
+                                          : const Color(0xffF9FAFB),
+                                      border: Border.all(
+                                        color: selected
+                                            ? const Color(0xff20BFC8)
+                                            : const Color(0xffE5E7EB),
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Text(item.title, style: const TextStyle(color: Color(0xff1F2937), fontWeight: FontWeight.w600, fontSize: 13)),
+                                              Text(
+                                                item.title,
+                                                style: const TextStyle(
+                                                  color: Color(0xff1F2937),
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
                                               const SizedBox(height: 2),
-                                              Text(item.subtitle, style: const TextStyle(color: Color(0xff9CA3AF), fontSize: 11)),
+                                              Text(
+                                                item.subtitle,
+                                                style: const TextStyle(
+                                                  color: Color(0xff9CA3AF),
+                                                  fontSize: 11,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
                                         Checkbox(
                                           value: selected,
                                           activeColor: const Color(0xff20BFC8),
-                                          onChanged: (_) => setState(() => _selectedIssueIndex = index),
+                                          onChanged: _submitting
+                                              ? null
+                                              : (_) => setState(
+                                                    () =>
+                                                        _selectedIssueIndex =
+                                                            index,
+                                                  ),
                                         ),
                                       ],
                                     ),
@@ -154,107 +284,124 @@ class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemR
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 12),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                      _card(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: const [
-                                CircleAvatar(radius: 11, backgroundColor: Color(0xff20BFC8), child: Text('2', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11))),
-                                SizedBox(width: 8),
-                                Text('تقديم وصف تفصيلي للمشكلة', style: TextStyle(color: Color(0xff1F2937), fontWeight: FontWeight.w700)),
-                              ],
+                            const _StepTitle(
+                              number: '2',
+                              title: 'وصف المشكلة',
+                              subtitle:
+                                  'أضف التفاصيل التي تساعد فريق الدعم على المراجعة',
                             ),
-                            const SizedBox(height: 2),
-                            const Padding(
-                              padding: EdgeInsetsDirectional.only(start: 30),
-                              child: Text('هل لديك ملاحظات أو تفاصيل تدعم شكواك؟', style: TextStyle(color: Color(0xff9CA3AF), fontSize: 12)),
-                            ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             TextField(
                               controller: _descriptionController,
+                              enabled: !_submitting,
                               maxLines: 5,
                               maxLength: _descriptionLimit,
+                              onChanged: (_) => setState(() {}),
                               decoration: InputDecoration(
-                                hintText: 'وصف المشكلة',
-                                counterText: '$descriptionLength/$_descriptionLimit',
+                                hintText: 'اكتب تفاصيل المشكلة',
+                                counterText:
+                                    '$descriptionLength/$_descriptionLimit',
                                 filled: true,
                                 fillColor: const Color(0xffF9FAFB),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0xffE5E7EB)),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0xffE5E7EB)),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Color(0xff20BFC8)),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xffE5E7EB),
+                                  ),
                                 ),
                               ),
-                              onChanged: (_) => setState(() {}),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 12),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                      _card(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: const [
-                                CircleAvatar(radius: 11, backgroundColor: Color(0xff20BFC8), child: Text('3', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11))),
-                                SizedBox(width: 8),
-                                Text('صور الأضرار', style: TextStyle(color: Color(0xff1F2937), fontWeight: FontWeight.w700)),
-                              ],
+                            const _StepTitle(
+                              number: '3',
+                              title: 'الصور والأدلة',
+                              subtitle:
+                                  'يمكنك إرفاق حتى 4 صور، بحد أقصى 2 ميجابايت للصورة',
                             ),
-                            const SizedBox(height: 2),
-                            const Padding(
-                              padding: EdgeInsetsDirectional.only(start: 30),
-                              child: Text('يرجى تقديم وصف تفصيلي للمشكلة', style: TextStyle(color: Color(0xff9CA3AF), fontSize: 12)),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
                               children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 90,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xffF9FAFB),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xffD1D5DB), style: BorderStyle.solid),
-                                    ),
-                                    child: const Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.upload_rounded, color: Color(0xff6B7280)),
-                                        SizedBox(height: 6),
-                                        Text('اضغط لرفع صورة', style: TextStyle(color: Color(0xff6B7280), fontSize: 12)),
-                                      ],
-                                    ),
+                                ..._attachments.asMap().entries.map(
+                                  (entry) => Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.memory(
+                                          entry.value.bytes,
+                                          width: 105,
+                                          height: 90,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      PositionedDirectional(
+                                        top: -8,
+                                        end: -8,
+                                        child: IconButton.filled(
+                                          visualDensity: VisualDensity.compact,
+                                          iconSize: 16,
+                                          onPressed: _submitting
+                                              ? null
+                                              : () => setState(
+                                                    () => _attachments.removeAt(
+                                                      entry.key,
+                                                    ),
+                                                  ),
+                                          icon: const Icon(Icons.close),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Container(
-                                    height: 90,
-                                    decoration: BoxDecoration(color: const Color(0xffD1D5DB), borderRadius: BorderRadius.circular(12)),
+                                if (_attachments.length < _maxAttachments)
+                                  InkWell(
+                                    onTap: _submitting ? null : _pickImage,
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      width: 105,
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xffF9FAFB),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xffD1D5DB),
+                                        ),
+                                      ),
+                                      child: const Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.add_photo_alternate_outlined,
+                                            color: Color(0xff6B7280),
+                                          ),
+                                          SizedBox(height: 6),
+                                          Text(
+                                            'إضافة صورة',
+                                            style: TextStyle(
+                                              color: Color(0xff6B7280),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
-                            const SizedBox(height: 8),
-                            const Text('الحد الأقصى: 2 ميجابايت', style: TextStyle(color: Color(0xff6B7280), fontSize: 11)),
-                            const SizedBox(height: 3),
-                            const Text('الصيغ المدعومة: JPG, PNG', style: TextStyle(color: Color(0xff6B7280), fontSize: 11)),
                           ],
                         ),
                       ),
@@ -268,13 +415,31 @@ class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemR
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: _submit,
+                    onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
                       backgroundColor: const Color(0xff20BFC8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    child: const Text('إرسال المشكلة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                    child: _submitting
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'إرسال البلاغ',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -282,6 +447,75 @@ class _CleaningOrderProblemReportScreenState extends State<CleaningOrderProblemR
           ),
         ),
       ),
+    );
+  }
+
+  Widget _card({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _StepTitle extends StatelessWidget {
+  const _StepTitle({
+    required this.number,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String number;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 11,
+          backgroundColor: const Color(0xff20BFC8),
+          child: Text(
+            number,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xff1F2937),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Color(0xff9CA3AF),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

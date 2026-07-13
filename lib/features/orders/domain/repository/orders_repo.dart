@@ -133,8 +133,11 @@ abstract class OrdersRepo {
     CreateCleaningUserSosParams params,
   );
 
-  DataResponse<FetchSupermarketCartModel> fetchSupermarketCart(FetchSupermarketCartParams params);
+  DataResponse<CleaningSosAlertModel> createCleaningComplaint(
+    CreateCleaningComplaintParams params,
+  );
 
+  DataResponse<FetchSupermarketCartModel> fetchSupermarketCart(FetchSupermarketCartParams params);
 
   DataResponse<RemoveSupermarketCartModel> removeSupermarketCart(RemoveSupermarketCartParams params);
 
