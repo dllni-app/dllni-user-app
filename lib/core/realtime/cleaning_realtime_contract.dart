@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../features/orders/data/models/cleaning_booking_status.dart';
 
 class CleaningRealtimeContract {
@@ -216,15 +218,15 @@ class CleaningRealtimeContract {
     final latitude = _asDouble(unwrapped['latitude'] ?? unwrapped['lat']);
     final longitude = _asDouble(unwrapped['longitude'] ?? unwrapped['lng']);
     if (latitude == null || longitude == null) return null;
-    final workerId = _asInt(unwrapped['workerId'] ?? unwrapped['worker_id']);
-    final updatedAt = (unwrapped['updatedAt'] ?? unwrapped['updated_at'])
-        ?.toString();
-    return CleaningRealtimeLocation(
+    final location = CleaningRealtimeLocation(
       latitude: latitude,
       longitude: longitude,
-      workerId: workerId,
-      updatedAt: updatedAt,
+      workerId: _asInt(unwrapped['workerId'] ?? unwrapped['worker_id']),
+      bookingId: extractBookingId(unwrapped),
+      updatedAt: (unwrapped['updatedAt'] ?? unwrapped['updated_at'])?.toString(),
     );
+    CleaningRealtimeLocationBus.publish(location);
+    return location;
   }
 
   static int? _asInt(dynamic value) {
@@ -264,16 +266,32 @@ class CleaningRealtimeContract {
   }
 }
 
+class CleaningRealtimeLocationBus {
+  CleaningRealtimeLocationBus._();
+
+  static final StreamController<CleaningRealtimeLocation> _controller =
+      StreamController<CleaningRealtimeLocation>.broadcast(sync: true);
+
+  static Stream<CleaningRealtimeLocation> get stream => _controller.stream;
+
+  static void publish(CleaningRealtimeLocation location) {
+    if (_controller.isClosed) return;
+    _controller.add(location);
+  }
+}
+
 class CleaningRealtimeLocation {
   const CleaningRealtimeLocation({
     required this.latitude,
     required this.longitude,
     this.workerId,
+    this.bookingId,
     this.updatedAt,
   });
 
   final double latitude;
   final double longitude;
   final int? workerId;
+  final int? bookingId;
   final String? updatedAt;
 }
