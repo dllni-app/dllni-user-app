@@ -14,6 +14,60 @@ bool _workerAcceptanceEquals(
       a.isFulfilled == b.isFulfilled;
 }
 
+bool _intListEquals(List<int>? a, List<int>? b) {
+  if (identical(a, b)) return true;
+  if (a == null || b == null || a.length != b.length) return false;
+  for (var index = 0; index < a.length; index++) {
+    if (a[index] != b[index]) return false;
+  }
+  return true;
+}
+
+bool _workerAssignmentEquals(
+  CleaningWorkerAssignmentModel a,
+  CleaningWorkerAssignmentModel b,
+) {
+  return a.id == b.id &&
+      a.workerId == b.workerId &&
+      a.status == b.status &&
+      a.acceptedAt == b.acceptedAt &&
+      a.roomCount == b.roomCount &&
+      a.roomsWeight == b.roomsWeight &&
+      a.serviceShareAmount == b.serviceShareAmount &&
+      a.travelFee == b.travelFee &&
+      a.adminMarginAmount == b.adminMarginAmount &&
+      a.workerAmount == b.workerAmount &&
+      a.currency == b.currency &&
+      _intListEquals(a.roomIds, b.roomIds) &&
+      a.worker?.id == b.worker?.id &&
+      a.worker?.name == b.worker?.name &&
+      a.worker?.phone == b.worker?.phone &&
+      a.worker?.averageRating == b.worker?.averageRating &&
+      a.worker?.avatarUrl == b.worker?.avatarUrl;
+}
+
+bool _workerAssignmentsEqual(
+  List<CleaningWorkerAssignmentModel>? a,
+  List<CleaningWorkerAssignmentModel>? b,
+) {
+  if (identical(a, b)) return true;
+  if (a == null || b == null || a.length != b.length) return false;
+
+  final byId = <int, CleaningWorkerAssignmentModel>{
+    for (final assignment in b)
+      if (assignment.id != null) assignment.id!: assignment,
+  };
+
+  for (var index = 0; index < a.length; index++) {
+    final assignment = a[index];
+    final other = assignment.id == null ? b[index] : byId[assignment.id];
+    if (other == null || !_workerAssignmentEquals(assignment, other)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool cleaningOrderListDisplayEquals(
   CleaningOrderModel a,
   CleaningOrderModel b,
@@ -62,10 +116,7 @@ bool cleaningOrderDetailDisplayEquals(
       _nullableEquals(a.worker?.avatarUrl, b.worker?.avatarUrl) &&
       _nullableEquals(a.preferredWorker?.id, b.preferredWorker?.id) &&
       _workerAcceptanceEquals(a.workerAcceptance, b.workerAcceptance) &&
-      _nullableEquals(
-        a.workerAssignments?.length,
-        b.workerAssignments?.length,
-      ) &&
+      _workerAssignmentsEqual(a.workerAssignments, b.workerAssignments) &&
       _nullableEquals(a.roomAssignments?.length, b.roomAssignments?.length) &&
       _nullableEquals(a.propertyDetails?.address, b.propertyDetails?.address);
 }
