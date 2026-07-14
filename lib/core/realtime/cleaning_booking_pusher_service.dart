@@ -90,9 +90,12 @@ class CleaningBookingPusherService {
   }
 
   Future<void> subscribeBookingChannel(int bookingId) async {
+    // Start the persisted-location fallback immediately; it must not wait for
+    // Pusher authentication or socket connection to finish.
+    CleaningTrackingSessionBus.activate(bookingId);
+
     if (_bookingListenerHandles.containsKey(bookingId)) {
       log('⚠️ Attempted to subscribe to already active channel: $bookingId');
-      CleaningTrackingSessionBus.activate(bookingId);
       return;
     }
 
@@ -100,7 +103,10 @@ class CleaningBookingPusherService {
       channelName: 'private-cleaning-booking.$bookingId',
       onEvent: (event) {
         log('🚀 Pusher Event Received: ${event.eventName}');
-        if (!CleaningRealtimeContract.isLocationEvent(event.eventName)) {
+        final normalizedEventName = event.eventName.startsWith('.')
+            ? event.eventName.substring(1)
+            : event.eventName;
+        if (!CleaningRealtimeContract.isLocationEvent(normalizedEventName)) {
           CleaningTrackingSessionBus.requestRefresh(bookingId);
         }
         final handler = _bookingHandlers[bookingId];
@@ -114,7 +120,6 @@ class CleaningBookingPusherService {
       },
     );
     _bookingListenerHandles[bookingId] = handle;
-    CleaningTrackingSessionBus.activate(bookingId);
   }
 
   Future<void> unsubscribeBookingChannel(int bookingId) async {
