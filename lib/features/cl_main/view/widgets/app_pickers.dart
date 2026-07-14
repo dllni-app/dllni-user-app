@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/app_date_time_locale.dart';
 
+/// Cleaning pickers show Arabic UI but always return English canonical values
+/// (`yyyy-MM-dd`, `HH:mm`) for business logic and API payloads.
 class AppPickers {
+  static const Locale _pickerUiLocale = Locale('ar');
+
   static Future<String> showAppTimePicker({
     required BuildContext context,
     DateTime? minimumTime,
@@ -14,7 +18,7 @@ class AppPickers {
           : TimeOfDay.now(),
       builder: (context, child) => Localizations.override(
         context: context,
-        locale: AppDateTimeLocale.locale,
+        locale: _pickerUiLocale,
         child: Theme(
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.light(
@@ -88,6 +92,7 @@ class AppPickers {
   static Future<String> showAppDatePicker({
     required BuildContext context,
     DateTime? startDate,
+    DateTime? initialDate,
   }) async {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -95,34 +100,54 @@ class AppPickers {
     final requestedStartDate = startDate == null
         ? todayDate
         : DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
-    );
+            startDate.year,
+            startDate.month,
+            startDate.day,
+          );
 
     final firstSelectableDate =
-    requestedStartDate.difference(todayDate).inDays <= 1
-        ? todayDate
-        : requestedStartDate;
+        requestedStartDate.difference(todayDate).inDays <= 1
+            ? todayDate
+            : requestedStartDate;
+
+    final lastSelectableDate = todayDate.add(const Duration(days: 365 * 5));
+
+    final requestedInitialDate = initialDate == null
+        ? requestedStartDate
+        : DateTime(
+            initialDate.year,
+            initialDate.month,
+            initialDate.day,
+          );
+
+    final clampedInitialDate = requestedInitialDate.isBefore(firstSelectableDate)
+        ? firstSelectableDate
+        : requestedInitialDate.isAfter(lastSelectableDate)
+            ? lastSelectableDate
+            : requestedInitialDate;
 
     final DateTime? res = await showDatePicker(
       context: context,
-      locale: AppDateTimeLocale.locale,
-      initialDate: firstSelectableDate,
+      locale: _pickerUiLocale,
+      initialDate: clampedInitialDate,
       firstDate: firstSelectableDate,
-      lastDate: todayDate.add(const Duration(days: 365 * 5)),
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: ColorScheme.light(
-            primary: Theme.of(context).primaryColor,
-            onPrimary: Colors.white,
-            onSurface: Colors.black,
+      lastDate: lastSelectableDate,
+      builder: (context, child) => Localizations.override(
+        context: context,
+        locale: _pickerUiLocale,
+        child: Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Colors.white,
+            ),
           ),
-          dialogTheme: const DialogThemeData(
-            backgroundColor: Colors.white,
-          ),
+          child: child!,
         ),
-        child: child!,
       ),
     );
 
@@ -130,5 +155,4 @@ class AppPickers {
 
     return AppDateTimeLocale.dateFormat('yyyy-MM-dd').format(res);
   }
-
 }

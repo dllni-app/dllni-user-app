@@ -5,7 +5,8 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
-import 'package:dllni_user_app/core/utils/app_date_time_locale.dart';
+import 'package:dllni_user_app/core/utils/cleaning_date_time_ui_format.dart';
+import 'package:dllni_user_app/core/utils/cleaning_schedule_date_time_logic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -53,6 +54,8 @@ class CleaningOrderRescheduleScreen extends StatefulWidget {
 class _CleaningOrderRescheduleScreenState
     extends State<CleaningOrderRescheduleScreen> {
   late DateTime _selectedDate;
+  late String _fromTimeHhMm;
+  late String _toTimeHhMm;
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
   late final ClMainBloc _clMainBloc;
@@ -66,13 +69,17 @@ class _CleaningOrderRescheduleScreenState
     super.initState();
     _clMainBloc = getIt<ClMainBloc>();
     _selectedDate = _resolveInitialDate(widget.args.order.scheduledDate);
-    _fromTimeController = TextEditingController(
-      text: _resolveInitialTime(
-        widget.args.order.scheduledTime,
-        fallback: getNextHourCeil(),
-      ),
+    _fromTimeHhMm = _resolveInitialTime(
+      widget.args.order.scheduledTime,
+      fallback: getNextHourCeil(),
     );
-    _toTimeController = TextEditingController();
+    _toTimeHhMm = _fromTimeHhMm;
+    _fromTimeController = TextEditingController(
+      text: CleaningDateTimeUiFormat.time(_fromTimeHhMm),
+    );
+    _toTimeController = TextEditingController(
+      text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
+    );
     _selectedGenderPreference = widget.args.order.genderPreference;
     _syncToTime(_parseOrderEstimatedHours());
     _requestEstimate();
@@ -104,8 +111,16 @@ class _CleaningOrderRescheduleScreenState
   }
 
   DateTime _resolveInitialDate(String? value) {
-    if (value == null || value.isEmpty) return DateTime.now().add(const Duration(hours: 1));
-    return DateTime.tryParse(value) ?? DateTime.now().add(const Duration(hours: 1));
+    if (value == null || value.isEmpty) {
+      return CleaningScheduleDateTimeLogic.tomorrowDate();
+    }
+    return CleaningScheduleDateTimeLogic.parseDateApi(value) ??
+        CleaningScheduleDateTimeLogic.tomorrowDate();
+  }
+
+  void _updateTimeDisplay() {
+    _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
+    _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
   }
 
   String _resolveInitialTime(String? value, {required String fallback}) {
@@ -115,7 +130,7 @@ class _CleaningOrderRescheduleScreenState
     final hour = int.tryParse(parts[0]);
     final minute = int.tryParse(parts[1]);
     if (hour == null || minute == null) return fallback;
-    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+    return CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
   }
 
   bool get _hasRequiredOrderData {
@@ -159,10 +174,13 @@ class _CleaningOrderRescheduleScreenState
   }
 
   Future<void> _pickDate() async {
-    final value = await AppPickers.showAppDatePicker(context: context);
+    final value = await AppPickers.showAppDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+    );
     if (value.isEmpty) return;
     setState(() {
-      _selectedDate = AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
+      _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
     });
   }
 
@@ -173,10 +191,11 @@ class _CleaningOrderRescheduleScreenState
 
   void _syncToTime(double estimatedHours) {
     if (estimatedHours <= 0) return;
-    _toTimeController.text = formatClServiceEndTime(
-      startTime: _fromTimeController.text,
+    _toTimeHhMm = formatClServiceEndTime(
+      startTime: _fromTimeHhMm,
       durationHours: estimatedHours,
     );
+    _updateTimeDisplay();
   }
 
   Future<void> _pickFromTime() async {
@@ -186,7 +205,7 @@ class _CleaningOrderRescheduleScreenState
     );
     if (value.isEmpty) return;
     setState(() {
-      _fromTimeController.text = value;
+      _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
       _syncToTime(_resolveEstimatedHours(_clMainBloc.state));
     });
   }
@@ -242,10 +261,10 @@ class _CleaningOrderRescheduleScreenState
         livingRoomSize: details.livingRoomSize!,
         address: details.address ?? '',
         locationName: order.locationName ?? 'المنزل',
-        scheduledDate: AppDateTimeLocale.dateFormat(
-          'yyyy-MM-dd',
-        ).format(_selectedDate),
-        scheduledTime: _fromTimeController.text,
+        scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+          _selectedDate,
+        ),
+        scheduledTime: _fromTimeHhMm,
         addressLatitude: order.addressLatitude!,
         addressLongitude: order.addressLongitude!,
         genderPreference: _selectedGenderPreference,
@@ -288,10 +307,8 @@ class _CleaningOrderRescheduleScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = AppDateTimeLocale.dateFormat('EEEE').format(_selectedDate);
-    final dayDate = AppDateTimeLocale.dateFormat(
-      'd MMM yyyy',
-    ).format(_selectedDate);
+    final dayAr = CleaningDateTimeUiFormat.weekday(_selectedDate);
+    final dayDate = CleaningDateTimeUiFormat.date(_selectedDate);
     final isSaveDisabled = _isSaving || _missingDataMessage != null;
 
     return BlocProvider.value(

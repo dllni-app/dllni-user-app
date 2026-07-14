@@ -14,7 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:toastification/toastification.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/utils/app_date_time_locale.dart';
+import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/view/widgets/cl_service_address_section_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_day_preview_card_widget.dart';
@@ -164,8 +164,12 @@ class _CleaningOrderDetailsScreenState
     final endDateTime = startDateTime?.add(
       Duration(minutes: (_resolveHours(order) * 60).round()),
     );
-    _fromTimeController.text = _timeLabel(startDateTime);
-    _toTimeController.text = _timeLabel(endDateTime);
+    _fromTimeController.text = CleaningDateTimeUiFormat.timeFromDateTime(
+      startDateTime,
+    );
+    _toTimeController.text = CleaningDateTimeUiFormat.timeFromDateTime(
+      endDateTime,
+    );
     final statusNorm = _normStatus(order.status);
     final isTerminalStatus =
         statusNorm == CleaningBookingStatus.completed ||
@@ -580,8 +584,10 @@ class _CleaningOrderDetailsScreenState
                               children: [
                                 Expanded(
                                   child: ClServiceDayPreviewCardWidget(
-                                    dayAr: _dayLabel(order.scheduledDate),
-                                    dayDate: _dayDateEnLabel(
+                                    dayAr: CleaningDateTimeUiFormat.weekdayFromApiDate(
+                                      order.scheduledDate,
+                                    ),
+                                    dayDate: CleaningDateTimeUiFormat.dateFromApiDate(
                                       order.scheduledDate,
                                     ),
                                   ),
@@ -705,6 +711,9 @@ class _CleaningOrderDetailsScreenState
                               )
                             : null,
                         bookingStatus: statusNorm,
+                        hasStartedTravel:
+                            order.startedTravelAt != null &&
+                            order.arrivedAt == null,
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -768,18 +777,6 @@ class _CleaningOrderDetailsScreenState
                                 ),
                               ],
                             ),
-                            if (order.startedTravelAt != null &&
-                                order.arrivedAt == null) ...[
-                              const SizedBox(height: 10),
-                              const Text(
-                                'مقدم الخدمة في الطريق إلى موقعك.',
-                                style: TextStyle(
-                                  color: Color(0xff0CBBC7),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
                             if (_workerLiveLatitude != null &&
                                 _workerLiveLongitude != null) ...[
                               const SizedBox(height: 8),
@@ -1225,29 +1222,6 @@ class _CleaningOrderDetailsScreenState
     _pusherService.setBookingErrorHandler(bookingId, _onCleaningPusherError);
     _subscribedBookingId = bookingId;
     unawaited(_pusherService.subscribeBookingChannel(bookingId));
-  }
-
-  String _dayDateEnLabel(String? rawDate) {
-    if (rawDate == null || rawDate.isEmpty) return '-';
-    final date = DateTime.tryParse(rawDate);
-    if (date == null) return '-';
-    return AppDateTimeLocale.dateFormat('d MMM yyyy').format(date);
-  }
-
-  String _dayLabel(String? rawDate) {
-    if (rawDate == null || rawDate.isEmpty) return '-';
-    final date = DateTime.tryParse(rawDate);
-    if (date == null) return '-';
-    const arabicDays = <String>[
-      'الاثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
-    ];
-    return arabicDays[date.weekday - 1];
   }
 
   CleaningWorkerAcceptanceModel? _effectiveWorkerAcceptance(
@@ -1997,15 +1971,6 @@ class _CleaningOrderDetailsScreenState
     _completionSheetDismissed =
         normalizedStatus == CleaningBookingStatus.awaitingCustomerCompletion &&
         _gateSession.isCompletionSuppressed(orderId);
-  }
-
-  String _timeLabel(DateTime? value) {
-    if (value == null) return '-';
-    final hour = value.hour;
-    final minute = value.minute;
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final normalizedHour = hour % 12 == 0 ? 12 : hour % 12;
-    return '${normalizedHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
   }
 }
 

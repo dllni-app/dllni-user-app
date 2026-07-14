@@ -24,6 +24,7 @@ Future<void> main() async {
   await DebugFileLogger.runGuarded(() async {
     Intl.defaultLocale = AppDateTimeLocale.languageCode;
     await initializeDateFormatting(AppDateTimeLocale.intlLocale);
+    await initializeDateFormatting('ar');
     if (kIsWeb) {
       usePathUrlStrategy();
     }

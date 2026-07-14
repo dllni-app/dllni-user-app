@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../../core/utils/app_date_time_locale.dart';
+import '../../../../core/utils/cleaning_date_time_ui_format.dart';
+import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../data/models/cleaning_services_response_model.dart';
@@ -50,6 +51,8 @@ class _ClMainServiceScheduleScreenState
     extends State<ClMainServiceScheduleScreen> {
   ClMainBloc? _bloc;
   late DateTime _selectedDate;
+  late String _fromTimeHhMm;
+  late String _toTimeHhMm;
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
   late TextEditingController _couponController;
@@ -69,8 +72,8 @@ class _ClMainServiceScheduleScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = _arabicWeekdayLabel(_selectedDate);
-    final dayDate = _arabicDayDateLabel(_selectedDate);
+    final dayAr = CleaningDateTimeUiFormat.weekday(_selectedDate);
+    final dayDate = CleaningDateTimeUiFormat.date(_selectedDate);
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final bloc = _bloc;
 
@@ -243,6 +246,12 @@ class _ClMainServiceScheduleScreenState
                             adminMargin: estimate?.pricing?.adminMargin,
                             isPricingFinal: estimate?.pricing?.isPricingFinal,
                             currency: estimate?.pricing?.currency ?? 'SYP',
+                            scheduleDayLabel: dayAr,
+                            scheduleDateLabel: dayDate,
+                            scheduleTimeRange: CleaningDateTimeUiFormat.timeRange(
+                              _fromTimeHhMm,
+                              _toTimeHhMm,
+                            ),
                           ),
                         ],
                       ),
@@ -304,28 +313,23 @@ class _ClMainServiceScheduleScreenState
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now().add(const Duration(hours: 1));
-    _fromTimeController = TextEditingController(text: getNextHourCeil());
-    _toTimeController = TextEditingController();
+    _selectedDate = CleaningScheduleDateTimeLogic.tomorrowDate();
+    _fromTimeHhMm = '09:00';
+    _toTimeHhMm = '09:00';
+    _fromTimeController = TextEditingController(
+      text: CleaningDateTimeUiFormat.time(_fromTimeHhMm),
+    );
+    _toTimeController = TextEditingController(
+      text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
+    );
     _couponController = TextEditingController();
     _customServiceController = TextEditingController();
   }
-  String getNextHourCeil() {
-    DateTime time = DateTime.now();
-    DateTime result;
 
-    if (time.minute == 0 && time.second == 0 && time.millisecond == 0) {
-      result = time.add(const Duration(hours: 1));
-    } else {
-      result = DateTime(time.year, time.month, time.day, time.hour + 2);
-    }
-
-    String hour = result.hour.toString().padLeft(2, '0');
-    String minute = result.minute.toString().padLeft(2, '0');
-
-    return "$hour:$minute";
+  void _updateTimeDisplay() {
+    _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
+    _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
   }
-
 
   void _addCustomCleaningService() {
     final normalized = _customServiceController.text.trim();
@@ -382,35 +386,53 @@ class _ClMainServiceScheduleScreenState
     });
   }
 
-  String _arabicDayDateLabel(DateTime date) {
-    const months = <String>[
-      'كانون الثاني',
-      'شباط',
-      'آذار',
-      'نيسان',
-      'أيار',
-      'حزيران',
-      'تموز',
-      'آب',
-      'أيلول',
-      'تشرين الأول',
-      'تشرين الثاني',
-      'كانون الأول',
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  Future<void> _pickDate() async {
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
+    final value = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: tomorrow,
+      initialDate: _selectedDate,
+    );
+
+    if (value.isEmpty) return;
+
+    setState(() {
+      _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
+    });
   }
 
-  String _arabicWeekdayLabel(DateTime date) {
-    const days = <String>[
-      'الاثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
-    ];
-    return days[date.weekday - 1];
+  Future<void> _pickFromTime() async {
+    final now = DateTime.now();
+
+    final isToday =
+        _selectedDate.year == now.year &&
+            _selectedDate.month == now.month &&
+            _selectedDate.day == now.day;
+
+    final value = await AppPickers.showAppTimePicker(
+      context: context,
+      minimumTime: isToday ? now.add(const Duration(hours: 1)) : null,
+    );
+
+    if (value.isEmpty) return;
+
+    setState(() {
+      _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
+      _syncToTime();
+    });
+  }
+
+  void _syncToTime() {
+    final estimatedHours =
+        _currentEstimate?.size?.estimatedHours ??
+            _routeArgs?.estimate.size?.estimatedHours ??
+            0;
+
+    _toTimeHhMm = formatClServiceEndTime(
+      startTime: _fromTimeHhMm,
+      durationHours: estimatedHours,
+    );
+    _updateTimeDisplay();
   }
 
   Future<void> _loadCleaningServices() async {
@@ -527,10 +549,10 @@ class _ClMainServiceScheduleScreenState
           addressId: int.parse(selectedAddress.value?.id ?? '0'),
           address: selectedAddress.value?.line1,
           locationName: selectedAddress.value?.label,
-          scheduledDate: AppDateTimeLocale.dateFormat(
-            'yyyy-MM-dd',
-          ).format(_selectedDate),
-          scheduledTime: _fromTimeController.text,
+          scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+            _selectedDate,
+          ),
+          scheduledTime: _fromTimeHhMm,
           addressLatitude: null,
           addressLongitude: null,
           genderPreference: state.genderPreference,
@@ -546,56 +568,6 @@ class _ClMainServiceScheduleScreenState
           termsAccepted: true,
         ),
       ),
-    );
-  }
-
-  Future<void> _pickDate() async {
-    final value = await AppPickers.showAppDatePicker(
-      context: context,
-      startDate: DateTime.now(),
-    );
-
-    if (value.isEmpty) return;
-
-    setState(() {
-      _selectedDate =
-          AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
-
-      // إذا أصبح التاريخ ليس اليوم فلا يوجد أي قيود على الوقت.
-      // وإذا بقي اليوم فإن showAppTimePicker سيطبق minimumTime تلقائياً.
-    });
-  }
-
-  Future<void> _pickFromTime() async {
-    final now = DateTime.now();
-
-    final isToday =
-        _selectedDate.year == now.year &&
-            _selectedDate.month == now.month &&
-            _selectedDate.day == now.day;
-
-    final value = await AppPickers.showAppTimePicker(
-      context: context,
-      minimumTime: isToday ? now.add(const Duration(hours: 1)) : null,
-    );
-
-    if (value.isEmpty) return;
-
-    setState(() {
-      _fromTimeController.text = value;
-      _syncToTime();
-    });
-  }
-
-  void _syncToTime() {
-    final estimatedHours =
-        _currentEstimate?.size?.estimatedHours ??
-            _routeArgs?.estimate.size?.estimatedHours ??
-            0;
-
-    _toTimeController.text = formatClServiceEndTime(
-      startTime: _fromTimeController.text,
-      durationHours: estimatedHours,
     );
   }
 

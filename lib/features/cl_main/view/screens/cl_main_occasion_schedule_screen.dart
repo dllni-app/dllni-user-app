@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
-import '../../../../core/utils/app_date_time_locale.dart';
+import '../../../../core/utils/cleaning_date_time_ui_format.dart';
+import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
@@ -46,6 +47,8 @@ class ClMainOccasionScheduleScreen extends StatefulWidget {
 class _ClMainOccasionScheduleScreenState
     extends State<ClMainOccasionScheduleScreen> {
   late DateTime _selectedDate;
+  late String _fromTimeHhMm;
+  late String _toTimeHhMm;
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
   late TextEditingController _couponController;
@@ -91,8 +94,8 @@ class _ClMainOccasionScheduleScreenState
         body: SafeArea(child: Center(child: CircularProgressIndicator())),
       );
     }
-    final dayAr = _arabicWeekdayLabel(_selectedDate);
-    final dayDate = _arabicDayDateLabel(_selectedDate);
+    final dayAr = CleaningDateTimeUiFormat.weekday(_selectedDate);
+    final dayDate = CleaningDateTimeUiFormat.date(_selectedDate);
     final estimate = _activeEstimate;
 
     return BlocProvider.value(
@@ -303,6 +306,12 @@ class _ClMainOccasionScheduleScreenState
                             adminMargin: estimate?.pricing?.adminMargin,
                             isPricingFinal: estimate?.pricing?.isPricingFinal,
                             currency: estimate?.pricing?.currency ?? 'SYP',
+                            scheduleDayLabel: dayAr,
+                            scheduleDateLabel: dayDate,
+                            scheduleTimeRange: CleaningDateTimeUiFormat.timeRange(
+                              _fromTimeHhMm,
+                              _toTimeHhMm,
+                            ),
                           ),
                         ],
                       ),
@@ -364,42 +373,22 @@ class _ClMainOccasionScheduleScreenState
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now().add(const Duration(days: 1));
-    _fromTimeController = TextEditingController(text: '09:00');
-    _toTimeController = TextEditingController();
+    _selectedDate = CleaningScheduleDateTimeLogic.tomorrowDate();
+    _fromTimeHhMm = '09:00';
+    _toTimeHhMm = '09:00';
+    _fromTimeController = TextEditingController(
+      text: CleaningDateTimeUiFormat.time(_fromTimeHhMm),
+    );
+    _toTimeController = TextEditingController(
+      text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
+    );
     _couponController = TextEditingController();
     _selectedAddress = ValueNotifier(null);
   }
 
-  String _arabicDayDateLabel(DateTime date) {
-    const months = <String>[
-      'كانون الثاني',
-      'شباط',
-      'آذار',
-      'نيسان',
-      'أيار',
-      'حزيران',
-      'تموز',
-      'آب',
-      'أيلول',
-      'تشرين الأول',
-      'تشرين الثاني',
-      'كانون الأول',
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  String _arabicWeekdayLabel(DateTime date) {
-    const days = <String>[
-      'الاثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
-    ];
-    return days[date.weekday - 1];
+  void _updateTimeDisplay() {
+    _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
+    _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
   }
 
   Future<void> _handleGenderPreferenceChanged(
@@ -489,10 +478,10 @@ class _ClMainOccasionScheduleScreenState
           hours: args.hours,
           address: selectedAddress.value?.line1,
           locationName: selectedAddress.value?.label,
-          scheduledDate: AppDateTimeLocale.dateFormat(
-            'yyyy-MM-dd',
-          ).format(_selectedDate),
-          scheduledTime: _fromTimeController.text,
+          scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+            _selectedDate,
+          ),
+          scheduledTime: _fromTimeHhMm,
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: assignment.assignmentMode,
@@ -510,13 +499,15 @@ class _ClMainOccasionScheduleScreenState
   }
 
   Future<void> _pickDate() async {
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
     final value = await AppPickers.showAppDatePicker(
       context: context,
-      startDate: DateTime.now().add(const Duration(days: 1)),
+      startDate: tomorrow,
+      initialDate: _selectedDate,
     );
     if (value.isEmpty) return;
     setState(() {
-      _selectedDate = AppDateTimeLocale.dateFormat('yyyy-MM-dd').parse(value);
+      _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
     });
   }
 
@@ -524,7 +515,7 @@ class _ClMainOccasionScheduleScreenState
     final value = await AppPickers.showAppTimePicker(context: context);
     if (value.isEmpty) return;
     setState(() {
-      _fromTimeController.text = value;
+      _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
       _syncToTime();
     });
   }
@@ -621,10 +612,11 @@ class _ClMainOccasionScheduleScreenState
   }
 
   void _syncToTime() {
-    _toTimeController.text = formatClServiceEndTime(
-      startTime: _fromTimeController.text,
+    _toTimeHhMm = formatClServiceEndTime(
+      startTime: _fromTimeHhMm,
       durationHours: _estimatedHours,
     );
+    _updateTimeDisplay();
   }
 }
 

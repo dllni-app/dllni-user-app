@@ -12,6 +12,9 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     this.adminMargin,
     this.isPricingFinal,
     required this.currency,
+    this.scheduleDayLabel,
+    this.scheduleDateLabel,
+    this.scheduleTimeRange,
     super.key,
   });
 
@@ -23,17 +26,27 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   final double? adminMargin;
   final bool? isPricingFinal;
   final String currency;
-
-
+  final String? scheduleDayLabel;
+  final String? scheduleDateLabel;
+  final String? scheduleTimeRange;
 
   String _formatDistance(double distance) {
     final fixed = distance.toStringAsFixed(3);
     return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
   }
 
+  String? get _scheduleDateLine {
+    if (scheduleDayLabel == null && scheduleDateLabel == null) return null;
+    if (scheduleDayLabel != null && scheduleDateLabel != null) {
+      return '$scheduleDayLabel، $scheduleDateLabel';
+    }
+    return scheduleDayLabel ?? scheduleDateLabel;
+  }
+
   @override
   Widget build(BuildContext context) {
     final showProvisionalWarning = isPricingFinal == false;
+    final scheduleDateLine = _scheduleDateLine;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -52,6 +65,25 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
             textAlign: TextAlign.right,
           ),
           const SizedBox(height: 14),
+          if (scheduleDateLine != null) ...[
+            _SummaryRowWidget(
+              label: 'موعد الخدمة',
+              value: scheduleDateLine,
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty) ...[
+            _SummaryRowWidget(
+              label: 'الوقت',
+              value: scheduleTimeRange!,
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (scheduleDateLine != null ||
+              (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty)) ...[
+            const Divider(color: Color(0xFFE5E7EB), thickness: 1),
+            const SizedBox(height: 8),
+          ],
           _SummaryRowWidget(
             label: 'قيمة الخدمة',
             value: basePrice.formatMoney(),
