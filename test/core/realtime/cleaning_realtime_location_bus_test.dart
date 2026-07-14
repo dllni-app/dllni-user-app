@@ -44,8 +44,14 @@ void main() {
 
       await subscription.cancel();
 
-      expect(emitted.map((item) => item.workerId), <int?>[1, 2]);
-      expect(emitted.map((item) => item.bookingId), <int?>[55, 55]);
+      expect(
+        emitted.map((item) => item.workerId).toList(growable: false),
+        <int?>[1, 2],
+      );
+      expect(
+        emitted.map((item) => item.bookingId).toList(growable: false),
+        <int?>[55, 55],
+      );
     });
   });
 }
