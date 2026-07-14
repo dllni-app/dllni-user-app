@@ -92,7 +92,9 @@ class FavouriteProductsTab extends StatelessWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.65,
+                      // A stable vertical extent prevents long Arabic titles and
+                      // larger system text from painting over the next grid row.
+                      mainAxisExtent: 300,
                     ),
                     delegate: SliverChildBuilderDelegate((_, index) {
                       final item = _mapFavouriteProductToStoreItem(pagination.list[index]);
