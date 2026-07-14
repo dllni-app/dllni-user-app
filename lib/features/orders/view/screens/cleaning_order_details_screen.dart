@@ -7,6 +7,7 @@ import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_gate_session_store.dart';
+import 'package:dllni_user_app/core/realtime/cleaning_global_verification_gate_coordinator.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_realtime_contract.dart';
 import 'package:dllni_user_app/core/realtime/pusher_manager.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +33,7 @@ import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../helpers/cleaning_event_assistance_helper.dart';
+import '../helpers/cleaning_extension_decision_presenter.dart';
 import '../helpers/cleaning_lifecycle_error_mapper.dart';
 import '../helpers/cleaning_order_polling_equality.dart';
 import '../helpers/cleaning_order_realtime_policy.dart';
@@ -97,6 +99,8 @@ class _CleaningOrderDetailsScreenState
   Timer? _detailsPollTimer;
   bool _isDetailsFetchInFlight = false;
   CleaningWorkerAcceptanceModel? _liveWorkerAcceptance;
+  final Set<int> _handledExtensionRejectedWarnings = <int>{};
+  bool _extensionRejectedDialogOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -500,12 +504,14 @@ class _CleaningOrderDetailsScreenState
                               children: [
                                 Expanded(
                                   child: ClServiceDayPreviewCardWidget(
-                                    dayAr: CleaningDateTimeUiFormat.weekdayFromApiDate(
-                                      order.scheduledDate,
-                                    ),
-                                    dayDate: CleaningDateTimeUiFormat.dateFromApiDate(
-                                      order.scheduledDate,
-                                    ),
+                                    dayAr:
+                                        CleaningDateTimeUiFormat.weekdayFromApiDate(
+                                          order.scheduledDate,
+                                        ),
+                                    dayDate:
+                                        CleaningDateTimeUiFormat.dateFromApiDate(
+                                          order.scheduledDate,
+                                        ),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -1191,6 +1197,15 @@ class _CleaningOrderDetailsScreenState
     if (triggerGatePrompts) {
       unawaited(_maybePromptForCompletionGate());
       final order = _order;
+      final coordinator =
+          CleaningGlobalVerificationGateCoordinator.activeInstance;
+      if (order != null &&
+          coordinator != null &&
+          _normStatus(order.status) ==
+              CleaningBookingStatus.awaitingStartVerification) {
+        final orderId = order.id ?? _activeOrderId;
+        unawaited(coordinator.requestStartVerificationPrompt(orderId: orderId));
+      }
       if (_reopenCompletionAfterRefresh &&
           order != null &&
           _normStatus(order.status) ==
@@ -1367,6 +1382,16 @@ class _CleaningOrderDetailsScreenState
 
     if (normalizedEvent == CleaningRealtimeContract.awaitingStartVerification) {
       _gateSession.clearStartDismissed(_activeOrderId);
+      final coordinator =
+          CleaningGlobalVerificationGateCoordinator.activeInstance;
+      if (coordinator != null) {
+        unawaited(
+          coordinator.requestStartVerificationPrompt(
+            orderId: _activeOrderId,
+            force: true,
+          ),
+        );
+      }
     }
     if (normalizedEvent ==
         CleaningRealtimeContract.awaitingCustomerCompletion) {
@@ -1391,6 +1416,23 @@ class _CleaningOrderDetailsScreenState
       }
     }
 
+    final extensionRejectedDialogData =
+        CleaningExtensionDecisionPresenter.resolveRejectedDialog(
+          normalizedEvent: normalizedEvent,
+          payload: payload,
+          currentStatus: _order?.status,
+          handledWarningIds: _handledExtensionRejectedWarnings,
+        );
+    if (extensionRejectedDialogData != null) {
+      final warningId = extensionRejectedDialogData.warningId;
+      if (warningId != null) {
+        _handledExtensionRejectedWarnings.add(warningId);
+      }
+      unawaited(
+        _showExtensionRejectedDialog(extensionRejectedDialogData.message),
+      );
+    }
+
     final action = CleaningOrderRealtimePolicy.resolve(
       eventName: eventName,
       payload: payload,
@@ -1409,6 +1451,41 @@ class _CleaningOrderDetailsScreenState
     _scheduleDetailsFallbackRefresh(
       fallbackReason: 'realtime_lifecycle_event_refresh',
     );
+  }
+
+  Future<void> _showExtensionRejectedDialog(String message) async {
+    if (!mounted || _extensionRejectedDialogOpen) {
+      return;
+    }
+    _extensionRejectedDialogOpen = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text(
+              'تم رفض طلب تمديد الوقت',
+              textAlign: TextAlign.center,
+            ),
+            content: Text(message, textAlign: TextAlign.center),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
+                  child: const Text('حسناً'),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      _extensionRejectedDialogOpen = false;
+    }
   }
 
   Future<void> _openCompletionSheet({bool force = false}) async {

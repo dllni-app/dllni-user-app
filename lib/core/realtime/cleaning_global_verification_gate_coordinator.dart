@@ -32,6 +32,10 @@ class CleaningGlobalVerificationGateCoordinator {
     required GlobalKey<NavigatorState> navigatorKey,
   }) : _navigatorKey = navigatorKey;
 
+  static CleaningGlobalVerificationGateCoordinator? _activeInstance;
+  static CleaningGlobalVerificationGateCoordinator? get activeInstance =>
+      _activeInstance;
+
   final GlobalKey<NavigatorState> _navigatorKey;
   final CleaningBookingPusherService _pusher =
       getIt<CleaningBookingPusherService>();
@@ -111,6 +115,7 @@ class CleaningGlobalVerificationGateCoordinator {
 
   Future<void> start() async {
     if (_started) return;
+    _activeInstance = this;
     _started = true;
     await _pusher.ensureInitialized();
     await _ensureCustomerRealtimeChannel();
@@ -142,6 +147,19 @@ class CleaningGlobalVerificationGateCoordinator {
       _listeningCustomerId = null;
     }
     _started = false;
+    if (identical(_activeInstance, this)) {
+      _activeInstance = null;
+    }
+  }
+
+  Future<void> requestStartVerificationPrompt({
+    required int orderId,
+    bool force = false,
+  }) {
+    return _promptForStartVerificationGateIfNeeded(
+      orderId: orderId,
+      force: force,
+    );
   }
 
   Future<void> _ensureCustomerRealtimeChannel() async {

@@ -85,6 +85,28 @@ void main() {
       expect(action.reopenCompletionAfterRefresh, isTrue);
     });
 
+    test('extension_declined decision reopens completion sheet', () {
+      final action = CleaningOrderRealtimePolicy.resolve(
+        eventName: 'CompletionDecisionMade',
+        payload: const <String, dynamic>{'decision': 'extension_declined'},
+        currentStatus: CleaningBookingStatus.timeExtensionRequested,
+      );
+
+      expect(action.reopenCompletionAfterRefresh, isTrue);
+    });
+
+    test('worker_rejected_extension decision reopens completion sheet', () {
+      final action = CleaningOrderRealtimePolicy.resolve(
+        eventName: 'CompletionDecisionMade',
+        payload: const <String, dynamic>{
+          'decision': 'worker_rejected_extension',
+        },
+        currentStatus: CleaningBookingStatus.timeExtensionRequested,
+      );
+
+      expect(action.reopenCompletionAfterRefresh, isTrue);
+    });
+
     test(
       'tracking update to awaiting_customer_completion reopens completion',
       () {
