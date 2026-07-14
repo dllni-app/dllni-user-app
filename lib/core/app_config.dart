@@ -6,7 +6,6 @@ class AppConfig {
   static const String baseUrl = 'https://alnadha.net';
 
   /// https://alnadha.net
-  /// https://dllni.mustafafares.com
   /// Pusher public key (same as Laravel `PUSHER_APP_KEY`). Override with
   /// `--dart-define=PUSHER_APP_KEY=...` or legacy `--dart-define=PUSHER_KEY=...`.
   ///
@@ -33,5 +32,5 @@ class AppConfig {
   static const String deepLinkCanonicalScheme = 'https';
 
   /// Canonical host for Universal Links / App Links (same deployment as [baseUrl]).
-  static const String deepLinkCanonicalHost = 'dllni.mustafafares.com';
+  static const String deepLinkCanonicalHost = 'alnadha.net';
 }

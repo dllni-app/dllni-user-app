@@ -397,7 +397,6 @@ class CleaningGlobalVerificationGateCoordinator {
     bool force = false,
   }) async {
     if (!_started || _gatePromptOpen) return;
-    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
     if (_gateSession.isStartVerificationSuppressed(orderId, force: force)) {
       return;
     }
@@ -414,7 +413,6 @@ class CleaningGlobalVerificationGateCoordinator {
 
     final details = await _fetchOrderDetails(orderId);
     if (!_started || _gatePromptOpen) return;
-    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
 
     if (details == null) return;
     _syncGateSessionWithDetails(details);
@@ -435,7 +433,6 @@ class CleaningGlobalVerificationGateCoordinator {
 
     final navContext = _navigatorKey.currentContext;
     if (navContext == null || !navContext.mounted) return;
-    if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
 
     _gatePromptOpen = true;
     var confirmed = false;

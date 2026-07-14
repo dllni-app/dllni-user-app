@@ -26,7 +26,6 @@ import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
-import '../../domain/usecases/confirm_cleaning_start_verification_use_case.dart';
 import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
@@ -44,7 +43,6 @@ import '../widgets/cleaning_cancel_reason_dialog.dart';
 import '../widgets/cleaning_completion_decision_sheet.dart';
 import '../widgets/cleaning_preferred_worker_card_widget.dart';
 import '../widgets/cleaning_room_assignments_section_widget.dart';
-import '../widgets/cleaning_start_verification_dialog.dart';
 import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
 import 'cleaning_order_reschedule_screen.dart';
@@ -89,12 +87,9 @@ class _CleaningOrderDetailsScreenState
 
   String? _gateError;
   bool _gateSubmitting = false;
-  bool _verifyDialogDismissed = false;
-  bool _verifyDialogOpen = false;
   bool _completionSheetDismissed = false;
   bool _completionSheetOpen = false;
   bool _realtimeAuthWarningShown = false;
-  bool _reopenVerificationAfterRefresh = false;
   bool _reopenCompletionAfterRefresh = false;
   bool _isRebooking = false;
   bool _isPatchingRoomAssignments = false;
@@ -375,85 +370,6 @@ class _CleaningOrderDetailsScreenState
                         isEditable: _canEditRoomAssignments(order),
                         isSaving: _isPatchingRoomAssignments,
                         onAssignRoom: _assignRoom,
-                      ),
-                    ],
-                    if (statusNorm ==
-                        CleaningBookingStatus.awaitingStartVerification) ...[
-                      const SizedBox(height: 12),
-                      _card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'التحقق من بدء الخدمة',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xff1F2937),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'أدخل رمز الأمان من النافذة المنبثقة لتأكيد بدء العمل.',
-                              style: TextStyle(
-                                color: Color(0xff6B7280),
-                                fontSize: 13,
-                              ),
-                            ),
-                            if (_gateError != null) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                _gateError!,
-                                style: const TextStyle(
-                                  color: Color(0xffDC2626),
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 12),
-                            OutlinedButton.icon(
-                              onPressed: _gateSubmitting
-                                  ? null
-                                  : () {
-                                      unawaited(
-                                        _maybePromptForVerifyGate(force: true),
-                                      );
-                                    },
-                              icon: const Icon(Icons.lock_clock_outlined),
-                              label: const Text('إعادة فتح رمز الأمان'),
-                            ),
-                            if (_verifyDialogDismissed) ...[
-                              const SizedBox(height: 8),
-                              const Text(
-                                'تم إغلاق نافذة الرمز. اضغط لإعادة فتحها.',
-                                style: TextStyle(
-                                  color: Color(0xff6B7280),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            FilledButton(
-                              onPressed: _gateSubmitting
-                                  ? null
-                                  : () {
-                                      unawaited(
-                                        _maybePromptForVerifyGate(force: true),
-                                      );
-                                    },
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E2A78),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                              ),
-                              child: const Text(
-                                'فتح نافذة إدخال الرمز',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                     if (statusNorm ==
@@ -1167,48 +1083,6 @@ class _CleaningOrderDetailsScreenState
     );
   }
 
-  Future<String?> _confirmStartVerification(
-    String code,
-    CleaningOrderDetailModel order,
-  ) async {
-    final orderId = order.id;
-    if (orderId == null) return 'تعذر تحديد الطلب';
-    setState(() {
-      _gateSubmitting = true;
-      _gateError = null;
-    });
-    final response = await getIt<ConfirmCleaningStartVerificationUseCase>()(
-      ConfirmCleaningStartVerificationParams(orderId: orderId, code: code),
-    );
-    if (!mounted) return null;
-    String? errorMessage;
-    response.fold(
-      (failure) => setState(() {
-        _gateSubmitting = false;
-        errorMessage = _mapVerificationError(failure);
-      }),
-      (result) {
-        setState(() {
-          _gateSubmitting = false;
-          _gateError = null;
-          _order = result.data;
-          final updatedOrder = result.data;
-          if (updatedOrder != null) {
-            _syncGateSessionWithOrder(updatedOrder);
-            if (updatedOrder.id != null) {
-              _gateSession.clearStartDismissed(updatedOrder.id!);
-            }
-          } else {
-            _gateSession.clearStartDismissed(orderId);
-          }
-          _verifyDialogDismissed = false;
-        });
-      },
-    );
-    if (!mounted) return errorMessage;
-    return errorMessage;
-  }
-
   void _connectCleaningPusher() {
     if (!mounted) return;
     final bookingId = _activeOrderId;
@@ -1315,16 +1189,8 @@ class _CleaningOrderDetailsScreenState
       );
     }
     if (triggerGatePrompts) {
-      unawaited(_maybePromptForVerifyGate());
       unawaited(_maybePromptForCompletionGate());
       final order = _order;
-      if (_reopenVerificationAfterRefresh &&
-          order != null &&
-          _normStatus(order.status) ==
-              CleaningBookingStatus.awaitingStartVerification) {
-        _reopenVerificationAfterRefresh = false;
-        unawaited(_maybePromptForVerifyGate(force: true));
-      }
       if (_reopenCompletionAfterRefresh &&
           order != null &&
           _normStatus(order.status) ==
@@ -1425,10 +1291,6 @@ class _CleaningOrderDetailsScreenState
     return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 24 ساعة. المتبقي: $hours ساعة.';
   }
 
-  String _mapVerificationError(Failure failure) {
-    return CleaningLifecycleErrorMapper.mapVerificationFailure(failure);
-  }
-
   Future<void> _maybePromptForCompletionGate({bool force = false}) async {
     final order = _order;
     if (!mounted || order == null) return;
@@ -1446,56 +1308,6 @@ class _CleaningOrderDetailsScreenState
       return;
     }
     await _openCompletionSheet(force: force);
-  }
-
-  Future<void> _maybePromptForVerifyGate({bool force = false}) async {
-    final order = _order;
-    if (!mounted || order == null) return;
-    final orderId = order.id;
-    if (orderId == null) return;
-    final status = _normStatus(order.status);
-    if (status != CleaningBookingStatus.awaitingStartVerification) {
-      _gateSession.clearStartDismissed(orderId);
-      _verifyDialogDismissed = false;
-      _reopenVerificationAfterRefresh = false;
-      return;
-    }
-    if (_isStartVerificationExpired(order)) {
-      _gateSession.suppressStartVerification(
-        orderId,
-        CleaningGateSuppressionReason.bookingTimeExpired,
-      );
-      setState(() => _verifyDialogDismissed = true);
-      return;
-    }
-    if (_verifyDialogOpen) return;
-    if (_gateSession.isStartVerificationSuppressed(orderId, force: force)) {
-      if (!_verifyDialogDismissed) {
-        setState(() => _verifyDialogDismissed = true);
-      }
-      return;
-    }
-    _verifyDialogOpen = true;
-    final scheduledAt = resolveCleaningBookingStartDateTime(
-      scheduledDate: order.scheduledDate,
-      scheduledTime: order.scheduledTime,
-    );
-    final confirmed = await CleaningStartVerificationDialog.show(
-      context,
-      bookingId: order.id,
-      bookingNumber: order.bookingNumber,
-      dateTime: scheduledAt?.toIso8601String(),
-      workerAvatarUrl: order.worker?.avatarUrl,
-      onSubmit: (code) => _confirmStartVerification(code, order),
-    );
-    if (!mounted) return;
-    _verifyDialogOpen = false;
-    if (!confirmed) {
-      return;
-    }
-    _gateSession.clearStartDismissed(orderId);
-    setState(() => _verifyDialogDismissed = false);
-    unawaited(_fetchDetails(showLoading: false));
   }
 
   Future<void> _navigateToRating(
@@ -1555,12 +1367,6 @@ class _CleaningOrderDetailsScreenState
 
     if (normalizedEvent == CleaningRealtimeContract.awaitingStartVerification) {
       _gateSession.clearStartDismissed(_activeOrderId);
-      _reopenVerificationAfterRefresh = true;
-      if (_verifyDialogDismissed && mounted) {
-        setState(() => _verifyDialogDismissed = false);
-      } else {
-        _verifyDialogDismissed = false;
-      }
     }
     if (normalizedEvent ==
         CleaningRealtimeContract.awaitingCustomerCompletion) {
@@ -1965,9 +1771,6 @@ class _CleaningOrderDetailsScreenState
         CleaningGateSuppressionReason.bookingTimeExpired,
       );
     }
-    _verifyDialogDismissed =
-        normalizedStatus == CleaningBookingStatus.awaitingStartVerification &&
-        _gateSession.isStartVerificationSuppressed(orderId);
     _completionSheetDismissed =
         normalizedStatus == CleaningBookingStatus.awaitingCustomerCompletion &&
         _gateSession.isCompletionSuppressed(orderId);

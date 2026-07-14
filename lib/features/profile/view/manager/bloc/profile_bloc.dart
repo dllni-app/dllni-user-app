@@ -476,6 +476,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             unreadNotification: result.countUnread
           ),
         );
+        if (event.markAllReadOnSuccess) {
+          final hasUnread = (result.countUnread ?? 0) > 0 ||
+              mapped.any((item) => item.isRead != true);
+          if (hasUnread) {
+            add(MarkAllNotificationsReadEvent(silent: true));
+          }
+        }
       },
     );
   }
@@ -485,16 +492,19 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   )
   async {
-    emit(
-      state.copyWith(
-        markAllNotificationsReadStatus: BlocStatus.loading,
-        clearNotificationActionError: true,
-        unreadNotification: 0
-      ),
-    );
+    if (!event.silent) {
+      emit(
+        state.copyWith(
+          markAllNotificationsReadStatus: BlocStatus.loading,
+          clearNotificationActionError: true,
+          unreadNotification: 0
+        ),
+      );
+    }
     final response = await markAllNotificationsReadUseCase(NoParams());
     await response.fold(
       (failure) async {
+        if (event.silent) return;
         emit(
           state.copyWith(
             clearMarkAllNotificationsReadStatus: true,

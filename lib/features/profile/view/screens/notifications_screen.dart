@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,7 +25,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
 
-    profileBloc=widget.args.profileBloc..add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
+    profileBloc=widget.args.profileBloc..add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true, markAllReadOnSuccess: true));
     // TODO: implement initState
     super.initState();
   }
@@ -62,7 +61,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _refreshNotifications(BuildContext context) async {
-    profileBloc.add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
+    profileBloc.add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true, markAllReadOnSuccess: true));
     await profileBloc.stream.firstWhere((state) => state.notificationsStatus != BlocStatus.loading);
   }
 
@@ -91,9 +90,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              _NotificationsAppBar(
-                profileBloc: profileBloc,
-              ),
+              const _NotificationsAppBar(),
               Expanded(
                 child: BlocBuilder<ProfileBloc, ProfileState>(
                   bloc: profileBloc,
@@ -119,7 +116,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             return false;
                           }
                           profileBloc.add(
-                            FetchNotificationsEvent(params: FetchNotificationsParams(perPage: pagination.perPage), loadMore: true),
+                            FetchNotificationsEvent(
+                              params: FetchNotificationsParams(perPage: pagination.perPage),
+                              loadMore: true,
+                              markAllReadOnSuccess: true,
+                            ),
                           );
                           return false;
                         },
@@ -183,9 +184,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 class _NotificationsAppBar extends StatelessWidget {
- final ProfileBloc profileBloc;
-
-  const _NotificationsAppBar({super.key, required this.profileBloc});
+  const _NotificationsAppBar();
 
   @override
   Widget build(BuildContext context) {
@@ -218,25 +217,6 @@ class _NotificationsAppBar extends StatelessWidget {
           SizedBox(width: 12),
           Expanded(
             child: AppText.headlineMedium('الإشعارات', color: context.primary, fontWeight: FontWeight.w700),
-          ),
-          BlocBuilder<ProfileBloc, ProfileState>(
-            bloc: profileBloc,
-            buildWhen: (previous, current) =>
-                previous.notifications != current.notifications || previous.markAllNotificationsReadStatus != current.markAllNotificationsReadStatus,
-            builder: (context, state) {
-              final hasUnread = state.notifications.any((e) => e.isRead != true);
-              final loading = state.markAllNotificationsReadStatus == BlocStatus.loading;
-              return TextButton(
-                onPressed: !hasUnread || loading ? null : () =>profileBloc.add(MarkAllNotificationsReadEvent()),
-                child: loading
-                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: context.primary))
-                    : AppText.labelLarge(
-                        'تعليم الكل كمقروء',
-                        color: hasUnread ? context.primary : const Color(0xff9CA3AF),
-                        fontWeight: FontWeight.w600,
-                      ),
-              );
-            },
           ),
         ],
       ),

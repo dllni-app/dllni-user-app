@@ -18,15 +18,21 @@ class FetchNotificationsEvent extends ProfileEvent with EventWithReload {
   final bool loadMore;
   @override
   final bool isReload;
+  final bool markAllReadOnSuccess;
 
   FetchNotificationsEvent({
     required this.params,
     this.loadMore = false,
     this.isReload = false,
+    this.markAllReadOnSuccess = false,
   });
 }
 
-class MarkAllNotificationsReadEvent extends ProfileEvent {}
+class MarkAllNotificationsReadEvent extends ProfileEvent {
+  final bool silent;
+
+  MarkAllNotificationsReadEvent({this.silent = false});
+}
 
 class MarkNotificationReadEvent extends ProfileEvent {
   final String id;

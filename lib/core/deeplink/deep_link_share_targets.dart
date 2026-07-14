@@ -21,7 +21,8 @@ String restaurantUrl(int id) => '${deepLinkUserApiRoot()}/restaurant/$id';
 String storeUrl(int id) => '${deepLinkBase()}/store/$id';
 
 /// Legacy alias kept for feature modules already importing this helper.
-String restaurantProductUrl(int id) => '${deepLinkUserApiRoot()}/product/$id';
+String restaurantProductUrl(int id) =>
+    '${deepLinkUserApiRoot()}/api/v1/user/products/$id';
 
 /// Legacy alias kept for feature modules already importing this helper.
 String supermarketStoreUrl(int id) => '${deepLinkUserApiRoot()}/store/$id';

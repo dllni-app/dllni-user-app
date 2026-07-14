@@ -11,7 +11,7 @@ void main() {
   });
 
   test('restaurantProductUrl legacy alias', () {
-    expect(restaurantProductUrl(42), '$base/product/42');
+    expect(restaurantProductUrl(42), '$base/api/v1/user/products/42');
   });
 
   test('restaurantUrl', () {
