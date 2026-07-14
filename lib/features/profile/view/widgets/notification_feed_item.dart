@@ -44,6 +44,30 @@ class NotificationFeedItem extends StatelessWidget {
     }
   }
 
+  String _displayBody() {
+    final canonicalType = (notification.canonicalType ?? '').trim().toLowerCase();
+    final type = notification.type.trim().toLowerCase();
+    final isExtensionRejected =
+        canonicalType == 'cleaning.booking.time_extension_rejected' ||
+        type == 'time_extension_rejected';
+
+    if (isExtensionRejected) {
+      final data = notification.data;
+      for (final key in const <String>[
+        'workerRejectMessage',
+        'worker_reject_message',
+        'message',
+      ]) {
+        final value = data?[key]?.toString().trim();
+        if (value != null && value.isNotEmpty) {
+          return 'رد العامل: $value';
+        }
+      }
+    }
+
+    return notification.body ?? '';
+  }
+
   String _relativeTime(String? createdAt) {
     if (createdAt == null || createdAt.isEmpty) {
       return '';
@@ -148,7 +172,7 @@ class NotificationFeedItem extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      AppText.bodyMedium(notification.body ?? '', color: const Color(0xFF4B5563), textAlign: TextAlign.start),
+                      AppText.bodyMedium(_displayBody(), color: const Color(0xFF4B5563), textAlign: TextAlign.start),
                       const SizedBox(height: 4),
                       AppText.labelLarge(
                         _relativeTime(notification.createdAt),
