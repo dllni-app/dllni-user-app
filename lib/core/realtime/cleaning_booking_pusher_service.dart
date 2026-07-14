@@ -3,6 +3,8 @@ import 'dart:developer';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:injectable/injectable.dart';
 
+import 'cleaning_realtime_contract.dart';
+import 'cleaning_tracking_session_bus.dart';
 import 'pusher_manager.dart';
 
 typedef CleaningBookingEventHandler =
@@ -90,14 +92,17 @@ class CleaningBookingPusherService {
   Future<void> subscribeBookingChannel(int bookingId) async {
     if (_bookingListenerHandles.containsKey(bookingId)) {
       log('⚠️ Attempted to subscribe to already active channel: $bookingId');
-      return; // هذا يمنع الاشتراك المتكرر
+      CleaningTrackingSessionBus.activate(bookingId);
+      return;
     }
 
-    if (_bookingListenerHandles.containsKey(bookingId)) return;
     final handle = await _pusherManager.listen(
       channelName: 'private-cleaning-booking.$bookingId',
       onEvent: (event) {
         log('🚀 Pusher Event Received: ${event.eventName}');
+        if (!CleaningRealtimeContract.isLocationEvent(event.eventName)) {
+          CleaningTrackingSessionBus.requestRefresh(bookingId);
+        }
         final handler = _bookingHandlers[bookingId];
         if (handler == null) return;
         handler(event.eventName, event.payload);
@@ -109,11 +114,13 @@ class CleaningBookingPusherService {
       },
     );
     _bookingListenerHandles[bookingId] = handle;
+    CleaningTrackingSessionBus.activate(bookingId);
   }
 
   Future<void> unsubscribeBookingChannel(int bookingId) async {
     final handle = _bookingListenerHandles.remove(bookingId);
     await handle?.dispose();
+    CleaningTrackingSessionBus.deactivate(bookingId);
   }
 
   Future<void> subscribeCustomerChannel(int customerId) async {
@@ -140,6 +147,7 @@ class CleaningBookingPusherService {
   }
 
   Future<void> disposeAllForSession() async {
+    final bookingIds = _bookingListenerHandles.keys.toList(growable: false);
     final bookingHandles = _bookingListenerHandles.values.toList(
       growable: false,
     );
@@ -154,6 +162,9 @@ class CleaningBookingPusherService {
     _customerErrorHandlers.clear();
     for (final handle in bookingHandles) {
       await handle.dispose();
+    }
+    for (final bookingId in bookingIds) {
+      CleaningTrackingSessionBus.deactivate(bookingId);
     }
     for (final handle in customerHandles) {
       await handle.dispose();
