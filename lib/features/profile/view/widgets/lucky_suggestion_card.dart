@@ -55,10 +55,13 @@ class LuckySuggestionCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _SuggestionTag(
-                    label: item.badge.trim().isEmpty ? 'اقتراح' : item.badge,
-                    backgroundColor: const Color(0xffFFF3E8),
-                    foregroundColor: const Color(0xffC75A00),
+                  Flexible(
+                    child: _SuggestionTag(
+                      label:
+                          item.badge.trim().isEmpty ? 'اقتراح' : item.badge,
+                      backgroundColor: const Color(0xffFFF3E8),
+                      foregroundColor: const Color(0xffC75A00),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   _SuggestionTag(
@@ -66,7 +69,7 @@ class LuckySuggestionCard extends StatelessWidget {
                     backgroundColor: const Color(0xffF3F4F6),
                     foregroundColor: const Color(0xff4B5563),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Container(
                     width: 34,
                     height: 34,
@@ -102,6 +105,7 @@ class LuckySuggestionCard extends StatelessWidget {
                           color: const Color(0xff111827),
                           textAlign: TextAlign.start,
                           maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 7),
                         AppText.labelLarge(
@@ -112,6 +116,7 @@ class LuckySuggestionCard extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                           textAlign: TextAlign.start,
                           maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -146,8 +151,10 @@ class LuckySuggestionCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         textAlign: TextAlign.start,
                         maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     AppText.labelLarge(
                       'عرض المنتجات',
                       color: context.primary,
@@ -203,7 +210,10 @@ class _SuggestionTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: 9,
+        vertical: 5,
+      ),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(999),
@@ -213,6 +223,7 @@ class _SuggestionTag extends StatelessWidget {
         color: foregroundColor,
         fontWeight: FontWeight.w700,
         maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
