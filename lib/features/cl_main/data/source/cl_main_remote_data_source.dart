@@ -77,7 +77,7 @@ class ClMainRemoteDataSource with HandlingApiManager {
       tryCall: () => dioNetwork.getData(
         endPoint: '/api/v1/user/cleaning/orders/female-worker-safety-policy',
       ),
-      jsonConvert: (json)=>FemaleWorkerSafetyPolicyModel.fromJson(json),
+      jsonConvert: (json) => FemaleWorkerSafetyPolicyModel.fromJson(json),
     );
   }
 
@@ -86,7 +86,7 @@ class ClMainRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/cleaning/home/banners',
+        endPoint: '/api/v1/user/cleaning/home/content',
         params: params.getParams(),
         data: params.getBody().isEmpty ? null : params.getBody(),
       ),
