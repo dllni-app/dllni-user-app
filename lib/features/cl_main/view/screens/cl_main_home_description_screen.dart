@@ -88,7 +88,7 @@ class _ClMainHomeDescriptionScreenState
           ),
           (
             type: CleaningRoomType.shed,
-            title: 'السقائف',
+            title: 'السقيفة',
             icon: Icons.garage_outlined,
           ),
         ];
@@ -390,8 +390,7 @@ class _ClMainHomeDescriptionScreenState
     ClMainBloc bloc,
     CleaningGenderPreference preference,
   ) async {
-    if (preference.apiValue !=
-        'female') {
+    if (preference.apiValue != 'female') {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
       return;
     }

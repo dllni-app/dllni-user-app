@@ -153,7 +153,7 @@ class _ClMainServiceScheduleScreenState
                             estimatedHours: _effectiveServiceHours(
                               estimatedHours:
                                   estimate?.size?.estimatedHours ?? 0,
-                              numberOfWorkers: state.numberOfWorkers,
+                              numberOfWorkers: _requiredWorkersCount(state),
                             ),
                           ),
                           if (estimate?.workerRoomAssignments.isNotEmpty ??
@@ -427,11 +427,11 @@ class _ClMainServiceScheduleScreenState
   }
 
   void _syncToTime() {
-    final estimatedHours =
-        _currentEstimate?.size?.estimatedHours ??
-            _routeArgs?.estimate.size?.estimatedHours ??
-            0;
-    final numberOfWorkers = _bloc?.state.numberOfWorkers ?? 1;
+    final estimate = _currentEstimate ?? _routeArgs?.estimate;
+    final estimatedHours = estimate?.size?.estimatedHours ?? 0;
+    final blocState = _bloc?.state;
+    final numberOfWorkers =
+        blocState == null ? 1 : _requiredWorkersCount(blocState);
 
     _toTimeHhMm = formatClServiceEndTime(
       startTime: _fromTimeHhMm,
@@ -441,6 +441,17 @@ class _ClMainServiceScheduleScreenState
       ),
     );
     _updateTimeDisplay();
+  }
+
+  /// Worker count used for wall-clock hours.
+  /// - "عامل/ة" (preferredWorker) → always 1
+  /// - "فريق عمل" (openCount) → the team counter
+  int _requiredWorkersCount(ClMainState state) {
+    if (state.assignmentMode != CleaningAssignmentMode.openCount) {
+      return 1;
+    }
+    final count = state.numberOfWorkers;
+    return count < 1 ? 1 : count;
   }
 
   /// When more than one worker is required, wall-clock duration is total hours

@@ -367,6 +367,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       emit(
         state.copyWith(
           assignmentMode: event.mode,
+          numberOfWorkers: 1,
           clearWorkerRoomAssignments: true,
           clearErrorMessage: true,
           clearAssignmentFieldErrors: true,

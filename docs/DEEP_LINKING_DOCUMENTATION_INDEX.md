@@ -15,6 +15,18 @@ This directory contains comprehensive documentation for the deep linking feature
 
 ### 📚 Core Documentation
 
+#### 0. **How to Implement Deep Linking (Flutter + Laravel)** ⭐ IMPLEMENTATION GUIDE
+**File:** `how_to_implement_deeplinking_flutter_laravel.md`
+- **Audience:** Flutter developers, Laravel/backend developers, DevOps
+- **Content:** End-to-end how-to for App Links / Universal Links on both client and server
+- **Key Sections:**
+  - Flutter: `app_links`, AndroidManifest, iOS entitlements, service flow, resolve API
+  - Laravel: resolve/events endpoints, content negotiation, `assetlinks.json`, AASA
+  - Shared checklist and related docs
+- **When to use:** Implementing or onboarding deep links from scratch on Flutter + Laravel
+
+---
+
 #### 1. **Deep Linking Quick Reference** ⭐ START HERE
 **File:** `deep_linking_quick_reference.md`
 - **Audience:** Developers, QA, Product Managers

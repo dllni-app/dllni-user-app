@@ -34,6 +34,19 @@ Future<void> main() async {
 
     await configureInjection();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        NotificationHelper.initAllNotifications(
+          tokenKey: 'fcm_token',
+          navigatorKey: navigatorKey,
+          onFcmTokenAvailable: FcmTokenRegistrar.registerIfAuthenticated,
+        ),
+      );
+      unawaited(UserSessionSyncService.syncOnStartup());
+      unawaited(getIt<DeepLinkService>().init(navigatorKey: navigatorKey));
+      unawaited(UpdateService.checkOnStartup(navigatorKey: navigatorKey));
+    });
+
     await bootstrapApp(
       AppBootstrapConfig(
         navigatorKey: navigatorKey,
@@ -49,18 +62,5 @@ Future<void> main() async {
         translationsAssetPath: 'assets/translations',
       ),
     );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(
-        NotificationHelper.initAllNotifications(
-          tokenKey: 'fcm_token',
-          navigatorKey: navigatorKey,
-          onFcmTokenAvailable: FcmTokenRegistrar.registerIfAuthenticated,
-        ),
-      );
-      unawaited(UserSessionSyncService.syncOnStartup());
-      unawaited(getIt<DeepLinkService>().init(navigatorKey: navigatorKey));
-      unawaited(UpdateService.checkOnStartup(navigatorKey: navigatorKey));
-    });
   });
 }
