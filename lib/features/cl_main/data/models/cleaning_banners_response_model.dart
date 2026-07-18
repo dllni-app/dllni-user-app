@@ -36,7 +36,7 @@ List<T> _parseList<T>(
   dynamic value,
   T Function(Map<String, dynamic> json) parser,
 ) {
-  if (value is! List) return const <T>[];
+  if (value is! List) return List<T>.empty(growable: false);
 
   return value
       .whereType<Map<String, dynamic>>()
@@ -88,6 +88,7 @@ class CleaningHomeTypeModel {
   final int? id;
   final String? section;
   final String? code;
+  final String? contentCode;
   final String? value;
   final String? title;
   final String? imageUrl;
@@ -97,6 +98,7 @@ class CleaningHomeTypeModel {
     this.id,
     this.section,
     this.code,
+    this.contentCode,
     this.value,
     this.title,
     this.imageUrl,
@@ -108,6 +110,7 @@ class CleaningHomeTypeModel {
       id: _toInt(json['id']),
       section: _toString(json['section']),
       code: _toString(json['code']),
+      contentCode: _toString(json['contentCode'] ?? json['content_code']),
       value: _toString(json['value'] ?? json['booking_value']),
       title: _toString(json['title']),
       imageUrl: _toString(json['imageUrl'] ?? json['image_url']),
