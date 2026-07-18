@@ -150,7 +150,11 @@ class _ClMainServiceScheduleScreenState
                         children: [
                           ClServiceGradientInfoCardWidget(
                             estimatedSqm: estimate?.size?.estimatedSqm ?? 0,
-                            estimatedHours: estimate?.size?.estimatedHours ?? 0,
+                            estimatedHours: _effectiveServiceHours(
+                              estimatedHours:
+                                  estimate?.size?.estimatedHours ?? 0,
+                              numberOfWorkers: state.numberOfWorkers,
+                            ),
                           ),
                           if (estimate?.workerRoomAssignments.isNotEmpty ??
                               false) ...[
@@ -427,12 +431,30 @@ class _ClMainServiceScheduleScreenState
         _currentEstimate?.size?.estimatedHours ??
             _routeArgs?.estimate.size?.estimatedHours ??
             0;
+    final numberOfWorkers = _bloc?.state.numberOfWorkers ?? 1;
 
     _toTimeHhMm = formatClServiceEndTime(
       startTime: _fromTimeHhMm,
-      durationHours: estimatedHours,
+      durationHours: _effectiveServiceHours(
+        estimatedHours: estimatedHours,
+        numberOfWorkers: numberOfWorkers,
+      ),
     );
     _updateTimeDisplay();
+  }
+
+  /// When more than one worker is required, wall-clock duration is total hours
+  /// divided by worker count (at most one decimal place).
+  double _effectiveServiceHours({
+    required double estimatedHours,
+    required int numberOfWorkers,
+  }) {
+    if (numberOfWorkers <= 1 || estimatedHours <= 0) {
+      return estimatedHours;
+    }
+    return double.parse(
+      (estimatedHours / numberOfWorkers).toStringAsFixed(1),
+    );
   }
 
   Future<void> _loadCleaningServices() async {

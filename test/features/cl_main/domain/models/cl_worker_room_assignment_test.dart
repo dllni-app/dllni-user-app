@@ -19,6 +19,22 @@ void main() {
         'corridor.medium.1',
       });
     });
+
+    test('includes shed room keys in API assignment payloads', () {
+      const breakdown = CleaningRoomSizeBreakdown(
+        bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+        shed: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
+      );
+
+      final units = enumerateRoomUnits(breakdown);
+
+      expect(units, hasLength(2));
+      expect(units.map((unit) => unit.roomKey), {
+        'bedroom.small.1',
+        'shed.medium.1',
+      });
+      expect(units.last.displayLabel, 'سقيفة 1 - متوسط');
+    });
   });
 
   group('buildWorkerRoomAssignmentsJson', () {

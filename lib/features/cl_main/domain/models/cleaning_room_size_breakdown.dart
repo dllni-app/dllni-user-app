@@ -5,6 +5,7 @@ enum CleaningRoomType {
   livingRoom,
   balcony,
   corridor,
+  shed,
 }
 
 /// Room types accepted by the backend validator for `room_size_breakdown`
@@ -16,6 +17,7 @@ const backendAcceptedRoomSizeBreakdownTypes = <CleaningRoomType>[
   CleaningRoomType.livingRoom,
   CleaningRoomType.balcony,
   CleaningRoomType.corridor,
+  CleaningRoomType.shed,
 ];
 
 /// All room types supported in the local UI.
@@ -36,6 +38,8 @@ extension CleaningRoomTypeX on CleaningRoomType {
         return 'balcony';
       case CleaningRoomType.corridor:
         return 'corridor';
+      case CleaningRoomType.shed:
+        return 'shed';
     }
   }
 }
@@ -95,6 +99,7 @@ class CleaningRoomSizeBreakdown {
     this.livingRoom = const CleaningRoomSizeBucket(),
     this.balcony = const CleaningRoomSizeBucket(),
     this.corridor = const CleaningRoomSizeBucket(),
+    this.shed = const CleaningRoomSizeBucket(),
   });
 
   final CleaningRoomSizeBucket bedroom;
@@ -103,14 +108,15 @@ class CleaningRoomSizeBreakdown {
   final CleaningRoomSizeBucket livingRoom;
   final CleaningRoomSizeBucket balcony;
   final CleaningRoomSizeBucket corridor;
+  final CleaningRoomSizeBucket shed;
 
   int get totalRooms =>
       bedroom.total +
       bathroom.total +
       kitchen.total +
       livingRoom.total +
-      corridor.total
-  ;
+      corridor.total +
+      shed.total;
 
   /// Sum of all room units including balconies (max worker count cap).
   int get totalUnits => totalRooms + balcony.total;
@@ -125,6 +131,7 @@ class CleaningRoomSizeBreakdown {
 
   int get legacyBalconiesCount => balcony.total;
   int get legacyCorridorCount => corridor.total;
+  int get legacyShedsCount => shed.total;
 
   String get legacyLivingRoomSize {
     if (livingRoom.large > 0) return CleaningRoomSize.large.apiValue;
@@ -146,6 +153,8 @@ class CleaningRoomSizeBreakdown {
         return balcony;
       case CleaningRoomType.corridor:
         return corridor;
+      case CleaningRoomType.shed:
+        return shed;
     }
   }
 
@@ -183,6 +192,7 @@ class CleaningRoomSizeBreakdown {
           livingRoom: livingRoom,
           balcony: balcony,
           corridor: corridor,
+          shed: shed,
         );
       case CleaningRoomType.bathroom:
         return CleaningRoomSizeBreakdown(
@@ -192,6 +202,7 @@ class CleaningRoomSizeBreakdown {
           livingRoom: livingRoom,
           balcony: balcony,
           corridor: corridor,
+          shed: shed,
         );
       case CleaningRoomType.kitchen:
         return CleaningRoomSizeBreakdown(
@@ -201,6 +212,7 @@ class CleaningRoomSizeBreakdown {
           livingRoom: livingRoom,
           balcony: balcony,
           corridor: corridor,
+          shed: shed,
         );
       case CleaningRoomType.livingRoom:
         return CleaningRoomSizeBreakdown(
@@ -210,6 +222,7 @@ class CleaningRoomSizeBreakdown {
           livingRoom: bucket,
           balcony: balcony,
           corridor: corridor,
+          shed: shed,
         );
       case CleaningRoomType.balcony:
         return CleaningRoomSizeBreakdown(
@@ -219,6 +232,7 @@ class CleaningRoomSizeBreakdown {
           livingRoom: livingRoom,
           balcony: bucket,
           corridor: corridor,
+          shed: shed,
         );
       case CleaningRoomType.corridor:
         return CleaningRoomSizeBreakdown(
@@ -228,6 +242,17 @@ class CleaningRoomSizeBreakdown {
           livingRoom: livingRoom,
           balcony: balcony,
           corridor: bucket,
+          shed: shed,
+        );
+      case CleaningRoomType.shed:
+        return CleaningRoomSizeBreakdown(
+          bedroom: bedroom,
+          bathroom: bathroom,
+          kitchen: kitchen,
+          livingRoom: livingRoom,
+          balcony: balcony,
+          corridor: corridor,
+          shed: bucket,
         );
     }
   }

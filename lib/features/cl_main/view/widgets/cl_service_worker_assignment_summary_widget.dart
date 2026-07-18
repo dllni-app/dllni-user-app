@@ -176,6 +176,7 @@ class _SlotSummaryCard extends StatelessWidget {
       'living_room': 'صالون',
       'balcony': 'بلكونة',
       'corridor': 'موزع',
+      'shed': 'سقيفة',
     };
     const roomSizeLabels = {
       'small': 'صغير',

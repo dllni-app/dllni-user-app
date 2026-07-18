@@ -86,6 +86,11 @@ class _ClMainHomeDescriptionScreenState
             title: 'الموزع',
             icon: Icons.meeting_room_outlined,
           ),
+          (
+            type: CleaningRoomType.shed,
+            title: 'السقائف',
+            icon: Icons.garage_outlined,
+          ),
         ];
 
     const sizeOptions = <({CleaningRoomSize size, String label})>[

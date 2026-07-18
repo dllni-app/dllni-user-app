@@ -79,6 +79,39 @@ void main() {
     },
   );
 
+  test(
+    'getBody includes shed in room_size_breakdown when present locally',
+    () {
+      const breakdown = CleaningRoomSizeBreakdown(
+        bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+        shed: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
+      );
+
+      final params = EstimateCleaningPriceParams(
+        propertyType: 'villa',
+        bedrooms: 0,
+        rooms: 0,
+        bathrooms: 0,
+        livingRoomSize: 'small',
+        roomSizeBreakdown: breakdown,
+        addressLatitude: 33.5,
+        addressLongitude: 36.3,
+      );
+
+      final details =
+          params.getBody()['propertyDetails'] as Map<String, dynamic>;
+      final breakdownJson =
+          details['room_size_breakdown'] as Map<String, dynamic>;
+
+      expect(breakdownJson.keys, {'bedroom', 'shed'});
+      expect(breakdownJson['shed'], {
+        'small': 0,
+        'medium': 1,
+        'large': 0,
+      });
+    },
+  );
+
   test('getBody includes propertyDetails.cleaning_mode when provided', () {
     final params = EstimateCleaningPriceParams(
       propertyType: 'apartment',

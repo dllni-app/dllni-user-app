@@ -28,6 +28,7 @@ const Map<CleaningRoomType, String> _roomTypeLabelsAr = {
   CleaningRoomType.livingRoom: 'صالون',
   CleaningRoomType.balcony: 'بلكونة',
   CleaningRoomType.corridor: 'موزع',
+  CleaningRoomType.shed: 'سقيفة',
 };
 
 const Map<CleaningRoomSize, String> _roomSizeLabelsAr = {

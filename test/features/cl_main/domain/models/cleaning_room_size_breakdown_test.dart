@@ -24,6 +24,24 @@ void main() {
       });
     });
 
+    test('includes shed and omits zero-count room buckets', () {
+      const breakdown = CleaningRoomSizeBreakdown(
+        bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+        shed: CleaningRoomSizeBucket(small: 0, medium: 1, large: 1),
+      );
+
+      final json = breakdown.toBackendJson();
+
+      expect(json.keys, {'bedroom', 'shed'});
+      expect(json['shed'], {
+        'small': 0,
+        'medium': 1,
+        'large': 1,
+      });
+      expect(breakdown.totalRooms, 3);
+      expect(breakdown.legacyShedsCount, 2);
+    });
+
     test('includes only backend-accepted types with total > 0', () {
       const breakdown = CleaningRoomSizeBreakdown(
         bedroom: CleaningRoomSizeBucket(small: 2, medium: 1, large: 0),
@@ -31,6 +49,7 @@ void main() {
         kitchen: CleaningRoomSizeBucket(small: 1, medium: 1, large: 0),
         livingRoom: CleaningRoomSizeBucket(small: 0, medium: 2, large: 0),
         balcony: CleaningRoomSizeBucket(small: 1, medium: 0, large: 2),
+        shed: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
       );
 
       final json = breakdown.toBackendJson();
@@ -41,6 +60,7 @@ void main() {
         'kitchen',
         'living_room',
         'balcony',
+        'shed',
       });
     });
   });
