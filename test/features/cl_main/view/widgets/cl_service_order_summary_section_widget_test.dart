@@ -20,16 +20,19 @@ void main() {
     );
   }
 
-  testWidgets('folds admin margin into travel fee and hides admin margin row', (
+  testWidgets('shows pure travel fee, total, and hides admin margin', (
     tester,
   ) async {
     await tester.pumpWidget(_buildWidget(isPricingFinal: false));
 
-    expect(find.text('المسافة'), findsOneWidget);
-    expect(find.text('هامش الإدارة'), findsNothing);
+    expect(find.text('قيمة الخدمة'), findsOneWidget);
     expect(find.text('رسوم التنقل'), findsOneWidget);
-    // 120 travel + 100 admin margin
-    expect(find.textContaining('220'), findsOneWidget);
+    expect(find.text('المسافة'), findsOneWidget);
+    expect(find.text('الإجمالي'), findsOneWidget);
+    expect(find.text('هامش الإدارة'), findsNothing);
+    // Pure travel fee only (120), not folded with admin margin (220).
+    expect(find.textContaining('120'), findsOneWidget);
+    expect(find.textContaining('220'), findsNothing);
   });
 
   testWidgets('shows provisional warning when pricing is not final', (

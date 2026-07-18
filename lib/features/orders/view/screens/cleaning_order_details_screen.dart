@@ -734,15 +734,13 @@ class _CleaningOrderDetailsScreenState
                           ),
                           const SizedBox(height: 10),
                           _SummaryRow(
-                            title: 'تكلفة الخدمة',
+                            title: 'قيمة الخدمة',
                             value: order.basePrice.formatMoney(),
                           ),
                           const SizedBox(height: 6),
                           _SummaryRow(
                             title: 'رسوم التنقل',
-                            value: ((order.travelFee ?? 0) +
-                                    (order.adminMargin ?? 0))
-                                .formatMoney(),
+                            value: (order.travelFee ?? 0).formatMoney(),
                           ),
                           if ((order.addonsTotal ?? 0) > 0) ...[
                             const SizedBox(height: 6),
@@ -755,7 +753,7 @@ class _CleaningOrderDetailsScreenState
                           const Divider(color: Color(0xffE5E7EB)),
                           const SizedBox(height: 10),
                           _SummaryRow(
-                            title: 'الإجمالي النهائي',
+                            title: 'الإجمالي',
                             value: order.totalPrice.formatMoney(),
                             isTotal: true,
                           ),
