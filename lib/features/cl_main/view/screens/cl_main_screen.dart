@@ -39,12 +39,84 @@ class ClMainScreen extends StatefulWidget {
 }
 
 class _ClMainScreenState extends State<ClMainScreen> {
+  static const List<CleaningHomeTypeModel> _fallbackPropertyTypes = [
+    CleaningHomeTypeModel(
+      section: 'property',
+      code: 'villa',
+      value: 'villa',
+      title: 'فيلا دوبلكس',
+      imageUrl: 'assets/images/villa_image.png',
+      sortOrder: 10,
+    ),
+    CleaningHomeTypeModel(
+      section: 'property',
+      code: 'office',
+      value: 'office',
+      title: 'مكتب',
+      imageUrl: 'assets/images/office_image.png',
+      sortOrder: 20,
+    ),
+    CleaningHomeTypeModel(
+      section: 'property',
+      code: 'apartment',
+      value: 'apartment',
+      title: 'شقة',
+      imageUrl: 'assets/images/home_image.png',
+      sortOrder: 30,
+    ),
+    CleaningHomeTypeModel(
+      section: 'property',
+      code: 'studio',
+      value: 'studio',
+      title: 'استديو',
+      imageUrl: 'assets/images/studio_image.png',
+      sortOrder: 40,
+    ),
+  ];
+
+  static const List<CleaningHomeTypeModel> _fallbackOccasionTypes = [
+    CleaningHomeTypeModel(
+      section: 'occasion',
+      code: 'family_dinner',
+      value: 'family_dinner',
+      title: 'عشاء عائلي',
+      imageUrl: 'assets/images/family_dinner.png',
+      sortOrder: 10,
+    ),
+    CleaningHomeTypeModel(
+      section: 'occasion',
+      code: 'birthday',
+      value: 'birthday',
+      title: 'حفلة عيد ميلاد',
+      imageUrl: 'assets/images/party.png',
+      sortOrder: 20,
+    ),
+    CleaningHomeTypeModel(
+      section: 'occasion',
+      code: 'large_gathering',
+      value: 'large_gathering',
+      title: 'عزيمة كبيرة',
+      imageUrl: 'assets/images/big_launch.png',
+      sortOrder: 30,
+    ),
+    CleaningHomeTypeModel(
+      section: 'occasion',
+      code: 'funeral',
+      value: 'funeral',
+      title: 'عزاء',
+      imageUrl: 'assets/images/aza.png',
+      sortOrder: 40,
+    ),
+  ];
+
   int _selectedTabIndex = ClMainServiceTabsWidget.cleaningIndex;
 
   late final PageController _cleaningBannersPageController;
   Timer? _cleaningBannersTimer;
 
   List<CleaningBannerModel> _cleaningBanners = const <CleaningBannerModel>[];
+  List<CleaningHomeTypeModel> _propertyTypes = _fallbackPropertyTypes;
+  List<CleaningHomeTypeModel> _occasionTypes = _fallbackOccasionTypes;
   BlocStatus _cleaningBannersStatus = BlocStatus.init;
   String? _cleaningBannersErrorMessage;
   int _lengthOfBanners = 0;
@@ -55,7 +127,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
   void initState() {
     super.initState();
     _cleaningBannersPageController = PageController();
-    _loadCleaningBanners();
+    _loadCleaningHomeContent();
     _startCleaningBannersAutoScroll();
   }
 
@@ -90,7 +162,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
     });
   }
 
-  Future<void> _loadCleaningBanners() async {
+  Future<void> _loadCleaningHomeContent() async {
     if (!mounted) return;
     setState(() {
       _cleaningBannersStatus = BlocStatus.loading;
@@ -112,6 +184,12 @@ class _ClMainScreenState extends State<ClMainScreen> {
         setState(() {
           _cleaningBannersStatus = BlocStatus.success;
           _cleaningBanners = response.banners;
+          _propertyTypes = response.propertyTypes.isNotEmpty
+              ? response.propertyTypes
+              : _fallbackPropertyTypes;
+          _occasionTypes = response.occasionTypes.isNotEmpty
+              ? response.occasionTypes
+              : _fallbackOccasionTypes;
           _lengthOfBanners = response.banners.length;
           _cleaningBannersErrorMessage = null;
         });
@@ -158,8 +236,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
       return Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
         child: FailureWidget(
-          message: _cleaningBannersErrorMessage ?? 'تعذر تحميل البانرات',
-          onRetry: _loadCleaningBanners,
+          message: _cleaningBannersErrorMessage ?? 'تعذر تحميل محتوى التنظيف',
+          onRetry: _loadCleaningHomeContent,
         ),
       );
     }
@@ -211,18 +289,6 @@ class _ClMainScreenState extends State<ClMainScreen> {
 
   Widget _buildScreenBody(BuildContext context) {
     final bloc = context.read<ClMainBloc>();
-    final propertyTypes = <({String title, String icon, String value})>[
-      (title: 'فيلا دوبلكس', icon: Assets.images.villaImage.path, value: 'villa'),
-      (title: 'مكتب', icon: Assets.images.officeImage.path, value: 'office'),
-      (title: 'شقة', icon: Assets.images.homeImage.path, value: 'apartment'),
-      (title: 'استديو', icon: Assets.images.studioImage.path, value: 'studio'),
-    ];
-    final occasionOptions = <ClMainOccasionOption>[
-      ClMainOccasionOption(id: 'family_dinner', title: 'عشاء عائلي', imagePath: Assets.images.familyDinner.path),
-      ClMainOccasionOption(id: 'birthday_party', title: 'حفلة عيد ميلاد', imagePath: Assets.images.party.path),
-      ClMainOccasionOption(id: 'large_gathering', title: 'عزيمة كبيرة', imagePath: Assets.images.bigLaunch.path),
-      ClMainOccasionOption(id: 'condolences', title: 'عزاء', imagePath: Assets.images.aza.path),
-    ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
@@ -230,7 +296,10 @@ class _ClMainScreenState extends State<ClMainScreen> {
         child: Column(
           children: [
             if (widget.params != null)
-              HomeAppBar(isCleaning: true, profileBloc: widget.params!.profileBloc),
+              HomeAppBar(
+                isCleaning: true,
+                profileBloc: widget.params!.profileBloc,
+              ),
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 0),
               child: ClMainServiceTabsWidget(
@@ -245,35 +314,62 @@ class _ClMainScreenState extends State<ClMainScreen> {
             ),
             _buildCleaningBannersSection(),
             Expanded(
-              child: _selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex
+              child:
+                  _selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex
                   ? ListView.separated(
                       key: const Key('cl_main_cleaning_list'),
-                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 20),
-                      itemCount: propertyTypes.length,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 26,
+                        vertical: 20,
+                      ),
+                      itemCount: _propertyTypes.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        final item = propertyTypes[index];
+                        final item = _propertyTypes[index];
+                        final propertyType = _nonEmpty(item.value, 'apartment');
                         return ClPropertyTypeCardWidget(
-                          title: item.title,
-                          icon: item.icon,
-                          args: ClMainHomeDescriptionArgs(propertyType: item.value, bloc: bloc),
+                          title: _nonEmpty(item.title, 'نوع تنظيف'),
+                          icon: _nonEmpty(
+                            item.imageUrl,
+                            _propertyFallbackImage(propertyType),
+                          ),
+                          args: ClMainHomeDescriptionArgs(
+                            propertyType: propertyType,
+                            bloc: bloc,
+                          ),
                         );
                       },
                     )
                   : ListView.separated(
                       key: const Key('cl_main_occasions_list'),
-                      padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 20),
-                      itemCount: occasionOptions.length,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 26,
+                        vertical: 20,
+                      ),
+                      itemCount: _occasionTypes.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        final option = occasionOptions[index];
+                        final item = _occasionTypes[index];
+                        final bookingValue = _nonEmpty(item.value, 'other');
+                        final option = ClMainOccasionOption(
+                          id: _nonEmpty(item.code, bookingValue),
+                          bookingValue: bookingValue,
+                          title: _nonEmpty(item.title, 'مناسبة'),
+                          imagePath: _nonEmpty(
+                            item.imageUrl,
+                            _occasionFallbackImage(bookingValue),
+                          ),
+                        );
                         return ClOccasionTypeCardWidget(
                           title: option.title,
                           imagePath: option.imagePath,
                           onTap: () {
                             context.pushRoute(
                               '/clmainoccasiondescription',
-                              arguments: ClMainOccasionDescriptionArgs(option: option, bloc: bloc),
+                              arguments: ClMainOccasionDescriptionArgs(
+                                option: option,
+                                bloc: bloc,
+                              ),
                             );
                           },
                         );
@@ -286,13 +382,43 @@ class _ClMainScreenState extends State<ClMainScreen> {
     );
   }
 
+  String _nonEmpty(String? value, String fallback) {
+    final normalized = value?.trim();
+    return normalized == null || normalized.isEmpty ? fallback : normalized;
+  }
+
+  String _propertyFallbackImage(String propertyType) {
+    return switch (propertyType) {
+      'villa' => Assets.images.villaImage.path,
+      'office' => Assets.images.officeImage.path,
+      'studio' => Assets.images.studioImage.path,
+      _ => Assets.images.homeImage.path,
+    };
+  }
+
+  String _occasionFallbackImage(String eventType) {
+    return switch (eventType) {
+      'family_dinner' => Assets.images.familyDinner.path,
+      'birthday' => Assets.images.party.path,
+      'large_gathering' => Assets.images.bigLaunch.path,
+      'funeral' => Assets.images.aza.path,
+      _ => Assets.images.party.path,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenContent = Builder(builder: _buildScreenBody);
     final injectedBloc = _injectedBloc;
     final screenBody = injectedBloc != null
-        ? BlocProvider<ClMainBloc>.value(value: injectedBloc, child: screenContent)
-        : BlocProvider<ClMainBloc>(create: (_) => getIt<ClMainBloc>(), child: screenContent);
+        ? BlocProvider<ClMainBloc>.value(
+            value: injectedBloc,
+            child: screenContent,
+          )
+        : BlocProvider<ClMainBloc>(
+            create: (_) => getIt<ClMainBloc>(),
+            child: screenContent,
+          );
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {

@@ -32,6 +32,18 @@ DateTime? _toDateTime(dynamic value) {
   return DateTime.tryParse(text);
 }
 
+List<T> _parseList<T>(
+  dynamic value,
+  T Function(Map<String, dynamic> json) parser,
+) {
+  if (value is! List) return List<T>.empty(growable: false);
+
+  return value
+      .whereType<Map<String, dynamic>>()
+      .map(parser)
+      .toList(growable: false);
+}
+
 CleaningBannersResponseModel cleaningBannersResponseModelFromJson(
   dynamic json,
 ) {
@@ -48,21 +60,62 @@ CleaningBannersResponseModel cleaningBannersResponseModelFromJson(
 
 class CleaningBannersResponseModel {
   final List<CleaningBannerModel> banners;
+  final List<CleaningHomeTypeModel> propertyTypes;
+  final List<CleaningHomeTypeModel> occasionTypes;
 
   const CleaningBannersResponseModel({
     this.banners = const <CleaningBannerModel>[],
+    this.propertyTypes = const <CleaningHomeTypeModel>[],
+    this.occasionTypes = const <CleaningHomeTypeModel>[],
   });
 
   factory CleaningBannersResponseModel.fromJson(Map<String, dynamic> json) {
-    final bannersRaw = json['banners'];
-    final banners = bannersRaw is List
-        ? bannersRaw
-              .whereType<Map<String, dynamic>>()
-              .map(CleaningBannerModel.fromJson)
-              .toList(growable: false)
-        : const <CleaningBannerModel>[];
+    return CleaningBannersResponseModel(
+      banners: _parseList(json['banners'], CleaningBannerModel.fromJson),
+      propertyTypes: _parseList(
+        json['propertyTypes'] ?? json['property_types'],
+        CleaningHomeTypeModel.fromJson,
+      ),
+      occasionTypes: _parseList(
+        json['occasionTypes'] ?? json['occasion_types'],
+        CleaningHomeTypeModel.fromJson,
+      ),
+    );
+  }
+}
 
-    return CleaningBannersResponseModel(banners: banners);
+class CleaningHomeTypeModel {
+  final int? id;
+  final String? section;
+  final String? code;
+  final String? contentCode;
+  final String? value;
+  final String? title;
+  final String? imageUrl;
+  final int? sortOrder;
+
+  const CleaningHomeTypeModel({
+    this.id,
+    this.section,
+    this.code,
+    this.contentCode,
+    this.value,
+    this.title,
+    this.imageUrl,
+    this.sortOrder,
+  });
+
+  factory CleaningHomeTypeModel.fromJson(Map<String, dynamic> json) {
+    return CleaningHomeTypeModel(
+      id: _toInt(json['id']),
+      section: _toString(json['section']),
+      code: _toString(json['code']),
+      contentCode: _toString(json['contentCode'] ?? json['content_code']),
+      value: _toString(json['value'] ?? json['booking_value']),
+      title: _toString(json['title']),
+      imageUrl: _toString(json['imageUrl'] ?? json['image_url']),
+      sortOrder: _toInt(json['sortOrder'] ?? json['sort_order']),
+    );
   }
 }
 

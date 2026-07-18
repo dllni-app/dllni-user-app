@@ -4,11 +4,25 @@ import 'package:flutter/material.dart';
 import '../data/cl_main_route_args.dart';
 
 class ClPropertyTypeCardWidget extends StatelessWidget {
-  const ClPropertyTypeCardWidget({required this.title, required this.icon, required this.args, super.key});
+  const ClPropertyTypeCardWidget({
+    required this.title,
+    required this.icon,
+    required this.args,
+    super.key,
+  });
 
   final String title;
   final String icon;
   final ClMainHomeDescriptionArgs args;
+
+  ImageProvider<Object> get _imageProvider {
+    final uri = Uri.tryParse(icon);
+    if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+      return NetworkImage(icon);
+    }
+
+    return AssetImage(icon);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,20 +34,34 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          image: DecorationImage(image: AssetImage(icon), fit: BoxFit.cover),
+          image: DecorationImage(image: _imageProvider, fit: BoxFit.cover),
         ),
         width: context.width,
         height: 200,
-        padding: EdgeInsetsDirectional.symmetric(vertical: 12, horizontal: 24),
+        padding: const EdgeInsetsDirectional.symmetric(
+          vertical: 12,
+          horizontal: 24,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-              padding: EdgeInsetsDirectional.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsetsDirectional.symmetric(vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [AppText.bodyMedium(title, fontWeight: FontWeight.w700, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis)],
+                children: [
+                  AppText.bodyMedium(
+                    title,
+                    fontWeight: FontWeight.w700,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ],

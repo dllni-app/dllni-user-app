@@ -18,14 +18,21 @@ class ClMainHomeDescriptionArgs {
 
 class ClMainOccasionOption {
   final String id;
+  final String bookingValue;
   final String title;
   final String imagePath;
 
   const ClMainOccasionOption({
-    required this.id,
+    required String id,
     required this.title,
     required this.imagePath,
-  });
+    String? bookingValue,
+  }) : bookingValue = bookingValue ?? id,
+       id = (bookingValue ?? id) == 'birthday'
+           ? 'birthday_party'
+           : (bookingValue ?? id) == 'funeral'
+           ? 'condolences'
+           : (bookingValue ?? id);
 }
 
 class ClMainOccasionDescriptionArgs {
