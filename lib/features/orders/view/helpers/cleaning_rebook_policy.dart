@@ -71,7 +71,7 @@ class CleaningRebookPolicy {
   CleaningRebookPolicy({required this.cancelOrder, required this.createOrder});
 
   static const String cancelReason = 'قام المستخدم بتعديل بيانات الطلب';
-  static const Duration minimumLeadTime = Duration(hours: 24);
+  static const Duration minimumLeadTime = Duration(hours: 2);
 
   final DataResponse<CleaningCancelResultModel> Function(
     CancelCleaningOrderParams params,

@@ -35,6 +35,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
   static const double _routeRefreshDistanceMeters = 35;
   static const Duration _persistedRefreshInterval = Duration(seconds: 15);
 
+  final MapController _mapController = MapController();
   final Map<int, _TrackingWorkerState> _workers =
       <int, _TrackingWorkerState>{};
   final Map<int, LatLng> _lastRoutedLocations = <int, LatLng>{};
@@ -92,6 +93,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
 
     if (legacyWorkerChanged) {
       _seedLegacyWorkerLocation(widget.workerLatLng);
+      _centerOnFollowedWorker();
     }
 
     if (customerChanged) {
@@ -112,6 +114,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
     _locationSubscription?.cancel();
     _activeBookingSubscription?.cancel();
     _refreshSubscription?.cancel();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -197,6 +200,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
       }
     });
 
+    _centerOnFollowedWorker();
     _reloadAllRoadRoutes(force: false);
   }
 
@@ -260,6 +264,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
       );
     });
 
+    _centerOnFollowedWorker();
     unawaited(_loadRoadRouteForWorker(workerKey));
   }
 
@@ -358,11 +363,10 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
         )
         .toList(growable: false)
       ..sort((a, b) => a.key.compareTo(b.key));
-    final visiblePoints = <LatLng>[
-      widget.customerLatLng,
-      ...travellingWorkers.map((entry) => entry.value.location!),
-    ];
-    final center = _averageCenter(visiblePoints);
+    final center =
+        travellingWorkers.isNotEmpty
+            ? travellingWorkers.first.value.location!
+            : widget.customerLatLng;
     final showTravelStatus = widget.hasStartedTravel || _workers.isNotEmpty;
     final travelStatusText = _travelStatusText(travellingWorkers);
 
@@ -409,6 +413,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
                   key: ValueKey<String>(
                     'cleaning-tracking-${_bookingId ?? 0}-${travellingWorkers.length}',
                   ),
+                  mapController: _mapController,
                   options: MapOptions(
                     interactionOptions: const InteractionOptions(
                       flags: InteractiveFlag.pinchZoom |
@@ -490,19 +495,32 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
     );
   }
 
-  LatLng _averageCenter(List<LatLng> points) {
-    if (points.isEmpty) return widget.customerLatLng;
-    final latitude = points.fold<double>(
-          0,
-          (sum, point) => sum + point.latitude,
-        ) /
-        points.length;
-    final longitude = points.fold<double>(
-          0,
-          (sum, point) => sum + point.longitude,
-        ) /
-        points.length;
-    return LatLng(latitude, longitude);
+  void _centerOnFollowedWorker() {
+    final workerLocation = _followedWorkerLocation();
+    if (workerLocation == null) return;
+
+    void moveToWorker() {
+      if (!mounted) return;
+      try {
+        _mapController.move(workerLocation, _mapController.camera.zoom);
+      } catch (_) {
+        // Map may not be ready yet (e.g. before first FlutterMap attach).
+      }
+    }
+
+    moveToWorker();
+    WidgetsBinding.instance.addPostFrameCallback((_) => moveToWorker());
+  }
+
+  LatLng? _followedWorkerLocation() {
+    final travellingWorkers = _workers.entries
+        .where(
+          (entry) => entry.value.isTravelling && entry.value.location != null,
+        )
+        .toList(growable: false)
+      ..sort((a, b) => a.key.compareTo(b.key));
+    if (travellingWorkers.isEmpty) return null;
+    return travellingWorkers.first.value.location;
   }
 
   String _travelStatusText(

@@ -47,6 +47,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final showProvisionalWarning = isPricingFinal == false;
     final scheduleDateLine = _scheduleDateLine;
+    final displayedTravelFee = travelFee + (adminMargin ?? 0);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -91,20 +92,13 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
           const SizedBox(height: 8),
           _SummaryRowWidget(
             label: 'رسوم التنقل',
-            value: travelFee.formatMoney(),
+            value: displayedTravelFee.formatMoney(),
           ),
           if (distanceKm != null) ...[
             const SizedBox(height: 8),
             _SummaryRowWidget(
               label: 'المسافة',
               value: '${_formatDistance(distanceKm!)} كم',
-            ),
-          ],
-          if (adminMargin != null) ...[
-            const SizedBox(height: 8),
-            _SummaryRowWidget(
-              label: 'هامش الإدارة',
-              value: adminMargin.formatMoney(),
             ),
           ],
           const SizedBox(height: 10),

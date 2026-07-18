@@ -33,7 +33,11 @@ class CleaningOrderCard extends StatelessWidget {
       }
       return 'جاري البحث عن عمال';
     }
-    return cleaningOrderStatusLabelAr(order.status);
+    return cleaningOrderStatusLabelAr(
+      order.status,
+      startedTravelAt: order.startedTravelAt,
+      arrivedAt: order.arrivedAt,
+    );
   }
 
   bool get _isTerminalStatus {

@@ -280,5 +280,36 @@ void main() {
         'بانتظار تأكيد مقدم الخدمة لبدء العمل',
       );
     });
+
+    test('labels worker assigned as on the road when travel started', () {
+      expect(
+        cleaningOrderStatusLabelAr(
+          CleaningBookingStatus.workerAssigned,
+          startedTravelAt: '2026-05-17T09:45:00Z',
+        ),
+        'مقدم الخدمة في الطريق',
+      );
+    });
+
+    test('keeps assigned label when travel started but worker arrived', () {
+      expect(
+        cleaningOrderStatusLabelAr(
+          CleaningBookingStatus.workerAssigned,
+          startedTravelAt: '2026-05-17T09:45:00Z',
+          arrivedAt: '2026-05-17T10:00:00Z',
+        ),
+        'تم تعيين مقدم الخدمة',
+      );
+    });
+
+    test('labels forceTravelling as on the road for assigned status', () {
+      expect(
+        cleaningOrderStatusLabelAr(
+          CleaningBookingStatus.workerAssigned,
+          forceTravelling: true,
+        ),
+        'مقدم الخدمة في الطريق',
+      );
+    });
   });
 }

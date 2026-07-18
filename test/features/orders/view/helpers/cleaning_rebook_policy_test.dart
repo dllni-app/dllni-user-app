@@ -10,23 +10,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CleaningRebookPolicy lead-time', () {
-    test('blocks when remaining time is less than 24 hours', () {
+    test('blocks when remaining time is less than 2 hours', () {
       final check = CleaningRebookPolicy.evaluateLeadTime(
         scheduledDate: '2026-05-20',
         scheduledTime: '09:00',
-        now: DateTime(2026, 5, 19, 12, 30),
+        now: DateTime(2026, 5, 20, 7, 30),
       );
 
       expect(check.allowed, isFalse);
       expect(check.remaining, isNotNull);
-      expect(check.remaining!.inHours, lessThan(24));
+      expect(check.remaining!.inHours, lessThan(2));
     });
 
-    test('allows when remaining time is at least 24 hours', () {
+    test('allows when remaining time is at least 2 hours', () {
       final check = CleaningRebookPolicy.evaluateLeadTime(
         scheduledDate: '2026-05-20',
         scheduledTime: '12:00',
-        now: DateTime(2026, 5, 19, 12, 0),
+        now: DateTime(2026, 5, 20, 10, 0),
       );
 
       expect(check.allowed, isTrue);

@@ -97,16 +97,7 @@ class _CleaningStartVerificationDialogContentState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Align(
-                alignment: AlignmentDirectional.topEnd,
-                child: IconButton(
-                  onPressed: _submitting
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                  icon: const Icon(Icons.close, color: _muted, size: 22),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
+              const SizedBox(height: 12),
               _DialogWorkerAvatar(workerAvatarUrl: widget.workerAvatarUrl),
               const SizedBox(height: 16),
               AppText.titleMedium(

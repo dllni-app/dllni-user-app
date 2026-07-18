@@ -86,6 +86,7 @@ class _CleaningOrderDetailsScreenState
   int? _subscribedBookingId;
   double? _workerLiveLatitude;
   double? _workerLiveLongitude;
+  bool _liveWorkerTravelling = false;
 
   String? _gateError;
   bool _gateSubmitting = false;
@@ -266,7 +267,12 @@ class _CleaningOrderDetailsScreenState
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
-                                  cleaningOrderStatusLabelAr(order.status),
+                                  cleaningOrderStatusLabelAr(
+                                    order.status,
+                                    startedTravelAt: order.startedTravelAt,
+                                    arrivedAt: order.arrivedAt,
+                                    forceTravelling: _liveWorkerTravelling,
+                                  ),
                                   style: const TextStyle(
                                     color: Color(0xff0CBBC7),
                                     fontWeight: FontWeight.w700,
@@ -734,7 +740,9 @@ class _CleaningOrderDetailsScreenState
                           const SizedBox(height: 6),
                           _SummaryRow(
                             title: 'رسوم التنقل',
-                            value: order.travelFee.formatMoney(),
+                            value: ((order.travelFee ?? 0) +
+                                    (order.adminMargin ?? 0))
+                                .formatMoney(),
                           ),
                           if ((order.addonsTotal ?? 0) > 0) ...[
                             const SizedBox(height: 6),
@@ -852,6 +860,10 @@ class _CleaningOrderDetailsScreenState
     setState(() {
       _workerLiveLatitude = location.latitude;
       _workerLiveLongitude = location.longitude;
+      // Live location implies the worker is en route until arrival is confirmed.
+      if (_order?.arrivedAt == null || _order!.arrivedAt!.trim().isEmpty) {
+        _liveWorkerTravelling = true;
+      }
     });
   }
 
@@ -1169,6 +1181,7 @@ class _CleaningOrderDetailsScreenState
             if (updatedOrder != null) {
               _syncGateSessionWithOrder(updatedOrder);
               _liveWorkerAcceptance = updatedOrder.workerAcceptance;
+              _syncLiveTravellingFromOrder(updatedOrder);
             } else {
               _liveWorkerAcceptance = null;
             }
@@ -1237,6 +1250,7 @@ class _CleaningOrderDetailsScreenState
         setState(() {
           _order = updatedOrder;
           _syncGateSessionWithOrder(updatedOrder);
+          _syncLiveTravellingFromOrder(updatedOrder);
         });
       }
       return result.extendedTimeRanges;
@@ -1297,13 +1311,13 @@ class _CleaningOrderDetailsScreenState
 
   String _leadTimeLockMessage(Duration? remaining) {
     if (remaining == null) {
-      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 24 ساعة من وقت الخدمة.';
+      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 2 ساعة من وقت الخدمة.';
     }
     final hours = remaining.inHours;
     if (hours <= 0) {
       return 'موعد الخدمة قريب جدًا، لا يمكن تعديل العنوان أو الموعد.';
     }
-    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 24 ساعة. المتبقي: $hours ساعة.';
+    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 2 ساعة. المتبقي: $hours ساعة.';
   }
 
   Future<void> _maybePromptForCompletionGate({bool force = false}) async {
@@ -1822,6 +1836,7 @@ class _CleaningOrderDetailsScreenState
       if (shouldReconnect) {
         _workerLiveLatitude = null;
         _workerLiveLongitude = null;
+        _liveWorkerTravelling = false;
       }
     });
     if (shouldReconnect) {
@@ -1832,6 +1847,31 @@ class _CleaningOrderDetailsScreenState
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(successMessage)));
+  }
+
+  void _syncLiveTravellingFromOrder(CleaningOrderDetailModel order) {
+    final hasArrived = order.arrivedAt != null && order.arrivedAt!.trim().isNotEmpty;
+    final status = _normStatus(order.status);
+    final leftTravelPhase =
+        hasArrived ||
+        status == CleaningBookingStatus.awaitingStartVerification ||
+        status == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
+        status == CleaningBookingStatus.inProgress ||
+        status == CleaningBookingStatus.awaitingCustomerCompletion ||
+        status == CleaningBookingStatus.timeExtensionRequested ||
+        status == CleaningBookingStatus.completed ||
+        status == CleaningBookingStatus.cancelled;
+
+    if (leftTravelPhase) {
+      _liveWorkerTravelling = false;
+      return;
+    }
+
+    final hasStartedTravel =
+        order.startedTravelAt != null && order.startedTravelAt!.trim().isNotEmpty;
+    if (hasStartedTravel) {
+      _liveWorkerTravelling = true;
+    }
   }
 
   void _syncGateSessionWithOrder(CleaningOrderDetailModel order) {

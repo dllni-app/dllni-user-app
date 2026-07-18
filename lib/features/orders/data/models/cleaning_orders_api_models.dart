@@ -77,8 +77,39 @@ Map<String, dynamic> _withTracking(Map<String, dynamic> json) {
 }
 
 /// Arabic status chip/label for cleaning orders (list + details).
-String cleaningOrderStatusLabelAr(String? status) {
-  switch ((status ?? '').toLowerCase()) {
+///
+/// When the booking is still pre-arrival (`pending` / `worker_assigned`) but
+/// the worker has started travel (`startedTravelAt` set and `arrivedAt` empty),
+/// show the on-the-road label instead of the assigned label.
+String cleaningOrderStatusLabelAr(
+  String? status, {
+  String? startedTravelAt,
+  String? arrivedAt,
+  bool forceTravelling = false,
+}) {
+  final statusNorm = (status ?? '').toLowerCase();
+
+  if (statusNorm == 'en_route' ||
+      statusNorm == 'worker_en_route' ||
+      statusNorm == 'on_the_way') {
+    return 'مقدم الخدمة في الطريق';
+  }
+
+  final hasStartedTravel =
+      forceTravelling ||
+      (startedTravelAt != null && startedTravelAt.trim().isNotEmpty);
+  final hasArrived = arrivedAt != null && arrivedAt.trim().isNotEmpty;
+  final isTravelling = hasStartedTravel && !hasArrived;
+  final isPreArrivalStatus =
+      statusNorm.isEmpty ||
+      statusNorm == CleaningBookingStatus.pending ||
+      statusNorm == CleaningBookingStatus.workerAssigned;
+
+  if (isTravelling && isPreArrivalStatus) {
+    return 'مقدم الخدمة في الطريق';
+  }
+
+  switch (statusNorm) {
     case CleaningBookingStatus.pending:
       return 'في مرحلة الاستعداد';
     case CleaningBookingStatus.workerAssigned:
