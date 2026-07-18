@@ -2,11 +2,25 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class ClOccasionTypeCardWidget extends StatelessWidget {
-  const ClOccasionTypeCardWidget({required this.title, required this.imagePath, required this.onTap, super.key});
+  const ClOccasionTypeCardWidget({
+    required this.title,
+    required this.imagePath,
+    required this.onTap,
+    super.key,
+  });
 
   final String title;
   final String imagePath;
   final VoidCallback onTap;
+
+  ImageProvider<Object> get _imageProvider {
+    final uri = Uri.tryParse(imagePath);
+    if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+      return NetworkImage(imagePath);
+    }
+
+    return AssetImage(imagePath);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,19 +32,34 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
         width: context.width,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          image: DecorationImage(image: AssetImage(imagePath), fit: BoxFit.cover),
+          image: DecorationImage(image: _imageProvider, fit: BoxFit.cover),
         ),
-        padding: EdgeInsetsDirectional.symmetric(vertical: 12, horizontal: 24),
+        padding: const EdgeInsetsDirectional.symmetric(
+          vertical: 12,
+          horizontal: 24,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsetsDirectional.symmetric(
+                horizontal: 10,
+                vertical: 8,
+              ),
               child: Row(
                 children: [
                   Expanded(
-                    child: AppText.bodyMedium(title, fontWeight: FontWeight.w700, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    child: AppText.bodyMedium(
+                      title,
+                      fontWeight: FontWeight.w700,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
