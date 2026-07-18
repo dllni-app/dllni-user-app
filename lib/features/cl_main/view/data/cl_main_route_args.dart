@@ -18,6 +18,7 @@ class ClMainHomeDescriptionArgs {
 
 class ClMainOccasionOption {
   final String id;
+  final String bookingValue;
   final String title;
   final String imagePath;
 
@@ -25,7 +26,8 @@ class ClMainOccasionOption {
     required this.id,
     required this.title,
     required this.imagePath,
-  });
+    String? bookingValue,
+  }) : bookingValue = bookingValue ?? id;
 }
 
 class ClMainOccasionDescriptionArgs {
