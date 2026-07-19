@@ -3,6 +3,7 @@ import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_room_size
 import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_type.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/check_restaurant_coupon_use_case.dart';
+import 'package:dllni_user_app/features/orders/view/manager/bloc/merchant_checkout_coupon_bloc_extension.dart';
 import 'package:dllni_user_app/features/profile/data/models/platform_coupon_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,6 +34,44 @@ void main() {
         'addressLatitude': 33.51,
         'addressLongitude': 36.29,
         'preferredWorkerId': 7,
+      });
+    });
+
+    test('restaurant checkout coupon targets the selected cart', () {
+      final event = ApplyMerchantCartCouponEvent(
+        cartId: 14,
+        section: 'restaurant',
+        couponCode: ' REST20 ',
+      );
+      final params = CheckRestaurantCouponParams(
+        couponCode: event.couponCode,
+        section: event.section,
+        cartId: event.cartId,
+      );
+
+      expect(params.getBody(), <String, dynamic>{
+        'section': 'restaurant',
+        'couponCode': 'REST20',
+        'cartId': 14,
+      });
+    });
+
+    test('supermarket checkout coupon targets the selected cart', () {
+      final event = ApplyMerchantCartCouponEvent(
+        cartId: 29,
+        section: 'supermarket',
+        couponCode: ' MARKET15 ',
+      );
+      final params = CheckRestaurantCouponParams(
+        couponCode: event.couponCode,
+        section: event.section,
+        cartId: event.cartId,
+      );
+
+      expect(params.getBody(), <String, dynamic>{
+        'section': 'supermarket',
+        'couponCode': 'MARKET15',
+        'cartId': 29,
       });
     });
 
