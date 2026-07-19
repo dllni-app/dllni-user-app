@@ -9,29 +9,22 @@ import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
-import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
-import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
-import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
-import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
-import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
-import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/cl_service_section_card_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_main_screen.dart';
-import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainOccasionScheduleScreen extends StatefulWidget {
@@ -238,58 +231,6 @@ class _ClMainOccasionScheduleScreenState
                             } ,
                           ),
 
-                          const SizedBox(height: 16),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
-                            onChanged: (value) {
-                              _handleGenderPreferenceChanged(bloc, value);
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          ClServicePreviousWorkersSectionWidget(
-                            workers: filterPreviousWorkersByGender(
-                              state.previousWorkers.list,
-                              state.genderPreference,
-                            ),
-                            selectedWorkerIds: state.selectedWorkerIds,
-                            isLoading:
-                                state.previousWorkersStatus ==
-                                BlocStatus.loading,
-                            errorMessage:
-                                state.previousWorkersStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
-                            onSelectWorker: (workerId) {
-                              if (_selectedAddress.value == null) {
-                                AppToast.showToast(
-                                  context: context,
-                                  message: 'يرجى اختيار عنوان الخدمة أولاً',
-                                  type: ToastificationType.error,
-                                );
-                                return;
-                              }
-                              final updatedWorkerIds = _workerIdsAfterToggle(
-                                state,
-                                workerId,
-                              );
-                              bloc.add(
-                                SetPreferredWorkerEvent(workerId: workerId),
-                              );
-                              _requestEventEstimate(
-                                state,
-                                selectedWorkerIds: updatedWorkerIds,
-                              );
-                            },
-                            onOpenWorkerProfile: (worker) {
-                              context.pushRoute(
-                                '/clworkerprofiledetail',
-                                arguments:
-                                    WorkerProfileRouteArgs.fromPreviousWorker(
-                                      worker,
-                                    ),
-                              );
-                            },
-                          ),
                           const SizedBox(height: 12),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
@@ -349,17 +290,6 @@ class _ClMainOccasionScheduleScreenState
       _currentEstimate = args.estimate;
       _syncToTime();
     }
-    _bloc?.add(
-      GetPreviousCleaningWorkersEvent(
-        params: GetPreviousCleaningWorkersParams(
-          page: 1,
-          propertyType: 'event_assistance',
-
-        ),
-
-        isReload: true,
-      ),
-    );
   }
 
   @override
@@ -389,43 +319,6 @@ class _ClMainOccasionScheduleScreenState
   void _updateTimeDisplay() {
     _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
-  }
-
-  Future<void> _handleGenderPreferenceChanged(
-    ClMainBloc bloc,
-    CleaningGenderPreference preference,
-  )
-  async {
-    if (preference != CleaningGenderPreference.female) {
-      bloc.add(SetGenderPreferenceEvent(preference: preference));
-      return;
-    }
-
-    Loading.show(context);
-    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
-    Loading.close();
-    if (!mounted) return;
-
-    await response.fold(
-      (failure) async {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(failure.message)));
-      },
-      (policy) async {
-        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
-          context: context,
-          policy: policy,
-        );
-        if (!mounted || confirmation == null) return;
-        bloc.add(
-          SetGenderPreferenceEvent(
-            preference: preference,
-            workEnvironmentConfirmation: confirmation,
-          ),
-        );
-      },
-    );
   }
 
   void _onApplyCoupon(String code) {
@@ -518,16 +411,6 @@ class _ClMainOccasionScheduleScreenState
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
       _syncToTime();
     });
-  }
-
-  List<int> _workerIdsAfterToggle(ClMainState state, int workerId) {
-    final updated = _normalizeWorkerIds(state.selectedWorkerIds);
-    if (updated.contains(workerId)) {
-      updated.remove(workerId);
-    } else if (workerId > 0) {
-      updated.add(workerId);
-    }
-    return updated;
   }
 
   void _requestEventEstimate(

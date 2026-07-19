@@ -10,26 +10,54 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CleaningRebookPolicy lead-time', () {
-    test('blocks when remaining time is less than 2 hours', () {
+    test('locks when remaining time is less than 24 hours', () {
       final check = CleaningRebookPolicy.evaluateLeadTime(
         scheduledDate: '2026-05-20',
         scheduledTime: '09:00',
-        now: DateTime(2026, 5, 20, 7, 30),
+        now: DateTime(2026, 5, 19, 10, 0),
       );
 
       expect(check.allowed, isFalse);
+      expect(check.visibility, CleaningRebookEditVisibility.locked);
+      expect(check.isLeadTimeLocked, isTrue);
+      expect(check.isPastScheduledTime, isFalse);
       expect(check.remaining, isNotNull);
-      expect(check.remaining!.inHours, lessThan(2));
+      expect(check.remaining!.inHours, lessThan(24));
     });
 
-    test('allows when remaining time is at least 2 hours', () {
+    test('hides when current time is after scheduled service time', () {
       final check = CleaningRebookPolicy.evaluateLeadTime(
         scheduledDate: '2026-05-20',
-        scheduledTime: '12:00',
-        now: DateTime(2026, 5, 20, 10, 0),
+        scheduledTime: '09:00',
+        now: DateTime(2026, 5, 20, 9, 1),
+      );
+
+      expect(check.allowed, isFalse);
+      expect(check.visibility, CleaningRebookEditVisibility.hidden);
+      expect(check.isPastScheduledTime, isTrue);
+      expect(check.isLeadTimeLocked, isFalse);
+    });
+
+    test('hides when current time equals scheduled service time', () {
+      final check = CleaningRebookPolicy.evaluateLeadTime(
+        scheduledDate: '2026-05-20',
+        scheduledTime: '09:00',
+        now: DateTime(2026, 5, 20, 9, 0),
+      );
+
+      expect(check.allowed, isFalse);
+      expect(check.visibility, CleaningRebookEditVisibility.hidden);
+    });
+
+    test('allows when remaining time is at least 24 hours', () {
+      final check = CleaningRebookPolicy.evaluateLeadTime(
+        scheduledDate: '2026-05-21',
+        scheduledTime: '09:00',
+        now: DateTime(2026, 5, 20, 9, 0),
       );
 
       expect(check.allowed, isTrue);
+      expect(check.visibility, CleaningRebookEditVisibility.editable);
     });
   });
 

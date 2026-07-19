@@ -66,17 +66,11 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (scheduleDateLine != null) ...[
-            _SummaryRowWidget(
-              label: 'موعد الخدمة',
-              value: scheduleDateLine,
-            ),
+            _SummaryRowWidget(label: 'موعد الخدمة', value: scheduleDateLine),
             const SizedBox(height: 8),
           ],
           if (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty) ...[
-            _SummaryRowWidget(
-              label: 'الوقت',
-              value: scheduleTimeRange!,
-            ),
+            _SummaryRowWidget(label: 'الوقت', value: scheduleTimeRange!),
             const SizedBox(height: 8),
           ],
           if (scheduleDateLine != null ||
@@ -119,7 +113,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFF3D6A1)),
               ),
               child: AppText.bodySmall(
-                'السعر المعروض تقديري وغير نهائي، وسيتم تأكيد السعر النهائي بعد قبول مقدم الخدمة للطلب.',
+                'السعر المعروض تقديري وغير نهائي، وسيتم اضافة رسوم التنقل بعد قبول مقدم الخدمة للطلب.',
                 color: const Color(0xFF8A5A12),
                 fontWeight: FontWeight.w600,
                 textAlign: TextAlign.right,

@@ -6,6 +6,7 @@ import '../../../sm_orders/view/screens/sm_order_details_screen.dart';
 import '../../../sm_orders/view/widgets/order_card.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../helpers/cleaning_rebook_policy.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../screens/cleaning_order_details_screen.dart';
 import '../screens/cleaning_order_reschedule_screen.dart';
@@ -162,6 +163,17 @@ bool _blocksCleaningListReschedule(String? status) {
       normalized == CleaningBookingStatus.timeExtensionRequested;
 }
 
+String _cleaningLeadTimeLockMessage(Duration? remaining) {
+  if (remaining == null) {
+    return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 24 ساعة من وقت الخدمة.';
+  }
+  final hours = remaining.inHours;
+  if (hours <= 0) {
+    return 'موعد الخدمة قريب جدًا، لا يمكن تعديل العنوان أو الموعد.';
+  }
+  return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 24 ساعة. المتبقي: $hours ساعة.';
+}
+
 class _CleaningOrderListItem extends StatelessWidget {
   const _CleaningOrderListItem({super.key, required this.orderId});
 
@@ -182,6 +194,10 @@ class _CleaningOrderListItem extends StatelessWidget {
         if (cleaningOrder == null) {
           return const SizedBox.shrink();
         }
+        final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
+          scheduledDate: cleaningOrder.scheduledDate,
+          scheduledTime: cleaningOrder.scheduledTime,
+        );
         return CleaningOrderCard(
           order: cleaningOrder,
           onTap: () {
@@ -190,30 +206,46 @@ class _CleaningOrderListItem extends StatelessWidget {
               arguments: CleaningOrderDetailsArgs(orderId: orderId),
             );
           },
-          onRescheduleTap: () {
-            if (_blocksCleaningListReschedule(cleaningOrder.status)) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('لا يمكن تغيير موعد الخدمة في هذه المرحلة'),
-                ),
-              );
-              return;
-            }
-            context
-                .pushRoute(
-                  '/cleaning-order-reschedule',
-                  arguments: CleaningOrderRescheduleArgs(order: cleaningOrder),
-                )
-                ?.then((result) {
-                  if (!context.mounted) return;
-                  if (result == true ||
-                      result is CleaningOrderRescheduleResult) {
-                    context.read<OrdersBloc>().add(
-                      FetchOrdersEvent(isReload: true),
+          onRescheduleTap: leadTimeCheck.isPastScheduledTime
+              ? null
+              : () {
+                  if (_blocksCleaningListReschedule(cleaningOrder.status)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'لا يمكن تغيير موعد الخدمة في هذه المرحلة',
+                        ),
+                      ),
                     );
+                    return;
                   }
-                });
-          },
+                  if (!leadTimeCheck.allowed) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _cleaningLeadTimeLockMessage(leadTimeCheck.remaining),
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  context
+                      .pushRoute(
+                        '/cleaning-order-reschedule',
+                        arguments: CleaningOrderRescheduleArgs(
+                          order: cleaningOrder,
+                        ),
+                      )
+                      ?.then((result) {
+                        if (!context.mounted) return;
+                        if (result == true ||
+                            result is CleaningOrderRescheduleResult) {
+                          context.read<OrdersBloc>().add(
+                            FetchOrdersEvent(isReload: true),
+                          );
+                        }
+                      });
+                },
           onReportIssueTap: () {
             context.pushRoute(
               '/cleaning-order-problem',

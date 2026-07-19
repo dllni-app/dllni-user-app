@@ -55,23 +55,44 @@ class CleaningRebookOutcome {
   final String? createMessage;
 }
 
+enum CleaningRebookEditVisibility {
+  /// More than [CleaningRebookPolicy.minimumLeadTime] remaining — edits allowed.
+  editable,
+
+  /// Less than 24 hours remaining, but scheduled time has not passed — show
+  /// controls disabled.
+  locked,
+
+  /// Current time is at or after the scheduled service time — hide edit
+  /// controls.
+  hidden,
+}
+
 class CleaningRebookGuardResult {
   const CleaningRebookGuardResult({
     required this.allowed,
+    required this.visibility,
     this.scheduledAt,
     this.remaining,
   });
 
   final bool allowed;
+  final CleaningRebookEditVisibility visibility;
   final DateTime? scheduledAt;
   final Duration? remaining;
+
+  bool get isPastScheduledTime =>
+      visibility == CleaningRebookEditVisibility.hidden;
+
+  bool get isLeadTimeLocked =>
+      visibility == CleaningRebookEditVisibility.locked;
 }
 
 class CleaningRebookPolicy {
   CleaningRebookPolicy({required this.cancelOrder, required this.createOrder});
 
   static const String cancelReason = 'قام المستخدم بتعديل بيانات الطلب';
-  static const Duration minimumLeadTime = Duration(hours: 2);
+  static const Duration minimumLeadTime = Duration(hours: 24);
 
   final DataResponse<CleaningCancelResultModel> Function(
     CancelCleaningOrderParams params,
@@ -103,19 +124,32 @@ class CleaningRebookPolicy {
       scheduledTime: scheduledTime,
     );
     if (scheduledAt == null) {
-      return const CleaningRebookGuardResult(allowed: false);
+      return const CleaningRebookGuardResult(
+        allowed: false,
+        visibility: CleaningRebookEditVisibility.hidden,
+      );
     }
     final current = now ?? DateTime.now();
     final remaining = scheduledAt.difference(current);
+    if (remaining <= Duration.zero) {
+      return CleaningRebookGuardResult(
+        allowed: false,
+        visibility: CleaningRebookEditVisibility.hidden,
+        scheduledAt: scheduledAt,
+        remaining: remaining,
+      );
+    }
     if (remaining < minimumLeadTime) {
       return CleaningRebookGuardResult(
         allowed: false,
+        visibility: CleaningRebookEditVisibility.locked,
         scheduledAt: scheduledAt,
         remaining: remaining,
       );
     }
     return CleaningRebookGuardResult(
       allowed: true,
+      visibility: CleaningRebookEditVisibility.editable,
       scheduledAt: scheduledAt,
       remaining: remaining,
     );

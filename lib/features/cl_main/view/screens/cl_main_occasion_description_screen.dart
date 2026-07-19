@@ -1,14 +1,25 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/injection.dart';
+import '../../../../core/widgets/toast_component.dart';
+import '../../domain/models/cleaning_assignment_mode.dart';
+import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
+import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
+import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../manager/bloc/cl_main_bloc.dart';
+import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_home_description_title_card_widget.dart';
 import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
+import '../widgets/cl_service_gender_preference_section_widget.dart';
+import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
+import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainOccasionDescriptionScreen extends StatefulWidget {
@@ -439,6 +450,42 @@ class _ClMainOccasionDescriptionScreenState
                             ),
                           ),
                           const SizedBox(height: 10),
+                          ClServiceGenderPreferenceSectionWidget(
+                            selectedPreference: state.genderPreference,
+                            onChanged: (value) {
+                              _handleGenderPreferenceChanged(bloc, value);
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          ClServicePreviousWorkersSectionWidget(
+                            workers: filterPreviousWorkersByGender(
+                              state.previousWorkers.list,
+                              state.genderPreference,
+                            ),
+                            selectedWorkerIds: state.selectedWorkerIds,
+                            isLoading:
+                                state.previousWorkersStatus ==
+                                BlocStatus.loading,
+                            errorMessage:
+                                state.previousWorkersStatus == BlocStatus.failed
+                                ? state.errorMessage
+                                : null,
+                            onSelectWorker: (workerId) {
+                              bloc.add(
+                                SetPreferredWorkerEvent(workerId: workerId),
+                              );
+                            },
+                            onOpenWorkerProfile: (worker) {
+                              context.pushRoute(
+                                '/clworkerprofiledetail',
+                                arguments:
+                                    WorkerProfileRouteArgs.fromPreviousWorker(
+                                      worker,
+                                    ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10),
                           if (state.estimatePriceStatus == BlocStatus.loading)
                             Center(child: CircularProgressIndicator())
                           else
@@ -471,6 +518,20 @@ class _ClMainOccasionDescriptionScreenState
     if (args is ClMainOccasionDescriptionArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
+      _bloc?.add(
+        SetGenderPreferenceEvent(
+          preference: CleaningGenderPreference.any,
+        ),
+      );
+      _bloc?.add(
+        GetPreviousCleaningWorkersEvent(
+          params: GetPreviousCleaningWorkersParams(
+            page: 1,
+            propertyType: 'event_assistance',
+          ),
+          isReload: true,
+        ),
+      );
     }
   }
 
@@ -479,6 +540,40 @@ class _ClMainOccasionDescriptionScreenState
     _customServiceController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleGenderPreferenceChanged(
+    ClMainBloc bloc,
+    CleaningGenderPreference preference,
+  ) async {
+    if (preference.apiValue != 'female') {
+      bloc.add(SetGenderPreferenceEvent(preference: preference));
+      return;
+    }
+
+    Loading.show(context);
+    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
+    Loading.close();
+    if (!mounted) return;
+
+    await response.fold(
+      (failure) async {
+        ToastComponent.showToast(context, msg: failure.message);
+      },
+      (policy) async {
+        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
+          context: context,
+          policy: policy,
+        );
+        if (!mounted || confirmation == null) return;
+        bloc.add(
+          SetGenderPreferenceEvent(
+            preference: preference,
+            workEnvironmentConfirmation: confirmation,
+          ),
+        );
+      },
+    );
   }
 
   String _eventTypeFromOption(ClMainOccasionOption option) {
@@ -529,6 +624,10 @@ class _ClMainOccasionDescriptionScreenState
     final specialRequirement = _selectedSpecialRequirement!.id == 'none'
         ? null
         : _selectedSpecialRequirement!.label;
+    final preferredWorkerIds = bloc.state.selectedWorkerIds;
+    final assignmentMode = preferredWorkerIds.isEmpty
+        ? CleaningAssignmentMode.openCount
+        : CleaningAssignmentMode.preferredWorker;
     bloc.add(
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams.eventAssistance(
@@ -538,6 +637,8 @@ class _ClMainOccasionDescriptionScreenState
           customService: customService,
           hours: _hoursCount.toDouble(),
           numberOfWorkers: _workersCount,
+          preferredWorkerIds: preferredWorkerIds,
+          assignmentMode: assignmentMode,
           specialRequirement: specialRequirement,
           notes: _enableNotes ? _notesController.text.trim() : null,
         ),

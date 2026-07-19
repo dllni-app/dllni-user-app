@@ -16,9 +16,7 @@ import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_cleaning_services_use_case.dart';
-import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
-import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
@@ -28,12 +26,10 @@ import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
-import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/cl_service_worker_assignment_summary_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_main_screen.dart';
-import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainServiceScheduleScreen extends StatefulWidget {
@@ -182,31 +178,6 @@ class _ClMainServiceScheduleScreenState
                             },
                           ),
                           const SizedBox(height: 12),
-                          ClServicePreviousWorkersSectionWidget(
-                            workers: filterPreviousWorkersByGender(
-                              state.previousWorkers.list,
-                              state.genderPreference,
-                            ),
-                            selectedWorkerIds: state.selectedWorkerIds,
-                            isLoading:
-                            state.previousWorkersStatus == BlocStatus.loading,
-                            errorMessage:
-                            state.previousWorkersStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
-                            onSelectWorker: (workerId) =>
-                                _togglePreferredWorker(state, workerId),
-                            onOpenWorkerProfile: (worker) {
-                              context.pushRoute(
-                                '/clworkerprofiledetail',
-                                arguments:
-                                WorkerProfileRouteArgs.fromPreviousWorker(
-                                  worker,
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 12),
                           ClCleaningServicesSelectorWidget(
                             availableServices: _availableCleaningServices,
                             selectedServiceNames: _selectedCleaningServiceNames,
@@ -299,7 +270,6 @@ class _ClMainServiceScheduleScreenState
       );
       _syncToTime();
       _loadCleaningServices();
-      _loadPreviousWorkers();
     } else if (args is AddressListItem) {
       selectedAddress = ValueNotifier(args);
     }
@@ -500,21 +470,6 @@ class _ClMainServiceScheduleScreenState
     );
   }
 
-  void _loadPreviousWorkers() {
-    final args = _routeArgs;
-    final bloc = _bloc;
-    if (args == null || bloc == null) return;
-    bloc.add(
-      GetPreviousCleaningWorkersEvent(
-        params: GetPreviousCleaningWorkersParams(
-          page: 1,
-          propertyType: args.propertyType,
-        ),
-        isReload: true,
-      ),
-    );
-  }
-
   Future<void> _onSubmitPressed(ClMainState state) async {
     final args = _routeArgs;
     final bloc = _bloc;
@@ -625,27 +580,6 @@ class _ClMainServiceScheduleScreenState
         _requestUpdatedEstimate(bloc.state);
       }
     }
-  }
-
-  void _togglePreferredWorker(ClMainState state, int workerId) {
-    if (selectedAddress.value == null) {
-      AppToast.showToast(
-        context: context,
-        message: 'يرجى اختيار عنوان الخدمة أولاً',
-        type: ToastificationType.error,
-      );
-      return;
-    }
-
-    final updated = List<int>.from(state.selectedWorkerIds);
-    if (updated.contains(workerId)) {
-      updated.remove(workerId);
-    } else {
-      updated.add(workerId);
-    }
-
-    _bloc?.add(SetPreferredWorkersEvent(workerIds: updated));
-    _requestUpdatedEstimate(state, selectedWorkerIds: updated);
   }
 
   void _requestUpdatedEstimate(ClMainState state, {

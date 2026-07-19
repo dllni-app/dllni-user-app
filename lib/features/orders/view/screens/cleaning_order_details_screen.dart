@@ -178,8 +178,13 @@ class _CleaningOrderDetailsScreenState
       scheduledDate: order.scheduledDate,
       scheduledTime: order.scheduledTime,
     );
+    final statusBlocksEdit = _blocksReschedule(order) || _isRebooking;
+    // Past scheduled time (or unparseable): hide change controls.
+    final hideEditActions =
+        statusBlocksEdit || leadTimeCheck.isPastScheduledTime;
+    // Within 24h but still before service: show controls disabled.
     final editLocked =
-        _blocksReschedule(order) || _isRebooking || !leadTimeCheck.allowed;
+        statusBlocksEdit || !leadTimeCheck.allowed;
     final liveAcceptance = _effectiveWorkerAcceptance(order);
     final searchingForWorkers = _isSearchingForWorkers(order, liveAcceptance);
 
@@ -499,35 +504,38 @@ class _CleaningOrderDetailsScreenState
                       ),
                     ],
                     const SizedBox(height: 12),
-                    if (!editLocked) ...[
-                      ClServiceSectionCardWidget(
-                        step: 1,
-                        showStepBadge: false,
-                        title: 'وقت و تاريخ الخدمة',
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ClServiceDayPreviewCardWidget(
-                                    dayAr:
-                                        CleaningDateTimeUiFormat.weekdayFromApiDate(
-                                          order.scheduledDate,
-                                        ),
-                                    dayDate:
-                                        CleaningDateTimeUiFormat.dateFromApiDate(
-                                          order.scheduledDate,
-                                        ),
-                                  ),
+                    ClServiceSectionCardWidget(
+                      step: 1,
+                      showStepBadge: false,
+                      title: 'وقت و تاريخ الخدمة',
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClServiceDayPreviewCardWidget(
+                                  dayAr:
+                                      CleaningDateTimeUiFormat.weekdayFromApiDate(
+                                        order.scheduledDate,
+                                      ),
+                                  dayDate:
+                                      CleaningDateTimeUiFormat.dateFromApiDate(
+                                        order.scheduledDate,
+                                      ),
                                 ),
+                              ),
+                              if (!hideEditActions) ...[
                                 const SizedBox(width: 10),
-
                                 FilledButton(
                                   onPressed: editLocked
-                                      ? null
+                                      ? () => _showLeadTimeLockedMessage(
+                                          leadTimeCheck,
+                                        )
                                       : () => _goToReschedule(order),
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1E2A78),
+                                    backgroundColor: editLocked
+                                        ? const Color(0xFFD1D5DB)
+                                        : const Color(0xFF1E2A78),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
@@ -540,62 +548,85 @@ class _CleaningOrderDetailsScreenState
                                   ),
                                 ),
                               ],
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsetsDirectional.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF7F7F9),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsetsDirectional.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF7F7F9),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AppText.bodyMedium(
-                                    'مدة الخدمة',
-                                    color: const Color(0xFF656B78),
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ClServiceTimePickerFieldWidget(
-                                          title: 'من',
-                                          controller: _fromTimeController,
-                                          onTap: () {
-                                            if (editLocked) return;
-                                            _goToReschedule(order);
-                                          },
-                                        ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AppText.bodyMedium(
+                                  'مدة الخدمة',
+                                  color: const Color(0xFF656B78),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ClServiceTimePickerFieldWidget(
+                                        title: 'من',
+                                        controller: _fromTimeController,
+                                        onTap: hideEditActions
+                                            ? null
+                                            : () {
+                                                if (editLocked) {
+                                                  _showLeadTimeLockedMessage(
+                                                    leadTimeCheck,
+                                                  );
+                                                  return;
+                                                }
+                                                _goToReschedule(order);
+                                              },
                                       ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: ClServiceTimePickerFieldWidget(
-                                          title: 'إلى',
-                                          controller: _toTimeController,
-                                          onTap: () {
-                                            if (editLocked) return;
-                                            _goToReschedule(order);
-                                          },
-                                        ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: ClServiceTimePickerFieldWidget(
+                                        title: 'إلى',
+                                        controller: _toTimeController,
+                                        onTap: hideEditActions
+                                            ? null
+                                            : () {
+                                                if (editLocked) {
+                                                  _showLeadTimeLockedMessage(
+                                                    leadTimeCheck,
+                                                  );
+                                                  return;
+                                                }
+                                                _goToReschedule(order);
+                                              },
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
+                          ),
+                          if (!hideEditActions) ...[
                             const SizedBox(height: 10),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: editLocked
-                                    ? null
+                                    ? () => _showLeadTimeLockedMessage(
+                                        leadTimeCheck,
+                                      )
                                     : () => _goToReschedule(order),
                                 style: ElevatedButton.styleFrom(
                                   elevation: 0,
                                   backgroundColor: const Color(0xffE5E7EB),
-                                  foregroundColor: const Color(0xff1E2A78),
+                                  foregroundColor: editLocked
+                                      ? const Color(0xff9CA3AF)
+                                      : const Color(0xff1E2A78),
+                                  disabledForegroundColor: const Color(
+                                    0xff9CA3AF,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -611,16 +642,20 @@ class _CleaningOrderDetailsScreenState
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                    ],
+                    ),
+                    const SizedBox(height: 12),
                     ClServiceAddressSectionWidget(
                       locationName: order.locationName ?? 'المنزل',
                       address: order.propertyDetails?.address ?? '-',
-                      onChangeTap: editLocked
+                      showChangeAction: !hideEditActions,
+                      onChangeTap: hideEditActions
                           ? null
+                          : editLocked
+                          ? () => _showLeadTimeLockedMessage(leadTimeCheck)
                           : () => _changeAddress(order),
+                      changeActionEnabled: !editLocked,
                     ),
                     const SizedBox(height: 12),
                     if (order.addressLatitude != null &&
@@ -1057,6 +1092,17 @@ class _CleaningOrderDetailsScreenState
 
   Future<void> _changeAddress(CleaningOrderDetailModel order) async {
     if (_isRebooking || _blocksReschedule(order)) return;
+    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+    );
+    if (!leadTimeCheck.allowed) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_leadTimeLockMessage(leadTimeCheck.remaining))),
+      );
+      return;
+    }
     final selectedAddress = await context.pushRoute(
       '/myaddresses',
       arguments: true,
@@ -1259,6 +1305,17 @@ class _CleaningOrderDetailsScreenState
     if (_blocksReschedule(order) || _isRebooking) {
       return;
     }
+    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+    );
+    if (!leadTimeCheck.allowed) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_leadTimeLockMessage(leadTimeCheck.remaining))),
+      );
+      return;
+    }
     final result = await context.pushRoute(
       '/cleaning-order-reschedule',
       arguments: CleaningOrderRescheduleArgs(
@@ -1309,13 +1366,23 @@ class _CleaningOrderDetailsScreenState
 
   String _leadTimeLockMessage(Duration? remaining) {
     if (remaining == null) {
-      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 2 ساعة من وقت الخدمة.';
+      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 24 ساعة من وقت الخدمة.';
     }
     final hours = remaining.inHours;
     if (hours <= 0) {
       return 'موعد الخدمة قريب جدًا، لا يمكن تعديل العنوان أو الموعد.';
     }
-    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 2 ساعة. المتبقي: $hours ساعة.';
+    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 24 ساعة. المتبقي: $hours ساعة.';
+  }
+
+  void _showLeadTimeLockedMessage(CleaningRebookGuardResult leadTimeCheck) {
+    if (!mounted) return;
+    final message = leadTimeCheck.allowed
+        ? 'تغيير الموعد أو العنوان غير متاح في هذه المرحلة.'
+        : _leadTimeLockMessage(leadTimeCheck.remaining);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _maybePromptForCompletionGate({bool force = false}) async {

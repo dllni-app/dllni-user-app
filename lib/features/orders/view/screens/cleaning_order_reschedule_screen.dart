@@ -218,13 +218,13 @@ class _CleaningOrderRescheduleScreenState
 
   String _leadTimeBlockMessage(Duration? remaining) {
     if (remaining == null) {
-      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 2 ساعة من وقت الخدمة.';
+      return 'لا يمكن تعديل العنوان أو الموعد قبل أقل من 24 ساعة من وقت الخدمة.';
     }
     final hours = remaining.inHours;
     if (hours <= 0) {
       return 'موعد الخدمة قريب جدًا، لا يمكن تعديل العنوان أو الموعد.';
     }
-    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 2 ساعة. المتبقي: $hours ساعة.';
+    return 'لا يمكن تعديل العنوان أو الموعد عندما يتبقى أقل من 24 ساعة. المتبقي: $hours ساعة.';
   }
 
   Future<void> _onSave() async {

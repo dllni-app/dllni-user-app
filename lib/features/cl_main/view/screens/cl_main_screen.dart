@@ -217,6 +217,84 @@ class _ClMainScreenState extends State<ClMainScreen> {
     }
   }
 
+  Future<void> _showBannerPreview(CleaningBannerModel banner) async {
+    final imageUrl = banner.imageUrl?.trim();
+    if (imageUrl == null || imageUrl.isEmpty) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.72),
+      builder: (dialogContext) {
+        final maxHeight = MediaQuery.sizeOf(dialogContext).height * 0.7;
+        return Dialog(
+          key: const Key('cl_main_banner_preview_dialog'),
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: IconButton(
+                  key: const Key('cl_main_banner_preview_close'),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.45),
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxHeight),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: InteractiveViewer(
+                    minScale: 1,
+                    maxScale: 3,
+                    child: AppImage.network(
+                      imageUrl,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+              if (_hasBannerTargetUrl(banner)) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    key: const Key('cl_main_banner_preview_open_link'),
+                    onPressed: () async {
+                      Navigator.of(dialogContext).pop();
+                      await _openBannerTargetUrl(banner.targetUrl);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('فتح الرابط'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  bool _hasBannerTargetUrl(CleaningBannerModel banner) {
+    final value = banner.targetUrl?.trim();
+    return value != null && value.isNotEmpty;
+  }
+
   Widget _buildCleaningBannersSection() {
     if (_cleaningBannersStatus == BlocStatus.loading) {
       return const Padding(
@@ -260,7 +338,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
               itemCount: _cleaningBanners.length,
               itemBuilder: (_, index) => _ClMainBannerCard(
                 banner: _cleaningBanners[index],
-                onTap: _openBannerTargetUrl,
+                onTap: _showBannerPreview,
               ),
             ),
           ),
@@ -436,19 +514,19 @@ class _ClMainBannerCard extends StatelessWidget {
   const _ClMainBannerCard({required this.banner, required this.onTap});
 
   final CleaningBannerModel banner;
-  final Future<void> Function(String? targetUrl) onTap;
+  final Future<void> Function(CleaningBannerModel banner) onTap;
 
-  bool get _hasTargetUrl {
-    final value = banner.targetUrl?.trim();
+  bool get _hasImage {
+    final value = banner.imageUrl?.trim();
     return value != null && value.isNotEmpty;
   }
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      button: _hasTargetUrl,
+      button: _hasImage,
       child: GestureDetector(
-        onTap: _hasTargetUrl ? () => onTap(banner.targetUrl) : null,
+        onTap: _hasImage ? () => onTap(banner) : null,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: AppImage.network(

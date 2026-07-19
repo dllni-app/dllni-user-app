@@ -12,9 +12,10 @@ enum CleaningGenderPreference {
       case 'female':
         return CleaningGenderPreference.female;
       case 'male':
+        return CleaningGenderPreference.male;
       case 'any':
       default:
-        return CleaningGenderPreference.male;
+        return CleaningGenderPreference.any;
     }
   }
 }

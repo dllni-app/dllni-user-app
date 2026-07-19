@@ -14,6 +14,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
   });
 
   static const List<CleaningGenderPreference> _selectablePreferences = [
+    CleaningGenderPreference.any,
     CleaningGenderPreference.male,
     CleaningGenderPreference.female,
   ];
@@ -28,12 +29,12 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
     return ClServiceSectionCardWidget(
       step: step,
       showStepBadge: showStepBadge,
-      title: 'تفضيل مقدم الخدمة *',
+      title: 'تفضيل مقدم الخدمة',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.bodySmall(
-            'اختيار جنس العامل إلزامي',
+            'اختر جنس العامل أو اتركه «لا يهم»',
             color: const Color(0xFF6B7280),
             textAlign: TextAlign.right,
           ),

@@ -14,6 +14,7 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
     this.locationName = 'المنزل',
     this.address = 'العنوان غير محدد',
     this.showChangeAction = true,
+    this.changeActionEnabled = true,
     this.onChangeTap,
     this.afterBringDefault,
   });
@@ -21,6 +22,7 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
   final String locationName;
   final String address;
   final bool showChangeAction;
+  final bool changeActionEnabled;
   final VoidCallback? onChangeTap;
   final void afterBringDefault;
 
@@ -33,6 +35,7 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
             ..add(FetchAddressesEvent(params: FetchAddressesParams())),
       child: BlocBuilder<ProfileBloc, ProfileState>(
         builder: (context, state) {
+          final actionEnabled = changeActionEnabled && onChangeTap != null;
           return Container(
             child: switch (state.addressesStatus) {
               null || BlocStatus.failed || BlocStatus.success => Container(
@@ -61,26 +64,30 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
                           textAlign: TextAlign.right,
                         ),
                         const Spacer(),
-                        // if (showChangeAction)
-                        InkWell(
-                          onTap: onChangeTap,
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsetsDirectional.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE9E9F3),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: AppText.labelLarge(
-                              'عرض',
-                              color: const Color(0xFF1E2A78),
-                              fontWeight: FontWeight.w700,
+                        if (showChangeAction)
+                          InkWell(
+                            onTap: onChangeTap,
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: actionEnabled
+                                    ? const Color(0xFFE9E9F3)
+                                    : const Color(0xFFE5E7EB),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: AppText.labelLarge(
+                                'عرض',
+                                color: actionEnabled
+                                    ? const Color(0xFF1E2A78)
+                                    : const Color(0xFF9CA3AF),
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -143,12 +150,12 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         const Spacer(),
-                        // if (showChangeAction)
-                        ShimmerWidget(
-                          width: 70,
-                          height: 20,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        if (showChangeAction)
+                          ShimmerWidget(
+                            width: 70,
+                            height: 20,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 10),

@@ -201,7 +201,7 @@ class CleaningOrderCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (!_isTerminalStatus) ...[
+                if (!_isTerminalStatus && onRescheduleTap != null) ...[
                   const SizedBox(width: 8),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
