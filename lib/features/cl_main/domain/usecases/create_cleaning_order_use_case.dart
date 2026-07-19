@@ -55,6 +55,7 @@ class CreateCleaningOrderParams with Params {
   final bool termsAccepted;
   final List<Map<String, dynamic>>? workerRoomAssignments;
   final int addressId;
+  final String? couponCode;
 
   CreateCleaningOrderParams({
     required this.addressId,
@@ -81,6 +82,7 @@ class CreateCleaningOrderParams with Params {
     this.numberOfWorkers,
     this.termsAccepted = true,
     this.workerRoomAssignments,
+    this.couponCode,
   }) : eventType = null,
        guestCount = null,
        venueType = null,
@@ -112,6 +114,7 @@ class CreateCleaningOrderParams with Params {
     this.numberOfWorkers,
     this.assignmentMode = CleaningAssignmentMode.openCount,
     this.termsAccepted = true,
+    this.couponCode,
   }) : bedrooms = null,
        workerRoomAssignments = null,
        rooms = null,
@@ -191,6 +194,7 @@ class CreateCleaningOrderParams with Params {
   BodyMap getBody() {
     final workerIds = _sanitizePreferredWorkerIds();
     final effectiveAssignmentMode = _effectiveAssignmentMode(workerIds);
+    final normalizedCouponCode = couponCode?.trim();
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'addressId': addressId,
@@ -205,33 +209,17 @@ class CreateCleaningOrderParams with Params {
       'assignmentMode': effectiveAssignmentMode.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
+      if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty) 'couponCode': normalizedCouponCode,
     };
     if (!_isEventAssistance) {
       final cleanServices = _sanitizeCleaningServices();
       if (cleanServices.isNotEmpty) body['cleaning_services'] = cleanServices;
     }
-    // final resolvedWorkers = _resolvedNumberOfWorkers(
-    //   workerIds,
-    //   effectiveAssignmentMode,
-    // );
-    // if (resolvedWorkers != null && resolvedWorkers > 0)
-      body['numberOfWorkers'] = numberOfWorkers;
+    body['numberOfWorkers'] = numberOfWorkers;
     final assignments = workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
     if (assignments != null && assignments.isNotEmpty) body['workerRoomAssignments'] = assignments;
     return body;
   }
-
-  // int? _resolvedNumberOfWorkers(
-  //   List<int> workerIds,
-  //   CleaningAssignmentMode effectiveAssignmentMode,
-  // ) {
-  //   if (_isEventAssistance) return numberOfWorkers;
-  //   if (effectiveAssignmentMode == CleaningAssignmentMode.openCount) {
-  //     final requested = numberOfWorkers ?? 1;
-  //     return requested < 1 ? 1 : requested;
-  //   }
-  //   return 1;
-  // }
 }
