@@ -20,15 +20,33 @@ class CheckRestaurantCouponUseCase
 class CheckRestaurantCouponParams with Params {
   final String couponCode;
   final String section;
+  final int? cartId;
+  final String? propertyType;
+  final Map<String, dynamic>? propertyDetails;
+  final double? addressLatitude;
+  final double? addressLongitude;
+  final int? preferredWorkerId;
 
   CheckRestaurantCouponParams({
     required this.couponCode,
-    this.section = 'restaurants',
+    this.section = 'restaurant',
+    this.cartId,
+    this.propertyType,
+    this.propertyDetails,
+    this.addressLatitude,
+    this.addressLongitude,
+    this.preferredWorkerId,
   });
 
   @override
   BodyMap getBody() => {
         'section': section,
-        'couponCode': couponCode,
+        'couponCode': couponCode.trim(),
+        if (cartId != null) 'cartId': cartId,
+        if (propertyType != null) 'propertyType': propertyType,
+        if (propertyDetails != null) 'propertyDetails': propertyDetails,
+        if (addressLatitude != null) 'addressLatitude': addressLatitude,
+        if (addressLongitude != null) 'addressLongitude': addressLongitude,
+        if (preferredWorkerId != null) 'preferredWorkerId': preferredWorkerId,
       };
 }

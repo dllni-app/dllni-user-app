@@ -111,7 +111,7 @@ class RestaurantOrderCheckoutCubit extends Cubit<RestaurantOrderCheckoutState> {
     );
   }
 
-  Future<void> applyCoupon(String code) async {
+  Future<void> applyCoupon(String code, {int? cartId}) async {
     emit(
       state.copyWith(
         couponStatus: BlocStatus.loading,
@@ -119,7 +119,7 @@ class RestaurantOrderCheckoutCubit extends Cubit<RestaurantOrderCheckoutState> {
       ),
     );
     final response = await checkRestaurantCouponUseCase(
-      CheckRestaurantCouponParams(couponCode: code),
+      CheckRestaurantCouponParams(couponCode: code, cartId: cartId),
     );
     response.fold(
       (failure) => emit(
