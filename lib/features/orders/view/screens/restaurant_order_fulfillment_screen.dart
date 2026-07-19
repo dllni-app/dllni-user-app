@@ -6,13 +6,13 @@ import 'package:dllni_user_app/features/profile/domain/models/address_list_item.
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../delivery/presentation/screens/delivery_order_tracking_screen.dart';
-import '../../data/models/orders_api_models.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
+import '../../data/models/orders_api_models.dart';
 import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../screens/restaurant_order_tracking_screen.dart';
+import '../widgets/merchant_checkout_coupon_section.dart';
 
 class RestaurantOrderFulfillmentArgs {
   final OrdersBloc bloc;
@@ -28,7 +28,10 @@ class RestaurantOrderFulfillmentArgs {
 
 @AutoRoutePage(path: '/restaurant-order-fulfillment')
 class RestaurantOrderFulfillmentScreen extends StatelessWidget {
-  const RestaurantOrderFulfillmentScreen({super.key, required this.args});
+  const RestaurantOrderFulfillmentScreen({
+    super.key,
+    required this.args,
+  });
 
   final RestaurantOrderFulfillmentArgs args;
 
@@ -46,8 +49,6 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         : state.restaurantCart;
   }
 
-  /// Pops checkout screens only (fulfillment, cart details, etc.) and keeps
-  /// the existing home / service routes (`/main`, `/smmain`, …) in the stack.
   void _exitCheckoutFlow(BuildContext context) {
     Navigator.of(context).popUntil((route) {
       final name = route.settings.name;
@@ -92,7 +93,10 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 const Text(
                   'تم إنشاء طلبك بنجاح',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -194,7 +198,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
         body: SafeArea(
           child: BlocConsumer<OrdersBloc, OrdersState>(
             listenWhen: (previous, current) => args.section == 'supermarket'
-                ? previous.placeStoreOrderStatus != current.placeStoreOrderStatus
+                ? previous.placeStoreOrderStatus !=
+                    current.placeStoreOrderStatus
                 : previous.placeOrderStatus != current.placeOrderStatus,
             listener: (context, state) {
               final status = args.section == 'supermarket'
@@ -203,6 +208,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               final errorMessage = args.section == 'supermarket'
                   ? state.placeStoreOrderErrorMessage
                   : state.placeOrderErrorMessage;
+
               if (status == BlocStatus.success) {
                 final placedOrder = args.section == 'supermarket'
                     ? state.placedStoreOrder
@@ -211,7 +217,9 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               } else if (status == BlocStatus.failed) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(errorMessage ?? 'تعذر تاكيد الطلب حالياً.'),
+                    content: Text(
+                      errorMessage ?? 'تعذر تاكيد الطلب حالياً.',
+                    ),
                   ),
                 );
               }
@@ -234,7 +242,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   couponData?.amounts?.discount ??
                   (subtotal - (amounts?.total ?? subtotal));
               final deliveryFee = isDelivery ? 0.0 : 0.0;
-              final total = couponData?.amounts?.total ?? amounts?.total ?? 0;
+              final total =
+                  couponData?.amounts?.total ?? amounts?.total ?? 0;
 
               return Column(
                 children: [
@@ -252,7 +261,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                           Center(
                             child: AppText.labelLarge(
                               'اختر الطريقة المناسبة لاستلام طلبك',
-                              color: Color(0xff6D28D9),
+                              color: const Color(0xff6D28D9),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -305,8 +314,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   );
                                 }
                               },
-                              line1:
-                                  state.selectedAddress?.line1 ??
+                              line1: state.selectedAddress?.line1 ??
                                   'لم يتم تحديد العنوان',
                               line2: state.selectedAddress?.street ?? '',
                             )
@@ -315,11 +323,17 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                               title: isStoreFlow
                                   ? 'موقع المتجر'
                                   : 'موقع المطعم',
-                              line1:
-                                  cart?.merchant?.name ??
+                              line1: cart?.merchant?.name ??
                                   (isStoreFlow ? 'المتجر' : 'المطعم'),
                               line2: '${args.cartId ?? ''}',
                             ),
+                          if (args.cartId case final cartId?) ...[
+                            const SizedBox(height: 24),
+                            MerchantCheckoutCouponSection(
+                              cartId: cartId,
+                              section: args.section,
+                            ),
+                          ],
                           const SizedBox(height: 24),
                           Container(
                             padding: const EdgeInsets.all(12),
@@ -338,7 +352,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   child: AppText.bodyMedium(
                                     'ملخص الطلب',
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xff1F2937),
+                                    color: const Color(0xff1F2937),
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -407,7 +421,9 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                 if (cartId == null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('تعذر تحديد السلة الحالية'),
+                                      content: Text(
+                                        'تعذر تحديد السلة الحالية',
+                                      ),
                                     ),
                                   );
                                   return;
@@ -496,7 +512,9 @@ class _FulfillmentCard extends StatelessWidget {
           color: selected ? const Color(0xffFFF7ED) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected ? const Color(0xffF97316) : const Color(0xffE5E7EB),
+            color: selected
+                ? const Color(0xffF97316)
+                : const Color(0xffE5E7EB),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -616,9 +634,15 @@ class _LocationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.labelLarge(line1, color: const Color(0xff111827)),
+                AppText.labelLarge(
+                  line1,
+                  color: const Color(0xff111827),
+                ),
                 if (line2.isNotEmpty)
-                  AppText.labelMedium(line2, color: const Color(0xff6B7280)),
+                  AppText.labelMedium(
+                    line2,
+                    color: const Color(0xff6B7280),
+                  ),
               ],
             ),
           ),
@@ -650,8 +674,7 @@ class _SummaryRow extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style:
-                titleStyle ??
+            style: titleStyle ??
                 const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -661,8 +684,7 @@ class _SummaryRow extends StatelessWidget {
         ),
         Text(
           value,
-          style:
-              valueStyle ??
+          style: valueStyle ??
               TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
