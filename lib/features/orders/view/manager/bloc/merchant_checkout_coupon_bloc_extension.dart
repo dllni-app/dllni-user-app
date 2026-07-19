@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 
+import '../../../data/models/orders_api_models.dart';
 import '../../../domain/usecases/check_restaurant_coupon_use_case.dart';
 import 'orders_bloc.dart';
 
