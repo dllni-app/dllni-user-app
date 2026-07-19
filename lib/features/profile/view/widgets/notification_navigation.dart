@@ -10,6 +10,17 @@ void tryNavigateFromNotificationPayload(
   required Map<String, dynamic>? data,
 }) {
   if (data == null || data.isEmpty) return;
+
+  final target = _stringFromData(
+    data,
+    const ['deepLinkTarget', 'deep_link_target'],
+  )?.toLowerCase();
+
+  if (target == 'coupons' || target == 'coupon_list') {
+    context.pushRoute('/coupons');
+    return;
+  }
+
   final m = (module ?? '').toLowerCase();
   if (m == 'cleaning') {
     final orderId = _intFromData(
@@ -28,11 +39,6 @@ void tryNavigateFromNotificationPayload(
   if (m == 'delivery') {
     final orderId = _intFromData(data, const ['orderId', 'order_id']);
     if (orderId == null) return;
-
-    final target = _stringFromData(
-      data,
-      const ['deepLinkTarget', 'deep_link_target'],
-    )?.toLowerCase();
 
     if (target == 'delivery_order_details' ||
         target == 'delivery_order_tracking') {
