@@ -93,7 +93,6 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
 
     if (legacyWorkerChanged) {
       _seedLegacyWorkerLocation(widget.workerLatLng);
-      _centerOnFollowedWorker();
     }
 
     if (customerChanged) {
@@ -200,7 +199,6 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
       }
     });
 
-    _centerOnFollowedWorker();
     _reloadAllRoadRoutes(force: false);
   }
 
@@ -264,7 +262,6 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
       );
     });
 
-    _centerOnFollowedWorker();
     unawaited(_loadRoadRouteForWorker(workerKey));
   }
 
@@ -363,10 +360,6 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
         )
         .toList(growable: false)
       ..sort((a, b) => a.key.compareTo(b.key));
-    final center =
-        travellingWorkers.isNotEmpty
-            ? travellingWorkers.first.value.location!
-            : widget.customerLatLng;
     final showTravelStatus = widget.hasStartedTravel || _workers.isNotEmpty;
     final travelStatusText = _travelStatusText(travellingWorkers);
 
@@ -411,7 +404,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
               children: [
                 FlutterMap(
                   key: ValueKey<String>(
-                    'cleaning-tracking-${_bookingId ?? 0}-${travellingWorkers.length}',
+                    'cleaning-tracking-${_bookingId ?? 0}',
                   ),
                   mapController: _mapController,
                   options: MapOptions(
@@ -420,8 +413,8 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
                           InteractiveFlag.doubleTapZoom |
                           InteractiveFlag.drag,
                     ),
-                    initialCenter: center,
-                    initialZoom: travellingWorkers.isEmpty ? 15 : 13,
+                    initialCenter: widget.customerLatLng,
+                    initialZoom: 15,
                   ),
                   children: [
                     TileLayer(
@@ -493,34 +486,6 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
         ),
       ],
     );
-  }
-
-  void _centerOnFollowedWorker() {
-    final workerLocation = _followedWorkerLocation();
-    if (workerLocation == null) return;
-
-    void moveToWorker() {
-      if (!mounted) return;
-      try {
-        _mapController.move(workerLocation, _mapController.camera.zoom);
-      } catch (_) {
-        // Map may not be ready yet (e.g. before first FlutterMap attach).
-      }
-    }
-
-    moveToWorker();
-    WidgetsBinding.instance.addPostFrameCallback((_) => moveToWorker());
-  }
-
-  LatLng? _followedWorkerLocation() {
-    final travellingWorkers = _workers.entries
-        .where(
-          (entry) => entry.value.isTravelling && entry.value.location != null,
-        )
-        .toList(growable: false)
-      ..sort((a, b) => a.key.compareTo(b.key));
-    if (travellingWorkers.isEmpty) return null;
-    return travellingWorkers.first.value.location;
   }
 
   String _travelStatusText(
