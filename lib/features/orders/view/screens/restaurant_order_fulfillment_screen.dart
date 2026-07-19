@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
+import '../../data/models/fetch_supermarket_cart_model.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../manager/bloc/orders_bloc.dart';
@@ -47,6 +48,19 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
     return args.section == 'supermarket'
         ? state.storeCart
         : state.restaurantCart;
+  }
+
+  FetchSupermarketCartModelDataItem? _supermarketCartForState(
+    OrdersState state,
+  ) {
+    final selected = state.singleSupermarketCart;
+    if (selected?.id == args.cartId) return selected;
+
+    for (final cart in state.supermarketCart?.data ??
+        const <FetchSupermarketCartModelDataItem>[]) {
+      if (cart.id == args.cartId) return cart;
+    }
+    return null;
   }
 
   void _exitCheckoutFlow(BuildContext context) {
@@ -225,25 +239,36 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               }
             },
             builder: (context, state) {
+              final isStoreFlow = args.section == 'supermarket';
               final cart = _cartForState(state);
+              final supermarketCart = isStoreFlow
+                  ? _supermarketCartForState(state)
+                  : null;
               final isDelivery =
                   (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
-              final isStoreFlow = args.section == 'supermarket';
               final isPlacingOrder = isStoreFlow
                   ? state.placeStoreOrderStatus == BlocStatus.loading
                   : state.placeOrderStatus == BlocStatus.loading;
-              final amounts = cart?.amounts;
               final couponData = isStoreFlow
                   ? state.storeCouponData
                   : state.couponData;
+              final baseSubtotal = isStoreFlow
+                  ? supermarketCart?.amounts?.subtotal?.toDouble()
+                  : cart?.amounts?.subtotal;
+              final baseTotal = isStoreFlow
+                  ? supermarketCart?.amounts?.total?.toDouble()
+                  : cart?.amounts?.total;
               final subtotal =
-                  couponData?.amounts?.subtotal ?? amounts?.subtotal ?? 0;
+                  couponData?.amounts?.subtotal ?? baseSubtotal ?? 0;
               final discount =
                   couponData?.amounts?.discount ??
-                  (subtotal - (amounts?.total ?? subtotal));
+                  ((baseSubtotal ?? 0) - (baseTotal ?? baseSubtotal ?? 0));
               final deliveryFee = isDelivery ? 0.0 : 0.0;
-              final total =
-                  couponData?.amounts?.total ?? amounts?.total ?? 0;
+              final total = couponData?.amounts?.total ?? baseTotal ?? 0;
+              final merchantName = cart?.merchant?.name ??
+                  supermarketCart?.merchant?.name ??
+                  supermarketCart?.store?.name ??
+                  (isStoreFlow ? 'المتجر' : 'المطعم');
 
               return Column(
                 children: [
@@ -323,8 +348,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                               title: isStoreFlow
                                   ? 'موقع المتجر'
                                   : 'موقع المطعم',
-                              line1: cart?.merchant?.name ??
-                                  (isStoreFlow ? 'المتجر' : 'المطعم'),
+                              line1: merchantName,
                               line2: '${args.cartId ?? ''}',
                             ),
                           if (args.cartId case final cartId?) ...[
