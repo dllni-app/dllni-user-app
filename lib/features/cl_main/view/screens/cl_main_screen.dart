@@ -4,9 +4,6 @@ import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.d
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/deeplink/deep_link_parser.dart';
-import '../../../../core/deeplink/deep_link_service.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/failure_widget.dart';
@@ -197,26 +194,6 @@ class _ClMainScreenState extends State<ClMainScreen> {
     );
   }
 
-  Future<void> _openBannerTargetUrl(String? targetUrl) async {
-    final value = targetUrl?.trim();
-    if (value == null || value.isEmpty) return;
-
-    final uri = Uri.tryParse(value);
-    if (uri == null) return;
-    if (getIt.isRegistered<DeepLinkService>() &&
-        DeepLinkParser.isSupportedDeepLink(uri)) {
-      await getIt<DeepLinkService>().handleIncomingUri(uri);
-      return;
-    }
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر فتح الرابط')),
-      );
-    }
-  }
-
   Future<void> _showBannerPreview(CleaningBannerModel banner) async {
     final imageUrl = banner.imageUrl?.trim();
     if (imageUrl == null || imageUrl.isEmpty) return;
@@ -261,38 +238,11 @@ class _ClMainScreenState extends State<ClMainScreen> {
                   ),
                 ),
               ),
-              if (_hasBannerTargetUrl(banner)) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    key: const Key('cl_main_banner_preview_open_link'),
-                    onPressed: () async {
-                      Navigator.of(dialogContext).pop();
-                      await _openBannerTargetUrl(banner.targetUrl);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      elevation: 0,
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('فتح الرابط'),
-                  ),
-                ),
-              ],
             ],
           ),
         );
       },
     );
-  }
-
-  bool _hasBannerTargetUrl(CleaningBannerModel banner) {
-    final value = banner.targetUrl?.trim();
-    return value != null && value.isNotEmpty;
   }
 
   Widget _buildCleaningBannersSection() {

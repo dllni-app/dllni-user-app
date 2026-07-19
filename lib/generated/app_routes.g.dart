@@ -118,7 +118,7 @@ class GeneratedAppRoutes {
       case '/clmain':
         if (args is ClMainScreenParams?) {
           return MaterialPageRoute(
-            builder: (_) => ClMainScreen(params: args),
+            builder: (_) => ClMainScreen(params: args, bloc: args),
             settings: settings,
           );
         }
