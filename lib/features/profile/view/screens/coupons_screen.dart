@@ -17,11 +17,22 @@ class CouponsScreen extends StatefulWidget {
 }
 
 class _CouponsScreenState extends State<CouponsScreen> {
+  late final CouponsCubit _cubit;
   String _selectedSection = 'all';
 
-  Future<void> _refreshCoupons() async {
-    await context.read<CouponsCubit>().loadCoupons();
+  @override
+  void initState() {
+    super.initState();
+    _cubit = getIt<CouponsCubit>()..loadCoupons();
   }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
+  Future<void> _refreshCoupons() => _cubit.loadCoupons();
 
   List<PlatformCouponModel> _visibleCoupons(
     List<PlatformCouponModel> coupons,
@@ -38,9 +49,8 @@ class _CouponsScreenState extends State<CouponsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<CouponsCubit>(
-      lazy: false,
-      create: (_) => getIt<CouponsCubit>()..loadCoupons(),
+    return BlocProvider<CouponsCubit>.value(
+      value: _cubit,
       child: BlocListener<CouponsCubit, CouponsState>(
         listenWhen: (previous, current) =>
             previous.couponsStatus != current.couponsStatus &&
