@@ -23,8 +23,17 @@ class _CouponsScreenState extends State<CouponsScreen> {
     await context.read<CouponsCubit>().loadCoupons();
   }
 
-  List<PlatformCouponModel> _visibleCoupons(List<PlatformCouponModel> coupons) {
-    return coupons.where((coupon) => coupon.appliesToSection(_selectedSection)).toList(growable: false);
+  List<PlatformCouponModel> _visibleCoupons(
+    List<PlatformCouponModel> coupons,
+  ) {
+    return coupons
+        .where((coupon) => coupon.appliesToSection(_selectedSection))
+        .toList(growable: false);
+  }
+
+  void _selectSection(String section) {
+    if (_selectedSection == section) return;
+    setState(() => _selectedSection = section);
   }
 
   @override
@@ -33,10 +42,14 @@ class _CouponsScreenState extends State<CouponsScreen> {
       lazy: false,
       create: (_) => getIt<CouponsCubit>()..loadCoupons(),
       child: BlocListener<CouponsCubit, CouponsState>(
-        listenWhen: (previous, current) => previous.couponsStatus != current.couponsStatus && current.couponsStatus == BlocStatus.failed,
+        listenWhen: (previous, current) =>
+            previous.couponsStatus != current.couponsStatus &&
+            current.couponsStatus == BlocStatus.failed,
         listener: (context, state) {
           if (state.errorMessage == null || state.errorMessage!.isEmpty) return;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.errorMessage!)),
+          );
         },
         child: Scaffold(
           backgroundColor: const Color(0xffF9FAFB),
@@ -47,13 +60,31 @@ class _CouponsScreenState extends State<CouponsScreen> {
                 const SizedBox(height: 12),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 16,
+                  ),
                   child: Row(
-                    children: const [
-                      _CouponSectionFilter(value: 'all', label: 'الكل'),
-                      _CouponSectionFilter(value: 'cleaning', label: 'التنظيف'),
-                      _CouponSectionFilter(value: 'restaurant', label: 'المطاعم'),
-                      _CouponSectionFilter(value: 'supermarket', label: 'السوبر ماركت'),
+                    children: [
+                      _CouponSectionFilter(
+                        label: 'الكل',
+                        selected: _selectedSection == 'all',
+                        onSelected: () => _selectSection('all'),
+                      ),
+                      _CouponSectionFilter(
+                        label: 'التنظيف',
+                        selected: _selectedSection == 'cleaning',
+                        onSelected: () => _selectSection('cleaning'),
+                      ),
+                      _CouponSectionFilter(
+                        label: 'المطاعم',
+                        selected: _selectedSection == 'restaurant',
+                        onSelected: () => _selectSection('restaurant'),
+                      ),
+                      _CouponSectionFilter(
+                        label: 'السوبر ماركت',
+                        selected: _selectedSection == 'supermarket',
+                        onSelected: () => _selectSection('supermarket'),
+                      ),
                     ],
                   ),
                 ),
@@ -61,8 +92,12 @@ class _CouponsScreenState extends State<CouponsScreen> {
                 Expanded(
                   child: BlocBuilder<CouponsCubit, CouponsState>(
                     builder: (context, state) {
-                      if (state.couponsStatus == null || state.couponsStatus == BlocStatus.loading || state.couponsStatus == BlocStatus.init) {
-                        return const Center(child: CircularProgressIndicator());
+                      if (state.couponsStatus == null ||
+                          state.couponsStatus == BlocStatus.loading ||
+                          state.couponsStatus == BlocStatus.init) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
                       }
 
                       final visibleCoupons = _visibleCoupons(state.coupons);
@@ -73,7 +108,11 @@ class _CouponsScreenState extends State<CouponsScreen> {
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: const [
                               SizedBox(height: 180),
-                              Center(child: Text('لا توجد كوبونات متاحة لهذا القسم حالياً')),
+                              Center(
+                                child: Text(
+                                  'لا توجد كوبونات متاحة لهذا القسم حالياً',
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -83,10 +122,19 @@ class _CouponsScreenState extends State<CouponsScreen> {
                         onRefresh: _refreshCoupons,
                         child: ListView.separated(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 20),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            16,
+                            0,
+                            16,
+                            20,
+                          ),
                           itemCount: visibleCoupons.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) => PlatformCouponCard(coupon: visibleCoupons[index]),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) =>
+                              PlatformCouponCard(
+                            coupon: visibleCoupons[index],
+                          ),
                         ),
                       );
                     },
@@ -102,26 +150,37 @@ class _CouponsScreenState extends State<CouponsScreen> {
 }
 
 class _CouponSectionFilter extends StatelessWidget {
-  const _CouponSectionFilter({required this.value, required this.label});
+  const _CouponSectionFilter({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
 
-  final String value;
   final String label;
+  final bool selected;
+  final VoidCallback onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final page = context.findAncestorStateOfType<_CouponsScreenState>();
-    final selected = page?._selectedSection == value;
-
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 8),
       child: ChoiceChip(
         label: Text(label),
         selected: selected,
-        onSelected: (_) => page?.setState(() => page._selectedSection = value),
+        onSelected: (_) => onSelected(),
         showCheckmark: false,
         selectedColor: const Color(0xffFFF7ED),
-        side: BorderSide(color: selected ? const Color(0xffF97316) : const Color(0xffE5E7EB)),
-        labelStyle: TextStyle(color: selected ? const Color(0xffC2410C) : const Color(0xff4B5563), fontWeight: FontWeight.w600),
+        side: BorderSide(
+          color: selected
+              ? const Color(0xffF97316)
+              : const Color(0xffE5E7EB),
+        ),
+        labelStyle: TextStyle(
+          color: selected
+              ? const Color(0xffC2410C)
+              : const Color(0xff4B5563),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
