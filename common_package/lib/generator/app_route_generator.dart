@@ -69,20 +69,15 @@ class AggregatingAppRouteBuilder implements Builder {
               }
             }
 
-            final paramAssignments = parameters
-                .map((p) {
-                  final paramName = p.name;
-                  return "$paramName: args";
-                })
-                .join(', ');
-
-            final paramType = parameters.first.type.getDisplayString();
+            final firstParam = parameters.first;
+            final paramName = firstParam.name;
+            final paramType = firstParam.type.getDisplayString();
 
             cases.add('''
       case '$routePath':
         if (args is $paramType) {
           return MaterialPageRoute(
-            builder: (_) => $className($paramAssignments),
+            builder: (_) => $className($paramName: args),
             settings: settings,
           );
         }

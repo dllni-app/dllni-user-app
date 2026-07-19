@@ -14,6 +14,7 @@ class CleaningGateSessionStore {
 
   final Map<int, _CleaningGateSessionEntry> _entries =
       <int, _CleaningGateSessionEntry>{};
+  final Set<int> handledExtensionRejectedWarningIds = <int>{};
 
   static const Set<CleaningGateSuppressionReason> _startPermanentReasons =
       <CleaningGateSuppressionReason>{
@@ -127,8 +128,17 @@ class CleaningGateSessionStore {
     }
   }
 
+  bool markExtensionRejectedHandled(int warningId) {
+    return handledExtensionRejectedWarningIds.add(warningId);
+  }
+
+  bool isExtensionRejectedHandled(int warningId) {
+    return handledExtensionRejectedWarningIds.contains(warningId);
+  }
+
   void reset() {
     _entries.clear();
+    handledExtensionRejectedWarningIds.clear();
   }
 
   void _cleanupIfEmpty(int bookingId, _CleaningGateSessionEntry entry) {

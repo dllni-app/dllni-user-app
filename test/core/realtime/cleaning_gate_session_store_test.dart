@@ -72,6 +72,16 @@ void main() {
         expect(store.isCompletionSuppressed(22), isFalse);
       },
     );
+
+    test('extension rejected warning ids are shared and cleared on reset', () {
+      expect(store.markExtensionRejectedHandled(90), isTrue);
+      expect(store.isExtensionRejectedHandled(90), isTrue);
+      expect(store.markExtensionRejectedHandled(90), isFalse);
+
+      store.reset();
+      expect(store.isExtensionRejectedHandled(90), isFalse);
+      expect(store.markExtensionRejectedHandled(90), isTrue);
+    });
   });
 
   group('CleaningGateSessionStore time helpers', () {

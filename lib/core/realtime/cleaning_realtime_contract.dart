@@ -208,6 +208,10 @@ class CleaningRealtimeContract {
         return CleaningBookingStatus.inProgress;
       case 'extension_requested':
         return CleaningBookingStatus.timeExtensionRequested;
+      case 'extension_rejected':
+      case 'extension_declined':
+      case 'worker_rejected_extension':
+        return CleaningBookingStatus.completed;
       default:
         return null;
     }

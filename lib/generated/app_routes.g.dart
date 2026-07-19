@@ -118,7 +118,7 @@ class GeneratedAppRoutes {
       case '/clmain':
         if (args is ClMainScreenParams?) {
           return MaterialPageRoute(
-            builder: (_) => ClMainScreen(params: args, bloc: args),
+            builder: (_) => ClMainScreen(params: args),
             settings: settings,
           );
         }
@@ -126,7 +126,7 @@ class GeneratedAppRoutes {
       case '/clmainserviceschedule':
         if (args is ClMainScheduleArgs?) {
           return MaterialPageRoute(
-            builder: (_) => ClMainServiceScheduleScreen(item: args, args: args),
+            builder: (_) => ClMainServiceScheduleScreen(item: args),
             settings: settings,
           );
         }

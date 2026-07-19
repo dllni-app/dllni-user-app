@@ -31,7 +31,8 @@ class CleaningExtensionDecisionPresenter {
       return null;
     }
     final normalizedStatus = (currentStatus ?? '').trim().toLowerCase();
-    if (normalizedStatus != CleaningBookingStatus.timeExtensionRequested) {
+    if (normalizedStatus != CleaningBookingStatus.timeExtensionRequested &&
+        normalizedStatus != CleaningBookingStatus.completed) {
       return null;
     }
 

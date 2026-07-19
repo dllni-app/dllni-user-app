@@ -14,6 +14,7 @@ import '../../features/orders/domain/usecases/fetch_cleaning_order_details_use_c
 import '../../features/orders/domain/usecases/fetch_cleaning_orders_use_case.dart';
 import '../../features/orders/domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
 import '../../features/orders/domain/usecases/reject_cleaning_completion_use_case.dart';
+import '../../features/orders/view/helpers/cleaning_extension_decision_presenter.dart';
 import '../../features/orders/view/helpers/cleaning_lifecycle_error_mapper.dart';
 import '../../features/orders/view/helpers/cleaning_worker_rating_gate.dart';
 import '../../features/orders/view/screens/cleaning_order_details_screen.dart';
@@ -46,11 +47,14 @@ class CleaningGlobalVerificationGateCoordinator {
   final List<Timer> _arrivalFollowUpRefreshTimers = <Timer>[];
   bool _started = false;
   bool _gatePromptOpen = false;
+  bool _extensionRejectedDialogOpen = false;
   bool _refreshing = false;
   bool _useUnfilteredPollingFallback = false;
   int? _listeningCustomerId;
   bool _customerChannelAuthWarningShown = false;
   String? _lastExtensionRequestSuccessMessage;
+  final Map<int, RealtimeListenerHandle> _extensionWatchHandles =
+      <int, RealtimeListenerHandle>{};
 
   static const int _pollPageSize = 25;
   static const int _pollMaxPagesPerStatus = 6;
@@ -139,7 +143,9 @@ class CleaningGlobalVerificationGateCoordinator {
     _pollTimer = null;
     _cancelArrivalFollowUpRefreshTimers();
     _gatePromptOpen = false;
+    _extensionRejectedDialogOpen = false;
     _useUnfilteredPollingFallback = false;
+    await _clearExtensionWatchHandles();
     if (_listeningCustomerId != null) {
       _pusher.setCustomerHandler(_listeningCustomerId!, null);
       _pusher.setCustomerErrorHandler(_listeningCustomerId!, null);
@@ -250,8 +256,171 @@ class CleaningGlobalVerificationGateCoordinator {
         normalizedEvent == CleaningRealtimeContract.completionDecisionMade ||
         normalizedEvent == CleaningRealtimeContract.serviceExtensionRequested ||
         normalizedEvent == CleaningRealtimeContract.teamUpdated) {
+      unawaited(
+        _maybeHandleExtensionRejected(
+          normalizedEvent: normalizedEvent,
+          payload: payload,
+          bookingId: bookingId,
+        ),
+      );
       unawaited(_refreshPendingGates());
     }
+  }
+
+  Future<void> _maybeHandleExtensionRejected({
+    required String normalizedEvent,
+    required Map<String, dynamic> payload,
+    required int? bookingId,
+  }) async {
+    final currentStatus =
+        CleaningRealtimeContract.resolveStatusFromPayload(payload) ??
+        CleaningBookingStatus.completed;
+    final dialogData = CleaningExtensionDecisionPresenter.resolveRejectedDialog(
+      normalizedEvent: normalizedEvent,
+      payload: payload,
+      currentStatus: currentStatus,
+      handledWarningIds: _gateSession.handledExtensionRejectedWarningIds,
+    );
+    if (dialogData == null) return;
+
+    final warningId = dialogData.warningId;
+    if (warningId != null &&
+        !_gateSession.markExtensionRejectedHandled(warningId)) {
+      return;
+    }
+
+    final unwrapped = CleaningRealtimeContract.unwrapPayload(payload);
+    final workerIdFromPayload = _asInt(
+      unwrapped['workerId'] ?? unwrapped['worker_id'],
+    );
+    final resolvedBookingId =
+        bookingId ?? CleaningRealtimeContract.extractBookingId(payload);
+
+    await _showExtensionRejectedDialogThenRate(
+      message: dialogData.message,
+      orderId: resolvedBookingId,
+      workerIdFromPayload: workerIdFromPayload,
+    );
+  }
+
+  Future<void> _showExtensionRejectedDialogThenRate({
+    required String message,
+    required int? orderId,
+    int? workerIdFromPayload,
+  }) async {
+    if (_extensionRejectedDialogOpen) return;
+    final navContext = _navigatorKey.currentContext;
+    if (navContext == null || !navContext.mounted) return;
+
+    _extensionRejectedDialogOpen = true;
+    try {
+      await showDialog<void>(
+        context: navContext,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text(
+              'تم رفض طلب تمديد الوقت',
+              textAlign: TextAlign.center,
+            ),
+            content: Text(message, textAlign: TextAlign.center),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
+                  child: const Text('حسناً'),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      final ratingContext = _navigatorKey.currentContext;
+      if (ratingContext == null || !ratingContext.mounted || orderId == null) {
+        return;
+      }
+
+      var workerId = workerIdFromPayload;
+      CleaningOrderDetailModel? details;
+      if (workerId == null || workerId <= 0) {
+        details = await _fetchOrderDetails(orderId);
+        workerId = details?.workerId ?? details?.pendingCompletionRequest?.workerId;
+      }
+      if (workerId == null || workerId <= 0) return;
+
+      final workerProfile = await resolveCleaningWorkerProfileForRating(
+        workerId: workerId,
+        fetchWorkerProfile: (params) =>
+            getIt<FetchCleaningWorkerProfileUseCase>()(params),
+        onError: (errorMessage) {
+          final errorContext = _navigatorKey.currentContext;
+          if (errorContext == null || !errorContext.mounted) return;
+          ScaffoldMessenger.of(
+            errorContext,
+          ).showSnackBar(SnackBar(content: Text(errorMessage)));
+        },
+      );
+      final pushContext = _navigatorKey.currentContext;
+      if (workerProfile == null || pushContext == null || !pushContext.mounted) {
+        return;
+      }
+      Navigator.of(pushContext, rootNavigator: true).pushNamed(
+        '/cleaning-worker-rating',
+        arguments: CleaningWorkerRatingArgs(
+          orderId: orderId,
+          workerProfile: workerProfile,
+        ),
+      );
+      unawaited(_stopWatchingExtensionDecision(orderId));
+    } finally {
+      _extensionRejectedDialogOpen = false;
+    }
+  }
+
+  Future<void> _watchBookingForExtensionDecision(int orderId) async {
+    if (_extensionWatchHandles.containsKey(orderId)) return;
+    await _pusher.ensureInitialized();
+    final handle = await getIt<PusherManager>().listen(
+      channelName: 'private-cleaning-booking.$orderId',
+      onEvent: (event) {
+        final normalizedEventName = event.eventName.startsWith('.')
+            ? event.eventName.substring(1)
+            : event.eventName;
+        unawaited(
+          _maybeHandleExtensionRejected(
+            normalizedEvent: CleaningRealtimeContract.normalizeEventName(
+              normalizedEventName,
+            ),
+            payload: event.payload,
+            bookingId: orderId,
+          ),
+        );
+      },
+    );
+    _extensionWatchHandles[orderId] = handle;
+  }
+
+  Future<void> _stopWatchingExtensionDecision(int orderId) async {
+    final handle = _extensionWatchHandles.remove(orderId);
+    await handle?.dispose();
+  }
+
+  Future<void> _clearExtensionWatchHandles() async {
+    final handles = _extensionWatchHandles.values.toList(growable: false);
+    _extensionWatchHandles.clear();
+    for (final handle in handles) {
+      await handle.dispose();
+    }
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
   }
 
   void _onRealtimeChannelError(RealtimeChannelError error) {
@@ -778,6 +947,7 @@ class CleaningGlobalVerificationGateCoordinator {
         _lastExtensionRequestSuccessMessage = _extensionRequestSuccessMessage(
           result.extensionPricing,
         );
+        unawaited(_watchBookingForExtensionDecision(orderId));
         return null;
       },
     );

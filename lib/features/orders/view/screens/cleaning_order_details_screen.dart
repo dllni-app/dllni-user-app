@@ -100,7 +100,6 @@ class _CleaningOrderDetailsScreenState
   Timer? _detailsPollTimer;
   bool _isDetailsFetchInFlight = false;
   CleaningWorkerAcceptanceModel? _liveWorkerAcceptance;
-  final Set<int> _handledExtensionRejectedWarnings = <int>{};
   bool _extensionRejectedDialogOpen = false;
 
   @override
@@ -1500,16 +1499,20 @@ class _CleaningOrderDetailsScreenState
           normalizedEvent: normalizedEvent,
           payload: payload,
           currentStatus: _order?.status,
-          handledWarningIds: _handledExtensionRejectedWarnings,
+          handledWarningIds: _gateSession.handledExtensionRejectedWarningIds,
         );
     if (extensionRejectedDialogData != null) {
       final warningId = extensionRejectedDialogData.warningId;
-      if (warningId != null) {
-        _handledExtensionRejectedWarnings.add(warningId);
+      final shouldShowDialog =
+          warningId == null ||
+          _gateSession.markExtensionRejectedHandled(warningId);
+      if (shouldShowDialog) {
+        unawaited(
+          _showExtensionRejectedDialogThenRate(
+            extensionRejectedDialogData.message,
+          ),
+        );
       }
-      unawaited(
-        _showExtensionRejectedDialog(extensionRejectedDialogData.message),
-      );
     }
 
     final action = CleaningOrderRealtimePolicy.resolve(
@@ -1532,7 +1535,7 @@ class _CleaningOrderDetailsScreenState
     );
   }
 
-  Future<void> _showExtensionRejectedDialog(String message) async {
+  Future<void> _showExtensionRejectedDialogThenRate(String message) async {
     if (!mounted || _extensionRejectedDialogOpen) {
       return;
     }
@@ -1562,6 +1565,19 @@ class _CleaningOrderDetailsScreenState
           );
         },
       );
+      if (!mounted) return;
+      var order = _order;
+      if (order == null || order.id == null) return;
+      if ((order.status ?? '').toLowerCase() !=
+          CleaningBookingStatus.completed) {
+        await _fetchDetails(showLoading: false);
+        if (!mounted) return;
+        order = _order;
+        if (order == null || order.id == null) return;
+      }
+      final workerId =
+          order.workerId ?? order.pendingCompletionRequest?.workerId;
+      await _navigateToRating(order, workerId: workerId);
     } finally {
       _extensionRejectedDialogOpen = false;
     }

@@ -73,14 +73,31 @@ void main() {
       expect(result.message, 'غير متاح التمديد حالياً.');
     });
 
-    test('returns null when status is not time_extension_requested', () {
+    test('returns dialog data when status is already completed', () {
       final result = CleaningExtensionDecisionPresenter.resolveRejectedDialog(
         normalizedEvent: CleaningRealtimeContract.completionDecisionMade,
         payload: const <String, dynamic>{
           'decision': 'extension_rejected',
+          'message': 'انتهى الوقت المتاح.',
           'warningId': 41,
         },
         currentStatus: CleaningBookingStatus.completed,
+        handledWarningIds: <int>{},
+      );
+
+      expect(result, isNotNull);
+      expect(result!.warningId, 41);
+      expect(result.message, 'انتهى الوقت المتاح.');
+    });
+
+    test('returns null for unrelated statuses', () {
+      final result = CleaningExtensionDecisionPresenter.resolveRejectedDialog(
+        normalizedEvent: CleaningRealtimeContract.completionDecisionMade,
+        payload: const <String, dynamic>{
+          'decision': 'extension_rejected',
+          'warningId': 42,
+        },
+        currentStatus: CleaningBookingStatus.inProgress,
         handledWarningIds: <int>{},
       );
 
