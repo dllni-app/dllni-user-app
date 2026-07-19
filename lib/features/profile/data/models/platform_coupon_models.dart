@@ -32,12 +32,18 @@ List<String> _asStringList(dynamic value) {
 }
 
 FetchCouponsModel fetchPlatformCouponsModelFromJson(dynamic json) {
-  final payload = json is Map ? Map<String, dynamic>.from(json) : <String, dynamic>{};
+  final payload = json is Map
+      ? Map<String, dynamic>.from(json)
+      : <String, dynamic>{};
   final coupons = payload['coupons'] is List
       ? (payload['coupons'] as List)
-            .whereType<Map>()
-            .map((item) => PlatformCouponModel.fromJson(Map<String, dynamic>.from(item)))
-            .toList(growable: false)
+          .whereType<Map>()
+          .map(
+            (item) => PlatformCouponModel.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(growable: false)
       : const <PlatformCouponModel>[];
 
   return FetchCouponsModel(coupons: coupons);
@@ -62,7 +68,8 @@ class PlatformCouponAppliesToModel {
     );
   }
 
-  bool get isEmpty => propertyTypes.isEmpty && cleaningModes.isEmpty && eventTypes.isEmpty;
+  bool get isEmpty =>
+      propertyTypes.isEmpty && cleaningModes.isEmpty && eventTypes.isEmpty;
 }
 
 class PlatformCouponModel extends RestaurantCouponModel {
@@ -74,20 +81,29 @@ class PlatformCouponModel extends RestaurantCouponModel {
   final PlatformCouponAppliesToModel appliesTo;
 
   const PlatformCouponModel({
-    required super.id,
-    required super.code,
-    required super.discountType,
-    required super.discountValue,
-    required super.minOrderAmount,
-    required super.startsAt,
-    required super.endsAt,
+    required int? id,
+    required String? code,
+    required String? discountType,
+    required double? discountValue,
+    required int? minOrderAmount,
+    required DateTime? startsAt,
+    required DateTime? endsAt,
     required this.title,
     required this.description,
     required this.section,
     required this.maximumDiscountAmount,
     required this.minimumOrderAmount,
     required this.appliesTo,
-  }) : super(isActive: true);
+  }) : super(
+          id: id,
+          code: code,
+          discountType: discountType,
+          discountValue: discountValue,
+          minOrderAmount: minOrderAmount,
+          startsAt: startsAt,
+          endsAt: endsAt,
+          isActive: true,
+        );
 
   factory PlatformCouponModel.fromJson(Map<String, dynamic> json) {
     final discount = _asMap(json['discount']);
@@ -106,11 +122,15 @@ class PlatformCouponModel extends RestaurantCouponModel {
       minOrderAmount: minOrder?.round(),
       startsAt: _asDateTime(json['startsAt']),
       endsAt: _asDateTime(json['expiresAt']),
-      appliesTo: PlatformCouponAppliesToModel.fromJson(_asMap(json['appliesTo'])),
+      appliesTo: PlatformCouponAppliesToModel.fromJson(
+        _asMap(json['appliesTo']),
+      ),
     );
   }
 
   bool appliesToSection(String selectedSection) {
-    return selectedSection == 'all' || section == 'all' || section == selectedSection;
+    return selectedSection == 'all' ||
+        section == 'all' ||
+        section == selectedSection;
   }
 }
