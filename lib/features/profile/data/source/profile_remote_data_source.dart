@@ -5,6 +5,7 @@ import '../../domain/usecases/fetch_addresses_use_case.dart';
 import '../../domain/usecases/fetch_favorite_restaurants_use_case.dart';
 import '../../domain/usecases/fetch_notifications_use_case.dart';
 import '../../domain/usecases/mark_notification_read_use_case.dart';
+import '../../domain/usecases/delete_notification_use_case.dart';
 import '../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../domain/usecases/create_vote_use_case.dart';
 import '../../domain/usecases/create_address_use_case.dart';
@@ -108,6 +109,24 @@ class ProfileRemoteDataSource with HandlingApiManager {
       tryCall: () => dioNetwork.patchData(
         endPoint: '/api/v1/user/notifications/${params.notificationId}/read',
         data: params.getBody().isEmpty ? {} : params.getBody(),
+      ),
+      jsonConvert: actionResultModelFromJson,
+    );
+  }
+
+  Future<ActionResultModel> deleteNotification(DeleteNotificationParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.deleteData(
+        endPoint: '/api/v1/user/notifications/${params.notificationId}',
+      ),
+      jsonConvert: actionResultModelFromJson,
+    );
+  }
+
+  Future<ActionResultModel> deleteAllNotifications(NoParams params) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.deleteData(
+        endPoint: '/api/v1/user/notifications/all',
       ),
       jsonConvert: actionResultModelFromJson,
     );

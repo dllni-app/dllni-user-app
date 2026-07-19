@@ -33,6 +33,8 @@ import '../../../domain/usecases/get_shopping_list_use_case.dart';
 import '../../../domain/usecases/join_group_order_use_case.dart';
 import '../../../domain/usecases/mark_all_notifications_read_use_case.dart';
 import '../../../domain/usecases/mark_notification_read_use_case.dart';
+import '../../../domain/usecases/delete_notification_use_case.dart';
+import '../../../domain/usecases/delete_all_notifications_use_case.dart';
 import '../../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../../domain/usecases/fetch_active_votes_use_case.dart';
 import '../../../domain/usecases/place_group_order_use_case.dart';
@@ -61,6 +63,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final FetchNotificationsUseCase fetchNotificationsUseCase;
   final MarkAllNotificationsReadUseCase markAllNotificationsReadUseCase;
   final MarkNotificationReadUseCase markNotificationReadUseCase;
+  final DeleteNotificationUseCase deleteNotificationUseCase;
+  final DeleteAllNotificationsUseCase deleteAllNotificationsUseCase;
   final FetchFavoriteRestaurantsUseCase fetchFavoriteRestaurantsUseCase;
   final RemoveFavoriteRestaurantUseCase removeFavoriteRestaurantUseCase;
   final CreateVoteUseCase createVoteUseCase;
@@ -99,6 +103,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     this.fetchNotificationsUseCase,
     this.markAllNotificationsReadUseCase,
     this.markNotificationReadUseCase,
+    this.deleteNotificationUseCase,
+    this.deleteAllNotificationsUseCase,
     this.fetchFavoriteRestaurantsUseCase,
     this.removeFavoriteRestaurantUseCase,
     this.createVoteUseCase,
@@ -139,6 +145,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     );
     on<MarkAllNotificationsReadEvent>(_markAllNotificationsRead);
     on<MarkNotificationReadEvent>(_markNotificationRead);
+    on<DeleteNotificationEvent>(_deleteNotification);
+    on<DeleteAllNotificationsEvent>(_deleteAllNotifications);
     on<FetchFavoriteRestaurantsEvent>(
       _fetchFavoriteRestaurants,
       transformer: paginationEventTransformer(),
@@ -538,6 +546,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final id = event.id.trim();
     if (id.isEmpty) return;
 
+    final wasUnread = state.notifications.any(
+      (item) => item.id == id && item.isRead != true,
+    );
+
     final response = await markNotificationReadUseCase(
       MarkNotificationReadParams(notificationId: id),
     );
@@ -551,12 +563,90 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           }
           return item;
         }).toList();
+        final currentUnread = state.unreadNotification ?? 0;
         emit(
           state.copyWith(
             notificationsPagination: state.notificationsPagination.copyWith(
               list: updated,
             ),
+            unreadNotification: wasUnread && currentUnread > 0
+                ? currentUnread - 1
+                : currentUnread,
             notificationActionError: null,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteNotification(
+    DeleteNotificationEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    final id = event.id.trim();
+    if (id.isEmpty) return;
+
+    FetchNotificationsModelDataItem? target;
+    for (final item in state.notifications) {
+      if (item.id == id) {
+        target = item;
+        break;
+      }
+    }
+    final wasUnread = target != null && target.isRead != true;
+
+    final response = await deleteNotificationUseCase(
+      DeleteNotificationParams(notificationId: id),
+    );
+    await response.fold(
+      (failure) async {
+        emit(state.copyWith(notificationActionError: failure.message));
+        add(
+          FetchNotificationsEvent(
+            params: FetchNotificationsParams(),
+            isReload: true,
+          ),
+        );
+      },
+      (_) async {
+        final updated = state.notifications
+            .where((item) => item.id != id)
+            .toList();
+        final currentUnread = state.unreadNotification ?? 0;
+        emit(
+          state.copyWith(
+            notificationsPagination: state.notificationsPagination.copyWith(
+              list: updated,
+              total: updated.length,
+            ),
+            unreadNotification: wasUnread && currentUnread > 0
+                ? currentUnread - 1
+                : currentUnread,
+            clearNotificationActionError: true,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteAllNotifications(
+    DeleteAllNotificationsEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    final response = await deleteAllNotificationsUseCase(NoParams());
+    await response.fold(
+      (failure) async {
+        emit(state.copyWith(notificationActionError: failure.message));
+      },
+      (_) async {
+        emit(
+          state.copyWith(
+            notificationsPagination: state.notificationsPagination.copyWith(
+              list: const <FetchNotificationsModelDataItem>[],
+              total: 0,
+            ),
+            unreadNotification: 0,
+            clearNotificationActionError: true,
           ),
         );
       },

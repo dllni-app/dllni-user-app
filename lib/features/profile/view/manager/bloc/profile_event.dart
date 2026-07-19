@@ -40,6 +40,14 @@ class MarkNotificationReadEvent extends ProfileEvent {
   MarkNotificationReadEvent({required this.id});
 }
 
+class DeleteNotificationEvent extends ProfileEvent {
+  final String id;
+
+  DeleteNotificationEvent({required this.id});
+}
+
+class DeleteAllNotificationsEvent extends ProfileEvent {}
+
 class FetchFavoriteRestaurantsEvent extends ProfileEvent with EventWithReload {
   final FetchFavoriteRestaurantsParams params;
   final bool loadMore;

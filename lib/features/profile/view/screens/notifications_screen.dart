@@ -10,7 +10,6 @@ import '../widgets/notification_navigation.dart';
 
 @AutoRoutePage()
 class NotificationsScreen extends StatefulWidget {
-
   final NotificationsScreenParams args;
 
   const NotificationsScreen({super.key, required this.args});
@@ -20,13 +19,17 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-
   late final ProfileBloc profileBloc;
+
   @override
   void initState() {
-
-    profileBloc=widget.args.profileBloc..add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true, markAllReadOnSuccess: true));
-    // TODO: implement initState
+    profileBloc = widget.args.profileBloc
+      ..add(
+        FetchNotificationsEvent(
+          params: FetchNotificationsParams(),
+          isReload: true,
+        ),
+      );
     super.initState();
   }
 
@@ -48,8 +51,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return 'الأقدم';
   }
 
-  Map<String, List<FetchNotificationsModelDataItem>> _groupNotifications(List<FetchNotificationsModelDataItem> notifications) {
-    final grouped = <String, List<FetchNotificationsModelDataItem>>{'اليوم': [], 'أمس': [], 'الأسبوع الماضي': [], 'الأقدم': []};
+  Map<String, List<FetchNotificationsModelDataItem>> _groupNotifications(
+    List<FetchNotificationsModelDataItem> notifications,
+  ) {
+    final grouped = <String, List<FetchNotificationsModelDataItem>>{
+      'اليوم': [],
+      'أمس': [],
+      'الأسبوع الماضي': [],
+      'الأقدم': [],
+    };
 
     for (final item in notifications) {
       final parsed = DateTime.tryParse(item.createdAt ?? '');
@@ -61,36 +71,87 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _refreshNotifications(BuildContext context) async {
-    profileBloc.add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true, markAllReadOnSuccess: true));
-    await profileBloc.stream.firstWhere((state) => state.notificationsStatus != BlocStatus.loading);
+    profileBloc.add(
+      FetchNotificationsEvent(
+        params: FetchNotificationsParams(),
+        isReload: true,
+      ),
+    );
+    await profileBloc.stream.firstWhere(
+      (state) => state.notificationsStatus != BlocStatus.loading,
+    );
+  }
+
+  Future<void> _confirmDeleteAll(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('حذف الكل'),
+          content: const Text('هل أنت متأكد من حذف جميع الإشعارات؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('إلغاء'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('حذف'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed == true) {
+      profileBloc.add(DeleteAllNotificationsEvent());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<ProfileBloc, ProfileState>(
-      bloc:profileBloc,
+      bloc: profileBloc,
       listenWhen: (previous, current) {
-        final listFailed = previous.notificationsStatus != current.notificationsStatus && current.notificationsStatus == BlocStatus.failed;
-        final actionErr = (current.notificationActionError ?? '').isNotEmpty && current.notificationActionError != previous.notificationActionError;
+        final listFailed =
+            previous.notificationsStatus != current.notificationsStatus &&
+            current.notificationsStatus == BlocStatus.failed;
+        final actionErr =
+            (current.notificationActionError ?? '').isNotEmpty &&
+            current.notificationActionError != previous.notificationActionError;
         return listFailed || actionErr;
       },
       listener: (context, state) {
         final action = state.notificationActionError;
         if (action != null && action.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(action)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(action)));
           return;
         }
         if (state.errorMessage == null || state.errorMessage!.isEmpty) {
           return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
       },
       child: Scaffold(
         backgroundColor: const Color(0xffF9FAFB),
         body: SafeArea(
           child: Column(
             children: [
-              const _NotificationsAppBar(),
+              BlocBuilder<ProfileBloc, ProfileState>(
+                bloc: profileBloc,
+                buildWhen: (previous, current) =>
+                    previous.notifications.isEmpty !=
+                    current.notifications.isEmpty,
+                builder: (context, state) {
+                  return _NotificationsAppBar(
+                    showDeleteAll: state.notifications.isNotEmpty,
+                    onDeleteAll: () => _confirmDeleteAll(context),
+                  );
+                },
+              ),
               Expanded(
                 child: BlocBuilder<ProfileBloc, ProfileState>(
                   bloc: profileBloc,
@@ -98,39 +159,58 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     final notifications = state.notifications;
                     final pagination = state.notificationsPagination;
                     final groups = _groupNotifications(state.notifications);
-                    const sections = ['اليوم', 'أمس', 'الأسبوع الماضي', 'الأقدم'];
-                    if (state.notificationsStatus == BlocStatus.loading && notifications.isEmpty) {
+                    const sections = [
+                      'اليوم',
+                      'أمس',
+                      'الأسبوع الماضي',
+                      'الأقدم',
+                    ];
+                    if (state.notificationsStatus == BlocStatus.loading &&
+                        notifications.isEmpty) {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (notifications.isEmpty) {
                       return const Center(child: Text('لا توجد إشعارات'));
                     }
                     return RefreshIndicator(
-                      onRefresh: () async => await _refreshNotifications(context),
+                      onRefresh: () async =>
+                          await _refreshNotifications(context),
                       child: NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
-                          if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 180) {
+                          if (notification.metrics.pixels <
+                              notification.metrics.maxScrollExtent - 180) {
                             return false;
                           }
-                          if (pagination.isEndPage || pagination.status == BlocStatus.loading) {
+                          if (pagination.isEndPage ||
+                              pagination.status == BlocStatus.loading) {
                             return false;
                           }
                           profileBloc.add(
                             FetchNotificationsEvent(
-                              params: FetchNotificationsParams(perPage: pagination.perPage),
+                              params: FetchNotificationsParams(
+                                perPage: pagination.perPage,
+                              ),
                               loadMore: true,
-                              markAllReadOnSuccess: true,
                             ),
                           );
                           return false;
                         },
                         child: ListView(
-                          padding: const EdgeInsetsDirectional.only(top: 8, bottom: 16),
+                          padding: const EdgeInsetsDirectional.only(
+                            top: 8,
+                            bottom: 16,
+                          ),
                           children: [
                             for (final section in sections)
                               if (groups[section]!.isNotEmpty) ...[
                                 Padding(
-                                  padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 8),
+                                  padding:
+                                      const EdgeInsetsDirectional.fromSTEB(
+                                        16,
+                                        10,
+                                        16,
+                                        8,
+                                      ),
                                   child: AppText.labelLarge(
                                     section,
                                     color: const Color(0xff9CA3AF),
@@ -142,31 +222,88 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   color: context.onPrimary,
                                   child: Column(
                                     children: [
-                                      for (var i = 0; i < groups[section]!.length; i++) ...[
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            onTap: () {
-                                              final item = groups[section]![i];
-                                              final id = item.id;
-                                              if (id != null && id.isNotEmpty && item.isRead != true) {
-                                               profileBloc.add(MarkNotificationReadEvent(id: id));
-                                              }
-                                              tryNavigateFromNotificationPayload(context, module: item.module, data: item.data);
-                                            },
-                                            child: NotificationFeedItem(notification: groups[section]![i]),
+                                      for (var i = 0;
+                                          i < groups[section]!.length;
+                                          i++) ...[
+                                        Dismissible(
+                                          key: ValueKey(
+                                            groups[section]![i].id ??
+                                                '${section}_$i',
+                                          ),
+                                          direction:
+                                              DismissDirection.endToStart,
+                                          background: Container(
+                                            alignment: AlignmentDirectional
+                                                .centerEnd,
+                                            color: const Color(0xffEF4444),
+                                            padding:
+                                                const EdgeInsetsDirectional
+                                                    .only(end: 20),
+                                            child: const Icon(
+                                              Icons.delete_outline,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          onDismissed: (_) {
+                                            final id =
+                                                groups[section]![i].id;
+                                            if (id != null &&
+                                                id.isNotEmpty) {
+                                              profileBloc.add(
+                                                DeleteNotificationEvent(
+                                                  id: id,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: () {
+                                                final item =
+                                                    groups[section]![i];
+                                                final id = item.id;
+                                                if (id != null &&
+                                                    id.isNotEmpty &&
+                                                    item.isRead != true) {
+                                                  profileBloc.add(
+                                                    MarkNotificationReadEvent(
+                                                      id: id,
+                                                    ),
+                                                  );
+                                                }
+                                                tryNavigateFromNotificationPayload(
+                                                  context,
+                                                  module: item.module,
+                                                  data: item.data,
+                                                );
+                                              },
+                                              child: NotificationFeedItem(
+                                                notification:
+                                                    groups[section]![i],
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                        if (i != groups[section]!.length - 1) const Divider(height: 1, thickness: 1, color: Color(0xffF3F4F6)),
+                                        if (i !=
+                                            groups[section]!.length - 1)
+                                          const Divider(
+                                            height: 1,
+                                            thickness: 1,
+                                            color: Color(0xffF3F4F6),
+                                          ),
                                       ],
                                     ],
                                   ),
                                 ),
                               ],
-                            if (!pagination.isEndPage && pagination.status == BlocStatus.loading)
+                            if (!pagination.isEndPage &&
+                                pagination.status == BlocStatus.loading)
                               const Padding(
                                 padding: EdgeInsets.all(16),
-                                child: Center(child: CircularProgressIndicator()),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
                               ),
                           ],
                         ),
@@ -184,7 +321,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 class _NotificationsAppBar extends StatelessWidget {
-  const _NotificationsAppBar();
+  final bool showDeleteAll;
+  final VoidCallback? onDeleteAll;
+
+  const _NotificationsAppBar({
+    this.showDeleteAll = false,
+    this.onDeleteAll,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -193,11 +336,22 @@ class _NotificationsAppBar extends StatelessWidget {
       width: context.width,
       decoration: BoxDecoration(
         color: context.onPrimary,
-        border: Border(bottom: BorderSide(color: context.primaryContainer, width: 2)),
-        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(20), bottomLeft: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(14), offset: const Offset(0, 3), blurRadius: 8)],
+        border: Border(
+          bottom: BorderSide(color: context.primaryContainer, width: 2),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(14),
+            offset: const Offset(0, 3),
+            blurRadius: 8,
+          ),
+        ],
       ),
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
       child: Row(
         children: [
           InkWell(
@@ -214,20 +368,32 @@ class _NotificationsAppBar extends StatelessWidget {
               child: Icon(Icons.arrow_back, color: context.primary),
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
-            child: AppText.headlineMedium('الإشعارات', color: context.primary, fontWeight: FontWeight.w700),
+            child: AppText.headlineMedium(
+              'الإشعارات',
+              color: context.primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
+          if (showDeleteAll)
+            TextButton(
+              onPressed: onDeleteAll,
+              child: Text(
+                'حذف الكل',
+                style: TextStyle(
+                  color: const Color(0xffEF4444),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-
-
-class  NotificationsScreenParams{
-
+class NotificationsScreenParams {
   final ProfileBloc profileBloc;
 
   NotificationsScreenParams({required this.profileBloc});

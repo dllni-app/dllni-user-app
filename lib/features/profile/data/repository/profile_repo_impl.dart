@@ -5,6 +5,7 @@ import '../../domain/usecases/fetch_addresses_use_case.dart';
 import '../../domain/usecases/fetch_favorite_restaurants_use_case.dart';
 import '../../domain/usecases/fetch_notifications_use_case.dart';
 import '../../domain/usecases/mark_notification_read_use_case.dart';
+import '../../domain/usecases/delete_notification_use_case.dart';
 import '../../domain/usecases/fetch_vote_suggestions_use_case.dart';
 import '../../domain/usecases/create_vote_use_case.dart';
 import '../../domain/usecases/create_address_use_case.dart';
@@ -93,6 +94,20 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   DataResponse<ActionResultModel> markNotificationRead(MarkNotificationReadParams params) {
     return wrapHandlingException(
       tryCall: () => profileRemoteDataSource.markNotificationRead(params),
+    );
+  }
+
+  @override
+  DataResponse<ActionResultModel> deleteNotification(DeleteNotificationParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.deleteNotification(params),
+    );
+  }
+
+  @override
+  DataResponse<ActionResultModel> deleteAllNotifications(NoParams params) {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.deleteAllNotifications(params),
     );
   }
 
