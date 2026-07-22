@@ -495,6 +495,24 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
+    final estimateForWorkers = _currentEstimate ?? args.estimate;
+    final estimatedHours = estimateForWorkers?.size?.estimatedHours ?? 0;
+    final selectedWorkers = _requiredWorkersCount(state);
+    final requiredWorkers = estimatedHours <= 0
+        ? 1
+        : (estimatedHours / 8).ceil();
+
+    if (selectedWorkers < requiredWorkers) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'مدة العمل تتجاوز 8 ساعات لكل عامل. يجب طلب $requiredWorkers عمال على الأقل لإتمام هذا الطلب.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final acceptedPledge = await _showPersonalPropertyPledgeDialog();
     if (!mounted || !acceptedPledge) return;
 
