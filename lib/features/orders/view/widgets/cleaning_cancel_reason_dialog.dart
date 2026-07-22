@@ -65,7 +65,7 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
     if (remaining >= const Duration(hours: 1)) {
       return 'علماً أنه سيتم إلغاء الحجز وسيُطبق خصم وفقاً لسياسة التطبيق لأن الوقت المتبقي للخدمة أقل من 24 ساعة';
     }
-    return 'اذا لم تتمكن من استقبال مقدم الخدمة سيتم احتساب رسوم عدم حضور وقدرها 25000';
+    return 'اذا لم تتمكن من استقبال مقدم الخدمة سيتم احتساب رسوم إلغاء وفقاً لسياسة التطبيق المعتمدة من لوحة التحكم.';
   }
 
   void _submit(BuildContext context) {

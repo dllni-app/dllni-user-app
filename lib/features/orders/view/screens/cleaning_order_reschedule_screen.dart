@@ -325,10 +325,9 @@ class _CleaningOrderRescheduleScreenState
           final subtotal =
               (pricing?.basePrice ?? 0) +
               (pricing?.travelFee ?? 0) +
-              (pricing?.adminMargin ?? 0) +
               (pricing?.addonsTotal ?? 0);
-          final total = pricing?.totalPrice ?? 0;
-          final tax = math.max(0, total - subtotal).toDouble();
+          final total = pricing?.totalPrice ?? subtotal;
+          final tax = 0.0;
           final isLoadingEstimate =
               _missingDataMessage == null &&
               (state.estimatePriceStatus == BlocStatus.loading ||

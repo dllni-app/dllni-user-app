@@ -47,7 +47,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final showProvisionalWarning = isPricingFinal == false;
     final scheduleDateLine = _scheduleDateLine;
-    final displayedServicePrice = basePrice + (adminMargin ?? 0);
+    final displayedServicePrice = basePrice;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(

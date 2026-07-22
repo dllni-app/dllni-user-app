@@ -769,9 +769,7 @@ class _CleaningOrderDetailsScreenState
                           const SizedBox(height: 10),
                           _SummaryRow(
                             title: 'قيمة الخدمة',
-                            value: ((order.basePrice ?? 0) +
-                                    (order.adminMargin ?? 0))
-                                .formatMoney(),
+                            value: (order.basePrice ?? 0).formatMoney(),
                           ),
                           const SizedBox(height: 6),
                           _SummaryRow(
