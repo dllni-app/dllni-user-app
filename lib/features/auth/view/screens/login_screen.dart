@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/auth/auth_gate.dart';
+import 'package:dllni_user_app/core/auth/deactivated_account_handler.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
@@ -10,6 +11,7 @@ import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_help_screen.dart';
 import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
+import 'package:dllni_user_app/features/auth/view/widgets/deactivated_account_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
@@ -118,6 +120,29 @@ class _LoginScreenState extends State<LoginScreen> {
             curr.loginStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.loginStatus == BlocStatus.failed) {
+            if (authFlowHasCode(
+              state.errorMessage,
+              DeactivatedAccountHandler.errorCode,
+            )) {
+              await DeactivatedAccountHandler.clearSession();
+              _passwordController.clear();
+
+              if (!context.mounted) return;
+
+              await showDialog<void>(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => DeactivatedAccountDialog(
+                  message: authFlowMessage(
+                    state.errorMessage,
+                    fallback:
+                        'تم إلغاء تفعيل حسابك. يرجى التواصل مع الدعم لإعادة تفعيله.',
+                  ),
+                ),
+              );
+              return;
+            }
+
             if (authFlowHasCode(
               state.errorMessage,
               'PHONE_VERIFICATION_REQUIRED',

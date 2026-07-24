@@ -124,12 +124,13 @@ class _ClMainOccasionScheduleScreenState
               '/clmain',
               arguments: ClMainScreenParams(profileBloc: getIt<ProfileBloc>()),
             );
-          } else if (state.createOrderStatus == BlocStatus.failed &&
-              state.errorMessage != null &&
-              state.errorMessage!.isNotEmpty) {
+          } else if (state.createOrderStatus == BlocStatus.failed) {
+            final message = (state.errorMessage ?? '').trim().isNotEmpty
+                ? state.errorMessage!
+                : 'فشل إرسال طلب المناسبة';
             AppToast.showToast(
               context: context,
-              message: state.errorMessage ?? 'فشل إرسال طلب المناسبة',
+              message: message,
               type: ToastificationType.error,
             );
           }

@@ -1,11 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
 import 'package:common_package/common_package.dart';
-import 'package:dio/dio.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
-import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -26,42 +25,64 @@ import '../widgets/filled_text_field.dart';
 import '../widgets/numbered_section_card.dart';
 import '../widgets/personal_details_app_bar.dart';
 
-Future<List<String>> getNeighborhoods([String city = "حلب"]) async {
-  // https://alnadha.net/api/v1/cleaning/neighborhoods?city=%D8%AD%D9%84%D8%A8
-  print('https://alnadha.net/api/v1/cleaning/neighborhoods?city=$city');
-  // Uri uri = Uri(
-  //   scheme: 'https',
-  //   host: 'alnadha.net',
-  //   path: '/api/v1/cleaning/neighborhoods',
-  //   queryParameters: {'city': city},
-  // );
-  final token = (SharedPreferencesHelper.getData(key: "token") ?? '')
-      .toString()
-      .trim();
-  final response = await Dio().get(
-    options: Options(
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': "Bearer $token",
-      },
-    ),
-    'https://alnadha.net/api/v1/cleaning/neighborhoods',
-    queryParameters: {'city': city},
+Future<List<String>> getNeighborhoods([String city = 'حلب']) async {
+  final dioNetwork = getIt<DioNetwork>();
+  final response = await dioNetwork.getData(
+    endPoint: '/api/v1/cleaning/neighborhoods',
+    params: {'city': city},
   );
-  if (response.statusCode == 200) {
-    // 1. Get the top-level map
-    final responseBody = response.data as Map<String, dynamic>;
-
-    // 2. Extract the actual list from the 'data' key
-    final List<dynamic> neighborhoodsList = responseBody['data'] ?? [];
-
-    // 3. Map over the list safely
-    return neighborhoodsList
-        .map((item) => item['displayName'] as String)
-        .toList();
+  final responseBody = response.data;
+  if (responseBody is! Map<String, dynamic>) {
+    return const <String>[];
   }
-  return [];
+
+  final List<dynamic> neighborhoodsList = responseBody['data'] ?? [];
+  return neighborhoodsList
+      .map((item) {
+        if (item is Map<String, dynamic>) {
+          return (item['displayName'] ?? item['nameAr'] ?? item['nameEn'] ?? '')
+              .toString()
+              .trim();
+        }
+        return '';
+      })
+      .where((name) => name.isNotEmpty)
+      .toList(growable: false);
+}
+
+Future<String?> matchNeighborhoodFromMap({
+  required String text,
+  String city = 'حلب',
+}) async {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return null;
+
+  final dioNetwork = getIt<DioNetwork>();
+  final response = await dioNetwork.postData(
+    endPoint: '/api/v1/cleaning/neighborhoods/match',
+    data: {
+      'text': trimmed,
+      'city': city,
+    },
+  );
+  final responseBody = response.data;
+  if (responseBody is! Map<String, dynamic>) {
+    return null;
+  }
+  if (responseBody['matched'] != true) {
+    return null;
+  }
+
+  final data = responseBody['data'];
+  if (data is! Map<String, dynamic>) {
+    return null;
+  }
+
+  final displayName =
+      (data['displayName'] ?? data['nameAr'] ?? data['nameEn'] ?? '')
+          .toString()
+          .trim();
+  return displayName.isEmpty ? null : displayName;
 }
 
 @AutoRoutePage()
@@ -115,7 +136,6 @@ class MyAddressesScreenParams {
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
   // final _labelController = TextEditingController();
-  final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
   final _cityController = TextEditingController();
   String? _selectedNeighborhood;
   final _streetController = TextEditingController();
@@ -222,7 +242,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledPhoneNumberField(
                             label: 'رقم الجوال',
-                            isRequired: true,
+                            isRequired: false,
                             hintText: 'أدخل رقم الجوال المرتبط بالعنوان',
                             controller: _phoneController,
                             obscureText: false,
@@ -295,11 +315,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                     'الحي',
                                     fontWeight: FontWeight.w500,
                                   ),
-                                  AppText.bodyMedium(
-                                    '*',
-                                    color: context.error,
-                                    fontWeight: FontWeight.w500,
-                                  ),
                                 ],
                               ),
                               const SizedBox(height: 8),
@@ -353,7 +368,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                 onChanged: (value) => setState(
                                   () => _selectedNeighborhood = value ?? '',
                                 ),
-                                validator: _requiredValidator,
                               ),
                             ],
                           ),
@@ -361,10 +375,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'اسم الشارع',
-                            isRequired: true,
+                            isRequired: false,
                             hintText: 'مثال: شارع الجلاء',
                             controller: _streetController,
-                            validator: _requiredValidator,
                             onTap: () =>
                                 _moveCursorToTextEnd(_streetController),
                             onChanged: (_) => _streetEdited = true,
@@ -380,20 +393,17 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'رقم الطابق',
-                            // hintText: 'طابق أول تاني باب عل اليمين',
-                            isRequired: true,
+                            isRequired: false,
                             controller: _floorController,
                             keyboardType: TextInputType.number,
-                            validator: _requiredValidator,
                             onTap: () => _moveCursorToTextEnd(_floorController),
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'المدينة',
-                            isRequired: true,
+                            isRequired: false,
                             hintText: 'مثال: دمشق',
                             controller: _cityController,
-                            validator: _requiredValidator,
                             onTap: () => _moveCursorToTextEnd(_cityController),
                             onChanged: (_) => _cityEdited = true,
                           ),
@@ -453,34 +463,27 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                         return;
                                       }
 
-                                      final phoneError = await _phoneFieldKey
-                                          .currentState
-                                          ?.validate();
-                                      if (!context.mounted) return;
-                                      if (phoneError != null) {
-                                        AppToast.showToast(
-                                          context: context,
-                                          message: phoneError,
-                                          type: ToastificationType.error,
+                                      final phoneText =
+                                          _phoneController.text.trim();
+                                      var mobile = '';
+                                      if (phoneText.isNotEmpty) {
+                                        final formatted = formatPhoneForApi(
+                                          PhoneNumber(
+                                            phoneNumber: phoneText,
+                                            dialCode: '963',
+                                            isoCode: 'SY',
+                                          ),
                                         );
-                                        return;
-                                      }
-
-                                      final mobile = formatPhoneForApi(
-                                        PhoneNumber(
-                                          phoneNumber: _phoneController.text
-                                              .trim(),
-                                          dialCode: "963",
-                                          isoCode: "SY",
-                                        ),
-                                      );
-                                      if (mobile == null) {
-                                        AppToast.showToast(
-                                          context: context,
-                                          message: 'يرجى إدخال رقم الجوال',
-                                          type: ToastificationType.error,
-                                        );
-                                        return;
+                                        if (formatted == null) {
+                                          AppToast.showToast(
+                                            context: context,
+                                            message:
+                                                'يرجى إدخال رقم جوال صالح أو تركه فارغًا',
+                                            type: ToastificationType.error,
+                                          );
+                                          return;
+                                        }
+                                        mobile = formatted;
                                       }
                                       if (_isEditMode) {
                                         final addressId = int.tryParse(
@@ -612,30 +615,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void initState() {
     super.initState();
     final item = widget.params.addressItem;
+    unawaited(_loadNeighborhoods(city: item?.city ?? 'حلب'));
     if (item == null) {
       final json = SharedPreferencesHelper.getData(
         key: UserSessionKeys.loggedInUser,
       );
       final user = LoggedInUserModel.fromJson(jsonDecode(json));
-      // _isLoadingPhone = true;
       _phoneController.text = user.phone ?? '';
     } else {
-      getNeighborhoods("حلب")
-          .then((value) {
-            _neighborhoods = value;
-            _selectedNeighborhood = item.neighborhood ?? '';
-            if (!mounted) return;
-            setState(() {});
-          })
-          .catchError((error) {
-            log('error: $error');
-            if (!mounted) return;
-            AppToast.showToast(
-              context: context,
-              message: 'خطأ في جلب الأحياء ${error.toString()}',
-              type: ToastificationType.error,
-            );
-          });
       if (!mounted) return;
 
       _phoneController.text = item.mobile ?? '';
@@ -654,6 +641,30 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       };
     }
     _phoneController.text = _phoneController.text.replaceAll('+963', '');
+  }
+
+  Future<void> _loadNeighborhoods({String city = 'حلب'}) async {
+    try {
+      final neighborhoods = await getNeighborhoods(city);
+      if (!mounted) return;
+      setState(() {
+        _neighborhoods = neighborhoods;
+        final selected = _selectedNeighborhood;
+        if (selected != null &&
+            selected.isNotEmpty &&
+            !_neighborhoods.contains(selected)) {
+          _neighborhoods = [..._neighborhoods, selected];
+        }
+      });
+    } catch (error) {
+      log('error: $error');
+      if (!mounted) return;
+      AppToast.showToast(
+        context: context,
+        message: 'خطأ في جلب الأحياء ${error.toString()}',
+        type: ToastificationType.error,
+      );
+    }
   }
 
   void _autofillTextField({
@@ -715,14 +726,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     await _reverseGeocodeSelectedLocation();
   }
 
-  String? _requiredValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'هذا الحقل مطلوب';
-    }
-    return null;
-  }
-
-// هذا هو مكان الدالة داخل الكلاس الخاص بك
   Future<void> _reverseGeocodeSelectedLocation({bool forceFill = false}) async {
     if (_latitude == null || _longitude == null) return;
 
@@ -731,7 +734,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     final fields = await NominatimReverseGeocoding().reverse(
       latitude: _latitude!,
       longitude: _longitude!,
-      acceptLanguage: "ar",
+      acceptLanguage: 'ar',
     );
 
     if (!mounted) return;
@@ -739,56 +742,56 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     setState(() => _isResolvingMap = false);
     if (fields == null) return;
 
-    // 1. تحديث الحقول الأساسية
     setState(() {
-      _autofillTextField(controller: _cityController, value: fields.city, wasEdited: _cityEdited, forceFill: forceFill);
-      _autofillTextField(controller: _streetController, value: fields.street, wasEdited: _streetEdited, forceFill: forceFill);
+      _autofillTextField(
+        controller: _cityController,
+        value: fields.city,
+        wasEdited: _cityEdited,
+        forceFill: forceFill,
+      );
+      _autofillTextField(
+        controller: _streetController,
+        value: fields.street,
+        wasEdited: _streetEdited,
+        forceFill: forceFill,
+      );
     });
 
-    // 2. جلب الأحياء من الباك إند
+    final cityForApi =
+        (_cityController.text.trim().isNotEmpty
+            ? _cityController.text.trim()
+            : (fields.city ?? 'حلب'));
+
     try {
-      final neighborhoods = await getNeighborhoods("حلب");
+      final neighborhoods = await getNeighborhoods(cityForApi);
       if (!mounted) return;
 
       setState(() => _neighborhoods = neighborhoods);
 
-      // 3. دالة تنظيف النص (تم دمجها هنا لتعمل داخل الدالة)
-      String normalize(String text) => text
-          .replaceAll(RegExp(r'^(حي\s+)'), '')
-          .replaceAll(RegExp(r'[ىي]'), 'ي')
-          .replaceAll(RegExp(r'[أإآا]'), 'ا')
-          .trim();
-
-      final mapNeighborhood = fields.neighborhood ?? '';
-
-      print("القيمة من الخريطة: ${fields.neighborhood}");
-      print("القيمة بعد التنظيف: ${normalize(fields.neighborhood ?? '')}");
-      print("قائمة الأحياء من الباك: $_neighborhoods");
-
-      // 4. منطق المطابقة
-      final match = _neighborhoods.firstWhere(
-            (n) => normalize(n) == normalize(mapNeighborhood),
-        orElse: () => '',
-      );
-
-      if (match.isNotEmpty) {
-        setState(() => _selectedNeighborhood = match);
-      } else {
-        final partialMatch = _neighborhoods.firstWhere(
-              (n) => normalize(n).contains(normalize(mapNeighborhood)) ||
-              normalize(mapNeighborhood).contains(normalize(n)),
-          orElse: () => '',
+      final mapNeighborhood = (fields.neighborhood ?? '').trim();
+      String? matched;
+      if (mapNeighborhood.isNotEmpty) {
+        matched = await matchNeighborhoodFromMap(
+          text: mapNeighborhood,
+          city: cityForApi,
         );
+      }
 
-        if (partialMatch.isNotEmpty) {
-          setState(() => _selectedNeighborhood = partialMatch);
-        } else {
-          AppToast.showToast(
-            context: context,
-            message: "لم يتم تحديد الحي اوتوماتيكيا، يرجى تحديده يدوياً",
-            type: ToastificationType.info,
-          );
-        }
+      if (!mounted) return;
+
+      if (matched != null && matched.isNotEmpty) {
+        setState(() {
+          if (!_neighborhoods.contains(matched)) {
+            _neighborhoods = [..._neighborhoods, matched!];
+          }
+          _selectedNeighborhood = matched;
+        });
+      } else if (mapNeighborhood.isNotEmpty) {
+        AppToast.showToast(
+          context: context,
+          message: 'لم يتم تحديد الحي اوتوماتيكيا، يرجى تحديده يدوياً',
+          type: ToastificationType.info,
+        );
       }
     } catch (error) {
       log('error: $error');

@@ -20,20 +20,23 @@ void main() {
     );
   }
 
-  testWidgets('shows pure travel fee, total, and hides admin margin', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_buildWidget(isPricingFinal: false));
+  testWidgets(
+    'folds admin margin into service price, keeps pure travel fee',
+    (tester) async {
+      await tester.pumpWidget(_buildWidget(isPricingFinal: false));
 
-    expect(find.text('قيمة الخدمة'), findsOneWidget);
-    expect(find.text('رسوم التنقل'), findsOneWidget);
-    expect(find.text('المسافة'), findsOneWidget);
-    expect(find.text('الإجمالي'), findsOneWidget);
-    expect(find.text('هامش الإدارة'), findsNothing);
-    // Pure travel fee only (120), not folded with admin margin (220).
-    expect(find.textContaining('120'), findsOneWidget);
-    expect(find.textContaining('220'), findsNothing);
-  });
+      expect(find.text('قيمة الخدمة'), findsOneWidget);
+      expect(find.text('رسوم التنقل'), findsOneWidget);
+      expect(find.text('المسافة'), findsOneWidget);
+      expect(find.text('الإجمالي'), findsOneWidget);
+      expect(find.text('هامش الإدارة'), findsNothing);
+      // Service = basePrice (1000) + adminMargin (100).
+      expect(find.textContaining('1,100'), findsOneWidget);
+      // Pure travel fee only (120), not folded with admin margin (220).
+      expect(find.textContaining('120'), findsOneWidget);
+      expect(find.textContaining('220'), findsNothing);
+    },
+  );
 
   testWidgets('shows provisional warning when pricing is not final', (
     tester,
@@ -42,7 +45,7 @@ void main() {
 
     expect(
       find.text(
-        'السعر المعروض تقديري وغير نهائي، وسيتم تأكيد السعر النهائي بعد قبول مقدم الخدمة للطلب.',
+        'السعر المعروض تقديري وغير نهائي، وسيتم اضافة رسوم التنقل بعد قبول مقدم الخدمة للطلب.',
       ),
       findsOneWidget,
     );
@@ -55,7 +58,7 @@ void main() {
 
     expect(
       find.text(
-        'السعر المعروض تقديري وغير نهائي، وسيتم تأكيد السعر النهائي بعد قبول مقدم الخدمة للطلب.',
+        'السعر المعروض تقديري وغير نهائي، وسيتم اضافة رسوم التنقل بعد قبول مقدم الخدمة للطلب.',
       ),
       findsNothing,
     );

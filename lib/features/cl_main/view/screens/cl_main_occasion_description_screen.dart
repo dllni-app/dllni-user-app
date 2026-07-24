@@ -520,7 +520,7 @@ class _ClMainOccasionDescriptionScreenState
       _bloc = args.bloc;
       _bloc?.add(
         SetGenderPreferenceEvent(
-          preference: CleaningGenderPreference.any,
+          preference: CleaningGenderPreference.male,
         ),
       );
       _bloc?.add(
