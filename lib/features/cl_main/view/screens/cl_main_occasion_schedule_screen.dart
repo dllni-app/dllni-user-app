@@ -2,10 +2,12 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
+
 import '../../../../core/di/injection.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
+import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
@@ -52,6 +54,7 @@ class _ClMainOccasionScheduleScreenState
   late final ValueNotifier<AddressListItem?> _selectedAddress;
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
+  String? _appliedCouponCode;
 
   EstimatePriceResponseModel? get _activeEstimate =>
       _currentEstimate ?? _routeArgs?.estimate;
@@ -68,9 +71,7 @@ class _ClMainOccasionScheduleScreenState
     return 4;
   }
 
-  int get _estimatedSqm {
-    return _activeEstimate?.size?.estimatedSqm ?? 0;
-  }
+  int get _estimatedSqm => _activeEstimate?.size?.estimatedSqm ?? 0;
 
   int get _routeNumberOfWorkers {
     final requested = _routeArgs?.numberOfWorkers ?? 1;
@@ -87,6 +88,7 @@ class _ClMainOccasionScheduleScreenState
         body: SafeArea(child: Center(child: CircularProgressIndicator())),
       );
     }
+
     final dayAr = CleaningDateTimeUiFormat.weekday(_selectedDate);
     final dayDate = CleaningDateTimeUiFormat.date(_selectedDate);
     final estimate = _activeEstimate;
@@ -114,8 +116,8 @@ class _ClMainOccasionScheduleScreenState
           if (state.createOrderStatus == BlocStatus.success) {
             AppToast.showToast(
               context: context,
-              message:
-                  state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
+              message: state.createOrderResult?.message ??
+                  'تم إرسال الطلب بنجاح',
               type: ToastificationType.success,
             );
             context.pushRoute(
@@ -213,25 +215,13 @@ class _ClMainOccasionScheduleScreenState
                             onPickFromTime: _pickFromTime,
                           ),
                           const SizedBox(height: 10),
-                          // ClServiceAddressSectionWidget(
-                          //   locationName:
-                          //       _selectedAddress?.label ?? 'اختر عنوان الخدمة',
-                          //   address:
-                          //       _selectedAddress?.line1 ??
-                          //       'اضغط لتغيير العنوان',
-                          //   onChangeTap: _selectAddress,
-                          // ),
                           CleaningAddressSelectWidget(
                             selectedAddress: _selectedAddress,
                             onChangeTap: _selectAddress,
-                            afterBringDefault:(){
-
-
+                            afterBringDefault: () {
                               _requestEventEstimate(bloc.state);
-
-                            } ,
+                            },
                           ),
-
                           const SizedBox(height: 12),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
@@ -239,6 +229,17 @@ class _ClMainOccasionScheduleScreenState
                             message: _couponMessage,
                             onApply: _onApplyCoupon,
                           ),
+                          if (_appliedCouponCode != null) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: AppText.bodySmall(
+                                'الكوبون المطبق: $_appliedCouponCode',
+                                color: const Color(0xFF047857),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           ClServiceOrderSummarySectionWidget(
                             basePrice: estimate?.pricing?.basePrice ?? 0,
@@ -250,7 +251,8 @@ class _ClMainOccasionScheduleScreenState
                             currency: estimate?.pricing?.currency ?? 'SYP',
                             scheduleDayLabel: dayAr,
                             scheduleDateLabel: dayDate,
-                            scheduleTimeRange: CleaningDateTimeUiFormat.timeRange(
+                            scheduleTimeRange:
+                                CleaningDateTimeUiFormat.timeRange(
                               _fromTimeHhMm,
                               _toTimeHhMm,
                             ),
@@ -298,6 +300,7 @@ class _ClMainOccasionScheduleScreenState
     _fromTimeController.dispose();
     _toTimeController.dispose();
     _couponController.dispose();
+    _selectedAddress.dispose();
     super.dispose();
   }
 
@@ -322,20 +325,137 @@ class _ClMainOccasionScheduleScreenState
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
   }
 
-  void _onApplyCoupon(String code) {
+  Future<void> _onApplyCoupon(String code) async {
+    final normalizedCode = code.trim();
+    final args = _routeArgs;
+    final state = _bloc?.state;
+    final address = _selectedAddress.value;
+
+    if (normalizedCode.isEmpty) {
+      setState(() {
+        _couponStatus = ClCouponUiStatus.failed;
+        _couponMessage = 'يرجى إدخال كود الحسم أولاً.';
+        _appliedCouponCode = null;
+      });
+      return;
+    }
+    if (args == null || state == null || address == null) {
+      setState(() {
+        _couponStatus = ClCouponUiStatus.failed;
+        _couponMessage = 'يرجى اختيار عنوان الخدمة وإكمال البيانات أولاً.';
+        _appliedCouponCode = null;
+      });
+      return;
+    }
+
     setState(() {
-      _couponStatus = ClCouponUiStatus.failed;
-      _couponMessage = 'الكوبونات غير متاحة لطلبات المناسبات حالياً.';
+      _couponStatus = ClCouponUiStatus.loading;
+      _couponMessage = null;
+      _appliedCouponCode = null;
     });
+
+    final assignment = _resolveAssignment(state);
+    final preferredWorkerId = assignment.preferredWorkerIds.isEmpty
+        ? null
+        : assignment.preferredWorkerIds.first;
+    final response = await getIt<CheckRestaurantCouponUseCase>()(
+      CheckRestaurantCouponParams(
+        couponCode: normalizedCode,
+        section: 'cleaning',
+        propertyType: 'event_assistance',
+        propertyDetails: _eventPropertyDetails(args, address),
+        addressLatitude: address.latitude,
+        addressLongitude: address.longitude,
+        preferredWorkerId: preferredWorkerId,
+      ),
+    );
+    if (!mounted) return;
+
+    response.fold(
+      (failure) => setState(() {
+        _couponStatus = ClCouponUiStatus.failed;
+        _couponMessage = failure.message;
+        _appliedCouponCode = null;
+      }),
+      (result) {
+        final data = result.data;
+        if (data == null || !data.isAvailable) {
+          setState(() {
+            _couponStatus = ClCouponUiStatus.failed;
+            _couponMessage = _couponReasonMessage(data?.reason);
+            _appliedCouponCode = null;
+          });
+          return;
+        }
+
+        final discount = data.amounts?.discount ?? 0;
+        setState(() {
+          _couponStatus = ClCouponUiStatus.success;
+          _couponMessage = discount > 0
+              ? 'تم تطبيق الكوبون. قيمة الخصم ${_formatDiscount(discount)} ل.س'
+              : 'تم التحقق من الكوبون بنجاح.';
+          _appliedCouponCode = data.couponCode ?? normalizedCode;
+        });
+      },
+    );
+  }
+
+  Map<String, dynamic> _eventPropertyDetails(
+    ClMainOccasionScheduleArgs args,
+    AddressListItem address,
+  ) {
+    final specialRequirement = args.specialRequirementId == 'none'
+        ? null
+        : args.specialRequirementLabel;
+    return {
+      'address': address.line1,
+      'location_name': address.label,
+      'eventType': args.eventType,
+      'guestCount': args.guestsCount,
+      'venueType': args.venueType,
+      'customService': args.customService,
+      'hours': args.hours,
+      if (specialRequirement != null)
+        'specialRequirement': specialRequirement,
+      if (args.notes != null && args.notes!.trim().isNotEmpty)
+        'notes': args.notes!.trim(),
+    };
+  }
+
+  String _couponReasonMessage(String? reason) {
+    return switch (reason) {
+      'not_found' => 'كود الكوبون غير موجود.',
+      'inactive' => 'الكوبون غير فعال حالياً.',
+      'not_started' => 'لم تبدأ صلاحية الكوبون بعد.',
+      'expired' => 'انتهت صلاحية الكوبون.',
+      'wrong_section' => 'الكوبون غير متاح لخدمات التنظيف.',
+      'not_assigned_to_user' => 'هذا الكوبون غير مخصص لحسابك.',
+      'global_usage_limit_reached' || 'user_usage_limit_reached' =>
+        'تم الوصول إلى الحد المسموح لاستخدام الكوبون.',
+      'min_order_not_met' => 'قيمة الطلب أقل من الحد الأدنى للكوبون.',
+      'property_type_not_supported' => 'الكوبون لا يشمل خدمات المناسبات.',
+      'event_type_not_supported' => 'الكوبون لا يشمل نوع المناسبة المحدد.',
+      _ => 'الكوبون غير صالح لبيانات هذا الطلب.',
+    };
+  }
+
+  String _formatDiscount(double value) {
+    return value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
+  }
+
+  void _resetAppliedCoupon({String? message}) {
+    _appliedCouponCode = null;
+    _couponStatus = ClCouponUiStatus.idle;
+    _couponMessage = message;
   }
 
   void _onSubmitPressed(ClMainState state) {
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')),
+      );
       return;
     }
 
@@ -347,10 +467,10 @@ class _ClMainOccasionScheduleScreenState
       return;
     }
 
-    final selectedAddress = _selectedAddress;
-    if (selectedAddress.value == null ||
-        selectedAddress.value?.latitude == null ||
-        selectedAddress.value?.longitude == null) {
+    final selectedAddress = _selectedAddress.value;
+    if (selectedAddress == null ||
+        selectedAddress.latitude == null ||
+        selectedAddress.longitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
       );
@@ -364,14 +484,14 @@ class _ClMainOccasionScheduleScreenState
     bloc.add(
       CreateCleaningOrderEvent(
         params: CreateCleaningOrderParams.eventAssistance(
-          addressId: int.parse(selectedAddress.value!.id),
+          addressId: int.parse(selectedAddress.id),
           eventType: args.eventType,
           guestCount: args.guestsCount,
           venueType: args.venueType,
           customService: args.customService,
           hours: args.hours,
-          address: selectedAddress.value?.line1,
-          locationName: selectedAddress.value?.label,
+          address: selectedAddress.line1,
+          locationName: selectedAddress.label,
           scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
             _selectedDate,
           ),
@@ -382,11 +502,9 @@ class _ClMainOccasionScheduleScreenState
           preferredWorkerIds: assignment.preferredWorkerIds,
           specialRequirement: specialRequirement,
           notes: args.notes,
-          numberOfWorkers:_routeNumberOfWorkers,
+          numberOfWorkers: _routeNumberOfWorkers,
+          couponCode: _appliedCouponCode,
           termsAccepted: true,
-
-          // addressLatitude: selectedAddress.latitude,
-          // addressLongitude: selectedAddress.longitude,
         ),
       ),
     );
@@ -422,6 +540,14 @@ class _ClMainOccasionScheduleScreenState
     final bloc = _bloc;
     if (args == null || bloc == null) return;
 
+    if (_appliedCouponCode != null) {
+      setState(() {
+        _resetAppliedCoupon(
+          message: 'تم تحديث السعر. أعد تطبيق الكوبون.',
+        );
+      });
+    }
+
     final specialRequirement = args.specialRequirementId == 'none'
         ? null
         : args.specialRequirementLabel;
@@ -429,7 +555,7 @@ class _ClMainOccasionScheduleScreenState
       state,
       selectedWorkerIds: selectedWorkerIds,
     );
-    final address = _selectedAddress;
+    final address = _selectedAddress.value;
 
     bloc.add(
       EstimateCleaningPriceEvent(
@@ -439,12 +565,12 @@ class _ClMainOccasionScheduleScreenState
           venueType: args.venueType,
           customService: args.customService,
           hours: args.hours,
-          addressLatitude: address.value?.latitude,
-          addressLongitude: address.value?.longitude,
+          addressLatitude: address?.latitude,
+          addressLongitude: address?.longitude,
           preferredWorkerIds: assignment.preferredWorkerIds,
           specialRequirement: specialRequirement,
           notes: args.notes,
-          numberOfWorkers:_routeNumberOfWorkers,
+          numberOfWorkers: _routeNumberOfWorkers,
           assignmentMode: assignment.assignmentMode,
         ),
       ),
@@ -458,7 +584,6 @@ class _ClMainOccasionScheduleScreenState
     final workerIds = _normalizeWorkerIds(
       selectedWorkerIds ?? state.selectedWorkerIds,
     );
-
     return EventAssignmentFields(
       assignmentMode: workerIds.isEmpty
           ? CleaningAssignmentMode.openCount
@@ -486,12 +611,12 @@ class _ClMainOccasionScheduleScreenState
     if (selectedAddress is AddressListItem) {
       setState(() {
         _selectedAddress.value = selectedAddress;
+        _resetAppliedCoupon(
+          message: 'تم تغيير العنوان. أعد تطبيق الكوبون.',
+        );
       });
       final bloc = _bloc;
-      if (bloc != null) {
-        _requestEventEstimate(bloc.state);
-
-      }
+      if (bloc != null) _requestEventEstimate(bloc.state);
     }
   }
 
@@ -506,7 +631,6 @@ class _ClMainOccasionScheduleScreenState
 
 class _OccasionInfoRow extends StatelessWidget {
   final String label;
-
   final String value;
 
   const _OccasionInfoRow({required this.label, required this.value});

@@ -19,6 +19,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
     this.couponStatusSelector,
     this.couponDataSelector,
     this.couponErrorSelector,
+    this.onCouponChanged,
   });
 
   final TextEditingController couponController;
@@ -30,6 +31,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
   final BlocStatus? Function(OrdersState state)? couponStatusSelector;
   final CouponCheckDataModel? Function(OrdersState state)? couponDataSelector;
   final String? Function(OrdersState state)? couponErrorSelector;
+  final ValueChanged<String>? onCouponChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +39,9 @@ class RestaurantCartCouponSection extends StatelessWidget {
     final couponData = couponDataSelector?.call(state) ?? state.couponData;
     final couponErrorMessage =
         couponErrorSelector?.call(state) ?? state.couponErrorMessage;
-    final eventBuilder = applyEventBuilder ?? (code) => ApplyRestaurantCouponEvent(couponCode: code);
+    final eventBuilder =
+        applyEventBuilder ??
+        (code) => ApplyRestaurantCouponEvent(couponCode: code);
 
     return RestaurantCartCardWrapper(
       child: Column(
@@ -45,9 +49,15 @@ class RestaurantCartCouponSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppImage.asset(Assets.images.rsProfileCoupon.path, color: context.primaryContainer),
+              AppImage.asset(
+                Assets.images.rsProfileCoupon.path,
+                color: context.primaryContainer,
+              ),
               const SizedBox(width: 6),
-              AppText.bodyLarge('هل لديك كود خصم؟', fontWeight: FontWeight.bold),
+              AppText.bodyLarge(
+                'هل لديك كود خصم؟',
+                fontWeight: FontWeight.bold,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -56,14 +66,27 @@ class RestaurantCartCouponSection extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: couponController,
-                  style: const TextStyle(color: Color(0xff9CA3AF), fontSize: 14),
+                  onChanged: onCouponChanged,
+                  style: const TextStyle(
+                    color: Color(0xff9CA3AF),
+                    fontSize: 14,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'أدخل كود الخصم هنا',
                     filled: true,
-                    hintStyle: const TextStyle(color: Color(0xff9CA3AF), fontSize: 14),
+                    hintStyle: const TextStyle(
+                      color: Color(0xff9CA3AF),
+                      fontSize: 14,
+                    ),
                     fillColor: const Color(0xffF3F4F6),
-                    contentPadding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
@@ -79,12 +102,28 @@ class RestaurantCartCouponSection extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xff1E2A78),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsetsDirectional.symmetric(vertical: 12, horizontal: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    vertical: 12,
+                    horizontal: 20,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: couponStatus == BlocStatus.loading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : AppText.labelLarge('تطبيق', color: Colors.white, fontWeight: FontWeight.bold),
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : AppText.labelLarge(
+                        'تطبيق',
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
               ),
             ],
           ),
@@ -92,10 +131,17 @@ class RestaurantCartCouponSection extends StatelessWidget {
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xffECFDF3), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: const Color(0xffECFDF3),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Color(0xff10B981), size: 18),
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xff10B981),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText.labelLarge(
@@ -113,10 +159,17 @@ class RestaurantCartCouponSection extends StatelessWidget {
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xffFEF2F2), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: const Color(0xffFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Color(0xffEF4444), size: 18),
+                  const Icon(
+                    Icons.error_outline,
+                    color: Color(0xffEF4444),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText.labelLarge(
@@ -133,14 +186,22 @@ class RestaurantCartCouponSection extends StatelessWidget {
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xffFEF2F2), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: const Color(0xffFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: Color(0xffEF4444), size: 18),
+                  const Icon(
+                    Icons.error_outline,
+                    color: Color(0xffEF4444),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText.labelLarge(
-                      couponErrorMessage ?? 'تعذر التحقق من الكوبون حالياً.',
+                      couponErrorMessage ??
+                          'تعذر التحقق من الكوبون حالياً.',
                       color: const Color(0xffB91C1C),
                       fontWeight: FontWeight.w600,
                     ),

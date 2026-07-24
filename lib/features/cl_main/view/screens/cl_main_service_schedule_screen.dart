@@ -6,6 +6,7 @@ import 'package:toastification/toastification.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
+import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../data/models/cleaning_services_response_model.dart';
@@ -63,7 +64,7 @@ class _ClMainServiceScheduleScreenState
   BlocStatus _cleaningServicesStatus = BlocStatus.init;
   String? _cleaningServicesErrorMessage;
   List<CleaningServiceModel> _availableCleaningServices =
-  const <CleaningServiceModel>[];
+      const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
 
   @override
@@ -84,7 +85,7 @@ class _ClMainServiceScheduleScreenState
       value: bloc,
       child: BlocConsumer<ClMainBloc, ClMainState>(
         listenWhen: (previous, current) =>
-        previous.createOrderStatus != current.createOrderStatus ||
+            previous.createOrderStatus != current.createOrderStatus ||
             previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
           if (state.estimatePriceStatus == BlocStatus.success &&
@@ -111,8 +112,7 @@ class _ClMainServiceScheduleScreenState
           if (state.createOrderStatus == BlocStatus.success) {
             AppToast.showToast(
               context: context,
-              message:
-              state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
+              message: state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
               type: ToastificationType.success,
             );
             context.pushRoute(
@@ -137,7 +137,6 @@ class _ClMainServiceScheduleScreenState
               child: Column(
                 children: [
                   const HomeDetailsAppBar(),
-
                   const SizedBox(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
@@ -186,12 +185,12 @@ class _ClMainServiceScheduleScreenState
                             selectedServiceNames: _selectedCleaningServiceNames,
                             customServiceController: _customServiceController,
                             isLoading:
-                            _cleaningServicesStatus == BlocStatus.loading,
+                                _cleaningServicesStatus == BlocStatus.loading,
                             errorMessage:
-                            _cleaningServicesStatus == BlocStatus.failed
-                                ? _cleaningServicesErrorMessage ??
-                                'تعذر تحميل الخدمات'
-                                : null,
+                                _cleaningServicesStatus == BlocStatus.failed
+                                    ? _cleaningServicesErrorMessage ??
+                                        'تعذر تحميل الخدمات'
+                                    : null,
                             onToggleService: _toggleCleaningService,
                             onAddCustomService: _addCustomCleaningService,
                             onRemoveService: _removeCleaningService,
@@ -226,7 +225,8 @@ class _ClMainServiceScheduleScreenState
                             currency: estimate?.pricing?.currency ?? 'SYP',
                             scheduleDayLabel: dayAr,
                             scheduleDateLabel: dayDate,
-                            scheduleTimeRange: CleaningDateTimeUiFormat.timeRange(
+                            scheduleTimeRange:
+                                CleaningDateTimeUiFormat.timeRange(
                               _fromTimeHhMm,
                               _toTimeHhMm,
                             ),
@@ -260,10 +260,7 @@ class _ClMainServiceScheduleScreenState
     super.didChangeDependencies();
     if (_didReadArgs) return;
     _didReadArgs = true;
-    final args = widget.args ?? ModalRoute
-        .of(context)
-        ?.settings
-        .arguments;
+    final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
     if (args is ClMainScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
@@ -284,6 +281,7 @@ class _ClMainServiceScheduleScreenState
     _toTimeController.dispose();
     _couponController.dispose();
     _customServiceController.dispose();
+    selectedAddress.dispose();
     super.dispose();
   }
 
@@ -317,22 +315,37 @@ class _ClMainServiceScheduleScreenState
       return;
     }
     if (normalized.length > 255) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('اسم الخدمة طويل جداً')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اسم الخدمة طويل جداً')),
+      );
       return;
     }
     setState(() {
       _selectedCleaningServiceNames.add(normalized);
       _customServiceController.clear();
+      _resetAppliedCoupon();
     });
   }
 
   Future<void> _applyCoupon(String code) async {
-    if (code.isEmpty) {
+    final normalizedCode = code.trim();
+    final args = _routeArgs;
+    final state = _bloc?.state;
+    final address = selectedAddress.value;
+
+    if (normalizedCode.isEmpty) {
       setState(() {
         _couponStatus = ClCouponUiStatus.failed;
         _couponMessage = 'يرجى إدخال كود الحسم أولاً.';
+        _appliedCouponCode = null;
+      });
+      return;
+    }
+    if (args == null || state == null || address == null) {
+      setState(() {
+        _couponStatus = ClCouponUiStatus.failed;
+        _couponMessage = 'يرجى إكمال بيانات الخدمة والعنوان أولاً.';
+        _appliedCouponCode = null;
       });
       return;
     }
@@ -340,27 +353,93 @@ class _ClMainServiceScheduleScreenState
     setState(() {
       _couponStatus = ClCouponUiStatus.loading;
       _couponMessage = null;
+      _appliedCouponCode = null;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 550));
+    final response = await getIt<CheckRestaurantCouponUseCase>()(
+      CheckRestaurantCouponParams(
+        couponCode: normalizedCode,
+        section: 'cleaning',
+        propertyType: args.propertyType,
+        propertyDetails: _regularPropertyDetails(args, address),
+        addressLatitude: address.latitude,
+        addressLongitude: address.longitude,
+        preferredWorkerId: state.primarySelectedWorkerId,
+      ),
+    );
     if (!mounted) return;
 
-    final normalized = code.trim().toLowerCase();
-    if (normalized == 'invalid' || normalized == 'expired') {
-      setState(() {
+    response.fold(
+      (failure) => setState(() {
         _couponStatus = ClCouponUiStatus.failed;
-        _couponMessage = 'الكوبون غير صالح حالياً.';
+        _couponMessage = failure.message;
         _appliedCouponCode = null;
-      });
-      return;
-    }
+      }),
+      (result) {
+        final data = result.data;
+        if (data == null || !data.isAvailable) {
+          setState(() {
+            _couponStatus = ClCouponUiStatus.failed;
+            _couponMessage = _couponReasonMessage(data?.reason);
+            _appliedCouponCode = null;
+          });
+          return;
+        }
 
-    final discountText = normalized.contains('20') ? '20%' : '10%';
-    setState(() {
-      _couponStatus = ClCouponUiStatus.success;
-      _couponMessage = 'تم تطبيق الكوبون بنجاح: خصم $discountText (تجريبي)';
-      _appliedCouponCode = code;
-    });
+        final discount = data.amounts?.discount ?? 0;
+        setState(() {
+          _couponStatus = ClCouponUiStatus.success;
+          _couponMessage = discount > 0
+              ? 'تم تطبيق الكوبون. قيمة الخصم ${_formatDiscount(discount)} ل.س'
+              : 'تم التحقق من الكوبون بنجاح.';
+          _appliedCouponCode = data.couponCode ?? normalizedCode;
+        });
+      },
+    );
+  }
+
+  Map<String, dynamic> _regularPropertyDetails(
+    ClMainScheduleArgs args,
+    AddressListItem address,
+  ) {
+    return {
+      'address': address.line1,
+      'location_name': address.label,
+      'bedrooms': args.roomSizeBreakdown.legacyBedroomsCount,
+      'rooms': args.roomSizeBreakdown.legacyRoomsCount,
+      'bathrooms': args.roomSizeBreakdown.legacyBathroomsCount,
+      'balconies': args.roomSizeBreakdown.legacyBalconiesCount,
+      'living_room_size': args.roomSizeBreakdown.legacyLivingRoomSize,
+      'room_size_breakdown': args.roomSizeBreakdown.toBackendJson(),
+      'cleaning_mode': args.cleaningType.cleaningModeValue,
+    };
+  }
+
+  String _couponReasonMessage(String? reason) {
+    return switch (reason) {
+      'not_found' => 'كود الكوبون غير موجود.',
+      'inactive' => 'الكوبون غير فعال حالياً.',
+      'not_started' => 'لم تبدأ صلاحية الكوبون بعد.',
+      'expired' => 'انتهت صلاحية الكوبون.',
+      'wrong_section' => 'الكوبون غير متاح لخدمات التنظيف.',
+      'not_assigned_to_user' => 'هذا الكوبون غير مخصص لحسابك.',
+      'global_usage_limit_reached' || 'user_usage_limit_reached' =>
+        'تم الوصول إلى الحد المسموح لاستخدام الكوبون.',
+      'min_order_not_met' => 'قيمة الطلب أقل من الحد الأدنى للكوبون.',
+      'property_type_not_supported' => 'الكوبون لا يشمل نوع العقار المحدد.',
+      'cleaning_mode_not_supported' => 'الكوبون لا يشمل نوع التنظيف المحدد.',
+      _ => 'الكوبون غير صالح لبيانات هذا الطلب.',
+    };
+  }
+
+  String _formatDiscount(double value) {
+    return value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
+  }
+
+  void _resetAppliedCoupon({String? message}) {
+    _appliedCouponCode = null;
+    _couponStatus = ClCouponUiStatus.idle;
+    _couponMessage = message;
   }
 
   Future<void> _pickDate() async {
@@ -370,9 +449,7 @@ class _ClMainServiceScheduleScreenState
       startDate: tomorrow,
       initialDate: _selectedDate,
     );
-
     if (value.isEmpty) return;
-
     setState(() {
       _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
     });
@@ -380,19 +457,15 @@ class _ClMainServiceScheduleScreenState
 
   Future<void> _pickFromTime() async {
     final now = DateTime.now();
-
     final isToday =
         _selectedDate.year == now.year &&
-            _selectedDate.month == now.month &&
-            _selectedDate.day == now.day;
-
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
     final value = await AppPickers.showAppTimePicker(
       context: context,
       minimumTime: isToday ? now.add(const Duration(hours: 1)) : null,
     );
-
     if (value.isEmpty) return;
-
     setState(() {
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
       _syncToTime();
@@ -405,7 +478,6 @@ class _ClMainServiceScheduleScreenState
     final blocState = _bloc?.state;
     final numberOfWorkers =
         blocState == null ? 1 : _requiredWorkersCount(blocState);
-
     _toTimeHhMm = formatClServiceEndTime(
       startTime: _fromTimeHhMm,
       durationHours: _effectiveServiceHours(
@@ -416,26 +488,17 @@ class _ClMainServiceScheduleScreenState
     _updateTimeDisplay();
   }
 
-  /// Worker count used for wall-clock hours.
-  /// - "عامل/ة" (preferredWorker) → always 1
-  /// - "فريق عمل" (openCount) → the team counter
   int _requiredWorkersCount(ClMainState state) {
-    if (state.assignmentMode != CleaningAssignmentMode.openCount) {
-      return 1;
-    }
+    if (state.assignmentMode != CleaningAssignmentMode.openCount) return 1;
     final count = state.numberOfWorkers;
     return count < 1 ? 1 : count;
   }
 
-  /// When more than one worker is required, wall-clock duration is total hours
-  /// divided by worker count (at most one decimal place).
   double _effectiveServiceHours({
     required double estimatedHours,
     required int numberOfWorkers,
   }) {
-    if (numberOfWorkers <= 1 || estimatedHours <= 0) {
-      return estimatedHours;
-    }
+    if (numberOfWorkers <= 1 || estimatedHours <= 0) return estimatedHours;
     return double.parse(
       (estimatedHours / numberOfWorkers).toStringAsFixed(1),
     );
@@ -447,50 +510,35 @@ class _ClMainServiceScheduleScreenState
       _cleaningServicesStatus = BlocStatus.loading;
       _cleaningServicesErrorMessage = null;
     });
-
     final response = await getIt<GetCleaningServicesUseCase>()(
       GetCleaningServicesParams(category: 'cleaning'),
     );
     if (!mounted) return;
-
     response.fold(
-          (failure) =>
-          setState(() {
-            _cleaningServicesStatus = BlocStatus.failed;
-            _cleaningServicesErrorMessage = failure.message;
-          }),
-          (result) =>
-          setState(() {
-            _cleaningServicesStatus = BlocStatus.success;
-            _cleaningServicesErrorMessage = null;
-            _availableCleaningServices = result.data
-                .where((service) =>
-            service.name
-                ?.trim()
-                .isNotEmpty == true)
-                .toList(growable: false);
-          }),
+      (failure) => setState(() {
+        _cleaningServicesStatus = BlocStatus.failed;
+        _cleaningServicesErrorMessage = failure.message;
+      }),
+      (result) => setState(() {
+        _cleaningServicesStatus = BlocStatus.success;
+        _cleaningServicesErrorMessage = null;
+        _availableCleaningServices = result.data
+            .where((service) => service.name?.trim().isNotEmpty == true)
+            .toList(growable: false);
+      }),
     );
   }
 
   Future<void> _onSubmitPressed(ClMainState state) async {
     final args = _routeArgs;
     final bloc = _bloc;
-    if (args == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
+    if (args == null || bloc == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('بيانات الطلب غير مكتملة')),
+      );
       return;
     }
-    if (bloc == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر تهيئة حالة الطلب')));
-      return;
-    }
-
-    if (state.genderPreference.apiValue ==
-        'female' &&
+    if (state.genderPreference.apiValue == 'female' &&
         state.safetyConfirmation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
@@ -524,25 +572,12 @@ class _ClMainServiceScheduleScreenState
     final workerRoomAssignments = normalizedAssignments.isNotEmpty
         ? workerRoomAssignmentsToRequestJson(normalizedAssignments)
         : buildWorkerRoomAssignmentsJson(
-      slotByRoomKey: state.workerRoomAssignments,
-      units: enumerateRoomUnits(args.roomSizeBreakdown),
-      preferredWorkerId: state.primarySelectedWorkerId,
-      assignmentMode: state.assignmentMode,
-    );
+            slotByRoomKey: state.workerRoomAssignments,
+            units: enumerateRoomUnits(args.roomSizeBreakdown),
+            preferredWorkerId: state.primarySelectedWorkerId,
+            assignmentMode: state.assignmentMode,
+          );
     final selectedWorkerIds = state.selectedWorkerIds;
-    final selectedWorkerCount = selectedWorkerIds.length;
-
-    print('args');
-    print('args');
-    print('args');
-    print('args');
-    print(args.bathrooms);
-    print(args.bathrooms);
-    print(args.bathrooms);
-    print(args.rooms);
-    print(args.rooms);
-    print(args.rooms);
-    print(args.rooms);
 
     bloc.add(
       CreateCleaningOrderEvent(
@@ -567,13 +602,12 @@ class _ClMainServiceScheduleScreenState
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: state.assignmentMode,
-          numberOfWorkers:
-          state.numberOfWorkers,
+          numberOfWorkers: state.numberOfWorkers,
           preferredWorkerIds: selectedWorkerIds,
           cleaningServices: _selectedCleaningServicesPayload(),
-          workerRoomAssignments: workerRoomAssignments.isEmpty
-              ? null
-              : workerRoomAssignments,
+          workerRoomAssignments:
+              workerRoomAssignments.isEmpty ? null : workerRoomAssignments,
+          couponCode: _appliedCouponCode,
           termsAccepted: true,
         ),
       ),
@@ -583,7 +617,12 @@ class _ClMainServiceScheduleScreenState
   void _removeCleaningService(String name) {
     final normalized = name.trim();
     if (normalized.isEmpty) return;
-    setState(() => _selectedCleaningServiceNames.remove(normalized));
+    setState(() {
+      _selectedCleaningServiceNames.remove(normalized);
+      _resetAppliedCoupon(
+        message: 'تم تغيير بيانات الخدمة. أعد تطبيق الكوبون.',
+      );
+    });
   }
 
   Future<void> _selectAddress() async {
@@ -595,15 +634,17 @@ class _ClMainServiceScheduleScreenState
     if (selectedAddressVal is AddressListItem) {
       setState(() {
         selectedAddress.value = selectedAddressVal;
+        _resetAppliedCoupon(
+          message: 'تم تغيير العنوان. أعد تطبيق الكوبون.',
+        );
       });
       final bloc = _bloc;
-      if (bloc != null) {
-        _requestUpdatedEstimate(bloc.state);
-      }
+      if (bloc != null) _requestUpdatedEstimate(bloc.state);
     }
   }
 
-  void _requestUpdatedEstimate(ClMainState state, {
+  void _requestUpdatedEstimate(
+    ClMainState state, {
     List<int>? selectedWorkerIds,
   }) {
     final args = _routeArgs;
@@ -611,12 +652,19 @@ class _ClMainServiceScheduleScreenState
     final address = selectedAddress.value;
     if (args == null || bloc == null || address == null) return;
 
+    if (_appliedCouponCode != null) {
+      setState(() {
+        _resetAppliedCoupon(
+          message: 'تم تحديث السعر. أعد تطبيق الكوبون.',
+        );
+      });
+    }
+
     final workerIds = selectedWorkerIds ?? state.selectedWorkerIds;
     final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
     final assignmentMode = workerIds.length > 1
         ? CleaningAssignmentMode.openCount
         : state.assignmentMode;
-    final numberOfWorkers = state.numberOfWorkers;
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
       slotByRoomKey: state.workerRoomAssignments,
       units: enumerateRoomUnits(args.roomSizeBreakdown),
@@ -639,11 +687,10 @@ class _ClMainServiceScheduleScreenState
           addressLatitude: null,
           addressLongitude: null,
           assignmentMode: assignmentMode,
-          numberOfWorkers: numberOfWorkers,
+          numberOfWorkers: state.numberOfWorkers,
           preferredWorkerIds: workerIds,
-          workerRoomAssignments: workerRoomAssignments.isEmpty
-              ? null
-              : workerRoomAssignments,
+          workerRoomAssignments:
+              workerRoomAssignments.isEmpty ? null : workerRoomAssignments,
         ),
       ),
     );
@@ -663,28 +710,24 @@ class _ClMainServiceScheduleScreenState
   Future<bool> _showPersonalPropertyPledgeDialog() async {
     const pledgeMessage =
         'أتعهد بحماية وتأمين كافة ممتلكاتي الشخصية والثمينة طوال فترة الخدمة، وأقر بأنني المسؤول الأول والأخير عنها دون أدنى مسؤولية على المنصة';
-
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (ctx) =>
-          AlertDialog(
-            content: const Text(pledgeMessage),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('إلغاء'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('أوافق'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        content: const Text(pledgeMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('إلغاء'),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('أوافق'),
+          ),
+        ],
+      ),
     );
-
     return accepted ?? false;
   }
-
 
   void _toggleCleaningService(String name) {
     final normalized = name.trim();
@@ -695,6 +738,9 @@ class _ClMainServiceScheduleScreenState
       } else {
         _selectedCleaningServiceNames.add(normalized);
       }
+      _resetAppliedCoupon(
+        message: 'تم تغيير بيانات الخدمة. أعد تطبيق الكوبون.',
+      );
     });
   }
 }
