@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/auth/deactivated_account_handler.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/auth/domain/repository/auth_repo.dart';
@@ -9,6 +10,7 @@ import 'package:dllni_user_app/features/auth/domain/usecases/auth_phone_params.d
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/screens/login_screen.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
+import 'package:dllni_user_app/features/auth/view/widgets/deactivated_account_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -169,6 +171,32 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
             curr.verifyAccountStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.verifyAccountStatus == BlocStatus.failed) {
+            if (authFlowHasCode(
+              state.verifyAccountErrorMessage,
+              DeactivatedAccountHandler.errorCode,
+            )) {
+              await DeactivatedAccountHandler.clearSession();
+
+              if (!context.mounted) return;
+
+              await showDialog<void>(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => DeactivatedAccountDialog(
+                  message: authFlowMessage(
+                    state.verifyAccountErrorMessage,
+                    fallback:
+                        'تم إلغاء تفعيل حسابك. يرجى التواصل مع الدعم لإعادة تفعيله.',
+                  ),
+                ),
+              );
+
+              if (context.mounted) {
+                context.pushRouteAndRemoveUntil('/login');
+              }
+              return;
+            }
+
             AppToast.showToast(
               context: context,
               message: authFlowMessage(
