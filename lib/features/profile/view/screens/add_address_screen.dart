@@ -19,7 +19,6 @@ import '../../domain/models/address_list_item.dart';
 import '../../domain/services/user_location_service.dart';
 import '../../domain/usecases/create_address_use_case.dart';
 import '../../domain/usecases/update_address_use_case.dart';
-import '../helpers/nominatim_reverse_geocoding.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/filled_text_field.dart';
 import '../widgets/numbered_section_card.dart';
@@ -48,41 +47,6 @@ Future<List<String>> getNeighborhoods([String city = 'حلب']) async {
       })
       .where((name) => name.isNotEmpty)
       .toList(growable: false);
-}
-
-Future<String?> matchNeighborhoodFromMap({
-  required String text,
-  String city = 'حلب',
-}) async {
-  final trimmed = text.trim();
-  if (trimmed.isEmpty) return null;
-
-  final dioNetwork = getIt<DioNetwork>();
-  final response = await dioNetwork.postData(
-    endPoint: '/api/v1/cleaning/neighborhoods/match',
-    data: {
-      'text': trimmed,
-      'city': city,
-    },
-  );
-  final responseBody = response.data;
-  if (responseBody is! Map<String, dynamic>) {
-    return null;
-  }
-  if (responseBody['matched'] != true) {
-    return null;
-  }
-
-  final data = responseBody['data'];
-  if (data is! Map<String, dynamic>) {
-    return null;
-  }
-
-  final displayName =
-      (data['displayName'] ?? data['nameAr'] ?? data['nameEn'] ?? '')
-          .toString()
-          .trim();
-  return displayName.isEmpty ? null : displayName;
 }
 
 @AutoRoutePage()
@@ -135,31 +99,17 @@ class MyAddressesScreenParams {
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
-  // final _labelController = TextEditingController();
   final _cityController = TextEditingController();
   String? _selectedNeighborhood;
-  final _streetController = TextEditingController();
-  final _buildingController = TextEditingController();
-  final _floorController = TextEditingController();
   final _directionsController = TextEditingController();
   final _phoneController = TextEditingController();
   List<String> _neighborhoods = [];
 
   String _selectedType = 'المنزل';
   bool _isDefault = true;
-  bool _isResolvingMap = false;
-
-  bool _cityEdited = false;
-  bool _directionsEdited = false;
-  final bool _neighborhoodEdited = false;
-  bool _streetEdited = false;
 
   double? _latitude;
   double? _longitude;
-
-  // PhoneNumber? _phone;
-  // PhoneNumber? _initialPhone;
-  // bool _isLoadingPhone = false;
 
   bool get _hasSelectedLocation => _latitude != null && _longitude != null;
   bool get _isEditMode => widget.params.addressItem != null;
@@ -255,9 +205,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
-                            onPressed: _isResolvingMap
-                                ? null
-                                : _pickAddressFromMap,
+                            onPressed: _pickAddressFromMap,
                             icon: const Icon(Icons.map_outlined),
                             label: Text(
                               _hasSelectedLocation
@@ -268,10 +216,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               ),
                             ),
                           ),
-                          if (_isResolvingMap) ...[
-                            const SizedBox(height: 8),
-                            const LinearProgressIndicator(minHeight: 2),
-                          ],
                           if (_hasSelectedLocation) ...[
                             const SizedBox(height: 8),
                             Text(
@@ -281,31 +225,25 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                 fontSize: 12,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            TextButton.icon(
-                              onPressed: _isResolvingMap
-                                  ? null
-                                  : () => _reverseGeocodeSelectedLocation(
-                                      forceFill: true,
-                                    ),
-                              icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text(
-                                'تحديث بيانات العنوان من الخريطة',
-                              ),
-                            ),
                           ],
                           const SizedBox(height: 12),
-                          // FilledTextField(
-                          //   label: 'اسم الحي',
-                          //   isRequired: true,
-                          //   hintText: 'مثال: المزة، الروضة',
-                          //   controller: _neighborhoodController,
-                          //   validator: _requiredValidator,
-                          //   onTap: () =>
-                          //       _moveCursorToTextEnd(_neighborhoodController),
-                          //   onChanged: (_) => _neighborhoodEdited = true,
-                          // ),
-                          // enhace the ui like _AddressTypeSelector
+                          FilledTextField(
+                            label: 'المدينة',
+                            isRequired: false,
+                            hintText: 'مثال: دمشق',
+                            controller: _cityController,
+                            onTap: () => _moveCursorToTextEnd(_cityController),
+                            onChanged: (_) {
+                              unawaited(
+                                _loadNeighborhoods(
+                                  city: _cityController.text.trim().isEmpty
+                                      ? 'حلب'
+                                      : _cityController.text.trim(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -319,7 +257,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
-                                initialValue: _selectedNeighborhood?.isEmpty ?? true
+                                initialValue:
+                                    _selectedNeighborhood?.isEmpty ?? true
                                     ? null
                                     : _selectedNeighborhood,
                                 decoration: InputDecoration(
@@ -371,51 +310,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               ),
                             ],
                           ),
-
-                          const SizedBox(height: 12),
-                          FilledTextField(
-                            label: 'اسم الشارع',
-                            isRequired: false,
-                            hintText: 'مثال: شارع الجلاء',
-                            controller: _streetController,
-                            onTap: () =>
-                                _moveCursorToTextEnd(_streetController),
-                            onChanged: (_) => _streetEdited = true,
-                          ),
-                          const SizedBox(height: 12),
-                          FilledTextField(
-                            label: 'اسم البناء',
-                            hintText: 'مثال: برج السلام (اختياري)',
-                            controller: _buildingController,
-                            onTap: () =>
-                                _moveCursorToTextEnd(_buildingController),
-                          ),
-                          const SizedBox(height: 12),
-                          FilledTextField(
-                            label: 'رقم الطابق',
-                            isRequired: false,
-                            controller: _floorController,
-                            keyboardType: TextInputType.number,
-                            onTap: () => _moveCursorToTextEnd(_floorController),
-                          ),
-                          const SizedBox(height: 12),
-                          FilledTextField(
-                            label: 'المدينة',
-                            isRequired: false,
-                            hintText: 'مثال: دمشق',
-                            controller: _cityController,
-                            onTap: () => _moveCursorToTextEnd(_cityController),
-                            onChanged: (_) => _cityEdited = true,
-                          ),
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'تفاصيل أخرى',
                             hintText:
-                                'مثال: بجانب الصيدلية، رقم الشقة (اختياري)',
+                                'مثل: جانب الصيدلية طابق اول اول باب على اليسار, الخ....',
                             controller: _directionsController,
                             onTap: () =>
                                 _moveCursorToTextEnd(_directionsController),
-                            onChanged: (_) => _directionsEdited = true,
                           ),
                           const SizedBox(height: 8),
                           SwitchListTile(
@@ -506,12 +408,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                               city: _cityController.text.trim(),
                                               neighborhood:
                                                   _selectedNeighborhood ?? "",
-                                              street: _streetController.text
-                                                  .trim(),
-                                              building: _buildingController.text
-                                                  .trim(),
-                                              floor: _floorController.text
-                                                  .trim(),
+                                              street: '',
+                                              building: '',
+                                              floor: '',
                                               directions: _directionsController
                                                   .text
                                                   .trim(),
@@ -531,16 +430,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                             city: _cityController.text.trim(),
                                             neighborhood:
                                                 _selectedNeighborhood ?? "",
-                                            street: _streetController.text
-                                                .trim(),
-                                            building:
-                                                _buildingController.text
-                                                    .trim()
-                                                    .isEmpty
-                                                ? null
-                                                : _buildingController.text
-                                                      .trim(),
-                                            floor: _floorController.text.trim(),
+                                            street: '',
+                                            building: null,
+                                            floor: '',
                                             directions: _directionsController
                                                 .text
                                                 .trim(),
@@ -601,11 +493,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   @override
   void dispose() {
-    // _labelController.dispose();
     _cityController.dispose();
-    _streetController.dispose();
-    _buildingController.dispose();
-    _floorController.dispose();
     _directionsController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -628,9 +516,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       _phoneController.text = item.mobile ?? '';
       _cityController.text = item.city ?? '';
       _selectedNeighborhood = item.neighborhood ?? '';
-      _streetController.text = item.street ?? '';
-      _buildingController.text = item.building ?? '';
-      _floorController.text = item.floor ?? '';
+      _directionsController.text =
+          item.directions ?? item.landmark ?? '';
       _isDefault = item.isDefault;
       _latitude = item.latitude;
       _longitude = item.longitude;
@@ -667,35 +554,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     }
   }
 
-  void _autofillTextField({
-    required TextEditingController controller,
-    required String? value,
-    required bool wasEdited,
-    required bool forceFill,
-  }) {
-    final normalized = value?.trim();
-    if (normalized == null || normalized.isEmpty) return;
-
-    final shouldFill =
-        forceFill || !wasEdited || controller.text.trim().isEmpty;
-    if (shouldFill) {
-      _setTextFieldValueAtEnd(controller, normalized);
-    }
-  }
-
   CreatedAddressSelectionHint _buildCreatedAddressHint() {
     return CreatedAddressSelectionHint(
       label: '',
       mobile: _phoneController.text.trim(),
       city: _cityController.text.trim(),
       neighborhood: _selectedNeighborhood ?? "",
-      street: _streetController.text.trim(),
-      floor: _floorController.text.trim(),
+      street: '',
+      floor: '',
       latitude: _latitude!,
       longitude: _longitude!,
-      building: _buildingController.text.trim().isEmpty
+      building: null,
+      directions: _directionsController.text.trim().isEmpty
           ? null
-          : _buildingController.text.trim(),
+          : _directionsController.text.trim(),
     );
   }
 
@@ -722,109 +594,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       _latitude = selected.latitude;
       _longitude = selected.longitude;
     });
-
-    await _reverseGeocodeSelectedLocation();
-  }
-
-  Future<void> _reverseGeocodeSelectedLocation({bool forceFill = false}) async {
-    if (_latitude == null || _longitude == null) return;
-
-    setState(() => _isResolvingMap = true);
-
-    final fields = await NominatimReverseGeocoding().reverse(
-      latitude: _latitude!,
-      longitude: _longitude!,
-      acceptLanguage: 'ar',
-    );
-
-    if (!mounted) return;
-
-    setState(() => _isResolvingMap = false);
-    if (fields == null) return;
-
-    setState(() {
-      _autofillTextField(
-        controller: _cityController,
-        value: fields.city,
-        wasEdited: _cityEdited,
-        forceFill: forceFill,
-      );
-      _autofillTextField(
-        controller: _streetController,
-        value: fields.street,
-        wasEdited: _streetEdited,
-        forceFill: forceFill,
-      );
-    });
-
-    final cityForApi =
-        (_cityController.text.trim().isNotEmpty
-            ? _cityController.text.trim()
-            : (fields.city ?? 'حلب'));
-
-    try {
-      final neighborhoods = await getNeighborhoods(cityForApi);
-      if (!mounted) return;
-
-      setState(() => _neighborhoods = neighborhoods);
-
-      final mapNeighborhood = (fields.neighborhood ?? '').trim();
-      String? matched;
-      if (mapNeighborhood.isNotEmpty) {
-        matched = await matchNeighborhoodFromMap(
-          text: mapNeighborhood,
-          city: cityForApi,
-        );
-      }
-
-      if (!mounted) return;
-
-      if (matched != null && matched.isNotEmpty) {
-        setState(() {
-          if (!_neighborhoods.contains(matched)) {
-            _neighborhoods = [..._neighborhoods, matched!];
-          }
-          _selectedNeighborhood = matched;
-        });
-      } else if (mapNeighborhood.isNotEmpty) {
-        AppToast.showToast(
-          context: context,
-          message: 'لم يتم تحديد الحي اوتوماتيكيا، يرجى تحديده يدوياً',
-          type: ToastificationType.info,
-        );
-      }
-    } catch (error) {
-      log('error: $error');
-      if (!mounted) return;
-      AppToast.showToast(
-        context: context,
-        message: 'خطأ في جلب الأحياء: ${error.toString()}',
-        type: ToastificationType.error,
-      );
-    }
-
-    _showReverseGeocodingMessage(fields);
-  }
-  void _setTextFieldValueAtEnd(TextEditingController controller, String value) {
-    controller.value = TextEditingValue(
-      text: value,
-      selection: TextSelection.collapsed(offset: value.length),
-    );
-  }
-
-  void _showReverseGeocodingMessage(NominatimAddressFields? fields) {
-    if (!mounted) return;
-
-    final message = fields == null || !fields.hasAnyData
-        ? 'تم تحديد الموقع، لكن لم نتمكن من جلب تفاصيل العنوان. يرجى إدخال البيانات يدويًا.'
-        : (fields.street ?? '').trim().isEmpty ||
-              (fields.neighborhood ?? '').trim().isEmpty
-        ? 'تم تعبئة بيانات العنوان الأساسية من الخريطة. يرجى إكمال الحقول الناقصة يدويًا.'
-        : 'تم تعبئة المدينة والحي والشارع من الخريطة، ويمكنك تعديلها قبل الحفظ.';
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool _validateLocationBeforeSubmit() {

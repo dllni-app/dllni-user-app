@@ -14,6 +14,7 @@ import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
+import '../../domain/models/cleaning_type.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_cleaning_services_use_case.dart';
@@ -538,6 +539,16 @@ class _ClMainServiceScheduleScreenState
       );
       return;
     }
+
+    final address = selectedAddress.value;
+    final addressId = int.tryParse(address?.id ?? '') ?? 0;
+    if (address == null || addressId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+
     if (state.genderPreference.apiValue == 'female' &&
         state.safetyConfirmation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -547,7 +558,7 @@ class _ClMainServiceScheduleScreenState
     }
 
     final estimateForWorkers = _currentEstimate ?? args.estimate;
-    final estimatedHours = estimateForWorkers?.size?.estimatedHours ?? 0;
+    final estimatedHours = estimateForWorkers.size?.estimatedHours ?? 0;
     final selectedWorkers = _requiredWorkersCount(state);
     final requiredWorkers = estimatedHours <= 0
         ? 1
@@ -590,9 +601,9 @@ class _ClMainServiceScheduleScreenState
           livingRoomSize: args.livingRoomSize,
           roomSizeBreakdown: args.roomSizeBreakdown,
           cleaningType: args.cleaningType,
-          addressId: int.parse(selectedAddress.value?.id ?? '0'),
-          address: selectedAddress.value?.line1,
-          locationName: selectedAddress.value?.label,
+          addressId: addressId,
+          address: address.line1,
+          locationName: address.label,
           scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
             _selectedDate,
           ),

@@ -204,20 +204,15 @@ class CleaningAddressSelectWidget extends StatelessWidget {
       getIt<ProfileBloc>()
         ..add(FetchAddressesEvent(params: FetchAddressesParams())),
       child: BlocConsumer<ProfileBloc, ProfileState>(
-        listener: (context,state){
-          if(state.addressesStatus==BlocStatus.success){
-            selectedAddress.value=state.defaultAddress;
-            if(selectedAddress.value !=null){
-              if(afterBringDefault !=null){
-                print('asdasdf');
-                afterBringDefault!();
-
-              }
-            }
-
-          }
+        listener: (context, state) {
+          if (state.addressesStatus != BlocStatus.success) return;
+          if (selectedAddress.value != null) return;
+          final defaultAddress = state.defaultAddress;
+          if (defaultAddress == null) return;
+          selectedAddress.value = defaultAddress;
+          afterBringDefault?.call();
         },
-        listenWhen: (pre,cur)=>pre.addressesStatus!=cur.addressesStatus,
+        listenWhen: (pre, cur) => pre.addressesStatus != cur.addressesStatus,
         builder: (context, state) {
           return Container(
             child: switch (state.addressesStatus) {
@@ -296,18 +291,14 @@ class CleaningAddressSelectWidget extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               AppText.bodyMedium(
-                                selectedAddress.value?.label ??
-                                    state.defaultAddress?.label ??
-                                    'اختر عنوان الخدمة',
+                                value?.label ?? 'اختر عنوان الخدمة',
                                 color: const Color(0xFF1F2937),
                                 fontWeight: FontWeight.w700,
                                 textAlign: TextAlign.right,
                               ),
                               const SizedBox(height: 4),
                               AppText.labelLarge(
-                                selectedAddress?.value?.line1 ??
-                                    state.defaultAddress?.line1 ??
-                                    'اضغط لتغيير العنوان',
+                                value?.line1 ?? 'اضغط لاختيار العنوان',
                                 color: const Color(0xFF6B7280),
                                 textAlign: TextAlign.right,
                               ),

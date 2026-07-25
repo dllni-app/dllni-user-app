@@ -468,9 +468,8 @@ class _ClMainOccasionScheduleScreenState
     }
 
     final selectedAddress = _selectedAddress.value;
-    if (selectedAddress == null ||
-        selectedAddress.latitude == null ||
-        selectedAddress.longitude == null) {
+    final addressId = int.tryParse(selectedAddress?.id ?? '') ?? 0;
+    if (selectedAddress == null || addressId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
       );
@@ -484,7 +483,7 @@ class _ClMainOccasionScheduleScreenState
     bloc.add(
       CreateCleaningOrderEvent(
         params: CreateCleaningOrderParams.eventAssistance(
-          addressId: int.parse(selectedAddress.id),
+          addressId: addressId,
           eventType: args.eventType,
           guestCount: args.guestsCount,
           venueType: args.venueType,
