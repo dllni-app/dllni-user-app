@@ -1050,8 +1050,6 @@ class _CleaningOrderDetailsScreenState
       builder: (_) => CleaningCancelReasonDialog(
         orderId: orderId,
         bloc: ordersBloc,
-        scheduledDate: order.scheduledDate,
-        scheduledTime: order.scheduledTime,
       ),
     );
     if (result == true && mounted) {

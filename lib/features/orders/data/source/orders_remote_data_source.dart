@@ -22,6 +22,7 @@ import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/sos_use_cases.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
+import '../models/cleaning_cancellation_fee_model.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/cleaning_worker_profile_model.dart';
 import '../models/merchant_cart_models.dart';
@@ -79,6 +80,15 @@ class OrdersRemoteDataSource with HandlingApiManager {
             data: params.getBody(),
           ),
       jsonConvert: cleaningCancelResultModelFromJson,
+    );
+  }
+
+  Future<CleaningCancellationFeeModel> fetchCleaningCancellationFee() {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/cleaning/cancellation-fee',
+      ),
+      jsonConvert: cleaningCancellationFeeModelFromJson,
     );
   }
 

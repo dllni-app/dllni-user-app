@@ -1,6 +1,7 @@
 import 'package:common_package/helpers/typedef.dart';
 
 import '../../data/models/cleaning_order_cancel_api_models.dart';
+import '../../data/models/cleaning_cancellation_fee_model.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../../data/models/cleaning_worker_profile_model.dart';
 import '../../data/models/merchant_cart_models.dart';
@@ -40,6 +41,7 @@ abstract class OrdersRepo {
   DataResponse<CleaningCancelResultModel> cancelCleaningOrder(
     CancelCleaningOrderParams params,
   );
+  DataResponse<CleaningCancellationFeeModel> fetchCleaningCancellationFee();
   DataResponse<FetchCleaningOrderDetailsModel> fetchCleaningOrderDetails(
     FetchCleaningOrderDetailsParams params,
   );

@@ -80,6 +80,8 @@ import '../../features/orders/domain/usecases/delete_store_cart_item_use_case.da
     as _i29;
 import '../../features/orders/domain/usecases/extend_cleaning_completion_time_use_case.dart'
     as _i22;
+import '../../features/orders/domain/usecases/fetch_cleaning_cancellation_fee_use_case.dart'
+    as _i492;
 import '../../features/orders/domain/usecases/fetch_cleaning_order_details_use_case.dart'
     as _i232;
 import '../../features/orders/domain/usecases/fetch_cleaning_orders_use_case.dart'
@@ -687,6 +689,11 @@ _i174.GetIt $initGetIt(
   );
   gh.lazySingleton<_i22.ExtendCleaningCompletionTimeUseCase>(
     () => _i22.ExtendCleaningCompletionTimeUseCase(
+      ordersRepo: gh<_i132.OrdersRepo>(),
+    ),
+  );
+  gh.lazySingleton<_i492.FetchCleaningCancellationFeeUseCase>(
+    () => _i492.FetchCleaningCancellationFeeUseCase(
       ordersRepo: gh<_i132.OrdersRepo>(),
     ),
   );

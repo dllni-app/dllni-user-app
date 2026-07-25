@@ -1,8 +1,10 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/realtime/cleaning_gate_session_store.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../data/models/cleaning_cancellation_fee_model.dart';
+import '../../domain/usecases/fetch_cleaning_cancellation_fee_use_case.dart';
 import '../manager/bloc/orders_bloc.dart';
 
 class CleaningCancelReasonDialog extends StatefulWidget {
@@ -10,14 +12,10 @@ class CleaningCancelReasonDialog extends StatefulWidget {
     super.key,
     required this.orderId,
     required this.bloc,
-    this.scheduledDate,
-    this.scheduledTime,
   });
 
   final int orderId;
   final OrdersBloc bloc;
-  final String? scheduledDate;
-  final String? scheduledTime;
 
   @override
   State<CleaningCancelReasonDialog> createState() =>
@@ -28,44 +26,64 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
   final TextEditingController _reasonController = TextEditingController();
   String? _reasonValidationError;
   bool _hasSubmitted = false;
-  bool _showPolicyNotice = false;
+  bool _feeLoading = true;
+  String? _feeError;
+  CleaningCancellationFeeModel? _fee;
 
   @override
   void initState() {
     super.initState();
-    _reasonController.addListener(_onReasonChanged);
+    _loadCancellationFee();
   }
 
   @override
   void dispose() {
-    _reasonController.removeListener(_onReasonChanged);
     _reasonController.dispose();
     super.dispose();
   }
 
-  void _onReasonChanged() {
-    final shouldShow = _reasonController.text.trim().isNotEmpty;
-    if (shouldShow != _showPolicyNotice) {
-      setState(() => _showPolicyNotice = shouldShow);
-    }
+  Future<void> _loadCancellationFee() async {
+    setState(() {
+      _feeLoading = true;
+      _feeError = null;
+    });
+
+    final response = await getIt<FetchCleaningCancellationFeeUseCase>()(
+      NoParams(),
+    );
+
+    if (!mounted) return;
+
+    response.fold(
+      (failure) {
+        setState(() {
+          _feeLoading = false;
+          _feeError = 'تعذر تحميل غرامة الإلغاء. حاول مرة أخرى.';
+        });
+      },
+      (fee) {
+        setState(() {
+          _feeLoading = false;
+          _fee = fee;
+          _feeError = null;
+        });
+      },
+    );
   }
 
-  String? _resolveCancelPolicyMessage() {
-    final scheduledAt = resolveCleaningBookingStartDateTime(
-      scheduledDate: widget.scheduledDate,
-      scheduledTime: widget.scheduledTime,
-    );
-    if (scheduledAt == null) return null;
+  String? _feeMessage() {
+    final fee = _fee;
+    if (fee == null) return null;
 
-    final remaining = scheduledAt.difference(DateTime.now());
+    if (fee.amount <= 0) {
+      return 'علماً أنه يمكن إلغاء الحجز دون رسوم إلغاء حالياً.';
+    }
 
-    if (remaining >= const Duration(hours: 24)) {
-      return 'علماً أنه سيتم إلغاء الحجز مجاناً لأن الوقت المتبقي للخدمة أكثر من 24 ساعة';
-    }
-    if (remaining >= const Duration(hours: 1)) {
-      return 'علماً أنه سيتم إلغاء الحجز وسيُطبق خصم وفقاً لسياسة التطبيق لأن الوقت المتبقي للخدمة أقل من 24 ساعة';
-    }
-    return 'اذا لم تتمكن من استقبال مقدم الخدمة سيتم احتساب رسوم إلغاء وفقاً لسياسة التطبيق المعتمدة من لوحة التحكم.';
+    final amountText = fee.amount == fee.amount.roundToDouble()
+        ? fee.amount.toStringAsFixed(0)
+        : fee.amount.toStringAsFixed(2);
+
+    return 'علماً أنه عند إلغاء الحجز سيتم احتساب غرامة بمبلغ $amountText ${fee.currency}.';
   }
 
   void _submit(BuildContext context) {
@@ -85,8 +103,7 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
 
   @override
   Widget build(BuildContext context) {
-    final policyMessage =
-        _showPolicyNotice ? _resolveCancelPolicyMessage() : null;
+    final feeMessage = _feeMessage();
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -158,15 +175,46 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
                     ),
                   ),
                 ),
-                if (policyMessage != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      10,
-                      8,
-                      10,
-                      8,
+                const SizedBox(height: 10),
+                if (_feeLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.3),
+                      ),
                     ),
+                  )
+                else if (_feeError != null) ...[
+                  Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 10, 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppText.bodySmall(
+                            _feeError!,
+                            color: const Color(0xFF92400E),
+                            textAlign: TextAlign.start,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: isLoading ? null : _loadCancellationFee,
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else if (feeMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 10, 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEE2E2),
                       borderRadius: BorderRadius.circular(12),
@@ -186,7 +234,7 @@ class _CleaningCancelReasonDialogState extends State<CleaningCancelReasonDialog>
                         const SizedBox(width: 6),
                         Expanded(
                           child: AppText.bodySmall(
-                            policyMessage,
+                            feeMessage,
                             color: Color(0xffB91C1C),
                             textAlign: TextAlign.start,
                             fontWeight: FontWeight.w600,

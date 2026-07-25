@@ -23,6 +23,7 @@ import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import '../../domain/usecases/sos_use_cases.dart';
 import '../../domain/usecases/update_cart_item_quantity_use_case.dart';
 import '../models/cleaning_order_cancel_api_models.dart';
+import '../models/cleaning_cancellation_fee_model.dart';
 import '../models/cleaning_orders_api_models.dart';
 import '../models/cleaning_worker_profile_model.dart';
 import '../models/merchant_cart_models.dart';
@@ -63,6 +64,12 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
     CancelCleaningOrderParams params,
   ) =>
       wrapHandlingException(tryCall: () => ordersRemoteDataSource.cancelCleaningOrder(params));
+
+  @override
+  DataResponse<CleaningCancellationFeeModel> fetchCleaningCancellationFee() =>
+      wrapHandlingException(
+        tryCall: () => ordersRemoteDataSource.fetchCleaningCancellationFee(),
+      );
 
   @override
   DataResponse<FetchCleaningOrderDetailsModel> fetchCleaningOrderDetails(
