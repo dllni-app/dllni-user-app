@@ -41,7 +41,10 @@ class AddressListItem {
         parsedId > 0 &&
         label.trim().isNotEmpty &&
         line1.trim().isNotEmpty &&
+        (city?.trim().isNotEmpty ?? false) &&
         (neighborhood?.trim().isNotEmpty ?? false) &&
+        ((directions?.trim().isNotEmpty ?? false) ||
+            (landmark?.trim().isNotEmpty ?? false)) &&
         latitude != null &&
         longitude != null;
   }

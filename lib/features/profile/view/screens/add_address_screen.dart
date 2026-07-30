@@ -229,9 +229,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'المدينة',
-                            isRequired: false,
+                            isRequired: true,
                             hintText: 'مثال: دمشق',
                             controller: _cityController,
+                            validator: _requiredCityValidator,
                             onTap: () => _moveCursorToTextEnd(_cityController),
                             onChanged: (_) {
                               unawaited(
@@ -251,6 +252,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                 children: [
                                   AppText.bodyMedium(
                                     'الحي',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  AppText.bodyMedium(
+                                    '*',
+                                    color: context.error,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ],
@@ -304,6 +310,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                       ),
                                     )
                                     .toList(),
+                                validator: _requiredNeighborhoodValidator,
                                 onChanged: (value) => setState(
                                   () => _selectedNeighborhood = value ?? '',
                                 ),
@@ -313,9 +320,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           FilledTextField(
                             label: 'تفاصيل أخرى',
+                            isRequired: true,
                             hintText:
                                 'مثل: جانب الصيدلية طابق اول اول باب على اليسار, الخ....',
                             controller: _directionsController,
+                            validator: _requiredDirectionsValidator,
                             onTap: () =>
                                 _moveCursorToTextEnd(_directionsController),
                           ),
@@ -365,8 +374,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                         return;
                                       }
 
-                                      final phoneText =
-                                          _phoneController.text.trim();
+                                      final phoneText = _phoneController.text
+                                          .trim();
                                       var mobile = '';
                                       if (phoneText.isNotEmpty) {
                                         final formatted = formatPhoneForApi(
@@ -516,8 +525,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       _phoneController.text = item.mobile ?? '';
       _cityController.text = item.city ?? '';
       _selectedNeighborhood = item.neighborhood ?? '';
-      _directionsController.text =
-          item.directions ?? item.landmark ?? '';
+      _directionsController.text = item.directions ?? item.landmark ?? '';
       _isDefault = item.isDefault;
       _latitude = item.latitude;
       _longitude = item.longitude;
@@ -577,6 +585,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       final textLength = controller.text.length;
       controller.selection = TextSelection.collapsed(offset: textLength);
     });
+  }
+
+  String? _requiredCityValidator(String? value) {
+    return value == null || value.trim().isEmpty ? 'يرجى إدخال المدينة' : null;
+  }
+
+  String? _requiredNeighborhoodValidator(String? value) {
+    return value == null || value.trim().isEmpty ? 'يرجى اختيار الحي' : null;
+  }
+
+  String? _requiredDirectionsValidator(String? value) {
+    return value == null || value.trim().isEmpty
+        ? 'يرجى إدخال تفاصيل العنوان الأخرى'
+        : null;
   }
 
   Future<void> _pickAddressFromMap() async {

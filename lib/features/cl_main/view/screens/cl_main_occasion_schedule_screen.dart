@@ -407,7 +407,8 @@ class _ClMainOccasionScheduleScreenState
     final specialRequirement = args.specialRequirementId == 'none'
         ? null
         : args.specialRequirementLabel;
-    return {
+    final notes = args.notes?.trim();
+    final details = <String, dynamic>{
       'address': address.line1,
       'location_name': address.label,
       'eventType': args.eventType,
@@ -415,10 +416,15 @@ class _ClMainOccasionScheduleScreenState
       'venueType': args.venueType,
       'customService': args.customService,
       'hours': args.hours,
-      if (specialRequirement != null) 'specialRequirement': specialRequirement,
-      if (args.notes != null && args.notes!.trim().isNotEmpty)
-        'notes': args.notes!.trim(),
     };
+    if (specialRequirement != null) {
+      details['specialRequirement'] = specialRequirement;
+    }
+    if (notes != null && notes.isNotEmpty) {
+      details['notes'] = notes;
+    }
+
+    return details;
   }
 
   String _couponReasonMessage(String? reason) {
@@ -478,7 +484,7 @@ class _ClMainOccasionScheduleScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على الحي والموقع على الخريطة',
+            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على المدينة والحي والتفاصيل الأخرى والموقع على الخريطة',
           ),
         ),
       );

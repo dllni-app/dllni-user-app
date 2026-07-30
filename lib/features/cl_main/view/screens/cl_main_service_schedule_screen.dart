@@ -10,7 +10,6 @@ import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../data/models/cleaning_services_response_model.dart';
-import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
@@ -552,7 +551,7 @@ class _ClMainServiceScheduleScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على الحي والموقع على الخريطة',
+            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على المدينة والحي والتفاصيل الأخرى والموقع على الخريطة',
           ),
         ),
       );
