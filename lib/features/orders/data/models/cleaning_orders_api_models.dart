@@ -774,6 +774,25 @@ class CleaningOrderDetailModel {
     return null;
   }
 
+  String? get workerAvatarUrlForDisplay {
+    final direct = worker?.avatarUrl?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+
+    final completionWorker = pendingCompletionRequest?.worker?.avatarUrl
+        ?.trim();
+    if (completionWorker != null && completionWorker.isNotEmpty) {
+      return completionWorker;
+    }
+
+    for (final assignment
+        in workerAssignments ?? const <CleaningWorkerAssignmentModel>[]) {
+      final avatar = assignment.worker?.avatarUrl?.trim();
+      if (avatar != null && avatar.isNotEmpty) return avatar;
+    }
+
+    return null;
+  }
+
   CleaningOrderModel toCleaningOrderModel() {
     return CleaningOrderModel(
       id: id,
@@ -1072,14 +1091,83 @@ class CleaningCompletionSnapshotItemModel {
     if (resolvedLabel == null || resolvedLabel.isEmpty) return null;
 
     final resolvedDetail = detail?.trim();
+    final displayLabel = _localizedCompletionLabel(resolvedLabel);
     if (resolvedDetail == null ||
         resolvedDetail.isEmpty ||
         resolvedLabel.contains(resolvedDetail)) {
-      return resolvedLabel;
+      return displayLabel;
     }
 
-    return '$resolvedLabel: $resolvedDetail';
+    return '$displayLabel: ${_localizedCompletionLabel(resolvedDetail)}';
   }
+
+  static String _localizedCompletionLabel(String value) {
+    final text = value.trim();
+    if (text.isEmpty || RegExp(r'[\u0600-\u06FF]').hasMatch(text)) {
+      return text;
+    }
+
+    final roomKeyPattern = RegExp(
+      r'^([a-z_ ]+)\.(small|medium|large)\.(\d+)$',
+      caseSensitive: false,
+    );
+    final roomKeyMatch = roomKeyPattern.firstMatch(text);
+    if (roomKeyMatch != null) {
+      return _roomUnitLabel(
+        roomKeyMatch.group(1)!,
+        roomKeyMatch.group(3)!,
+        roomKeyMatch.group(2)!,
+      );
+    }
+
+    final displayPattern = RegExp(
+      r'^(bedroom|bathroom|toilet|kitchen|living room|living_room|balcony|hall|corridor|shed)\s+(\d+)\s*-\s*(small|medium|large)$',
+      caseSensitive: false,
+    );
+    final displayMatch = displayPattern.firstMatch(text);
+    if (displayMatch != null) {
+      return _roomUnitLabel(
+        displayMatch.group(1)!,
+        displayMatch.group(2)!,
+        displayMatch.group(3)!,
+      );
+    }
+
+    final normalized = _normalizeEnglishKey(text);
+    return _roomTypeLabels[normalized] ?? _roomSizeLabels[normalized] ?? text;
+  }
+
+  static String _roomUnitLabel(String roomType, String index, String roomSize) {
+    final typeLabel =
+        _roomTypeLabels[_normalizeEnglishKey(roomType)] ?? roomType.trim();
+    final sizeLabel =
+        _roomSizeLabels[_normalizeEnglishKey(roomSize)] ?? roomSize.trim();
+    return '$typeLabel $index - $sizeLabel';
+  }
+
+  static String _normalizeEnglishKey(String value) =>
+      value.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+
+  static const Map<String, String> _roomTypeLabels = <String, String>{
+    'bedroom': 'غرفة نوم',
+    'bed_room': 'غرفة نوم',
+    'bathroom': 'حمام',
+    'bath_room': 'حمام',
+    'toilet': 'حمام صغير',
+    'kitchen': 'مطبخ',
+    'living_room': 'غرفة معيشة',
+    'balcony': 'شرفة',
+    'hall': 'صالة',
+    'corridor': 'ممر',
+    'shed': 'سقيفة',
+  };
+
+  static const Map<String, String> _roomSizeLabels = <String, String>{
+    'small': 'صغيرة',
+    'medium': 'متوسطة',
+    'large': 'كبيرة',
+    'none': 'لا يوجد',
+  };
 }
 
 class CleaningRoomAssignmentModel {

@@ -116,8 +116,8 @@ class _ClMainOccasionScheduleScreenState
           if (state.createOrderStatus == BlocStatus.success) {
             AppToast.showToast(
               context: context,
-              message: state.createOrderResult?.message ??
-                  'تم إرسال الطلب بنجاح',
+              message:
+                  state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
               type: ToastificationType.success,
             );
             context.pushRoute(
@@ -253,9 +253,9 @@ class _ClMainOccasionScheduleScreenState
                             scheduleDateLabel: dayDate,
                             scheduleTimeRange:
                                 CleaningDateTimeUiFormat.timeRange(
-                              _fromTimeHhMm,
-                              _toTimeHhMm,
-                            ),
+                                  _fromTimeHhMm,
+                                  _toTimeHhMm,
+                                ),
                           ),
                         ],
                       ),
@@ -415,8 +415,7 @@ class _ClMainOccasionScheduleScreenState
       'venueType': args.venueType,
       'customService': args.customService,
       'hours': args.hours,
-      if (specialRequirement != null)
-        'specialRequirement': specialRequirement,
+      if (specialRequirement != null) 'specialRequirement': specialRequirement,
       if (args.notes != null && args.notes!.trim().isNotEmpty)
         'notes': args.notes!.trim(),
     };
@@ -453,9 +452,9 @@ class _ClMainOccasionScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
       return;
     }
 
@@ -472,6 +471,16 @@ class _ClMainOccasionScheduleScreenState
     if (selectedAddress == null || addressId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+    if (!selectedAddress.hasCompleteServiceLocation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على الحي والموقع على الخريطة',
+          ),
+        ),
       );
       return;
     }
@@ -541,9 +550,7 @@ class _ClMainOccasionScheduleScreenState
 
     if (_appliedCouponCode != null) {
       setState(() {
-        _resetAppliedCoupon(
-          message: 'تم تحديث السعر. أعد تطبيق الكوبون.',
-        );
+        _resetAppliedCoupon(message: 'تم تحديث السعر. أعد تطبيق الكوبون.');
       });
     }
 
@@ -610,9 +617,7 @@ class _ClMainOccasionScheduleScreenState
     if (selectedAddress is AddressListItem) {
       setState(() {
         _selectedAddress.value = selectedAddress;
-        _resetAppliedCoupon(
-          message: 'تم تغيير العنوان. أعد تطبيق الكوبون.',
-        );
+        _resetAppliedCoupon(message: 'تم تغيير العنوان. أعد تطبيق الكوبون.');
       });
       final bloc = _bloc;
       if (bloc != null) _requestEventEstimate(bloc.state);

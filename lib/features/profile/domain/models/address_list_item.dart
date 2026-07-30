@@ -34,4 +34,15 @@ class AddressListItem {
   final double? longitude;
   final AddressType type;
   final bool isDefault;
+
+  bool get hasCompleteServiceLocation {
+    final parsedId = int.tryParse(id);
+    return parsedId != null &&
+        parsedId > 0 &&
+        label.trim().isNotEmpty &&
+        line1.trim().isNotEmpty &&
+        (neighborhood?.trim().isNotEmpty ?? false) &&
+        latitude != null &&
+        longitude != null;
+  }
 }

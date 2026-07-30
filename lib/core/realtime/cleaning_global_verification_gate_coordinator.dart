@@ -348,7 +348,8 @@ class CleaningGlobalVerificationGateCoordinator {
       CleaningOrderDetailModel? details;
       if (workerId == null || workerId <= 0) {
         details = await _fetchOrderDetails(orderId);
-        workerId = details?.workerId ?? details?.pendingCompletionRequest?.workerId;
+        workerId =
+            details?.workerId ?? details?.pendingCompletionRequest?.workerId;
       }
       if (workerId == null || workerId <= 0) return;
 
@@ -365,7 +366,9 @@ class CleaningGlobalVerificationGateCoordinator {
         },
       );
       final pushContext = _navigatorKey.currentContext;
-      if (workerProfile == null || pushContext == null || !pushContext.mounted) {
+      if (workerProfile == null ||
+          pushContext == null ||
+          !pushContext.mounted) {
         return;
       }
       Navigator.of(pushContext, rootNavigator: true).pushNamed(
@@ -633,7 +636,7 @@ class CleaningGlobalVerificationGateCoordinator {
         bookingId: details.id ?? orderId,
         bookingNumber: details.bookingNumber,
         dateTime: scheduledAt?.toIso8601String(),
-        workerAvatarUrl: details.worker?.avatarUrl,
+        workerAvatarUrl: details.workerAvatarUrlForDisplay,
         onSubmit: (code) =>
             _confirmStartVerificationCode(orderId: orderId, code: code),
       );

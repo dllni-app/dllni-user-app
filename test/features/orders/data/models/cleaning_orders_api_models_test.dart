@@ -201,6 +201,52 @@ void main() {
       );
     });
 
+    test('localizes completed room labels from English snapshots', () {
+      final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 778,
+          'completionRequests': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'isAwaitingCustomerConfirmation': true,
+              'finishedPropertyRooms': <Map<String, dynamic>>[
+                <String, dynamic>{'label': 'Bedroom 1 - Large'},
+                <String, dynamic>{'roomKey': 'kitchen.medium.1'},
+              ],
+            },
+          ],
+        },
+      });
+
+      final rooms = model.data?.pendingCompletionRequest?.finishedPropertyRooms;
+      expect(rooms?[0].displayText, 'غرفة نوم 1 - كبيرة');
+      expect(rooms?[1].displayText, 'مطبخ 1 - متوسطة');
+    });
+
+    test(
+      'uses assignment worker avatar when direct worker avatar is missing',
+      () {
+        final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+          'data': <String, dynamic>{
+            'id': 779,
+            'workerAssignments': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 1,
+                'worker': <String, dynamic>{
+                  'id': 44,
+                  'avatarUrl': 'https://example.test/worker.jpg',
+                },
+              },
+            ],
+          },
+        });
+
+        expect(
+          model.data?.workerAvatarUrlForDisplay,
+          'https://example.test/worker.jpg',
+        );
+      },
+    );
+
     test('parses multi-worker team fields on list payload', () {
       final model = fetchCleaningOrdersModelFromJson(<String, dynamic>{
         'data': <Map<String, dynamic>>[

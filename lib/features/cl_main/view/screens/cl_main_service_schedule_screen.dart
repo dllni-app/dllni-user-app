@@ -113,7 +113,8 @@ class _ClMainServiceScheduleScreenState
           if (state.createOrderStatus == BlocStatus.success) {
             AppToast.showToast(
               context: context,
-              message: state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
+              message:
+                  state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
               type: ToastificationType.success,
             );
             context.pushRoute(
@@ -189,9 +190,9 @@ class _ClMainServiceScheduleScreenState
                                 _cleaningServicesStatus == BlocStatus.loading,
                             errorMessage:
                                 _cleaningServicesStatus == BlocStatus.failed
-                                    ? _cleaningServicesErrorMessage ??
-                                        'تعذر تحميل الخدمات'
-                                    : null,
+                                ? _cleaningServicesErrorMessage ??
+                                      'تعذر تحميل الخدمات'
+                                : null,
                             onToggleService: _toggleCleaningService,
                             onAddCustomService: _addCustomCleaningService,
                             onRemoveService: _removeCleaningService,
@@ -228,9 +229,9 @@ class _ClMainServiceScheduleScreenState
                             scheduleDateLabel: dayDate,
                             scheduleTimeRange:
                                 CleaningDateTimeUiFormat.timeRange(
-                              _fromTimeHhMm,
-                              _toTimeHhMm,
-                            ),
+                                  _fromTimeHhMm,
+                                  _toTimeHhMm,
+                                ),
                           ),
                         ],
                       ),
@@ -316,9 +317,9 @@ class _ClMainServiceScheduleScreenState
       return;
     }
     if (normalized.length > 255) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('اسم الخدمة طويل جداً')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('اسم الخدمة طويل جداً')));
       return;
     }
     setState(() {
@@ -477,8 +478,9 @@ class _ClMainServiceScheduleScreenState
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final estimatedHours = estimate?.size?.estimatedHours ?? 0;
     final blocState = _bloc?.state;
-    final numberOfWorkers =
-        blocState == null ? 1 : _requiredWorkersCount(blocState);
+    final numberOfWorkers = blocState == null
+        ? 1
+        : _requiredWorkersCount(blocState);
     _toTimeHhMm = formatClServiceEndTime(
       startTime: _fromTimeHhMm,
       durationHours: _effectiveServiceHours(
@@ -500,9 +502,7 @@ class _ClMainServiceScheduleScreenState
     required int numberOfWorkers,
   }) {
     if (numberOfWorkers <= 1 || estimatedHours <= 0) return estimatedHours;
-    return double.parse(
-      (estimatedHours / numberOfWorkers).toStringAsFixed(1),
-    );
+    return double.parse((estimatedHours / numberOfWorkers).toStringAsFixed(1));
   }
 
   Future<void> _loadCleaningServices() async {
@@ -534,9 +534,9 @@ class _ClMainServiceScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('بيانات الطلب غير مكتملة')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('بيانات الطلب غير مكتملة')));
       return;
     }
 
@@ -545,6 +545,16 @@ class _ClMainServiceScheduleScreenState
     if (address == null || addressId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+    if (!address.hasCompleteServiceLocation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على الحي والموقع على الخريطة',
+          ),
+        ),
       );
       return;
     }
@@ -616,8 +626,9 @@ class _ClMainServiceScheduleScreenState
           numberOfWorkers: state.numberOfWorkers,
           preferredWorkerIds: selectedWorkerIds,
           cleaningServices: _selectedCleaningServicesPayload(),
-          workerRoomAssignments:
-              workerRoomAssignments.isEmpty ? null : workerRoomAssignments,
+          workerRoomAssignments: workerRoomAssignments.isEmpty
+              ? null
+              : workerRoomAssignments,
           couponCode: _appliedCouponCode,
           termsAccepted: true,
         ),
@@ -645,9 +656,7 @@ class _ClMainServiceScheduleScreenState
     if (selectedAddressVal is AddressListItem) {
       setState(() {
         selectedAddress.value = selectedAddressVal;
-        _resetAppliedCoupon(
-          message: 'تم تغيير العنوان. أعد تطبيق الكوبون.',
-        );
+        _resetAppliedCoupon(message: 'تم تغيير العنوان. أعد تطبيق الكوبون.');
       });
       final bloc = _bloc;
       if (bloc != null) _requestUpdatedEstimate(bloc.state);
@@ -665,9 +674,7 @@ class _ClMainServiceScheduleScreenState
 
     if (_appliedCouponCode != null) {
       setState(() {
-        _resetAppliedCoupon(
-          message: 'تم تحديث السعر. أعد تطبيق الكوبون.',
-        );
+        _resetAppliedCoupon(message: 'تم تحديث السعر. أعد تطبيق الكوبون.');
       });
     }
 
@@ -700,8 +707,9 @@ class _ClMainServiceScheduleScreenState
           assignmentMode: assignmentMode,
           numberOfWorkers: state.numberOfWorkers,
           preferredWorkerIds: workerIds,
-          workerRoomAssignments:
-              workerRoomAssignments.isEmpty ? null : workerRoomAssignments,
+          workerRoomAssignments: workerRoomAssignments.isEmpty
+              ? null
+              : workerRoomAssignments,
         ),
       ),
     );
