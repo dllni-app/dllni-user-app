@@ -3,16 +3,15 @@ import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_use_case.dart';
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
-import 'package:dllni_user_app/features/sm_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../../../generated/assets.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
 import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../rs_home/view/widgets/home_app_bar.dart';
-import '../../../rs_main/view/rs_main_screen.dart';
 import '../widgets/home_cube.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -28,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     List<String> titles = ['مطاعم', 'سوبر ماركت', 'تنظيف'];
-    List<String> screens = ['/rsmain', '/smmain', '/clmain'];
     List<String> images = [
       Assets.images.restaurantServiceIcon.path,
       Assets.images.storeServiceIcon.path,
@@ -140,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         //       : ClMainScreenParams(profileBloc: profileBloc),
                         // );
                         context.pushRoute(
-                          screens.last,
+                          '/clmain',
                           arguments: ClMainScreenParams(
                             profileBloc: profileBloc,
                           ),
@@ -208,16 +206,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () {
-                        context.pushRoute(
-                          screens[index],
-                          arguments: index == 1
-                              ? SmMainScreenParams(
-                                  initialPage: 0,
-                                  expandSearch: false,
-                                )
-                              : index == 0
-                              ? RsMainScreenParams(profileBloc: profileBloc)
-                              : ClMainScreenParams(profileBloc: profileBloc),
+                        AppToast.showToast(
+                          context: context,
+                          message: 'متوفر قريبا',
+                          type: ToastificationType.info,
                         );
                       },
                       child: Column(
@@ -226,19 +218,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 64,
                             height: 64,
                             decoration: BoxDecoration(
-                              color: context.onPrimary,
+                              color: const Color(0xffF3F4F6),
                               borderRadius: BorderRadius.circular(24),
                             ),
                             padding: EdgeInsetsDirectional.all(15),
                             child: AppImage.asset(
                               images[index],
-                              color: context.primary,
+                              color: const Color(0xff9CA3AF),
                             ),
                           ),
                           SizedBox(height: 8),
                           AppText.labelLarge(
                             titles[index],
-                            color: Color(0xff6B7280),
+                            color: const Color(0xff9CA3AF),
                             fontWeight: FontWeight.w500,
                           ),
                         ],
