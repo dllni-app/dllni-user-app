@@ -90,18 +90,46 @@ void main() {
       expect(result.message, 'انتهى الوقت المتاح.');
     });
 
-    test('returns null for unrelated statuses', () {
-      final result = CleaningExtensionDecisionPresenter.resolveRejectedDialog(
-        normalizedEvent: CleaningRealtimeContract.completionDecisionMade,
-        payload: const <String, dynamic>{
-          'decision': 'extension_rejected',
-          'warningId': 42,
-        },
-        currentStatus: CleaningBookingStatus.inProgress,
-        handledWarningIds: <int>{},
-      );
+    test(
+      'returns dialog data for event assistance when local status is stale',
+      () {
+        final result = CleaningExtensionDecisionPresenter.resolveRejectedDialog(
+          normalizedEvent: CleaningRealtimeContract.completionDecisionMade,
+          payload: const <String, dynamic>{
+            'decision': 'extension_rejected',
+            'status': CleaningBookingStatus.completed,
+            'propertyType': 'event_assistance',
+            'workerRejectMessage': 'Cannot extend event assistance.',
+            'warningId': 42,
+          },
+          currentStatus: CleaningBookingStatus.awaitingCustomerCompletion,
+          handledWarningIds: <int>{},
+        );
 
-      expect(result, isNull);
-    });
+        expect(result, isNotNull);
+        expect(result!.warningId, 42);
+        expect(result.message, 'Cannot extend event assistance.');
+      },
+    );
+
+    test(
+      'infers completed status from rejected decision when local status is old',
+      () {
+        final result = CleaningExtensionDecisionPresenter.resolveRejectedDialog(
+          normalizedEvent: CleaningRealtimeContract.trackingUpdated,
+          payload: const <String, dynamic>{
+            'tracking': {
+              'decision': 'worker_rejected_extension',
+              'warning_id': 43,
+            },
+          },
+          currentStatus: CleaningBookingStatus.inProgress,
+          handledWarningIds: <int>{},
+        );
+
+        expect(result, isNotNull);
+        expect(result!.warningId, 43);
+      },
+    );
   });
 }

@@ -71,46 +71,34 @@ void main() {
           details['room_size_breakdown'] as Map<String, dynamic>;
 
       expect(breakdownJson.keys, {'bedroom', 'corridor'});
-      expect(breakdownJson['corridor'], {
-        'small': 0,
-        'medium': 1,
-        'large': 0,
-      });
+      expect(breakdownJson['corridor'], {'small': 0, 'medium': 1, 'large': 0});
     },
   );
 
-  test(
-    'getBody includes shed in room_size_breakdown when present locally',
-    () {
-      const breakdown = CleaningRoomSizeBreakdown(
-        bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
-        shed: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
-      );
+  test('getBody includes shed in room_size_breakdown when present locally', () {
+    const breakdown = CleaningRoomSizeBreakdown(
+      bedroom: CleaningRoomSizeBucket(small: 1, medium: 0, large: 0),
+      shed: CleaningRoomSizeBucket(small: 0, medium: 1, large: 0),
+    );
 
-      final params = EstimateCleaningPriceParams(
-        propertyType: 'villa',
-        bedrooms: 0,
-        rooms: 0,
-        bathrooms: 0,
-        livingRoomSize: 'small',
-        roomSizeBreakdown: breakdown,
-        addressLatitude: 33.5,
-        addressLongitude: 36.3,
-      );
+    final params = EstimateCleaningPriceParams(
+      propertyType: 'villa',
+      bedrooms: 0,
+      rooms: 0,
+      bathrooms: 0,
+      livingRoomSize: 'small',
+      roomSizeBreakdown: breakdown,
+      addressLatitude: 33.5,
+      addressLongitude: 36.3,
+    );
 
-      final details =
-          params.getBody()['propertyDetails'] as Map<String, dynamic>;
-      final breakdownJson =
-          details['room_size_breakdown'] as Map<String, dynamic>;
+    final details = params.getBody()['propertyDetails'] as Map<String, dynamic>;
+    final breakdownJson =
+        details['room_size_breakdown'] as Map<String, dynamic>;
 
-      expect(breakdownJson.keys, {'bedroom', 'shed'});
-      expect(breakdownJson['shed'], {
-        'small': 0,
-        'medium': 1,
-        'large': 0,
-      });
-    },
-  );
+    expect(breakdownJson.keys, {'bedroom', 'shed'});
+    expect(breakdownJson['shed'], {'small': 0, 'medium': 1, 'large': 0});
+  });
 
   test('getBody includes propertyDetails.cleaning_mode when provided', () {
     final params = EstimateCleaningPriceParams(
@@ -170,6 +158,47 @@ void main() {
     expect(details.containsKey('cleaning_mode'), isFalse);
     expect(body.containsKey('workerRoomAssignments'), isFalse);
   });
+
+  test('event assistance getBody includes addressId when provided', () {
+    final params = EstimateCleaningPriceParams.eventAssistance(
+      eventType: 'funeral',
+      guestCount: 30,
+      venueType: 'apartment',
+      customService: 'Hospitality support',
+      hours: 3,
+      addressId: 22,
+      addressLatitude: 33.5,
+      addressLongitude: 36.3,
+    );
+
+    final body = params.getBody();
+
+    expect(body['addressId'], 22);
+    expect(body.containsKey('addressLatitude'), isFalse);
+    expect(body.containsKey('addressLongitude'), isFalse);
+  });
+
+  test(
+    'event assistance getBody includes coordinates without valid addressId',
+    () {
+      final params = EstimateCleaningPriceParams.eventAssistance(
+        eventType: 'funeral',
+        guestCount: 30,
+        venueType: 'apartment',
+        customService: 'Hospitality support',
+        hours: 3,
+        addressId: 0,
+        addressLatitude: 33.5,
+        addressLongitude: 36.3,
+      );
+
+      final body = params.getBody();
+
+      expect(body.containsKey('addressId'), isFalse);
+      expect(body['addressLatitude'], 33.5);
+      expect(body['addressLongitude'], 36.3);
+    },
+  );
 
   test('preferred worker ids do not drive open-count worker count', () {
     final params = EstimateCleaningPriceParams(

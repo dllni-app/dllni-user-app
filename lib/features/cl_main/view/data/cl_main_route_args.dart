@@ -62,6 +62,7 @@ class ClMainOccasionScheduleArgs {
   final String helpTypeLabel;
   final String specialRequirementId;
   final String specialRequirementLabel;
+  final AddressListItem? defaultAddress;
   final String? notes;
 
   const ClMainOccasionScheduleArgs({
@@ -79,6 +80,7 @@ class ClMainOccasionScheduleArgs {
     required this.helpTypeLabel,
     required this.specialRequirementId,
     required this.specialRequirementLabel,
+    this.defaultAddress,
     this.notes,
   });
 }

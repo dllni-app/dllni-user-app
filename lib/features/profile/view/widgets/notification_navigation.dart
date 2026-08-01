@@ -11,10 +11,10 @@ void tryNavigateFromNotificationPayload(
 }) {
   if (data == null || data.isEmpty) return;
 
-  final target = _stringFromData(
-    data,
-    const ['deepLinkTarget', 'deep_link_target'],
-  )?.toLowerCase();
+  final target = _stringFromData(data, const [
+    'deepLinkTarget',
+    'deep_link_target',
+  ])?.toLowerCase();
 
   if (target == 'coupons' || target == 'coupon_list') {
     context.pushRoute('/coupons');
@@ -23,10 +23,14 @@ void tryNavigateFromNotificationPayload(
 
   final m = (module ?? '').toLowerCase();
   if (m == 'cleaning') {
-    final orderId = _intFromData(
-      data,
-      const ['bookingId', 'booking_id', 'orderId', 'order_id'],
-    );
+    if (_isLegacyEventBookingPayload(data)) return;
+
+    final orderId = _intFromData(data, const [
+      'bookingId',
+      'booking_id',
+      'orderId',
+      'order_id',
+    ]);
     if (orderId != null) {
       context.pushRoute(
         '/cleaning-order-details',
@@ -54,6 +58,15 @@ void tryNavigateFromNotificationPayload(
       arguments: DeliveryOrderTrackingArgs(orderId: orderId),
     );
   }
+}
+
+bool _isLegacyEventBookingPayload(Map<String, dynamic> data) {
+  final bookingType = _stringFromData(data, const [
+    'bookingType',
+    'booking_type',
+  ])?.trim().toLowerCase();
+
+  return bookingType == 'event_booking';
 }
 
 int? _intFromData(Map<String, dynamic> data, List<String> keys) {

@@ -291,6 +291,7 @@ class _ClMainOccasionScheduleScreenState
       _routeArgs = args;
       _bloc = args.bloc;
       _currentEstimate = args.estimate;
+      _selectedAddress.value = args.defaultAddress;
       _syncToTime();
     }
   }

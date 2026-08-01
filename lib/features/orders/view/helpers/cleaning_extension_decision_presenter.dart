@@ -30,15 +30,17 @@ class CleaningExtensionDecisionPresenter {
         normalizedEvent != CleaningRealtimeContract.trackingUpdated) {
       return null;
     }
-    final normalizedStatus = (currentStatus ?? '').trim().toLowerCase();
-    if (normalizedStatus != CleaningBookingStatus.timeExtensionRequested &&
-        normalizedStatus != CleaningBookingStatus.completed) {
-      return null;
-    }
 
     final unwrapped = CleaningRealtimeContract.unwrapPayload(payload);
     final decision = _extractDecision(normalizedEvent, unwrapped);
     if (!_rejectedDecisions.contains(decision)) {
+      return null;
+    }
+    if (!_allowsRejectedDialog(
+      currentStatus: currentStatus,
+      payload: unwrapped,
+      decision: decision,
+    )) {
       return null;
     }
 
@@ -72,6 +74,26 @@ class CleaningExtensionDecisionPresenter {
         .toString()
         .trim()
         .toLowerCase();
+  }
+
+  static bool _allowsRejectedDialog({
+    required String? currentStatus,
+    required Map<String, dynamic> payload,
+    required String decision,
+  }) {
+    final statusCandidates = <String?>[
+      currentStatus,
+      CleaningRealtimeContract.resolveStatusFromPayload(payload),
+      CleaningRealtimeContract.statusFromDecision(decision),
+    ];
+
+    return statusCandidates
+        .map((status) => (status ?? '').trim().toLowerCase())
+        .any(
+          (status) =>
+              status == CleaningBookingStatus.timeExtensionRequested ||
+              status == CleaningBookingStatus.completed,
+        );
   }
 
   static int? _extractWarningId(Map<String, dynamic> payload) {

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/toast_component.dart';
+import '../../../profile/domain/models/address_list_item.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
@@ -16,6 +17,7 @@ import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_home_description_title_card_widget.dart';
 import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
+import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
@@ -34,15 +36,16 @@ class ClMainOccasionDescriptionScreen extends StatefulWidget {
 
 class _ClMainOccasionDescriptionScreenState
     extends State<ClMainOccasionDescriptionScreen> {
-  late int _guestsCount ;
-  late int _hoursCount ;
-  late int _workersCount ;
- late final List<_MenuOption> _helpTypeOptions ;
- late final List<_MenuOption> _specialRequirementOptions ;
+  late int _guestsCount;
+  late int _hoursCount;
+  late int _workersCount;
+  late final List<_MenuOption> _helpTypeOptions;
+  late final List<_MenuOption> _specialRequirementOptions;
 
   final TextEditingController _customServiceController =
       TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  late final ValueNotifier<AddressListItem?> _selectedAddress;
 
   bool _enableNotes = false;
   ClMainOccasionDescriptionArgs? _routeArgs;
@@ -60,97 +63,134 @@ class _ClMainOccasionDescriptionScreenState
 
   @override
   void initState() {
-    _initializeDefaults();
     super.initState();
+    _initializeDefaults();
+    _selectedAddress = ValueNotifier<AddressListItem?>(null);
 
     // widget.args?.option.id=='condolences'?
   }
- void _initializeDefaults() {
-   final occasionId = widget.args?.option.id;
 
-   switch (occasionId) {
-     case 'family_dinner':
-       _guestsCount = 10;
-       _hoursCount = 3;
-       _workersCount = 1;
-       _helpTypeOptions = [
-         _MenuOption(id: 'table_setup', label: 'تجهيز طاولة العشاء'),
-         _MenuOption(id: 'manual_help', label: 'مساعدة يدوية في المطبخ'),
-         _MenuOption(id: 'serving', label: 'تقديم الطعام للضيوف'),
-         _MenuOption(id: 'cleanup', label: 'تنظيف المائدة بعد العشاء'),
-       ];
-       _specialRequirementOptions = [
-         _MenuOption(id: 'none', label: 'لا يوجد'),
-         _MenuOption(id: 'quick_setup', label: 'تجهيز سريع قبل الوصول'),
-         _MenuOption(id: 'kids_safety', label: 'انتباه خاص لسلامة الأطفال'),
-         _MenuOption(id: 'extra_seating', label: 'ترتيب مقاعد إضافية'),
-       ];
-       break;
+  void _initializeDefaults() {
+    final occasionId = widget.args?.option.id;
 
-     case 'birthday_party':
-       _guestsCount = 20;
-       _hoursCount = 4;
-       _workersCount = 2;
-       _helpTypeOptions = [
-         _MenuOption(id: 'serving_support', label: 'دعم توزيع المشروبات والحلويات'),
-         _MenuOption(id: 'decoration_help', label: 'المساعدة في ترتيب الزينة'),
-         _MenuOption(id: 'gift_management', label: 'تنظيم ركن الهدايا'),
-         _MenuOption(id: 'post_party_cleanup', label: 'تنظيف المكان بعد الحفلة'),
-       ];
-       _specialRequirementOptions = [
-         _MenuOption(id: 'none', label: 'لا يوجد'),
-         _MenuOption(id: 'cake_ceremony', label: 'تنسيق فقرة الكيك'),
-         _MenuOption(id: 'music_coordination', label: 'متابعة وتيرة الموسيقى'),
-         _MenuOption(id: 'extra_attention', label: 'عناية إضافية لمنطقة البوفيه'),
-       ];
-       break;
+    switch (occasionId) {
+      case 'family_dinner':
+        _guestsCount = 10;
+        _hoursCount = 3;
+        _workersCount = 1;
+        _helpTypeOptions = [
+          _MenuOption(id: 'table_setup', label: 'تجهيز طاولة العشاء'),
+          _MenuOption(id: 'manual_help', label: 'مساعدة يدوية في المطبخ'),
+          _MenuOption(id: 'serving', label: 'تقديم الطعام للضيوف'),
+          _MenuOption(id: 'cleanup', label: 'تنظيف المائدة بعد العشاء'),
+        ];
+        _specialRequirementOptions = [
+          _MenuOption(id: 'none', label: 'لا يوجد'),
+          _MenuOption(id: 'quick_setup', label: 'تجهيز سريع قبل الوصول'),
+          _MenuOption(id: 'kids_safety', label: 'انتباه خاص لسلامة الأطفال'),
+          _MenuOption(id: 'extra_seating', label: 'ترتيب مقاعد إضافية'),
+        ];
+        break;
 
-     case 'large_gathering':
-       _guestsCount = 40;
-       _hoursCount = 6;
-       _workersCount = 3;
-       _helpTypeOptions = [
-         _MenuOption(id: 'hospitality_setup', label: 'تجهيز كامل لمنطقة الضيافة'),
-         _MenuOption(id: 'reception_support', label: 'دعم استقبال الضيوف'),
-         _MenuOption(id: 'food_refill', label: 'متابعة إعادة تعبئة الطعام'),
-         _MenuOption(id: 'full_cleanup', label: 'تنظيف شامل وتنسيق بعد المناسبة'),
-       ];
-       _specialRequirementOptions = [
-         _MenuOption(id: 'separate_teams', label: 'توزيع فريق العمل على أقسام'),
-         _MenuOption(id: 'valet_support', label: 'المساعدة في تنظيم المواقف'),
-         _MenuOption(id: 'security_awareness', label: 'انتباه وتنسيق حركة الضيوف'),
-         _MenuOption(id: 'dynamic_service', label: 'خدمة مرنة حسب احتياج القاعة'),
-       ];
-       break;
+      case 'birthday_party':
+        _guestsCount = 20;
+        _hoursCount = 4;
+        _workersCount = 2;
+        _helpTypeOptions = [
+          _MenuOption(
+            id: 'serving_support',
+            label: 'دعم توزيع المشروبات والحلويات',
+          ),
+          _MenuOption(id: 'decoration_help', label: 'المساعدة في ترتيب الزينة'),
+          _MenuOption(id: 'gift_management', label: 'تنظيم ركن الهدايا'),
+          _MenuOption(
+            id: 'post_party_cleanup',
+            label: 'تنظيف المكان بعد الحفلة',
+          ),
+        ];
+        _specialRequirementOptions = [
+          _MenuOption(id: 'none', label: 'لا يوجد'),
+          _MenuOption(id: 'cake_ceremony', label: 'تنسيق فقرة الكيك'),
+          _MenuOption(id: 'music_coordination', label: 'متابعة وتيرة الموسيقى'),
+          _MenuOption(
+            id: 'extra_attention',
+            label: 'عناية إضافية لمنطقة البوفيه',
+          ),
+        ];
+        break;
 
-     case 'condolences':
-       _guestsCount = 30;
-       _hoursCount = 5;
-       _workersCount = 2;
-       _helpTypeOptions = [
-         _MenuOption(id: 'hospitality_setup', label: 'تجهيز ركن القهوة والضيافة'),
-         _MenuOption(id: 'serving_support', label: 'تقديم مستمر للضيافة'),
-         _MenuOption(id: 'silent_service', label: 'خدمة هادئة غير ملفتة'),
-         _MenuOption(id: 'cleanup_support', label: 'تنظيف وتغيير أكواب الضيافة'),
-       ];
-       _specialRequirementOptions = [
-         _MenuOption(id: 'none', label: 'لا يوجد'),
-         _MenuOption(id: 'continuous_cleaning', label: 'تنظيف مستمر أثناء العزاء'),
-         _MenuOption(id: 'high_traffic', label: 'عناية إضافية بالمداخل والممرات'),
-         _MenuOption(id: 'restrooms', label: 'متابعة نظافة دورات المياه'),
-       ];
-       break;
+      case 'large_gathering':
+        _guestsCount = 40;
+        _hoursCount = 6;
+        _workersCount = 3;
+        _helpTypeOptions = [
+          _MenuOption(
+            id: 'hospitality_setup',
+            label: 'تجهيز كامل لمنطقة الضيافة',
+          ),
+          _MenuOption(id: 'reception_support', label: 'دعم استقبال الضيوف'),
+          _MenuOption(id: 'food_refill', label: 'متابعة إعادة تعبئة الطعام'),
+          _MenuOption(
+            id: 'full_cleanup',
+            label: 'تنظيف شامل وتنسيق بعد المناسبة',
+          ),
+        ];
+        _specialRequirementOptions = [
+          _MenuOption(
+            id: 'separate_teams',
+            label: 'توزيع فريق العمل على أقسام',
+          ),
+          _MenuOption(id: 'valet_support', label: 'المساعدة في تنظيم المواقف'),
+          _MenuOption(
+            id: 'security_awareness',
+            label: 'انتباه وتنسيق حركة الضيوف',
+          ),
+          _MenuOption(
+            id: 'dynamic_service',
+            label: 'خدمة مرنة حسب احتياج القاعة',
+          ),
+        ];
+        break;
 
-     default:
-     // ... القيم الافتراضية العامة كما كانت
-       break;
-   }
+      case 'condolences':
+        _guestsCount = 30;
+        _hoursCount = 5;
+        _workersCount = 2;
+        _helpTypeOptions = [
+          _MenuOption(
+            id: 'hospitality_setup',
+            label: 'تجهيز ركن القهوة والضيافة',
+          ),
+          _MenuOption(id: 'serving_support', label: 'تقديم مستمر للضيافة'),
+          _MenuOption(id: 'silent_service', label: 'خدمة هادئة غير ملفتة'),
+          _MenuOption(
+            id: 'cleanup_support',
+            label: 'تنظيف وتغيير أكواب الضيافة',
+          ),
+        ];
+        _specialRequirementOptions = [
+          _MenuOption(id: 'none', label: 'لا يوجد'),
+          _MenuOption(
+            id: 'continuous_cleaning',
+            label: 'تنظيف مستمر أثناء العزاء',
+          ),
+          _MenuOption(
+            id: 'high_traffic',
+            label: 'عناية إضافية بالمداخل والممرات',
+          ),
+          _MenuOption(id: 'restrooms', label: 'متابعة نظافة دورات المياه'),
+        ];
+        break;
 
-   // تحديث القيم المختارة لضمان توافقها مع القوائم الجديدة
-   // _selectedHelpType = _helpTypeOptions.first;
-   // _selectedSpecialRequirement = _specialRequirementOptions.first;
- }
+      default:
+        // ... القيم الافتراضية العامة كما كانت
+        break;
+    }
 
+    // تحديث القيم المختارة لضمان توافقها مع القوائم الجديدة
+    // _selectedHelpType = _helpTypeOptions.first;
+    // _selectedSpecialRequirement = _specialRequirementOptions.first;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -199,6 +239,7 @@ class _ClMainOccasionDescriptionScreenState
               helpTypeLabel: customService,
               specialRequirementId: _selectedSpecialRequirement!.id,
               specialRequirementLabel: specialRequirement ?? 'لا يوجد',
+              defaultAddress: _selectedAddress.value,
               notes: _enableNotes ? _notesController.text.trim() : null,
             );
             // if (!context.mounted) return;
@@ -383,6 +424,11 @@ class _ClMainOccasionDescriptionScreenState
                             ),
                           ),
                           const SizedBox(height: 10),
+                          CleaningAddressSelectWidget(
+                            selectedAddress: _selectedAddress,
+                            onChangeTap: _selectAddress,
+                          ),
+                          const SizedBox(height: 10),
                           ClHomeDescriptionTitleCardWidget(
                             step: 6,
                             title: 'ملاحظات الطلب',
@@ -519,9 +565,7 @@ class _ClMainOccasionDescriptionScreenState
       _routeArgs = args;
       _bloc = args.bloc;
       _bloc?.add(
-        SetGenderPreferenceEvent(
-          preference: CleaningGenderPreference.male,
-        ),
+        SetGenderPreferenceEvent(preference: CleaningGenderPreference.male),
       );
       _bloc?.add(
         GetPreviousCleaningWorkersEvent(
@@ -539,6 +583,7 @@ class _ClMainOccasionDescriptionScreenState
   void dispose() {
     _customServiceController.dispose();
     _notesController.dispose();
+    _selectedAddress.dispose();
     super.dispose();
   }
 
@@ -619,6 +664,24 @@ class _ClMainOccasionDescriptionScreenState
       );
       return;
     }
+    final selectedAddress = _selectedAddress.value;
+    final addressId = int.tryParse(selectedAddress?.id ?? '') ?? 0;
+    if (selectedAddress == null || addressId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+    if (!selectedAddress.hasCompleteServiceLocation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على المدينة والحي والتفاصيل الأخرى والموقع على الخريطة',
+          ),
+        ),
+      );
+      return;
+    }
 
     final eventType = _eventTypeFromOption(args.option);
     final specialRequirement = _selectedSpecialRequirement!.id == 'none'
@@ -636,6 +699,9 @@ class _ClMainOccasionDescriptionScreenState
           venueType: 'apartment',
           customService: customService,
           hours: _hoursCount.toDouble(),
+          addressId: addressId,
+          addressLatitude: selectedAddress.latitude,
+          addressLongitude: selectedAddress.longitude,
           numberOfWorkers: _workersCount,
           preferredWorkerIds: preferredWorkerIds,
           assignmentMode: assignmentMode,
@@ -644,6 +710,19 @@ class _ClMainOccasionDescriptionScreenState
         ),
       ),
     );
+  }
+
+  Future<void> _selectAddress() async {
+    final selectedAddress = await context.pushRoute(
+      '/myaddresses',
+      arguments: true,
+    );
+    if (!mounted) return;
+    if (selectedAddress is AddressListItem) {
+      setState(() {
+        _selectedAddress.value = selectedAddress;
+      });
+    }
   }
 
   Future<void> _selectHelpType() async {
