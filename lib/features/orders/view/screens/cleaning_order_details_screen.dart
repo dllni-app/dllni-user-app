@@ -1602,6 +1602,7 @@ class _CleaningOrderDetailsScreenState
       context,
       useRootNavigator: true,
       completionRequest: completionRequest,
+      cleaningOrder: order,
       onConfirm: () => _submitCompletionConfirm(order, completionRequest),
       onReject: (reason) =>
           _submitCompletionReject(order, completionRequest, reason),

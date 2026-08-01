@@ -696,6 +696,7 @@ class CleaningGlobalVerificationGateCoordinator {
         navContext,
         useRootNavigator: true,
         completionRequest: completionRequest,
+        cleaningOrder: details,
         onConfirm: () => _submitCompletionConfirm(
           orderId: orderId,
           completionRequest: completionRequest,

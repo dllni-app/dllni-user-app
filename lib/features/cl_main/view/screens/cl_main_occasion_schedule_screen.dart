@@ -10,15 +10,14 @@ import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
+import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
-import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
-import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
@@ -213,14 +212,6 @@ class _ClMainOccasionScheduleScreenState
                             toTimeController: _toTimeController,
                             onPickDate: _pickDate,
                             onPickFromTime: _pickFromTime,
-                          ),
-                          const SizedBox(height: 10),
-                          CleaningAddressSelectWidget(
-                            selectedAddress: _selectedAddress,
-                            onChangeTap: _selectAddress,
-                            afterBringDefault: () {
-                              _requestEventEstimate(bloc.state);
-                            },
                           ),
                           const SizedBox(height: 12),
                           ClServiceCouponSectionWidget(
@@ -449,12 +440,6 @@ class _ClMainOccasionScheduleScreenState
     return value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
   }
 
-  void _resetAppliedCoupon({String? message}) {
-    _appliedCouponCode = null;
-    _couponStatus = ClCouponUiStatus.idle;
-    _couponMessage = message;
-  }
-
   void _onSubmitPressed(ClMainState state) {
     final args = _routeArgs;
     final bloc = _bloc;
@@ -547,49 +532,6 @@ class _ClMainOccasionScheduleScreenState
     });
   }
 
-  void _requestEventEstimate(
-    ClMainState state, {
-    List<int>? selectedWorkerIds,
-  }) {
-    final args = _routeArgs;
-    final bloc = _bloc;
-    if (args == null || bloc == null) return;
-
-    if (_appliedCouponCode != null) {
-      setState(() {
-        _resetAppliedCoupon(message: 'تم تحديث السعر. أعد تطبيق الكوبون.');
-      });
-    }
-
-    final specialRequirement = args.specialRequirementId == 'none'
-        ? null
-        : args.specialRequirementLabel;
-    final assignment = _resolveAssignment(
-      state,
-      selectedWorkerIds: selectedWorkerIds,
-    );
-    final address = _selectedAddress.value;
-
-    bloc.add(
-      EstimateCleaningPriceEvent(
-        params: EstimateCleaningPriceParams.eventAssistance(
-          eventType: args.eventType,
-          guestCount: args.guestsCount,
-          venueType: args.venueType,
-          customService: args.customService,
-          hours: args.hours,
-          addressLatitude: address?.latitude,
-          addressLongitude: address?.longitude,
-          preferredWorkerIds: assignment.preferredWorkerIds,
-          specialRequirement: specialRequirement,
-          notes: args.notes,
-          numberOfWorkers: _routeNumberOfWorkers,
-          assignmentMode: assignment.assignmentMode,
-        ),
-      ),
-    );
-  }
-
   EventAssignmentFields _resolveAssignment(
     ClMainState state, {
     List<int>? selectedWorkerIds,
@@ -613,22 +555,6 @@ class _ClMainOccasionScheduleScreenState
       normalized.add(id);
     }
     return normalized;
-  }
-
-  Future<void> _selectAddress() async {
-    final selectedAddress = await context.pushRoute(
-      '/myaddresses',
-      arguments: true,
-    );
-    if (!mounted) return;
-    if (selectedAddress is AddressListItem) {
-      setState(() {
-        _selectedAddress.value = selectedAddress;
-        _resetAppliedCoupon(message: 'تم تغيير العنوان. أعد تطبيق الكوبون.');
-      });
-      final bloc = _bloc;
-      if (bloc != null) _requestEventEstimate(bloc.state);
-    }
   }
 
   void _syncToTime() {

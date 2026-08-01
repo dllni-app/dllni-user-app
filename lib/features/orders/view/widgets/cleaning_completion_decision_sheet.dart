@@ -3,6 +3,7 @@ import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../helpers/cleaning_event_assistance_helper.dart';
 
 enum CleaningCompletionDecision { confirmed, rejected, extensionRequested }
 
@@ -42,6 +43,7 @@ class CleaningCompletionDecisionSheet {
   static Future<CleaningCompletionDecision?> show(
     BuildContext context, {
     required CleaningCompletionRequestModel completionRequest,
+    CleaningOrderDetailModel? cleaningOrder,
     required Future<String?> Function() onConfirm,
     required Future<String?> Function(String? reason) onReject,
     required Future<String?> Function(int minutes) onExtend,
@@ -61,6 +63,7 @@ class CleaningCompletionDecisionSheet {
       ),
       builder: (ctx) => _CleaningCompletionDecisionSheetBody(
         completionRequest: completionRequest,
+        cleaningOrder: cleaningOrder,
         onConfirm: onConfirm,
         onReject: onReject,
         onExtend: onExtend,
@@ -73,6 +76,7 @@ class CleaningCompletionDecisionSheet {
 class _CleaningCompletionDecisionSheetBody extends StatefulWidget {
   const _CleaningCompletionDecisionSheetBody({
     required this.completionRequest,
+    required this.cleaningOrder,
     required this.onConfirm,
     required this.onReject,
     required this.onExtend,
@@ -80,6 +84,7 @@ class _CleaningCompletionDecisionSheetBody extends StatefulWidget {
   });
 
   final CleaningCompletionRequestModel completionRequest;
+  final CleaningOrderDetailModel? cleaningOrder;
   final Future<String?> Function() onConfirm;
   final Future<String?> Function(String? reason) onReject;
   final Future<String?> Function(int minutes) onExtend;
@@ -100,12 +105,23 @@ class _CleaningCompletionDecisionSheetBodyState
   @override
   void initState() {
     super.initState();
-    _finishedTaskGroups = _buildFinishedTaskGroups(widget.completionRequest);
+    _finishedTaskGroups = _buildFinishedTaskGroups(
+      widget.completionRequest,
+      widget.cleaningOrder,
+    );
   }
 
   List<_FinishedTaskGroup> _buildFinishedTaskGroups(
     CleaningCompletionRequestModel completionRequest,
+    CleaningOrderDetailModel? cleaningOrder,
   ) {
+    if (cleaningOrder != null &&
+        CleaningEventAssistanceHelper.isEventAssistance(
+          cleaningOrder.propertyType,
+        )) {
+      return _buildEventAssistanceTaskGroups(cleaningOrder);
+    }
+
     final items = <String>{
       ...completionRequest.finishedCleaningServices
           .map((item) => item.displayText)
@@ -123,6 +139,34 @@ class _CleaningCompletionDecisionSheetBodyState
         items: items.toList(growable: false),
       ),
     ];
+  }
+
+  List<_FinishedTaskGroup> _buildEventAssistanceTaskGroups(
+    CleaningOrderDetailModel order,
+  ) {
+    final serviceTitle = CleaningEventAssistanceHelper.serviceTitle(
+      propertyType: order.propertyType,
+      customService: order.propertyDetails?.customService,
+    ).trim();
+    final specialRequirement = order.propertyDetails?.specialRequirement
+        ?.trim();
+
+    final groups = <_FinishedTaskGroup>[];
+    if (serviceTitle.isNotEmpty) {
+      groups.add(
+        _FinishedTaskGroup(
+          title: 'طبيعة المساعدة المطلوبة',
+          items: [serviceTitle],
+        ),
+      );
+    }
+    if (specialRequirement != null && specialRequirement.isNotEmpty) {
+      groups.add(
+        _FinishedTaskGroup(title: 'متطلبات خاصة', items: [specialRequirement]),
+      );
+    }
+
+    return groups;
   }
 
   Future<void> _run(

@@ -7,6 +7,16 @@ import 'package:intl/date_symbol_data_local.dart';
 Future<void> _openSheet(
   WidgetTester tester, {
   required Future<String?> Function(int minutes) onExtend,
+  CleaningCompletionRequestModel completionRequest =
+      const CleaningCompletionRequestModel(
+        workerId: 8,
+        assignmentId: 14,
+        message: 'Please check the kitchen counter.',
+        finishedCleaningServices: [
+          CleaningCompletionSnapshotItemModel(label: 'Kitchen cleaning'),
+        ],
+      ),
+  CleaningOrderDetailModel? cleaningOrder,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -18,16 +28,8 @@ Future<void> _openSheet(
                 onPressed: () {
                   CleaningCompletionDecisionSheet.show(
                     context,
-                    completionRequest: const CleaningCompletionRequestModel(
-                      workerId: 8,
-                      assignmentId: 14,
-                      message: 'Please check the kitchen counter.',
-                      finishedCleaningServices: [
-                        CleaningCompletionSnapshotItemModel(
-                          label: 'Kitchen cleaning',
-                        ),
-                      ],
-                    ),
+                    completionRequest: completionRequest,
+                    cleaningOrder: cleaningOrder,
                     fetchExtensionTimeRanges: () async => [
                       CleaningExtensionRangeModel(
                         startMinutes: 1,
@@ -152,6 +154,37 @@ void main() {
     expect(find.text('Kitchen cleaning'), findsOneWidget);
     expect(find.text('Please check the kitchen counter.'), findsOneWidget);
     expect(find.text('صالون'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('shows event assistance task instead of inferred room snapshot', (
+    WidgetTester tester,
+  ) async {
+    await _openSheet(
+      tester,
+      onExtend: (_) async => null,
+      completionRequest: const CleaningCompletionRequestModel(
+        workerId: 8,
+        assignmentId: 14,
+        finishedPropertyRooms: [
+          CleaningCompletionSnapshotItemModel(label: 'living_room.medium.1'),
+        ],
+      ),
+      cleaningOrder: CleaningOrderDetailModel(
+        propertyType: 'event_assistance',
+        propertyDetails: CleaningPropertyDetailsModel(
+          customService: 'تجهيز ركن القهوة والضيافة',
+          specialRequirement: 'تنظيف مستمر أثناء العزاء',
+        ),
+      ),
+    );
+
+    expect(find.text('طبيعة المساعدة المطلوبة'), findsOneWidget);
+    expect(find.text('تجهيز ركن القهوة والضيافة'), findsOneWidget);
+    expect(find.text('متطلبات خاصة'), findsOneWidget);
+    expect(find.text('تنظيف مستمر أثناء العزاء'), findsOneWidget);
+    expect(find.textContaining('غرفة معيشة'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
