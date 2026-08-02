@@ -7,6 +7,7 @@ import 'package:toastification/toastification.dart';
 
 import '../../features/orders/data/models/cleaning_booking_status.dart';
 import '../../features/orders/data/models/cleaning_orders_api_models.dart';
+import '../../features/orders/data/source/orders_remote_data_source.dart';
 import '../../features/orders/domain/usecases/confirm_cleaning_completion_use_case.dart';
 import '../../features/orders/domain/usecases/confirm_cleaning_start_verification_use_case.dart';
 import '../../features/orders/domain/usecases/extend_cleaning_completion_time_use_case.dart';
@@ -21,14 +22,16 @@ import '../../features/orders/view/screens/cleaning_order_details_screen.dart';
 import '../../features/orders/view/screens/cleaning_worker_rating_screen.dart';
 import '../../features/orders/view/widgets/cleaning_completion_decision_sheet.dart';
 import '../../features/orders/view/widgets/cleaning_start_verification_dialog.dart';
+import '../../features/orders/view/widgets/preferred_worker_rejection_decision_dialog.dart';
 import '../di/injection.dart';
 import '../extensions/num_extensions.dart';
 import 'cleaning_booking_pusher_service.dart';
 import 'cleaning_gate_session_store.dart';
 import 'cleaning_realtime_contract.dart';
+import 'cleaning_tracking_session_bus.dart';
 import 'pusher_manager.dart';
 
-class CleaningGlobalVerificationGateCoordinator {
+class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
   CleaningGlobalVerificationGateCoordinator({
     required GlobalKey<NavigatorState> navigatorKey,
   }) : _navigatorKey = navigatorKey;
@@ -121,6 +124,7 @@ class CleaningGlobalVerificationGateCoordinator {
     if (_started) return;
     _activeInstance = this;
     _started = true;
+    WidgetsBinding.instance.addObserver(this);
     await _pusher.ensureInitialized();
     await _ensureCustomerRealtimeChannel();
     unawaited(_refreshPendingGates());
@@ -141,6 +145,7 @@ class CleaningGlobalVerificationGateCoordinator {
   Future<void> stop() async {
     _pollTimer?.cancel();
     _pollTimer = null;
+    WidgetsBinding.instance.removeObserver(this);
     _cancelArrivalFollowUpRefreshTimers();
     _gatePromptOpen = false;
     _extensionRejectedDialogOpen = false;
@@ -156,6 +161,13 @@ class CleaningGlobalVerificationGateCoordinator {
     if (identical(_activeInstance, this)) {
       _activeInstance = null;
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    unawaited(_ensureCustomerRealtimeChannel());
+    unawaited(_refreshPendingGates());
   }
 
   Future<void> requestStartVerificationPrompt({
@@ -445,6 +457,9 @@ class CleaningGlobalVerificationGateCoordinator {
     if (!_hasToken() || _refreshing) return;
     _refreshing = true;
     try {
+      await _refreshPreferredWorkerRejectionDecisions();
+      if (!_started || _gatePromptOpen) return;
+
       if (_useUnfilteredPollingFallback) {
         await _refreshPendingGatesWithoutStatusFilter();
         return;
@@ -460,6 +475,24 @@ class CleaningGlobalVerificationGateCoordinator {
       }
     } finally {
       _refreshing = false;
+    }
+  }
+
+  Future<void> _refreshPreferredWorkerRejectionDecisions() async {
+    if (!_started || _gatePromptOpen) return;
+
+    final FetchCleaningOrdersModel response;
+    try {
+      response = await getIt<OrdersRemoteDataSource>()
+          .fetchPendingPreferredWorkerRejectionDecisions();
+    } catch (_) {
+      return;
+    }
+
+    for (final order in response.data) {
+      if (!_started || _gatePromptOpen) return;
+      if (!order.isPreferredWorkerRejectionDecisionPending) continue;
+      await _promptForPreferredWorkerRejectionDecisionIfNeeded(order);
     }
   }
 
@@ -566,6 +599,51 @@ class CleaningGlobalVerificationGateCoordinator {
         );
       }
     }
+  }
+
+  Future<void> _promptForPreferredWorkerRejectionDecisionIfNeeded(
+    CleaningOrderModel order,
+  ) async {
+    final orderId = order.id;
+    if (!_started || _gatePromptOpen || orderId == null || orderId <= 0) {
+      return;
+    }
+    if (!order.isPreferredWorkerRejectionDecisionPending) return;
+
+    final navContext = _navigatorKey.currentContext;
+    if (navContext == null || !navContext.mounted) return;
+
+    _gatePromptOpen = true;
+    PreferredWorkerRejectionDecisionAction? decision;
+    try {
+      decision = await PreferredWorkerRejectionDecisionDialog.show(
+        navContext,
+        order: order,
+        onConvertToOpen: () => _submitPreferredWorkerRejectionDecision(
+          orderId: orderId,
+          decision: 'convert_to_open',
+        ),
+        onCancel: () => _submitPreferredWorkerRejectionDecision(
+          orderId: orderId,
+          decision: 'cancel',
+        ),
+      );
+    } finally {
+      _gatePromptOpen = false;
+    }
+
+    if (decision == null || !navContext.mounted) return;
+
+    final message =
+        decision == PreferredWorkerRejectionDecisionAction.convertToOpen
+        ? 'تم تحويل الطلب إلى طلب عام. نبحث الآن عن عامل بديل.'
+        : 'تم إلغاء الطلب بدون رسوم.';
+    AppToast.showToast(
+      context: navContext,
+      message: message,
+      type: ToastificationType.success,
+    );
+    CleaningTrackingSessionBus.requestRefresh(orderId);
   }
 
   bool _isOrderDetailsScreenOpenFor(int orderId) {
@@ -955,6 +1033,34 @@ class CleaningGlobalVerificationGateCoordinator {
         return null;
       },
     );
+  }
+
+  Future<String?> _submitPreferredWorkerRejectionDecision({
+    required int orderId,
+    required String decision,
+  }) async {
+    try {
+      final response = await getIt<OrdersRemoteDataSource>()
+          .submitPreferredWorkerRejectionDecision(
+            orderId: orderId,
+            decision: decision,
+          );
+      final details = response.data;
+      if (details != null) {
+        _syncGateSessionWithDetails(details);
+      }
+      CleaningTrackingSessionBus.requestRefresh(orderId);
+      return null;
+    } catch (error) {
+      return _preferredWorkerRejectionDecisionError(error);
+    }
+  }
+
+  String _preferredWorkerRejectionDecisionError(Object error) {
+    if (error is Failure && error.message.trim().isNotEmpty) {
+      return error.message;
+    }
+    return 'تعذر تنفيذ القرار الآن. يرجى المحاولة مرة أخرى.';
   }
 
   String? _extensionRequestSuccessMessage(

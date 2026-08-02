@@ -313,6 +313,11 @@ class CleaningOrderModel {
   final String? assignmentMode;
   final bool convertedFromPreferredWorker;
   final String? convertedFromPreferredWorkerAt;
+  final bool requiresPreferredWorkerRejectionDecision;
+  final String? preferredWorkerRejectionDecisionStatus;
+  final String? preferredWorkerRejectedAt;
+  final int? preferredWorkerRejectionWorkerId;
+  final String? preferredWorkerRejectionDecidedAt;
   final int? numberOfWorkers;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
 
@@ -357,6 +362,11 @@ class CleaningOrderModel {
     this.assignmentMode,
     this.convertedFromPreferredWorker = false,
     this.convertedFromPreferredWorkerAt,
+    this.requiresPreferredWorkerRejectionDecision = false,
+    this.preferredWorkerRejectionDecisionStatus,
+    this.preferredWorkerRejectedAt,
+    this.preferredWorkerRejectionWorkerId,
+    this.preferredWorkerRejectionDecidedAt,
     this.numberOfWorkers,
     this.workerAcceptance,
   });
@@ -489,6 +499,42 @@ class CleaningOrderModel {
           'converted_from_preferred_worker_at',
         ]),
       ),
+      requiresPreferredWorkerRejectionDecision:
+          _toBool(
+            _pick(m, const <String>[
+              'requiresPreferredWorkerRejectionDecision',
+              'requires_preferred_worker_rejection_decision',
+              'requiresDecision',
+              'requires_decision',
+            ]),
+          ) ??
+          false,
+      preferredWorkerRejectionDecisionStatus: _toStringValue(
+        _pick(m, const <String>[
+          'preferredWorkerRejectionDecisionStatus',
+          'preferred_worker_rejection_decision_status',
+          'decisionStatus',
+          'decision_status',
+        ]),
+      ),
+      preferredWorkerRejectedAt: _toStringValue(
+        _pick(m, const <String>[
+          'preferredWorkerRejectedAt',
+          'preferred_worker_rejected_at',
+        ]),
+      ),
+      preferredWorkerRejectionWorkerId: _toInt(
+        _pick(m, const <String>[
+          'preferredWorkerRejectionWorkerId',
+          'preferred_worker_rejection_worker_id',
+        ]),
+      ),
+      preferredWorkerRejectionDecidedAt: _toStringValue(
+        _pick(m, const <String>[
+          'preferredWorkerRejectionDecidedAt',
+          'preferred_worker_rejection_decided_at',
+        ]),
+      ),
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
@@ -517,6 +563,11 @@ class CleaningOrderModel {
       isSearchingForWorkers &&
       (assignmentMode ?? '').toLowerCase() == 'open_count' &&
       convertedFromPreferredWorker;
+
+  bool get isPreferredWorkerRejectionDecisionPending =>
+      (status ?? '').toLowerCase() == CleaningBookingStatus.pending &&
+      requiresPreferredWorkerRejectionDecision &&
+      (preferredWorkerRejectionDecisionStatus ?? '').toLowerCase() == 'pending';
 }
 
 class CleaningOrderDetailModel {
@@ -562,6 +613,11 @@ class CleaningOrderDetailModel {
   final String? assignmentMode;
   final bool convertedFromPreferredWorker;
   final String? convertedFromPreferredWorkerAt;
+  final bool requiresPreferredWorkerRejectionDecision;
+  final String? preferredWorkerRejectionDecisionStatus;
+  final String? preferredWorkerRejectedAt;
+  final int? preferredWorkerRejectionWorkerId;
+  final String? preferredWorkerRejectionDecidedAt;
   final int? numberOfWorkers;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
   final CleaningOrderWorkerModel? preferredWorker;
@@ -613,6 +669,11 @@ class CleaningOrderDetailModel {
     this.assignmentMode,
     this.convertedFromPreferredWorker = false,
     this.convertedFromPreferredWorkerAt,
+    this.requiresPreferredWorkerRejectionDecision = false,
+    this.preferredWorkerRejectionDecisionStatus,
+    this.preferredWorkerRejectedAt,
+    this.preferredWorkerRejectionWorkerId,
+    this.preferredWorkerRejectionDecidedAt,
     this.numberOfWorkers,
     this.workerAcceptance,
     this.preferredWorker,
@@ -756,6 +817,42 @@ class CleaningOrderDetailModel {
           'converted_from_preferred_worker_at',
         ]),
       ),
+      requiresPreferredWorkerRejectionDecision:
+          _toBool(
+            _pick(m, const <String>[
+              'requiresPreferredWorkerRejectionDecision',
+              'requires_preferred_worker_rejection_decision',
+              'requiresDecision',
+              'requires_decision',
+            ]),
+          ) ??
+          false,
+      preferredWorkerRejectionDecisionStatus: _toStringValue(
+        _pick(m, const <String>[
+          'preferredWorkerRejectionDecisionStatus',
+          'preferred_worker_rejection_decision_status',
+          'decisionStatus',
+          'decision_status',
+        ]),
+      ),
+      preferredWorkerRejectedAt: _toStringValue(
+        _pick(m, const <String>[
+          'preferredWorkerRejectedAt',
+          'preferred_worker_rejected_at',
+        ]),
+      ),
+      preferredWorkerRejectionWorkerId: _toInt(
+        _pick(m, const <String>[
+          'preferredWorkerRejectionWorkerId',
+          'preferred_worker_rejection_worker_id',
+        ]),
+      ),
+      preferredWorkerRejectionDecidedAt: _toStringValue(
+        _pick(m, const <String>[
+          'preferredWorkerRejectionDecidedAt',
+          'preferred_worker_rejection_decided_at',
+        ]),
+      ),
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
@@ -804,6 +901,11 @@ class CleaningOrderDetailModel {
       isSearchingForWorkers &&
       (assignmentMode ?? '').toLowerCase() == 'open_count' &&
       convertedFromPreferredWorker;
+
+  bool get isPreferredWorkerRejectionDecisionPending =>
+      (status ?? '').toLowerCase() == CleaningBookingStatus.pending &&
+      requiresPreferredWorkerRejectionDecision &&
+      (preferredWorkerRejectionDecisionStatus ?? '').toLowerCase() == 'pending';
 
   List<CleaningWorkerAssignmentModel> get acceptedWorkerAssignments {
     final assignments = workerAssignments ?? const [];
@@ -881,6 +983,13 @@ class CleaningOrderDetailModel {
       assignmentMode: assignmentMode,
       convertedFromPreferredWorker: convertedFromPreferredWorker,
       convertedFromPreferredWorkerAt: convertedFromPreferredWorkerAt,
+      requiresPreferredWorkerRejectionDecision:
+          requiresPreferredWorkerRejectionDecision,
+      preferredWorkerRejectionDecisionStatus:
+          preferredWorkerRejectionDecisionStatus,
+      preferredWorkerRejectedAt: preferredWorkerRejectedAt,
+      preferredWorkerRejectionWorkerId: preferredWorkerRejectionWorkerId,
+      preferredWorkerRejectionDecidedAt: preferredWorkerRejectionDecidedAt,
       numberOfWorkers: numberOfWorkers,
       workerAcceptance: workerAcceptance,
     );

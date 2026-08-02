@@ -41,12 +41,13 @@ void main() {
   });
 
   testWidgets(
-    'opens cleaning details for preferred-worker rejected notification',
+    'opens cleaning details for preferred-worker decision-required notification',
     (tester) async {
       await tester.pumpWidget(
         _NotificationNavigationHarness(
           payload: const <String, dynamic>{
-            'canonicalType': 'cleaning.booking.preferred_worker_rejected',
+            'canonicalType':
+                'cleaning.booking.preferred_worker_rejected_decision_required',
             'bookingId': 46,
             'deep_link_target': 'cleaning_order_details',
           },

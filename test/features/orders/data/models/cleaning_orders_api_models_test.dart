@@ -210,6 +210,47 @@ void main() {
       },
     );
 
+    test('parses preferred-worker rejection decision fields', () {
+      final detail = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 880,
+          'status': CleaningBookingStatus.pending,
+          'assignmentMode': 'preferred_worker',
+          'requiresPreferredWorkerRejectionDecision': true,
+          'preferredWorkerRejectionDecisionStatus': 'pending',
+          'preferredWorkerRejectedAt': '2026-08-02T08:00:00Z',
+          'preferredWorkerRejectionWorkerId': 64,
+        },
+      }).data;
+
+      expect(detail, isNotNull);
+      expect(detail!.requiresPreferredWorkerRejectionDecision, isTrue);
+      expect(detail.preferredWorkerRejectionDecisionStatus, 'pending');
+      expect(detail.preferredWorkerRejectedAt, '2026-08-02T08:00:00Z');
+      expect(detail.preferredWorkerRejectionWorkerId, 64);
+      expect(detail.isPreferredWorkerRejectionDecisionPending, isTrue);
+
+      final list = fetchCleaningOrdersModelFromJson(<String, dynamic>{
+        'data': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 881,
+            'status': CleaningBookingStatus.pending,
+            'assignment_mode': 'preferred_worker',
+            'requires_preferred_worker_rejection_decision': 1,
+            'preferred_worker_rejection_decision_status': 'pending',
+            'preferred_worker_rejected_at': '2026-08-02T08:10:00Z',
+            'preferred_worker_rejection_worker_id': 65,
+          },
+        ],
+      }).data.first;
+
+      expect(list.requiresPreferredWorkerRejectionDecision, isTrue);
+      expect(list.preferredWorkerRejectionDecisionStatus, 'pending');
+      expect(list.preferredWorkerRejectedAt, '2026-08-02T08:10:00Z');
+      expect(list.preferredWorkerRejectionWorkerId, 65);
+      expect(list.isPreferredWorkerRejectionDecisionPending, isTrue);
+    });
+
     test('parses a worker-specific completion request', () {
       final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
         'data': <String, dynamic>{
