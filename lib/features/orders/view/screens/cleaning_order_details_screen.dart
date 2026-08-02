@@ -182,10 +182,11 @@ class _CleaningOrderDetailsScreenState
     final hideEditActions =
         statusBlocksEdit || leadTimeCheck.isPastScheduledTime;
     // Within 24h but still before service: show controls disabled.
-    final editLocked =
-        statusBlocksEdit || !leadTimeCheck.allowed;
+    final editLocked = statusBlocksEdit || !leadTimeCheck.allowed;
     final liveAcceptance = _effectiveWorkerAcceptance(order);
     final searchingForWorkers = _isSearchingForWorkers(order, liveAcceptance);
+    final showPreferredWorkerFallbackBanner =
+        _showPreferredWorkerFallbackBanner(order, liveAcceptance);
 
     Widget? sosTrailing;
     if (!isTerminalStatus) {
@@ -353,6 +354,10 @@ class _CleaningOrderDetailsScreenState
                     ],
                     if (searchingForWorkers) ...[
                       const SizedBox(height: 12),
+                      if (showPreferredWorkerFallbackBanner) ...[
+                        const CleaningPreferredWorkerFallbackBannerWidget(),
+                        const SizedBox(height: 12),
+                      ],
                       CleaningTeamSearchBannerWidget(
                         acceptance: liveAcceptance,
                         numberOfWorkers: order.numberOfWorkers,
@@ -1047,10 +1052,8 @@ class _CleaningOrderDetailsScreenState
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => CleaningCancelReasonDialog(
-        orderId: orderId,
-        bloc: ordersBloc,
-      ),
+      builder: (_) =>
+          CleaningCancelReasonDialog(orderId: orderId, bloc: ordersBloc),
     );
     if (result == true && mounted) {
       _gateSession.suppressStartVerification(
@@ -1353,6 +1356,15 @@ class _CleaningOrderDetailsScreenState
     if (statusNorm != CleaningBookingStatus.pending) return false;
     if (acceptance == null) return order.isSearchingForWorkers;
     return acceptance.isFulfilled != true;
+  }
+
+  bool _showPreferredWorkerFallbackBanner(
+    CleaningOrderDetailModel order,
+    CleaningWorkerAcceptanceModel? acceptance,
+  ) {
+    return order.convertedFromPreferredWorker &&
+        (order.assignmentMode ?? '').toLowerCase() == 'open_count' &&
+        _isSearchingForWorkers(order, acceptance);
   }
 
   bool _isStartVerificationExpired(CleaningOrderDetailModel order) {
@@ -1930,7 +1942,8 @@ class _CleaningOrderDetailsScreenState
   }
 
   void _syncLiveTravellingFromOrder(CleaningOrderDetailModel order) {
-    final hasArrived = order.arrivedAt != null && order.arrivedAt!.trim().isNotEmpty;
+    final hasArrived =
+        order.arrivedAt != null && order.arrivedAt!.trim().isNotEmpty;
     final status = _normStatus(order.status);
     final leftTravelPhase =
         hasArrived ||
@@ -1948,7 +1961,8 @@ class _CleaningOrderDetailsScreenState
     }
 
     final hasStartedTravel =
-        order.startedTravelAt != null && order.startedTravelAt!.trim().isNotEmpty;
+        order.startedTravelAt != null &&
+        order.startedTravelAt!.trim().isNotEmpty;
     if (hasStartedTravel) {
       _liveWorkerTravelling = true;
     }

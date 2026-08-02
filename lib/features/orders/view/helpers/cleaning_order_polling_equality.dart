@@ -80,6 +80,14 @@ bool cleaningOrderListDisplayEquals(
       _nullableEquals(a.scheduledDate, b.scheduledDate) &&
       _nullableEquals(a.scheduledTime, b.scheduledTime) &&
       _nullableEquals(a.assignmentMode, b.assignmentMode) &&
+      _nullableEquals(
+        a.convertedFromPreferredWorker,
+        b.convertedFromPreferredWorker,
+      ) &&
+      _nullableEquals(
+        a.convertedFromPreferredWorkerAt,
+        b.convertedFromPreferredWorkerAt,
+      ) &&
       _nullableEquals(a.numberOfWorkers, b.numberOfWorkers) &&
       _workerAcceptanceEquals(a.workerAcceptance, b.workerAcceptance);
 }
@@ -103,6 +111,14 @@ bool cleaningOrderDetailDisplayEquals(
       _nullableEquals(a.isPricingFinal, b.isPricingFinal) &&
       _nullableEquals(a.addonsTotal, b.addonsTotal) &&
       _nullableEquals(a.assignmentMode, b.assignmentMode) &&
+      _nullableEquals(
+        a.convertedFromPreferredWorker,
+        b.convertedFromPreferredWorker,
+      ) &&
+      _nullableEquals(
+        a.convertedFromPreferredWorkerAt,
+        b.convertedFromPreferredWorkerAt,
+      ) &&
       _nullableEquals(a.numberOfWorkers, b.numberOfWorkers) &&
       _nullableEquals(a.workerId, b.workerId) &&
       _nullableEquals(a.startedTravelAt, b.startedTravelAt) &&

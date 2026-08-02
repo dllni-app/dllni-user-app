@@ -18,9 +18,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: NotificationFeedItem(notification: notification),
-        ),
+        home: Scaffold(body: NotificationFeedItem(notification: notification)),
       ),
     );
 
@@ -37,12 +35,38 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: NotificationFeedItem(notification: notification),
-        ),
+        home: Scaffold(body: NotificationFeedItem(notification: notification)),
       ),
     );
 
     expect(find.text('رسالة عادية'), findsOneWidget);
+  });
+
+  testWidgets('shows preferred-worker rejected cleaning notification body', (
+    tester,
+  ) async {
+    const body =
+        'رفض العامل المخصص الطلب، وتم تحويله إلى طلب عام. نبحث الآن عن عامل بديل.';
+    const notification = FetchNotificationsModelDataItem(
+      type: 'preferred_worker_rejected',
+      canonicalType: 'cleaning.booking.preferred_worker_rejected',
+      title: 'رفض العامل المخصص الطلب',
+      body: body,
+      module: 'cleaning',
+      data: <String, dynamic>{
+        'bookingId': 45,
+        'status': 'pending',
+        'assignmentMode': 'open_count',
+        'convertedToOpen': true,
+      },
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: NotificationFeedItem(notification: notification)),
+      ),
+    );
+
+    expect(find.text(body), findsOneWidget);
   });
 }

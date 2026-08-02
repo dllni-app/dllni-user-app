@@ -39,6 +39,26 @@ void main() {
 
     expect(find.text('cleaning details'), findsOneWidget);
   });
+
+  testWidgets(
+    'opens cleaning details for preferred-worker rejected notification',
+    (tester) async {
+      await tester.pumpWidget(
+        _NotificationNavigationHarness(
+          payload: const <String, dynamic>{
+            'canonicalType': 'cleaning.booking.preferred_worker_rejected',
+            'bookingId': 46,
+            'deep_link_target': 'cleaning_order_details',
+          },
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('navigate')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('cleaning details'), findsOneWidget);
+    },
+  );
 }
 
 class _NotificationNavigationHarness extends StatelessWidget {

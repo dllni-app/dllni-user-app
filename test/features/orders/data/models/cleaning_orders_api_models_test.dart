@@ -103,6 +103,8 @@ void main() {
           'id': 123,
           'status': CleaningBookingStatus.pending,
           'assignmentMode': 'open_count',
+          'convertedFromPreferredWorker': true,
+          'convertedFromPreferredWorkerAt': '2026-07-01T12:00:00Z',
           'numberOfWorkers': 2,
           'workerAcceptance': <String, dynamic>{
             'required': 2,
@@ -151,6 +153,8 @@ void main() {
       final data = model.data;
       expect(data, isNotNull);
       expect(data!.assignmentMode, 'open_count');
+      expect(data.convertedFromPreferredWorker, isTrue);
+      expect(data.convertedFromPreferredWorkerAt, '2026-07-01T12:00:00Z');
       expect(data.numberOfWorkers, 2);
       expect(data.workerAcceptance?.required, 2);
       expect(data.workerAcceptance?.accepted, 1);
@@ -164,8 +168,47 @@ void main() {
       expect(data.myAssignment?.workerAmount, 20500);
       expect(data.isMultiWorkerTeam, isTrue);
       expect(data.isSearchingForWorkers, isTrue);
+      expect(data.isPreferredWorkerFallbackSearch, isTrue);
       expect(data.acceptedWorkerAssignments.length, 1);
     });
+
+    test(
+      'marks preferred-worker fallback search only for pending open orders',
+      () {
+        expect(
+          CleaningOrderDetailModel(
+            status: CleaningBookingStatus.pending,
+            assignmentMode: 'open_count',
+            convertedFromPreferredWorker: true,
+          ).isPreferredWorkerFallbackSearch,
+          isTrue,
+        );
+        expect(
+          CleaningOrderDetailModel(
+            status: CleaningBookingStatus.pending,
+            assignmentMode: 'preferred_worker',
+            convertedFromPreferredWorker: true,
+          ).isPreferredWorkerFallbackSearch,
+          isFalse,
+        );
+        expect(
+          CleaningOrderDetailModel(
+            status: CleaningBookingStatus.workerAssigned,
+            assignmentMode: 'open_count',
+            convertedFromPreferredWorker: true,
+          ).isPreferredWorkerFallbackSearch,
+          isFalse,
+        );
+        expect(
+          CleaningOrderDetailModel(
+            status: CleaningBookingStatus.pending,
+            assignmentMode: 'open_count',
+            convertedFromPreferredWorker: false,
+          ).isPreferredWorkerFallbackSearch,
+          isFalse,
+        );
+      },
+    );
 
     test('parses a worker-specific completion request', () {
       final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
@@ -254,6 +297,8 @@ void main() {
             'id': 401,
             'status': CleaningBookingStatus.pending,
             'assignment_mode': 'open_count',
+            'converted_from_preferred_worker': 1,
+            'converted_from_preferred_worker_at': '2026-07-01T12:00:00Z',
             'number_of_workers': 3,
             'worker_acceptance': <String, dynamic>{
               'required': 3,
@@ -267,10 +312,13 @@ void main() {
 
       final item = model.data.first;
       expect(item.assignmentMode, 'open_count');
+      expect(item.convertedFromPreferredWorker, isTrue);
+      expect(item.convertedFromPreferredWorkerAt, '2026-07-01T12:00:00Z');
       expect(item.numberOfWorkers, 3);
       expect(item.workerAcceptance?.accepted, 1);
       expect(item.isMultiWorkerTeam, isTrue);
       expect(item.isSearchingForWorkers, isTrue);
+      expect(item.isPreferredWorkerFallbackSearch, isTrue);
     });
 
     test('parses new pricing fields on list payload', () {

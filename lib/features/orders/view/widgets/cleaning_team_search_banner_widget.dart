@@ -87,3 +87,39 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
     );
   }
 }
+
+class CleaningPreferredWorkerFallbackBannerWidget extends StatelessWidget {
+  const CleaningPreferredWorkerFallbackBannerWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7E6),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFF2B94B)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            color: Color(0xFFB76E00),
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: AppText.bodyMedium(
+              'رفض العامل المخصص الطلب. تم تحويل طلبك إلى طلب عام ونبحث الآن عن عامل بديل.',
+              color: const Color(0xFF7A4B00),
+              fontWeight: FontWeight.w700,
+              textAlign: TextAlign.start,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

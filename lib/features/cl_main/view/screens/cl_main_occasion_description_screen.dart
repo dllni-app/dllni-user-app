@@ -11,6 +11,7 @@ import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
+import '../helpers/cl_event_assignment_helper.dart';
 import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
@@ -60,6 +61,14 @@ class _ClMainOccasionDescriptionScreenState
     if (typed.isNotEmpty) return typed;
     return _selectedHelpType?.label ?? '';
   }
+
+  int get _minimumWorkersForSelectedHours =>
+      resolveMinimumEventWorkersForHours(_hoursCount.toDouble());
+
+  int get _resolvedWorkersCount => resolveEventWorkerCountForHours(
+    hours: _hoursCount.toDouble(),
+    requestedWorkers: _workersCount,
+  );
 
   @override
   void initState() {
@@ -222,8 +231,9 @@ class _ClMainOccasionDescriptionScreenState
             final specialRequirement = _selectedSpecialRequirement!.id == 'none'
                 ? null
                 : _selectedSpecialRequirement!.label;
+            final resolvedWorkersCount = _resolvedWorkersCount;
             final suggestedTeamSize =
-                state.estimatePrice?.suggestedTeamSize ?? _workersCount;
+                state.estimatePrice?.suggestedTeamSize ?? resolvedWorkersCount;
             final scheduleArgs = ClMainOccasionScheduleArgs(
               option: _routeArgs!.option,
               bloc: bloc,
@@ -233,7 +243,7 @@ class _ClMainOccasionDescriptionScreenState
               venueType: 'apartment',
               customService: customService,
               hours: _hoursCount.toDouble(),
-              numberOfWorkers: _workersCount,
+              numberOfWorkers: resolvedWorkersCount,
               suggestedTeamSize: suggestedTeamSize,
               helpTypeId: _selectedHelpType?.id ?? 'custom',
               helpTypeLabel: customService,
@@ -386,11 +396,11 @@ class _ClMainOccasionDescriptionScreenState
                               maxValue: 24,
                               onAdd: () {
                                 if (_hoursCount >= 24) return;
-                                setState(() => _hoursCount += 1);
+                                _setHoursCount(_hoursCount + 1);
                               },
                               onSubtract: () {
                                 if (_hoursCount <= 1) return;
-                                setState(() => _hoursCount -= 1);
+                                _setHoursCount(_hoursCount - 1);
                               },
                             ),
                           ),
@@ -404,7 +414,10 @@ class _ClMainOccasionDescriptionScreenState
                               minValue: 1,
                               onAdd: () => setState(() => _workersCount += 1),
                               onSubtract: () {
-                                if (_workersCount <= 1) return;
+                                if (_workersCount <=
+                                    _minimumWorkersForSelectedHours) {
+                                  return;
+                                }
                                 setState(() => _workersCount -= 1);
                               },
                             ),
@@ -621,6 +634,17 @@ class _ClMainOccasionDescriptionScreenState
     );
   }
 
+  void _setHoursCount(int value) {
+    final safeHours = value.clamp(1, 24).toInt();
+    setState(() {
+      _hoursCount = safeHours;
+      final minimumWorkers = _minimumWorkersForSelectedHours;
+      if (_workersCount < minimumWorkers) {
+        _workersCount = minimumWorkers;
+      }
+    });
+  }
+
   String _eventTypeFromOption(ClMainOccasionOption option) {
     switch (option.id) {
       case 'family_dinner':
@@ -702,7 +726,7 @@ class _ClMainOccasionDescriptionScreenState
           addressId: addressId,
           addressLatitude: selectedAddress.latitude,
           addressLongitude: selectedAddress.longitude,
-          numberOfWorkers: _workersCount,
+          numberOfWorkers: _resolvedWorkersCount,
           preferredWorkerIds: preferredWorkerIds,
           assignmentMode: assignmentMode,
           specialRequirement: specialRequirement,

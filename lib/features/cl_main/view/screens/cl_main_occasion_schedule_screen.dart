@@ -77,6 +77,11 @@ class _ClMainOccasionScheduleScreenState
     return requested < 1 ? 1 : requested;
   }
 
+  int get _resolvedNumberOfWorkers => resolveEventWorkerCountForHours(
+    hours: _estimatedHours,
+    requestedWorkers: _routeNumberOfWorkers,
+  );
+
   @override
   Widget build(BuildContext context) {
     final args = _routeArgs;
@@ -91,6 +96,7 @@ class _ClMainOccasionScheduleScreenState
     final dayAr = CleaningDateTimeUiFormat.weekday(_selectedDate);
     final dayDate = CleaningDateTimeUiFormat.date(_selectedDate);
     final estimate = _activeEstimate;
+    final numberOfWorkers = _resolvedNumberOfWorkers;
 
     return BlocProvider.value(
       value: bloc,
@@ -186,7 +192,7 @@ class _ClMainOccasionScheduleScreenState
                                 const SizedBox(height: 8),
                                 _OccasionInfoRow(
                                   label: 'عدد العمال',
-                                  value: '${args.numberOfWorkers}',
+                                  value: '$numberOfWorkers',
                                 ),
                                 const SizedBox(height: 8),
                                 _OccasionInfoRow(
@@ -502,7 +508,7 @@ class _ClMainOccasionScheduleScreenState
           preferredWorkerIds: assignment.preferredWorkerIds,
           specialRequirement: specialRequirement,
           notes: args.notes,
-          numberOfWorkers: _routeNumberOfWorkers,
+          numberOfWorkers: _resolvedNumberOfWorkers,
           couponCode: _appliedCouponCode,
           termsAccepted: true,
         ),
@@ -543,7 +549,7 @@ class _ClMainOccasionScheduleScreenState
       assignmentMode: workerIds.isEmpty
           ? CleaningAssignmentMode.openCount
           : CleaningAssignmentMode.preferredWorker,
-      numberOfWorkers: _routeNumberOfWorkers,
+      numberOfWorkers: _resolvedNumberOfWorkers,
       preferredWorkerIds: workerIds,
     );
   }

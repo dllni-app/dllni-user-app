@@ -97,6 +97,93 @@ class MyAddressesScreenParams {
   });
 }
 
+class AddAddressBottomActions extends StatelessWidget {
+  const AddAddressBottomActions({
+    required this.isSubmitting,
+    required this.submitLabel,
+    required this.onSubmitPressed,
+    required this.onCancelPressed,
+    super.key,
+  });
+
+  static const double stackedBreakpoint = 320;
+  static const Key submitButtonKey = Key('add_address_submit_button');
+  static const Key cancelButtonKey = Key('add_address_cancel_button');
+
+  final bool isSubmitting;
+  final String submitLabel;
+  final VoidCallback? onSubmitPressed;
+  final VoidCallback onCancelPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final submitButton = SizedBox(
+      height: 42,
+      child: ElevatedButton(
+        key: submitButtonKey,
+        onPressed: isSubmitting ? null : onSubmitPressed,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: context.primary,
+          foregroundColor: context.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          minimumSize: const Size.fromHeight(42),
+        ),
+        child: AppText.labelLarge(
+          submitLabel,
+          color: context.onPrimary,
+          fontWeight: FontWeight.w700,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+    final cancelButton = SizedBox(
+      height: 42,
+      child: OutlinedButton(
+        key: cancelButtonKey,
+        onPressed: isSubmitting ? null : onCancelPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: context.error),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          minimumSize: const Size.fromHeight(42),
+        ),
+        child: AppText.labelLarge(
+          'إلغاء',
+          color: context.error,
+          fontWeight: FontWeight.w700,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < stackedBreakpoint) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [submitButton, const SizedBox(height: 10), cancelButton],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(flex: 2, child: submitButton),
+            const SizedBox(width: 12),
+            Expanded(child: cancelButton),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
   final _cityController = TextEditingController();
@@ -359,135 +446,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                       final isSubmitting =
                           state.createAddressStatus == BlocStatus.loading ||
                           state.updateAddressStatus == BlocStatus.loading;
-                      return Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: ElevatedButton(
-                              onPressed: isSubmitting
-                                  ? null
-                                  : () async {
-                                      if (!_formKey.currentState!.validate()) {
-                                        return;
-                                      }
-                                      if (!_validateLocationBeforeSubmit()) {
-                                        return;
-                                      }
-
-                                      final phoneText = _phoneController.text
-                                          .trim();
-                                      var mobile = '';
-                                      if (phoneText.isNotEmpty) {
-                                        final formatted = formatPhoneForApi(
-                                          PhoneNumber(
-                                            phoneNumber: phoneText,
-                                            dialCode: '963',
-                                            isoCode: 'SY',
-                                          ),
-                                        );
-                                        if (formatted == null) {
-                                          AppToast.showToast(
-                                            context: context,
-                                            message:
-                                                'يرجى إدخال رقم جوال صالح أو تركه فارغًا',
-                                            type: ToastificationType.error,
-                                          );
-                                          return;
-                                        }
-                                        mobile = formatted;
-                                      }
-                                      if (_isEditMode) {
-                                        final addressId = int.tryParse(
-                                          widget.params.addressItem!.id,
-                                        );
-                                        if (addressId == null) {
-                                          AppToast.showToast(
-                                            context: context,
-                                            message: 'معرف العنوان غير صالح',
-                                            type: ToastificationType.error,
-                                          );
-                                          return;
-                                        }
-                                        widget.params.bloc.add(
-                                          UpdateAddressEvent(
-                                            params: UpdateAddressParams(
-                                              addressId: addressId,
-                                              label: _selectedType,
-                                              mobile: mobile,
-                                              city: _cityController.text.trim(),
-                                              neighborhood:
-                                                  _selectedNeighborhood ?? "",
-                                              street: '',
-                                              building: '',
-                                              floor: '',
-                                              directions: _directionsController
-                                                  .text
-                                                  .trim(),
-                                              isDefault: _isDefault,
-                                              latitude: _latitude,
-                                              longitude: _longitude,
-                                            ),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      widget.params.bloc.add(
-                                        CreateAddressEvent(
-                                          params: CreateAddressParams(
-                                            label: _selectedType,
-                                            mobile: mobile,
-                                            city: _cityController.text.trim(),
-                                            neighborhood:
-                                                _selectedNeighborhood ?? "",
-                                            street: '',
-                                            building: null,
-                                            floor: '',
-                                            directions: _directionsController
-                                                .text
-                                                .trim(),
-                                            isDefault: _isDefault,
-                                            latitude: _latitude!,
-                                            longitude: _longitude!,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                elevation: 0,
-                                backgroundColor: context.primary,
-                                foregroundColor: context.onPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                minimumSize: const Size.fromHeight(42),
-                              ),
-                              child: AppText.labelLarge(
-                                _isEditMode ? 'حفظ التعديلات' : 'أضف العنوان',
-                                color: context.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: isSubmitting
-                                  ? null
-                                  : () => context.pop(false),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: context.error),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: AppText.labelLarge(
-                                'إلغاء',
-                                color: context.error,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
+                      return AddAddressBottomActions(
+                        isSubmitting: isSubmitting,
+                        submitLabel: _isEditMode
+                            ? 'حفظ التعديلات'
+                            : 'أضف العنوان',
+                        onSubmitPressed: _submitAddress,
+                        onCancelPressed: () => context.pop(false),
                       );
                     },
                   ),
@@ -506,6 +471,81 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _directionsController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitAddress() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (!_validateLocationBeforeSubmit()) {
+      return;
+    }
+
+    final phoneText = _phoneController.text.trim();
+    var mobile = '';
+    if (phoneText.isNotEmpty) {
+      final formatted = formatPhoneForApi(
+        PhoneNumber(phoneNumber: phoneText, dialCode: '963', isoCode: 'SY'),
+      );
+      if (formatted == null) {
+        AppToast.showToast(
+          context: context,
+          message: 'يرجى إدخال رقم جوال صالح أو تركه فارغًا',
+          type: ToastificationType.error,
+        );
+        return;
+      }
+      mobile = formatted;
+    }
+
+    if (_isEditMode) {
+      final addressId = int.tryParse(widget.params.addressItem!.id);
+      if (addressId == null) {
+        AppToast.showToast(
+          context: context,
+          message: 'معرف العنوان غير صالح',
+          type: ToastificationType.error,
+        );
+        return;
+      }
+      widget.params.bloc.add(
+        UpdateAddressEvent(
+          params: UpdateAddressParams(
+            addressId: addressId,
+            label: _selectedType,
+            mobile: mobile,
+            city: _cityController.text.trim(),
+            neighborhood: _selectedNeighborhood ?? "",
+            street: '',
+            building: '',
+            floor: '',
+            directions: _directionsController.text.trim(),
+            isDefault: _isDefault,
+            latitude: _latitude,
+            longitude: _longitude,
+          ),
+        ),
+      );
+      return;
+    }
+
+    widget.params.bloc.add(
+      CreateAddressEvent(
+        params: CreateAddressParams(
+          label: _selectedType,
+          mobile: mobile,
+          city: _cityController.text.trim(),
+          neighborhood: _selectedNeighborhood ?? "",
+          street: '',
+          building: null,
+          floor: '',
+          directions: _directionsController.text.trim(),
+          isDefault: _isDefault,
+          latitude: _latitude!,
+          longitude: _longitude!,
+        ),
+      ),
+    );
   }
 
   @override

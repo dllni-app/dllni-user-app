@@ -7,8 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/widgets/legal_links_launcher.dart';
 import '../helpers/cleaning_security_code_display.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../manager/bloc/orders_bloc.dart';
 
@@ -552,9 +552,7 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
               const SizedBox(height: 12),
 
               TextButton(
-                onPressed: () async {
-                  context.pushRoute('/termsAndConditions');
-                },
+                onPressed: () => launchTermsAndConditions(context),
                 child: const Text(
                   'الاطلاع على الشروط والأحكام',
                   style: TextStyle(decoration: TextDecoration.underline),

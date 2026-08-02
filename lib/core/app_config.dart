@@ -4,6 +4,8 @@ class AppConfig {
   static const String appName = 'My App';
   static const String orgIdentifier = 'com.dllni.userapp';
   static const String baseUrl = 'https://alnadha.net';
+  static const String privacyPolicyUrl = '$baseUrl/legal/user-app';
+  static const String termsAndConditionsUrl = '$baseUrl/legal/user-app/terms';
 
   /// https://alnadha.net
   /// Pusher public key (same as Laravel `PUSHER_APP_KEY`). Override with

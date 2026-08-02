@@ -311,6 +311,8 @@ class CleaningOrderModel {
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
   final String? assignmentMode;
+  final bool convertedFromPreferredWorker;
+  final String? convertedFromPreferredWorkerAt;
   final int? numberOfWorkers;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
 
@@ -353,6 +355,8 @@ class CleaningOrderModel {
     this.timeWarnings,
     this.disputes,
     this.assignmentMode,
+    this.convertedFromPreferredWorker = false,
+    this.convertedFromPreferredWorkerAt,
     this.numberOfWorkers,
     this.workerAcceptance,
   });
@@ -471,6 +475,20 @@ class CleaningOrderModel {
       assignmentMode: _toStringValue(
         _pick(m, const <String>['assignmentMode', 'assignment_mode']),
       ),
+      convertedFromPreferredWorker:
+          _toBool(
+            _pick(m, const <String>[
+              'convertedFromPreferredWorker',
+              'converted_from_preferred_worker',
+            ]),
+          ) ??
+          false,
+      convertedFromPreferredWorkerAt: _toStringValue(
+        _pick(m, const <String>[
+          'convertedFromPreferredWorkerAt',
+          'converted_from_preferred_worker_at',
+        ]),
+      ),
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
@@ -494,6 +512,11 @@ class CleaningOrderModel {
     if (acceptance == null) return isMultiWorkerTeam;
     return acceptance.isFulfilled != true;
   }
+
+  bool get isPreferredWorkerFallbackSearch =>
+      isSearchingForWorkers &&
+      (assignmentMode ?? '').toLowerCase() == 'open_count' &&
+      convertedFromPreferredWorker;
 }
 
 class CleaningOrderDetailModel {
@@ -537,6 +560,8 @@ class CleaningOrderDetailModel {
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
   final String? assignmentMode;
+  final bool convertedFromPreferredWorker;
+  final String? convertedFromPreferredWorkerAt;
   final int? numberOfWorkers;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
   final CleaningOrderWorkerModel? preferredWorker;
@@ -586,6 +611,8 @@ class CleaningOrderDetailModel {
     this.timeWarnings,
     this.disputes,
     this.assignmentMode,
+    this.convertedFromPreferredWorker = false,
+    this.convertedFromPreferredWorkerAt,
     this.numberOfWorkers,
     this.workerAcceptance,
     this.preferredWorker,
@@ -715,6 +742,20 @@ class CleaningOrderDetailModel {
       assignmentMode: _toStringValue(
         _pick(m, const <String>['assignmentMode', 'assignment_mode']),
       ),
+      convertedFromPreferredWorker:
+          _toBool(
+            _pick(m, const <String>[
+              'convertedFromPreferredWorker',
+              'converted_from_preferred_worker',
+            ]),
+          ) ??
+          false,
+      convertedFromPreferredWorkerAt: _toStringValue(
+        _pick(m, const <String>[
+          'convertedFromPreferredWorkerAt',
+          'converted_from_preferred_worker_at',
+        ]),
+      ),
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
@@ -758,6 +799,11 @@ class CleaningOrderDetailModel {
     if (acceptance == null) return isMultiWorkerTeam;
     return acceptance.isFulfilled != true;
   }
+
+  bool get isPreferredWorkerFallbackSearch =>
+      isSearchingForWorkers &&
+      (assignmentMode ?? '').toLowerCase() == 'open_count' &&
+      convertedFromPreferredWorker;
 
   List<CleaningWorkerAssignmentModel> get acceptedWorkerAssignments {
     final assignments = workerAssignments ?? const [];
@@ -833,6 +879,8 @@ class CleaningOrderDetailModel {
       timeWarnings: timeWarnings,
       disputes: disputes,
       assignmentMode: assignmentMode,
+      convertedFromPreferredWorker: convertedFromPreferredWorker,
+      convertedFromPreferredWorkerAt: convertedFromPreferredWorkerAt,
       numberOfWorkers: numberOfWorkers,
       workerAcceptance: workerAcceptance,
     );
