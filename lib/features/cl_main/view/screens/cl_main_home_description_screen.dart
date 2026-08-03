@@ -14,9 +14,7 @@ import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
-import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
-import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_cleaning_type_option_card_widget.dart';
 import '../widgets/cl_counter_row_widget.dart';
@@ -25,12 +23,10 @@ import '../widgets/cl_home_description_title_card_widget.dart';
 import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_service_assignment_mode_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
-import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_worker_count_selector_widget.dart';
 import '../widgets/cl_service_worker_room_assignment_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_main_service_schedule_screen.dart';
-import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainHomeDescriptionScreen extends StatefulWidget {
@@ -284,35 +280,6 @@ class _ClMainHomeDescriptionScreenState
                             },
                           ),
                           const SizedBox(height: 10),
-                          ClServicePreviousWorkersSectionWidget(
-                            workers: filterPreviousWorkersByGender(
-                              state.previousWorkers.list,
-                              state.genderPreference,
-                            ),
-                            selectedWorkerIds: state.selectedWorkerIds,
-                            isLoading:
-                                state.previousWorkersStatus ==
-                                BlocStatus.loading,
-                            errorMessage:
-                                state.previousWorkersStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
-                            onSelectWorker: (workerId) {
-                              bloc.add(
-                                SetPreferredWorkerEvent(workerId: workerId),
-                              );
-                            },
-                            onOpenWorkerProfile: (worker) {
-                              context.pushRoute(
-                                '/clworkerprofiledetail',
-                                arguments:
-                                    WorkerProfileRouteArgs.fromPreviousWorker(
-                                      worker,
-                                    ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 10),
                           ClServiceAssignmentModeSectionWidget(
                             selectedMode: state.assignmentMode,
                             onModeChanged: (mode) {
@@ -388,15 +355,6 @@ class _ClMainHomeDescriptionScreenState
       _bloc?.add(
         SetGenderPreferenceEvent(
           preference: CleaningGenderPreference.male,
-        ),
-      );
-      _bloc?.add(
-        GetPreviousCleaningWorkersEvent(
-          params: GetPreviousCleaningWorkersParams(
-            page: 1,
-            propertyType: _propertyType,
-          ),
-          isReload: true,
         ),
       );
     }
