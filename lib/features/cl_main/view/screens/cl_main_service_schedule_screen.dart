@@ -22,6 +22,7 @@ import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_cleaning_services_selector_widget.dart';
+import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
@@ -171,6 +172,27 @@ class _ClMainServiceScheduleScreenState
                             toTimeController: _toTimeController,
                             onPickDate: _pickDate,
                             onPickFromTime: _pickFromTime,
+                          ),
+                          const SizedBox(height: 10),
+                          ClScheduledPreviousWorkersSectionWidget(
+                            bloc: bloc,
+                            propertyType: _routeArgs?.propertyType ?? '',
+                            scheduledDate:
+                                CleaningScheduleDateTimeLogic.formatDateApi(
+                                  _selectedDate,
+                                ),
+                            scheduledTime: _fromTimeHhMm,
+                            durationHours: _effectiveServiceHours(
+                              estimatedHours:
+                                  estimate?.size?.estimatedHours ?? 0,
+                              numberOfWorkers: _requiredWorkersCount(state),
+                            ),
+                            onSelectedWorkersChanged: (workerIds) {
+                              _requestUpdatedEstimate(
+                                state,
+                                selectedWorkerIds: workerIds,
+                              );
+                            },
                           ),
                           const SizedBox(height: 10),
                           CleaningAddressSelectWidget(
