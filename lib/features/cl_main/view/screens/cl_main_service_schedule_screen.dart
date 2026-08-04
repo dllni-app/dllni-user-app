@@ -4,8 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
+import '../../../../core/widgets/toast_component.dart';
 import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
@@ -14,6 +16,7 @@ import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_type.dart';
+import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_cleaning_services_use_case.dart';
@@ -22,10 +25,12 @@ import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_cleaning_services_selector_widget.dart';
+import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
+import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
@@ -172,6 +177,16 @@ class _ClMainServiceScheduleScreenState
                             toTimeController: _toTimeController,
                             onPickDate: _pickDate,
                             onPickFromTime: _pickFromTime,
+                          ),
+                          const SizedBox(height: 10),
+                          ClServiceGenderPreferenceSectionWidget(
+                            selectedPreference: state.genderPreference,
+                            onChanged: (preference) {
+                              _handleGenderPreferenceChanged(
+                                bloc,
+                                preference,
+                              );
+                            },
                           ),
                           const SizedBox(height: 10),
                           ClScheduledPreviousWorkersSectionWidget(
@@ -348,6 +363,40 @@ class _ClMainServiceScheduleScreenState
       _customServiceController.clear();
       _resetAppliedCoupon();
     });
+  }
+
+  Future<void> _handleGenderPreferenceChanged(
+    ClMainBloc bloc,
+    CleaningGenderPreference preference,
+  ) async {
+    if (preference != CleaningGenderPreference.female) {
+      bloc.add(SetGenderPreferenceEvent(preference: preference));
+      return;
+    }
+
+    Loading.show(context);
+    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
+    Loading.close();
+    if (!mounted) return;
+
+    await response.fold(
+      (failure) async {
+        ToastComponent.showToast(context, msg: failure.message);
+      },
+      (policy) async {
+        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
+          context: context,
+          policy: policy,
+        );
+        if (!mounted || confirmation == null) return;
+        bloc.add(
+          SetGenderPreferenceEvent(
+            preference: preference,
+            workEnvironmentConfirmation: confirmation,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _applyCoupon(String code) async {
