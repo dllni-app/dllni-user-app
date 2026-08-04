@@ -55,17 +55,22 @@ void main() {
     final addressScreen = _source(
       'lib/features/profile/view/screens/add_address_screen.dart',
     );
+    final cityStart = addressScreen.indexOf("Key('address_city_dropdown')");
+    final neighborhoodStart = addressScreen.indexOf("'الحي'", cityStart);
 
     expect(
       addressScreen.contains("TextEditingController(text: 'حلب')"),
       isTrue,
     );
-    expect(addressScreen.contains("Key('address_city_dropdown')"), isTrue);
+    expect(cityStart, greaterThanOrEqualTo(0));
+    expect(neighborhoodStart, greaterThan(cityStart));
+
+    final citySection = addressScreen.substring(cityStart, neighborhoodStart);
+    expect(citySection.contains("value: 'حلب'"), isTrue);
+    expect(citySection.contains("child: Text('حلب')"), isTrue);
     expect(
-      addressScreen.contains(
-        "DropdownMenuItem<String>(\n                                    value: 'حلب',\n                                    child: Text('حلب')",
-      ),
-      isTrue,
+      RegExp(r"DropdownMenuItem<String>\(").allMatches(citySection),
+      hasLength(1),
     );
     expect(addressScreen.contains("hintText: 'مثال: دمشق'"), isFalse);
     expect(addressScreen.contains('_cityController.text = item.city'), isFalse);
