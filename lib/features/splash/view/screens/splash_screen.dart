@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/themes/app_colors.dart';
-import '../../../../generated/assets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({
@@ -19,7 +18,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  static const Duration _displayDuration = Duration(seconds: 1);
+  static const Duration _displayDuration = Duration(seconds: 2);
 
   Timer? _timer;
 
@@ -59,11 +58,10 @@ class _SplashLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Assets.images.appLogo.image(
+      child: Image.asset(
+        'assets/images/app_logo.png',
         width: MediaQuery.sizeOf(context).width * 0.5,
         fit: BoxFit.contain,
-        color: AppColors.white,
-        colorBlendMode: BlendMode.srcIn,
         semanticLabel: 'دللني',
       ),
     );
