@@ -6,23 +6,19 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../../core/widgets/toast_component.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
-import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_cleaning_type_option_card_widget.dart';
 import '../widgets/cl_counter_row_widget.dart';
-import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_home_description_title_card_widget.dart';
 import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_service_assignment_mode_section_widget.dart';
-import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_worker_count_selector_widget.dart';
 import '../widgets/cl_service_worker_room_assignment_widget.dart';
 import '../widgets/home_details_app_bar.dart';
@@ -115,9 +111,12 @@ class _ClMainHomeDescriptionScreenState
             _openScheduleScreen(bloc, state.estimatePrice!);
           } else {
             _closeLoadingOverlay();
-            ToastComponent.showToast(
-              context,
-              msg: state.errorMessage ?? 'حدث خطأ أثناء حساب التكلفة',
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.errorMessage ?? 'حدث خطأ أثناء حساب التكلفة',
+                ),
+              ),
             );
           }
         },
@@ -172,7 +171,9 @@ class _ClMainHomeDescriptionScreenState
                                                 option.title,
                                                 fontWeight: FontWeight.w700,
                                                 textAlign: TextAlign.start,
-                                                style: TextStyle(fontSize: 14),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                ),
                                               ),
                                             ),
                                             Container(
@@ -190,10 +191,8 @@ class _ClMainHomeDescriptionScreenState
                                               ),
                                               child: AppText.labelSmall(
                                                 'المجموع: $total',
-                                                style: TextStyle(
-                                                  color: const Color(
-                                                    0xFF0B7480,
-                                                  ),
+                                                style: const TextStyle(
+                                                  color: Color(0xFF0B7480),
                                                   fontWeight: FontWeight.w700,
                                                   fontSize: 14,
                                                 ),
@@ -271,13 +270,6 @@ class _ClMainHomeDescriptionScreenState
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
-                            onChanged: (value) {
-                              _handleGenderPreferenceChanged(bloc, value);
-                            },
                           ),
                           const SizedBox(height: 10),
                           ClServiceAssignmentModeSectionWidget(
@@ -379,40 +371,6 @@ class _ClMainHomeDescriptionScreenState
     if (!_isLoadingOverlayVisible) return;
     _isLoadingOverlayVisible = false;
     Loading.close();
-  }
-
-  Future<void> _handleGenderPreferenceChanged(
-    ClMainBloc bloc,
-    CleaningGenderPreference preference,
-  ) async {
-    if (preference.apiValue != 'female') {
-      bloc.add(SetGenderPreferenceEvent(preference: preference));
-      return;
-    }
-
-    _showLoadingOverlay();
-    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
-    _closeLoadingOverlay();
-    if (!mounted) return;
-
-    await response.fold(
-      (failure) async {
-        ToastComponent.showToast(context, msg: failure.message);
-      },
-      (policy) async {
-        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
-          context: context,
-          policy: policy,
-        );
-        if (!mounted || confirmation == null) return;
-        bloc.add(
-          SetGenderPreferenceEvent(
-            preference: preference,
-            workEnvironmentConfirmation: confirmation,
-          ),
-        );
-      },
-    );
   }
 
   Future<void> _onContinuePressed(ClMainBloc bloc, ClMainState state) async {
