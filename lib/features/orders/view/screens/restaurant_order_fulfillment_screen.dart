@@ -63,6 +63,53 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
     return null;
   }
 
+  String _joinLocationParts(Iterable<String?> parts) {
+    final uniqueParts = <String>[];
+    for (final part in parts) {
+      final value = part?.trim() ?? '';
+      if (value.isNotEmpty && !uniqueParts.contains(value)) {
+        uniqueParts.add(value);
+      }
+    }
+    return uniqueParts.join('، ');
+  }
+
+  String _coordinates(double? latitude, double? longitude) {
+    if (latitude == null || longitude == null) return '';
+    return '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+  }
+
+  String _merchantLocation({
+    required bool isStoreFlow,
+    required RestaurantCartDataModel? cart,
+    required FetchSupermarketCartModelDataItem? supermarketCart,
+  }) {
+    if (isStoreFlow) {
+      final merchant = supermarketCart?.merchant;
+      final store = supermarketCart?.store;
+      final address = _joinLocationParts([
+        merchant?.address ?? store?.address,
+        merchant?.neighborhood ?? store?.neighborhood,
+        merchant?.city ?? store?.city,
+      ]);
+      if (address.isNotEmpty) return address;
+      return _coordinates(
+        merchant?.latitude ?? store?.latitude,
+        merchant?.longitude ?? store?.longitude,
+      );
+    }
+
+    final merchant = cart?.merchant;
+    final address = _joinLocationParts([
+      merchant?.address,
+      merchant?.locationDetails,
+      merchant?.district,
+      merchant?.city,
+    ]);
+    if (address.isNotEmpty) return address;
+    return _coordinates(merchant?.latitude, merchant?.longitude);
+  }
+
   void _exitCheckoutFlow(BuildContext context) {
     Navigator.of(context).popUntil((route) {
       final name = route.settings.name;
@@ -269,6 +316,11 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   supermarketCart?.merchant?.name ??
                   supermarketCart?.store?.name ??
                   (isStoreFlow ? 'المتجر' : 'المطعم');
+              final merchantLocation = _merchantLocation(
+                isStoreFlow: isStoreFlow,
+                cart: cart,
+                supermarketCart: supermarketCart,
+              );
 
               return Column(
                 children: [
@@ -349,7 +401,9 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   ? 'موقع المتجر'
                                   : 'موقع المطعم',
                               line1: merchantName,
-                              line2: '${args.cartId ?? ''}',
+                              line2: merchantLocation.isNotEmpty
+                                  ? merchantLocation
+                                  : 'الموقع غير متوفر',
                             ),
                           if (args.cartId case final cartId?) ...[
                             const SizedBox(height: 24),
