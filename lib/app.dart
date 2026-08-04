@@ -23,7 +23,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final CleaningGlobalVerificationGateCoordinator _verificationCoordinator;
-  bool _showSplash = true;
+  bool _didOpenMainScreen = false;
 
   @override
   void initState() {
@@ -32,7 +32,6 @@ class _AppState extends State<App> {
     _verificationCoordinator = CleaningGlobalVerificationGateCoordinator(
       navigatorKey: widget.navigatorKey,
     );
-    unawaited(_verificationCoordinator.start());
   }
 
   @override
@@ -52,27 +51,16 @@ class _AppState extends State<App> {
         supportedLocales: context.supportedLocales,
         localizationsDelegates: context.localizationDelegates,
         onGenerateRoute: AppRouter.onGenerateRoute,
-        home: const MainScreen(),
+        home: SplashScreen(onFinished: _openMainScreen),
         builder: (context, child) {
           final mediaQuery = MediaQuery.of(context);
           final clampedScaler = mediaQuery.textScaler.clamp(
             minScaleFactor: 1.0,
             maxScaleFactor: 1.2,
           );
-          final appContent = MediaQuery(
+          return MediaQuery(
             data: mediaQuery.copyWith(textScaler: clampedScaler),
             child: child ?? const SizedBox.shrink(),
-          );
-
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              appContent,
-              if (_showSplash)
-                Positioned.fill(
-                  child: SplashScreen(onFinished: _hideSplash),
-                ),
-            ],
           );
         },
         theme: ThemeData(
@@ -102,8 +90,20 @@ class _AppState extends State<App> {
     );
   }
 
-  void _hideSplash() {
-    if (!mounted || !_showSplash) return;
-    setState(() => _showSplash = false);
+  void _openMainScreen() {
+    if (_didOpenMainScreen) return;
+    _didOpenMainScreen = true;
+
+    final navigator = widget.navigatorKey.currentState;
+    if (navigator == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openMainScreen());
+      _didOpenMainScreen = false;
+      return;
+    }
+
+    navigator.pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const MainScreen()),
+    );
+    unawaited(_verificationCoordinator.start());
   }
 }
