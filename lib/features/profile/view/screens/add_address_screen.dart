@@ -61,7 +61,6 @@ class AddAddressScreen extends StatefulWidget {
 
 class CreatedAddressSelectionHint {
   final String label;
-
   final String mobile;
   final String city;
   final String neighborhood;
@@ -71,6 +70,7 @@ class CreatedAddressSelectionHint {
   final double longitude;
   final String? building;
   final String? directions;
+
   const CreatedAddressSelectionHint({
     required this.label,
     required this.mobile,
@@ -186,7 +186,7 @@ class AddAddressBottomActions extends StatelessWidget {
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _cityController = TextEditingController();
+  final _cityController = TextEditingController(text: 'حلب');
   String? _selectedNeighborhood;
   final _directionsController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -267,15 +267,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             onChanged: (value) =>
                                 setState(() => _selectedType = value),
                           ),
-                          // const SizedBox(height: 12),
-                          // FilledTextField(
-                          //   label: 'اسم العنوان',
-                          //   isRequired: true,
-                          //   hintText: 'مثال: المنزل، العمل، بيت العائلة',
-                          //   controller: _labelController,
-                          //   validator: _requiredValidator,
-                          //   onTap: () => _moveCursorToTextEnd(_labelController),
-                          // ),
                           const SizedBox(height: 12),
                           FilledPhoneNumberField(
                             label: 'رقم الجوال',
@@ -289,7 +280,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             keyboardType: TextInputType.phone,
                             suffixIcon: const Icon(Icons.phone),
                           ),
-
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: _pickAddressFromMap,
@@ -314,22 +304,75 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             ),
                           ],
                           const SizedBox(height: 12),
-                          FilledTextField(
-                            label: 'المدينة',
-                            isRequired: true,
-                            hintText: 'مثال: دمشق',
-                            controller: _cityController,
-                            validator: _requiredCityValidator,
-                            onTap: () => _moveCursorToTextEnd(_cityController),
-                            onChanged: (_) {
-                              unawaited(
-                                _loadNeighborhoods(
-                                  city: _cityController.text.trim().isEmpty
-                                      ? 'حلب'
-                                      : _cityController.text.trim(),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  AppText.bodyMedium(
+                                    'المدينة',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  AppText.bodyMedium(
+                                    '*',
+                                    color: context.error,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                key: const Key('address_city_dropdown'),
+                                initialValue: _cityController.text,
+                                decoration: InputDecoration(
+                                  hintText: 'اختر المدينة',
+                                  hintStyle: const TextStyle(
+                                    color: AppColors.hintText,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xffF9FAFB),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xffE5E7EB),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xffE5E7EB),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide(
+                                      color: context.primary,
+                                      width: 1.2,
+                                    ),
+                                  ),
                                 ),
-                              );
-                            },
+                                items: const [
+                                  DropdownMenuItem<String>(
+                                    value: 'حلب',
+                                    child: Text('حلب'),
+                                  ),
+                                ],
+                                validator: _requiredCityValidator,
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  _cityController.text = value;
+                                  unawaited(_loadNeighborhoods(city: value));
+                                },
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 12),
                           Column(
@@ -515,7 +558,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
             label: _selectedType,
             mobile: mobile,
             city: _cityController.text.trim(),
-            neighborhood: _selectedNeighborhood ?? "",
+            neighborhood: _selectedNeighborhood ?? '',
             street: '',
             building: '',
             floor: '',
@@ -535,7 +578,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           label: _selectedType,
           mobile: mobile,
           city: _cityController.text.trim(),
-          neighborhood: _selectedNeighborhood ?? "",
+          neighborhood: _selectedNeighborhood ?? '',
           street: '',
           building: null,
           floor: '',
@@ -552,7 +595,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void initState() {
     super.initState();
     final item = widget.params.addressItem;
-    unawaited(_loadNeighborhoods(city: item?.city ?? 'حلب'));
+    unawaited(_loadNeighborhoods(city: 'حلب'));
     if (item == null) {
       final json = SharedPreferencesHelper.getData(
         key: UserSessionKeys.loggedInUser,
@@ -560,10 +603,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       final user = LoggedInUserModel.fromJson(jsonDecode(json));
       _phoneController.text = user.phone ?? '';
     } else {
-      if (!mounted) return;
-
       _phoneController.text = item.mobile ?? '';
-      _cityController.text = item.city ?? '';
       _selectedNeighborhood = item.neighborhood ?? '';
       _directionsController.text = item.directions ?? item.landmark ?? '';
       _isDefault = item.isDefault;
@@ -607,7 +647,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       label: '',
       mobile: _phoneController.text.trim(),
       city: _cityController.text.trim(),
-      neighborhood: _selectedNeighborhood ?? "",
+      neighborhood: _selectedNeighborhood ?? '',
       street: '',
       floor: '',
       latitude: _latitude!,
@@ -628,7 +668,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   }
 
   String? _requiredCityValidator(String? value) {
-    return value == null || value.trim().isEmpty ? 'يرجى إدخال المدينة' : null;
+    return value == null || value.trim().isEmpty ? 'يرجى اختيار المدينة' : null;
   }
 
   String? _requiredNeighborhoodValidator(String? value) {
@@ -671,8 +711,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
 class _AddressMapPickerScreen extends StatefulWidget {
   final double? initialLatitude;
-
   final double? initialLongitude;
+
   const _AddressMapPickerScreen({
     required this.initialLatitude,
     required this.initialLongitude,
@@ -799,8 +839,8 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
 
 class _AddressMapSelection {
   final double latitude;
-
   final double longitude;
+
   const _AddressMapSelection({required this.latitude, required this.longitude});
 }
 
