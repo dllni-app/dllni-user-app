@@ -5,6 +5,7 @@ import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_u
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:toastification/toastification.dart';
 
 import '../../../../generated/assets.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
@@ -191,39 +192,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisSpacing: 12,
                       childAspectRatio: .8,
                     ),
-                    itemBuilder: (context, index) => InkWell(
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () {
-                        final messenger = ScaffoldMessenger.of(context);
-                        messenger
-                          ..hideCurrentSnackBar()
-                          ..showSnackBar(
-                            const SnackBar(content: Text('قريبا')),
-                          );
-                      },
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: context.onPrimary,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            padding: EdgeInsetsDirectional.all(15),
-                            child: AppImage.asset(
-                              shoppingImages[index],
-                              color: context.primary,
-                            ),
+                    itemBuilder: (context, index) => Semantics(
+                      button: true,
+                      enabled: false,
+                      label: '${shoppingTitles[index]} - متوفر قريبا',
+                      child: InkWell(
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        onTap: _showComingSoonToast,
+                        child: Opacity(
+                          opacity: 0.45,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xffE5E7EB),
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                padding: EdgeInsetsDirectional.all(15),
+                                child: AppImage.asset(
+                                  shoppingImages[index],
+                                  color: const Color(0xff6B7280),
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              AppText.labelLarge(
+                                shoppingTitles[index],
+                                color: const Color(0xff9CA3AF),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 8),
-                          AppText.labelLarge(
-                            shoppingTitles[index],
-                            color: Color(0xff6B7280),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -233,6 +235,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showComingSoonToast() {
+    AppToast.showToast(
+      context: context,
+      message: 'متوفر قريبا',
+      type: ToastificationType.info,
     );
   }
 
