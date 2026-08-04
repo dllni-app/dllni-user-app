@@ -51,15 +51,10 @@ class _HomeCubeState extends State<HomeCube> {
       child: FlutterCubeTransition(
         width: context.width * 0.65,
         height: context.height * 0.25,
-        secondsToSwipe: Duration(seconds: 5),
-
+        secondsToSwipe: Duration(seconds: 3),
 
         // size:  context.width * 0.5,
-
-
-
-
-        animationDuration: Duration(milliseconds: 400),
+        animationDuration: Duration(milliseconds: 300),
         animationCurve: Curves.easeOut,
         enableHapticFeedback: true,
         perspectiveStrength: 0.002,

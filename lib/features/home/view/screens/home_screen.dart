@@ -3,6 +3,8 @@ import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_use_case.dart';
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
+import 'package:dllni_user_app/features/rs_main/view/rs_main_screen.dart';
+import 'package:dllni_user_app/features/sm_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
@@ -24,15 +26,21 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final ProfileBloc profileBloc;
 
-  @override
-  Widget build(BuildContext context) {
-    List<String> titles = ['مطاعم', 'سوبر ماركت', 'تنظيف'];
-    List<String> images = [
+  List<String> shoppingTitles = ['مطاعم', 'سوبر ماركت'];
+    List<String> shoppingScreens = ['/rsmain', '/smmain'];
+    List<String> shoppingImages = [
       Assets.images.restaurantServiceIcon.path,
       Assets.images.storeServiceIcon.path,
+    ];
+
+    List<String> servicesTitles = ['تنظيف'];
+    List<String> servicesScreens = ['/clmain'];
+    List<String> servicesImages = [
       Assets.images.cleaninigServiceIcon.path,
     ];
 
+  @override
+  Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) {
         final bloc = getIt<HomeBloc>();
@@ -115,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: 1,
+                    itemCount: servicesScreens.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       mainAxisSpacing: 12,
@@ -126,22 +134,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () {
-                        // context.pushRoute(
-                        //   screens[index],
-                        //   arguments: index == 2
-                        //       ? SmMainScreenParams(
-                        //           initialPage: 0,
-                        //           expandSearch: false,
-                        //         )
-                        //       : index == 0
-                        //       ? RsMainScreenParams(profileBloc: profileBloc)
-                        //       : ClMainScreenParams(profileBloc: profileBloc),
-                        // );
                         context.pushRoute(
-                          '/clmain',
-                          arguments: ClMainScreenParams(
-                            profileBloc: profileBloc,
-                          ),
+                          servicesScreens[index],
+                          arguments: ClMainScreenParams(profileBloc: profileBloc),
                         );
                       },
                       child: Column(
@@ -155,13 +150,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             padding: EdgeInsetsDirectional.all(15),
                             child: AppImage.asset(
-                              images.last,
+                              servicesImages[index],
                               color: context.primary,
                             ),
                           ),
                           SizedBox(height: 8),
                           AppText.labelLarge(
-                            titles.last,
+                            servicesTitles[index],
                             color: Color(0xff6B7280),
                             fontWeight: FontWeight.w500,
                           ),
@@ -195,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: 2,
+                    itemCount: shoppingScreens.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       mainAxisSpacing: 12,
@@ -206,10 +201,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () {
-                        AppToast.showToast(
-                          context: context,
-                          message: 'متوفر قريبا',
-                          type: ToastificationType.info,
+                        context.pushRoute(
+                          shoppingScreens[index],
+                          arguments: index == 1
+                              ? SmMainScreenParams(
+                                  initialPage: 0,
+                                  expandSearch: false,
+                                )
+                              : RsMainScreenParams(profileBloc: profileBloc),
+                              
                         );
                       },
                       child: Column(
@@ -218,19 +218,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 64,
                             height: 64,
                             decoration: BoxDecoration(
-                              color: const Color(0xffF3F4F6),
+                              color: context.onPrimary,
                               borderRadius: BorderRadius.circular(24),
                             ),
                             padding: EdgeInsetsDirectional.all(15),
                             child: AppImage.asset(
-                              images[index],
-                              color: const Color(0xff9CA3AF),
+                              shoppingImages[index],
+                              color: context.primary,
                             ),
                           ),
                           SizedBox(height: 8),
                           AppText.labelLarge(
-                            titles[index],
-                            color: const Color(0xff9CA3AF),
+                            shoppingTitles[index],
+                            color: Color(0xff6B7280),
                             fontWeight: FontWeight.w500,
                           ),
                         ],
