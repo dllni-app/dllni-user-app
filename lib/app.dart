@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 
 import 'core/di/injection.dart';
-import 'core/themes/app_colors.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/realtime/cleaning_global_verification_gate_coordinator.dart';
 import 'core/routes/app_router.dart';
+import 'core/themes/app_colors.dart';
 import 'features/main/view/screens/main_screen.dart';
+import 'features/splash/view/screens/splash_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key, required this.navigatorKey});
@@ -22,6 +23,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final CleaningGlobalVerificationGateCoordinator _verificationCoordinator;
+  bool _showSplash = true;
 
   @override
   void initState() {
@@ -57,9 +59,20 @@ class _AppState extends State<App> {
             minScaleFactor: 1.0,
             maxScaleFactor: 1.2,
           );
-          return MediaQuery(
+          final appContent = MediaQuery(
             data: mediaQuery.copyWith(textScaler: clampedScaler),
             child: child ?? const SizedBox.shrink(),
+          );
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              appContent,
+              if (_showSplash)
+                Positioned.fill(
+                  child: SplashScreen(onFinished: _hideSplash),
+                ),
+            ],
           );
         },
         theme: ThemeData(
@@ -71,7 +84,7 @@ class _AppState extends State<App> {
               fontWeight: FontWeight.w400,
             ),
           ),
-          colorScheme: ColorScheme(
+          colorScheme: const ColorScheme(
             brightness: Brightness.light,
             primary: Color(0xff1E2A78),
             onPrimary: Color(0xffFFFFFF),
@@ -87,5 +100,10 @@ class _AppState extends State<App> {
         ),
       ),
     );
+  }
+
+  void _hideSplash() {
+    if (!mounted || !_showSplash) return;
+    setState(() => _showSplash = false);
   }
 }
