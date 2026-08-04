@@ -3,11 +3,8 @@ import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_use_case.dart';
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
-import 'package:dllni_user_app/features/rs_main/view/rs_main_screen.dart';
-import 'package:dllni_user_app/features/sm_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:toastification/toastification.dart';
 
 import '../../../../generated/assets.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
@@ -27,17 +24,14 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ProfileBloc profileBloc;
 
   List<String> shoppingTitles = ['مطاعم', 'سوبر ماركت'];
-    List<String> shoppingScreens = ['/rsmain', '/smmain'];
-    List<String> shoppingImages = [
-      Assets.images.restaurantServiceIcon.path,
-      Assets.images.storeServiceIcon.path,
-    ];
+  List<String> shoppingImages = [
+    Assets.images.restaurantServiceIcon.path,
+    Assets.images.storeServiceIcon.path,
+  ];
 
-    List<String> servicesTitles = ['تنظيف'];
-    List<String> servicesScreens = ['/clmain'];
-    List<String> servicesImages = [
-      Assets.images.cleaninigServiceIcon.path,
-    ];
+  List<String> servicesTitles = ['تنظيف'];
+  List<String> servicesScreens = ['/clmain'];
+  List<String> servicesImages = [Assets.images.cleaninigServiceIcon.path];
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: shoppingScreens.length,
+                    itemCount: shoppingTitles.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       mainAxisSpacing: 12,
@@ -201,16 +195,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () {
-                        context.pushRoute(
-                          shoppingScreens[index],
-                          arguments: index == 1
-                              ? SmMainScreenParams(
-                                  initialPage: 0,
-                                  expandSearch: false,
-                                )
-                              : RsMainScreenParams(profileBloc: profileBloc),
-                              
-                        );
+                        final messenger = ScaffoldMessenger.of(context);
+                        messenger
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            const SnackBar(content: Text('قريبا')),
+                          );
                       },
                       child: Column(
                         children: [
