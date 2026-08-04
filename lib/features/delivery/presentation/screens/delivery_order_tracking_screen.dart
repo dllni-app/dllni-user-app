@@ -504,8 +504,29 @@ class _EventsCard extends StatelessWidget {
       'cancelled' => 'تم إلغاء التوصيل',
       'stopped' => 'توقف التوصيل',
       'rejected' => 'تعذر قبول طلب التوصيل',
-      _ => event.note ?? 'تم تحديث حالة الطلب',
+      _ => _localizedEventNote(event.note),
     };
+  }
+
+  static String _localizedEventNote(String? note) {
+    final raw = note?.trim() ?? '';
+    if (raw.isEmpty) return 'تم تحديث حالة الطلب';
+
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('merchant accepted order') &&
+        normalized.contains('driver search started')) {
+      return 'قبل المتجر الطلب وبدأ البحث عن مندوب';
+    }
+    if (normalized.contains('offers sent to driver pool')) {
+      return 'تم إرسال الطلب إلى مجموعة المندوبين';
+    }
+    if (normalized.contains('driver accepted')) {
+      return 'تم قبول الطلب من المندوب';
+    }
+    if (RegExp(r'[\u0600-\u06FF]').hasMatch(raw)) {
+      return raw;
+    }
+    return 'تم تحديث حالة الطلب';
   }
 
   static String _formatArabicDateTime(String? value) {
