@@ -7,25 +7,34 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
+import '../../../../core/widgets/toast_component.dart';
 import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
+import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
+import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
+import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
+import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
+import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
+import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
+import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/cl_service_section_card_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_main_screen.dart';
+import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainOccasionScheduleScreen extends StatefulWidget {
@@ -111,6 +120,14 @@ class _ClMainOccasionScheduleScreenState
               _currentEstimate = state.estimatePrice;
               _syncToTime();
             });
+          } else if (state.estimatePriceStatus == BlocStatus.failed &&
+              state.errorMessage != null &&
+              state.errorMessage!.isNotEmpty) {
+            AppToast.showToast(
+              context: context,
+              message: state.errorMessage!,
+              type: ToastificationType.error,
+            );
           }
 
           if (state.createOrderStatus == BlocStatus.loading) {
@@ -219,6 +236,57 @@ class _ClMainOccasionScheduleScreenState
                             onPickDate: _pickDate,
                             onPickFromTime: _pickFromTime,
                           ),
+                          const SizedBox(height: 10),
+                          ClServiceGenderPreferenceSectionWidget(
+                            selectedPreference: state.genderPreference,
+                            onChanged: (preference) {
+                              _handleGenderPreferenceChanged(
+                                bloc,
+                                preference,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          ClServicePreviousWorkersSectionWidget(
+                            workers: filterPreviousWorkersByGender(
+                              state.previousWorkers.list,
+                              state.genderPreference,
+                            ),
+                            selectedWorkerIds: state.selectedWorkerIds,
+                            isLoading:
+                                state.previousWorkersStatus ==
+                                BlocStatus.loading,
+                            errorMessage:
+                                state.previousWorkersStatus == BlocStatus.failed
+                                ? state.errorMessage
+                                : null,
+                            onSelectWorker: (workerId) {
+                              final updatedWorkerIds = List<int>.from(
+                                state.selectedWorkerIds,
+                              );
+                              if (updatedWorkerIds.contains(workerId)) {
+                                updatedWorkerIds.remove(workerId);
+                              } else {
+                                updatedWorkerIds.add(workerId);
+                              }
+                              bloc.add(
+                                SetPreferredWorkerEvent(workerId: workerId),
+                              );
+                              _requestUpdatedEstimate(
+                                state,
+                                selectedWorkerIds: updatedWorkerIds,
+                              );
+                            },
+                            onOpenWorkerProfile: (worker) {
+                              context.pushRoute(
+                                '/clworkerprofiledetail',
+                                arguments:
+                                    WorkerProfileRouteArgs.fromPreviousWorker(
+                                      worker,
+                                    ),
+                              );
+                            },
+                          ),
                           const SizedBox(height: 12),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
@@ -290,6 +358,15 @@ class _ClMainOccasionScheduleScreenState
       _currentEstimate = args.estimate;
       _selectedAddress.value = args.defaultAddress;
       _syncToTime();
+      _bloc?.add(
+        GetPreviousCleaningWorkersEvent(
+          params: GetPreviousCleaningWorkersParams(
+            page: 1,
+            propertyType: 'event_assistance',
+          ),
+          isReload: true,
+        ),
+      );
     }
   }
 
@@ -321,6 +398,71 @@ class _ClMainOccasionScheduleScreenState
   void _updateTimeDisplay() {
     _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
+  }
+
+  Future<void> _handleGenderPreferenceChanged(
+    ClMainBloc bloc,
+    CleaningGenderPreference preference,
+  ) async {
+    final selectedWorkerIds = _workerIdsMatchingPreference(
+      bloc.state,
+      preference,
+    );
+
+    if (preference != CleaningGenderPreference.female) {
+      bloc.add(SetGenderPreferenceEvent(preference: preference));
+      _requestUpdatedEstimate(
+        bloc.state,
+        selectedWorkerIds: selectedWorkerIds,
+      );
+      return;
+    }
+
+    Loading.show(context);
+    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
+    Loading.close();
+    if (!mounted) return;
+
+    await response.fold(
+      (failure) async {
+        ToastComponent.showToast(context, msg: failure.message);
+      },
+      (policy) async {
+        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
+          context: context,
+          policy: policy,
+        );
+        if (!mounted || confirmation == null) return;
+        bloc.add(
+          SetGenderPreferenceEvent(
+            preference: preference,
+            workEnvironmentConfirmation: confirmation,
+          ),
+        );
+        _requestUpdatedEstimate(
+          bloc.state,
+          selectedWorkerIds: selectedWorkerIds,
+        );
+      },
+    );
+  }
+
+  List<int> _workerIdsMatchingPreference(
+    ClMainState state,
+    CleaningGenderPreference preference,
+  ) {
+    if (preference == CleaningGenderPreference.any) {
+      return List<int>.from(state.selectedWorkerIds);
+    }
+
+    final allowedIds = filterPreviousWorkersByGender(
+      state.previousWorkers.list,
+      preference,
+    ).map((worker) => worker.id).whereType<int>().toSet();
+
+    return state.selectedWorkerIds
+        .where(allowedIds.contains)
+        .toList(growable: false);
   }
 
   Future<void> _onApplyCoupon(String code) async {
@@ -536,6 +678,52 @@ class _ClMainOccasionScheduleScreenState
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
       _syncToTime();
     });
+  }
+
+  void _requestUpdatedEstimate(
+    ClMainState state, {
+    List<int>? selectedWorkerIds,
+  }) {
+    final args = _routeArgs;
+    final bloc = _bloc;
+    final address = _selectedAddress.value;
+    if (args == null || bloc == null || address == null) return;
+
+    if (_appliedCouponCode != null) {
+      setState(() {
+        _appliedCouponCode = null;
+        _couponStatus = ClCouponUiStatus.idle;
+        _couponMessage = 'تم تحديث مقدم الخدمة. أعد تطبيق الكوبون.';
+      });
+    }
+
+    final assignment = _resolveAssignment(
+      state,
+      selectedWorkerIds: selectedWorkerIds,
+    );
+    final specialRequirement = args.specialRequirementId == 'none'
+        ? null
+        : args.specialRequirementLabel;
+
+    bloc.add(
+      EstimateCleaningPriceEvent(
+        params: EstimateCleaningPriceParams.eventAssistance(
+          eventType: args.eventType,
+          guestCount: args.guestsCount,
+          venueType: args.venueType,
+          customService: args.customService,
+          hours: args.hours,
+          addressId: int.tryParse(address.id),
+          addressLatitude: address.latitude,
+          addressLongitude: address.longitude,
+          numberOfWorkers: _resolvedNumberOfWorkers,
+          preferredWorkerIds: assignment.preferredWorkerIds,
+          assignmentMode: assignment.assignmentMode,
+          specialRequirement: specialRequirement,
+          notes: args.notes,
+        ),
+      ),
+    );
   }
 
   EventAssignmentFields _resolveAssignment(
