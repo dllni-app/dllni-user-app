@@ -11,6 +11,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../rs_favourite/domain/usecases/toggle_product_favourite_use_case.dart';
+import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 import '../../data/models/fetch_restaurant_product_details_model.dart';
 import '../../domain/usecases/add_restaurant_cart_item_use_case.dart';
 import '../manager/bloc/rs_discover_bloc.dart';
@@ -181,7 +182,10 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                   builder: (context, cartCount) {
                     return _CartAppBarAction(
                       cartCount: cartCount,
-                      onTap: () => context.pushRoute('/cart'),
+                      onTap: () => context.pushRoute(
+                        '/cart',
+                        arguments: SmCartScreenParams(initialSectionIndex: 1),
+                      ),
                     );
                   },
                 ),
