@@ -91,9 +91,17 @@ class _MerchantCartCard extends StatelessWidget {
   final bool isMutating;
   final String Function(double value) money;
 
+  double get _itemsSubtotal => cart.items.fold<double>(0, (sum, item) {
+    final calculated = item.unitPrice * item.quantity;
+    return sum + (calculated > 0 ? calculated : item.totalPrice);
+  });
+
   @override
   Widget build(BuildContext context) {
     final cartId = cart.id;
+    final subtotal = _itemsSubtotal;
+    final total = cart.amounts?.total ?? subtotal;
+
     return Container(
       margin: const EdgeInsetsDirectional.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -143,9 +151,9 @@ class _MerchantCartCard extends StatelessWidget {
           ),
           RestaurantCartOrderSummarySection(
             itemsCount: cart.items.length,
-            subtotal: cart.amounts?.subtotal ?? 0,
+            subtotal: subtotal,
             discount: 0,
-            total: cart.amounts?.total ?? 0,
+            total: total,
           ),
           const SizedBox(height: 12),
           RestaurantCartCheckoutFulfillmentButton(
