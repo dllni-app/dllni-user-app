@@ -3,26 +3,17 @@ import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection.dart';
-import '../../../../core/widgets/toast_component.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
-import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
-import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
-import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../manager/bloc/cl_main_bloc.dart';
-import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_home_description_title_card_widget.dart';
 import '../widgets/cl_main_continue_button_widget.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
-import '../widgets/cl_service_gender_preference_section_widget.dart';
-import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
-import 'cl_worker_profile_detail_screen.dart';
 
 @AutoRoutePage()
 class ClMainOccasionDescriptionScreen extends StatefulWidget {
@@ -75,8 +66,6 @@ class _ClMainOccasionDescriptionScreenState
     super.initState();
     _initializeDefaults();
     _selectedAddress = ValueNotifier<AddressListItem?>(null);
-
-    // widget.args?.option.id=='condolences'?
   }
 
   void _initializeDefaults() {
@@ -88,16 +77,19 @@ class _ClMainOccasionDescriptionScreenState
         _hoursCount = 3;
         _workersCount = 1;
         _helpTypeOptions = [
-          _MenuOption(id: 'table_setup', label: 'تجهيز طاولة العشاء'),
-          _MenuOption(id: 'manual_help', label: 'مساعدة يدوية في المطبخ'),
-          _MenuOption(id: 'serving', label: 'تقديم الطعام للضيوف'),
-          _MenuOption(id: 'cleanup', label: 'تنظيف المائدة بعد العشاء'),
+          const _MenuOption(id: 'table_setup', label: 'تجهيز طاولة العشاء'),
+          const _MenuOption(id: 'manual_help', label: 'مساعدة يدوية في المطبخ'),
+          const _MenuOption(id: 'serving', label: 'تقديم الطعام للضيوف'),
+          const _MenuOption(id: 'cleanup', label: 'تنظيف المائدة بعد العشاء'),
         ];
         _specialRequirementOptions = [
-          _MenuOption(id: 'none', label: 'لا يوجد'),
-          _MenuOption(id: 'quick_setup', label: 'تجهيز سريع قبل الوصول'),
-          _MenuOption(id: 'kids_safety', label: 'انتباه خاص لسلامة الأطفال'),
-          _MenuOption(id: 'extra_seating', label: 'ترتيب مقاعد إضافية'),
+          const _MenuOption(id: 'none', label: 'لا يوجد'),
+          const _MenuOption(id: 'quick_setup', label: 'تجهيز سريع قبل الوصول'),
+          const _MenuOption(
+            id: 'kids_safety',
+            label: 'انتباه خاص لسلامة الأطفال',
+          ),
+          const _MenuOption(id: 'extra_seating', label: 'ترتيب مقاعد إضافية'),
         ];
         break;
 
@@ -106,22 +98,28 @@ class _ClMainOccasionDescriptionScreenState
         _hoursCount = 4;
         _workersCount = 2;
         _helpTypeOptions = [
-          _MenuOption(
+          const _MenuOption(
             id: 'serving_support',
             label: 'دعم توزيع المشروبات والحلويات',
           ),
-          _MenuOption(id: 'decoration_help', label: 'المساعدة في ترتيب الزينة'),
-          _MenuOption(id: 'gift_management', label: 'تنظيم ركن الهدايا'),
-          _MenuOption(
+          const _MenuOption(
+            id: 'decoration_help',
+            label: 'المساعدة في ترتيب الزينة',
+          ),
+          const _MenuOption(id: 'gift_management', label: 'تنظيم ركن الهدايا'),
+          const _MenuOption(
             id: 'post_party_cleanup',
             label: 'تنظيف المكان بعد الحفلة',
           ),
         ];
         _specialRequirementOptions = [
-          _MenuOption(id: 'none', label: 'لا يوجد'),
-          _MenuOption(id: 'cake_ceremony', label: 'تنسيق فقرة الكيك'),
-          _MenuOption(id: 'music_coordination', label: 'متابعة وتيرة الموسيقى'),
-          _MenuOption(
+          const _MenuOption(id: 'none', label: 'لا يوجد'),
+          const _MenuOption(id: 'cake_ceremony', label: 'تنسيق فقرة الكيك'),
+          const _MenuOption(
+            id: 'music_coordination',
+            label: 'متابعة وتيرة الموسيقى',
+          ),
+          const _MenuOption(
             id: 'extra_attention',
             label: 'عناية إضافية لمنطقة البوفيه',
           ),
@@ -133,28 +131,28 @@ class _ClMainOccasionDescriptionScreenState
         _hoursCount = 6;
         _workersCount = 3;
         _helpTypeOptions = [
-          _MenuOption(
+          const _MenuOption(
             id: 'hospitality_setup',
             label: 'تجهيز كامل لمنطقة الضيافة',
           ),
-          _MenuOption(id: 'reception_support', label: 'دعم استقبال الضيوف'),
-          _MenuOption(id: 'food_refill', label: 'متابعة إعادة تعبئة الطعام'),
-          _MenuOption(
+          const _MenuOption(id: 'reception_support', label: 'دعم استقبال الضيوف'),
+          const _MenuOption(id: 'food_refill', label: 'متابعة إعادة تعبئة الطعام'),
+          const _MenuOption(
             id: 'full_cleanup',
             label: 'تنظيف شامل وتنسيق بعد المناسبة',
           ),
         ];
         _specialRequirementOptions = [
-          _MenuOption(
+          const _MenuOption(
             id: 'separate_teams',
             label: 'توزيع فريق العمل على أقسام',
           ),
-          _MenuOption(id: 'valet_support', label: 'المساعدة في تنظيم المواقف'),
-          _MenuOption(
+          const _MenuOption(id: 'valet_support', label: 'المساعدة في تنظيم المواقف'),
+          const _MenuOption(
             id: 'security_awareness',
             label: 'انتباه وتنسيق حركة الضيوف',
           ),
-          _MenuOption(
+          const _MenuOption(
             id: 'dynamic_service',
             label: 'خدمة مرنة حسب احتياج القاعة',
           ),
@@ -166,39 +164,43 @@ class _ClMainOccasionDescriptionScreenState
         _hoursCount = 5;
         _workersCount = 2;
         _helpTypeOptions = [
-          _MenuOption(
+          const _MenuOption(
             id: 'hospitality_setup',
             label: 'تجهيز ركن القهوة والضيافة',
           ),
-          _MenuOption(id: 'serving_support', label: 'تقديم مستمر للضيافة'),
-          _MenuOption(id: 'silent_service', label: 'خدمة هادئة غير ملفتة'),
-          _MenuOption(
+          const _MenuOption(id: 'serving_support', label: 'تقديم مستمر للضيافة'),
+          const _MenuOption(id: 'silent_service', label: 'خدمة هادئة غير ملفتة'),
+          const _MenuOption(
             id: 'cleanup_support',
             label: 'تنظيف وتغيير أكواب الضيافة',
           ),
         ];
         _specialRequirementOptions = [
-          _MenuOption(id: 'none', label: 'لا يوجد'),
-          _MenuOption(
+          const _MenuOption(id: 'none', label: 'لا يوجد'),
+          const _MenuOption(
             id: 'continuous_cleaning',
             label: 'تنظيف مستمر أثناء العزاء',
           ),
-          _MenuOption(
+          const _MenuOption(
             id: 'high_traffic',
             label: 'عناية إضافية بالمداخل والممرات',
           ),
-          _MenuOption(id: 'restrooms', label: 'متابعة نظافة دورات المياه'),
+          const _MenuOption(id: 'restrooms', label: 'متابعة نظافة دورات المياه'),
         ];
         break;
 
       default:
-        // ... القيم الافتراضية العامة كما كانت
+        _guestsCount = 10;
+        _hoursCount = 3;
+        _workersCount = 1;
+        _helpTypeOptions = const [
+          _MenuOption(id: 'custom', label: 'مساعدة عامة'),
+        ];
+        _specialRequirementOptions = const [
+          _MenuOption(id: 'none', label: 'لا يوجد'),
+        ];
         break;
     }
-
-    // تحديث القيم المختارة لضمان توافقها مع القوائم الجديدة
-    // _selectedHelpType = _helpTypeOptions.first;
-    // _selectedSpecialRequirement = _specialRequirementOptions.first;
   }
 
   @override
@@ -252,16 +254,11 @@ class _ClMainOccasionDescriptionScreenState
               defaultAddress: _selectedAddress.value,
               notes: _enableNotes ? _notesController.text.trim() : null,
             );
-            // if (!context.mounted) return;
             await context.pushRoute(
               '/clmainoccasionschedule',
               arguments: scheduleArgs,
             );
             _didNavigateToSchedule = false;
-            // WidgetsBinding.instance.addPostFrameCallback((_) {
-            //   print(suggestedTeamSize)
-
-            // });
           } else if (state.estimatePriceStatus == BlocStatus.failed) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -509,44 +506,8 @@ class _ClMainOccasionDescriptionScreenState
                             ),
                           ),
                           const SizedBox(height: 10),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
-                            onChanged: (value) {
-                              _handleGenderPreferenceChanged(bloc, value);
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                          ClServicePreviousWorkersSectionWidget(
-                            workers: filterPreviousWorkersByGender(
-                              state.previousWorkers.list,
-                              state.genderPreference,
-                            ),
-                            selectedWorkerIds: state.selectedWorkerIds,
-                            isLoading:
-                                state.previousWorkersStatus ==
-                                BlocStatus.loading,
-                            errorMessage:
-                                state.previousWorkersStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
-                            onSelectWorker: (workerId) {
-                              bloc.add(
-                                SetPreferredWorkerEvent(workerId: workerId),
-                              );
-                            },
-                            onOpenWorkerProfile: (worker) {
-                              context.pushRoute(
-                                '/clworkerprofiledetail',
-                                arguments:
-                                    WorkerProfileRouteArgs.fromPreviousWorker(
-                                      worker,
-                                    ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 10),
                           if (state.estimatePriceStatus == BlocStatus.loading)
-                            Center(child: CircularProgressIndicator())
+                            const Center(child: CircularProgressIndicator())
                           else
                             ClMainContinueButtonWidget(
                               key: const Key(
@@ -580,15 +541,7 @@ class _ClMainOccasionDescriptionScreenState
       _bloc?.add(
         SetGenderPreferenceEvent(preference: CleaningGenderPreference.male),
       );
-      _bloc?.add(
-        GetPreviousCleaningWorkersEvent(
-          params: GetPreviousCleaningWorkersParams(
-            page: 1,
-            propertyType: 'event_assistance',
-          ),
-          isReload: true,
-        ),
-      );
+      _bloc?.add(ClearPreferredWorkersEvent());
     }
   }
 
@@ -598,40 +551,6 @@ class _ClMainOccasionDescriptionScreenState
     _notesController.dispose();
     _selectedAddress.dispose();
     super.dispose();
-  }
-
-  Future<void> _handleGenderPreferenceChanged(
-    ClMainBloc bloc,
-    CleaningGenderPreference preference,
-  ) async {
-    if (preference.apiValue != 'female') {
-      bloc.add(SetGenderPreferenceEvent(preference: preference));
-      return;
-    }
-
-    Loading.show(context);
-    final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
-    Loading.close();
-    if (!mounted) return;
-
-    await response.fold(
-      (failure) async {
-        ToastComponent.showToast(context, msg: failure.message);
-      },
-      (policy) async {
-        final confirmation = await showFemaleWorkerSafetyConfirmationSheet(
-          context: context,
-          policy: policy,
-        );
-        if (!mounted || confirmation == null) return;
-        bloc.add(
-          SetGenderPreferenceEvent(
-            preference: preference,
-            workEnvironmentConfirmation: confirmation,
-          ),
-        );
-      },
-    );
   }
 
   void _setHoursCount(int value) {
@@ -711,10 +630,8 @@ class _ClMainOccasionDescriptionScreenState
     final specialRequirement = _selectedSpecialRequirement!.id == 'none'
         ? null
         : _selectedSpecialRequirement!.label;
-    final preferredWorkerIds = bloc.state.selectedWorkerIds;
-    final assignmentMode = preferredWorkerIds.isEmpty
-        ? CleaningAssignmentMode.openCount
-        : CleaningAssignmentMode.preferredWorker;
+
+    bloc.add(ClearPreferredWorkersEvent());
     bloc.add(
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams.eventAssistance(
@@ -727,8 +644,8 @@ class _ClMainOccasionDescriptionScreenState
           addressLatitude: selectedAddress.latitude,
           addressLongitude: selectedAddress.longitude,
           numberOfWorkers: _resolvedWorkersCount,
-          preferredWorkerIds: preferredWorkerIds,
-          assignmentMode: assignmentMode,
+          preferredWorkerIds: const <int>[],
+          assignmentMode: CleaningAssignmentMode.openCount,
           specialRequirement: specialRequirement,
           notes: _enableNotes ? _notesController.text.trim() : null,
         ),
@@ -831,9 +748,9 @@ class _ClMainOccasionDescriptionScreenState
 
 class _CounterActionButton extends StatelessWidget {
   final IconData icon;
-
   final VoidCallback onTap;
   final Color color;
+
   const _CounterActionButton({
     required this.icon,
     required this.onTap,
@@ -860,11 +777,11 @@ class _CounterActionButton extends StatelessWidget {
 
 class _CounterField extends StatelessWidget {
   final int value;
-
   final int minValue;
   final int? maxValue;
   final VoidCallback onAdd;
   final VoidCallback onSubtract;
+
   const _CounterField({
     required this.value,
     required this.onAdd,
