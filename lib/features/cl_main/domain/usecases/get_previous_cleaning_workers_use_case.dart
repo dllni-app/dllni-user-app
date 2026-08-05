@@ -45,8 +45,6 @@ class GetPreviousCleaningWorkersParams with Params {
     return {
       'page': page,
       'per_page': perPage,
-      if (propertyType != null && propertyType!.isNotEmpty)
-        'propertyType': propertyType,
       if (scheduledDate != null && scheduledDate!.isNotEmpty)
         'scheduledDate': scheduledDate,
       if (scheduledTime != null && scheduledTime!.isNotEmpty)
