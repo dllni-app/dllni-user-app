@@ -362,7 +362,13 @@ class _ClMainOccasionScheduleScreenState
         GetPreviousCleaningWorkersEvent(
           params: GetPreviousCleaningWorkersParams(
             page: 1,
+            perPage: 20,
             propertyType: 'event_assistance',
+            scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+              _selectedDate,
+            ),
+            scheduledTime: _fromTimeHhMm,
+            durationHours: _estimatedHours,
           ),
           isReload: true,
         ),
