@@ -358,21 +358,7 @@ class _ClMainOccasionScheduleScreenState
       _currentEstimate = args.estimate;
       _selectedAddress.value = args.defaultAddress;
       _syncToTime();
-      _bloc?.add(
-        GetPreviousCleaningWorkersEvent(
-          params: GetPreviousCleaningWorkersParams(
-            page: 1,
-            perPage: 20,
-            propertyType: 'event_assistance',
-            scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
-              _selectedDate,
-            ),
-            scheduledTime: _fromTimeHhMm,
-            durationHours: _estimatedHours,
-          ),
-          isReload: true,
-        ),
-      );
+      _requestPreviousWorkers();
     }
   }
 
@@ -404,6 +390,27 @@ class _ClMainOccasionScheduleScreenState
   void _updateTimeDisplay() {
     _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
+  }
+
+  void _requestPreviousWorkers() {
+    final bloc = _bloc;
+    if (bloc == null) return;
+
+    bloc.add(
+      GetPreviousCleaningWorkersEvent(
+        params: GetPreviousCleaningWorkersParams(
+          page: 1,
+          perPage: 20,
+          propertyType: 'event_assistance',
+          scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+            _selectedDate,
+          ),
+          scheduledTime: _fromTimeHhMm,
+          durationHours: _estimatedHours,
+        ),
+        isReload: true,
+      ),
+    );
   }
 
   Future<void> _handleGenderPreferenceChanged(
@@ -675,6 +682,7 @@ class _ClMainOccasionScheduleScreenState
     setState(() {
       _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
     });
+    _requestPreviousWorkers();
   }
 
   Future<void> _pickFromTime() async {
@@ -684,6 +692,7 @@ class _ClMainOccasionScheduleScreenState
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
       _syncToTime();
     });
+    _requestPreviousWorkers();
   }
 
   void _requestUpdatedEstimate(
