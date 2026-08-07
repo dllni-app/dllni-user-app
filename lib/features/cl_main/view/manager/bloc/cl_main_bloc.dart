@@ -155,13 +155,16 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       ),
     );
 
-    final page = isLoadMore ? pagination.pageNumber : 1;
-    final perPage = pagination.perPage;
+    final page = isLoadMore ? pagination.pageNumber : event.params.page;
+    final perPage = isLoadMore ? pagination.perPage : event.params.perPage;
     final response = await getPreviousCleaningWorkersUseCase(
       GetPreviousCleaningWorkersParams(
         page: page,
         perPage: perPage,
         propertyType: event.params.propertyType,
+        scheduledDate: event.params.scheduledDate,
+        scheduledTime: event.params.scheduledTime,
+        durationHours: event.params.durationHours,
       ),
     );
     response.fold(
