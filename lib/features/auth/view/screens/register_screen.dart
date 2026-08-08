@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
+import 'package:dllni_user_app/core/widgets/legal_links_launcher.dart';
 import 'package:dllni_user_app/features/auth/view/auth_form_validators.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
@@ -29,6 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   PhoneNumber? _phone;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _acceptedLegal = false;
 
   static const Color _iconGray = Color(0xff6B7280);
 
@@ -42,6 +44,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _submit(AuthBloc bloc) async {
     FocusScope.of(context).unfocus();
+
+    if (!_acceptedLegal) {
+      AppToast.showToast(
+        context: context,
+        message: 'يرجى الموافقة على سياسة الخصوصية وشروط الاستخدام للمتابعة.',
+        type: ToastificationType.error,
+      );
+      return;
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final phoneError = await _phoneFieldKey.currentState?.validate();
@@ -163,6 +175,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onToggleVisibility: () => setState(() => _obscureConfirm = !_obscureConfirm),
                       validator: (v) => AuthFormValidators.confirmPassword(v, _passwordController.text),
                     ),
+                    const SizedBox(height: 16),
+                    _LegalConsentRow(
+                      value: _acceptedLegal,
+                      enabled: !loading,
+                      onChanged: (value) => setState(() => _acceptedLegal = value ?? false),
+                    ),
                   ],
                 ),
               ),
@@ -206,6 +224,80 @@ class _RegisterScreenState extends State<RegisterScreen> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _LegalConsentRow extends StatelessWidget {
+  const _LegalConsentRow({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: enabled ? onChanged : null,
+          activeColor: context.primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                AppText.bodySmall(
+                  'أوافق على ',
+                  color: _RegisterScreenState._iconGray,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                GestureDetector(
+                  onTap: enabled ? () => launchPrivacyPolicy(context) : null,
+                  child: AppText.bodySmall(
+                    'سياسة الخصوصية',
+                    color: context.secondary,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                AppText.bodySmall(
+                  ' و',
+                  color: _RegisterScreenState._iconGray,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                GestureDetector(
+                  onTap: enabled ? () => launchTermsAndConditions(context) : null,
+                  child: AppText.bodySmall(
+                    'شروط الاستخدام',
+                    color: context.secondary,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
