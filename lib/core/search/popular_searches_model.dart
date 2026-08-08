@@ -1,8 +1,20 @@
+enum PopularSearchFilter {
+  products,
+  merchants;
+
+  String get apiValue => name;
+}
+
 class PopularSearchesModel {
   final String? section;
+  final String? filter;
   final List<String> searches;
 
-  const PopularSearchesModel({this.section, this.searches = const <String>[]});
+  const PopularSearchesModel({
+    this.section,
+    this.filter,
+    this.searches = const <String>[],
+  });
 
   factory PopularSearchesModel.fromJson(dynamic json) {
     if (json is! Map) return const PopularSearchesModel();
@@ -29,6 +41,7 @@ class PopularSearchesModel {
 
     return PopularSearchesModel(
       section: map['section']?.toString(),
+      filter: map['filter']?.toString(),
       searches: searches,
     );
   }

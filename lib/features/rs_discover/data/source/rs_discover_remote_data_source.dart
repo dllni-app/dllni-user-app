@@ -94,11 +94,16 @@ class RsDiscoverRemoteDataSource with HandlingApiManager {
     );
   }
 
-  Future<PopularSearchesModel> fetchPopularSearches() {
+  Future<PopularSearchesModel> fetchPopularSearches(
+    PopularSearchFilter filter,
+  ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
         endPoint: '/api/v1/user/popular-searches',
-        params: const <String, dynamic>{'section': 'restaurant'},
+        params: <String, dynamic>{
+          'section': 'restaurant',
+          'filter': filter.apiValue,
+        },
       ),
       jsonConvert: popularSearchesModelFromJson,
     );
