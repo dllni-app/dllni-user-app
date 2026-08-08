@@ -41,14 +41,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return BlocProvider(
       create: (_) {
         final bloc = getIt<HomeBloc>();
-        if (AuthGate.isAuthenticated) {
-          bloc.add(
-            FetchUserOffersEvent(
-              params: FetchUserOffersParams(),
-              isReload: true,
-            ),
-          );
-        }
+        bloc.add(
+          FetchUserOffersEvent(
+            params: FetchUserOffersParams(),
+            isReload: true,
+          ),
+        );
         return bloc;
       },
       child: Column(
@@ -60,40 +58,39 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (AuthGate.isAuthenticated) SizedBox(height: 32),
-                  if (AuthGate.isAuthenticated)
-                    BlocBuilder<HomeBloc, HomeState>(
-                      buildWhen: (prev, next) =>
-                          prev.userOffersStatus != next.userOffersStatus ||
-                          prev.userOffers != next.userOffers ||
-                          prev.errorMessage != next.errorMessage,
-                      builder: (context, state) {
-                        if (state.userOffersStatus == BlocStatus.loading ||
-                            state.userOffersStatus == BlocStatus.init) {
-                          return SizedBox(
-                            height:
-                                (context.width * 0.52).clamp(180.0, 230.0) + 56,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: context.primaryContainer,
-                              ),
+                  SizedBox(height: 32),
+                  BlocBuilder<HomeBloc, HomeState>(
+                    buildWhen: (prev, next) =>
+                        prev.userOffersStatus != next.userOffersStatus ||
+                        prev.userOffers != next.userOffers ||
+                        prev.errorMessage != next.errorMessage,
+                    builder: (context, state) {
+                      if (state.userOffersStatus == BlocStatus.loading ||
+                          state.userOffersStatus == BlocStatus.init) {
+                        return SizedBox(
+                          height:
+                              (context.width * 0.52).clamp(180.0, 230.0) + 56,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: context.primaryContainer,
                             ),
-                          );
-                        }
-                        if (state.userOffersStatus == BlocStatus.failed) {
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 16),
-                            child: AppText.bodyMedium(
-                              state.errorMessage ?? 'تعذر تحميل العروض',
-                              color: Color(0xffB91C1C),
-                            ),
-                          );
-                        }
-                        return Center(
-                          child: HomeCube(offers: state.userOffers.list),
+                          ),
                         );
-                      },
-                    ),
+                      }
+                      if (state.userOffersStatus == BlocStatus.failed) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: AppText.bodyMedium(
+                            state.errorMessage ?? 'تعذر تحميل العروض',
+                            color: Color(0xffB91C1C),
+                          ),
+                        );
+                      }
+                      return Center(
+                        child: HomeCube(offers: state.userOffers.list),
+                      );
+                    },
+                  ),
                   SizedBox(height: 35),
                   Row(
                     children: [
