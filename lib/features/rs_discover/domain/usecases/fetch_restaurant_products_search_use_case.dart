@@ -26,12 +26,14 @@ class FetchRestaurantProductsSearchParams with Params {
   final int perPage;
   final String text;
   final int? restaurantId;
+  final int? categoryId;
 
   FetchRestaurantProductsSearchParams({
     required this.page,
     this.perPage = 10,
     this.text = '',
     this.restaurantId,
+    this.categoryId,
   });
 
   @override
@@ -42,6 +44,7 @@ class FetchRestaurantProductsSearchParams with Params {
       'perPage': perPage,
       if (queryText.isNotEmpty) 'text': queryText,
       if (restaurantId != null) 'restaurantId': restaurantId,
+      if (categoryId != null) 'categoryId': categoryId,
     };
   }
 }
