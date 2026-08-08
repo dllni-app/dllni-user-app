@@ -5,17 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/di/injection.dart';
+import '../../../../core/widgets/search_field_with_voice.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../profile/view/screens/notifications_screen.dart';
+import '../../../rs_main/view/rs_main_screen.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class HomeAppBar extends StatefulWidget {
   final bool isCleaning;
   final ProfileBloc profileBloc;
 
-  const HomeAppBar({super.key,  this.isCleaning=false, required this.profileBloc});
-
+  const HomeAppBar({
+    super.key,
+    this.isCleaning = false,
+    required this.profileBloc,
+  });
 
   @override
   State<HomeAppBar> createState() => _HomeAppBarState();
@@ -26,7 +30,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
 
   @override
   void initState() {
-    profileBloc =widget.profileBloc;
+    profileBloc = widget.profileBloc;
     super.initState();
   }
 
@@ -35,18 +39,15 @@ class _HomeAppBarState extends State<HomeAppBar> {
       context,
       message: 'سجّل الدخول لعرض السلة',
       onAuthenticated: () {
-        widget.isCleaning?
-        context.pushRoute(
-          '/cart',
-          arguments: SmCartScreenParams(initialSectionIndex: 2),
-        )
-            :
-
-
-        context.pushRoute(
-          '/cart',
-          arguments: SmCartScreenParams(initialSectionIndex: 1),
-        );
+        widget.isCleaning
+            ? context.pushRoute(
+                '/cart',
+                arguments: SmCartScreenParams(initialSectionIndex: 2),
+              )
+            : context.pushRoute(
+                '/cart',
+                arguments: SmCartScreenParams(initialSectionIndex: 1),
+              );
       },
     );
   }
@@ -56,10 +57,22 @@ class _HomeAppBarState extends State<HomeAppBar> {
       context,
       message: 'سجّل الدخول لعرض الإشعارات',
       onAuthenticated: () {
-        context.pushRoute('/notifications',arguments: NotificationsScreenParams(
-          profileBloc: profileBloc
-        ));
+        context.pushRoute(
+          '/notifications',
+          arguments: NotificationsScreenParams(profileBloc: profileBloc),
+        );
       },
+    );
+  }
+
+  void _openSearch() {
+    context.pushRoute(
+      '/rsmain',
+      arguments: RsMainScreenParams(
+        profileBloc: profileBloc,
+        initialPage: 1,
+        expandSearch: true,
+      ),
     );
   }
 
@@ -74,7 +87,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Color(0xFFF3F4F6)),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
       ),
       child: Column(
         children: [
@@ -86,8 +99,10 @@ class _HomeAppBarState extends State<HomeAppBar> {
                   spacing: 2,
                   children: [
                     Text(
-                      AuthGate.isAuthenticated ? 'مرحباً بعودتك 👋' : 'مرحباً بك 👋',
-                      style: TextStyle(
+                      AuthGate.isAuthenticated
+                          ? 'مرحباً بعودتك 👋'
+                          : 'مرحباً بك 👋',
+                      style: const TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -98,8 +113,10 @@ class _HomeAppBarState extends State<HomeAppBar> {
                       valueListenable: UserSessionStore.userNotifier,
                       builder: (context, user, _) {
                         return Text(
-                          AuthGate.isAuthenticated ? UserSessionStore.displayName(user) : 'زائر',
-                          style: TextStyle(
+                          AuthGate.isAuthenticated
+                              ? UserSessionStore.displayName(user)
+                              : 'زائر',
+                          style: const TextStyle(
                             color: Color(0xFF1E2A78),
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -115,7 +132,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 icon: FontAwesomeIcons.cartShopping,
                 onTap: _openCart,
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               _AppBarNotificationWidget(
                 profileBloc: profileBloc,
                 icon: FontAwesomeIcons.bell,
@@ -123,7 +140,13 @@ class _HomeAppBarState extends State<HomeAppBar> {
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
+          SearchFieldWithVoice(
+            hintText: 'ابحث عن مطعم أو وجبة...',
+            onSearch: (_) => _openSearch(),
+            onVoiceTap: _openSearch,
+            onTap: _openSearch,
+          ),
         ],
       ),
     );
@@ -145,7 +168,7 @@ class _AppBarAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      customBorder: CircleBorder(),
+      customBorder: const CircleBorder(),
       child: Stack(
         fit: StackFit.loose,
         children: [
@@ -154,29 +177,16 @@ class _AppBarAction extends StatelessWidget {
             height: 44,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Color(0xFFF9FAFB),
+              color: const Color(0xFFF9FAFB),
               shape: BoxShape.circle,
-              border: Border.all(color: Color(0xFFF3F4F6)),
+              border: Border.all(color: const Color(0xFFF3F4F6)),
             ),
-            child: FaIcon(icon, size: 20, color: Color(0xFF1A1A1A)),
+            child: FaIcon(
+              icon,
+              size: 20,
+              color: const Color(0xFF1A1A1A),
+            ),
           ),
-          // if (hasNew)
-          //   Positioned(
-          //     top: 10,
-          //     right: 8,
-          //     child: Container(
-          //       width: 8,
-          //       height: 8,
-          //       decoration: BoxDecoration(
-          //         color: context.primaryContainer,
-          //         shape: BoxShape.circle,
-          //         border: Border.all(
-          //           color: context.onPrimaryContainer,
-          //           width: 2,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
         ],
       ),
     );
@@ -198,7 +208,7 @@ class _AppBarNotificationWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      customBorder: CircleBorder(),
+      customBorder: const CircleBorder(),
       child: BlocBuilder<ProfileBloc, ProfileState>(
         bloc: profileBloc,
         builder: (context, state) {
@@ -210,20 +220,24 @@ class _AppBarNotificationWidget extends StatelessWidget {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Color(0xFFF9FAFB),
+                  color: const Color(0xFFF9FAFB),
                   shape: BoxShape.circle,
-                  border: Border.all(color: Color(0xFFF3F4F6)),
+                  border: Border.all(color: const Color(0xFFF3F4F6)),
                 ),
-                child: FaIcon(icon, size: 20, color: Color(0xFF1A1A1A)),
+                child: FaIcon(
+                  icon,
+                  size: 20,
+                  color: const Color(0xFF1A1A1A),
+                ),
               ),
-              if (AuthGate.isAuthenticated && state.unreadNotification != null &&
+              if (AuthGate.isAuthenticated &&
+                  state.unreadNotification != null &&
                   state.unreadNotification! > 0)
                 Positioned(
                   top: -2,
                   right: -2,
-
                   child: Container(
-                    padding: EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: context.primaryContainer,
                       shape: BoxShape.circle,
@@ -234,7 +248,7 @@ class _AppBarNotificationWidget extends StatelessWidget {
                     ),
                     child: Text(
                       state.unreadNotification.toString(),
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 8,
                         fontWeight: FontWeight.w500,

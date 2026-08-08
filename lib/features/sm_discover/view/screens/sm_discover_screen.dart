@@ -7,7 +7,7 @@ import '../../../../core/widgets/search_with_type_dropdown.dart';
 import '../manager/bloc/sm_discover_bloc.dart';
 import '../widgets/smart_search_sheet.dart';
 import 'sm_main_discover_view.dart';
-import 'sm_search_view.dart';
+import 'sm_search_view_v2.dart';
 
 @AutoRoutePage(path: "/sm_discover")
 class SmDiscoverScreen extends StatefulWidget {
@@ -35,7 +35,6 @@ class _SmDiscoverScreenState extends State<SmDiscoverScreen> {
   late int _selectedView;
   SearchType searchType = SearchType.product;
 
-  /// One-shot query from smart search sheet when opening the search tab.
   String? _smartSearchInitialQuery;
   bool get _isShoppingListMode => widget.params.shoppingListId != null;
 
@@ -45,8 +44,8 @@ class _SmDiscoverScreenState extends State<SmDiscoverScreen> {
       create: (context) => getIt<SmDiscoverBloc>(),
       child: Scaffold(
         backgroundColor: _selectedView == 0
-            ? Color(0xFFF9FAFB)
-            : Color(0xFFEFEFEF),
+            ? const Color(0xFFF9FAFB)
+            : const Color(0xFFEFEFEF),
         body: PopScope(
           canPop: _isShoppingListMode || _selectedView == 0,
           onPopInvokedWithResult: (didPop, result) {
@@ -68,25 +67,27 @@ class _SmDiscoverScreenState extends State<SmDiscoverScreen> {
                       isScrollControlled: true,
                       useSafeArea: true,
                       backgroundColor: Colors.transparent,
-                      builder: (ctx) => const SmartSearchSheet(isSupermarket: true,),
+                      builder: (ctx) =>
+                          const SmartSearchSheet(isSupermarket: true),
                     );
-                    if (!context.mounted || words == null || words.isEmpty)
+                    if (!context.mounted || words == null || words.isEmpty) {
                       return;
+                    }
                     searchType = SearchType.product;
                     _smartSearchInitialQuery = words.join(' , ');
                     _selectedView = 1;
                     setState(() {});
                     return;
-                  } else {
-                    searchType = type;
-                    if (_selectedView == 0) {
-                      _selectedView = 1;
-                      setState(() {});
-                    }
+                  }
+
+                  searchType = type;
+                  if (_selectedView == 0) {
+                    _selectedView = 1;
+                    setState(() {});
                   }
                 },
               ),
-              SmSearchView(
+              SmSearchViewV2(
                 key: ValueKey<String>(
                   '${searchType}_${_smartSearchInitialQuery ?? ''}',
                 ),

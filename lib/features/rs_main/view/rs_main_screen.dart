@@ -4,7 +4,6 @@ import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_main/view/widgets/rs_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 
-import '../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../rs_discover/view/screens/rs_discover_screen.dart';
 import '../../rs_favourite/view/screens/rs_favourite_screen.dart';
@@ -13,13 +12,18 @@ import '../../rs_offers/view/rs_offers_screen.dart';
 
 class RsMainScreenParams {
   final ProfileBloc profileBloc;
+  final int initialPage;
+  final bool expandSearch;
 
-  RsMainScreenParams({required this.profileBloc});
+  RsMainScreenParams({
+    required this.profileBloc,
+    this.initialPage = 0,
+    this.expandSearch = false,
+  });
 }
 
 @AutoRoutePage()
 class RsMainScreen extends StatefulWidget {
-
   final RsMainScreenParams args;
 
   const RsMainScreen({super.key, required this.args});
@@ -33,11 +37,15 @@ class _RsMainScreenState extends State<RsMainScreen>
   late TabController controller;
   late final ProfileBloc profileBloc;
 
-
   @override
   void initState() {
     super.initState();
-    controller = TabController(length: 4, vsync: this);
+    final initialPage = widget.args.initialPage.clamp(0, 3).toInt();
+    controller = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: initialPage,
+    );
 
     profileBloc = widget.args.profileBloc;
     getIt<CartProductsCountCubit>().fetchCount();
@@ -47,29 +55,26 @@ class _RsMainScreenState extends State<RsMainScreen>
     RsHomeScreen(
       args: RsHomeScreenParams(profileBloc: profileBloc),
     ),
-    const RsDiscoverScreen(),
+    RsDiscoverScreen(expandSearch: widget.args.expandSearch),
     const RsOffersScreen(),
     const RsFavouriteScreen(),
   ];
 
-  // List<Widget> pages = <Widget>[
-  //   RsHomeScreen(args: RsHomeScreenParams(profileBloc: profileBloc),),
-  //   RsDiscoverScreen(),
-  //   RsOffersScreen(),
-  //   RsFavouriteScreen(),
-  // ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Scaffold(
-        body: TabBarView(
-          controller: controller,
-          physics: NeverScrollableScrollPhysics(),
-          children: pages,
-        ),
+      body: TabBarView(
+        controller: controller,
+        physics: const NeverScrollableScrollPhysics(),
+        children: pages,
       ),
       bottomNavigationBar: RsBottomNavBar(controller: controller),
     );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 }
