@@ -45,7 +45,11 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
         ) ??
         <String>[];
     _popularSearchesFuture = getIt<SmDiscoverRemoteDataSource>()
-        .fetchPopularSearches();
+        .fetchPopularSearches(
+          widget.type == SearchType.product
+              ? PopularSearchFilter.products
+              : PopularSearchFilter.merchants,
+        );
 
     final initial = widget.initialSearch?.trim();
     if (initial != null && initial.isNotEmpty) {
