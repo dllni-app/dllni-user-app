@@ -900,22 +900,19 @@ class _DayPeriodsEditor extends StatelessWidget {
                           ),
                       ],
                     ),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: _TimeDropdown(
-                            label: 'من',
-                            value: period.from,
-                            onChanged: (value) => onChange(index, period.copyWith(from: value)),
-                          ),
+                        _TimeDropdown(
+                          label: 'من',
+                          value: period.from,
+                          onChanged: (value) => onChange(index, period.copyWith(from: value)),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _TimeDropdown(
-                            label: 'إلى',
-                            value: period.to,
-                            onChanged: (value) => onChange(index, period.copyWith(to: value)),
-                          ),
+                        const SizedBox(height: 12),
+                        _TimeDropdown(
+                          label: 'إلى',
+                          value: period.to,
+                          onChanged: (value) => onChange(index, period.copyWith(to: value)),
                         ),
                       ],
                     ),
