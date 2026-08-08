@@ -30,8 +30,9 @@ class MerchantOrderSummaryCard extends StatelessWidget {
       order.deliveryOrderId != null ||
       order.deliverySummary?.enabled == true;
 
-  bool get _isScheduled =>
-      (order.fulfillment?.receiveMode ?? '').toLowerCase().contains('scheduled');
+  bool get _isScheduled => (order.fulfillment?.receiveMode ?? '')
+      .toLowerCase()
+      .contains('scheduled');
 
   String get _categoryLabel => _isRestaurant ? 'مطعم' : 'سوبرماركت';
 
@@ -82,9 +83,7 @@ class MerchantOrderSummaryCard extends StatelessWidget {
     if (status == 'completed' || status == 'delivered') {
       return const Color(0xFF159447);
     }
-    if (status == 'cancelled' ||
-        status == 'canceled' ||
-        status == 'rejected') {
+    if (status == 'cancelled' || status == 'canceled' || status == 'rejected') {
       return const Color(0xFFD14343);
     }
     if (status == 'pending' || status == 'preparing') {
@@ -140,9 +139,9 @@ class MerchantOrderSummaryCard extends StatelessWidget {
     if (number == null || number.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: number));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم نسخ رقم الطلب')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('تم نسخ رقم الطلب')));
   }
 
   @override
@@ -233,10 +232,7 @@ class MerchantOrderSummaryCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _MerchantAvatar(
-                    imageUrl: null,
-                    isRestaurant: _isRestaurant,
-                  ),
+                  _MerchantAvatar(imageUrl: null, isRestaurant: _isRestaurant),
                   const SizedBox(width: 10),
                   Expanded(
                     child: AppText(
@@ -266,7 +262,10 @@ class MerchantOrderSummaryCard extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFBFCFE),
                   borderRadius: BorderRadius.circular(14),
@@ -279,14 +278,17 @@ class MerchantOrderSummaryCard extends StatelessWidget {
                         Expanded(
                           child: _InfoCell(
                             icon: FontAwesomeIcons.bagShopping,
-                            label: itemCount == 1 ? 'عنصر واحد' : '$itemCount عناصر',
+                            label: itemCount == 1
+                                ? 'عنصر واحد'
+                                : '$itemCount عناصر',
                           ),
                         ),
                         const _VerticalDivider(),
                         Expanded(
                           child: _InfoCell(
                             icon: FontAwesomeIcons.receipt,
-                            label: 'الإجمالي: ${_money(order.amounts?.total ?? 0)}',
+                            label:
+                                'الإجمالي: ${_money(order.amounts?.total ?? 0)}',
                           ),
                         ),
                       ],
@@ -326,7 +328,10 @@ class MerchantOrderSummaryCard extends StatelessWidget {
                 child: Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -351,7 +356,9 @@ class MerchantOrderSummaryCard extends StatelessWidget {
                               child: _BottomInfo(
                                 icon: FontAwesomeIcons.motorcycle,
                                 title: 'التوصيل',
-                                value: order.deliveryStatusLabel ?? 'متابعة حالة التوصيل',
+                                value:
+                                    order.deliveryStatusLabel ??
+                                    'متابعة حالة التوصيل',
                               ),
                             ),
                           ],
@@ -360,7 +367,12 @@ class MerchantOrderSummaryCard extends StatelessWidget {
                     ),
                     const Divider(height: 1, color: Color(0xFFE5E7EB)),
                     Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(10, 9, 10, 9),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        10,
+                        9,
+                        10,
+                        9,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -409,9 +421,7 @@ class MerchantOrderSummaryCard extends StatelessWidget {
     if (status == 'completed' || status == 'delivered') {
       return Icons.check_circle_outline_rounded;
     }
-    if (status == 'cancelled' ||
-        status == 'canceled' ||
-        status == 'rejected') {
+    if (status == 'cancelled' || status == 'canceled' || status == 'rejected') {
       return Icons.cancel_outlined;
     }
     return Icons.schedule_rounded;
@@ -467,7 +477,11 @@ class _MerchantAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fallback = isRestaurant
-        ? const Icon(Icons.restaurant_rounded, size: 24, color: AppColors.primary)
+        ? const Icon(
+            Icons.restaurant_rounded,
+            size: 24,
+            color: AppColors.primary,
+          )
         : AppImage.asset(AppImages.defaultStore, fit: BoxFit.cover, size: 48);
     final url = imageUrl?.trim();
 
@@ -497,7 +511,7 @@ class _MerchantAvatar extends StatelessWidget {
 class _InfoCell extends StatelessWidget {
   const _InfoCell({required this.icon, required this.label});
 
-  final IconData icon;
+  final FaIconData icon;
   final String label;
 
   @override
@@ -535,7 +549,7 @@ class _BottomInfo extends StatelessWidget {
     required this.value,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final String title;
   final String value;
 
@@ -597,7 +611,7 @@ class _ActionButton extends StatelessWidget {
   });
 
   final String label;
-  final IconData icon;
+  final FaIconData icon;
   final VoidCallback onTap;
 
   @override
