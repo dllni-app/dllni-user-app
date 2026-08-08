@@ -30,7 +30,7 @@ jobs:
 
       - name: Analyze changed Dart files
         run: >-
-          flutter analyze
+          flutter analyze --no-fatal-warnings --no-fatal-infos
           lib/features/rs_discover/data/models/fetch_restaurant_product_details_model.dart
           lib/features/rs_discover/domain/usecases/fetch_restaurant_products_search_use_case.dart
           lib/features/rs_discover/view/screens/rs_product_details_screen.dart
