@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/orders_api_models.dart';
+import '../helpers/order_date_time_formatter.dart';
 import 'restaurant_order_details_line_item.dart';
 import 'restaurant_order_details_summary_line.dart';
 import 'restaurant_order_tracking_colors.dart';
@@ -14,6 +15,7 @@ class RestaurantOrderDetailsCard extends StatelessWidget {
     required this.deliveryFee,
     required this.total,
     required this.money,
+    this.createdAt,
   });
 
   final List<OrderItemModel> items;
@@ -21,6 +23,7 @@ class RestaurantOrderDetailsCard extends StatelessWidget {
   final double deliveryFee;
   final double total;
   final String Function(double) money;
+  final String? createdAt;
 
   @override
   Widget build(BuildContext context) {
@@ -34,19 +37,53 @@ class RestaurantOrderDetailsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppText.titleSmall('تفاصيل الطلب', color: RestaurantOrderTrackingColors.primary, fontWeight: FontWeight.bold, textAlign: TextAlign.start),
+          AppText.titleSmall(
+            'تفاصيل الطلب',
+            color: RestaurantOrderTrackingColors.primary,
+            fontWeight: FontWeight.bold,
+            textAlign: TextAlign.start,
+          ),
+          if ((createdAt ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AppText.bodySmall(
+                  'وقت إنشاء الطلب',
+                  color: RestaurantOrderTrackingColors.grey,
+                ),
+                AppText.bodySmall(
+                  formatOrderDateTime(createdAt),
+                  color: RestaurantOrderTrackingColors.grey,
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           if (items.isEmpty)
-            AppText.bodyMedium('لا عناصر', color: RestaurantOrderTrackingColors.grey)
+            AppText.bodyMedium(
+              'لا عناصر',
+              color: RestaurantOrderTrackingColors.grey,
+            )
           else
-            ...items.map((e) => RestaurantOrderDetailsLineItem(item: e, money: money)),
+            ...items.map(
+              (e) => RestaurantOrderDetailsLineItem(item: e, money: money),
+            ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, color: Color(0xffE5E7EB)),
           ),
-          RestaurantOrderDetailsSummaryLine(label: 'المجموع الفرعي', value: money(subtotal), emphasize: false),
+          RestaurantOrderDetailsSummaryLine(
+            label: 'المجموع الفرعي',
+            value: money(subtotal),
+            emphasize: false,
+          ),
           const SizedBox(height: 8),
-          RestaurantOrderDetailsSummaryLine(label: 'رسوم التوصيل', value: money(deliveryFee), emphasize: false),
+          RestaurantOrderDetailsSummaryLine(
+            label: 'رسوم التوصيل',
+            value: money(deliveryFee),
+            emphasize: false,
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1, color: Color(0xffE5E7EB)),
@@ -54,8 +91,16 @@ class RestaurantOrderDetailsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              AppText.bodyMedium('الإجمالي', color: RestaurantOrderTrackingColors.primary, fontWeight: FontWeight.bold),
-              AppText.bodyMedium(money(total), color: RestaurantOrderTrackingColors.primary, fontWeight: FontWeight.bold),
+              AppText.bodyMedium(
+                'الإجمالي',
+                color: RestaurantOrderTrackingColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+              AppText.bodyMedium(
+                money(total),
+                color: RestaurantOrderTrackingColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ],
           ),
         ],
