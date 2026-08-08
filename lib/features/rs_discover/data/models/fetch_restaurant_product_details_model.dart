@@ -1,8 +1,10 @@
 String? _pdString(dynamic value) => value == null ? null : '$value';
 
-int? _pdInt(dynamic value) => value is int ? value : int.tryParse('${value ?? ''}');
+int? _pdInt(dynamic value) =>
+    value is int ? value : int.tryParse('${value ?? ''}');
 
-num? _pdNum(dynamic value) => value is num ? value : num.tryParse('${value ?? ''}');
+num? _pdNum(dynamic value) =>
+    value is num ? value : num.tryParse('${value ?? ''}');
 
 bool? _pdBool(dynamic value) {
   if (value is bool) return value;
@@ -13,22 +15,38 @@ bool? _pdBool(dynamic value) {
   return null;
 }
 
-FetchRestaurantProductDetailsModel fetchRestaurantProductDetailsModelFromJson(dynamic json) =>
-    FetchRestaurantProductDetailsModel.fromJson(Map<String, dynamic>.from(json as Map));
+FetchRestaurantProductDetailsModel fetchRestaurantProductDetailsModelFromJson(
+  dynamic json,
+) => FetchRestaurantProductDetailsModel.fromJson(
+  Map<String, dynamic>.from(json as Map),
+);
 
 class FetchRestaurantProductDetailsModel {
   final RestaurantProductDetailsProduct? product;
   final List<RestaurantProductDetailsModifierGroup> modifierGroups;
 
-  FetchRestaurantProductDetailsModel({this.product, this.modifierGroups = const []});
+  FetchRestaurantProductDetailsModel({
+    this.product,
+    this.modifierGroups = const [],
+  });
 
-  factory FetchRestaurantProductDetailsModel.fromJson(Map<String, dynamic> json) {
+  factory FetchRestaurantProductDetailsModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return FetchRestaurantProductDetailsModel(
-      product: json['product'] is Map ? RestaurantProductDetailsProduct.fromJson(Map<String, dynamic>.from(json['product'] as Map)) : null,
+      product: json['product'] is Map
+          ? RestaurantProductDetailsProduct.fromJson(
+              Map<String, dynamic>.from(json['product'] as Map),
+            )
+          : null,
       modifierGroups: json['modifierGroups'] is List
           ? (json['modifierGroups'] as List)
                 .whereType<Map>()
-                .map((e) => RestaurantProductDetailsModifierGroup.fromJson(Map<String, dynamic>.from(e)))
+                .map(
+                  (e) => RestaurantProductDetailsModifierGroup.fromJson(
+                    Map<String, dynamic>.from(e),
+                  ),
+                )
                 .toList()
           : const [],
     );
@@ -37,6 +55,10 @@ class FetchRestaurantProductDetailsModel {
 
 class RestaurantProductDetailsProduct {
   final int? id;
+  final int? restaurantId;
+  final int? categoryId;
+  final RestaurantProductDetailsRestaurant? restaurant;
+  final RestaurantProductDetailsCategory? category;
   final String? name;
   final String? description;
   final num? price;
@@ -45,11 +67,17 @@ class RestaurantProductDetailsProduct {
   final List<String> images;
   final bool? isFavorite;
   final int cartQuantity;
-  /// Public marketing URL from API (e.g. `/product/{id}`), preferred for share when present.
+
+  /// Public marketing URL from API (e.g. `/product/{id}`), preferred for
+  /// share when present.
   final String? shareUrl;
 
   RestaurantProductDetailsProduct({
     this.id,
+    this.restaurantId,
+    this.categoryId,
+    this.restaurant,
+    this.category,
     this.name,
     this.description,
     this.price,
@@ -64,17 +92,65 @@ class RestaurantProductDetailsProduct {
   factory RestaurantProductDetailsProduct.fromJson(Map<String, dynamic> json) {
     return RestaurantProductDetailsProduct(
       id: _pdInt(json['id']),
+      restaurantId: _pdInt(json['restaurantId'] ?? json['restaurant_id']),
+      categoryId: _pdInt(json['categoryId'] ?? json['category_id']),
+      restaurant: json['restaurant'] is Map
+          ? RestaurantProductDetailsRestaurant.fromJson(
+              Map<String, dynamic>.from(json['restaurant'] as Map),
+            )
+          : null,
+      category: json['category'] is Map
+          ? RestaurantProductDetailsCategory.fromJson(
+              Map<String, dynamic>.from(json['category'] as Map),
+            )
+          : null,
       name: _pdString(json['name']),
       description: _pdString(json['description']),
       price: _pdNum(json['price']),
       discountedPrice: _pdNum(json['discountedPrice']),
       primaryImage: _pdString(json['primaryImage']),
       isFavorite: _pdBool(json['isFavorite'] ?? json['is_favorite']),
-      cartQuantity: _pdInt(json['cartQuantity'] ?? json['cart_quantity']) ?? 0,
+      cartQuantity:
+          _pdInt(json['cartQuantity'] ?? json['cart_quantity']) ?? 0,
       shareUrl: _pdString(json['shareUrl'] ?? json['share_url']),
       images: json['images'] is List
-          ? (json['images'] as List).map((e) => _pdString(e)?.trim() ?? '').where((e) => e.isNotEmpty).toList()
+          ? (json['images'] as List)
+                .map((e) => _pdString(e)?.trim() ?? '')
+                .where((e) => e.isNotEmpty)
+                .toList()
           : const [],
+    );
+  }
+}
+
+class RestaurantProductDetailsRestaurant {
+  final int? id;
+  final String? name;
+
+  RestaurantProductDetailsRestaurant({this.id, this.name});
+
+  factory RestaurantProductDetailsRestaurant.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return RestaurantProductDetailsRestaurant(
+      id: _pdInt(json['id']),
+      name: _pdString(json['name']),
+    );
+  }
+}
+
+class RestaurantProductDetailsCategory {
+  final int? id;
+  final String? name;
+
+  RestaurantProductDetailsCategory({this.id, this.name});
+
+  factory RestaurantProductDetailsCategory.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return RestaurantProductDetailsCategory(
+      id: _pdInt(json['id']),
+      name: _pdString(json['name']),
     );
   }
 }
@@ -98,7 +174,9 @@ class RestaurantProductDetailsModifierGroup {
     this.modifiers = const [],
   });
 
-  factory RestaurantProductDetailsModifierGroup.fromJson(Map<String, dynamic> json) {
+  factory RestaurantProductDetailsModifierGroup.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return RestaurantProductDetailsModifierGroup(
       id: _pdInt(json['id']),
       restaurantId: _pdInt(json['restaurantId']),
@@ -107,7 +185,14 @@ class RestaurantProductDetailsModifierGroup {
       minSelections: _pdInt(json['minSelections']) ?? 0,
       maxSelections: _pdInt(json['maxSelections']) ?? 0,
       modifiers: json['modifiers'] is List
-          ? (json['modifiers'] as List).whereType<Map>().map((e) => RestaurantProductDetailsModifier.fromJson(Map<String, dynamic>.from(e))).toList()
+          ? (json['modifiers'] as List)
+                .whereType<Map>()
+                .map(
+                  (e) => RestaurantProductDetailsModifier.fromJson(
+                    Map<String, dynamic>.from(e),
+                  ),
+                )
+                .toList()
           : const [],
     );
   }
@@ -120,9 +205,17 @@ class RestaurantProductDetailsModifier {
   final num? price;
   final int? sortOrder;
 
-  RestaurantProductDetailsModifier({this.id, this.modifierGroupId, this.name, this.price, this.sortOrder});
+  RestaurantProductDetailsModifier({
+    this.id,
+    this.modifierGroupId,
+    this.name,
+    this.price,
+    this.sortOrder,
+  });
 
-  factory RestaurantProductDetailsModifier.fromJson(Map<String, dynamic> json) {
+  factory RestaurantProductDetailsModifier.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return RestaurantProductDetailsModifier(
       id: _pdInt(json['id']),
       modifierGroupId: _pdInt(json['modifierGroupId']),

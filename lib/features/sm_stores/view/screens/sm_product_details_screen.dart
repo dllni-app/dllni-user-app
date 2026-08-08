@@ -11,8 +11,12 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../rs_discover/view/widgets/product_details_sub_widgets.dart';
+import '../../../rs_discover/view/widgets/product_recommendations_section.dart';
+import '../../../sm_discover/data/models/browse_products_model.dart';
+import '../../../sm_discover/domain/usecases/browse_products_use_case.dart';
 import '../../../sm_discover/domain/usecases/change_product_favorite_use_case.dart';
 import '../../../sm_discover/view/manager/bloc/sm_discover_bloc.dart';
+import '../../data/models/get_compare_products_model.dart';
 import '../../data/models/get_supermarket_product_details_model.dart';
 import '../../domain/usecases/get_compare_products_use_case.dart';
 import '../manager/bloc/sm_stores_bloc.dart';
@@ -89,6 +93,12 @@ List<String> _smImageUrls(
 String _smStoresTrim(dynamic value) =>
     value == null ? '-' : value.toString().trim();
 
+num? _smRecommendationNum(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value;
+  return num.tryParse(value.toString().trim());
+}
+
 @AutoRoutePage(path: "/product")
 class SmProductDetailsScreen extends StatefulWidget {
   final SmProductDetailsScreenArgs args;
@@ -134,6 +144,9 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
   final List<String> _savedNotes = <String>[];
   int _currentImagePage = 0;
   int _quantity = 1;
+  bool _didRequestRecommendations = false;
+  List<ProductRecommendationItem> _sameStoreProducts = const [];
+  List<ProductRecommendationItem> _relatedProducts = const [];
 
   @override
   Widget build(BuildContext context) {
@@ -146,9 +159,11 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
         listener: (context, state) {
           if (state.productDetailsStatus == BlocStatus.success &&
               state.productDetails != null) {
+            final details = state.productDetails!;
             setState(() {
-              _favoriteLocal = state.productDetails!.isFavorite ?? false;
+              _favoriteLocal = details.isFavorite ?? false;
             });
+            _requestSupermarketRecommendations(details);
           }
           if (state.addToCartStatus == BlocStatus.success) {
             AppToast.showToast(
@@ -523,42 +538,6 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                       ),
                                     ),
                                   ],
-                                  // const SizedBox(height: 14),
-                                  // Row(
-                                  //   children: [
-                                  //     const SizedBox(width: 6),
-
-                                  //     // Container(
-                                  //     //   padding:
-                                  //     //       const EdgeInsetsDirectional.all(12),
-                                  //     //   decoration: BoxDecoration(
-                                  //     //     color: const Color(0xffF9FAFB),
-                                  //     //     borderRadius: BorderRadius.circular(
-                                  //     //       12,
-                                  //     //     ),
-                                  //     //   ),
-                                  //     //   child: Row(
-                                  //     //     children: [
-                                  //     //       FaIcon(
-                                  //     //         FontAwesomeIcons.fire,
-                                  //     //         size: 13,
-                                  //     //         color: context.primaryContainer,
-                                  //     //       ),
-                                  //     //       const SizedBox(width: 6),
-                                  //     //       AppText(
-                                  //     //         '450 مرة طلب',
-                                  //     //         style: const TextStyle(
-                                  //     //           color: Color(0xFF6B7280),
-                                  //     //           fontSize: 13,
-                                  //     //           fontWeight: FontWeight.w500,
-                                  //     //           height: 20 / 13,
-                                  //     //         ),
-                                  //     //       ),
-                                  //     //     ],
-                                  //     //   ),
-                                  //     // ),
-                                  //   ],
-                                  // ),
                                   const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment:
@@ -609,6 +588,22 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                   },
                                 ),
                               ),
+                            if (_sameStoreProducts.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              ProductRecommendationsSection(
+                                title: 'منتجات أخرى من نفس المتجر',
+                                items: _sameStoreProducts,
+                                onProductTap: _openSupermarketRecommendation,
+                              ),
+                            ],
+                            if (_relatedProducts.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              ProductRecommendationsSection(
+                                title: 'منتجات مشابهة',
+                                items: _relatedProducts,
+                                onProductTap: _openSupermarketRecommendation,
+                              ),
+                            ],
                             const SizedBox(height: 6),
                           ],
                         ),
@@ -660,6 +655,201 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
     super.initState();
     _favoriteLocal = widget.args.starter?.isFavorite ?? false;
     _bloc = getIt<SmDiscoverBloc>();
+  }
+
+  void _requestSupermarketRecommendations(
+    SupermarketProductDetailsProduct product,
+  ) {
+    if (_didRequestRecommendations) return;
+    final storeId = product.storeId ?? product.store?.id;
+    final storeName = product.store?.name?.trim().isNotEmpty == true
+        ? product.store!.name!.trim()
+        : (widget.args.starter?.storeName?.trim().isNotEmpty == true
+              ? widget.args.starter!.storeName!.trim()
+              : 'متجر');
+
+    _didRequestRecommendations = true;
+    if (storeId != null && storeId > 0) {
+      unawaited(
+        _loadSameStoreProducts(storeId: storeId, storeName: storeName),
+      );
+    }
+    unawaited(
+      _loadRelatedSupermarketProducts(
+        currentStoreId: storeId,
+        currentStoreName: storeName,
+      ),
+    );
+  }
+
+  Future<void> _loadSameStoreProducts({
+    required int storeId,
+    required String storeName,
+  }) async {
+    final response = await getIt<BrowseProductsUseCase>()(
+      BrowseProductsParams(storeId: storeId, page: 1),
+    );
+    if (!mounted) return;
+
+    response.fold((_) {}, (result) {
+      final seenIds = <int>{widget.args.productId};
+      final recommendations = <ProductRecommendationItem>[];
+      for (final product in result.data ?? <BrowseProductsModelDataItem>[]) {
+        final id = product.id;
+        if (id == null || id <= 0 || !seenIds.add(id)) continue;
+        recommendations.add(
+          _browseProductRecommendation(product, storeName),
+        );
+        if (recommendations.length >= 10) break;
+      }
+
+      final sameStoreIds = recommendations.map((item) => item.id).toSet();
+      setState(() {
+        _sameStoreProducts = recommendations;
+        if (sameStoreIds.isNotEmpty) {
+          _relatedProducts = _relatedProducts
+              .where((item) => !sameStoreIds.contains(item.id))
+              .toList();
+        }
+      });
+    });
+  }
+
+  Future<void> _loadRelatedSupermarketProducts({
+    required int? currentStoreId,
+    required String currentStoreName,
+  }) async {
+    final response = await getIt<GetCompareProductsUseCase>()(
+      GetCompareProductsParams(productId: widget.args.productId),
+    );
+    if (!mounted) return;
+
+    response.fold((_) {}, (result) {
+      final sameStoreIds = _sameStoreProducts.map((item) => item.id).toSet();
+      final seenIds = <int>{widget.args.productId, ...sameStoreIds};
+      final recommendations = <ProductRecommendationItem>[];
+
+      for (final product
+          in result.data ?? <GetCompareProductsModelDataItem>[]) {
+        final id = product.id;
+        if (id == null || id <= 0 || !seenIds.add(id)) continue;
+        recommendations.add(
+          _compareProductRecommendation(
+            product,
+            currentStoreId: currentStoreId,
+            currentStoreName: currentStoreName,
+          ),
+        );
+        if (recommendations.length >= 10) break;
+      }
+
+      setState(() {
+        _relatedProducts = recommendations;
+      });
+    });
+  }
+
+  ProductRecommendationItem _browseProductRecommendation(
+    BrowseProductsModelDataItem product,
+    String fallbackStoreName,
+  ) {
+    final discountedPrice = _smRecommendationNum(product.discountedPrice);
+    final price = _smRecommendationNum(product.price);
+    final merchantName = product.store?.name?.trim().isNotEmpty == true
+        ? product.store!.name!.trim()
+        : fallbackStoreName;
+
+    return ProductRecommendationItem(
+      id: product.id ?? 0,
+      name: product.name?.trim() ?? '',
+      merchantName: merchantName,
+      imageUrl: _browseProductImage(product),
+      description: product.description?.toString(),
+      displayPrice: discountedPrice ?? price,
+      originalPrice: discountedPrice != null ? price : null,
+      currency: 'ل.س',
+      isFavorited: product.isFavorite ?? false,
+      masterProductId: product.masterProductId,
+    );
+  }
+
+  ProductRecommendationItem _compareProductRecommendation(
+    GetCompareProductsModelDataItem product, {
+    required int? currentStoreId,
+    required String currentStoreName,
+  }) {
+    final finalPrice = _smRecommendationNum(product.finalPrice);
+    final discountedPrice = _smRecommendationNum(product.discountedPrice);
+    final price = _smRecommendationNum(product.price);
+    final originalPrice = product.hasDiscount == true
+        ? _smRecommendationNum(product.originalPrice) ?? price
+        : null;
+    final isSameStore =
+        currentStoreId != null && product.storeId == currentStoreId;
+
+    return ProductRecommendationItem(
+      id: product.id ?? 0,
+      name: product.name?.trim() ?? '',
+      merchantName: isSameStore ? currentStoreName : 'متجر آخر',
+      imageUrl: _compareProductImage(product),
+      description: product.description?.toString(),
+      displayPrice: finalPrice ?? discountedPrice ?? price,
+      originalPrice: originalPrice,
+      currency: 'ل.س',
+      isFavorited: product.isFavorite ?? false,
+      masterProductId: product.masterProductId,
+    );
+  }
+
+  String? _browseProductImage(BrowseProductsModelDataItem product) {
+    final candidates = <String?>[
+      product.imageUrl,
+      product.image?.url,
+      product.image?.thumbnailUrl,
+      ...?product.imageUrls,
+      ...?product.images?.map((image) => image.url),
+    ];
+    for (final candidate in candidates) {
+      final value = candidate?.trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  String? _compareProductImage(GetCompareProductsModelDataItem product) {
+    final candidates = <String?>[
+      product.primaryImage,
+      product.imageUrl,
+      product.image?.url,
+      product.image?.thumbnailUrl,
+      ...?product.imageUrls,
+      ...?product.images?.map((image) => image.url),
+    ];
+    for (final candidate in candidates) {
+      final value = candidate?.trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  void _openSupermarketRecommendation(ProductRecommendationItem item) {
+    context.pushRoute(
+      '/product',
+      arguments: SmProductDetailsScreenArgs(
+        productId: item.id,
+        starter: SmStarterProductDetailsData(
+          masterId: item.masterProductId,
+          name: item.name,
+          storeName: item.merchantName,
+          imageUrl: item.imageUrl,
+          price: (item.originalPrice ?? item.displayPrice)?.toString(),
+          discountedPrice: item.originalPrice != null
+              ? item.displayPrice?.toString()
+              : null,
+          isFavorite: item.isFavorited,
+        ),
+      ),
+    );
   }
 
   void _openCompareDialog(BuildContext context) {
