@@ -234,7 +234,7 @@ class MerchantOrderSummaryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _MerchantAvatar(
-                    imageUrl: order.merchant?.primaryImageUrl,
+                    imageUrl: null,
                     isRestaurant: _isRestaurant,
                   ),
                   const SizedBox(width: 10),
