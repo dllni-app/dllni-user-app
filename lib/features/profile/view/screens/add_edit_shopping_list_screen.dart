@@ -187,7 +187,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
                           hintText: 'ضع اسماً للقائمة: المنزل - العمل ...',
                         ),
                         const SizedBox(height: 16),
-                        const AppText(
+                        AppText(
                           'أيقونة القائمة',
                           textAlign: TextAlign.start,
                           style: TextStyle(
@@ -317,7 +317,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
         ),
         const SizedBox(height: 12),
         if (products.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: AppText('لا يوجد منتجات'),
           )
@@ -432,7 +432,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const AppText(
+        AppText(
           'أيام الشهر',
           textAlign: TextAlign.start,
           style: TextStyle(fontWeight: FontWeight.w700),
