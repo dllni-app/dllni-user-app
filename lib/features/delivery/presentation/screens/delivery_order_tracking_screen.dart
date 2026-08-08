@@ -204,12 +204,13 @@ class _DeliveryOrderTrackingScreenState
                                 distanceKm: order.distanceKm,
                               ),
                             ],
-                            if (!_isTerminalDeliveryStatus(order)) ...[
+                            if (order.id != null &&
+                                !_isTerminalDeliveryStatus(order)) ...[
                               const SizedBox(height: 14),
                               OutlinedButton.icon(
                                 onPressed: () => RestaurantOrderSosSheet.show(
                                   context,
-                                  orderId: order.id,
+                                  orderId: order.id!,
                                   bookingType: 'delivery_order',
                                 ),
                                 style: OutlinedButton.styleFrom(
