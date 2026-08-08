@@ -5,7 +5,6 @@ import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_u
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:toastification/toastification.dart';
 
 import '../../../../generated/assets.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
@@ -23,12 +22,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final ProfileBloc profileBloc;
-
-  List<String> shoppingTitles = ['مطاعم', 'سوبر ماركت'];
-  List<String> shoppingImages = [
-    Assets.images.restaurantServiceIcon.path,
-    Assets.images.storeServiceIcon.path,
-  ];
 
   List<String> servicesTitles = ['تنظيف'];
   List<String> servicesScreens = ['/clmain'];
@@ -159,90 +152,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      SizedBox(
-                        height: 20,
-                        child: VerticalDivider(
-                          color: context.primaryContainer,
-                          thickness: 4,
-                          radius: BorderRadius.circular(9999),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      AppText.titleMedium(
-                        'التسوق',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xff212C7E),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: shoppingTitles.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: .8,
-                    ),
-                    itemBuilder: (context, index) => Semantics(
-                      button: true,
-                      enabled: false,
-                      label: '${shoppingTitles[index]} - متوفر قريبا',
-                      child: InkWell(
-                        splashColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                        onTap: _showComingSoonToast,
-                        child: Opacity(
-                          opacity: 0.45,
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xffE5E7EB),
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                padding: EdgeInsetsDirectional.all(15),
-                                child: AppImage.asset(
-                                  shoppingImages[index],
-                                  color: const Color(0xff6B7280),
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              AppText.labelLarge(
-                                shoppingTitles[index],
-                                color: const Color(0xff9CA3AF),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  SizedBox(height: 24),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  void _showComingSoonToast() {
-    AppToast.showToast(
-      context: context,
-      message: 'متوفر قريبا',
-      type: ToastificationType.info,
     );
   }
 
