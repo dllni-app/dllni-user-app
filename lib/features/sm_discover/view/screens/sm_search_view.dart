@@ -183,10 +183,16 @@ class _SmSearchViewState extends State<SmSearchView> {
                               failedWidget: Center(
                                 child: FailureWidget(
                                   message: state.errorMessage.toString(),
-                                  onRetry: () {},
+                                  onRetry: () => makeSearch(
+                                    context,
+                                    searchController.text.trim(),
+                                  ),
                                 ),
                               ),
-                              onTapRetry: () {},
+                              onTapRetry: () => makeSearch(
+                                context,
+                                searchController.text.trim(),
+                              ),
                             );
                           },
                         )
@@ -247,10 +253,16 @@ class _SmSearchViewState extends State<SmSearchView> {
                               failedWidget: Center(
                                 child: FailureWidget(
                                   message: state.errorMessage.toString(),
-                                  onRetry: () {},
+                                  onRetry: () => makeSearch(
+                                    context,
+                                    searchController.text.trim(),
+                                  ),
                                 ),
                               ),
-                              onTapRetry: () {},
+                              onTapRetry: () => makeSearch(
+                                context,
+                                searchController.text.trim(),
+                              ),
                             );
                           },
                         ),
