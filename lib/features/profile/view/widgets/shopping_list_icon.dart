@@ -6,7 +6,7 @@ const String defaultShoppingListIconKey = 'bag';
 
 class ShoppingListIconOption {
   final String key;
-  final IconData icon;
+  final FaIconData icon;
 
   const ShoppingListIconOption({required this.key, required this.icon});
 }
