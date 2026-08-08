@@ -7,12 +7,15 @@ import '../../../../core/themes/app_colors.dart';
 class SearchesGroup extends StatelessWidget {
   final List<String> searches;
   final String title;
+  final String emptyText;
   final void Function(String search) onSearchTap;
   final void Function()? onDeleteAllTap;
+
   const SearchesGroup({
     super.key,
     required this.searches,
     required this.title,
+    this.emptyText = 'لا يوجد سجل للبحث',
     this.onDeleteAllTap,
     required this.onSearchTap,
   });
@@ -29,7 +32,7 @@ class SearchesGroup extends StatelessWidget {
             children: [
               AppText(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black,
                   fontSize: 14,
                   height: 16 / 14,
@@ -38,9 +41,9 @@ class SearchesGroup extends StatelessWidget {
               if (onDeleteAllTap != null)
                 InkWell(
                   onTap: onDeleteAllTap,
-                  borderRadius: BorderRadius.all(Radius.circular(4)),
-                  child: AppText(
-                    " مسح الكل ",
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  child: const AppText(
+                    ' مسح الكل ',
                     style: TextStyle(
                       color: AppColors.accent,
                       fontSize: 10,
@@ -51,9 +54,9 @@ class SearchesGroup extends StatelessWidget {
                 ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           if (searches.isEmpty)
-            AppText.labelMedium("لا يوجد سجل للبحث")
+            AppText.labelMedium(emptyText)
           else
             Wrap(
               spacing: 8,
@@ -62,9 +65,7 @@ class SearchesGroup extends StatelessWidget {
                   .map<_SearchChip>(
                     (search) => _SearchChip(
                       label: search,
-                      onTap: () {
-                        onSearchTap(search);
-                      },
+                      onTap: () => onSearchTap(search),
                     ),
                   )
                   .toList(),
@@ -78,31 +79,32 @@ class SearchesGroup extends StatelessWidget {
 class _SearchChip extends StatelessWidget {
   final void Function()? onTap;
   final String label;
+
   const _SearchChip({this.onTap, required this.label});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.all(Radius.circular(22)),
+      borderRadius: const BorderRadius.all(Radius.circular(22)),
       child: Container(
-        padding: EdgeInsets.fromLTRB(12, 4, 8, 5),
-        decoration: BoxDecoration(
+        padding: const EdgeInsets.fromLTRB(12, 4, 8, 5),
+        decoration: const BoxDecoration(
           color: Color(0xFFDADCEA),
           borderRadius: BorderRadius.all(Radius.circular(22)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(
+            const FaIcon(
               FontAwesomeIcons.magnifyingGlass,
               size: 12,
               color: AppColors.primary,
             ),
-            SizedBox(width: 4),
+            const SizedBox(width: 4),
             AppText(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.primary,
                 fontSize: 10,
                 fontWeight: FontWeight.w300,

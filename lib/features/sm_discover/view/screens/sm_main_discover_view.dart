@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -17,6 +16,7 @@ import '../widgets/store_card.dart';
 class SmMainDiscoverView extends StatefulWidget {
   final void Function(SearchType type) onTypeSelected;
   final bool expandSearch;
+
   const SmMainDiscoverView({
     super.key,
     required this.onTypeSelected,
@@ -30,6 +30,7 @@ class SmMainDiscoverView extends StatefulWidget {
 class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
   String _selectedSort = 'nearestBy';
   final List<String> _sortOptions = ['nearestBy', 'alphabet'];
+
   @override
   void initState() {
     context.read<SmDiscoverBloc>().add(
@@ -46,27 +47,11 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
     return Column(
       children: [
         AppSimpleAppBarWithSearch(
-          title: "تصفح",
+          title: 'تصفح',
           onTypeSelected: widget.onTypeSelected,
           isSearchExpand: widget.expandSearch,
         ),
-        if (kDebugMode) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/sm_autocomplete_demo');
-                },
-                child: const Text('تجربة Autocomplete'),
-              ),
-            ),
-          ),
-        ],
-        SizedBox(height: 16),
-        // DiscoverTabBar(items: discoverTabs, onChanged: (index) {}),
-        // SizedBox(height: 24),
+        const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
@@ -77,9 +62,9 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                 builder: (context, state) {
                   return Expanded(
                     child: AppText(
-                      "${state.browseStores?.total ?? 0} متجر متاح",
+                      '${state.browseStores?.total ?? 0} متجر متاح',
                       textAlign: TextAlign.start,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -107,13 +92,13 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                           (option) => PopupMenuItem<String>(
                             value: option,
                             child: AppText(
-                              option == "alphabet"
-                                  ? "الترتيب الأبجدي"
-                                  : "الأقرب إلي",
+                              option == 'alphabet'
+                                  ? 'الترتيب الأبجدي'
+                                  : 'الأقرب إلي',
                               style: TextStyle(
                                 color: _selectedSort == option
                                     ? AppColors.primary
-                                    : Color(0xFF6B7280),
+                                    : const Color(0xFF6B7280),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -126,16 +111,16 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                       child: Row(
                         children: [
                           AppText(
-                            "ترتيب حسب: ${_selectedSort == "alphabet" ? "الترتيب الأبجدي" : "الأقرب إلي"}",
-                            style: TextStyle(
+                            'ترتيب حسب: ${_selectedSort == 'alphabet' ? 'الترتيب الأبجدي' : 'الأقرب إلي'}',
+                            style: const TextStyle(
                               color: AppColors.primary,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               height: 20 / 14,
                             ),
                           ),
-                          SizedBox(width: 4),
-                          FaIcon(
+                          const SizedBox(width: 4),
+                          const FaIcon(
                             FontAwesomeIcons.angleDown,
                             size: 12,
                             color: AppColors.primary,
@@ -149,7 +134,7 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
             ],
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Expanded(
           child: BlocBuilder<SmDiscoverBloc, SmDiscoverState>(
             buildWhen: (previous, current) =>
@@ -172,13 +157,14 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                 ),
                 successWidget: () {
                   return GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 16,
-                      mainAxisExtent: 180,
-                    ),
-                    padding: EdgeInsetsDirectional.all(20),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 16,
+                          mainAxisExtent: 180,
+                        ),
+                    padding: const EdgeInsetsDirectional.all(20),
                     itemBuilder: (context, index) {
                       if (state.browseStores!.length <= index) {
                         if (state.browseStores!.length == index) {
@@ -191,11 +177,10 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                             ),
                           );
                         }
-                        return DownloadMore();
+                        return const DownloadMore();
                       }
                       return StoreCard(store: state.browseStores![index]);
                     },
-                    // separatorBuilder: (context, index) => SizedBox(height: 16),
                     itemCount: state.browseStores!.listLength(1),
                   );
                 },
@@ -228,10 +213,3 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
     );
   }
 }
-
-// ListView.separated(
-//             padding: EdgeInsets.all(20),
-//             itemBuilder: (_, index) => StoreCard(store: stores[index]),
-//             separatorBuilder: (_, _) => SizedBox(height: 16),
-//             itemCount: stores.length,
-//           )
