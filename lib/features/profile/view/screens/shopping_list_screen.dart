@@ -219,10 +219,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     color: Color(0xFFFF7A00),
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
-                  child: const AppText(
+                  child: AppText(
                     'إضافة قائمة تسوق جديدة',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color(0xFFFFEEFF),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
