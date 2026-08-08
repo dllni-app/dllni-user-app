@@ -42,7 +42,7 @@ class SearchesGroup extends StatelessWidget {
                 InkWell(
                   onTap: onDeleteAllTap,
                   borderRadius: const BorderRadius.all(Radius.circular(4)),
-                  child: const AppText(
+                  child: AppText(
                     ' مسح الكل ',
                     style: TextStyle(
                       color: AppColors.accent,
