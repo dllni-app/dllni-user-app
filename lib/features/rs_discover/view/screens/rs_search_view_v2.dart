@@ -49,7 +49,11 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
         SharedPreferencesHelper.sharedPreferences!.getStringList(_historyKey) ??
         <String>[];
     _popularSearchesFuture = getIt<RsDiscoverRemoteDataSource>()
-        .fetchPopularSearches();
+        .fetchPopularSearches(
+          widget.type == SearchType.product
+              ? PopularSearchFilter.products
+              : PopularSearchFilter.merchants,
+        );
 
     final initial = widget.initialSearch?.trim();
     if (initial != null && initial.isNotEmpty) {
