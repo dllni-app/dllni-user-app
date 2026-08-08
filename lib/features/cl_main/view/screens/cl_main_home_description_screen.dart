@@ -2,8 +2,6 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../profile/domain/models/address_list_item.dart';
@@ -43,8 +41,6 @@ class _ClMainHomeDescriptionScreenState
   AddressListItem? _defaultAddress;
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
-  double? _lastLatitude;
-  double? _lastLongitude;
   bool _isLoadingOverlayVisible = false;
 
   @override
@@ -373,7 +369,7 @@ class _ClMainHomeDescriptionScreenState
     Loading.close();
   }
 
-  Future<void> _onContinuePressed(ClMainBloc bloc, ClMainState state) async {
+  void _onContinuePressed(ClMainBloc bloc, ClMainState state) {
     if (!_roomSizeBreakdown.hasAnyRoom) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -383,58 +379,7 @@ class _ClMainHomeDescriptionScreenState
       return;
     }
 
-    _showLoadingOverlay();
-
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (!mounted) {
-      _closeLoadingOverlay();
-      return;
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      _closeLoadingOverlay();
-      await _showLocationPermissionSettingsDialog();
-      return;
-    }
-    if (permission == LocationPermission.denied) {
-      _closeLoadingOverlay();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى منح إذن الوصول إلى الموقع للمتابعة'),
-        ),
-      );
-      return;
-    }
-
-    final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!isServiceEnabled) {
-      _closeLoadingOverlay();
-      await _showLocationServiceSettingsDialog();
-      return;
-    }
-
-    Position position;
-    try {
-      position = await Geolocator.getCurrentPosition();
-    } catch (_) {
-      _closeLoadingOverlay();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر الحصول على الموقع الحالي')),
-      );
-      return;
-    }
-    if (!mounted) {
-      _closeLoadingOverlay();
-      return;
-    }
-
-    _lastLatitude = position.latitude;
-    _lastLongitude = position.longitude;
-
+    final address = _defaultAddress;
     final roomUnits = enumerateRoomUnits(_roomSizeBreakdown);
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
       slotByRoomKey: state.workerRoomAssignments,
@@ -454,9 +399,9 @@ class _ClMainHomeDescriptionScreenState
           livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
           roomSizeBreakdown: _roomSizeBreakdown,
           cleaningType: _selectedCleaningType,
-          addressId: int.tryParse(_defaultAddress?.id ?? ''),
-          addressLatitude: position.latitude,
-          addressLongitude: position.longitude,
+          addressId: int.tryParse(address?.id ?? ''),
+          addressLatitude: address?.latitude,
+          addressLongitude: address?.longitude,
           assignmentMode: state.assignmentMode,
           numberOfWorkers:
               state.assignmentMode == CleaningAssignmentMode.openCount
@@ -487,8 +432,8 @@ class _ClMainHomeDescriptionScreenState
             bathrooms: _roomSizeBreakdown.legacyBathroomsCount,
             livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
             roomSizeBreakdown: _roomSizeBreakdown,
-            addressLatitude: _lastLatitude ?? _defaultAddress?.latitude ?? 0,
-            addressLongitude: _lastLongitude ?? _defaultAddress?.longitude ?? 0,
+            addressLatitude: _defaultAddress?.latitude ?? 0,
+            addressLongitude: _defaultAddress?.longitude ?? 0,
             estimate: estimate,
             cleaningType: _selectedCleaningType,
             bloc: bloc,
@@ -503,55 +448,5 @@ class _ClMainHomeDescriptionScreenState
     if (_isLoadingOverlayVisible || !mounted) return;
     _isLoadingOverlayVisible = true;
     Loading.show(context);
-  }
-
-  Future<void> _showLocationPermissionSettingsDialog() async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('إذن الموقع مطلوب'),
-        content: const Text(
-          'يرجى منح التطبيق إذن الوصول إلى الموقع من إعدادات التطبيق.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await openAppSettings();
-            },
-            child: const Text('فتح الإعدادات'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showLocationServiceSettingsDialog() async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('خدمة الموقع غير مفعّلة'),
-        content: const Text(
-          'يرجى تفعيل الموقع (GPS) من إعدادات الجهاز ثم الضغط على متابعة مرة أخرى.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await Geolocator.openLocationSettings();
-            },
-            child: const Text('فتح إعدادات الموقع'),
-          ),
-        ],
-      ),
-    );
   }
 }
