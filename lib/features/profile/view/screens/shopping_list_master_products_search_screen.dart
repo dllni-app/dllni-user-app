@@ -13,8 +13,13 @@ import '../../domain/usecases/search_master_products_for_shopping_list_use_case.
 class ShoppingListMasterProductOption {
   final int id;
   final String name;
+  final String? imageUrl;
 
-  const ShoppingListMasterProductOption({required this.id, required this.name});
+  const ShoppingListMasterProductOption({
+    required this.id,
+    required this.name,
+    this.imageUrl,
+  });
 }
 
 class ShoppingListMasterProductsSearchScreen extends StatefulWidget {
@@ -284,14 +289,13 @@ class _ShoppingListMasterProductsSearchScreenState
         });
       },
       (result) {
-        // The backend endpoint is explicitly the master-products picker source.
-        // Keep only valid master-product ids before they can be selected.
         final mapped = result.data
             .where((e) => e.id > 0 && e.name.trim().isNotEmpty)
             .map(
               (e) => ShoppingListMasterProductOption(
                 id: e.id,
                 name: e.name.trim(),
+                imageUrl: e.primaryImageUrl,
               ),
             )
             .toList();
@@ -306,6 +310,12 @@ class _ShoppingListMasterProductsSearchScreenState
             final existingIds = _results.map((e) => e.id).toSet();
             _results.addAll(mapped.where((e) => !existingIds.contains(e.id)));
           }
+
+          for (final item in mapped) {
+            if (!_selectedById.containsKey(item.id)) continue;
+            _selectedById[item.id] = item;
+          }
+
           _page = current;
           _hasMore = current < last;
           _isLoading = false;
@@ -365,6 +375,8 @@ class _ShoppingListMasterProductsSearchScreenState
                               ),
                               child: Row(
                                 children: [
+                                  _ProductImage(imageUrl: item.imageUrl, size: 46),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: AppText.bodyMedium(
                                       item.name,
@@ -437,38 +449,61 @@ class _MasterProductCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
+              _ProductImage(imageUrl: item.imageUrl),
+              const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText.bodyMedium(
-                      item.name,
-                      textAlign: TextAlign.start,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    const SizedBox(height: 5),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: AppText.bodySmall(
-                        'منتج رئيسي',
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                child: AppText.bodyMedium(
+                  item.name,
+                  textAlign: TextAlign.start,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               Checkbox(value: selected, onChanged: (_) => onTap()),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  final String? imageUrl;
+  final double size;
+
+  const _ProductImage({this.imageUrl, this.size = 58});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim();
+    final placeholder = Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: const Icon(
+        Icons.storefront_rounded,
+        color: Color(0xFF94A3B8),
+        size: 26,
+      ),
+    );
+
+    if (url == null || url.isEmpty) return placeholder;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: AppImage.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(10),
+        errorWidget: placeholder,
       ),
     );
   }
