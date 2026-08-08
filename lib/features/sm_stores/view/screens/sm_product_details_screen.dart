@@ -26,6 +26,18 @@ String _smDescriptionText(SupermarketProductDetailsProduct? product) {
   return d.toString().trim();
 }
 
+String _smExpiryDateText(dynamic value) {
+  final raw = value?.toString().trim() ?? '';
+  if (raw.isEmpty) return '';
+
+  final parsed = DateTime.tryParse(raw);
+  if (parsed == null) return raw;
+
+  final day = parsed.day.toString().padLeft(2, '0');
+  final month = parsed.month.toString().padLeft(2, '0');
+  return '$day/$month/${parsed.year}';
+}
+
 List<String> _smImageUrls(
   SupermarketProductDetailsProduct? product,
   SmStarterProductDetailsData? starter,
@@ -87,7 +99,7 @@ List<String> _smImageUrls(
 }
 
 String _smStoresTrim(dynamic value) =>
-    value == null ? '-' : value.toString().trim();
+    value == null ? '' : value.toString().trim();
 
 @AutoRoutePage(path: "/product")
 class SmProductDetailsScreen extends StatefulWidget {
@@ -196,6 +208,77 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
               : 'متجر';
 
           final description = _smDescriptionText(product);
+          final categoryName = product?.category?.name?.trim() ?? '';
+          final barcode = product?.barcode?.trim() ?? '';
+          final expiryDate = _smExpiryDateText(product?.expiresAt);
+          final storeAddress = product?.store?.address?.trim() ?? '';
+          final ratingText =
+              product?.store?.averageRating?.trim().isNotEmpty == true
+              ? product!.store!.averageRating!.trim()
+              : '0.0';
+          final stockQuantity = product?.stockQuantity;
+          final lowStockThreshold = product?.lowStockThreshold;
+          final isUnavailable =
+              product != null &&
+              (product.isAvailable == false || stockQuantity == 0);
+          final isLowStock =
+              !isUnavailable &&
+              stockQuantity != null &&
+              lowStockThreshold != null &&
+              stockQuantity > 0 &&
+              stockQuantity <= lowStockThreshold;
+          final availabilityText = product == null
+              ? ''
+              : isUnavailable
+              ? 'غير متوفر حالياً'
+              : isLowStock
+              ? 'متبقي $stockQuantity فقط'
+              : 'متوفر';
+          final availabilityColor = isUnavailable
+              ? const Color(0xFFDC2626)
+              : isLowStock
+              ? const Color(0xFFF59E0B)
+              : const Color(0xFF16A34A);
+
+          final detailRows = <Widget>[
+            if (categoryName.isNotEmpty)
+              _SmProductDetailRow(
+                icon: Icons.category_outlined,
+                label: 'الفئة',
+                value: categoryName,
+              ),
+            if (availabilityText.isNotEmpty)
+              _SmProductDetailRow(
+                icon: Icons.inventory_2_outlined,
+                label: 'الحالة',
+                value: availabilityText,
+                valueColor: availabilityColor,
+              ),
+            if (stockQuantity != null && stockQuantity > 0)
+              _SmProductDetailRow(
+                icon: Icons.inventory_outlined,
+                label: 'المخزون',
+                value: '$stockQuantity قطعة',
+              ),
+            if (barcode.isNotEmpty)
+              _SmProductDetailRow(
+                icon: Icons.qr_code_2,
+                label: 'الباركود',
+                value: barcode,
+              ),
+            if (expiryDate.isNotEmpty)
+              _SmProductDetailRow(
+                icon: Icons.event_outlined,
+                label: 'تاريخ الانتهاء',
+                value: expiryDate,
+              ),
+            if (storeAddress.isNotEmpty)
+              _SmProductDetailRow(
+                icon: Icons.location_on_outlined,
+                label: 'عنوان المتجر',
+                value: storeAddress,
+              ),
+          ];
 
           return PopScope(
             canPop: false,
@@ -364,8 +447,8 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                       bottom: 20,
                                       right: 16,
                                       child: const ProductBadge(
-                                        title: 'الأكثر طلباً',
-                                        color: Color(0xFF22C55E),
+                                        title: 'عرض متاح',
+                                        color: Color(0xFFFF7A00),
                                       ),
                                     ),
                                   if (imageUrls.length > 1)
@@ -465,15 +548,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                             ),
                                             const SizedBox(width: 6),
                                             AppText(
-                                              product?.store?.averageRating
-                                                          ?.trim()
-                                                          .isNotEmpty ==
-                                                      true
-                                                  ? product!
-                                                        .store!
-                                                        .averageRating!
-                                                        .trim()
-                                                  : '4.9',
+                                              ratingText,
                                               style: const TextStyle(
                                                 color: Color(0xFF374151),
                                                 fontSize: 14,
@@ -523,42 +598,6 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                       ),
                                     ),
                                   ],
-                                  // const SizedBox(height: 14),
-                                  // Row(
-                                  //   children: [
-                                  //     const SizedBox(width: 6),
-
-                                  //     // Container(
-                                  //     //   padding:
-                                  //     //       const EdgeInsetsDirectional.all(12),
-                                  //     //   decoration: BoxDecoration(
-                                  //     //     color: const Color(0xffF9FAFB),
-                                  //     //     borderRadius: BorderRadius.circular(
-                                  //     //       12,
-                                  //     //     ),
-                                  //     //   ),
-                                  //     //   child: Row(
-                                  //     //     children: [
-                                  //     //       FaIcon(
-                                  //     //         FontAwesomeIcons.fire,
-                                  //     //         size: 13,
-                                  //     //         color: context.primaryContainer,
-                                  //     //       ),
-                                  //     //       const SizedBox(width: 6),
-                                  //     //       AppText(
-                                  //     //         '450 مرة طلب',
-                                  //     //         style: const TextStyle(
-                                  //     //           color: Color(0xFF6B7280),
-                                  //     //           fontSize: 13,
-                                  //     //           fontWeight: FontWeight.w500,
-                                  //     //           height: 20 / 13,
-                                  //     //         ),
-                                  //     //       ),
-                                  //     //     ],
-                                  //     //   ),
-                                  //     // ),
-                                  //   ],
-                                  // ),
                                   const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment:
@@ -593,6 +632,69 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                 ],
                               ),
                             ),
+                            if (detailRows.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: context.onPrimary,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFFE5E7EB),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 34,
+                                            height: 34,
+                                            alignment: Alignment.center,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFF7ED),
+                                              borderRadius: BorderRadius.circular(
+                                                10,
+                                              ),
+                                            ),
+                                            child: const Icon(
+                                              Icons.info_outline,
+                                              size: 19,
+                                              color: Color(0xFFFF7A00),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          const AppText(
+                                            'تفاصيل المنتج',
+                                            style: TextStyle(
+                                              color: Color(0xFF111827),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              height: 22 / 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      for (
+                                        var i = 0;
+                                        i < detailRows.length;
+                                        i++
+                                      ) ...[
+                                        detailRows[i],
+                                        if (i != detailRows.length - 1)
+                                          const Divider(
+                                            height: 1,
+                                            color: Color(0xFFF3F4F6),
+                                          ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
                             if (failedProduct &&
                                 product == null &&
                                 starter != null)
@@ -715,5 +817,69 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
       _savedNotes.add(note);
       _notesController.clear();
     });
+  }
+}
+
+class _SmProductDetailRow extends StatelessWidget {
+  const _SmProductDetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 18, color: const Color(0xFF6B7280)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 18 / 12,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                AppText(
+                  value,
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    color: valueColor ?? const Color(0xFF374151),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    height: 20 / 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
