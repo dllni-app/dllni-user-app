@@ -24,6 +24,14 @@ import '../widgets/filled_text_field.dart';
 import '../widgets/numbered_section_card.dart';
 import '../widgets/personal_details_app_bar.dart';
 
+const LatLng _aleppoCenter = LatLng(36.19934, 37.15822);
+final LatLngBounds _aleppoBounds = LatLngBounds(
+  const LatLng(36.10, 37.03),
+  const LatLng(36.31, 37.31),
+);
+
+bool _isInsideAleppo(LatLng point) => _aleppoBounds.contains(point);
+
 Future<List<String>> getNeighborhoods([String city = 'حلب']) async {
   final dioNetwork = getIt<DioNetwork>();
   final response = await dioNetwork.getData(
@@ -699,13 +707,25 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   }
 
   bool _validateLocationBeforeSubmit() {
-    if (_hasSelectedLocation) return true;
-    AppToast.showToast(
-      context: context,
-      message: 'يرجى تحديد العنوان على الخريطة أولًا',
-      type: ToastificationType.error,
-    );
-    return false;
+    if (!_hasSelectedLocation) {
+      AppToast.showToast(
+        context: context,
+        message: 'يرجى تحديد العنوان على الخريطة أولًا',
+        type: ToastificationType.error,
+      );
+      return false;
+    }
+
+    if (!_isInsideAleppo(LatLng(_latitude!, _longitude!))) {
+      AppToast.showToast(
+        context: context,
+        message: 'عذراً، الموقع المحدد خارج مدينة حلب',
+        type: ToastificationType.error,
+      );
+      return false;
+    }
+
+    return true;
   }
 }
 
@@ -724,8 +744,6 @@ class _AddressMapPickerScreen extends StatefulWidget {
 }
 
 class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
-  static const LatLng _defaultCenter = LatLng(33.5138, 36.2765);
-
   LatLng? _selected;
   bool _isResolvingInitialLocation = false;
 
@@ -746,8 +764,19 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
                 : FlutterMap(
                     options: MapOptions(
                       initialCenter: selected,
-                      initialZoom: 17,
+                      initialZoom: 15,
+                      cameraConstraint: CameraConstraint.containCenter(
+                        bounds: _aleppoBounds,
+                      ),
                       onTap: (_, point) {
+                        if (!_isInsideAleppo(point)) {
+                          AppToast.showToast(
+                            context: context,
+                            message: 'عذراً، يرجى اختيار موقع ضمن مدينة حلب',
+                            type: ToastificationType.warning,
+                          );
+                          return;
+                        }
                         setState(() => _selected = point);
                       },
                     ),
@@ -815,7 +844,13 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
   void initState() {
     super.initState();
     if (_hasInitialCoordinates) {
-      _selected = LatLng(widget.initialLatitude!, widget.initialLongitude!);
+      final initialLocation = LatLng(
+        widget.initialLatitude!,
+        widget.initialLongitude!,
+      );
+      _selected = _isInsideAleppo(initialLocation)
+          ? initialLocation
+          : _aleppoCenter;
       return;
     }
     _isResolvingInitialLocation = true;
@@ -826,13 +861,16 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
     final location = await getIt<UserLocationService>().getCurrentPosition();
     if (!mounted) return;
 
+    final currentLocation =
+        location.latitude != null && location.longitude != null
+        ? LatLng(location.latitude!, location.longitude!)
+        : null;
+
     setState(() {
       _isResolvingInitialLocation = false;
-      if (location.latitude != null && location.longitude != null) {
-        _selected = LatLng(location.latitude!, location.longitude!);
-      } else {
-        _selected = _defaultCenter;
-      }
+      _selected = currentLocation != null && _isInsideAleppo(currentLocation)
+          ? currentLocation
+          : _aleppoCenter;
     });
   }
 }
