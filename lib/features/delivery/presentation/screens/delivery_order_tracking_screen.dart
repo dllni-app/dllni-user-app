@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/delivery/presentation/cubit/delivery_tracking_cubit.dart';
+import 'package:dllni_user_app/features/orders/view/widgets/restaurant_order_sos_sheet.dart';
 import 'package:dllni_user_app/features/profile/view/widgets/personal_details_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -57,6 +58,7 @@ class _DeliveryOrderTrackingScreenState
     final status = (order?.status ?? order?.tracking?.currentStatus ?? '')
         .toLowerCase();
     return order?.isTerminal == true ||
+        status == 'delivered' ||
         status == 'completed' ||
         status == 'stopped' ||
         status == 'cancelled' ||
@@ -200,6 +202,26 @@ class _DeliveryOrderTrackingScreenState
                                 fee: order.deliveryFee!,
                                 currency: order.currency ?? 'SYP',
                                 distanceKm: order.distanceKm,
+                              ),
+                            ],
+                            if (!_isTerminalDeliveryStatus(order)) ...[
+                              const SizedBox(height: 14),
+                              OutlinedButton.icon(
+                                onPressed: () => RestaurantOrderSosSheet.show(
+                                  context,
+                                  orderId: order.id,
+                                  bookingType: 'delivery_order',
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xffDC2626),
+                                  side: const BorderSide(color: Color(0xffDC2626)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                icon: const Icon(Icons.sos_outlined),
+                                label: const Text(
+                                  'طلب SOS',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
                               ),
                             ],
                           ],
