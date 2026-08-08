@@ -48,6 +48,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _openSupport() => launchSupportWhatsApp(context);
 
+  Future<void> _logout() async {
+    await getIt<CleaningBookingPusherService>().disposeAllForSession();
+    await SharedPreferencesHelper.clearData();
+    await UserSessionStore.clear();
+    AuthGate.clearPendingAction();
+    if (!context.mounted) return;
+    context.pushRouteAndRemoveUntil('/main');
+  }
+
   Widget _supportSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -294,10 +303,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: 'الإشعارات',
                           subtitle: 'إشعارات الطلبات والعروض',
                           onTap: () {
-
-                            context.pushRoute('/notifications',arguments: NotificationsScreenParams(
-                                profileBloc: profileBloc
-                            ));
+                            context.pushRoute(
+                              '/notifications',
+                              arguments: NotificationsScreenParams(
+                                profileBloc: profileBloc,
+                              ),
+                            );
                           },
                         ),
                         Padding(
@@ -326,15 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _supportSection(context),
                   SizedBox(height: 16),
                   InkWell(
-                    onTap: () async {
-                      await getIt<CleaningBookingPusherService>()
-                          .disposeAllForSession();
-                      await SharedPreferencesHelper.clearData();
-                      await UserSessionStore.clear();
-                      AuthGate.clearPendingAction();
-                      if (!context.mounted) return;
-                      context.pushRouteAndRemoveUntil('/main');
-                    },
+                    onTap: _logout,
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
                       decoration: BoxDecoration(
@@ -362,6 +365,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           SizedBox(width: 12),
                           AppText.bodyMedium(
                             'تسجيل الخروج',
+                            color: Color(0xffEF4444),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  InkWell(
+                    key: const Key('profile_delete_account_button'),
+                    onTap: _logout,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Color(0xffEF4444).withAlpha(6),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Color(0xffEF4444).withAlpha(52),
+                        ),
+                      ),
+                      padding: EdgeInsetsDirectional.symmetric(vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Color(0xffEF4444).withAlpha(25),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: EdgeInsetsDirectional.all(13),
+                            child: Icon(
+                              Icons.delete_forever_outlined,
+                              color: Color(0xffEF4444),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          AppText.bodyMedium(
+                            'حذف الحساب',
                             color: Color(0xffEF4444),
                             fontWeight: FontWeight.bold,
                           ),
