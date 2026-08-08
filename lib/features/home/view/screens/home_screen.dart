@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Column(
         children: [
-          HomeAppBar(profileBloc: profileBloc),
+          HomeAppBar(profileBloc: profileBloc, showSearch: false),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsetsDirectional.symmetric(horizontal: 20),

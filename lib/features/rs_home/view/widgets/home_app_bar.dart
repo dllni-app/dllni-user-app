@@ -13,11 +13,13 @@ import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class HomeAppBar extends StatefulWidget {
   final bool isCleaning;
+  final bool showSearch;
   final ProfileBloc profileBloc;
 
   const HomeAppBar({
     super.key,
     this.isCleaning = false,
+    this.showSearch = true,
     required this.profileBloc,
   });
 
@@ -78,6 +80,8 @@ class _HomeAppBarState extends State<HomeAppBar> {
 
   @override
   Widget build(BuildContext context) {
+    final shouldShowSearch = widget.showSearch && !widget.isCleaning;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -140,13 +144,15 @@ class _HomeAppBarState extends State<HomeAppBar> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          SearchFieldWithVoice(
-            hintText: 'ابحث عن مطعم أو وجبة...',
-            onSearch: (_) => _openSearch(),
-            onVoiceTap: _openSearch,
-            onTap: _openSearch,
-          ),
+          if (shouldShowSearch) ...[
+            const SizedBox(height: 16),
+            SearchFieldWithVoice(
+              hintText: 'ابحث عن مطعم أو وجبة...',
+              onSearch: (_) => _openSearch(),
+              onVoiceTap: _openSearch,
+              onTap: _openSearch,
+            ),
+          ],
         ],
       ),
     );
