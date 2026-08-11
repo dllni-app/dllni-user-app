@@ -18,34 +18,41 @@ class RsOffersProductCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final mapped = _toStoreProductItem(product);
     final productId = mapped.id ?? 0;
-    final offerText = (mapped.offerBadgeText ?? mapped.offer ?? '').trim();
     return RsAppProductCard(
       productId: productId,
       image: (mapped.imageUrl ?? '').trim(),
       title: mapped.name,
-      restaurant: (mapped.restaurantName ?? '').trim().isEmpty ? 'مطعم' : mapped.restaurantName!.trim(),
-      price: mapped.displayPriceValue.formatMoney(),
+      restaurant: (mapped.restaurantName ?? '').trim().isEmpty
+          ? 'مطعم'
+          : mapped.restaurantName!.trim(),
+      price: mapped.resolvedDisplayPriceValue.formatMoney(),
       offer: FetchRestaurantProductsSearchModelActiveOffer(
         badgeText: mapped.offerBadgeText,
         discountType: mapped.offerDiscountType,
         discountValue: mapped.offerDiscountValue,
         title: mapped.offerName,
-
       ),
       onTap: () {
         if (productId <= 0) return;
         context.pushRoute(
           '/rs_product',
-          arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromStoreProduct(mapped, fallbackRestaurantName: mapped.restaurantName)),
+          arguments: ProductDetailsScreenParams(
+            product: ProductPreviewData.fromStoreProduct(
+              mapped,
+              fallbackRestaurantName: mapped.restaurantName,
+            ),
+          ),
         );
       },
-      cartProductsCount: product.cartQuantity??0,
+      cartProductsCount: product.cartQuantity ?? 0,
     );
   }
 }
 
 StoreProductItem _toStoreProductItem(FetchRsOffersProductsModelDataItem product) {
-  final activeOffers = (product.activeOffers ?? []).where((offer) => offer.isActive == true).toList();
+  final activeOffers = (product.activeOffers ?? [])
+      .where((offer) => offer.isActive == true)
+      .toList();
   final activeOffer = activeOffers.isNotEmpty ? activeOffers.first : null;
   final displayPrice = product.displayPrice;
   final originalPrice = product.originalPrice;
@@ -53,7 +60,9 @@ StoreProductItem _toStoreProductItem(FetchRsOffersProductsModelDataItem product)
 
   String? formatPrice(num? value) {
     if (value == null) return null;
-    final normalized = value % 1 == 0 ? value.toInt().toString() : value.toInt().toString();
+    final normalized = value % 1 == 0
+        ? value.toInt().toString()
+        : value.toString();
     return '$normalized ل.س'.trim();
   }
 
