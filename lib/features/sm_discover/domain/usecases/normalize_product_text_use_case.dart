@@ -33,6 +33,8 @@ class NormalizeProductTextParams with Params {
   BodyMap getBody() => {
     'text': text,
     'locale': locale,
-    'module': isSupermarket ? 'supermarket' : 'restaurant',
+    // The backend API contract intentionally uses the legacy `resturant`
+    // spelling to select restaurant/menu-item normalization.
+    'module': isSupermarket ? 'supermarket' : 'resturant',
   };
 }
