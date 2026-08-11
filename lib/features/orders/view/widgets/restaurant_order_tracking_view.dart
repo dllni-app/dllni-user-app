@@ -20,6 +20,7 @@ class RestaurantOrderTrackingView extends StatelessWidget {
   const RestaurantOrderTrackingView({
     super.key,
     required this.order,
+    required this.section,
     this.tracking,
     this.deliveryOrder,
     this.isLoading = false,
@@ -28,6 +29,7 @@ class RestaurantOrderTrackingView extends StatelessWidget {
   });
 
   final OrderResourceModel order;
+  final String section;
   final RestaurantOrderTrackingDataModel? tracking;
   final DeliveryOrderModel? deliveryOrder;
   final bool isLoading;
@@ -57,6 +59,21 @@ class RestaurantOrderTrackingView extends StatelessWidget {
     }
     return '30 — 40 دقيقة';
   }
+
+  bool _isTerminal() {
+    if (deliveryOrder?.isTerminal == true) return true;
+    final status = (
+      deliveryOrder?.status ?? tracking?.latestToStatus ?? order.status ?? ''
+    ).toLowerCase();
+    return status == 'delivered' ||
+        status == 'completed' ||
+        status == 'cancelled' ||
+        status == 'rejected' ||
+        status == 'stopped';
+  }
+
+  String get _sosBookingType =>
+      section == 'supermarket' ? 'supermarket_order' : 'restaurant_order';
 
   @override
   Widget build(BuildContext context) {
@@ -164,12 +181,13 @@ class RestaurantOrderTrackingView extends StatelessWidget {
                         money: _money,
                         createdAt: order.createdAt,
                       ),
-                      if (order.id != null) ...[
+                      if (order.id != null && !_isTerminal()) ...[
                         const SizedBox(height: 14),
                         OutlinedButton.icon(
                           onPressed: () => RestaurantOrderSosSheet.show(
                             context,
                             orderId: order.id!,
+                            bookingType: _sosBookingType,
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xffDC2626),

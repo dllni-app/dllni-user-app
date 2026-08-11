@@ -156,8 +156,9 @@ class _RestaurantOrderTrackingScreenState
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: () => _fetchTracking(),
-            child:  RestaurantOrderTrackingView(
+            child: RestaurantOrderTrackingView(
               order: widget.args.order,
+              section: widget.args.section,
               tracking: _tracking,
               deliveryOrder: _deliveryOrder,
               isLoading: _loading,
