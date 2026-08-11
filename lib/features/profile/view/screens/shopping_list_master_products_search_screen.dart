@@ -53,13 +53,13 @@ class _ShoppingListMasterProductsSearchScreenState
   bool _isLoadingMore = false;
   bool _hasMore = false;
   int _page = 1;
+  int _searchGeneration = 0;
   String _query = '';
   String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
     final count = _selectedById.length;
-    final hasQuery = _query.trim().isNotEmpty;
 
     return Scaffold(
       body: Column(
@@ -83,16 +83,7 @@ class _ShoppingListMasterProductsSearchScreenState
               ),
             ),
           ),
-          Expanded(
-            child: hasQuery
-                ? _buildSearchResults()
-                : Center(
-                    child: AppText.bodyMedium(
-                      'اكتب اسم منتج للبحث',
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-          ),
+          Expanded(child: _buildSearchResults()),
           Container(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -172,6 +163,10 @@ class _ShoppingListMasterProductsSearchScreenState
       _selectedById[item.id] = item;
     }
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _runSearch(reload: true);
+    });
   }
 
   Widget _buildSearchResults() {
@@ -189,7 +184,7 @@ class _ShoppingListMasterProductsSearchScreenState
     if (_results.isEmpty) {
       return Center(
         child: AppText.bodyMedium(
-          'لا توجد نتائج',
+          _query.trim().isEmpty ? 'لا توجد منتجات' : 'لا توجد نتائج',
           color: const Color(0xFF64748B),
         ),
       );
@@ -233,28 +228,16 @@ class _ShoppingListMasterProductsSearchScreenState
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(_searchDebounceDuration, () {
-      final query = value.trim();
       if (!mounted) return;
-      if (query.isEmpty) {
-        setState(() {
-          _query = '';
-          _results.clear();
-          _errorMessage = null;
-          _page = 1;
-          _hasMore = false;
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
-      }
-      _query = query;
+      _query = value.trim();
       _runSearch(reload: true);
     });
   }
 
   Future<void> _runSearch({required bool reload}) async {
     final query = _query.trim();
-    if (query.isEmpty) return;
+    final requestGeneration = reload ? ++_searchGeneration : _searchGeneration;
+
     if (reload) {
       setState(() {
         _isLoading = true;
@@ -278,7 +261,9 @@ class _ShoppingListMasterProductsSearchScreenState
       ),
     );
 
-    if (!mounted) return;
+    if (!mounted || requestGeneration != _searchGeneration || query != _query.trim()) {
+      return;
+    }
 
     response.fold(
       (failure) {
