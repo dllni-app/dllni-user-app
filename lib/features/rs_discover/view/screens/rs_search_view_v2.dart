@@ -55,13 +55,11 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
               : PopularSearchFilter.merchants,
         );
 
-    final initial = widget.initialSearch?.trim();
-    if (initial != null && initial.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _submitSearch(context, initial);
-      });
-    }
+    final initial = widget.initialSearch?.trim() ?? '';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _submitSearch(context, initial);
+    });
   }
 
   @override
@@ -326,23 +324,22 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
 
   void _submitSearch(BuildContext context, String rawSearch) {
     final search = rawSearch.trim();
-    if (search.isEmpty) return;
     _makeSearch(context, search);
-    _rememberSearch(search);
+    if (search.isNotEmpty) {
+      _rememberSearch(search);
+    }
   }
 
   void _makeSearch(BuildContext context, String rawSearch) {
     final search = rawSearch.trim();
-    if (search.isEmpty) {
-      isSearching = false;
-      searchController.clear();
-      setState(() {});
-      return;
-    }
 
     isSearching = true;
-    searchController.text = search;
-    searchController.selection = TextSelection.collapsed(offset: search.length);
+    if (search.isEmpty) {
+      searchController.clear();
+    } else {
+      searchController.text = search;
+      searchController.selection = TextSelection.collapsed(offset: search.length);
+    }
 
     if (widget.type == SearchType.product) {
       context.read<RsDiscoverBloc>().add(
