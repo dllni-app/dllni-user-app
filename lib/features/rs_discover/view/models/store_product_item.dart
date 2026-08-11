@@ -5,24 +5,35 @@ class StoreProductItem {
     required this.description,
     required this.priceText,
     required this.category,
-    this.offer,
+    String? offer,
     this.oldPriceText,
-    this.displayPriceValue,
-    this.oldPriceValue,
+    num? displayPriceValue,
+    num? oldPriceValue,
     this.currency,
     this.isTop = false,
     this.cartProductsCount = 0,
     this.cartItemId,
     this.imageUrl,
     this.restaurantName,
-    this.offerName,
-    this.offerBadgeText,
-    this.offerUrgencyTag,
-    this.offerDiscountType,
-    this.offerDiscountValue,
-    this.isOfferActive,
+    String? offerName,
+    String? offerBadgeText,
+    String? offerUrgencyTag,
+    String? offerDiscountType,
+    num? offerDiscountValue,
+    bool? isOfferActive,
     this.isFavorited = false,
-  });
+  }) : displayPriceValue = displayPriceValue,
+       oldPriceValue = oldPriceValue,
+       offer = offer ?? _fallbackOfferLabel(displayPriceValue, oldPriceValue),
+       offerName = offerName,
+       offerBadgeText = offerBadgeText ??
+           _fallbackOfferLabel(displayPriceValue, oldPriceValue),
+       offerUrgencyTag = offerUrgencyTag ??
+           _fallbackOfferUrgency(displayPriceValue, oldPriceValue),
+       offerDiscountType = offerDiscountType,
+       offerDiscountValue = offerDiscountValue,
+       isOfferActive = isOfferActive ??
+           _hasDiscountedPrice(displayPriceValue, oldPriceValue);
 
   final int? id;
   final String name;
@@ -93,4 +104,18 @@ class StoreProductItem {
 
     return null;
   }
+}
+
+bool _hasDiscountedPrice(num? displayPrice, num? originalPrice) {
+  return displayPrice != null &&
+      originalPrice != null &&
+      originalPrice > displayPrice;
+}
+
+String? _fallbackOfferLabel(num? displayPrice, num? originalPrice) {
+  return _hasDiscountedPrice(displayPrice, originalPrice) ? 'خصم' : null;
+}
+
+String? _fallbackOfferUrgency(num? displayPrice, num? originalPrice) {
+  return _hasDiscountedPrice(displayPrice, originalPrice) ? 'عرض' : null;
 }
