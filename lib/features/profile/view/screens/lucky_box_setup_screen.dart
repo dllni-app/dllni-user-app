@@ -18,7 +18,10 @@ class LuckyBoxSetupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => getIt<LuckyBoxCubit>()..loadOptions(), child: const _LuckyBoxSetupBody());
+    return BlocProvider(
+      create: (_) => getIt<LuckyBoxCubit>()..loadOptions(),
+      child: const _LuckyBoxSetupBody(),
+    );
   }
 }
 
@@ -31,11 +34,14 @@ class _LuckyBoxSetupBody extends StatefulWidget {
 
 class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
   final TextEditingController _budgetController = TextEditingController();
-  final TextEditingController _constraintsController = TextEditingController(text: 'لا قيود');
-  final TextEditingController _restaurantTypeController = TextEditingController(text: 'الكل');
+  final TextEditingController _constraintsController =
+      TextEditingController(text: 'لا قيود');
+  final TextEditingController _restaurantTypeController =
+      TextEditingController(text: 'الكل');
 
   bool _isSectionExpanded = true;
-  int _membersCount = 0;
+  bool _isSubmitting = false;
+  int _membersCount = 1;
   final Set<String> _selectedRestrictionValues = {};
   int? _selectedCuisineId;
 
@@ -54,7 +60,10 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
       return;
     }
     final labels = options.restrictions
-        .where((r) => r.value != null && _selectedRestrictionValues.contains(r.value))
+        .where(
+          (r) =>
+              r.value != null && _selectedRestrictionValues.contains(r.value),
+        )
         .map((r) => r.labelAr ?? r.value ?? '')
         .where((s) => s.isNotEmpty)
         .toList();
@@ -74,7 +83,8 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
       }
     }
     final name = match?.name?.trim();
-    _restaurantTypeController.text = name != null && name.isNotEmpty ? name : 'الكل';
+    _restaurantTypeController.text =
+        name != null && name.isNotEmpty ? name : 'الكل';
   }
 
   Future<void> _pickRestrictions(LuckBoxOptionsModel options) async {
@@ -82,7 +92,9 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
     final result = await showModalBottomSheet<Set<String>>(
       context: context,
       backgroundColor: context.onPrimary,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (modalContext) {
         var working = Set<String>.from(initial);
         return StatefulBuilder(
@@ -94,10 +106,16 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText.titleMedium('هل هناك قيود؟', fontWeight: FontWeight.w700, color: context.primary),
+                    AppText.titleMedium(
+                      'هل هناك قيود؟',
+                      fontWeight: FontWeight.w700,
+                      color: context.primary,
+                    ),
                     const SizedBox(height: 10),
                     ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.45),
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+                      ),
                       child: SingleChildScrollView(
                         child: Column(
                           children: options.restrictions.map((r) {
@@ -127,15 +145,22 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.of(modalContext).pop(working),
+                        onPressed: () =>
+                            Navigator.of(modalContext).pop(working),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
                           backgroundColor: context.primary,
                           foregroundColor: context.onPrimary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
-                        child: AppText.labelLarge('تأكيد', color: context.onPrimary, fontWeight: FontWeight.w700),
+                        child: AppText.labelLarge(
+                          'تأكيد',
+                          color: context.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -160,7 +185,9 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
     final picked = await showModalBottomSheet<int?>(
       context: context,
       backgroundColor: context.onPrimary,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (modalContext) {
         return StatefulBuilder(
           builder: (_, setModalState) {
@@ -171,7 +198,11 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText.titleMedium('نوع المطاعم', fontWeight: FontWeight.w700, color: context.primary),
+                    AppText.titleMedium(
+                      'نوع المطاعم',
+                      fontWeight: FontWeight.w700,
+                      color: context.primary,
+                    ),
                     const SizedBox(height: 10),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -219,15 +250,22 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.of(modalContext).pop(current),
+                        onPressed: () =>
+                            Navigator.of(modalContext).pop(current),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
                           backgroundColor: context.primary,
                           foregroundColor: context.onPrimary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
-                        child: AppText.labelLarge('تأكيد', color: context.onPrimary, fontWeight: FontWeight.w700),
+                        child: AppText.labelLarge(
+                          'تأكيد',
+                          color: context.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -246,85 +284,122 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
   }
 
   Future<void> _onSearchPressed() async {
+    if (_isSubmitting) return;
+
+    FocusScope.of(context).unfocus();
+
     final budgetRaw = _budgetController.text.trim();
     final budget = int.tryParse(budgetRaw);
-    if (_membersCount < 1) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى تحديد عدد أفراد المجموعة')));
+    if (_membersCount < 1 || _membersCount > 50) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('عدد أفراد المجموعة يجب أن يكون بين 1 و50'),
+        ),
+      );
       return;
     }
-    if (budget == null || budget < 1) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى إدخال ميزانية صحيحة للشخص الواحد')));
+    if (budget == null || budget < 1 || budget > 999999) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى إدخال ميزانية صحيحة للشخص الواحد'),
+        ),
+      );
       return;
     }
+
+    setState(() {
+      _isSubmitting = true;
+    });
 
     final cubit = context.read<LuckyBoxCubit>();
     Loading.show(context);
-    final loc = await getIt<UserLocationService>().getCurrentPosition();
-    if (!mounted) return;
-    if (loc.latitude == null || loc.longitude == null) {
-      Loading.close();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: AppText('يرجى تفعيل الموقع ومنح التطبيق الإذن لتحديد موقعك قبل البحث'), backgroundColor: Colors.red));
-      return;
-    }
 
-    final params = SuggestLuckBoxParams(
-      groupSize: _membersCount,
-      budgetPerPerson: budget,
-      restrictions: _selectedRestrictionValues.toList(),
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      cuisineTypeId: _selectedCuisineId,
-    );
-    await cubit.suggestLuckBox(params);
-    if (!mounted) return;
-    Loading.close();
+    try {
+      // Location improves nearby results, but it is optional in the backend
+      // contract. The Lucky Box must still work when location is unavailable
+      // or the user does not grant permission.
+      final loc = await getIt<UserLocationService>().getCurrentPosition();
 
-    final st = cubit.state;
-    if (st.suggestStatus == BlocStatus.success && st.suggestResult != null) {
-      final options = st.options;
-      final constraintsSummary = _selectedRestrictionValues.isEmpty
-          ? 'لا قيود'
-          : (options == null
-                ? _constraintsController.text
-                : options.restrictions
-                      .where((r) => r.value != null && _selectedRestrictionValues.contains(r.value))
-                      .map((r) => r.labelAr ?? r.value ?? '')
-                      .where((s) => s.isNotEmpty)
-                      .join('، '));
-      final args = LuckyBoxSuggestionsArgs(
+      final params = SuggestLuckBoxParams(
         groupSize: _membersCount,
         budgetPerPerson: budget,
-        restrictionValues: _selectedRestrictionValues.toList(),
+        restrictions: _selectedRestrictionValues.toList(),
+        latitude: loc.latitude,
+        longitude: loc.longitude,
         cuisineTypeId: _selectedCuisineId,
-        initialResponse: st.suggestResult!,
-        budgetSummaryText: '$budget ل.س',
-        constraintsSummaryText: constraintsSummary,
-        cuisineSummaryText: _restaurantTypeController.text,
       );
-      cubit.clearSuggestStatus();
-      context.pushRoute('/luckyboxsuggestions', arguments: args);
-    } else if (st.suggestStatus == BlocStatus.failed) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(st.errorMessage ?? 'تعذر جلب الاقتراحات')));
+      await cubit.suggestLuckBox(params);
+
+      if (!mounted) return;
+
+      final st = cubit.state;
+      if (st.suggestStatus == BlocStatus.success &&
+          st.suggestResult != null) {
+        final options = st.options;
+        final constraintsSummary = _selectedRestrictionValues.isEmpty
+            ? 'لا قيود'
+            : (options == null
+                  ? _constraintsController.text
+                  : options.restrictions
+                        .where(
+                          (r) =>
+                              r.value != null &&
+                              _selectedRestrictionValues.contains(r.value),
+                        )
+                        .map((r) => r.labelAr ?? r.value ?? '')
+                        .where((s) => s.isNotEmpty)
+                        .join('، '));
+        final args = LuckyBoxSuggestionsArgs(
+          groupSize: _membersCount,
+          budgetPerPerson: budget,
+          restrictionValues: _selectedRestrictionValues.toList(),
+          cuisineTypeId: _selectedCuisineId,
+          initialResponse: st.suggestResult!,
+          budgetSummaryText: '$budget ل.س',
+          constraintsSummaryText: constraintsSummary,
+          cuisineSummaryText: _restaurantTypeController.text,
+        );
+        cubit.clearSuggestStatus();
+        context.pushRoute('/luckyboxsuggestions', arguments: args);
+      } else if (st.suggestStatus == BlocStatus.failed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(st.errorMessage ?? 'تعذر جلب الاقتراحات'),
+          ),
+        );
+      }
+    } finally {
+      Loading.close();
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<LuckyBoxCubit, LuckyBoxState>(
-      listenWhen: (p, c) => c.optionsStatus == BlocStatus.failed && p.optionsStatus != BlocStatus.failed,
+      listenWhen: (p, c) =>
+          c.optionsStatus == BlocStatus.failed &&
+          p.optionsStatus != BlocStatus.failed,
       listener: (context, state) {
         if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.errorMessage!)),
+          );
         }
       },
       builder: (context, state) {
         final options = state.options;
 
-        final optionsLoading = state.optionsStatus == BlocStatus.loading || state.optionsStatus == null;
+        final optionsLoading =
+            state.optionsStatus == BlocStatus.loading ||
+            state.optionsStatus == null;
         final optionsFailed = state.optionsStatus == BlocStatus.failed;
-        final canPick = state.optionsStatus == BlocStatus.success && options != null;
+        final canPick =
+            state.optionsStatus == BlocStatus.success && options != null;
 
         return Scaffold(
           backgroundColor: const Color(0xffF9FAFB),
@@ -335,7 +410,12 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                 const SizedBox(height: 14),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      0,
+                      16,
+                      16,
+                    ),
                     child: ExpandableNumberedSection(
                       sectionNumber: '1',
                       title: 'تخصيص البحث',
@@ -357,11 +437,17 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: OutlinedButton(
-                                onPressed: () => context.read<LuckyBoxCubit>().loadOptions(),
+                                onPressed: () => context
+                                    .read<LuckyBoxCubit>()
+                                    .loadOptions(),
                                 child: const Text('إعادة تحميل الخيارات'),
                               ),
                             ),
-                          AppText.bodyMedium('عدد أفراد المجموعة', fontWeight: FontWeight.w600, textAlign: TextAlign.center),
+                          AppText.bodyMedium(
+                            'عدد أفراد المجموعة',
+                            fontWeight: FontWeight.w600,
+                            textAlign: TextAlign.center,
+                          ),
                           const SizedBox(height: 10),
                           Row(
                             children: [
@@ -370,6 +456,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                                 backgroundColor: context.primaryContainer,
                                 iconColor: context.onPrimary,
                                 onTap: () {
+                                  if (_membersCount >= 50) return;
                                   setState(() {
                                     _membersCount += 1;
                                   });
@@ -382,10 +469,17 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                                   decoration: BoxDecoration(
                                     color: const Color(0xffF9FAFB),
                                     borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: const Color(0xffE5E7EB), width: 1),
+                                    border: Border.all(
+                                      color: const Color(0xffE5E7EB),
+                                      width: 1,
+                                    ),
                                   ),
                                   alignment: Alignment.center,
-                                  child: AppText.titleMedium('$_membersCount', color: const Color(0xff6B7280), fontWeight: FontWeight.w700),
+                                  child: AppText.titleMedium(
+                                    '$_membersCount',
+                                    color: const Color(0xff6B7280),
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -394,7 +488,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                                 backgroundColor: const Color(0xffF3F4F6),
                                 iconColor: const Color(0xff4B5563),
                                 onTap: () {
-                                  if (_membersCount == 0) return;
+                                  if (_membersCount <= 1) return;
                                   setState(() {
                                     _membersCount -= 1;
                                   });
@@ -408,8 +502,16 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             controller: _budgetController,
                             keyboardType: TextInputType.number,
                             suffixIcon: Padding(
-                              padding: const EdgeInsetsDirectional.only(end: 10),
-                              child: Center(widthFactor: 1, child: AppText.bodyMedium('ل.س', color: const Color(0xff9CA3AF))),
+                              padding: const EdgeInsetsDirectional.only(
+                                end: 10,
+                              ),
+                              child: Center(
+                                widthFactor: 1,
+                                child: AppText.bodyMedium(
+                                  'ل.س',
+                                  color: const Color(0xff9CA3AF),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -417,16 +519,24 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             label: 'هل هناك قيود؟',
                             controller: _constraintsController,
                             readOnly: true,
-                            onTap: !canPick ? null : () => _pickRestrictions(options),
-                            suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                            onTap: !canPick
+                                ? null
+                                : () => _pickRestrictions(options),
+                            suffixIcon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                            ),
                           ),
                           const SizedBox(height: 14),
                           FilledTextField(
                             label: 'نوع المطاعم',
                             controller: _restaurantTypeController,
                             readOnly: true,
-                            onTap: !canPick ? null : () => _pickCuisine(options),
-                            suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                            onTap: !canPick
+                                ? null
+                                : () => _pickCuisine(options),
+                            suffixIcon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                            ),
                           ),
                         ],
                       ),
@@ -434,35 +544,62 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 16,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
                         flex: 3,
                         child: ElevatedButton(
-                          onPressed: optionsLoading ? null : _onSearchPressed,
+                          onPressed: _isSubmitting ? null : _onSearchPressed,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: context.primary,
                             foregroundColor: context.onPrimary,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: AppText.labelLarge('ابحث عن عرض', color: context.onPrimary, fontWeight: FontWeight.w700),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : AppText.labelLarge(
+                                  'ابحث عن عرض',
+                                  color: context.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.of(context).maybePop();
-                          },
+                          onPressed: _isSubmitting
+                              ? null
+                              : () {
+                                  Navigator.of(context).maybePop();
+                                },
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: context.error.withAlpha(200)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: BorderSide(
+                              color: context.error.withAlpha(200),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: AppText.labelLarge('إلغاء', color: context.error, fontWeight: FontWeight.w600),
+                          child: AppText.labelLarge(
+                            'إلغاء',
+                            color: context.error,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
