@@ -27,6 +27,7 @@ class SmStarterStoreDetailsData {
   final String? description;
   final bool? isFavorite;
   final bool? isActive;
+  final List<SupermarketStoreDetailsHour>? storeHours;
 
   const SmStarterStoreDetailsData({
     this.name,
@@ -38,6 +39,7 @@ class SmStarterStoreDetailsData {
     this.description,
     this.isFavorite,
     this.isActive,
+    this.storeHours,
   });
 }
 
@@ -67,6 +69,7 @@ extension SupermarketStoreDetailsStoreStarterX on SupermarketStoreDetailsStore {
       description: description,
       isFavorite: isFavorited,
       isActive: isActive,
+      storeHours: storeHours,
     );
   }
 }
