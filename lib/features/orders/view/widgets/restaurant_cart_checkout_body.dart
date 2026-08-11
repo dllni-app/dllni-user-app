@@ -47,33 +47,22 @@ class RestaurantCartCheckoutBody extends StatelessWidget {
           return CartEmptyView(onRefresh: onRefresh, isStore: false);
         }
 
-        return Stack(
-          children: [
-            RefreshIndicator(
-              onRefresh: onRefresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
-                children: [
-                  ...carts.map(
-                    (cart) => _MerchantCartCard(
-                      cart: cart,
-                      isMutating: state.isMutatingCartItem,
-                      money: _money,
-                    ),
-                  ),
-                  const RestaurantCartAddMoreProductsButton(),
-                ],
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
+            children: [
+              ...carts.map(
+                (cart) => _MerchantCartCard(
+                  cart: cart,
+                  isMutating: state.isMutatingCartItem,
+                  money: _money,
+                ),
               ),
-            ),
-            if (loading)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
-          ],
+              const RestaurantCartAddMoreProductsButton(),
+            ],
+          ),
         );
       },
     );
