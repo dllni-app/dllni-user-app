@@ -7,7 +7,7 @@ class CartProductsCountCubit extends Cubit<int> {
 
   final FetchRestaurantCartProductsCountUseCase fetchRestaurantCartProductsCountUseCase;
 
-  void setCount(int count) {
+  void setCount(int _) {
     if (isClosed) return;
 
     // The add-item response returns the count for the affected merchant cart,
