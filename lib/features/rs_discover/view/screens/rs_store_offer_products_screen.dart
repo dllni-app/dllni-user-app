@@ -9,14 +9,8 @@ import '../../data/models/fetch_restaurant_details_model.dart';
 import '../widgets/special_offer_card.dart';
 
 class StoreOfferProductsScreenParams {
-  const StoreOfferProductsScreenParams({
-    required this.restaurantId,
-    required this.restaurantName,
-    required this.offer,
-  });
+  const StoreOfferProductsScreenParams({required this.offer});
 
-  final int restaurantId;
-  final String restaurantName;
   final RestaurantDetailsOffer offer;
 }
 
@@ -41,7 +35,7 @@ class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen>
 
   Future<FetchRsOffersProductsModel?> _loadProducts() async {
     final offerId = widget.params.offer.id;
-    if (offerId == null || offerId <= 0 || widget.params.restaurantId <= 0) {
+    if (offerId == null || offerId <= 0) {
       return null;
     }
 
@@ -49,7 +43,6 @@ class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen>
       FetchRsOffersProductsParams(
         page: 1,
         perPage: 100,
-        restaurantId: widget.params.restaurantId,
         offerId: offerId,
       ),
     );
