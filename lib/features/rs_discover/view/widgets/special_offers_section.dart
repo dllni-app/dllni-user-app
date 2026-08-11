@@ -5,16 +5,9 @@ import '../screens/rs_store_offer_products_screen.dart';
 import 'special_offer_card.dart';
 
 class SpecialOffersSection extends StatelessWidget {
-  const SpecialOffersSection({
-    super.key,
-    required this.offers,
-    required this.restaurantId,
-    required this.restaurantName,
-  });
+  const SpecialOffersSection({super.key, required this.offers});
 
   final List<RestaurantDetailsOffer> offers;
-  final int restaurantId;
-  final String restaurantName;
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +62,6 @@ class SpecialOffersSection extends StatelessWidget {
                           MaterialPageRoute<void>(
                             builder: (_) => RsStoreOfferProductsScreen(
                               params: StoreOfferProductsScreenParams(
-                                restaurantId: restaurantId,
-                                restaurantName: restaurantName,
                                 offer: offer,
                               ),
                             ),
