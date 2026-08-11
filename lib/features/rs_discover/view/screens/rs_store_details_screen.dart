@@ -100,13 +100,7 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
           restaurant?.address,
           preview.address,
         ], fallback: 'غير متاح');
-        final prepMinutes =
-            restaurant?.estimatedPreparationTime ??
-            preview.estimatedPreparationTime ??
-            0;
-        final preparationLabel = prepMinutes > 0
-            ? '$prepMinutes دقيقة'
-            : 'غير متاح';
+        final preparationLabel = _preparationTimeLabel(restaurant, preview);
         final isOpenNow = _resolveIsOpenNow(restaurant);
         final coverImage = _pickFirstNotEmpty([
           restaurant?.imageUrl,
@@ -310,6 +304,24 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
   String _formatPrice(num? value) {
     if (value == null) return '—';
     return '${value.toStringAsFixed(2)} د.أ';
+  }
+
+  String _preparationTimeLabel(
+    RestaurantDetailsRestaurant? restaurant,
+    RestaurantPreviewData preview,
+  ) {
+    final min = restaurant?.estimatedPreparationTimeMin;
+    final max = restaurant?.estimatedPreparationTimeMax ??
+        restaurant?.estimatedPreparationTime ??
+        preview.estimatedPreparationTime;
+
+    if (min != null && max != null && min > 0 && max > 0) {
+      if (min == max) return '$min دقيقة';
+      return '$min - $max دقيقة';
+    }
+
+    if (max != null && max > 0) return '$max دقيقة';
+    return 'غير متاح';
   }
 
   Future<FetchRestaurantDetailsModel?> _loadDetails() async {
