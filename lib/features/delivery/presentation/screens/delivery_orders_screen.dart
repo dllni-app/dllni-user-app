@@ -90,7 +90,9 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen> {
                         padding: const EdgeInsets.all(16),
                         children: [
                           SizedBox(
-                            height: (constraints.maxHeight - 32).clamp(0, double.infinity),
+                            height: constraints.maxHeight > 32
+                                ? constraints.maxHeight - 32
+                                : 0.0,
                             child: const Center(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
