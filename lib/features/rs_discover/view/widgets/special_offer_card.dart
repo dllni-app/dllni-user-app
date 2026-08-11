@@ -7,9 +7,16 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../data/models/fetch_restaurant_details_model.dart';
 
 class SpecialOfferCard extends StatelessWidget {
-  const SpecialOfferCard({super.key, required this.offer});
+  const SpecialOfferCard({
+    super.key,
+    required this.offer,
+    this.onTap,
+    this.width = 280,
+  });
 
   final RestaurantDetailsOffer offer;
+  final VoidCallback? onTap;
+  final double width;
 
   String get _discountLabel {
     final value = offer.discountValue;
@@ -17,16 +24,16 @@ class SpecialOfferCard extends StatelessWidget {
     if (offer.discountType == 'percentage') {
       return 'خصم ${value.toStringAsFixed(0)}%';
     }
-    return 'خصم ${value.toStringAsFixed(2)} د.أ';
+    return 'خصم ${value.toStringAsFixed(2)} ل.س';
   }
 
   String get _title => offer.name ?? 'عرض خاص';
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final content = Container(
       height: 192,
-      width: 280,
+      width: width,
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -85,7 +92,7 @@ class SpecialOfferCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           AppText(
-            'احصل على $_discountLabel على الطلبات المؤهلة في هذا المتجر',
+            'احصل على $_discountLabel على المنتجات المؤهلة في هذا المطعم',
             textAlign: TextAlign.start,
             style: const TextStyle(
               color: Color(0xE5FFFFFF),
@@ -122,6 +129,24 @@ class SpecialOfferCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+
+    return Semantics(
+      button: true,
+      label: 'فتح منتجات العرض $_title',
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: content,
+        ),
       ),
     );
   }
