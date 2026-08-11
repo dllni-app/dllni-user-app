@@ -181,7 +181,9 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 11),
                 filled: true,
                 fillColor: _SmartSearchColors.fieldFill,
-                hintText: '.. بدي ربطة خبز',
+                hintText: widget.isSupermarket
+                    ? '.. بدي ربطة خبز'
+                    : '.. بدي وجبة شاورما',
                 hintStyle: const TextStyle(
                   color: _SmartSearchColors.hint,
                   fontSize: 14,
