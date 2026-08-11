@@ -5,6 +5,24 @@ String? _asString(dynamic value) {
   return null;
 }
 
+String? _localizeCartMessage(String? message) {
+  final normalized = message?.trim();
+  if (normalized == null || normalized.isEmpty) return message;
+
+  switch (normalized.toLowerCase()) {
+    case 'item added to cart':
+    case 'item added to cart.':
+      return 'تمت إضافة المنتج إلى السلة';
+    case 'cart item updated':
+    case 'cart item updated.':
+    case 'item quantity updated':
+    case 'item quantity updated.':
+      return 'تم تحديث السلة';
+    default:
+      return message;
+  }
+}
+
 int? _asInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;
@@ -37,7 +55,7 @@ class AddRestaurantCartItemModel {
 
   factory AddRestaurantCartItemModel.fromJson(Map<String, dynamic> json) {
     return AddRestaurantCartItemModel(
-      message: _asString(json['message']),
+      message: _localizeCartMessage(_asString(json['message'])),
       cartId: _asInt(json['cartId']),
       itemId: _asInt(json['itemId']),
       quantity: _asInt(json['quantity']),
