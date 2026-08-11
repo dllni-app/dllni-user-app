@@ -499,6 +499,9 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           }
           if (state.endVoteStatus == BlocStatus.success) {
             _pendingWinnerDialog = true;
+            context.read<ProfileBloc>().add(
+              ShowVoteEvent(voteId: widget.params.voteId),
+            );
           }
           if (state.voteDetailsStatus == BlocStatus.success) {
             _hydrateFromVoteDetails(state.voteDetails);
@@ -507,7 +510,14 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
               _showWinnerDialog(state.voteDetails?.winnerLabel);
             }
           }
-          if (state.errorMessage == null || state.errorMessage!.isEmpty) {
+
+          final hasCurrentVoteFailure =
+              state.endVoteStatus == BlocStatus.failed ||
+              state.voteDetailsStatus == BlocStatus.failed ||
+              state.voteBallotStatus == BlocStatus.failed;
+          if (!hasCurrentVoteFailure ||
+              state.errorMessage == null ||
+              state.errorMessage!.isEmpty) {
             return;
           }
           ScaffoldMessenger.of(
