@@ -67,8 +67,14 @@ class _SmDiscoverScreenState extends State<SmDiscoverScreen> {
                       isScrollControlled: true,
                       useSafeArea: true,
                       backgroundColor: Colors.transparent,
-                      builder: (ctx) =>
-                          const SmartSearchSheet(isSupermarket: true),
+                      builder: (ctx) => AnimatedPadding(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+                        ),
+                        child: const SmartSearchSheet(isSupermarket: true),
+                      ),
                     );
                     if (!context.mounted || words == null || words.isEmpty) {
                       return;
