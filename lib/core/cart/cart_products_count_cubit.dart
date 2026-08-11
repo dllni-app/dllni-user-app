@@ -9,7 +9,11 @@ class CartProductsCountCubit extends Cubit<int> {
 
   void setCount(int count) {
     if (isClosed) return;
-    emit(count < 0 ? 0 : count);
+
+    // The add-item response returns the count for the affected merchant cart,
+    // while this cubit drives the global restaurant-cart badge. Re-fetch the
+    // global count so carts from other restaurants are not lost from the badge.
+    fetchCount();
   }
 
   Future<void> fetchCount() async {
