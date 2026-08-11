@@ -84,19 +84,20 @@ class StoreStatusSection extends StatelessWidget {
     final unknownHeader = s == null;
     final isOpenNow = supermarketStoreIsOpenNow(s?.storeHours);
     final statusUnknown = isOpenNow == null;
+    final isOpen = isOpenNow == true;
     final statusBackgroundColor = statusUnknown
         ? const Color(0xFFF3F4F6)
-        : isOpenNow
+        : isOpen
         ? const Color(0xFFF0FDF4)
         : const Color(0xFFFEF2F2);
     final statusColor = statusUnknown
         ? const Color(0xFF6B7280)
-        : isOpenNow
+        : isOpen
         ? const Color(0xFF15803D)
         : const Color(0xFFDC2626);
     final statusDotColor = statusUnknown
         ? const Color(0xFF9CA3AF)
-        : isOpenNow
+        : isOpen
         ? const Color(0xFF22C55E)
         : const Color(0xFFEF4444);
 
@@ -173,7 +174,7 @@ class StoreStatusSection extends StatelessWidget {
                       CircleAvatar(radius: 4, backgroundColor: statusDotColor),
                       const SizedBox(width: 8),
                       AppText(
-                        isOpenNow ? 'مفتوح الآن' : 'مغلق الآن',
+                        isOpen ? 'مفتوح الآن' : 'مغلق الآن',
                         style: TextStyle(
                           color: statusColor,
                           fontSize: 14,
