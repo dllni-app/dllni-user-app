@@ -79,6 +79,57 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen> {
                 );
               }
 
+              if (state.orders.isEmpty) {
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      context.read<DeliveryOrdersCubit>().load(reload: true),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          SizedBox(
+                            height: (constraints.maxHeight - 32).clamp(0, double.infinity),
+                            child: const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.inbox_outlined,
+                                    size: 52,
+                                    color: Color(0xff9CA3AF),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'لا يوجد بيانات',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xff374151),
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    'لا توجد طلبات توصيل مرتبطة بحسابك حالياً.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xff6B7280),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                );
+              }
+
               return RefreshIndicator(
                 onRefresh: () =>
                     context.read<DeliveryOrdersCubit>().load(reload: true),
