@@ -30,6 +30,11 @@ class RestaurantCartProductCard extends StatefulWidget {
 }
 
 class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
+  double get _displayTotalPrice {
+    final calculated = widget.item.unitPrice * widget.item.quantity;
+    return calculated > 0 ? calculated : widget.item.totalPrice;
+  }
+
   void _updateQuantity(int quantity) {
     final cartId = widget.cartId;
     final itemId = widget.item.id;

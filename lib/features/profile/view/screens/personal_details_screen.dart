@@ -116,24 +116,17 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return true;
   }
 
-  Future<bool> _ensureImagePermission(ImageSource source) async {
-    final permission = source == ImageSource.camera
-        ? Permission.camera
-        : Permission.photos;
-    final deniedMessage = source == ImageSource.camera
-        ? 'يلزم السماح بالكاميرا لالتقاط صورة شخصية.'
-        : 'يلزم السماح بالوصول إلى معرض الصور لاختيار صورة شخصية.';
-    final settingsMessage = source == ImageSource.camera
-        ? 'فعّل إذن الكاميرا من إعدادات التطبيق.'
-        : 'فعّل إذن معرض الصور من إعدادات التطبيق.';
+  Future<bool> _ensureCameraPermission() async {
+    const deniedMessage = 'يلزم السماح بالكاميرا لالتقاط صورة شخصية.';
+    const settingsMessage = 'فعّل إذن الكاميرا من إعدادات التطبيق.';
 
-    var status = await permission.status;
+    var status = await Permission.camera.status;
 
     if (status.isPermanentlyDenied) {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(settingsMessage),
+          content: const Text(settingsMessage),
           action: SnackBarAction(
             label: 'الإعدادات',
             onPressed: openAppSettings,
@@ -144,7 +137,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     }
 
     if (!status.isGranted) {
-      status = await permission.request();
+      status = await Permission.camera.request();
     }
 
     if (!status.isGranted) {
@@ -161,7 +154,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    if (!await _ensureImagePermission(source)) return;
+    if (source == ImageSource.camera && !await _ensureCameraPermission()) {
+      return;
+    }
 
     final picker = ImagePicker();
     try {

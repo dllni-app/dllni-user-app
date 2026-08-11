@@ -10,10 +10,29 @@ class SmCartScreen extends StatelessWidget {
 
   final SmCartScreenParams? params;
 
+  int _resolveInitialSectionIndex(BuildContext context) {
+    final explicitIndex = params?.initialSectionIndex;
+    if (explicitIndex != null) return explicitIndex;
+
+    final pages = Navigator.of(context).widget.pages;
+    if (pages.length < 2) return 0;
+
+    final previousRouteName = (pages[pages.length - 2].name ?? '').toLowerCase();
+    const restaurantRouteMarkers = <String>[
+      'rs_',
+      'rsmain',
+      'rsstore',
+      'rsproduct',
+      'restaurant',
+    ];
+
+    return restaurantRouteMarkers.any(previousRouteName.contains) ? 1 : 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return OrdersScreen(
-      initialSectionIndex: params?.initialSectionIndex ?? 0,
+      initialSectionIndex: _resolveInitialSectionIndex(context),
       initialSegmentIndex: OrdersCartOrdersSegmentBar.cartIndex,
     );
   }

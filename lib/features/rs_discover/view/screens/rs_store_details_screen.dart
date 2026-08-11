@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../rs_favourite/domain/usecases/toggle_restaurant_favourite_use_case.dart';
+import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 import '../../data/models/fetch_restaurant_details_model.dart';
 import '../../domain/usecases/fetch_restaurant_details_use_case.dart';
 import '../models/restaurant_preview_data.dart';
@@ -127,7 +128,12 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
                         isFavorited: _isFavorited,
                         onFavouriteTap: _toggleFavourite,
                         cartCount: cartCount,
-                        onCartTap: () => context.pushRoute('/cart'),
+                        onCartTap: () => context.pushRoute(
+                          '/cart',
+                          arguments: SmCartScreenParams(
+                            initialSectionIndex: 1,
+                          ),
+                        ),
                         onShareTap: () {
                           if (widget.params.restaurantId <= 0) return;
                           unawaited(

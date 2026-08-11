@@ -297,13 +297,35 @@ class OrderResourceModel {
 class OrderMerchantModel {
   int? id;
   String? name;
+  String? address;
+  String? city;
+  String? district;
+  String? locationDetails;
+  double? latitude;
+  double? longitude;
 
-  OrderMerchantModel({this.id, this.name});
+  OrderMerchantModel({
+    this.id,
+    this.name,
+    this.address,
+    this.city,
+    this.district,
+    this.locationDetails,
+    this.latitude,
+    this.longitude,
+  });
 
   factory OrderMerchantModel.fromJson(Map<String, dynamic> json) {
     return OrderMerchantModel(
       id: _asInt(json['id']),
       name: _asString(json['name']),
+      address: _asString(json['address']),
+      city: _asString(json['city']),
+      district: _asString(json['district']),
+      locationDetails: _asString(json['locationDetails']) ??
+          _asString(json['location_details']),
+      latitude: _asDouble(json['latitude']),
+      longitude: _asDouble(json['longitude']),
     );
   }
 }
