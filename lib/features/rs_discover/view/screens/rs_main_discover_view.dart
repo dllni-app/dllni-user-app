@@ -226,10 +226,9 @@ RestaurantHomeNearestRestaurantItem _mapDiscoverRestaurantToHomeCard(
       ?.map((cuisine) => (cuisine.name ?? '').trim())
       .where((name) => name.isNotEmpty)
       .toList();
-  final estimatedMax = item.estimatedPreparationTime;
-  final int? estimatedMin = estimatedMax == null
-      ? null
-      : (estimatedMax - 10).clamp(1, estimatedMax).toInt();
+  final estimatedMax =
+      item.estimatedPreparationTimeMax ?? item.estimatedPreparationTime;
+  final estimatedMin = item.estimatedPreparationTimeMin ?? estimatedMax;
 
   return RestaurantHomeNearestRestaurantItem(
     id: item.id,
