@@ -94,9 +94,13 @@ class _MerchantCartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartId = cart.id;
+    final subtotal = cart.amounts?.subtotal ?? 0;
+    final total = cart.amounts?.total ?? 0;
+    final discount = subtotal > total ? subtotal - total : 0.0;
+
     return Container(
       margin: const EdgeInsetsDirectional.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -120,10 +124,10 @@ class _MerchantCartCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           ...cart.items.map(
             (item) => Padding(
-              padding: const EdgeInsetsDirectional.only(bottom: 12),
+              padding: const EdgeInsetsDirectional.only(bottom: 10),
               child: RestaurantCartProductCard(
                 item: item,
                 cartId: cartId,
@@ -143,11 +147,11 @@ class _MerchantCartCard extends StatelessWidget {
           ),
           RestaurantCartOrderSummarySection(
             itemsCount: cart.items.length,
-            subtotal: cart.amounts?.subtotal ?? 0,
-            discount: 0,
-            total: cart.amounts?.total ?? 0,
+            subtotal: subtotal,
+            discount: discount,
+            total: total,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           RestaurantCartCheckoutFulfillmentButton(
             onTap: cartId == null
                 ? null
