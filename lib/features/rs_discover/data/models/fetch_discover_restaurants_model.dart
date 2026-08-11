@@ -273,6 +273,8 @@ class FetchDiscoverRestaurantsModelDataItem {
   double? averageRating;
   int? totalReviews;
   int? estimatedPreparationTime;
+  int? estimatedPreparationTimeMin;
+  int? estimatedPreparationTimeMax;
   num? minimumOrderAmount;
   String? priceRange;
   int? reputationScore;
@@ -320,6 +322,8 @@ class FetchDiscoverRestaurantsModelDataItem {
     this.averageRating,
     this.totalReviews,
     this.estimatedPreparationTime,
+    this.estimatedPreparationTimeMin,
+    this.estimatedPreparationTimeMax,
     this.minimumOrderAmount,
     this.priceRange,
     this.reputationScore,
@@ -369,6 +373,8 @@ class FetchDiscoverRestaurantsModelDataItem {
       averageRating: _asDouble(json['averageRating']),
       totalReviews: _asInt(json['totalReviews']),
       estimatedPreparationTime: _asInt(json['estimatedPreparationTime']),
+      estimatedPreparationTimeMin: _asInt(json['estimatedPreparationTimeMin']),
+      estimatedPreparationTimeMax: _asInt(json['estimatedPreparationTimeMax']),
       minimumOrderAmount: _asNum(json['minimumOrderAmount']),
       priceRange: _asString(json['priceRange']),
       reputationScore: _asInt(json['reputationScore']),
@@ -425,6 +431,8 @@ class FetchDiscoverRestaurantsModelDataItem {
         'averageRating': averageRating,
         'totalReviews': totalReviews,
         'estimatedPreparationTime': estimatedPreparationTime,
+        'estimatedPreparationTimeMin': estimatedPreparationTimeMin,
+        'estimatedPreparationTimeMax': estimatedPreparationTimeMax,
         'minimumOrderAmount': minimumOrderAmount,
         'priceRange': priceRange,
         'reputationScore': reputationScore,

@@ -34,8 +34,10 @@ class SearchMasterProductsForShoppingListParams with Params {
 
   @override
   QueryParams getParams() {
+    final normalizedIndex = index.trim();
+
     return <String, dynamic>{
-      'index': index,
+      if (normalizedIndex.isNotEmpty) 'index': normalizedIndex,
       if (page != null) 'page': page,
       if (perPage != null) 'perPage': perPage,
     };

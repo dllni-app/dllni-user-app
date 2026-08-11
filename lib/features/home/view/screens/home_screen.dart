@@ -5,13 +5,14 @@ import 'package:dllni_user_app/features/home/domain/usecases/fetch_user_offers_u
 import 'package:dllni_user_app/features/home/view/manager/bloc/home_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:toastification/toastification.dart';
 
 import '../../../../generated/assets.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
 import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../rs_home/view/widgets/home_app_bar.dart';
+import '../../../rs_main/view/rs_main_screen.dart';
+import '../../../sm_main_page.dart';
 import '../widgets/home_cube.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final ProfileBloc profileBloc;
 
   List<String> shoppingTitles = ['مطاعم', 'سوبر ماركت'];
+  List<String> shoppingScreens = ['/rsmain', '/smmain'];
   List<String> shoppingImages = [
     Assets.images.restaurantServiceIcon.path,
     Assets.images.storeServiceIcon.path,
@@ -39,59 +41,56 @@ class _HomeScreenState extends State<HomeScreen> {
     return BlocProvider(
       create: (_) {
         final bloc = getIt<HomeBloc>();
-        if (AuthGate.isAuthenticated) {
-          bloc.add(
-            FetchUserOffersEvent(
-              params: FetchUserOffersParams(),
-              isReload: true,
-            ),
-          );
-        }
+        bloc.add(
+          FetchUserOffersEvent(
+            params: FetchUserOffersParams(),
+            isReload: true,
+          ),
+        );
         return bloc;
       },
       child: Column(
         children: [
-          HomeAppBar(profileBloc: profileBloc),
+          HomeAppBar(profileBloc: profileBloc, showSearch: false),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsetsDirectional.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (AuthGate.isAuthenticated) SizedBox(height: 32),
-                  if (AuthGate.isAuthenticated)
-                    BlocBuilder<HomeBloc, HomeState>(
-                      buildWhen: (prev, next) =>
-                          prev.userOffersStatus != next.userOffersStatus ||
-                          prev.userOffers != next.userOffers ||
-                          prev.errorMessage != next.errorMessage,
-                      builder: (context, state) {
-                        if (state.userOffersStatus == BlocStatus.loading ||
-                            state.userOffersStatus == BlocStatus.init) {
-                          return SizedBox(
-                            height:
-                                (context.width * 0.52).clamp(180.0, 230.0) + 56,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: context.primaryContainer,
-                              ),
+                  SizedBox(height: 32),
+                  BlocBuilder<HomeBloc, HomeState>(
+                    buildWhen: (prev, next) =>
+                        prev.userOffersStatus != next.userOffersStatus ||
+                        prev.userOffers != next.userOffers ||
+                        prev.errorMessage != next.errorMessage,
+                    builder: (context, state) {
+                      if (state.userOffersStatus == BlocStatus.loading ||
+                          state.userOffersStatus == BlocStatus.init) {
+                        return SizedBox(
+                          height:
+                              (context.width * 0.52).clamp(180.0, 230.0) + 56,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: context.primaryContainer,
                             ),
-                          );
-                        }
-                        if (state.userOffersStatus == BlocStatus.failed) {
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 16),
-                            child: AppText.bodyMedium(
-                              state.errorMessage ?? 'تعذر تحميل العروض',
-                              color: Color(0xffB91C1C),
-                            ),
-                          );
-                        }
-                        return Center(
-                          child: HomeCube(offers: state.userOffers.list),
+                          ),
                         );
-                      },
-                    ),
+                      }
+                      if (state.userOffersStatus == BlocStatus.failed) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: AppText.bodyMedium(
+                            state.errorMessage ?? 'تعذر تحميل العروض',
+                            color: Color(0xffB91C1C),
+                          ),
+                        );
+                      }
+                      return Center(
+                        child: HomeCube(offers: state.userOffers.list),
+                      );
+                    },
+                  ),
                   SizedBox(height: 35),
                   Row(
                     children: [
@@ -185,47 +184,49 @@ class _HomeScreenState extends State<HomeScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
-                    itemCount: shoppingTitles.length,
+                    itemCount: shoppingScreens.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
                       childAspectRatio: .8,
                     ),
-                    itemBuilder: (context, index) => Semantics(
-                      button: true,
-                      enabled: false,
-                      label: '${shoppingTitles[index]} - متوفر قريبا',
-                      child: InkWell(
-                        splashColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                        onTap: _showComingSoonToast,
-                        child: Opacity(
-                          opacity: 0.45,
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xffE5E7EB),
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                padding: EdgeInsetsDirectional.all(15),
-                                child: AppImage.asset(
-                                  shoppingImages[index],
-                                  color: const Color(0xff6B7280),
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              AppText.labelLarge(
-                                shoppingTitles[index],
-                                color: const Color(0xff9CA3AF),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ],
+                    itemBuilder: (context, index) => InkWell(
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      onTap: () {
+                        context.pushRoute(
+                          shoppingScreens[index],
+                          arguments: index == 1
+                              ? SmMainScreenParams(
+                                  initialPage: 0,
+                                  expandSearch: false,
+                                )
+                              : RsMainScreenParams(profileBloc: profileBloc),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: context.onPrimary,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            padding: EdgeInsetsDirectional.all(15),
+                            child: AppImage.asset(
+                              shoppingImages[index],
+                              color: context.primary,
+                            ),
                           ),
-                        ),
+                          SizedBox(height: 8),
+                          AppText.labelLarge(
+                            shoppingTitles[index],
+                            color: Color(0xff6B7280),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -235,14 +236,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  void _showComingSoonToast() {
-    AppToast.showToast(
-      context: context,
-      message: 'متوفر قريبا',
-      type: ToastificationType.info,
     );
   }
 

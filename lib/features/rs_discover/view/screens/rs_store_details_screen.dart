@@ -101,14 +101,8 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
           restaurant?.address,
           preview.address,
         ], fallback: 'غير متاح');
-        final prepMinutes =
-            restaurant?.estimatedPreparationTime ??
-            preview.estimatedPreparationTime ??
-            0;
-        final preparationLabel = prepMinutes > 0
-            ? '$prepMinutes دقيقة'
-            : 'غير متاح';
-        final isOpenNow = !(restaurant?.isTemporarilyClosed ?? false);
+        final preparationLabel = _preparationTimeLabel(restaurant, preview);
+        final isOpenNow = _resolveIsOpenNow(restaurant);
         final coverImage = _pickFirstNotEmpty([
           restaurant?.imageUrl,
           restaurant?.primaryImage,
@@ -318,6 +312,24 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
     return '${value.toStringAsFixed(2)} د.أ';
   }
 
+  String _preparationTimeLabel(
+    RestaurantDetailsRestaurant? restaurant,
+    RestaurantPreviewData preview,
+  ) {
+    final min = restaurant?.estimatedPreparationTimeMin;
+    final max = restaurant?.estimatedPreparationTimeMax ??
+        restaurant?.estimatedPreparationTime ??
+        preview.estimatedPreparationTime;
+
+    if (min != null && max != null && min > 0 && max > 0) {
+      if (min == max) return '$min دقيقة';
+      return '$min - $max دقيقة';
+    }
+
+    if (max != null && max > 0) return '$max دقيقة';
+    return 'غير متاح';
+  }
+
   Future<FetchRestaurantDetailsModel?> _loadDetails() async {
     final useCase = getIt<FetchRestaurantDetailsUseCase>();
     final res = await useCase(
@@ -427,5 +439,88 @@ class _RsStoreDetailsScreenState extends State<RsStoreDetailsScreen> {
       if (h.isClosed == true) return '$day: مغلق';
       return '$day: ${_formatHour(h.openTime)} - ${_formatHour(h.closeTime)}';
     }).toList();
+  }
+
+  bool? _resolveIsOpenNow(RestaurantDetailsRestaurant? restaurant) {
+    if (restaurant == null) return null;
+    if (restaurant.isTemporarilyClosed == true) return false;
+
+    final hours = restaurant.operatingHours;
+    if (hours.isEmpty) return null;
+
+    final now = DateTime.now();
+    final currentMinutes = (now.hour * 60) + now.minute;
+    final today = _weekdayKey(now.weekday);
+    final yesterday = _weekdayKey(
+      now.subtract(const Duration(days: 1)).weekday,
+    );
+
+    for (final hour in hours) {
+      final day = (hour.dayOfWeek ?? '').trim().toLowerCase();
+      if (day != today || hour.isClosed == true) continue;
+
+      final openMinutes = _timeToMinutes(hour.openTime);
+      final closeMinutes = _timeToMinutes(hour.closeTime);
+      if (openMinutes == null || closeMinutes == null) continue;
+
+      if (openMinutes == closeMinutes) return true;
+      if (closeMinutes > openMinutes &&
+          currentMinutes >= openMinutes &&
+          currentMinutes < closeMinutes) {
+        return true;
+      }
+      if (closeMinutes < openMinutes && currentMinutes >= openMinutes) {
+        return true;
+      }
+    }
+
+    for (final hour in hours) {
+      final day = (hour.dayOfWeek ?? '').trim().toLowerCase();
+      if (day != yesterday || hour.isClosed == true) continue;
+
+      final openMinutes = _timeToMinutes(hour.openTime);
+      final closeMinutes = _timeToMinutes(hour.closeTime);
+      if (openMinutes == null || closeMinutes == null) continue;
+
+      if (closeMinutes < openMinutes && currentMinutes < closeMinutes) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  int? _timeToMinutes(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final parts = value.trim().split(':');
+    if (parts.length < 2) return null;
+
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+
+    return (hour * 60) + minute;
+  }
+
+  String _weekdayKey(int weekday) {
+    switch (weekday) {
+      case DateTime.monday:
+        return 'monday';
+      case DateTime.tuesday:
+        return 'tuesday';
+      case DateTime.wednesday:
+        return 'wednesday';
+      case DateTime.thursday:
+        return 'thursday';
+      case DateTime.friday:
+        return 'friday';
+      case DateTime.saturday:
+        return 'saturday';
+      case DateTime.sunday:
+        return 'sunday';
+      default:
+        return '';
+    }
   }
 }

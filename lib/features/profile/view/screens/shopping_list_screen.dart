@@ -9,10 +9,11 @@ import '../../../../core/widgets/failure_widget.dart';
 import '../../data/models/get_shopping_list_model.dart';
 import '../../domain/usecases/get_shopping_list_use_case.dart';
 import '../manager/bloc/profile_bloc.dart';
+import '../widgets/shopping_list_icon.dart';
 import 'add_edit_shopping_list_screen.dart';
 import 'shopping_list_details_screen.dart';
 
-@AutoRoutePage(path: "/shopping_list")
+@AutoRoutePage(path: '/shopping_list')
 class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({super.key});
 
@@ -22,12 +23,15 @@ class ShoppingListScreen extends StatefulWidget {
 
 class _ShoppingListCard extends StatelessWidget {
   final GetShoppingListModelDataItem item;
-
   final VoidCallback onTap;
+
   const _ShoppingListCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final icon = shoppingListIconOptionForKey(
+      shoppingListIconKeyFromDescription(item.description),
+    );
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -55,10 +59,10 @@ class _ShoppingListCard extends StatelessWidget {
                 color: Color(0x2B22C55E),
                 borderRadius: BorderRadius.all(Radius.circular(12)),
               ),
-              child: const FaIcon(
-                FontAwesomeIcons.bagShopping,
+              child: FaIcon(
+                icon.icon,
                 size: 20,
-                color: Color(0xFF4CAF50),
+                color: const Color(0xFF4CAF50),
               ),
             ),
             Expanded(
@@ -122,11 +126,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               child: BlocConsumer<ProfileBloc, ProfileState>(
                 listener: (context, state) {},
                 buildWhen: (previous, current) =>
-                    previous.shoppingListStatus != current.shoppingListStatus,
+                    previous.shoppingListStatus != current.shoppingListStatus ||
+                    previous.shoppingList != current.shoppingList,
                 builder: (context, state) {
                   if (state.shoppingListStatus == BlocStatus.loading) {
                     return const Center(child: CircularProgressIndicator());
-                  } else if (state.shoppingListStatus == BlocStatus.failed) {
+                  }
+                  if (state.shoppingListStatus == BlocStatus.failed) {
                     return Center(
                       child: FailureWidget(
                         message: state.errorMessage.toString(),
@@ -139,7 +145,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                         },
                       ),
                     );
-                  } else if (state.shoppingListStatus == BlocStatus.success) {
+                  }
+                  if (state.shoppingListStatus == BlocStatus.success) {
                     return RefreshIndicator(
                       onRefresh: () async {
                         context.read<ProfileBloc>().add(
@@ -157,25 +164,21 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                               ),
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: 16),
-                              itemBuilder: (_, index) => _ShoppingListCard(
-                                item: state.shoppingList!.data![index],
-                                onTap: () {
-                                  context.pushRoute(
-                                    "/shopping_list_details",
-                                    arguments: ShoppingListDetailsScreenArgs(
-                                      shoppingListId:
-                                          state.shoppingList!.data![index].id ??
-                                          0,
-                                      shoppingListName:
-                                          state
-                                              .shoppingList!
-                                              .data![index]
-                                              .name ??
-                                          '',
-                                    ),
-                                  );
-                                },
-                              ),
+                              itemBuilder: (_, index) {
+                                final item = state.shoppingList!.data![index];
+                                return _ShoppingListCard(
+                                  item: item,
+                                  onTap: () {
+                                    context.pushRoute(
+                                      '/shopping_list_details',
+                                      arguments: ShoppingListDetailsScreenArgs(
+                                        shoppingListId: item.id ?? 0,
+                                        shoppingListName: item.name ?? '',
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
                             ),
                     );
                   }
@@ -198,7 +201,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               return GestureDetector(
                 onTap: () async {
                   final result = await context.pushRoute(
-                    "/add_edit_shopping_list",
+                    '/add_edit_shopping_list',
                     arguments: AddEditShoppingListScreenArgs(
                       profileBloc: context.read<ProfileBloc>(),
                     ),
@@ -217,9 +220,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
                   child: AppText(
-                    "إضافة قائمة تسوق جديدة",
+                    'إضافة قائمة تسوق جديدة',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color(0xFFFFEEFF),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

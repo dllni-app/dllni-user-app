@@ -29,6 +29,8 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
+    final weightLabel = _extractWeightLabel();
+
     return BlocProvider(
       create: (_) => _smStoresBloc,
       child: GestureDetector(
@@ -118,16 +120,18 @@ class _ProductCardState extends State<ProductCard> {
                               height: 20 / 14,
                             ),
                           ),
-                          SizedBox(height: 8),
-                          AppText(
-                            "وزن ${widget.product.description} غ",
-                            style: TextStyle(
-                              color: Color(0xFF6B7280),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              height: 16 / 12,
+                          if (weightLabel != null) ...[
+                            SizedBox(height: 8),
+                            AppText(
+                              weightLabel,
+                              style: TextStyle(
+                                color: Color(0xFF6B7280),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                height: 16 / 12,
+                              ),
                             ),
-                          ),
+                          ],
                           SizedBox(height: 2),
                           Row(
                             children: [
@@ -248,6 +252,44 @@ class _ProductCardState extends State<ProductCard> {
         ),
       ),
     );
+  }
+
+  String? _extractWeightLabel() {
+    final sources = <String>[
+      if (widget.product.name?.trim().isNotEmpty == true) widget.product.name!.trim(),
+      if (widget.product.description != null)
+        widget.product.description.toString().trim(),
+    ].where((value) => value.isNotEmpty && value.toLowerCase() != 'null');
+
+    final weightPattern = RegExp(
+      r'([0-9٠-٩۰-۹]+(?:[.,][0-9٠-٩۰-۹]+)?)\s*(كيلوغرام|كيلو|كجم|كغ|غرام|جرام|جم|غ|kgs|kg|gr|g)',
+      caseSensitive: false,
+      unicode: true,
+    );
+
+    for (final source in sources) {
+      final match = weightPattern.firstMatch(source);
+      if (match == null) continue;
+
+      final value = match.group(1)?.trim();
+      final rawUnit = match.group(2)?.trim().toLowerCase();
+      if (value == null || value.isEmpty || rawUnit == null || rawUnit.isEmpty) {
+        continue;
+      }
+
+      final isKilogram = const <String>{
+        'كيلوغرام',
+        'كيلو',
+        'كجم',
+        'كغ',
+        'kgs',
+        'kg',
+      }.contains(rawUnit);
+
+      return 'وزن $value ${isKilogram ? 'كغ' : 'غ'}';
+    }
+
+    return null;
   }
 
   @override

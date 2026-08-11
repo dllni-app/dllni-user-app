@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/search/popular_searches_model.dart';
 import '../models/fetch_discover_restaurants_model.dart';
 import '../models/add_restaurant_cart_item_model.dart';
 import '../models/fetch_restaurant_cart_products_count_model.dart';
@@ -90,6 +91,21 @@ class RsDiscoverRemoteDataSource with HandlingApiManager {
         endPoint: '/api/v1/user/restaurants/cart/products-count',
       ),
       jsonConvert: fetchRestaurantCartProductsCountModelFromJson,
+    );
+  }
+
+  Future<PopularSearchesModel> fetchPopularSearches(
+    PopularSearchFilter filter,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/popular-searches',
+        params: <String, dynamic>{
+          'section': 'restaurant',
+          'filter': filter.apiValue,
+        },
+      ),
+      jsonConvert: popularSearchesModelFromJson,
     );
   }
 }

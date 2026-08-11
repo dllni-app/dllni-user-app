@@ -27,15 +27,19 @@ class LuckyBoxState {
     BlocStatus? suggestStatus,
     LuckBoxSuggestResponseModel? suggestResult,
     String? errorMessage,
+    bool clearSuggestStatus = false,
     bool clearSuggestResult = false,
     bool clearErrorMessage = false,
   }) {
     return LuckyBoxState(
       optionsStatus: optionsStatus ?? this.optionsStatus,
       options: options ?? this.options,
-      suggestStatus: suggestStatus ?? this.suggestStatus,
-      suggestResult: clearSuggestResult ? null : (suggestResult ?? this.suggestResult),
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      suggestStatus:
+          clearSuggestStatus ? null : (suggestStatus ?? this.suggestStatus),
+      suggestResult:
+          clearSuggestResult ? null : (suggestResult ?? this.suggestResult),
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -51,7 +55,12 @@ class LuckyBoxCubit extends Cubit<LuckyBoxState> {
   }) : super(const LuckyBoxState());
 
   Future<void> loadOptions() async {
-    emit(state.copyWith(optionsStatus: BlocStatus.loading, clearErrorMessage: true));
+    emit(
+      state.copyWith(
+        optionsStatus: BlocStatus.loading,
+        clearErrorMessage: true,
+      ),
+    );
     final res = await fetchLuckBoxOptionsUseCase(NoParams());
     res.fold(
       (f) => emit(
@@ -97,6 +106,12 @@ class LuckyBoxCubit extends Cubit<LuckyBoxState> {
   }
 
   void clearSuggestStatus() {
-    emit(state.copyWith(suggestStatus: null, clearSuggestResult: true));
+    emit(
+      state.copyWith(
+        clearSuggestStatus: true,
+        clearSuggestResult: true,
+        clearErrorMessage: true,
+      ),
+    );
   }
 }

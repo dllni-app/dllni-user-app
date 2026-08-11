@@ -88,6 +88,8 @@ class RestaurantDetailsRestaurant {
   final String? district;
   final String? locationDetails;
   final int? estimatedPreparationTime;
+  final int? estimatedPreparationTimeMin;
+  final int? estimatedPreparationTimeMax;
   final int? totalReviews;
   final bool? isTemporarilyClosed;
   final bool? isFavorited;
@@ -109,6 +111,8 @@ class RestaurantDetailsRestaurant {
     this.district,
     this.locationDetails,
     this.estimatedPreparationTime,
+    this.estimatedPreparationTimeMin,
+    this.estimatedPreparationTimeMax,
     this.totalReviews,
     this.isTemporarilyClosed,
     this.isFavorited,
@@ -123,6 +127,7 @@ class RestaurantDetailsRestaurant {
   });
 
   factory RestaurantDetailsRestaurant.fromJson(Map<String, dynamic> json) {
+    final range = _asMap(json['preparationTimeRange']);
     return RestaurantDetailsRestaurant(
       id: _asInt(json['id']),
       name: _asString(json['name']),
@@ -132,6 +137,12 @@ class RestaurantDetailsRestaurant {
       district: _asString(json['district']),
       locationDetails: _asString(json['locationDetails']),
       estimatedPreparationTime: _asInt(json['estimatedPreparationTime']),
+      estimatedPreparationTimeMin: _asInt(
+        json['estimatedPreparationTimeMin'] ?? range?['min'],
+      ),
+      estimatedPreparationTimeMax: _asInt(
+        json['estimatedPreparationTimeMax'] ?? range?['max'],
+      ),
       totalReviews: _asInt(json['totalReviews']),
       isTemporarilyClosed: _asBool(json['isTemporarilyClosed']),
       isFavorited: _asBool(json['isFavorited'] ?? json['is_favorited'] ?? json['isFavorite']),

@@ -58,104 +58,125 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xffE5E7EB)),
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppImage.network(
-                widget.item.imageUrl ?? widget.item.name ?? '',
-                loadingBuilder: (context) =>
-                    const Center(child: CircularProgressIndicator()),
-                errorWidget: const Center(child: Icon(Icons.error)),
-                width: 96,
-                height: 96,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText.titleMedium(
-                      widget.item.name ?? '-',
-                      color: const Color(0xff1F2937),
-                      fontWeight: FontWeight.bold,
-                    ),
-                    const SizedBox(height: 4),
-                    AppText.labelLarge(
-                      'الإضافات: ${widget.item.note ?? '-'}',
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xff6B7280),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          AppImage.network(
+            widget.item.imageUrl ?? widget.item.name ?? '',
+            loadingBuilder: (context) =>
+                const Center(child: CircularProgressIndicator()),
+            errorWidget: const Center(child: Icon(Icons.error)),
+            width: 76,
+            height: 76,
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xffF9FAFB),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xffD1D5DB)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.bodyLarge(
+                  widget.item.name ?? '-',
+                  color: const Color(0xff1F2937),
+                  fontWeight: FontWeight.bold,
+                  maxLines: 2,
                 ),
-                child: Row(
+                const SizedBox(height: 2),
+                AppText.labelMedium(
+                  'ملاحظات: ${widget.item.note ?? '-'}',
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xff6B7280),
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 8),
+                Row(
                   children: [
-                    IconButton(
-                      onPressed: widget.isMutating
-                          ? null
-                          : () => _updateQuantity(widget.item.quantity + 1),
-                      icon: const Icon(
-                        Icons.add,
-                        color: Color(0xff1A237E),
-                        size: 15,
-                      ),
-                    ),
-                    AppText.labelLarge(
-                      '${widget.item.quantity}',
+                    AppText.bodyMedium(
+                      widget.item.totalPrice.formatMoney(),
+                      fontWeight: FontWeight.bold,
                       color: const Color(0xff1A237E),
-                      fontWeight: FontWeight.bold,
                     ),
+                    const Spacer(),
+                    Container(
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: const Color(0xffF9FAFB),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xffD1D5DB)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            constraints: const BoxConstraints.tightFor(
+                              width: 32,
+                              height: 32,
+                            ),
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            onPressed: widget.isMutating
+                                ? null
+                                : () => _updateQuantity(
+                                      widget.item.quantity + 1,
+                                    ),
+                            icon: const Icon(
+                              Icons.add,
+                              color: Color(0xff1A237E),
+                              size: 15,
+                            ),
+                          ),
+                          AppText.labelMedium(
+                            '${widget.item.quantity}',
+                            color: const Color(0xff1A237E),
+                            fontWeight: FontWeight.bold,
+                          ),
+                          IconButton(
+                            constraints: const BoxConstraints.tightFor(
+                              width: 32,
+                              height: 32,
+                            ),
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            onPressed:
+                                widget.isMutating || widget.item.quantity <= 1
+                                    ? null
+                                    : () => _updateQuantity(
+                                          widget.item.quantity - 1,
+                                        ),
+                            icon: const Icon(
+                              Icons.remove,
+                              color: Color(0xff1A237E),
+                              size: 15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                     IconButton(
-                      onPressed: widget.isMutating || widget.item.quantity <= 1
-                          ? null
-                          : () => _updateQuantity(widget.item.quantity - 1),
+                      tooltip: 'حذف',
+                      constraints: const BoxConstraints.tightFor(
+                        width: 34,
+                        height: 34,
+                      ),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.isMutating ? null : widget.onDelete,
                       icon: const Icon(
-                        Icons.remove,
-                        color: Color(0xff1A237E),
-                        size: 15,
+                        Icons.delete_outline,
+                        color: Color(0xffEF4444),
+                        size: 18,
                       ),
                     ),
                   ],
                 ),
-              ),
-              AppText.bodyLarge(
-                _displayTotalPrice.formatMoney(),
-                fontWeight: FontWeight.bold,
-                color: const Color(0xff1A237E),
-              ),
-            ],
-          ),
-          TextButton.icon(
-            onPressed: widget.isMutating ? null : widget.onDelete,
-            icon: const Icon(
-              Icons.delete_outline,
-              color: Color(0xffEF4444),
-              size: 15,
-            ),
-            label: AppText.labelLarge(
-              'حذف',
-              color: const Color(0xffEF4444),
+              ],
             ),
           ),
         ],

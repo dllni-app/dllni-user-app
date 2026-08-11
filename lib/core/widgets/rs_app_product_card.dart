@@ -71,7 +71,9 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
   }
 
   void _syncInitialCartState() {
-    _cartProductsCount = widget.cartProductsCount > 0 ? widget.cartProductsCount : (widget.isInCart ? 1 : 0);
+    _cartProductsCount = widget.cartProductsCount > 0
+        ? widget.cartProductsCount
+        : (widget.isInCart ? 1 : 0);
     _cartItemId = widget.cartItemId;
   }
 
@@ -80,7 +82,6 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
     final safeImage = widget.image.trim();
     final isDeleteState = _hasCartQuantity;
     return Container(
-
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xffF3F4F6), width: 1),
@@ -95,7 +96,10 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
             child: Stack(
               children: [
                 Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 12),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -103,9 +107,15 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                           ? Container(
                               width: context.width,
                               height: 100,
-                              decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(16)),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F5),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                               alignment: Alignment.center,
-                              child: const Icon(Icons.image_outlined, color: Color(0xFF9CA3AF)),
+                              child: const Icon(
+                                Icons.image_outlined,
+                                color: Color(0xFF9CA3AF),
+                              ),
                             )
                           : AppImage.network(
                               safeImage,
@@ -116,21 +126,42 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                               errorWidget: Container(
                                 width: context.width,
                                 height: 100,
-                                decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(16)),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF5F5F5),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                                 alignment: Alignment.center,
-                                child: const Icon(Icons.image_outlined, color: Color(0xFF9CA3AF)),
+                                child: const Icon(
+                                  Icons.image_outlined,
+                                  color: Color(0xFF9CA3AF),
+                                ),
                               ),
                             ),
                       const SizedBox(height: 12),
                       Row(
                         spacing: 10,
                         children: [
-                          Expanded(child: AppText.bodyMedium(widget.title, fontWeight: FontWeight.bold,maxLines: 3,)),
+                          Expanded(
+                            child: AppText.bodyMedium(
+                              widget.title,
+                              fontWeight: FontWeight.bold,
+                              maxLines: 3,
+                            ),
+                          ),
                           if (widget.offer?.badgeText != null)
                             Container(
-                              decoration: BoxDecoration(color: context.primaryContainer.withAlpha(51), borderRadius: BorderRadius.circular(16)),
-                              padding: const EdgeInsetsDirectional.symmetric(horizontal: 4),
-                              child: AppText.labelMedium(widget.offer!.badgeText!, color: context.primaryContainer, fontWeight: FontWeight.bold),
+                              decoration: BoxDecoration(
+                                color: context.primaryContainer.withAlpha(51),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: AppText.labelMedium(
+                                widget.offer!.badgeText!,
+                                color: context.primaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                         ],
                       ),
@@ -142,24 +173,42 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                         color: const Color(0xff6B7280),
                       ),
 
-                      AppText.bodyMedium(widget.price, fontWeight: FontWeight.bold, maxLines: 1, color: const Color(0xff1E2A78)),
+                      AppText.bodyMedium(
+                        widget.price,
+                        fontWeight: FontWeight.bold,
+                        maxLines: 1,
+                        color: const Color(0xff1E2A78),
+                      ),
                     ],
                   ),
                 ),
                 if (widget.offer?.title != null)
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: context.primaryContainer,
-                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
+                  SizedBox(
+                    width: context.width,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: context.primaryContainer,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                          ),
+                          padding: const EdgeInsetsDirectional.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: AppText.labelSmall(
+                            widget.offer!.title!,
+                            fontWeight: FontWeight.bold,
+                            color: context.onPrimaryContainer,
+                          ),
                         ),
-                        padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 4),
-                        child: AppText.labelSmall(widget.offer!.title!, fontWeight: FontWeight.bold, color: context.onPrimaryContainer),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
               ],
             ),
@@ -167,7 +216,11 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: InkWell(
-              onTap: _isMutatingCart ? null : (isDeleteState ? _onDeleteFromCartPressed : () => _onAddToCartPressed(widget.productId)),
+              onTap: _isMutatingCart
+                  ? null
+                  : (isDeleteState
+                        ? _onDeleteFromCartPressed
+                        : () => _onAddToCartPressed(widget.productId)),
               borderRadius: BorderRadius.circular(10),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
@@ -176,18 +229,29 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: _isMutatingCart ? const Color(0xFFF3F4F6) : (isDeleteState ? context.onPrimary : context.primary),
-                  border: isDeleteState ? Border.all(color: const Color(0xFFEF4444)) : null,
+                  color: _isMutatingCart
+                      ? const Color(0xFFF3F4F6)
+                      : (isDeleteState ? context.onPrimary : context.primary),
+                  border: isDeleteState
+                      ? Border.all(color: const Color(0xFFEF4444))
+                      : null,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 350),
                   child: _isMutatingCart
-                      ? const SizedBox(key: ValueKey('loading'), width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.2))
+                      ? const SizedBox(
+                          key: ValueKey('loading'),
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
                       : AppText.bodyMedium(
                           isDeleteState ? 'حذف من السلة' : 'طلب الوجبة',
                           key: ValueKey(isDeleteState),
-                          color: isDeleteState ? const Color(0xFFEF4444) : context.onPrimary,
+                          color: isDeleteState
+                              ? const Color(0xFFEF4444)
+                              : context.onPrimary,
                           fontWeight: FontWeight.w700,
                           maxLines: 1,
                         ),
@@ -212,7 +276,11 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
     });
 
     final result = await getIt<AddRestaurantCartItemUseCase>()(
-      AddRestaurantCartItemParams(productId: id, quantity: 1, quantityMode: 'increment'),
+      AddRestaurantCartItemParams(
+        productId: id,
+        quantity: 1,
+        quantityMode: 'increment',
+      ),
     );
 
     if (!mounted) return;
@@ -304,25 +372,28 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
 
     final result = await getIt<FetchRestaurantCartUseCase>()(NoParams());
 
-    return result.fold(
-      (_) => null,
-      (carts) {
-        for (final cart in carts.data) {
-          for (final item in cart.items) {
-            if (item.productId == widget.productId && item.modifierIds.isEmpty && item.substituteProductId == null && cart.id != null && item.id != null) {
-              return _ResolvedCartItem(cartId: cart.id!, itemId: item.id!);
-            }
+    return result.fold((_) => null, (carts) {
+      for (final cart in carts.data) {
+        for (final item in cart.items) {
+          if (item.productId == widget.productId &&
+              item.modifierIds.isEmpty &&
+              item.substituteProductId == null &&
+              cart.id != null &&
+              item.id != null) {
+            return _ResolvedCartItem(cartId: cart.id!, itemId: item.id!);
           }
         }
-        for (final cart in carts.data) {
-          for (final item in cart.items) {
-            if (item.productId == widget.productId && cart.id != null && item.id != null) {
-              return _ResolvedCartItem(cartId: cart.id!, itemId: item.id!);
-            }
+      }
+      for (final cart in carts.data) {
+        for (final item in cart.items) {
+          if (item.productId == widget.productId &&
+              cart.id != null &&
+              item.id != null) {
+            return _ResolvedCartItem(cartId: cart.id!, itemId: item.id!);
           }
         }
-        return null;
-      },
-    );
+      }
+      return null;
+    });
   }
 }

@@ -12,11 +12,16 @@ import 'package:toastification/toastification.dart';
 
 import '../../../rs_favourite/domain/usecases/toggle_product_favourite_use_case.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
+import '../../data/models/fetch_restaurant_details_model.dart';
 import '../../data/models/fetch_restaurant_product_details_model.dart';
+import '../../data/models/fetch_restaurant_products_search_model.dart';
 import '../../domain/usecases/add_restaurant_cart_item_use_case.dart';
+import '../../domain/usecases/fetch_restaurant_details_use_case.dart';
+import '../../domain/usecases/fetch_restaurant_products_search_use_case.dart';
 import '../manager/bloc/rs_discover_bloc.dart';
 import '../models/product_preview_data.dart';
 import '../widgets/product_details_sub_widgets.dart';
+import '../widgets/product_recommendations_section.dart';
 
 class ProductDetailsScreenParams {
   final ProductPreviewData product;
@@ -99,6 +104,9 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
   bool _isUpdatingFavourite = false;
   bool _didSyncRemoteFavourite = false;
   bool _didApplyInitialCartQuantity = false;
+  bool _didRequestRecommendations = false;
+  List<ProductRecommendationItem> _sameRestaurantProducts = const [];
+  List<ProductRecommendationItem> _relatedProducts = const [];
 
   String get _restaurantName {
     final preview = widget.params.product.restaurantName.trim();
@@ -116,6 +124,12 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
           final description = _description(details);
           final displayPrice = _displayPrice(details);
           final oldPrice = _oldPrice(details);
+          final previewOfferTitle =
+              (widget.params.product.offerName ?? '').trim();
+          final previewOfferBadge =
+              (widget.params.product.offerBadgeText ?? '').trim();
+          final showPreviewOffer =
+              widget.params.product.hasVisibleOfferDetails;
           final modifierGroups =
               details?.modifierGroups ??
               const <RestaurantProductDetailsModifierGroup>[];
@@ -145,6 +159,13 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                 _quantity = remoteCartQuantity > 0 ? remoteCartQuantity : 1;
                 _didApplyInitialCartQuantity = true;
               });
+            });
+          }
+
+          if (!_didRequestRecommendations && details?.product != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _requestRestaurantRecommendations(details!);
             });
           }
 
@@ -313,7 +334,10 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                           ),
                           SizedBox(height: 6),
                           AppText(
-                            _restaurantName,
+                            details?.product?.restaurant?.name?.trim().isNotEmpty ==
+                                    true
+                                ? details!.product!.restaurant!.name!.trim()
+                                : _restaurantName,
                             textAlign: TextAlign.start,
                             style: TextStyle(
                               color: Color(0xFF6B7280),
@@ -332,6 +356,72 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 height: 20 / 13,
+                              ),
+                            ),
+                          ],
+                          if (showPreviewOffer) ...[
+                            SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: context.primaryContainer.withValues(
+                                  alpha: .08,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: context.primaryContainer.withValues(
+                                    alpha: .2,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.local_offer_outlined,
+                                    size: 18,
+                                    color: context.primaryContainer,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: AppText(
+                                      previewOfferTitle.isNotEmpty
+                                          ? previewOfferTitle
+                                          : 'عرض خاص',
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        color: Color(0xFF111827),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        height: 20 / 13,
+                                      ),
+                                    ),
+                                  ),
+                                  if (previewOfferBadge.isNotEmpty) ...[
+                                    SizedBox(width: 8),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: context.primaryContainer,
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: AppText(
+                                        previewOfferBadge,
+                                        style: TextStyle(
+                                          color: context.onPrimaryContainer,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
                           ],
@@ -598,6 +688,22 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                         ],
                       ),
                     ),
+                    if (_sameRestaurantProducts.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      ProductRecommendationsSection(
+                        title: 'منتجات أخرى من نفس المطعم',
+                        items: _sameRestaurantProducts,
+                        onProductTap: _openRestaurantRecommendation,
+                      ),
+                    ],
+                    if (_relatedProducts.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      ProductRecommendationsSection(
+                        title: 'منتجات مشابهة',
+                        items: _relatedProducts,
+                        onProductTap: _openRestaurantRecommendation,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -655,8 +761,23 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
   }
 
   num? _displayPrice(FetchRestaurantProductDetailsModel? details) {
-    return details?.product?.discountedPrice ??
-        details?.product?.price ??
+    final detailsProduct = details?.product;
+    final detailsPrice = detailsProduct?.price;
+    final detailsDiscountedPrice = detailsProduct?.discountedPrice;
+    final hasServerDiscount =
+        detailsPrice != null &&
+        detailsDiscountedPrice != null &&
+        detailsDiscountedPrice < detailsPrice;
+
+    if (hasServerDiscount) return detailsDiscountedPrice;
+
+    if (widget.params.product.hasActiveOffer &&
+        widget.params.product.displayPrice != null) {
+      return widget.params.product.displayPrice;
+    }
+
+    return detailsDiscountedPrice ??
+        detailsPrice ??
         widget.params.product.displayPrice;
   }
 
@@ -687,11 +808,186 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
 
   num? _oldPrice(FetchRestaurantProductDetailsModel? details) {
     final detailsProduct = details?.product;
-    if (detailsProduct?.discountedPrice != null &&
-        detailsProduct?.price != null) {
-      return detailsProduct!.price;
+    final detailsPrice = detailsProduct?.price;
+    final detailsDiscountedPrice = detailsProduct?.discountedPrice;
+    if (detailsPrice != null &&
+        detailsDiscountedPrice != null &&
+        detailsDiscountedPrice < detailsPrice) {
+      return detailsPrice;
     }
-    return widget.params.product.originalPrice;
+
+    final previewDisplay = widget.params.product.displayPrice;
+    final previewOriginal = widget.params.product.originalPrice;
+    if (previewDisplay != null &&
+        previewOriginal != null &&
+        previewOriginal > previewDisplay) {
+      return previewOriginal;
+    }
+
+    return null;
+  }
+
+  void _requestRestaurantRecommendations(
+    FetchRestaurantProductDetailsModel details,
+  ) {
+    if (_didRequestRecommendations) return;
+    final product = details.product;
+    if (product == null) return;
+
+    final restaurantId = product.restaurantId ?? product.restaurant?.id;
+    final categoryId = product.categoryId ?? product.category?.id;
+    final hasRestaurant = restaurantId != null && restaurantId > 0;
+    final hasCategory = categoryId != null && categoryId > 0;
+    if (!hasRestaurant && !hasCategory) return;
+
+    _didRequestRecommendations = true;
+
+    if (hasRestaurant) {
+      unawaited(_loadSameRestaurantProducts(restaurantId));
+    }
+    if (hasCategory) {
+      unawaited(
+        _loadRelatedRestaurantProducts(
+          categoryId: categoryId,
+          restaurantId: hasRestaurant ? restaurantId : null,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadSameRestaurantProducts(int restaurantId) async {
+    final response = await getIt<FetchRestaurantDetailsUseCase>()(
+      FetchRestaurantDetailsParams(restaurantId: restaurantId),
+    );
+    if (!mounted) return;
+
+    response.fold((_) {}, (result) {
+      final source = <RestaurantDetailsProduct>[
+        ...?result.popularProducts,
+        ...result.categories.expand((category) => category.products),
+      ];
+      final seenIds = <int>{widget.params.product.productId};
+      final recommendations = <ProductRecommendationItem>[];
+      final merchantName = result.restaurant?.name?.trim().isNotEmpty == true
+          ? result.restaurant!.name!.trim()
+          : _restaurantName;
+
+      for (final product in source) {
+        final id = product.id;
+        if (id == null || id <= 0 || !seenIds.add(id)) continue;
+        recommendations.add(
+          ProductRecommendationItem(
+            id: id,
+            name: product.name?.trim() ?? '',
+            merchantName: merchantName,
+            imageUrl: _restaurantDetailsProductImage(product),
+            description: product.description,
+            displayPrice: product.discountedPrice ?? product.price,
+            originalPrice: product.discountedPrice != null
+                ? product.price
+                : null,
+            currency: widget.params.product.currency,
+          ),
+        );
+        if (recommendations.length >= 10) break;
+      }
+
+      final recommendationIds = recommendations.map((e) => e.id).toSet();
+      setState(() {
+        _sameRestaurantProducts = recommendations;
+        if (recommendationIds.isNotEmpty) {
+          _relatedProducts = _relatedProducts
+              .where((item) => !recommendationIds.contains(item.id))
+              .toList();
+        }
+      });
+    });
+  }
+
+  Future<void> _loadRelatedRestaurantProducts({
+    required int categoryId,
+    int? restaurantId,
+  }) async {
+    final response = await getIt<FetchRestaurantProductsSearchUseCase>()(
+      FetchRestaurantProductsSearchParams(
+        page: 1,
+        perPage: 10,
+        categoryId: categoryId,
+      ),
+    );
+    if (!mounted) return;
+
+    response.fold((_) {}, (result) {
+      final source =
+          result.data ?? <FetchRestaurantProductsSearchModelDataItem>[];
+      final ordered = <FetchRestaurantProductsSearchModelDataItem>[
+        ...source.where((item) => item.restaurant?.id != restaurantId),
+        ...source.where((item) => item.restaurant?.id == restaurantId),
+      ];
+      final sameRestaurantIds = _sameRestaurantProducts.map((e) => e.id).toSet();
+      final seenIds = <int>{
+        widget.params.product.productId,
+        ...sameRestaurantIds,
+      };
+      final recommendations = <ProductRecommendationItem>[];
+
+      for (final item in ordered) {
+        final id = item.id;
+        if (id == null || id <= 0 || !seenIds.add(id)) continue;
+        recommendations.add(
+          ProductRecommendationItem(
+            id: id,
+            name: item.name?.trim() ?? '',
+            merchantName: item.restaurant?.name?.trim().isNotEmpty == true
+                ? item.restaurant!.name!.trim()
+                : 'مطعم',
+            imageUrl: item.primaryImageUrl,
+            description: item.description,
+            displayPrice: item.displayPrice,
+            originalPrice: item.originalPrice,
+            currency: item.currency,
+            isFavorited: item.isFavorite ?? false,
+          ),
+        );
+        if (recommendations.length >= 10) break;
+      }
+
+      setState(() {
+        _relatedProducts = recommendations;
+      });
+    });
+  }
+
+  String? _restaurantDetailsProductImage(RestaurantDetailsProduct product) {
+    final candidates = [
+      product.primaryImage,
+      product.imageUrl,
+      product.image,
+    ];
+    for (final candidate in candidates) {
+      final value = candidate?.trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  void _openRestaurantRecommendation(ProductRecommendationItem item) {
+    context.pushRoute(
+      '/rs_product',
+      arguments: ProductDetailsScreenParams(
+        product: ProductPreviewData(
+          productId: item.id,
+          name: item.name,
+          restaurantName: item.merchantName,
+          description: item.description ?? '',
+          displayPrice: item.displayPrice,
+          originalPrice: item.originalPrice,
+          currency: item.currency,
+          imageUrl: item.imageUrl,
+          isFavorited: item.isFavorited,
+        ),
+      ),
+    );
   }
 
   Future<void> _onAddToCartPressed() async {

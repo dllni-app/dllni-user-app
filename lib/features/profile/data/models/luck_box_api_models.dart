@@ -68,13 +68,21 @@ class LuckBoxOptionsModel {
       restrictions: payload['restrictions'] is List
           ? (payload['restrictions'] as List)
               .whereType<Map>()
-              .map((e) => LuckBoxRestrictionOption.fromJson(Map<String, dynamic>.from(e)))
+              .map(
+                (e) => LuckBoxRestrictionOption.fromJson(
+                  Map<String, dynamic>.from(e),
+                ),
+              )
               .toList()
           : const [],
       cuisineTypes: payload['cuisineTypes'] is List
           ? (payload['cuisineTypes'] as List)
               .whereType<Map>()
-              .map((e) => LuckBoxCuisineTypeOption.fromJson(Map<String, dynamic>.from(e)))
+              .map(
+                (e) => LuckBoxCuisineTypeOption.fromJson(
+                  Map<String, dynamic>.from(e),
+                ),
+              )
               .toList()
           : const [],
     );
@@ -102,9 +110,9 @@ class SuggestLuckBoxParams with Params {
         'groupSize': groupSize,
         'budgetPerPerson': budgetPerPerson,
         'restrictions': restrictions,
-        'latitude': latitude,
-        'longitude': longitude,
-        'cuisineTypeId': cuisineTypeId,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+        if (cuisineTypeId != null) 'cuisineTypeId': cuisineTypeId,
       };
 
   @override
@@ -208,7 +216,9 @@ class LuckBoxBundleModel {
       label: _lbAsString(json['label']),
       labelAr: _lbAsString(json['labelAr']),
       restaurant: json['restaurant'] is Map
-          ? LuckBoxRestaurantModel.fromJson(Map<String, dynamic>.from(json['restaurant'] as Map))
+          ? LuckBoxRestaurantModel.fromJson(
+              Map<String, dynamic>.from(json['restaurant'] as Map),
+            )
           : null,
       totalProducts: _lbAsInt(json['totalProducts']),
       itemsDescription: _lbAsString(json['itemsDescription']),
@@ -217,7 +227,11 @@ class LuckBoxBundleModel {
       lineItems: json['lineItems'] is List
           ? (json['lineItems'] as List)
               .whereType<Map>()
-              .map((e) => LuckBoxLineItemModel.fromJson(Map<String, dynamic>.from(e)))
+              .map(
+                (e) => LuckBoxLineItemModel.fromJson(
+                  Map<String, dynamic>.from(e),
+                ),
+              )
               .toList()
           : const [],
     );
@@ -237,12 +251,18 @@ class LuckBoxSuggestResponseModel {
     final payload = _unwrapPayload(json);
     return LuckBoxSuggestResponseModel(
       budget: payload['budget'] is Map
-          ? LuckBoxBudgetModel.fromJson(Map<String, dynamic>.from(payload['budget'] as Map))
+          ? LuckBoxBudgetModel.fromJson(
+              Map<String, dynamic>.from(payload['budget'] as Map),
+            )
           : null,
       bundles: payload['bundles'] is List
           ? (payload['bundles'] as List)
               .whereType<Map>()
-              .map((e) => LuckBoxBundleModel.fromJson(Map<String, dynamic>.from(e)))
+              .map(
+                (e) => LuckBoxBundleModel.fromJson(
+                  Map<String, dynamic>.from(e),
+                ),
+              )
               .toList()
           : const [],
     );

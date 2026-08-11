@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../orders/data/models/orders_api_models.dart';
+import '../../../orders/view/helpers/order_date_time_formatter.dart';
 import '../../../../core/themes/app_colors.dart';
 
 class OrderInfoCard extends StatelessWidget {
@@ -31,7 +32,7 @@ class OrderInfoCard extends StatelessWidget {
         children: [
           _OrderInfoRow(
             info: 'وقت إنشاء الطلب',
-            value: order.createdAt ?? '-',
+            value: formatOrderDateTime(order.createdAt),
           ),
           _OrderInfoRow(
             info: 'رقم الطلب',

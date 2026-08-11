@@ -48,10 +48,22 @@ class SearchFieldWithVoice extends StatelessWidget {
         prefixIconConstraints: BoxConstraints(maxWidth: 50),
         prefixIcon: Padding(
           padding: EdgeInsets.only(right: 16, left: 12),
-          child: FaIcon(
-            FontAwesomeIcons.magnifyingGlass,
-            size: 18,
-            color: Color(0xFF1E2A78),
+          child: InkWell(
+            onTap: () {
+              if (controller != null) {
+                onSearch(controller!.text);
+                return;
+              }
+              onTap?.call();
+            },
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            child: Center(
+              child: FaIcon(
+                FontAwesomeIcons.magnifyingGlass,
+                size: 18,
+                color: Color(0xFF1E2A78),
+              ),
+            ),
           ),
         ),
         suffixIconConstraints: BoxConstraints(maxWidth: 44),

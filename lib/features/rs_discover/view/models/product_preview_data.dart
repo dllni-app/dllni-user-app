@@ -13,6 +13,12 @@ class ProductPreviewData {
   final String? currency;
   final String? imageUrl;
   final bool isFavorited;
+  final String? offerName;
+  final String? offerBadgeText;
+  final String? offerUrgencyTag;
+  final String? offerDiscountType;
+  final num? offerDiscountValue;
+  final bool? isOfferActive;
 
   const ProductPreviewData({
     required this.productId,
@@ -24,7 +30,20 @@ class ProductPreviewData {
     this.currency,
     this.imageUrl,
     this.isFavorited = false,
+    this.offerName,
+    this.offerBadgeText,
+    this.offerUrgencyTag,
+    this.offerDiscountType,
+    this.offerDiscountValue,
+    this.isOfferActive,
   });
+
+  bool get hasActiveOffer => isOfferActive == true;
+
+  bool get hasVisibleOfferDetails =>
+      hasActiveOffer &&
+      ((offerName ?? '').trim().isNotEmpty ||
+          (offerBadgeText ?? '').trim().isNotEmpty);
 
   factory ProductPreviewData.fromSuggestedItem(
     RestaurantHomeSuggestedProductItem item,
@@ -67,11 +86,17 @@ class ProductPreviewData {
       name: item.name,
       restaurantName: fallbackRestaurantName ?? '',
       description: item.description,
-      displayPrice: item.displayPriceValue,
-      originalPrice: item.oldPriceValue,
+      displayPrice: item.resolvedDisplayPriceValue,
+      originalPrice: item.resolvedOldPriceValue,
       currency: item.currency,
       imageUrl: item.imageUrl,
       isFavorited: item.isFavorited,
+      offerName: item.offerName,
+      offerBadgeText: item.offerBadgeText,
+      offerUrgencyTag: item.offerUrgencyTag,
+      offerDiscountType: item.offerDiscountType,
+      offerDiscountValue: item.offerDiscountValue,
+      isOfferActive: item.isOfferActive,
     );
   }
 

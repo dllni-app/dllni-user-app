@@ -5,8 +5,8 @@ extension NumberFormatting on num? {
   String formatMoney({String currency = 'ل.س'}) {
     if (this == null) return '0 $currency';
 
-    final formatter = NumberFormat('#,###');
-    final formatted = formatter.format(this!.truncate());
+    final formatter = NumberFormat('#,##0.##', 'en');
+    final formatted = formatter.format(this);
 
     if (currency.trim().isEmpty) return formatted;
     return '$formatted $currency';

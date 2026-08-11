@@ -19,9 +19,21 @@ class FetchRsOffersProductsUseCase implements UseCase<FetchRsOffersProductsModel
 class FetchRsOffersProductsParams with Params {
   final int page;
   final int perPage;
+  final int? restaurantId;
+  final int? offerId;
 
-  FetchRsOffersProductsParams({required this.page, this.perPage = 10});
+  FetchRsOffersProductsParams({
+    required this.page,
+    this.perPage = 10,
+    this.restaurantId,
+    this.offerId,
+  });
 
   @override
-  QueryParams getParams() => {'page': page, 'per_page': perPage};
+  QueryParams getParams() => {
+        'page': page,
+        'per_page': perPage,
+        if (restaurantId != null) 'restaurant_id': restaurantId,
+        if (offerId != null) 'offer_id': offerId,
+      };
 }

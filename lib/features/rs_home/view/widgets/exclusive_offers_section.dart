@@ -40,6 +40,8 @@ class ExclusiveOffersSection extends StatelessWidget {
               return Center(child: AppText.labelLarge(state.errorMessage ?? 'حدث خطا ما'));
             } else {
               final list = state.restaurantExclusiveOffers?.exclusiveOffers ?? const [];
+              if (list.isEmpty) return const SizedBox.shrink();
+
               String badgeText(int index) {
                 final badge = list[index].offerBadgeText?.trim();
                 if (badge != null && badge.isNotEmpty) return badge;
@@ -61,7 +63,7 @@ class ExclusiveOffersSection extends StatelessWidget {
                     if (n != null && n.isNotEmpty) return n;
                   }
                 }
-                return 'مطعم';
+                return '';
               }
 
               String offerCardSubtitle(RestaurantHomeExclusiveOfferItem item) {

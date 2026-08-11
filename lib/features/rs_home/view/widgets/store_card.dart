@@ -38,6 +38,10 @@ class _StoreCardState extends State<StoreCard> {
 
   @override
   Widget build(BuildContext context) {
+    final name = store.name?.trim() ?? '';
+    final cuisineSummary = store.cuisineSummary?.trim() ?? '';
+    final rating = store.rating;
+
     return InkWell(
       onTap: () {
         final id = store.id;
@@ -166,61 +170,65 @@ class _StoreCardState extends State<StoreCard> {
                             ],
                           ),
                         ),
-                      SizedBox(width: 16),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF0FDF4),
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AppText(
-                              (store.rating ?? 0).toStringAsFixed(1),
-                              style: TextStyle(
-                                color: Color(0xFF15803D),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                height: 16 / 12,
+                      if (rating != null) ...[
+                        SizedBox(width: 16),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AppText(
+                                rating.toStringAsFixed(1),
+                                style: TextStyle(
+                                  color: Color(0xFF15803D),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  height: 16 / 12,
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 4),
-                            FaIcon(
-                              FontAwesomeIcons.solidStar,
-                              size: 12,
-                              color: Color(0xFF22C55E),
-                            ),
-                          ],
+                              SizedBox(width: 4),
+                              FaIcon(
+                                FontAwesomeIcons.solidStar,
+                                size: 12,
+                                color: Color(0xFF22C55E),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   SizedBox(height: 4),
-                  AppText(
-                    store.name ?? ' - ',
-                    textAlign: TextAlign.start,
-                    maxLines: 1,
-                    scrollText: true,
-                    style: TextStyle(
-                      color: Color(0xFF1A1A1A),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: 24 / 16,
+                  if (name.isNotEmpty)
+                    AppText(
+                      name,
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      scrollText: true,
+                      style: TextStyle(
+                        color: Color(0xFF1A1A1A),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 24 / 16,
+                      ),
                     ),
-                  ),
-                  AppText(
-                    store.cuisineSummary ?? '-',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      height: 16 / 12,
+                  if (cuisineSummary.isNotEmpty)
+                    AppText(
+                      cuisineSummary,
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 16 / 12,
+                      ),
                     ),
-                  ),
                   SizedBox(height: 4),
                 ],
               ),

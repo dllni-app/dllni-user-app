@@ -4,6 +4,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../domain/repository/shopping_lists_repo.dart';
@@ -12,8 +13,13 @@ import '../../domain/usecases/search_master_products_for_shopping_list_use_case.
 class ShoppingListMasterProductOption {
   final int id;
   final String name;
+  final String? imageUrl;
 
-  const ShoppingListMasterProductOption({required this.id, required this.name});
+  const ShoppingListMasterProductOption({
+    required this.id,
+    required this.name,
+    this.imageUrl,
+  });
 }
 
 class ShoppingListMasterProductsSearchScreen extends StatefulWidget {
@@ -39,21 +45,21 @@ class _ShoppingListMasterProductsSearchScreenState
   final ScrollController _scrollController = ScrollController();
   final Map<int, ShoppingListMasterProductOption> _selectedById =
       <int, ShoppingListMasterProductOption>{};
-
   final List<ShoppingListMasterProductOption> _results =
       <ShoppingListMasterProductOption>[];
+
   Timer? _searchDebounce;
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = false;
   int _page = 1;
+  int _searchGeneration = 0;
   String _query = '';
   String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
     final count = _selectedById.length;
-    final hasQuery = _query.trim().isNotEmpty;
 
     return Scaffold(
       body: Column(
@@ -77,16 +83,7 @@ class _ShoppingListMasterProductsSearchScreenState
               ),
             ),
           ),
-          Expanded(
-            child: hasQuery
-                ? _buildSearchResults()
-                : Center(
-                    child: AppText.bodyMedium(
-                      'اكتب اسم منتج للبحث',
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-          ),
+          Expanded(child: _buildSearchResults()),
           Container(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -107,9 +104,29 @@ class _ShoppingListMasterProductsSearchScreenState
             child: Row(
               children: [
                 Expanded(
-                  child: AppText.bodyMedium(
-                    'المختار: $count',
-                    fontWeight: FontWeight.w700,
+                  child: InkWell(
+                    onTap: count == 0 ? null : _showSelectedProductsSheet,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppText.bodyMedium(
+                            'المختار: $count',
+                            fontWeight: FontWeight.w700,
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.keyboard_arrow_up_rounded,
+                            size: 22,
+                            color: count == 0
+                                ? const Color(0xFF9CA3AF)
+                                : AppColors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 ElevatedButton(
@@ -146,6 +163,10 @@ class _ShoppingListMasterProductsSearchScreenState
       _selectedById[item.id] = item;
     }
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _runSearch(reload: true);
+    });
   }
 
   Widget _buildSearchResults() {
@@ -163,7 +184,7 @@ class _ShoppingListMasterProductsSearchScreenState
     if (_results.isEmpty) {
       return Center(
         child: AppText.bodyMedium(
-          'لا توجد نتائج',
+          _query.trim().isEmpty ? 'لا توجد منتجات' : 'لا توجد نتائج',
           color: const Color(0xFF64748B),
         ),
       );
@@ -189,31 +210,10 @@ class _ShoppingListMasterProductsSearchScreenState
         }
         final item = _results[index];
         final selected = _selectedById.containsKey(item.id);
-        return Material(
-          color: const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => _toggleSelection(item),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AppText.bodyMedium(
-                      item.name,
-                      textAlign: TextAlign.start,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Checkbox(
-                    value: selected,
-                    onChanged: (_) => _toggleSelection(item),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return _MasterProductCard(
+          item: item,
+          selected: selected,
+          onTap: () => _toggleSelection(item),
         );
       },
     );
@@ -228,28 +228,16 @@ class _ShoppingListMasterProductsSearchScreenState
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(_searchDebounceDuration, () {
-      final query = value.trim();
       if (!mounted) return;
-      if (query.isEmpty) {
-        setState(() {
-          _query = '';
-          _results.clear();
-          _errorMessage = null;
-          _page = 1;
-          _hasMore = false;
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-        return;
-      }
-      _query = query;
+      _query = value.trim();
       _runSearch(reload: true);
     });
   }
 
   Future<void> _runSearch({required bool reload}) async {
     final query = _query.trim();
-    if (query.isEmpty) return;
+    final requestGeneration = reload ? ++_searchGeneration : _searchGeneration;
+
     if (reload) {
       setState(() {
         _isLoading = true;
@@ -273,7 +261,9 @@ class _ShoppingListMasterProductsSearchScreenState
       ),
     );
 
-    if (!mounted) return;
+    if (!mounted || requestGeneration != _searchGeneration || query != _query.trim()) {
+      return;
+    }
 
     response.fold(
       (failure) {
@@ -285,8 +275,14 @@ class _ShoppingListMasterProductsSearchScreenState
       },
       (result) {
         final mapped = result.data
-            .where((e) => e.id > 0)
-            .map((e) => ShoppingListMasterProductOption(id: e.id, name: e.name))
+            .where((e) => e.id > 0 && e.name.trim().isNotEmpty)
+            .map(
+              (e) => ShoppingListMasterProductOption(
+                id: e.id,
+                name: e.name.trim(),
+                imageUrl: e.primaryImageUrl,
+              ),
+            )
             .toList();
         final current = result.meta?.currentPage ?? targetPage;
         final last = result.meta?.lastPage ?? current;
@@ -296,14 +292,110 @@ class _ShoppingListMasterProductsSearchScreenState
               ..clear()
               ..addAll(mapped);
           } else {
-            _results.addAll(mapped);
+            final existingIds = _results.map((e) => e.id).toSet();
+            _results.addAll(mapped.where((e) => !existingIds.contains(e.id)));
           }
+
+          for (final item in mapped) {
+            if (!_selectedById.containsKey(item.id)) continue;
+            _selectedById[item.id] = item;
+          }
+
           _page = current;
           _hasMore = current < last;
           _isLoading = false;
           _isLoadingMore = false;
           _errorMessage = null;
         });
+      },
+    );
+  }
+
+  Future<void> _showSelectedProductsSheet() async {
+    if (_selectedById.isEmpty) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, sheetSetState) {
+            final selected = _selectedById.values.toList(growable: false);
+            return SafeArea(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.65,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppText.bodyMedium(
+                        'المنتجات المختارة (${selected.length})',
+                        fontWeight: FontWeight.w700,
+                        textAlign: TextAlign.start,
+                      ),
+                      const SizedBox(height: 12),
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: selected.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (_, index) {
+                            final item = selected[index];
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFE5E7EB),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  _ProductImage(imageUrl: item.imageUrl, size: 46),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: AppText.bodyMedium(
+                                      item.name,
+                                      fontWeight: FontWeight.w600,
+                                      textAlign: TextAlign.start,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'إزالة',
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedById.remove(item.id);
+                                      });
+                                      if (_selectedById.isEmpty) {
+                                        Navigator.of(sheetContext).pop();
+                                      } else {
+                                        sheetSetState(() {});
+                                      }
+                                    },
+                                    icon: const Icon(Icons.close_rounded),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -316,5 +408,88 @@ class _ShoppingListMasterProductsSearchScreenState
         _selectedById[item.id] = item;
       }
     });
+  }
+}
+
+class _MasterProductCard extends StatelessWidget {
+  final ShoppingListMasterProductOption item;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _MasterProductCard({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFFF9FAFB),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              _ProductImage(imageUrl: item.imageUrl),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppText.bodyMedium(
+                  item.name,
+                  textAlign: TextAlign.start,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Checkbox(value: selected, onChanged: (_) => onTap()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  final String? imageUrl;
+  final double size;
+
+  const _ProductImage({this.imageUrl, this.size = 58});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim();
+    final placeholder = Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: const Icon(
+        Icons.storefront_rounded,
+        color: Color(0xFF94A3B8),
+        size: 26,
+      ),
+    );
+
+    if (url == null || url.isEmpty) return placeholder;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: AppImage.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(10),
+        errorWidget: placeholder,
+      ),
+    );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:injectable/injectable.dart';
+
+import '../../../../core/search/popular_searches_model.dart';
 import '../models/browse_stores_model.dart';
 import '../../domain/usecases/browse_stores_use_case.dart';
 import '../models/browse_products_model.dart';
@@ -91,6 +93,21 @@ class SmDiscoverRemoteDataSource with HandlingApiManager {
         params: params.getParams(),
       ),
       jsonConvert: normalizeProductTextModelFromJson,
+    );
+  }
+
+  Future<PopularSearchesModel> fetchPopularSearches(
+    PopularSearchFilter filter,
+  ) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint: '/api/v1/user/popular-searches',
+        params: <String, dynamic>{
+          'section': 'supermarket',
+          'filter': filter.apiValue,
+        },
+      ),
+      jsonConvert: popularSearchesModelFromJson,
     );
   }
 }

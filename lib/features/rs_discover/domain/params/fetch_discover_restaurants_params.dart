@@ -7,6 +7,8 @@ class FetchDiscoverRestaurantsParams with Params {
   final String sort;
   final int filterOpenNow;
   final int filterHasOffers;
+  final int? preparationTimeMin;
+  final int? preparationTimeMax;
   final double? latitude;
   final double? longitude;
 
@@ -17,6 +19,8 @@ class FetchDiscoverRestaurantsParams with Params {
     this.sort = 'rating',
     this.filterOpenNow = 0,
     this.filterHasOffers = 0,
+    this.preparationTimeMin,
+    this.preparationTimeMax,
     this.latitude,
     this.longitude,
   });
@@ -25,10 +29,14 @@ class FetchDiscoverRestaurantsParams with Params {
   QueryParams getParams() => {
         'page': page,
         'perPage': perPage,
-        if(search != null && search!.isNotEmpty)'search': search,
+        if (search != null && search!.isNotEmpty) 'search': search,
         'sort': sort,
         'filter[openNow]': filterOpenNow,
         'filter[hasOffers]': filterHasOffers,
+        if (preparationTimeMin != null)
+          'filter[preparationTimeMin]': preparationTimeMin,
+        if (preparationTimeMax != null)
+          'filter[preparationTimeMax]': preparationTimeMax,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       };
