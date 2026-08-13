@@ -53,6 +53,8 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>نستخدم موقعك لاقتراح مطاعم قريبة في صندوق الحظ.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>نستخدم موقعك لتحديد موقعك وحساب المسافة بينك وبين مقدم الخدمة واقتراح الخدمات القريبة عند استخدام ميزات الموقع في التطبيق.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>نحتاج إلى الميكروفون لتحويل كلامك إلى نص أثناء البحث الصوتي.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
