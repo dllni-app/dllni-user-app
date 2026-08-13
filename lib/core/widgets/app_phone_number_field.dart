@@ -51,9 +51,11 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
             decoration: _decoration(context),
             initialValue: _phone?.phoneNumber,
             onChanged: (value) {
+              final phone = PhoneNumber(phoneNumber: "+963$value");
               setState(() {
-                _phone = PhoneNumber(phoneNumber: "+963$value");
+                _phone = phone;
               });
+              widget.onChanged?.call(phone);
             },
           ),
         ),
