@@ -128,7 +128,6 @@ class NotificationHelper {
       );
     }
     await _initAwesomeNotifications();
-    await _ensurePermission();
     if (_firebaseReady) {
       _registerListeners();
       await _checkTerminatedNotification();
@@ -173,6 +172,20 @@ class NotificationHelper {
 
   static Future<void> _requestMessagingPermission() async {
     try {
+      final currentSettings =
+          await FirebaseMessaging.instance.getNotificationSettings();
+
+      // Do not retry notification permission from app startup after the user has
+      // already made a choice. In particular, a denied permission must never
+      // trigger a settings flow automatically during launch.
+      if (currentSettings.authorizationStatus !=
+          AuthorizationStatus.notDetermined) {
+        log(
+          'FCM notification permission already decided: ${currentSettings.authorizationStatus.name}',
+        );
+        return;
+      }
+
       final settings = await FirebaseMessaging.instance.requestPermission();
       log(
         'FCM notification permission status: ${settings.authorizationStatus.name}',
@@ -261,13 +274,6 @@ class NotificationHelper {
 
   static Future<void> _initAwesomeNotifications() async {
     await _awesome.initialize(_notificationIcon, _basicNotificationChannels);
-  }
-
-  static Future<void> _ensurePermission() async {
-    final allowed = await _awesome.isNotificationAllowed();
-    if (!allowed) {
-      await _awesome.requestPermissionToSendNotifications();
-    }
   }
 
   static Future<void> _startAwesomeListeners() async {
