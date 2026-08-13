@@ -605,11 +605,29 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     final item = widget.params.addressItem;
     unawaited(_loadNeighborhoods(city: 'حلب'));
     if (item == null) {
-      final json = SharedPreferencesHelper.getData(
+      String? phone;
+      final rawUser = SharedPreferencesHelper.getData(
         key: UserSessionKeys.loggedInUser,
       );
-      final user = LoggedInUserModel.fromJson(jsonDecode(json));
-      _phoneController.text = user.phone ?? '';
+
+      if (rawUser is String && rawUser.trim().isNotEmpty) {
+        try {
+          final decoded = jsonDecode(rawUser);
+          if (decoded is Map) {
+            final user = LoggedInUserModel.fromJson(
+              Map<String, dynamic>.from(decoded),
+            );
+            phone = user.phone;
+          }
+        } catch (error) {
+          log('Unable to read cached user for address phone: $error');
+        }
+      }
+
+      phone ??= SharedPreferencesHelper.getData(
+        key: UserSessionKeys.customerPhone,
+      )?.toString();
+      _phoneController.text = phone ?? '';
     } else {
       _phoneController.text = item.mobile ?? '';
       _selectedNeighborhood = item.neighborhood ?? '';
