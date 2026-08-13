@@ -24,7 +24,8 @@ class RsStoreOfferProductsScreen extends StatefulWidget {
       _RsStoreOfferProductsScreenState();
 }
 
-class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen> {
+class _RsStoreOfferProductsScreenState
+    extends State<RsStoreOfferProductsScreen> {
   late Future<FetchRsOffersProductsModel?> _productsFuture;
 
   @override
@@ -40,11 +41,7 @@ class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen>
     }
 
     final result = await getIt<FetchRsOffersProductsUseCase>()(
-      FetchRsOffersProductsParams(
-        page: 1,
-        perPage: 100,
-        offerId: offerId,
-      ),
+      FetchRsOffersProductsParams(page: 1, perPage: 100, offerId: offerId),
     );
 
     return result.fold((_) => null, (response) => response);
@@ -92,7 +89,8 @@ class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen>
             );
           }
 
-          final products = response.data ?? const <FetchRsOffersProductsModelDataItem>[];
+          final products =
+              response.data ?? const <FetchRsOffersProductsModelDataItem>[];
           final total = response.meta?.total ?? products.length;
 
           return CustomScrollView(
@@ -111,7 +109,7 @@ class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen>
                 sliver: SliverToBoxAdapter(
                   child: Row(
                     children: [
-                      const AppText(
+                      AppText(
                         'منتجات العرض',
                         style: TextStyle(
                           color: Color(0xFF111827),
@@ -133,7 +131,7 @@ class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen>
                 ),
               ),
               if (products.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
                     child: Padding(
@@ -162,9 +160,8 @@ class _RsStoreOfferProductsScreenState extends State<RsStoreOfferProductsScreen>
                           childAspectRatio: 0.65,
                         ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => RsOffersProductCardWidget(
-                        product: products[index],
-                      ),
+                      (context, index) =>
+                          RsOffersProductCardWidget(product: products[index]),
                       childCount: products.length,
                     ),
                   ),
@@ -207,8 +204,8 @@ class _OfferProductsError extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         SpecialOfferCard(offer: offer, width: double.infinity),
-        const SizedBox(height: 32),
-        const AppText(
+        SizedBox(height: 32),
+        AppText(
           'تعذر تحميل منتجات العرض',
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -218,7 +215,7 @@ class _OfferProductsError extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const AppText(
+        AppText(
           'تحقق من الاتصال وحاول مرة أخرى.',
           textAlign: TextAlign.center,
           style: TextStyle(

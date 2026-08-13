@@ -36,7 +36,7 @@ class StoreRestaurantInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const AppText(
+            AppText(
               'معلومات المطعم',
               style: TextStyle(
                 color: Color(0xFF111827),
@@ -78,7 +78,7 @@ class _InfoRow extends StatelessWidget {
     required this.value,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final String title;
   final String value;
 
@@ -186,7 +186,7 @@ class _WorkingHoursSectionState extends State<_WorkingHoursSection> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const AppText(
+                        AppText(
                           'أوقات العمل',
                           style: TextStyle(
                             color: Color(0xFF111827),
@@ -238,7 +238,9 @@ class _WorkingHoursSectionState extends State<_WorkingHoursSection> {
                           )
                         else
                           AppText(
-                            hasSchedule ? 'اضغط لعرض الجدول الأسبوعي' : 'غير متاح',
+                            hasSchedule
+                                ? 'اضغط لعرض الجدول الأسبوعي'
+                                : 'غير متاح',
                             style: const TextStyle(
                               color: Color(0xFF6B7280),
                               fontSize: 12,

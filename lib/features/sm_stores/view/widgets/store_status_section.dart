@@ -203,7 +203,7 @@ class _NeutralRatingPlaceholder extends StatelessWidget {
         color: Color(0xFFF3F4F6),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      child: const AppText(
+      child: AppText(
         '—',
         style: TextStyle(
           color: Color(0xFF9CA3AF),
@@ -230,7 +230,7 @@ class _NeutralStatusPlaceholder extends StatelessWidget {
         color: Color(0xFFF3F4F6),
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      child: const AppText(
+      child: AppText(
         '…',
         style: TextStyle(
           color: Color(0xFF9CA3AF),

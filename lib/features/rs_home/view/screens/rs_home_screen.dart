@@ -7,6 +7,7 @@ import 'package:dllni_user_app/core/widgets/failure_widget.dart';
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:dllni_user_app/features/rs_home/data/models/fetch_featured_offers_model.dart';
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_featured_offers_use_case.dart';
+import 'package:dllni_user_app/features/sm_home/view/screens/sm_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dllni_user_app/features/rs_home/domain/usecases/fetch_restaurant_home_categories_use_case.dart';
@@ -123,13 +124,34 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
       lazy: false,
       create: (context) => getIt<RsHomeBloc>()
         ..add(FetchFeaturedOffersEvent(params: FetchFeaturedOffersParams()))
-        ..add(FetchRestaurantHomeCategoriesEvent(params: FetchRestaurantHomeCategoriesParams()))
-        ..add(FetchRestaurantHomeExclusiveOffersEvent(params: FetchRestaurantHomeExclusiveOffersParams()))
-        ..add(FetchRestaurantHomeNearestRestaurantsEvent(params: FetchRestaurantHomeNearestRestaurantsParams()))
-        ..add(FetchRestaurantHomeSuggestedProductsEvent(params: FetchRestaurantHomeSuggestedProductsParams()))
-        ..add(FetchRestaurantHomeLatestOrderedProductsEvent(params: FetchRestaurantHomeLatestOrderedProductsParams())),
+        ..add(
+          FetchRestaurantHomeCategoriesEvent(
+            params: FetchRestaurantHomeCategoriesParams(),
+          ),
+        )
+        ..add(
+          FetchRestaurantHomeExclusiveOffersEvent(
+            params: FetchRestaurantHomeExclusiveOffersParams(),
+          ),
+        )
+        ..add(
+          FetchRestaurantHomeNearestRestaurantsEvent(
+            params: FetchRestaurantHomeNearestRestaurantsParams(),
+          ),
+        )
+        ..add(
+          FetchRestaurantHomeSuggestedProductsEvent(
+            params: FetchRestaurantHomeSuggestedProductsParams(),
+          ),
+        )
+        ..add(
+          FetchRestaurantHomeLatestOrderedProductsEvent(
+            params: FetchRestaurantHomeLatestOrderedProductsParams(),
+          ),
+        ),
       child: BlocListener<RsHomeBloc, RsHomeState>(
-        listenWhen: (previous, current) => previous.restaurantReorderStatus != current.restaurantReorderStatus,
+        listenWhen: (previous, current) =>
+            previous.restaurantReorderStatus != current.restaurantReorderStatus,
         listener: (context, state) {
           if (state.restaurantReorderStatus == BlocStatus.success) {
             AppToast.showToast(
@@ -148,9 +170,7 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
         child: Scaffold(
           body: Column(
             children: [
-              HomeAppBar(
-                profileBloc: widget.args.profileBloc,
-              ),
+              HomeAppBar(profileBloc: widget.args.profileBloc),
               Expanded(
                 child: SingleChildScrollView(
                   padding: EdgeInsetsDirectional.symmetric(horizontal: 20),
@@ -159,23 +179,31 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                     children: [
                       SizedBox(height: 16),
                       BlocBuilder<RsHomeBloc, RsHomeState>(
-                        buildWhen: (previous, current) => previous.featuredOffersStatus != current.featuredOffersStatus,
+                        buildWhen: (previous, current) =>
+                            previous.featuredOffersStatus !=
+                            current.featuredOffersStatus,
                         builder: (context, state) {
-                          if (state.featuredOffersStatus == BlocStatus.loading) {
+                          if (state.featuredOffersStatus ==
+                              BlocStatus.loading) {
                             return LoadingPageView();
-                          } else if (state.featuredOffersStatus == BlocStatus.failed) {
+                          } else if (state.featuredOffersStatus ==
+                              BlocStatus.failed) {
                             return FailureWidget(
                               message: state.errorMessage.toString(),
                               onRetry: () {
                                 context.read<RsHomeBloc>().add(
-                                  FetchFeaturedOffersEvent(params: FetchFeaturedOffersParams()),
+                                  FetchFeaturedOffersEvent(
+                                    params: FetchFeaturedOffersParams(),
+                                  ),
                                 );
                               },
                             );
                           }
 
-                          if (state.featuredOffersStatus == BlocStatus.success) {
-                            lengthOfOffers = state.featuredOffers?.offers?.length ?? 0;
+                          if (state.featuredOffersStatus ==
+                              BlocStatus.success) {
+                            lengthOfOffers =
+                                state.featuredOffers?.offers?.length ?? 0;
                             return lengthOfOffers > 0
                                 ? Column(
                                     mainAxisSize: MainAxisSize.min,
@@ -184,10 +212,18 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                                         height: 130,
                                         child: PageView.builder(
                                           controller: _pageController,
-                                          itemCount: state.featuredOffers?.offers?.length ?? 0,
-                                          itemBuilder: (_, index) => RsHomeOfferCard(
-                                            offer: state.featuredOffers!.offers![index],
-                                          ),
+                                          itemCount:
+                                              state
+                                                  .featuredOffers
+                                                  ?.offers
+                                                  ?.length ??
+                                              0,
+                                          itemBuilder: (_, index) =>
+                                              RsHomeOfferCard(
+                                                offer: state
+                                                    .featuredOffers!
+                                                    .offers![index],
+                                              ),
                                         ),
                                       ),
                                       SizedBox(height: 8),
@@ -196,13 +232,19 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                                         child: Center(
                                           child: SmoothPageIndicator(
                                             controller: _pageController,
-                                            count: state.featuredOffers?.offers?.length ?? 0,
+                                            count:
+                                                state
+                                                    .featuredOffers
+                                                    ?.offers
+                                                    ?.length ??
+                                                0,
                                             effect: ExpandingDotsEffect(
                                               expansionFactor: 1.01,
                                               dotHeight: 4,
                                               dotWidth: 18,
                                               spacing: 4,
-                                              dotColor: AppColors.primary.withValues(alpha: .34),
+                                              dotColor: AppColors.primary
+                                                  .withValues(alpha: .34),
                                               activeDotColor: AppColors.primary,
                                             ),
                                             onDotClicked: (index) {},
@@ -220,20 +262,26 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                       SizedBox(height: 16),
                       BlocBuilder<RsHomeBloc, RsHomeState>(
                         builder: (context, state) {
-                          if (state.restaurantCategoriesStatus == BlocStatus.loading ||
+                          if (state.restaurantCategoriesStatus ==
+                                  BlocStatus.loading ||
                               state.restaurantCategoriesStatus == null ||
-                              state.restaurantCategoriesStatus == BlocStatus.init) {
+                              state.restaurantCategoriesStatus ==
+                                  BlocStatus.init) {
                             return const SizedBox(
                               height: 96,
                               child: Center(child: CircularProgressIndicator()),
                             );
                           }
-                          if (state.restaurantCategoriesStatus == BlocStatus.failed) {
+                          if (state.restaurantCategoriesStatus ==
+                              BlocStatus.failed) {
                             return const SizedBox.shrink();
                           }
 
-                          final categories = state.restaurantCategories?.categories ?? const [];
-                          if (categories.isEmpty) return const SizedBox.shrink();
+                          final categories =
+                              state.restaurantCategories?.categories ??
+                              const [];
+                          if (categories.isEmpty)
+                            return const SizedBox.shrink();
 
                           return CategoriesBar(
                             selectedCategory: selectedCategory,
@@ -241,7 +289,8 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                             onCategorySelected: (index) {
                               selectedCategory = index;
                               setState(() {});
-                              if (index < 0 || index >= categories.length) return;
+                              if (index < 0 || index >= categories.length)
+                                return;
                               context.pushRoute(
                                 '/rshomecategoryproducts',
                                 arguments: RsHomeCategoryProductsScreenParams(
