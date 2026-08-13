@@ -1,6 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/auth/auth_gate.dart';
+
 class ClOccasionTypeCardWidget extends StatelessWidget {
   const ClOccasionTypeCardWidget({
     required this.title,
@@ -48,7 +50,15 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: () async {
+        await AuthGate.requireAuth(
+          context,
+          onAuthenticated: () {
+            if (!context.mounted) return;
+            onTap();
+          },
+        );
+      },
       borderRadius: BorderRadius.circular(16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
