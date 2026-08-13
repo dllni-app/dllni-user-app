@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/auth/auth_gate.dart';
 import '../data/cl_main_route_args.dart';
 
 class ClPropertyTypeCardWidget extends StatelessWidget {
@@ -51,8 +52,14 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        context.pushRoute('/clmainhomedescription', arguments: args);
+      onTap: () async {
+        await AuthGate.requireAuth(
+          context,
+          onAuthenticated: () {
+            if (!context.mounted) return;
+            context.pushRoute('/clmainhomedescription', arguments: args);
+          },
+        );
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
