@@ -1,15 +1,13 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
-import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/core/widgets/legal_links_launcher.dart';
+import 'package:dllni_user_app/core/widgets/phone_number_widget/my_phone_number_field_widget.dart';
 import 'package:dllni_user_app/features/auth/view/auth_form_validators.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
 import 'package:dllni_user_app/features/auth/view/screens/verify_account_screen.dart';
 import 'package:dllni_user_app/features/auth/view/widgets/auth_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:toastification/toastification.dart';
 
 @AutoRoutePage(path: '/register')
@@ -23,11 +21,10 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _phoneFieldKey = GlobalKey<AppPhoneNumberFieldState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final ValueNotifier<String> _phoneValue = ValueNotifier<String>('');
 
-  PhoneNumber? _phone;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _acceptedLegal = false;
@@ -39,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _nameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _phoneValue.dispose();
     super.dispose();
   }
 
@@ -56,19 +54,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final phoneError = await _phoneFieldKey.currentState?.validate();
-    if (!mounted) return;
-    if (phoneError != null) {
-      AppToast.showToast(
-        context: context,
-        message: phoneError,
-        type: ToastificationType.error,
-      );
-      return;
-    }
-
-    final phone = formatPhoneForApi(_phone);
-    if (phone == null) return;
+    final phone = _phoneValue.value.trim();
+    if (phone.isEmpty) return;
 
     bloc.add(
       RegisterSubmittedEvent(
@@ -84,19 +71,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return BlocProvider(
       create: (_) => getIt<AuthBloc>(),
       child: BlocListener<AuthBloc, AuthState>(
-        listenWhen: (prev, curr) => curr.registerStatus == BlocStatus.failed || curr.registerStatus == BlocStatus.success,
+        listenWhen: (prev, curr) =>
+            curr.registerStatus == BlocStatus.failed ||
+            curr.registerStatus == BlocStatus.success,
         listener: (context, state) async {
           if (state.registerStatus == BlocStatus.failed) {
             final error = state.registerErrorMessage ?? '';
             if (error.contains('USER_ALREADY_REGISTERED')) {
-              AppToast.showToast(context: context, message: 'لديك حساب مسجل مسبقاً. يرجى تسجيل الدخول.', type: ToastificationType.info);
+              AppToast.showToast(
+                context: context,
+                message: 'لديك حساب مسجل مسبقاً. يرجى تسجيل الدخول.',
+                type: ToastificationType.info,
+              );
               if (context.mounted) context.pushRoute('/login');
               return;
             }
             if (error.contains('VERIFICATION_REQUIRED')) {
-              final phone = formatPhoneForApi(_phone);
-              if (phone != null && context.mounted) {
-                AppToast.showToast(context: context, message: 'تم إرسال رمز التحقق إلى رقم الهاتف.', type: ToastificationType.info);
+              final phone = _phoneValue.value.trim();
+              if (phone.isNotEmpty && context.mounted) {
+                AppToast.showToast(
+                  context: context,
+                  message: 'تم إرسال رمز التحقق إلى رقم الهاتف.',
+                  type: ToastificationType.info,
+                );
                 context.pushRoute(
                   '/verify-account',
                   arguments: VerifyAccountRouteArgs(
@@ -107,19 +104,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
               }
               return;
             }
-            AppToast.showToast(context: context, message: state.registerErrorMessage ?? 'فشل إنشاء الحساب', type: ToastificationType.error);
+            AppToast.showToast(
+              context: context,
+              message: state.registerErrorMessage ?? 'فشل إنشاء الحساب',
+              type: ToastificationType.error,
+            );
             return;
           }
           if (state.registerStatus == BlocStatus.success) {
-            final r = state.registerResult;
-            final phone = formatPhoneForApi(_phone);
-            if (context.mounted && phone != null) {
+            final result = state.registerResult;
+            final phone = _phoneValue.value.trim();
+            if (context.mounted && phone.isNotEmpty) {
               context.pushRoute(
                 '/verify-account',
                 arguments: VerifyAccountRouteArgs(
                   phone: phone,
-                  message: r?.message,
-                  expiresAt: r?.expiresAt,
+                  message: result?.message,
+                  expiresAt: result?.expiresAt,
                 ),
               );
             }
@@ -142,16 +143,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'أدخل الاسم الكامل',
                       validator: AuthFormValidators.fullName,
                       enabled: !loading,
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: _iconGray, size: 22),
+                      prefixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        color: _iconGray,
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(height: 18),
-                    AppPhoneNumberField(
-                      key: _phoneFieldKey,
-                      label: 'رقم الجوال',
-                      isRequired: true,
+                    Row(
+                      children: [
+                        AppText.bodyMedium(
+                          'رقم الجوال',
+                          fontWeight: FontWeight.w500,
+                        ),
+                        AppText.bodyMedium(
+                          '*',
+                          color: context.error,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    MyPhoneNumberField(
+                      internationalPhoneValue: _phoneValue,
+                      hintText: 'رقم الجوال',
+                      isMargin: false,
                       enabled: !loading,
-                      variant: AppPhoneFieldVariant.auth,
-                      onChanged: (number) => _phone = number,
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 18),
                     _PasswordField(
@@ -161,7 +179,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'أدخل كلمة المرور',
                       obscureText: _obscurePassword,
                       enabled: !loading,
-                      onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
+                      onToggleVisibility: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                       validator: AuthFormValidators.password,
                     ),
                     const SizedBox(height: 18),
@@ -172,14 +191,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'أدخل كلمة المرور مرة ثانية',
                       obscureText: _obscureConfirm,
                       enabled: !loading,
-                      onToggleVisibility: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                      validator: (v) => AuthFormValidators.confirmPassword(v, _passwordController.text),
+                      onToggleVisibility: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                      validator: (value) => AuthFormValidators.confirmPassword(
+                        value,
+                        _passwordController.text,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     _LegalConsentRow(
                       value: _acceptedLegal,
                       enabled: !loading,
-                      onChanged: (value) => setState(() => _acceptedLegal = value ?? false),
+                      onChanged: (value) =>
+                          setState(() => _acceptedLegal = value ?? false),
                     ),
                   ],
                 ),
@@ -196,7 +220,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Divider(height: 1, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
-                  AppText.bodySmall('لديك حساب بالفعل؟', color: _iconGray, style: const TextStyle(fontSize: 13)),
+                  AppText.bodySmall(
+                    'لديك حساب بالفعل؟',
+                    color: _iconGray,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                   const SizedBox(height: 10),
                   InkWell(
                     onTap: loading ? null : () => context.pushRoute('/login'),
@@ -205,7 +233,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: context.secondary.withAlpha(25),
-                        border: Border.all(color: context.secondary.withAlpha(220), width: 1),
+                        border: Border.all(
+                          color: context.secondary.withAlpha(220),
+                          width: 1,
+                        ),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       child: AppText.labelLarge(
@@ -282,7 +313,9 @@ class _LegalConsentRow extends StatelessWidget {
                   style: const TextStyle(fontSize: 12),
                 ),
                 GestureDetector(
-                  onTap: enabled ? () => launchTermsAndConditions(context) : null,
+                  onTap: enabled
+                      ? () => launchTermsAndConditions(context)
+                      : null,
                   child: AppText.bodySmall(
                     'شروط الاستخدام',
                     color: context.secondary,
@@ -333,7 +366,12 @@ class _PasswordField extends StatelessWidget {
         Row(
           children: [
             AppText.bodyMedium(label, fontWeight: FontWeight.w500),
-            if (isRequired) AppText.bodyMedium('*', color: context.error, fontWeight: FontWeight.w500),
+            if (isRequired)
+              AppText.bodyMedium(
+                '*',
+                color: context.error,
+                fontWeight: FontWeight.w500,
+              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -342,15 +380,29 @@ class _PasswordField extends StatelessWidget {
           obscureText: obscureText,
           enabled: enabled,
           validator: validator,
-          style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14, fontWeight: FontWeight.w400),
+          style: const TextStyle(
+            color: Color(0xff2F2B3D),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
           decoration: authFieldDecoration(
             context,
             hasError: false,
             hintText: hintText,
-            prefixIcon: const Icon(Icons.lock_outline_rounded, color: _iconGray, size: 22),
+            prefixIcon: const Icon(
+              Icons.lock_outline_rounded,
+              color: _iconGray,
+              size: 22,
+            ),
             suffixIcon: IconButton(
               onPressed: enabled ? onToggleVisibility : null,
-              icon: Icon(obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: _iconGray, size: 22),
+              icon: Icon(
+                obscureText
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: _iconGray,
+                size: 22,
+              ),
             ),
           ),
         ),
