@@ -45,7 +45,7 @@ class _AppState extends State<App> {
     return ToastificationWrapper(
       child: MaterialApp(
         navigatorKey: widget.navigatorKey,
-        title: 'دللني',
+        title: 'ع الندهة',
         debugShowCheckedModeBanner: false,
         locale: context.locale,
         supportedLocales: context.supportedLocales,
