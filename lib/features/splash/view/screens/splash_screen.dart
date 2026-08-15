@@ -6,10 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/themes/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({
-    required this.onFinished,
-    super.key,
-  });
+  const SplashScreen({required this.onFinished, super.key});
 
   final VoidCallback onFinished;
 
@@ -44,10 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
         systemNavigationBarColor: AppColors.primary,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
-      child: Material(
-        color: AppColors.primary,
-        child: _SplashLogo(),
-      ),
+      child: Material(color: AppColors.primary, child: _SplashLogo()),
     );
   }
 }
@@ -62,7 +56,7 @@ class _SplashLogo extends StatelessWidget {
         'assets/images/app_logo.png',
         width: MediaQuery.sizeOf(context).width * 0.5,
         fit: BoxFit.contain,
-        semanticLabel: 'دللني',
+        semanticLabel: 'ع الندهة',
       ),
     );
   }

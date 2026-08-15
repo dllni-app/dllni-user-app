@@ -66,32 +66,29 @@ class RsAppOfferCard extends StatelessWidget {
               ),
             ),
             if (offer != '')
-              SizedBox(
-                width: context.width,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: context.primaryContainer,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          bottomRight: Radius.circular(16),
-                        ),
-                      ),
-                      padding: EdgeInsetsDirectional.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      child: AppText.labelSmall(
-                        offer,
-                        fontWeight: FontWeight.bold,
-                        color: context.onPrimaryContainer,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: context.primaryContainer,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
                       ),
                     ),
-                  ],
-                ),
+                    padding: EdgeInsetsDirectional.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: AppText.labelSmall(
+                      offer,
+                      fontWeight: FontWeight.bold,
+                      color: context.onPrimaryContainer,
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
