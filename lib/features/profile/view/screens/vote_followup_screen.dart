@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../data/models/profile_api_models.dart';
+import '../../../rs_main/view/rs_main_screen.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/expandable_numbered_section.dart';
 import '../widgets/list_widgets_separated.dart';
@@ -359,13 +360,29 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     unawaited(_handleVoteTimeExpired());
   }
 
+  RsMainScreenParams _restaurantMainParams({bool openDiscoverSearch = false}) {
+    return RsMainScreenParams(
+      profileBloc: getIt<ProfileBloc>(),
+      initialPage: openDiscoverSearch ? 1 : 0,
+      expandSearch: openDiscoverSearch,
+    );
+  }
+
+  void _openBestRestaurantSearch(BuildContext navigationContext) {
+    navigationContext.pushRouteAndRemoveUntil(
+      '/rsmain',
+      predicate: (route) => route.isFirst,
+      arguments: _restaurantMainParams(openDiscoverSearch: true),
+    );
+  }
+
   Future<void> _handleVoteTimeExpired() async {
     final winnerData = await _resolveWinnerDataForSheet();
     if (!mounted) return;
     context.pushRouteAndRemoveUntil(
       '/rsmain',
       predicate: (route) => route.isFirst,
-      arguments: getIt<ProfileBloc>(),
+      arguments: _restaurantMainParams(),
     );
     _showWinnerBottomSheetOnRoot(winnerData);
   }
@@ -419,9 +436,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
             winnerName: winnerData.winnerName,
             onShowBestOfferTap: () {
               Navigator.of(rootContext).pop();
-              ScaffoldMessenger.maybeOf(rootContext)?.showSnackBar(
-                const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')),
-              );
+              _openBestRestaurantSearch(rootContext);
             },
           );
         },
@@ -460,9 +475,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
           winnerName: winnerLabel ?? 'بيتزا مارغريتا',
           onShowBestOfferTap: () {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')),
-            );
+            _openBestRestaurantSearch(context);
           },
         );
       },
