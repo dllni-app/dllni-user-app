@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../orders/data/models/orders_api_models.dart';
 import '../../../orders/view/screens/restaurant_order_tracking_screen.dart';
+import '../../data/models/group_order_api_models.dart';
 import '../manager/bloc/profile_bloc.dart';
 
 class GroupOrderFooterBar extends StatefulWidget {
