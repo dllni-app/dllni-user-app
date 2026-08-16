@@ -157,7 +157,7 @@ class _RsStoreOfferProductsScreenState
                           crossAxisCount: 2,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 0.65,
+                          childAspectRatio: 0.6,
                         ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) =>

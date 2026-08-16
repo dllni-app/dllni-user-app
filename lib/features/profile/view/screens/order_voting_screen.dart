@@ -24,7 +24,10 @@ class OrderVotingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<ProfileBloc>(create: (_) => getIt<ProfileBloc>(), child: const _OrderVotingScreenBody());
+    return BlocProvider<ProfileBloc>(
+      create: (_) => getIt<ProfileBloc>(),
+      child: const _OrderVotingScreenBody(),
+    );
   }
 }
 
@@ -38,7 +41,8 @@ class _OrderVotingScreenBody extends StatefulWidget {
 class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
   final TextEditingController _mealController = TextEditingController();
   final TextEditingController _suggestionsController = TextEditingController();
-  final TextEditingController _restaurantTypeController = TextEditingController();
+  final TextEditingController _restaurantTypeController =
+      TextEditingController();
   final TextEditingController _durationController = TextEditingController();
   final FocusNode _mealFocusNode = FocusNode();
 
@@ -81,10 +85,12 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
     final bloc = context.read<ProfileBloc>();
     final st = bloc.state;
     if (!forceRetry) {
-      if (query == _lastCommittedMealQuery && st.voteSuggestionsStatus == BlocStatus.loading) {
+      if (query == _lastCommittedMealQuery &&
+          st.voteSuggestionsStatus == BlocStatus.loading) {
         return;
       }
-      if (query == _lastCommittedMealQuery && st.voteSuggestionsStatus == BlocStatus.success) {
+      if (query == _lastCommittedMealQuery &&
+          st.voteSuggestionsStatus == BlocStatus.success) {
         return;
       }
     }
@@ -124,7 +130,9 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
       _selectedSuggestions
         ..clear()
         ..addAll(options);
-      _suggestionsController.text = _selectedSuggestions.isEmpty ? '' : 'تم اختيار ${_selectedSuggestions.length}';
+      _suggestionsController.text = _selectedSuggestions.isEmpty
+          ? ''
+          : 'تم اختيار ${_selectedSuggestions.length}';
     });
   }
 
@@ -139,7 +147,9 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
       return;
     }
     final selectedName = options.isEmpty ? null : options.first;
-    final types = context.read<ProfileBloc>().state.voteSuggestions?.cuisineTypes ?? const <VoteCuisineTypeModel>[];
+    final types =
+        context.read<ProfileBloc>().state.voteSuggestions?.cuisineTypes ??
+        const <VoteCuisineTypeModel>[];
     VoteCuisineTypeModel? value;
     for (final type in types) {
       if (type.name == selectedName) {
@@ -163,34 +173,53 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
     if (!mounted || options == null) {
       return;
     }
-    final value = options.isEmpty ? null : int.tryParse(options.first.split(' ').first);
+    final value = options.isEmpty
+        ? null
+        : int.tryParse(options.first.split(' ').first);
     setState(() {
       _selectedDurationMinutes = value;
       _durationController.text = value == null ? '' : _durationLabel(value);
     });
   }
 
-  Future<List<VoteProductSuggestionModel>?> _showSuggestionsBottomSheet(ProfileBloc bloc) async {
-    final current = <int>{..._selectedSuggestions.map((e) => e.id).whereType<int>()};
+  Future<List<VoteProductSuggestionModel>?> _showSuggestionsBottomSheet(
+    ProfileBloc bloc,
+  ) async {
+    final current = <int>{
+      ..._selectedSuggestions.map((e) => e.id).whereType<int>(),
+    };
     return showModalBottomSheet<List<VoteProductSuggestionModel>>(
       context: context,
       backgroundColor: context.onPrimary,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
             return BlocBuilder<ProfileBloc, ProfileState>(
               bloc: bloc,
               builder: (context, state) {
-                final title = AppText.titleMedium('اختر خيارات التصويت', fontWeight: FontWeight.w700, color: context.primary);
+                final title = AppText.titleMedium(
+                  'اختر خيارات التصويت',
+                  fontWeight: FontWeight.w700,
+                  color: context.primary,
+                );
 
-                final isLoading = state.voteSuggestionsStatus == null || state.voteSuggestionsStatus == BlocStatus.loading;
+                final isLoading =
+                    state.voteSuggestionsStatus == null ||
+                    state.voteSuggestionsStatus == BlocStatus.loading;
 
                 if (isLoading) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 24, 18, 24),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        24,
+                        18,
+                        24,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -198,7 +227,10 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                           const SizedBox(height: 24),
                           const CircularProgressIndicator(),
                           const SizedBox(height: 12),
-                          AppText.bodyMedium('جاري تحميل الاقتراحات…', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            'جاري تحميل الاقتراحات…',
+                            color: const Color(0xff6B7280),
+                          ),
                         ],
                       ),
                     ),
@@ -208,14 +240,22 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 if (state.voteSuggestionsStatus == BlocStatus.failed) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        16,
+                        18,
+                        18,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           title,
                           const SizedBox(height: 12),
-                          AppText.bodyMedium(state.errorMessage ?? 'تعذر تحميل الاقتراحات', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            state.errorMessage ?? 'تعذر تحميل الاقتراحات',
+                            color: const Color(0xff6B7280),
+                          ),
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
@@ -225,9 +265,15 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                               elevation: 0,
                               backgroundColor: context.primary,
                               foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: AppText.labelLarge('إعادة المحاولة', color: context.onPrimary, fontWeight: FontWeight.w700),
+                            child: AppText.labelLarge(
+                              'إعادة المحاولة',
+                              color: context.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ),
@@ -235,23 +281,36 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                   );
                 }
 
-                final suggestions = state.voteSuggestions?.suggestions ?? const <VoteProductSuggestionModel>[];
+                final suggestions =
+                    state.voteSuggestions?.suggestions ??
+                    const <VoteProductSuggestionModel>[];
 
                 if (suggestions.isEmpty) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        16,
+                        18,
+                        18,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           title,
                           const SizedBox(height: 12),
-                          AppText.bodyMedium('لا توجد اقتراحات لهذا البحث', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            'لا توجد اقتراحات لهذا البحث',
+                            color: const Color(0xff6B7280),
+                          ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
-                            child: OutlinedButton(onPressed: () => Navigator.of(modalContext).pop(), child: const Text('إغلاق')),
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(modalContext).pop(),
+                              child: const Text('إغلاق'),
+                            ),
                           ),
                         ],
                       ),
@@ -263,7 +322,12 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
 
                 return SafeArea(
                   child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      18,
+                      16,
+                      18,
+                      18,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +343,9 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                               final isSelected = current.contains(optionId);
                               return ListTile(
                                 contentPadding: EdgeInsets.zero,
-                                title: AppText.bodyMedium(_suggestionDisplay(option)),
+                                title: AppText.bodyMedium(
+                                  _suggestionDisplay(option),
+                                ),
                                 trailing: Checkbox(
                                   value: isSelected,
                                   activeColor: context.primaryContainer,
@@ -311,16 +377,24 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              final selected = suggestions.where((e) => current.contains(e.id)).toList();
+                              final selected = suggestions
+                                  .where((e) => current.contains(e.id))
+                                  .toList();
                               Navigator.of(modalContext).pop(selected);
                             },
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               backgroundColor: context.primary,
                               foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: AppText.labelLarge('تأكيد', color: context.onPrimary, fontWeight: FontWeight.w700),
+                            child: AppText.labelLarge(
+                              'تأكيد',
+                              color: context.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -336,26 +410,41 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
   }
 
   Future<Set<String>?> _showCuisineBottomSheet(ProfileBloc bloc) async {
-    final current = <String>{if (_selectedRestaurantType?.name != null) _selectedRestaurantType!.name!};
+    final current = <String>{
+      if (_selectedRestaurantType?.name != null) _selectedRestaurantType!.name!,
+    };
     return showModalBottomSheet<Set<String>>(
       context: context,
       backgroundColor: context.onPrimary,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
             return BlocBuilder<ProfileBloc, ProfileState>(
               bloc: bloc,
               builder: (context, state) {
-                final title = AppText.titleMedium('حدد نوع المطعم', fontWeight: FontWeight.w700, color: context.primary);
+                final title = AppText.titleMedium(
+                  'حدد نوع المطعم',
+                  fontWeight: FontWeight.w700,
+                  color: context.primary,
+                );
 
-                final isLoading = state.voteSuggestionsStatus == null || state.voteSuggestionsStatus == BlocStatus.loading;
+                final isLoading =
+                    state.voteSuggestionsStatus == null ||
+                    state.voteSuggestionsStatus == BlocStatus.loading;
 
                 if (isLoading) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 24, 18, 24),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        24,
+                        18,
+                        24,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -363,7 +452,10 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                           const SizedBox(height: 24),
                           const CircularProgressIndicator(),
                           const SizedBox(height: 12),
-                          AppText.bodyMedium('جاري التحميل…', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            'جاري التحميل…',
+                            color: const Color(0xff6B7280),
+                          ),
                         ],
                       ),
                     ),
@@ -373,24 +465,39 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 if (state.voteSuggestionsStatus == BlocStatus.failed) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        16,
+                        18,
+                        18,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           title,
                           const SizedBox(height: 12),
-                          AppText.bodyMedium(state.errorMessage ?? 'تعذر التحميل', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            state.errorMessage ?? 'تعذر التحميل',
+                            color: const Color(0xff6B7280),
+                          ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => _commitMealSearch(forceRetry: true),
+                            onPressed: () =>
+                                _commitMealSearch(forceRetry: true),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               backgroundColor: context.primary,
                               foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: AppText.labelLarge('إعادة المحاولة', color: context.onPrimary, fontWeight: FontWeight.w700),
+                            child: AppText.labelLarge(
+                              'إعادة المحاولة',
+                              color: context.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ),
@@ -398,24 +505,40 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                   );
                 }
 
-                final types = state.voteSuggestions?.cuisineTypes ?? const <VoteCuisineTypeModel>[];
-                final labels = types.map((e) => e.name ?? '').where((e) => e.isNotEmpty).toList();
+                final types =
+                    state.voteSuggestions?.cuisineTypes ??
+                    const <VoteCuisineTypeModel>[];
+                final labels = types
+                    .map((e) => e.name ?? '')
+                    .where((e) => e.isNotEmpty)
+                    .toList();
 
                 if (labels.isEmpty) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        16,
+                        18,
+                        18,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           title,
                           const SizedBox(height: 12),
-                          AppText.bodyMedium('لا توجد أنواع مطاعم', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            'لا توجد أنواع مطاعم',
+                            color: const Color(0xff6B7280),
+                          ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
-                            child: OutlinedButton(onPressed: () => Navigator.of(modalContext).pop(), child: const Text('إغلاق')),
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(modalContext).pop(),
+                              child: const Text('إغلاق'),
+                            ),
                           ),
                         ],
                       ),
@@ -427,7 +550,12 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
 
                 return SafeArea(
                   child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      18,
+                      16,
+                      18,
+                      18,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,7 +572,9 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 title: AppText.bodyMedium(option),
                                 trailing: Radio<String>(
                                   value: option,
-                                  groupValue: current.isEmpty ? null : current.first,
+                                  groupValue: current.isEmpty
+                                      ? null
+                                      : current.first,
                                   activeColor: context.primaryContainer,
                                   onChanged: (value) {
                                     setModalState(() {
@@ -469,14 +599,21 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () => Navigator.of(modalContext).pop(current),
+                            onPressed: () =>
+                                Navigator.of(modalContext).pop(current),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               backgroundColor: context.primary,
                               foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: AppText.labelLarge('تأكيد', color: context.onPrimary, fontWeight: FontWeight.w700),
+                            child: AppText.labelLarge(
+                              'تأكيد',
+                              color: context.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -492,26 +629,42 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
   }
 
   Future<Set<String>?> _showDurationBottomSheet(ProfileBloc bloc) async {
-    final current = <String>{if (_selectedDurationMinutes != null) _durationLabel(_selectedDurationMinutes!)};
+    final current = <String>{
+      if (_selectedDurationMinutes != null)
+        _durationLabel(_selectedDurationMinutes!),
+    };
     return showModalBottomSheet<Set<String>>(
       context: context,
       backgroundColor: context.onPrimary,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
             return BlocBuilder<ProfileBloc, ProfileState>(
               bloc: bloc,
               builder: (context, state) {
-                final title = AppText.titleMedium('حدد مدة التصويت', fontWeight: FontWeight.w700, color: context.primary);
+                final title = AppText.titleMedium(
+                  'حدد مدة التصويت',
+                  fontWeight: FontWeight.w700,
+                  color: context.primary,
+                );
 
-                final isLoading = state.voteSuggestionsStatus == null || state.voteSuggestionsStatus == BlocStatus.loading;
+                final isLoading =
+                    state.voteSuggestionsStatus == null ||
+                    state.voteSuggestionsStatus == BlocStatus.loading;
 
                 if (isLoading) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 24, 18, 24),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        24,
+                        18,
+                        24,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -519,7 +672,10 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                           const SizedBox(height: 24),
                           const CircularProgressIndicator(),
                           const SizedBox(height: 12),
-                          AppText.bodyMedium('جاري التحميل…', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            'جاري التحميل…',
+                            color: const Color(0xff6B7280),
+                          ),
                         ],
                       ),
                     ),
@@ -528,24 +684,39 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 if (state.voteSuggestionsStatus == BlocStatus.failed) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        16,
+                        18,
+                        18,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           title,
                           const SizedBox(height: 12),
-                          AppText.bodyMedium(state.errorMessage ?? 'تعذر التحميل', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            state.errorMessage ?? 'تعذر التحميل',
+                            color: const Color(0xff6B7280),
+                          ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => _commitMealSearch(forceRetry: true),
+                            onPressed: () =>
+                                _commitMealSearch(forceRetry: true),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               backgroundColor: context.primary,
                               foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: AppText.labelLarge('إعادة المحاولة', color: context.onPrimary, fontWeight: FontWeight.w700),
+                            child: AppText.labelLarge(
+                              'إعادة المحاولة',
+                              color: context.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ),
@@ -553,24 +724,37 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                   );
                 }
 
-                final presets = state.voteSuggestions?.durationMinutesPresets ?? const <int>[];
+                final presets =
+                    state.voteSuggestions?.durationMinutesPresets ??
+                    const <int>[];
                 final labels = presets.map(_durationLabel).toList();
 
                 if (labels.isEmpty) {
                   return SafeArea(
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        18,
+                        16,
+                        18,
+                        18,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           title,
                           const SizedBox(height: 12),
-                          AppText.bodyMedium('لا توجد مدات متاحة', color: const Color(0xff6B7280)),
+                          AppText.bodyMedium(
+                            'لا توجد مدات متاحة',
+                            color: const Color(0xff6B7280),
+                          ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
-                            child: OutlinedButton(onPressed: () => Navigator.of(modalContext).pop(), child: const Text('إغلاق')),
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(modalContext).pop(),
+                              child: const Text('إغلاق'),
+                            ),
                           ),
                         ],
                       ),
@@ -582,7 +766,12 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
 
                 return SafeArea(
                   child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      18,
+                      16,
+                      18,
+                      18,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,7 +788,9 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 title: AppText.bodyMedium(option),
                                 trailing: Radio<String>(
                                   value: option,
-                                  groupValue: current.isEmpty ? null : current.first,
+                                  groupValue: current.isEmpty
+                                      ? null
+                                      : current.first,
                                   activeColor: context.primaryContainer,
                                   onChanged: (value) {
                                     setModalState(() {
@@ -624,14 +815,21 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () => Navigator.of(modalContext).pop(current),
+                            onPressed: () =>
+                                Navigator.of(modalContext).pop(current),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               backgroundColor: context.primary,
                               foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: AppText.labelLarge('تأكيد', color: context.onPrimary, fontWeight: FontWeight.w700),
+                            child: AppText.labelLarge(
+                              'تأكيد',
+                              color: context.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -652,13 +850,16 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
       if (_selectedSuggestions.isEmpty) {
         _suggestionsController.clear();
       } else {
-        _suggestionsController.text = 'تم اختيار ${_selectedSuggestions.length}';
+        _suggestionsController.text =
+            'تم اختيار ${_selectedSuggestions.length}';
       }
     });
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _durationLabel(int minutes) => '$minutes دقيقة';
@@ -673,7 +874,10 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
   void _syncSuggestionsFromState(ProfileState state) {
     final incoming = state.voteSuggestions;
     if (incoming == null) return;
-    final validIds = incoming.suggestions.map((e) => e.id).whereType<int>().toSet();
+    final validIds = incoming.suggestions
+        .map((e) => e.id)
+        .whereType<int>()
+        .toSet();
     setState(() {
       _durations = incoming.durationMinutesPresets;
       _restaurantTypes = incoming.cuisineTypes;
@@ -684,13 +888,16 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
       if (_selectedSuggestions.isEmpty) {
         _suggestionsController.clear();
       } else {
-        _suggestionsController.text = 'تم اختيار ${_selectedSuggestions.length}';
+        _suggestionsController.text =
+            'تم اختيار ${_selectedSuggestions.length}';
       }
-      if (_selectedRestaurantType != null && !_restaurantTypes.any((e) => e.id == _selectedRestaurantType!.id)) {
+      if (_selectedRestaurantType != null &&
+          !_restaurantTypes.any((e) => e.id == _selectedRestaurantType!.id)) {
         _selectedRestaurantType = null;
         _restaurantTypeController.clear();
       }
-      if (_selectedDurationMinutes != null && !_durations.contains(_selectedDurationMinutes)) {
+      if (_selectedDurationMinutes != null &&
+          !_durations.contains(_selectedDurationMinutes)) {
         _selectedDurationMinutes = null;
         _durationController.clear();
       }
@@ -706,20 +913,36 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
       CreateVoteEvent(
         params: CreateVoteParams(
           durationMinutes: _selectedDurationMinutes ?? 30,
-          foodCategoryHint: _mealController.text.trim().isEmpty ? null : _mealController.text.trim(),
+          foodCategoryHint: _mealController.text.trim().isEmpty
+              ? null
+              : _mealController.text.trim(),
           cuisineTypeId: _selectedRestaurantType?.id,
-          options: _selectedSuggestions.map((e) => {'label': e.name ?? '', 'productId': e.id}).toList(),
+          options: _selectedSuggestions
+              .map((e) => {'label': e.name ?? '', 'productId': e.id})
+              .toList(),
         ),
       ),
     );
   }
 
-  List<OrderVotingCreatedPollItem> _mapActiveVotesToPollItems(List<VoteCreatedData> activeVotes) {
+  List<OrderVotingCreatedPollItem> _mapActiveVotesToPollItems(
+    List<VoteCreatedData> activeVotes,
+  ) {
     return activeVotes.where((e) => e.vote?.id != null).map((entry) {
       final vote = entry.vote!;
-      final title = (vote.foodCategoryHint ?? '').trim().isNotEmpty ? vote.foodCategoryHint!.trim() : 'تصويت #${vote.id}';
-      final detailParts = <String>['${entry.options.length} خيارات', _remainingLabel(vote.secondsRemaining)];
-      return OrderVotingCreatedPollItem(title: title, detail: detailParts.join(' • '), voteId: vote.id!, initialData: entry);
+      final title = (vote.foodCategoryHint ?? '').trim().isNotEmpty
+          ? vote.foodCategoryHint!.trim()
+          : 'تصويت #${vote.id}';
+      final detailParts = <String>[
+        '${entry.options.length} خيارات',
+        _remainingLabel(vote.secondsRemaining),
+      ];
+      return OrderVotingCreatedPollItem(
+        title: title,
+        detail: detailParts.join(' • '),
+        voteId: vote.id!,
+        initialData: entry,
+      );
     }).toList();
   }
 
@@ -743,22 +966,29 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
           previous.activeVotesStatus != current.activeVotesStatus ||
           previous.voteSuggestions != current.voteSuggestions,
       listener: (context, state) {
-        if (state.voteSuggestionsStatus == BlocStatus.failed && state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+        if (state.voteSuggestionsStatus == BlocStatus.failed &&
+            state.errorMessage != null &&
+            state.errorMessage!.isNotEmpty) {
           _showSnackBar(state.errorMessage!);
         }
         if (state.voteSuggestionsStatus == BlocStatus.success) {
           _syncSuggestionsFromState(state);
         }
-        if (state.createVoteStatus == BlocStatus.failed && state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+        if (state.createVoteStatus == BlocStatus.failed &&
+            state.errorMessage != null &&
+            state.errorMessage!.isNotEmpty) {
           _showSnackBar(state.errorMessage!);
           return;
         }
-        if (state.activeVotesStatus == BlocStatus.failed && state.errorMessage != null && state.errorMessage!.isNotEmpty) {
+        if (state.activeVotesStatus == BlocStatus.failed &&
+            state.errorMessage != null &&
+            state.errorMessage!.isNotEmpty) {
           _showSnackBar(state.errorMessage!);
           return;
         }
         // Add SuccessActionBottomSheet for createVoteStatus success
-        if (state.createVoteStatus == BlocStatus.success && _mode == OrderVotingMode.create) {
+        if (state.createVoteStatus == BlocStatus.success &&
+            _mode == OrderVotingMode.create) {
           final createdVote = state.createdVote;
           final voteId = createdVote?.voteId;
           if (createdVote?.data == null || voteId == null) {
@@ -768,7 +998,9 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
             builder: (context) {
               return SuccessActionBottomSheet(
                 title: 'تم إنشاء التصويت',
@@ -778,14 +1010,21 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                   Navigator.of(context).pop();
                   context.pushRoute(
                     '/votefollowup',
-                    arguments: VoteFollowupScreenParams(voteId: voteId, initialData: createdVote!.data),
+                    arguments: VoteFollowupScreenParams(
+                      voteId: voteId,
+                      initialData: createdVote!.data,
+                    ),
                   );
                 },
                 onShare: () {
                   Navigator.of(context).pop();
                   context.pushRoute(
                     '/votefollowup',
-                    arguments: VoteFollowupScreenParams(voteId: voteId, initialData: createdVote!.data, needShare: true),
+                    arguments: VoteFollowupScreenParams(
+                      voteId: voteId,
+                      initialData: createdVote!.data,
+                      needShare: true,
+                    ),
                   );
                 },
               );
@@ -815,7 +1054,11 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                             _mode = mode;
                           });
                           if (mode == OrderVotingMode.existingPolls) {
-                            context.read<ProfileBloc>().add(FetchActiveVotesEvent(params: FetchActiveVotesParams()));
+                            context.read<ProfileBloc>().add(
+                              FetchActiveVotesEvent(
+                                params: FetchActiveVotesParams(),
+                              ),
+                            );
                           }
                         },
                       ),
@@ -833,30 +1076,51 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              AppText.headlineMedium('اكتب ما تود أكله اليوم', color: const Color(0xff374151)),
+                              AppText.bodyLarge(
+                                'اكتب ما تود أكله اليوم',
+                                color: const Color(0xff374151),
+                              ),
                               const SizedBox(height: 12),
                               TextFormField(
                                 controller: _mealController,
                                 focusNode: _mealFocusNode,
                                 textInputAction: TextInputAction.done,
-                                onFieldSubmitted: (_) => _onMealFieldSubmitted(),
+                                onFieldSubmitted: (_) =>
+                                    _onMealFieldSubmitted(),
                                 onEditingComplete: _onMealFieldSubmitted,
-                                style: const TextStyle(color: Color(0xff2F2B3D), fontSize: 14, fontWeight: FontWeight.w400),
+                                style: const TextStyle(
+                                  color: Color(0xff2F2B3D),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
                                 decoration: InputDecoration(
                                   hintText: 'مثال: برغر',
-                                  hintStyle: const TextStyle(color: Color(0xff9CA3AF), fontSize: 14),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  hintStyle: const TextStyle(
+                                    color: Color(0xff9CA3AF),
+                                    fontSize: 14,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(color: Color(0xffD1D5DB)),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xffD1D5DB),
+                                    ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(color: Color(0xffD1D5DB)),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xffD1D5DB),
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide(color: context.primary, width: 1.2),
+                                    borderSide: BorderSide(
+                                      color: context.primary,
+                                      width: 1.2,
+                                    ),
                                   ),
                                   filled: true,
                                   fillColor: const Color(0xffF9FAFB),
@@ -884,15 +1148,24 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                     controller: _suggestionsController,
                                     readOnly: true,
                                     onTap: () {
-                                      _pickMultipleSuggestions(context.read<ProfileBloc>());
+                                      _pickMultipleSuggestions(
+                                        context.read<ProfileBloc>(),
+                                      );
                                     },
-                                    suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                                    suffixIcon: const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                    ),
                                   );
                                 },
                               ),
                               const SizedBox(height: 10),
                               if (_selectedSuggestions.isNotEmpty) ...[
-                                OrderVotingTagWrap(values: _selectedSuggestions.map(_suggestionDisplay).toList(), onRemoveTap: _removeSuggestionChip),
+                                OrderVotingTagWrap(
+                                  values: _selectedSuggestions
+                                      .map(_suggestionDisplay)
+                                      .toList(),
+                                  onRemoveTap: _removeSuggestionChip,
+                                ),
                                 const SizedBox(height: 14),
                               ],
                               BlocBuilder<ProfileBloc, ProfileState>(
@@ -902,9 +1175,13 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                     controller: _restaurantTypeController,
                                     readOnly: true,
                                     onTap: () {
-                                      _pickRestaurantType(context.read<ProfileBloc>());
+                                      _pickRestaurantType(
+                                        context.read<ProfileBloc>(),
+                                      );
                                     },
-                                    suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                                    suffixIcon: const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                    ),
                                   );
                                 },
                               ),
@@ -916,16 +1193,22 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                     controller: _durationController,
                                     readOnly: true,
                                     onTap: () {
-                                      _pickDuration(context.read<ProfileBloc>());
+                                      _pickDuration(
+                                        context.read<ProfileBloc>(),
+                                      );
                                     },
-                                    suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                                    suffixIcon: const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                    ),
                                   );
                                 },
                               ),
                               const SizedBox(height: 10),
                               if (_selectedDurationMinutes != null)
                                 OrderVotingTagWrap(
-                                  values: [_durationLabel(_selectedDurationMinutes!)],
+                                  values: [
+                                    _durationLabel(_selectedDurationMinutes!),
+                                  ],
                                   onRemoveTap: (_) {
                                     setState(() {
                                       _selectedDurationMinutes = null;
@@ -939,25 +1222,39 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                       ] else ...[
                         BlocBuilder<ProfileBloc, ProfileState>(
                           buildWhen: (previous, current) =>
-                              previous.activeVotesStatus != current.activeVotesStatus || previous.activeVotes != current.activeVotes,
+                              previous.activeVotesStatus !=
+                                  current.activeVotesStatus ||
+                              previous.activeVotes != current.activeVotes,
                           builder: (context, state) {
                             if (state.activeVotesStatus == BlocStatus.loading) {
                               return const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 40),
-                                child: Center(child: CircularProgressIndicator()),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
                               );
                             }
 
                             if (state.activeVotesStatus == BlocStatus.failed) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                ),
                                 child: Column(
                                   children: [
-                                    AppText.bodyMedium(state.errorMessage ?? 'تعذر تحميل المقارنات القائمة', color: const Color(0xff6B7280)),
+                                    AppText.bodyMedium(
+                                      state.errorMessage ??
+                                          'تعذر تحميل المقارنات القائمة',
+                                      color: const Color(0xff6B7280),
+                                    ),
                                     const SizedBox(height: 12),
                                     OutlinedButton(
                                       onPressed: () {
-                                        context.read<ProfileBloc>().add(FetchActiveVotesEvent(params: FetchActiveVotesParams()));
+                                        context.read<ProfileBloc>().add(
+                                          FetchActiveVotesEvent(
+                                            params: FetchActiveVotesParams(),
+                                          ),
+                                        );
                                       },
                                       child: const Text('إعادة المحاولة'),
                                     ),
@@ -966,11 +1263,18 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                               );
                             }
 
-                            final items = _mapActiveVotesToPollItems(state.activeVotes);
+                            final items = _mapActiveVotesToPollItems(
+                              state.activeVotes,
+                            );
                             if (items.isEmpty) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                child: AppText.bodyMedium('لا توجد مقارنات قائمة حالياً', color: const Color(0xff6B7280)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                ),
+                                child: AppText.bodyMedium(
+                                  'لا توجد مقارنات قائمة حالياً',
+                                  color: const Color(0xff6B7280),
+                                ),
                               );
                             }
 
@@ -979,7 +1283,10 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                               onPollTap: (item) {
                                 context.pushRoute(
                                   '/votefollowup',
-                                  arguments: VoteFollowupScreenParams(voteId: item.voteId, initialData: item.initialData),
+                                  arguments: VoteFollowupScreenParams(
+                                    voteId: item.voteId,
+                                    initialData: item.initialData,
+                                  ),
                                 );
                               },
                             );
@@ -992,27 +1299,49 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
               ),
               if (_mode == OrderVotingMode.create)
                 Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 16,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
                         flex: 3,
                         child: BlocBuilder<ProfileBloc, ProfileState>(
-                          buildWhen: (previous, current) => previous.createVoteStatus != current.createVoteStatus,
+                          buildWhen: (previous, current) =>
+                              previous.createVoteStatus !=
+                              current.createVoteStatus,
                           builder: (context, state) {
-                            final isCreating = state.createVoteStatus == BlocStatus.loading;
+                            final isCreating =
+                                state.createVoteStatus == BlocStatus.loading;
                             return ElevatedButton(
-                              onPressed: isCreating ? null : _createVoteAndContinue,
+                              onPressed: isCreating
+                                  ? null
+                                  : _createVoteAndContinue,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: context.primary,
                                 foregroundColor: context.onPrimary,
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                               child: isCreating
-                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : AppText.labelLarge('إنشاء التصويت', color: context.onPrimary, fontWeight: FontWeight.w700),
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : AppText.labelLarge(
+                                      'إنشاء التصويت',
+                                      color: context.onPrimary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                             );
                           },
                         ),
@@ -1024,11 +1353,19 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                             Navigator.of(context).maybePop();
                           },
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: context.error.withAlpha(200)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: BorderSide(
+                              color: context.error.withAlpha(200),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: AppText.labelLarge('إلغاء', color: context.error, fontWeight: FontWeight.w600),
+                          child: AppText.labelLarge(
+                            'إلغاء',
+                            color: context.error,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

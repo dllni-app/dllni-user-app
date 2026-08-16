@@ -130,7 +130,7 @@ class AuthTrailing extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           AppText.bodySmall(
-            'جميع الحقوق محفوظة © 2026 تطبيق دللني',
+            'جميع الحقوق محفوظة © 2026 تطبيق ع الندهة',
             textAlign: TextAlign.center,
             color: Color(0xff9CA3AF),
             style: const TextStyle(fontSize: 11),

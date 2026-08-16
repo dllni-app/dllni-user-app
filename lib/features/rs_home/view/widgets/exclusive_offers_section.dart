@@ -25,10 +25,19 @@ class ExclusiveOffersSection extends StatelessWidget {
           children: [
             AppText(
               "عروض حصرية بالقرب منك",
-              style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
+              style: TextStyle(
+                color: Color(0xFF1A1A1A),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                height: 24 / 16,
+              ),
             ),
             SizedBox(width: 8),
-            FaIcon(FontAwesomeIcons.fire, color: context.primaryContainer, size: 14),
+            FaIcon(
+              FontAwesomeIcons.fire,
+              color: context.primaryContainer,
+              size: 14,
+            ),
           ],
         ),
         BlocBuilder<RsHomeBloc, RsHomeState>(
@@ -37,10 +46,14 @@ class ExclusiveOffersSection extends StatelessWidget {
                 state.restaurantExclusiveOffersStatus == BlocStatus.init ||
                 state.restaurantExclusiveOffersStatus == null) {
               return Center(child: CircularProgressIndicator());
-            } else if (state.restaurantExclusiveOffersStatus == BlocStatus.failed) {
-              return Center(child: AppText.labelLarge(state.errorMessage ?? 'حدث خطا ما'));
+            } else if (state.restaurantExclusiveOffersStatus ==
+                BlocStatus.failed) {
+              return Center(
+                child: AppText.labelLarge(state.errorMessage ?? 'حدث خطا ما'),
+              );
             } else {
-              final list = state.restaurantExclusiveOffers?.exclusiveOffers ?? const [];
+              final list =
+                  state.restaurantExclusiveOffers?.exclusiveOffers ?? const [];
               if (list.isEmpty) return const SizedBox.shrink();
 
               String badgeText(int index) {
@@ -73,14 +86,20 @@ class ExclusiveOffersSection extends StatelessWidget {
                 return '';
               }
 
-              void onOfferTap(BuildContext context, RestaurantHomeExclusiveOfferItem item) {
+              void onOfferTap(
+                BuildContext context,
+                RestaurantHomeExclusiveOfferItem item,
+              ) {
                 final r = item.restaurant;
                 if (r != null && (r.id ?? 0) > 0) {
                   context.pushRoute(
                     '/rs_store',
                     arguments: StoreDetailsScreenParams(
                       restaurantId: r.id!,
-                      preview: RestaurantPreviewData.fromHomeExclusiveOfferRestaurant(r),
+                      preview:
+                          RestaurantPreviewData.fromHomeExclusiveOfferRestaurant(
+                            r,
+                          ),
                     ),
                   );
                   return;
@@ -141,27 +160,6 @@ class _RestaurantHomeEngagementCards extends StatelessWidget {
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            AppText(
-              'عروض حصرية بالقرب منك',
-              style: TextStyle(
-                color: Color(0xFF1A1A1A),
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                height: 24 / 16,
-              ),
-            ),
-            SizedBox(width: 8),
-            FaIcon(
-              FontAwesomeIcons.solidCircleCheck,
-              color: context.primaryContainer,
-              size: 14,
-            ),
-          ],
-        ),
-        SizedBox(height: 16),
-        Row(
           spacing: 11,
           children: [
             Expanded(
@@ -189,7 +187,10 @@ class _RestaurantHomeEngagementCards extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          AppImage.asset(Assets.images.giftImage.path, height: 88),
+                          AppImage.asset(
+                            Assets.images.giftImage.path,
+                            height: 88,
+                          ),
                         ],
                       ),
                       AppText.bodyLarge(
@@ -258,7 +259,10 @@ class _RestaurantHomeEngagementCards extends StatelessWidget {
                 end: AlignmentGeometry.bottomRight,
               ),
             ),
-            padding: EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 16),
+            padding: EdgeInsetsDirectional.symmetric(
+              horizontal: 14,
+              vertical: 16,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
