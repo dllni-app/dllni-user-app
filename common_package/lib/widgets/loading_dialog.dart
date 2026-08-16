@@ -17,7 +17,12 @@ class Loading {
             children: [
               CircularProgressIndicator(color: context.primary),
               const SizedBox(width: 10),
-              Text(context.locale == const Locale('ar') ? 'يتم التحميل...' : 'Loading...', style: const TextStyle(color: Color(0xff000000))),
+              Text(
+                context.locale == const Locale('ar')
+                    ? 'يتم التحميل...'
+                    : 'Loading...',
+                style: const TextStyle(color: Color(0xff000000)),
+              ),
             ],
           ),
         );
@@ -26,10 +31,19 @@ class Loading {
   }
 
   static void close() {
-    if (Loading._context != null) {
-      if (_context!.mounted) {
-        Navigator.of(Loading._context!).pop();
-      }
+    final dialogContext = Loading._context;
+    Loading._context = null;
+
+    if (dialogContext == null || !dialogContext.mounted) return;
+
+    // Close the loading dialog route itself instead of popping the navigator's
+    // current route. This matters when a success handler navigates before its
+    // finally block calls Loading.close(): Navigator.pop() would otherwise pop
+    // the newly opened screen and leave the loading dialog visible underneath.
+    final route = ModalRoute.of(dialogContext);
+    final navigator = route?.navigator;
+    if (route != null && navigator != null && route.isActive) {
+      navigator.removeRoute(route);
     }
   }
 
@@ -37,7 +51,11 @@ class Loading {
     return value
         ? Container(
             alignment: Alignment.center,
-            child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: context.primaryColor)),
+            child: SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(color: context.primaryColor),
+            ),
           )
         : const SizedBox(height: 5, width: 5);
   }

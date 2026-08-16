@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../data/models/profile_api_models.dart';
+import '../../../rs_main/view/rs_main_screen.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/expandable_numbered_section.dart';
 import '../widgets/list_widgets_separated.dart';
@@ -359,13 +360,41 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     unawaited(_handleVoteTimeExpired());
   }
 
+  RsMainScreenParams _restaurantMainParams({
+    bool openDiscoverSearch = false,
+    String? initialSearch,
+  }) {
+    final search = initialSearch?.trim();
+    final hasInitialSearch = search != null && search.isNotEmpty;
+    return RsMainScreenParams(
+      profileBloc: getIt<ProfileBloc>(),
+      initialPage: openDiscoverSearch ? 1 : 0,
+      expandSearch: openDiscoverSearch && !hasInitialSearch,
+      initialSearch: hasInitialSearch ? search : null,
+    );
+  }
+
+  void _openBestRestaurantSearch(
+    BuildContext navigationContext,
+    String winnerName,
+  ) {
+    navigationContext.pushRouteAndRemoveUntil(
+      '/rsmain',
+      predicate: (route) => route.isFirst,
+      arguments: _restaurantMainParams(
+        openDiscoverSearch: true,
+        initialSearch: winnerName,
+      ),
+    );
+  }
+
   Future<void> _handleVoteTimeExpired() async {
     final winnerData = await _resolveWinnerDataForSheet();
     if (!mounted) return;
     context.pushRouteAndRemoveUntil(
       '/rsmain',
       predicate: (route) => route.isFirst,
-      arguments: getIt<ProfileBloc>(),
+      arguments: _restaurantMainParams(),
     );
     _showWinnerBottomSheetOnRoot(winnerData);
   }
@@ -419,9 +448,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
             winnerName: winnerData.winnerName,
             onShowBestOfferTap: () {
               Navigator.of(rootContext).pop();
-              ScaffoldMessenger.maybeOf(rootContext)?.showSnackBar(
-                const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')),
-              );
+              _openBestRestaurantSearch(rootContext, winnerData.winnerName);
             },
           );
         },
@@ -453,16 +480,19 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   }
 
   void _showWinnerDialog(String? winnerLabel) {
+    final normalizedWinnerName = winnerLabel?.trim();
+    final winnerName =
+        normalizedWinnerName == null || normalizedWinnerName.isEmpty
+        ? 'بيتزا مارغريتا'
+        : normalizedWinnerName;
     showDialog<void>(
       context: context,
       builder: (_) {
         return VoteWinnerDialog(
-          winnerName: winnerLabel ?? 'بيتزا مارغريتا',
+          winnerName: winnerName,
           onShowBestOfferTap: () {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('سيتم ربط أفضل عرض قريباً')),
-            );
+            _openBestRestaurantSearch(context, winnerName);
           },
         );
       },

@@ -16,11 +16,13 @@ class RsMainScreenParams {
   final ProfileBloc profileBloc;
   final int initialPage;
   final bool expandSearch;
+  final String? initialSearch;
 
   RsMainScreenParams({
     required this.profileBloc,
     this.initialPage = 0,
     this.expandSearch = false,
+    this.initialSearch,
   });
 }
 
@@ -65,7 +67,10 @@ class _RsMainScreenState extends State<RsMainScreen>
     RsHomeScreen(
       args: RsHomeScreenParams(profileBloc: profileBloc),
     ),
-    RsDiscoverScreen(expandSearch: widget.args.expandSearch),
+    RsDiscoverScreen(
+      expandSearch: widget.args.expandSearch,
+      initialSearch: widget.args.initialSearch,
+    ),
     const RsOffersScreen(),
     const RsFavouriteScreen(),
   ];
