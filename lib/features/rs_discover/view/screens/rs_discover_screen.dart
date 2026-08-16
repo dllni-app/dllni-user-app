@@ -15,10 +15,12 @@ class RsDiscoverScreen extends StatefulWidget {
     super.key,
     this.selectedView = 0,
     this.expandSearch = false,
+    this.initialSearch,
   });
 
   final int selectedView;
   final bool expandSearch;
+  final String? initialSearch;
 
   @override
   State<RsDiscoverScreen> createState() => _RsDiscoverScreenState();
@@ -32,7 +34,11 @@ class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedView = widget.selectedView.clamp(0, 1).toInt();
+    final initialSearch = widget.initialSearch?.trim() ?? '';
+    _smartSearchInitialQuery = initialSearch.isEmpty ? null : initialSearch;
+    _selectedView = _smartSearchInitialQuery == null
+        ? widget.selectedView.clamp(0, 1).toInt()
+        : 1;
   }
 
   @override
