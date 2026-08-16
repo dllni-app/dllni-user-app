@@ -360,19 +360,31 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     unawaited(_handleVoteTimeExpired());
   }
 
-  RsMainScreenParams _restaurantMainParams({bool openDiscoverSearch = false}) {
+  RsMainScreenParams _restaurantMainParams({
+    bool openDiscoverSearch = false,
+    String? initialSearch,
+  }) {
+    final search = initialSearch?.trim();
+    final hasInitialSearch = search != null && search.isNotEmpty;
     return RsMainScreenParams(
       profileBloc: getIt<ProfileBloc>(),
       initialPage: openDiscoverSearch ? 1 : 0,
-      expandSearch: openDiscoverSearch,
+      expandSearch: openDiscoverSearch && !hasInitialSearch,
+      initialSearch: hasInitialSearch ? search : null,
     );
   }
 
-  void _openBestRestaurantSearch(BuildContext navigationContext) {
+  void _openBestRestaurantSearch(
+    BuildContext navigationContext,
+    String winnerName,
+  ) {
     navigationContext.pushRouteAndRemoveUntil(
       '/rsmain',
       predicate: (route) => route.isFirst,
-      arguments: _restaurantMainParams(openDiscoverSearch: true),
+      arguments: _restaurantMainParams(
+        openDiscoverSearch: true,
+        initialSearch: winnerName,
+      ),
     );
   }
 
@@ -436,7 +448,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
             winnerName: winnerData.winnerName,
             onShowBestOfferTap: () {
               Navigator.of(rootContext).pop();
-              _openBestRestaurantSearch(rootContext);
+              _openBestRestaurantSearch(rootContext, winnerData.winnerName);
             },
           );
         },
@@ -468,14 +480,19 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
   }
 
   void _showWinnerDialog(String? winnerLabel) {
+    final normalizedWinnerName = winnerLabel?.trim();
+    final winnerName =
+        normalizedWinnerName == null || normalizedWinnerName.isEmpty
+        ? 'بيتزا مارغريتا'
+        : normalizedWinnerName;
     showDialog<void>(
       context: context,
       builder: (_) {
         return VoteWinnerDialog(
-          winnerName: winnerLabel ?? 'بيتزا مارغريتا',
+          winnerName: winnerName,
           onShowBestOfferTap: () {
             Navigator.of(context).pop();
-            _openBestRestaurantSearch(context);
+            _openBestRestaurantSearch(context, winnerName);
           },
         );
       },
