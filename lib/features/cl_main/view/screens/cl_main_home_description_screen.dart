@@ -42,6 +42,7 @@ class _ClMainHomeDescriptionScreenState
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
   bool _isLoadingOverlayVisible = false;
+  bool _isEstimatingForContinue = false;
 
   @override
   Widget build(BuildContext context) {
@@ -99,13 +100,17 @@ class _ClMainHomeDescriptionScreenState
         listenWhen: (previous, current) =>
             previous.estimatePriceStatus != current.estimatePriceStatus,
         listener: (context, state) {
+          if (!_isEstimatingForContinue) return;
+
           if (state.estimatePriceStatus == BlocStatus.loading) {
             _showLoadingOverlay();
           } else if (state.estimatePriceStatus == BlocStatus.success &&
               state.estimatePrice != null) {
+            _isEstimatingForContinue = false;
             _closeLoadingOverlay();
             _openScheduleScreen(bloc, state.estimatePrice!);
-          } else {
+          } else if (state.estimatePriceStatus == BlocStatus.failed) {
+            _isEstimatingForContinue = false;
             _closeLoadingOverlay();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -348,6 +353,12 @@ class _ClMainHomeDescriptionScreenState
     }
   }
 
+  @override
+  void dispose() {
+    _closeLoadingOverlay();
+    super.dispose();
+  }
+
   void _changeRoomBucketCount(
     CleaningRoomType roomType,
     CleaningRoomSize roomSize,
@@ -370,6 +381,8 @@ class _ClMainHomeDescriptionScreenState
   }
 
   void _onContinuePressed(ClMainBloc bloc, ClMainState state) {
+    if (_isEstimatingForContinue) return;
+
     if (!_roomSizeBreakdown.hasAnyRoom) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -388,6 +401,7 @@ class _ClMainHomeDescriptionScreenState
       assignmentMode: state.assignmentMode,
     );
 
+    _isEstimatingForContinue = true;
     bloc.add(
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams(
