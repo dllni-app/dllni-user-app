@@ -8,6 +8,8 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     required this.travelFee,
     required this.addonsTotal,
     required this.totalPrice,
+    this.discountAmount,
+    this.totalAfterDiscount,
     this.distanceKm,
     this.adminMargin,
     this.isPricingFinal,
@@ -22,6 +24,8 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   final double travelFee;
   final double addonsTotal;
   final double totalPrice;
+  final double? discountAmount;
+  final double? totalAfterDiscount;
   final double? distanceKm;
   final double? adminMargin;
   final bool? isPricingFinal;
@@ -48,6 +52,10 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     final showProvisionalWarning = isPricingFinal == false;
     final scheduleDateLine = _scheduleDateLine;
     final displayedServicePrice = basePrice + (adminMargin ?? 0);
+    final hasDiscount = discountAmount != null && discountAmount! > 0;
+    final displayedTotal = hasDiscount && totalAfterDiscount != null
+        ? totalAfterDiscount!
+        : totalPrice;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -95,12 +103,20 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
               value: '${_formatDistance(distanceKm!)} كم',
             ),
           ],
+          if (hasDiscount) ...[
+            const SizedBox(height: 8),
+            _SummaryRowWidget(
+              label: 'الخصم',
+              value: '- ${discountAmount!.formatMoney()}',
+              valueColor: const Color(0xFF047857),
+            ),
+          ],
           const SizedBox(height: 10),
           const Divider(color: Color(0xFFE5E7EB), thickness: 1),
           const SizedBox(height: 8),
           _SummaryRowWidget(
-            label: 'الإجمالي',
-            value: totalPrice.formatMoney(),
+            label: hasDiscount ? 'الإجمالي بعد الخصم' : 'الإجمالي',
+            value: displayedTotal.formatMoney(),
             isTotal: true,
           ),
           if (showProvisionalWarning) ...[
@@ -132,11 +148,13 @@ class _SummaryRowWidget extends StatelessWidget {
     required this.label,
     required this.value,
     this.isTotal = false,
+    this.valueColor,
   });
 
   final String label;
   final String value;
   final bool isTotal;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +170,7 @@ class _SummaryRowWidget extends StatelessWidget {
         const Spacer(),
         AppText.bodyMedium(
           value,
-          color: color,
+          color: valueColor ?? color,
           fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
           textAlign: TextAlign.right,
         ),
