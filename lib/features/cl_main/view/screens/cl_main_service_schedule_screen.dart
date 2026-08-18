@@ -67,6 +67,8 @@ class _ClMainServiceScheduleScreenState
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
   String? _appliedCouponCode;
+  double? _appliedCouponDiscount;
+  double? _appliedCouponTotal;
   BlocStatus _cleaningServicesStatus = BlocStatus.init;
   String? _cleaningServicesErrorMessage;
   List<CleaningServiceModel> _availableCleaningServices =
@@ -258,6 +260,8 @@ class _ClMainServiceScheduleScreenState
                             travelFee: estimate?.pricing?.travelFee ?? 0,
                             addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
                             totalPrice: estimate?.pricing?.totalPrice ?? 0,
+                            discountAmount: _appliedCouponDiscount,
+                            totalAfterDiscount: _appliedCouponTotal,
                             adminMargin: estimate?.pricing?.adminMargin,
                             isPricingFinal: estimate?.pricing?.isPricingFinal,
                             currency: estimate?.pricing?.currency ?? 'SYP',
@@ -410,6 +414,8 @@ class _ClMainServiceScheduleScreenState
         _couponStatus = ClCouponUiStatus.failed;
         _couponMessage = 'يرجى إدخال كود الحسم أولاً.';
         _appliedCouponCode = null;
+        _appliedCouponDiscount = null;
+        _appliedCouponTotal = null;
       });
       return;
     }
@@ -418,6 +424,8 @@ class _ClMainServiceScheduleScreenState
         _couponStatus = ClCouponUiStatus.failed;
         _couponMessage = 'يرجى إكمال بيانات الخدمة والعنوان أولاً.';
         _appliedCouponCode = null;
+        _appliedCouponDiscount = null;
+        _appliedCouponTotal = null;
       });
       return;
     }
@@ -426,6 +434,8 @@ class _ClMainServiceScheduleScreenState
       _couponStatus = ClCouponUiStatus.loading;
       _couponMessage = null;
       _appliedCouponCode = null;
+      _appliedCouponDiscount = null;
+      _appliedCouponTotal = null;
     });
 
     final response = await getIt<CheckRestaurantCouponUseCase>()(
@@ -446,6 +456,8 @@ class _ClMainServiceScheduleScreenState
         _couponStatus = ClCouponUiStatus.failed;
         _couponMessage = failure.message;
         _appliedCouponCode = null;
+        _appliedCouponDiscount = null;
+        _appliedCouponTotal = null;
       }),
       (result) {
         final data = result.data;
@@ -454,6 +466,8 @@ class _ClMainServiceScheduleScreenState
             _couponStatus = ClCouponUiStatus.failed;
             _couponMessage = _couponReasonMessage(data?.reason);
             _appliedCouponCode = null;
+            _appliedCouponDiscount = null;
+            _appliedCouponTotal = null;
           });
           return;
         }
@@ -465,6 +479,8 @@ class _ClMainServiceScheduleScreenState
               ? 'تم تطبيق الكوبون. قيمة الخصم ${_formatDiscount(discount)} ل.س'
               : 'تم التحقق من الكوبون بنجاح.';
           _appliedCouponCode = data.couponCode ?? normalizedCode;
+          _appliedCouponDiscount = data.amounts?.discount;
+          _appliedCouponTotal = data.amounts?.total;
         });
       },
     );
@@ -510,6 +526,8 @@ class _ClMainServiceScheduleScreenState
 
   void _resetAppliedCoupon({String? message}) {
     _appliedCouponCode = null;
+    _appliedCouponDiscount = null;
+    _appliedCouponTotal = null;
     _couponStatus = ClCouponUiStatus.idle;
     _couponMessage = message;
   }
