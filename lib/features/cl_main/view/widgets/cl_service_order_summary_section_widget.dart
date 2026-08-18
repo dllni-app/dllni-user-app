@@ -53,8 +53,12 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     final scheduleDateLine = _scheduleDateLine;
     final displayedServicePrice = basePrice + (adminMargin ?? 0);
     final hasDiscount = discountAmount != null && discountAmount! > 0;
-    final displayedTotal = hasDiscount && totalAfterDiscount != null
-        ? totalAfterDiscount!
+    // Coupon amounts are calculated on the coupon-eligible subtotal only.
+    // Keep non-coupon charges (for example admin margin/travel) in the final
+    // customer total by subtracting the authoritative discount from the
+    // estimate total instead of displaying coupon.amounts.total directly.
+    final displayedTotal = hasDiscount
+        ? (totalPrice - discountAmount!).clamp(0, double.infinity).toDouble()
         : totalPrice;
     return Container(
       width: double.infinity,
