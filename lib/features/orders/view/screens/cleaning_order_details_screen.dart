@@ -187,6 +187,26 @@ class _CleaningOrderDetailsScreenState
     final searchingForWorkers = _isSearchingForWorkers(order, liveAcceptance);
     final showPreferredWorkerFallbackBanner =
         _showPreferredWorkerFallbackBanner(order, liveAcceptance);
+    final requiredWorkers =
+        liveAcceptance?.required ??
+        order.numberOfWorkers ??
+        (order.isMultiWorkerTeam ? null : 1);
+    final acceptedWorkers =
+        liveAcceptance?.accepted ??
+        (order.isMultiWorkerTeam
+            ? order.acceptedWorkerAssignments.length
+            : ((order.workerId != null || order.worker != null) ? 1 : 0));
+    final allWorkersAccepted =
+        liveAcceptance?.isFulfilled ??
+        (requiredWorkers != null &&
+            requiredWorkers > 0 &&
+            acceptedWorkers >= requiredWorkers);
+    final travelFee = order.travelFee ?? 0;
+    final displayedTotalPrice = allWorkersAccepted
+        ? (order.totalPrice ?? 0)
+        : ((order.totalPrice ?? 0) - travelFee)
+              .clamp(0, double.infinity)
+              .toDouble();
 
     Widget? sosTrailing;
     if (!isTerminalStatus) {
@@ -779,7 +799,9 @@ class _CleaningOrderDetailsScreenState
                           const SizedBox(height: 6),
                           _SummaryRow(
                             title: 'رسوم التنقل',
-                            value: (order.travelFee ?? 0).formatMoney(),
+                            value: allWorkersAccepted
+                                ? travelFee.formatMoney()
+                                : 'لم يتم حسابه بعد',
                           ),
                           if ((order.addonsTotal ?? 0) > 0) ...[
                             const SizedBox(height: 6),
@@ -793,13 +815,9 @@ class _CleaningOrderDetailsScreenState
                           const SizedBox(height: 10),
                           _SummaryRow(
                             title: 'الإجمالي',
-                            value: order.totalPrice.formatMoney(),
+                            value: displayedTotalPrice.formatMoney(),
                             isTotal: true,
                           ),
-                          if (order.isPricingFinal == false) ...[
-                            const SizedBox(height: 12),
-                            const _ProvisionalPricingNotice(),
-                          ],
                         ],
                       ),
                     ),
@@ -1985,30 +2003,6 @@ class _CleaningOrderDetailsScreenState
     _completionSheetDismissed =
         normalizedStatus == CleaningBookingStatus.awaitingCustomerCompletion &&
         _gateSession.isCompletionSuppressed(orderId);
-  }
-}
-
-class _ProvisionalPricingNotice extends StatelessWidget {
-  const _ProvisionalPricingNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF7E8),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFF3D6A1)),
-      ),
-      child: AppText.bodySmall(
-        "السعر المعروض تقريبي. لمقدم الخدمة الحق في معاينة المكان عند الوصول واقتراح سعر جديد يتوافق مع حجم العمل الفعلي قبل البدء، ولن يتم اعتماد أي تعديل إلا بعد موافقتك.",
-        // "السعر المعروض تقريبي. لمقدم الخدمة الحق في معاينة المكان عند الوصول واقتراح سعر جديد يتوافق مع حجم العمل الفعلي قبل البدء، ولن يتم اعتماد أي تعديل إلا بعد موافقتك.",
-        color: const Color(0xFF8A5A12),
-        fontWeight: FontWeight.w600,
-        textAlign: TextAlign.right,
-      ),
-    );
   }
 }
 
