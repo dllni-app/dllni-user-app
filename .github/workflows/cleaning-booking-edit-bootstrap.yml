@@ -1,16 +1,17 @@
 name: Cleaning Booking Edit Bootstrap
 
 on:
-  push:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
     branches:
-      - agent/cleaning-booking-edit-api
+      - main
 
 permissions:
   contents: write
 
 jobs:
   verify-and-apply:
-    if: ${{ !contains(github.event.head_commit.message, '[cleaning-edit-applied]') }}
+    if: ${{ github.event.pull_request.head.ref == 'agent/cleaning-booking-edit-api' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
