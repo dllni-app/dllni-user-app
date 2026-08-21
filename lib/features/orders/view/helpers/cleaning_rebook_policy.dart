@@ -55,23 +55,16 @@ class CleaningRebookOutcome {
     this.createMessage,
   });
 
-  /// Kept for backward compatibility with the existing navigation flow.
-  /// Editing now patches the same booking, so this is the existing order id.
+  /// Kept for compatibility with the existing screen result contract.
+  /// Editing now keeps the same booking id.
   final int? newOrderId;
   final String? cancelMessage;
   final String? createMessage;
 }
 
 enum CleaningRebookEditVisibility {
-  /// More than [CleaningRebookPolicy.minimumLeadTime] remaining — edits allowed.
   editable,
-
-  /// Less than 24 hours remaining, but scheduled time has not passed — show
-  /// controls disabled.
   locked,
-
-  /// Current time is at or after the scheduled service time — hide edit
-  /// controls.
   hidden,
 }
 
@@ -111,9 +104,8 @@ class CleaningRebookPolicy {
        patchOrder =
            patchOrder ?? ((params) => getIt<PatchCleaningOrderUseCase>()(params));
 
-  /// Legacy callbacks are kept in the constructor so existing call sites stay
-  /// source-compatible. They are intentionally no longer used for editing.
-  /// Cleaning booking edits are now in-place PATCH requests.
+  /// These callbacks remain in the constructor only to keep the current screen
+  /// wiring source-compatible. They are no longer executed by edit flows.
   final DataResponse<CleaningCancelResultModel> Function(
     CancelCleaningOrderParams params,
   )
@@ -132,7 +124,6 @@ class CleaningRebookPolicy {
   )
   patchOrder;
 
-  // Kept for compatibility with older tests/callers that reference the value.
   static const String cancelReason = 'قام المستخدم بتعديل بيانات الطلب';
   static const Duration minimumLeadTime = Duration(hours: 24);
 
@@ -162,6 +153,7 @@ class CleaningRebookPolicy {
         visibility: CleaningRebookEditVisibility.hidden,
       );
     }
+
     final current = now ?? DateTime.now();
     final remaining = scheduledAt.difference(current);
     if (remaining <= Duration.zero) {
@@ -180,6 +172,7 @@ class CleaningRebookPolicy {
         remaining: remaining,
       );
     }
+
     return CleaningRebookGuardResult(
       allowed: true,
       visibility: CleaningRebookEditVisibility.editable,
@@ -188,11 +181,13 @@ class CleaningRebookPolicy {
     );
   }
 
-  /// Updates the existing cleaning booking in place.
+  /// Patch the existing cleaning booking instead of cancelling it and creating
+  /// another booking.
   ///
-  /// The current booking is fetched immediately before save so the request can
-  /// contain only changed fields and react correctly if a worker accepted while
-  /// the edit screen was open.
+  /// A fresh copy is fetched immediately before save. The PATCH body contains
+  /// only values that actually changed, which is required because configuration
+  /// fields become immutable after workers accept while schedule-only edits may
+  /// still be accepted by the backend.
   Future<Either<Failure, CleaningRebookOutcome>> execute({
     required CleaningRebookRequest request,
     String cancelReasonMessage = cancelReason,
@@ -209,7 +204,7 @@ class CleaningRebookPolicy {
         );
       }
 
-      if (!current.canEdit) {
+      if (_isTerminalEditStatus(current.status)) {
         return const Left(
           ServerFailure(message: 'لا يمكن تعديل الطلب في حالته الحالية.'),
         );
@@ -247,7 +242,6 @@ class CleaningRebookPolicy {
           changes.containsKey('addressLatitude') ||
           changes.containsKey('addressLongitude');
       final hasAcceptedWorkers =
-          current.acceptedWorkersCount > 0 ||
           (current.workerAcceptance?.accepted ?? 0) > 0 ||
           current.acceptedWorkerAssignments.isNotEmpty;
 
@@ -299,6 +293,13 @@ class CleaningRebookPolicy {
         ),
       );
     });
+  }
+
+  static bool _isTerminalEditStatus(String? value) {
+    final status = (value ?? '').trim().toLowerCase();
+    return status == 'in_progress' ||
+        status == 'completed' ||
+        status == 'cancelled';
   }
 
   static String _normalizeTime(String? value) {
