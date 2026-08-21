@@ -8,7 +8,6 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
   const ClServiceGenderPreferenceSectionWidget({
     required this.selectedPreference,
     required this.onChanged,
-    this.enabled = true,
     this.step = 2,
     this.showStepBadge = false,
     super.key,
@@ -21,7 +20,6 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
 
   final CleaningGenderPreference selectedPreference;
   final ValueChanged<CleaningGenderPreference> onChanged;
-  final bool enabled;
   final int step;
   final bool showStepBadge;
 
@@ -49,7 +47,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
                     key: Key('cleaning_gender_pref_${preference.apiValue}'),
                     label: Text(preference.arabicLabel),
                     selected: selectedPreference == preference,
-                    onSelected: enabled ? (_) => onChanged(preference) : null,
+                    onSelected: (_) => onChanged(preference),
                     selectedColor: const Color(0xFF1E2A78),
                     backgroundColor: const Color(0xFFF3F4F6),
                     labelStyle: TextStyle(
@@ -67,14 +65,6 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
                 )
                 .toList(growable: false),
           ),
-          if (!enabled) ...[
-            const SizedBox(height: 8),
-            AppText.bodySmall(
-              'لا يمكن تغيير تفضيل مقدم الخدمة بعد قبول أحد مقدمي الخدمة للطلب.',
-              color: const Color(0xFF9CA3AF),
-              textAlign: TextAlign.right,
-            ),
-          ],
         ],
       ),
     );
