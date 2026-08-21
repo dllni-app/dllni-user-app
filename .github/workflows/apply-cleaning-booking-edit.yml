@@ -1,0 +1,165 @@
+name: Apply Cleaning Booking Edit
+
+on:
+  push:
+    branches:
+      - agent/cleaning-booking-edit-api
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[cleaning-edit-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/cleaning-booking-edit-api
+          fetch-depth: 0
+
+      - name: Apply model and UI integration
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"Pattern not found in {path}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          model = 'lib/features/orders/data/models/cleaning_orders_api_models.dart'
+
+          replace_once(model,
+          """  final int? numberOfWorkers;\n  final CleaningWorkerAcceptanceModel? workerAcceptance;\n\n  CleaningOrderModel({\n""",
+          """  final int? numberOfWorkers;\n  final bool canEdit;\n  final int acceptedWorkersCount;\n  final CleaningWorkerAcceptanceModel? workerAcceptance;\n\n  CleaningOrderModel({\n""")
+
+          replace_once(model,
+          """    this.numberOfWorkers,\n    this.workerAcceptance,\n  });\n\n  factory CleaningOrderModel.fromJson""",
+          """    this.numberOfWorkers,\n    this.canEdit = false,\n    this.acceptedWorkersCount = 0,\n    this.workerAcceptance,\n  });\n\n  factory CleaningOrderModel.fromJson""")
+
+          worker_count_parse = """      numberOfWorkers: _toInt(\n        _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),\n      ),\n      workerAcceptance:\n"""
+          worker_count_parse_with_edit = """      numberOfWorkers: _toInt(\n        _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),\n      ),\n      canEdit:\n          _toBool(_pick(m, const <String>['canEdit', 'can_edit'])) ?? false,\n      acceptedWorkersCount:\n          _toInt(\n            _pick(m, const <String>[\n              'acceptedWorkersCount',\n              'accepted_workers_count',\n            ]),\n          ) ??\n          0,\n      workerAcceptance:\n"""
+          replace_once(model, worker_count_parse, worker_count_parse_with_edit)
+
+          replace_once(model,
+          """  final int? numberOfWorkers;\n  final CleaningWorkerAcceptanceModel? workerAcceptance;\n  final CleaningOrderWorkerModel? preferredWorker;\n""",
+          """  final int? numberOfWorkers;\n  final bool canEdit;\n  final int acceptedWorkersCount;\n  final CleaningWorkerAcceptanceModel? workerAcceptance;\n  final CleaningOrderWorkerModel? preferredWorker;\n""")
+
+          replace_once(model,
+          """    this.numberOfWorkers,\n    this.workerAcceptance,\n    this.preferredWorker,\n""",
+          """    this.numberOfWorkers,\n    this.canEdit = false,\n    this.acceptedWorkersCount = 0,\n    this.workerAcceptance,\n    this.preferredWorker,\n""")
+
+          replace_once(model, worker_count_parse, worker_count_parse_with_edit)
+
+          replace_once(model,
+          """      numberOfWorkers: numberOfWorkers,\n      workerAcceptance: workerAcceptance,\n""",
+          """      numberOfWorkers: numberOfWorkers,\n      canEdit: canEdit,\n      acceptedWorkersCount: acceptedWorkersCount,\n      workerAcceptance: workerAcceptance,\n""")
+
+          details = 'lib/features/orders/view/screens/cleaning_order_details_screen.dart'
+
+          replace_once(details,
+          """    final statusBlocksEdit = _blocksReschedule(order) || _isRebooking;\n""",
+          """    final statusBlocksEdit = !order.canEdit || _isRebooking;\n""")
+
+          replace_once(details,
+          """    final allWorkersAccepted =\n        liveAcceptance?.isFulfilled ??\n""",
+          """    final hasAcceptedWorkers = _hasAcceptedWorkers(order);\n    final allWorkersAccepted =\n        liveAcceptance?.isFulfilled ??\n""")
+
+          replace_once(details,
+          """                      onChangeTap: hideEditActions\n                          ? null\n                          : editLocked\n                          ? () => _showLeadTimeLockedMessage(leadTimeCheck)\n                          : () => _changeAddress(order),\n                      changeActionEnabled: !editLocked,\n""",
+          """                      onChangeTap: hideEditActions\n                          ? null\n                          : hasAcceptedWorkers\n                          ? _showConfigurationLockedMessage\n                          : editLocked\n                          ? () => _showLeadTimeLockedMessage(leadTimeCheck)\n                          : () => _changeAddress(order),\n                      changeActionEnabled: !editLocked && !hasAcceptedWorkers,\n""")
+
+          replace_once(details,
+          """  bool _blocksReschedule(CleaningOrderDetailModel order) {\n    final s = _normStatus(order.status);\n    return s == CleaningBookingStatus.awaitingStartVerification ||\n        s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||\n        s == CleaningBookingStatus.awaitingCustomerCompletion ||\n        s == CleaningBookingStatus.inProgress ||\n        s == CleaningBookingStatus.timeExtensionRequested;\n  }\n\n""",
+          """)
+
+          replace_once(details,
+          """  Future<void> _changeAddress(CleaningOrderDetailModel order) async {\n    if (_isRebooking || _blocksReschedule(order)) return;\n""",
+          """  Future<void> _changeAddress(CleaningOrderDetailModel order) async {\n    if (_isRebooking || !order.canEdit || _hasAcceptedWorkers(order)) return;\n""")
+
+          replace_once(details,
+          """  Future<void> _goToReschedule(CleaningOrderDetailModel order) async {\n    if (_blocksReschedule(order) || _isRebooking) {\n""",
+          """  Future<void> _goToReschedule(CleaningOrderDetailModel order) async {\n    if (!order.canEdit || _isRebooking) {\n""")
+
+          replace_once(details,
+          """  bool _canEditRoomAssignments(CleaningOrderDetailModel order) {\n""",
+          """  bool _hasAcceptedWorkers(CleaningOrderDetailModel order) {\n    final liveAccepted = _effectiveWorkerAcceptance(order)?.accepted;\n    if (liveAccepted != null) return liveAccepted > 0;\n    return order.acceptedWorkersCount > 0 ||\n        order.acceptedWorkerAssignments.isNotEmpty;\n  }\n\n  bool _canEditRoomAssignments(CleaningOrderDetailModel order) {\n""")
+
+          replace_once(details,
+          """  void _showLeadTimeLockedMessage(CleaningRebookGuardResult leadTimeCheck) {\n""",
+          """  void _showConfigurationLockedMessage() {\n    if (!mounted) return;\n    ScaffoldMessenger.of(context).showSnackBar(\n      const SnackBar(\n        content: Text(\n          'لا يمكن تغيير عنوان أو إعدادات الخدمة بعد قبول مقدم الخدمة.',\n        ),\n      ),\n    );\n  }\n\n  void _showLeadTimeLockedMessage(CleaningRebookGuardResult leadTimeCheck) {\n""")
+
+          reschedule = 'lib/features/orders/view/screens/cleaning_order_reschedule_screen.dart'
+
+          replace_once(reschedule,
+          """    final order = widget.args.order;\n    final details = order.propertyDetails!;\n\n    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(\n""",
+          """    final order = widget.args.order;\n    final details = order.propertyDetails!;\n\n    if (!order.canEdit) {\n      ScaffoldMessenger.of(context).showSnackBar(\n        const SnackBar(content: Text('لا يمكن تعديل الطلب في حالته الحالية.')),\n      );\n      return;\n    }\n\n    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(\n""")
+
+          replace_once(reschedule,
+          """    final isSaveDisabled = _isSaving || _missingDataMessage != null;\n\n    return BlocProvider.value(\n""",
+          """    final hasAcceptedWorkers =\n        widget.args.order.acceptedWorkersCount > 0 ||\n        (widget.args.order.workerAcceptance?.accepted ?? 0) > 0;\n    final isSaveDisabled =\n        _isSaving || _missingDataMessage != null || !widget.args.order.canEdit;\n\n    return BlocProvider.value(\n""")
+
+          replace_once(reschedule,
+          """                            ClServiceGenderPreferenceSectionWidget(\n                              selectedPreference: _selectedGenderPreference,\n                              onChanged: (value) {\n""",
+          """                            ClServiceGenderPreferenceSectionWidget(\n                              selectedPreference: _selectedGenderPreference,\n                              enabled: !hasAcceptedWorkers,\n                              onChanged: (value) {\n""")
+          PY
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format touched Dart files
+        run: >-
+          dart format
+          lib/features/orders/data/models/cleaning_orders_api_models.dart
+          lib/features/orders/domain/usecases/patch_cleaning_order_use_case.dart
+          lib/features/orders/view/helpers/cleaning_rebook_policy.dart
+          lib/features/orders/view/screens/cleaning_order_details_screen.dart
+          lib/features/orders/view/screens/cleaning_order_reschedule_screen.dart
+          lib/features/cl_main/view/widgets/cl_service_gender_preference_section_widget.dart
+          test/features/orders/data/models/cleaning_booking_editability_test.dart
+          test/features/orders/domain/usecases/patch_cleaning_order_use_case_test.dart
+          test/features/orders/view/helpers/cleaning_rebook_policy_test.dart
+
+      - name: Analyze touched Flutter sources
+        run: >-
+          flutter analyze
+          lib/features/orders/data/models/cleaning_orders_api_models.dart
+          lib/features/orders/domain/usecases/patch_cleaning_order_use_case.dart
+          lib/features/orders/view/helpers/cleaning_rebook_policy.dart
+          lib/features/orders/view/screens/cleaning_order_details_screen.dart
+          lib/features/orders/view/screens/cleaning_order_reschedule_screen.dart
+          lib/features/cl_main/view/widgets/cl_service_gender_preference_section_widget.dart
+
+      - name: Run focused cleaning edit tests
+        run: >-
+          flutter test
+          test/features/orders/data/models/cleaning_booking_editability_test.dart
+          test/features/orders/domain/usecases/patch_cleaning_order_use_case_test.dart
+          test/features/orders/view/helpers/cleaning_rebook_policy_test.dart
+
+      - name: Commit applied integration
+        shell: bash
+        run: |
+          rm .github/workflows/apply-cleaning-booking-edit.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            lib/features/orders/data/models/cleaning_orders_api_models.dart \
+            lib/features/orders/view/screens/cleaning_order_details_screen.dart \
+            lib/features/orders/view/screens/cleaning_order_reschedule_screen.dart \
+            .github/workflows/apply-cleaning-booking-edit.yml
+          git commit -m "[cleaning-edit-applied] Wire cleaning booking edit API into Flutter"
+          git push origin HEAD:agent/cleaning-booking-edit-api
