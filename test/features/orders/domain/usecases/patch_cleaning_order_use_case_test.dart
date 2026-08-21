@@ -1,41 +1,48 @@
-import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/patch_cleaning_order_use_case.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  PatchCleaningOrderParams _buildParams({
-    CleaningGenderPreference genderPreference = CleaningGenderPreference.any,
-  }) {
-    return PatchCleaningOrderParams(
+  test('getBody preserves a schedule-only partial PATCH payload', () {
+    final params = PatchCleaningOrderParams(
       cleaningOrderId: 42,
-      propertyType: 'apartment',
-      scheduledDate: '2026-05-30',
-      scheduledTime: '10:00',
-      address: 'Address',
-      bedrooms: 2,
-      rooms: 3,
-      bathrooms: 1,
-      livingRoomSize: 'medium',
-      addressLatitude: 33.5,
-      addressLongitude: 36.3,
-      genderPreference: genderPreference,
+      changes: const {
+        'scheduledDate': '2026-08-25',
+        'scheduledTime': '11:30',
+      },
     );
-  }
 
-  test('getBody includes genderPreference and defaults to any', () {
-    final params = _buildParams();
-    final body = params.getBody();
-
-    expect(params.genderPreference, CleaningGenderPreference.any);
-    expect(body['genderPreference'], 'any');
+    expect(params.cleaningOrderId, 42);
+    expect(params.getBody(), {
+      'scheduledDate': '2026-08-25',
+      'scheduledTime': '11:30',
+    });
+    expect(params.getBody().containsKey('propertyType'), isFalse);
+    expect(params.getBody().containsKey('basePrice'), isFalse);
+    expect(params.getBody().containsKey('totalPrice'), isFalse);
   });
 
-  test('getBody includes selected genderPreference value', () {
-    final params = _buildParams(
-      genderPreference: CleaningGenderPreference.male,
+  test('getBody sends only explicitly supplied configuration changes', () {
+    final params = PatchCleaningOrderParams(
+      cleaningOrderId: 9,
+      changes: const {
+        'propertyDetails': {
+          'address': 'Aleppo - Al Furqan',
+          'location_name': 'المنزل',
+        },
+        'addressLatitude': 36.2,
+        'addressLongitude': 37.1,
+      },
     );
-    final body = params.getBody();
 
-    expect(body['genderPreference'], 'male');
+    expect(params.getBody(), {
+      'propertyDetails': {
+        'address': 'Aleppo - Al Furqan',
+        'location_name': 'المنزل',
+      },
+      'addressLatitude': 36.2,
+      'addressLongitude': 37.1,
+    });
+    expect(params.getBody().containsKey('genderPreference'), isFalse);
+    expect(params.getBody().containsKey('estimatedHours'), isFalse);
   });
 }
