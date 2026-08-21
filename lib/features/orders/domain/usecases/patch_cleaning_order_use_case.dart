@@ -1,6 +1,5 @@
 import 'package:common_package/helpers/typedef.dart';
 import 'package:injectable/injectable.dart';
-import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 
 import '../../data/models/orders_api_models.dart';
 import '../repository/orders_repo.dart';
@@ -18,49 +17,21 @@ class PatchCleaningOrderUseCase
   }
 }
 
+/// Partial PATCH payload for an existing cleaning booking.
+///
+/// The backend owns pricing and lifecycle validation, so callers must include
+/// only fields that actually changed. In particular, do not rebuild and send
+/// the original create-order payload because some configuration fields become
+/// immutable after a worker accepts the booking.
 class PatchCleaningOrderParams with Params {
   final int cleaningOrderId;
-  final String propertyType;
-  final String scheduledDate;
-  final String scheduledTime;
-  final String address;
-  final int bedrooms;
-  final int rooms;
-  final int bathrooms;
-  final String livingRoomSize;
-  final double addressLatitude;
-  final double addressLongitude;
-  final CleaningGenderPreference genderPreference;
+  final BodyMap changes;
 
   PatchCleaningOrderParams({
     required this.cleaningOrderId,
-    required this.propertyType,
-    required this.scheduledDate,
-    required this.scheduledTime,
-    required this.address,
-    required this.bedrooms,
-    required this.rooms,
-    required this.bathrooms,
-    required this.livingRoomSize,
-    required this.addressLatitude,
-    required this.addressLongitude,
-    this.genderPreference = CleaningGenderPreference.any,
+    required this.changes,
   });
 
   @override
-  BodyMap getBody() => {
-    'propertyType': propertyType,
-    'scheduledDate': scheduledDate,
-    'scheduledTime': scheduledTime,
-    'propertyDetails': {
-      'address': address,
-      'bedrooms': bedrooms,
-      'rooms': rooms,
-      'bathrooms': bathrooms,
-      'living_room_size': livingRoomSize,
-    },
-    'addressLatitude': addressLatitude,
-    'addressLongitude': addressLongitude,
-    'genderPreference': genderPreference.apiValue,
-  };
+  BodyMap getBody() => Map<String, dynamic>.from(changes);
 }
