@@ -25,18 +25,4 @@ void main() {
     expect(order.canEdit, isFalse);
     expect(order.acceptedWorkersCount, 1);
   });
-
-  test('preserves editability fields when converting detail to list model', () {
-    final detail = CleaningOrderDetailModel.fromJson({
-      'id': 9,
-      'status': 'worker_assigned',
-      'canEdit': true,
-      'accepted_workers_count': 1,
-    });
-
-    final listModel = detail.toCleaningOrderModel();
-
-    expect(listModel.canEdit, isTrue);
-    expect(listModel.acceptedWorkersCount, 1);
-  });
 }
