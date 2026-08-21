@@ -20,8 +20,6 @@ void main() {
 
       expect(check.allowed, isFalse);
       expect(check.visibility, CleaningRebookEditVisibility.locked);
-      expect(check.isLeadTimeLocked, isTrue);
-      expect(check.isPastScheduledTime, isFalse);
     });
 
     test('hides when current time is after scheduled service time', () {
@@ -33,7 +31,6 @@ void main() {
 
       expect(check.allowed, isFalse);
       expect(check.visibility, CleaningRebookEditVisibility.hidden);
-      expect(check.isPastScheduledTime, isTrue);
     });
 
     test('allows when remaining time is at least 24 hours', () {
@@ -49,15 +46,10 @@ void main() {
   });
 
   group('CleaningRebookPolicy in-place PATCH', () {
-    CleaningOrderDetailModel currentOrder({
-      int acceptedWorkers = 0,
-      bool canEdit = true,
-    }) {
+    CleaningOrderDetailModel currentOrder({int acceptedWorkers = 0}) {
       return CleaningOrderDetailModel.fromJson({
         'id': 12,
         'status': 'pending',
-        'canEdit': canEdit,
-        'accepted_workers_count': acceptedWorkers,
         'propertyType': 'apartment',
         'propertyDetails': {
           'address': 'Old address',
@@ -72,6 +64,12 @@ void main() {
         'addressLatitude': 33.5,
         'addressLongitude': 36.3,
         'genderPreference': 'any',
+        'workerAcceptance': {
+          'required': 1,
+          'accepted': acceptedWorkers,
+          'remaining': acceptedWorkers > 0 ? 0 : 1,
+          'isFulfilled': acceptedWorkers > 0,
+        },
       });
     }
 
@@ -136,7 +134,6 @@ void main() {
       );
 
       expect(result.isRight(), isTrue);
-      expect(sent, isNotNull);
       expect(sent!.cleaningOrderId, 12);
       expect(sent!.getBody(), {
         'scheduledDate': '2026-05-26',
@@ -183,15 +180,13 @@ void main() {
           sent = params;
           return Right(OrdersActionResultModel(message: 'updated'));
         },
-      ).execute(
-        request: request(scheduledTime: '12:00'),
-      );
+      ).execute(request: request(scheduledTime: '12:00'));
 
       expect(result.isRight(), isTrue);
       expect(sent!.getBody(), {'scheduledTime': '12:00'});
     });
 
-    test('rejects protected configuration edit after a worker accepts', () async {
+    test('rejects protected configuration edit after worker acceptance', () async {
       bool patchCalled = false;
       final result = await policy(
         current: currentOrder(acceptedWorkers: 1),
