@@ -1,11 +1,16 @@
 import 'package:common_package/helpers/error_handler.dart';
 import 'package:common_package/helpers/typedef.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_order_cancel_api_models.dart';
+import 'package:dllni_user_app/features/orders/data/models/cleaning_orders_api_models.dart';
+import 'package:dllni_user_app/features/orders/data/models/orders_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/cancel_cleaning_order_use_case.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/fetch_cleaning_order_details_use_case.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/patch_cleaning_order_use_case.dart';
 
 class CleaningRebookRequest {
   const CleaningRebookRequest({
@@ -50,6 +55,8 @@ class CleaningRebookOutcome {
     this.createMessage,
   });
 
+  /// Kept for backward compatibility with the existing navigation flow.
+  /// Editing now patches the same booking, so this is the existing order id.
   final int? newOrderId;
   final String? cancelMessage;
   final String? createMessage;
@@ -89,11 +96,24 @@ class CleaningRebookGuardResult {
 }
 
 class CleaningRebookPolicy {
-  CleaningRebookPolicy({required this.cancelOrder, required this.createOrder});
+  CleaningRebookPolicy({
+    required this.cancelOrder,
+    required this.createOrder,
+    DataResponse<FetchCleaningOrderDetailsModel> Function(
+      FetchCleaningOrderDetailsParams params,
+    )?
+    fetchOrderDetails,
+    DataResponse<OrdersActionResultModel> Function(PatchCleaningOrderParams params)?
+    patchOrder,
+  }) : fetchOrderDetails =
+           fetchOrderDetails ??
+           ((params) => getIt<FetchCleaningOrderDetailsUseCase>()(params)),
+       patchOrder =
+           patchOrder ?? ((params) => getIt<PatchCleaningOrderUseCase>()(params));
 
-  static const String cancelReason = 'قام المستخدم بتعديل بيانات الطلب';
-  static const Duration minimumLeadTime = Duration(hours: 24);
-
+  /// Legacy callbacks are kept in the constructor so existing call sites stay
+  /// source-compatible. They are intentionally no longer used for editing.
+  /// Cleaning booking edits are now in-place PATCH requests.
   final DataResponse<CleaningCancelResultModel> Function(
     CancelCleaningOrderParams params,
   )
@@ -102,6 +122,19 @@ class CleaningRebookPolicy {
     CreateCleaningOrderParams params,
   )
   createOrder;
+
+  final DataResponse<FetchCleaningOrderDetailsModel> Function(
+    FetchCleaningOrderDetailsParams params,
+  )
+  fetchOrderDetails;
+  final DataResponse<OrdersActionResultModel> Function(
+    PatchCleaningOrderParams params,
+  )
+  patchOrder;
+
+  // Kept for compatibility with older tests/callers that reference the value.
+  static const String cancelReason = 'قام المستخدم بتعديل بيانات الطلب';
+  static const Duration minimumLeadTime = Duration(hours: 24);
 
   static DateTime? parseScheduledAt({
     required String? scheduledDate,
@@ -155,48 +188,129 @@ class CleaningRebookPolicy {
     );
   }
 
+  /// Updates the existing cleaning booking in place.
+  ///
+  /// The current booking is fetched immediately before save so the request can
+  /// contain only changed fields and react correctly if a worker accepted while
+  /// the edit screen was open.
   Future<Either<Failure, CleaningRebookOutcome>> execute({
     required CleaningRebookRequest request,
     String cancelReasonMessage = cancelReason,
   }) async {
-    final cancelResult = await cancelOrder(
-      CancelCleaningOrderParams(
-        cleaningOrderId: request.existingOrderId,
-        reason: cancelReasonMessage,
-      ),
+    final detailsResult = await fetchOrderDetails(
+      FetchCleaningOrderDetailsParams(orderId: request.existingOrderId),
     );
-    return cancelResult.fold((failure) async => Left(failure), (
-      cancelResponse,
-    ) async {
-      final createResult = await createOrder(
-        CreateCleaningOrderParams(
-          addressId: int.tryParse(request.address) ?? 0,
-          propertyType: request.propertyType,
-          bedrooms: request.bedrooms,
-          rooms: request.rooms,
-          bathrooms: request.bathrooms,
-          livingRoomSize: request.livingRoomSize,
-          address: request.address,
-          locationName: request.locationName,
-          scheduledDate: request.scheduledDate,
-          scheduledTime: request.scheduledTime,
-          addressLatitude: request.addressLatitude,
-          addressLongitude: request.addressLongitude,
-          genderPreference: request.genderPreference,
-          preferredWorkerId: request.preferredWorkerId,
-          termsAccepted: request.termsAccepted,
+
+    return detailsResult.fold((failure) async => Left(failure), (details) async {
+      final current = details.data;
+      if (current == null) {
+        return const Left(
+          ServerFailure(message: 'تعذر تحميل بيانات الطلب الحالية.'),
+        );
+      }
+
+      if (!current.canEdit) {
+        return const Left(
+          ServerFailure(message: 'لا يمكن تعديل الطلب في حالته الحالية.'),
+        );
+      }
+
+      final changes = <String, dynamic>{};
+      final propertyChanges = <String, dynamic>{};
+
+      if ((current.scheduledDate ?? '') != request.scheduledDate) {
+        changes['scheduledDate'] = request.scheduledDate;
+      }
+      if (_normalizeTime(current.scheduledTime) !=
+          _normalizeTime(request.scheduledTime)) {
+        changes['scheduledTime'] = request.scheduledTime;
+      }
+
+      final currentAddress = current.propertyDetails?.address ?? '';
+      if (currentAddress != request.address) {
+        propertyChanges['address'] = request.address;
+      }
+      if ((current.locationName ?? '') != request.locationName) {
+        propertyChanges['location_name'] = request.locationName;
+      }
+
+      if (!_sameCoordinate(current.addressLatitude, request.addressLatitude)) {
+        changes['addressLatitude'] = request.addressLatitude;
+      }
+      if (!_sameCoordinate(current.addressLongitude, request.addressLongitude)) {
+        changes['addressLongitude'] = request.addressLongitude;
+      }
+
+      final genderChanged = current.genderPreference != request.genderPreference;
+      final addressChanged =
+          propertyChanges.isNotEmpty ||
+          changes.containsKey('addressLatitude') ||
+          changes.containsKey('addressLongitude');
+      final hasAcceptedWorkers =
+          current.acceptedWorkersCount > 0 ||
+          (current.workerAcceptance?.accepted ?? 0) > 0 ||
+          current.acceptedWorkerAssignments.isNotEmpty;
+
+      if (hasAcceptedWorkers && addressChanged) {
+        return const Left(
+          ServerFailure(
+            message: 'لا يمكن تغيير عنوان الخدمة بعد قبول مقدم الخدمة.',
+          ),
+        );
+      }
+      if (hasAcceptedWorkers && genderChanged) {
+        return const Left(
+          ServerFailure(
+            message: 'لا يمكن تغيير تفضيل مقدم الخدمة بعد قبول مقدم الخدمة.',
+          ),
+        );
+      }
+
+      if (propertyChanges.isNotEmpty) {
+        changes['propertyDetails'] = propertyChanges;
+      }
+      if (genderChanged) {
+        changes['genderPreference'] = request.genderPreference.apiValue;
+      }
+
+      if (changes.isEmpty) {
+        return Right(
+          CleaningRebookOutcome(
+            newOrderId: request.existingOrderId,
+            createMessage: 'لا توجد تغييرات للحفظ.',
+          ),
+        );
+      }
+
+      final patchResult = await patchOrder(
+        PatchCleaningOrderParams(
+          cleaningOrderId: request.existingOrderId,
+          changes: changes,
         ),
       );
-      return createResult.fold(
+
+      return patchResult.fold(
         (failure) => Left(failure),
-        (createResponse) => Right(
+        (response) => Right(
           CleaningRebookOutcome(
-            newOrderId: createResponse.orderId,
-            cancelMessage: cancelResponse.message,
-            createMessage: createResponse.message,
+            newOrderId: request.existingOrderId,
+            createMessage: response.message ?? 'تم تحديث الطلب بنجاح.',
           ),
         ),
       );
     });
+  }
+
+  static String _normalizeTime(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return '';
+    final parts = text.split(':');
+    if (parts.length < 2) return text;
+    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  }
+
+  static bool _sameCoordinate(double? current, double next) {
+    if (current == null) return false;
+    return (current - next).abs() < 0.0000001;
   }
 }
