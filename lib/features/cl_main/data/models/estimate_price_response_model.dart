@@ -47,6 +47,8 @@ class EstimatePriceResponseModel {
   final EstimateRecommendationModel? recommendation;
   final EstimateWorkerAcceptanceModel? workerAcceptance;
   final CleaningAssignmentMode? assignmentMode;
+  final int? requiredWorkers;
+  final double? maxHoursPerWorker;
   final List<CleaningWorkerRoomAssignment> workerRoomAssignments;
 
   const EstimatePriceResponseModel({
@@ -56,6 +58,8 @@ class EstimatePriceResponseModel {
     this.recommendation,
     this.workerAcceptance,
     this.assignmentMode,
+    this.requiredWorkers,
+    this.maxHoursPerWorker,
     this.workerRoomAssignments = const [],
   });
 
@@ -65,6 +69,10 @@ class EstimatePriceResponseModel {
   factory EstimatePriceResponseModel.fromJson(Map<String, dynamic> json) {
     final assignmentModeRaw =
         (json['assignmentMode'] ?? json['assignment_mode']) as String?;
+    final estimationRaw = json['estimation'];
+    final estimation = estimationRaw is Map<String, dynamic>
+        ? estimationRaw
+        : const <String, dynamic>{};
     return EstimatePriceResponseModel(
       size: json['size'] is Map<String, dynamic>
           ? EstimateSizeModel.fromJson(json['size'] as Map<String, dynamic>)
@@ -93,6 +101,18 @@ class EstimatePriceResponseModel {
       assignmentMode: assignmentModeRaw == null
           ? null
           : CleaningAssignmentModeX.fromApi(assignmentModeRaw),
+      requiredWorkers: _toInt(
+        json['requiredWorkers'] ??
+            json['required_workers'] ??
+            estimation['requiredWorkers'] ??
+            estimation['required_workers'],
+      ),
+      maxHoursPerWorker: _toDouble(
+        json['maxHoursPerWorker'] ??
+            json['max_hours_per_worker'] ??
+            estimation['maxHoursPerWorker'] ??
+            estimation['max_hours_per_worker'],
+      ),
       workerRoomAssignments: parseWorkerRoomAssignments(
         json['workerRoomAssignments'] ?? json['worker_room_assignments'],
       ),
