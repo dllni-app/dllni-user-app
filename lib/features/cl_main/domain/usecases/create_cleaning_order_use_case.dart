@@ -139,9 +139,26 @@ class CreateCleaningOrderParams with Params {
   }
 
   CleaningAssignmentMode _effectiveAssignmentMode(List<int> workerIds) {
-    return workerIds.isEmpty
-        ? assignmentMode
-        : CleaningAssignmentMode.preferredWorker;
+    if (workerIds.isEmpty) return assignmentMode;
+    final requestedWorkers = numberOfWorkers ?? 1;
+    if (assignmentMode == CleaningAssignmentMode.openCount ||
+        requestedWorkers > 1 ||
+        workerIds.length > 1) {
+      return CleaningAssignmentMode.openCount;
+    }
+    return CleaningAssignmentMode.preferredWorker;
+  }
+
+  int _resolvedNumberOfWorkers(
+    List<int> workerIds,
+    CleaningAssignmentMode effectiveAssignmentMode,
+  ) {
+    if (effectiveAssignmentMode == CleaningAssignmentMode.preferredWorker) {
+      return 1;
+    }
+    final requested = numberOfWorkers ?? 1;
+    final safeRequested = requested < 1 ? 1 : requested;
+    return workerIds.length > safeRequested ? workerIds.length : safeRequested;
   }
 
   List<String> _sanitizeCleaningServices() {
@@ -210,12 +227,15 @@ class CreateCleaningOrderParams with Params {
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
       if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty) 'couponCode': normalizedCouponCode,
+      'numberOfWorkers': _resolvedNumberOfWorkers(
+        workerIds,
+        effectiveAssignmentMode,
+      ),
     };
     if (!_isEventAssistance) {
       final cleanServices = _sanitizeCleaningServices();
       if (cleanServices.isNotEmpty) body['cleaning_services'] = cleanServices;
     }
-    body['numberOfWorkers'] = numberOfWorkers;
     final assignments = workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
