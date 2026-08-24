@@ -114,9 +114,26 @@ class EstimateCleaningPriceParams with Params {
   }
 
   CleaningAssignmentMode _effectiveAssignmentMode(List<int> workerIds) {
-    return workerIds.isEmpty
-        ? assignmentMode
-        : CleaningAssignmentMode.preferredWorker;
+    if (workerIds.isEmpty) return assignmentMode;
+    final requestedWorkers = numberOfWorkers ?? 1;
+    if (assignmentMode == CleaningAssignmentMode.openCount ||
+        requestedWorkers > 1 ||
+        workerIds.length > 1) {
+      return CleaningAssignmentMode.openCount;
+    }
+    return CleaningAssignmentMode.preferredWorker;
+  }
+
+  int _resolvedNumberOfWorkers(
+    List<int> workerIds,
+    CleaningAssignmentMode effectiveAssignmentMode,
+  ) {
+    if (effectiveAssignmentMode == CleaningAssignmentMode.preferredWorker) {
+      return 1;
+    }
+    final requested = numberOfWorkers ?? 1;
+    final safeRequested = requested < 1 ? 1 : requested;
+    return workerIds.length > safeRequested ? workerIds.length : safeRequested;
   }
 
   int? get _resolvedBedrooms =>
@@ -174,9 +191,11 @@ class EstimateCleaningPriceParams with Params {
         'addressLongitude': addressLongitude,
       'assignmentMode': effectiveAssignmentMode.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
+      'numberOfWorkers': _resolvedNumberOfWorkers(
+        workerIds,
+        effectiveAssignmentMode,
+      ),
     };
-
-      body['numberOfWorkers'] = numberOfWorkers??1;
 
     final assignments = workerRoomAssignments == null
         ? null
@@ -186,20 +205,6 @@ class EstimateCleaningPriceParams with Params {
     }
     return body;
   }
-
-  // int? _resolvedNumberOfWorkers(
-  //   List<int> workerIds,
-  //   CleaningAssignmentMode effectiveAssignmentMode,
-  // ) {
-  //   if (_isEventAssistance) {
-  //     return numberOfWorkers;
-  //   }
-  //   if (effectiveAssignmentMode == CleaningAssignmentMode.openCount) {
-  //     final requested = numberOfWorkers ?? 1;
-  //     return requested < 1 ? 1 : requested;
-  //   }
-  //   return 1;
-  // }
 
   @override
   BodyMap getBody() {
