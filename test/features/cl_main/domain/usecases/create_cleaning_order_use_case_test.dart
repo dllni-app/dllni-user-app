@@ -27,7 +27,7 @@ void main() {
     );
   }
 
-  test('preferred worker ids do not drive open-count worker count on create', () {
+  test('preferred worker ids count toward an open-count team on create', () {
     final params = buildParams(
       assignmentMode: CleaningAssignmentMode.openCount,
       numberOfWorkers: 2,
@@ -36,8 +36,8 @@ void main() {
 
     final body = params.getBody();
 
-    expect(body['assignmentMode'], 'preferred_worker');
-    expect(body['numberOfWorkers'], 1);
+    expect(body['assignmentMode'], 'open_count');
+    expect(body['numberOfWorkers'], 2);
     expect(body['preferredWorkerIds'], [7, 9]);
   });
 
