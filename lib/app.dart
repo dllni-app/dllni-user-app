@@ -9,7 +9,6 @@ import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/realtime/cleaning_global_verification_gate_coordinator.dart';
 import 'core/routes/app_router.dart';
 import 'core/themes/app_colors.dart';
-import 'features/main/view/screens/main_screen.dart';
 import 'features/splash/view/screens/splash_screen.dart';
 
 class App extends StatefulWidget {
@@ -23,7 +22,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final CleaningGlobalVerificationGateCoordinator _verificationCoordinator;
-  bool _didOpenMainScreen = false;
+  bool _didOpenLoginScreen = false;
 
   @override
   void initState() {
@@ -51,7 +50,7 @@ class _AppState extends State<App> {
         supportedLocales: context.supportedLocales,
         localizationsDelegates: context.localizationDelegates,
         onGenerateRoute: AppRouter.onGenerateRoute,
-        home: SplashScreen(onFinished: _openMainScreen),
+        home: SplashScreen(onFinished: _openLoginScreen),
         builder: (context, child) {
           final mediaQuery = MediaQuery.of(context);
           final clampedScaler = mediaQuery.textScaler.clamp(
@@ -90,20 +89,18 @@ class _AppState extends State<App> {
     );
   }
 
-  void _openMainScreen() {
-    if (_didOpenMainScreen) return;
-    _didOpenMainScreen = true;
+  void _openLoginScreen() {
+    if (_didOpenLoginScreen) return;
+    _didOpenLoginScreen = true;
 
     final navigator = widget.navigatorKey.currentState;
     if (navigator == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _openMainScreen());
-      _didOpenMainScreen = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openLoginScreen());
+      _didOpenLoginScreen = false;
       return;
     }
 
-    navigator.pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const MainScreen()),
-    );
+    navigator.pushReplacementNamed('/login');
     unawaited(_verificationCoordinator.start());
   }
 }
