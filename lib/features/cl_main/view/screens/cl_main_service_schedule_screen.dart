@@ -580,9 +580,11 @@ class _ClMainServiceScheduleScreenState
   }
 
   int _requiredWorkersCount(ClMainState state) {
-    if (state.assignmentMode != CleaningAssignmentMode.openCount) return 1;
-    final count = state.numberOfWorkers;
-    return count < 1 ? 1 : count;
+    final openCount = state.assignmentMode == CleaningAssignmentMode.openCount
+        ? (state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers)
+        : 1;
+    final preferredCount = state.selectedWorkerIds.length;
+    return preferredCount > openCount ? preferredCount : openCount;
   }
 
   double _effectiveServiceHours({
@@ -658,9 +660,9 @@ class _ClMainServiceScheduleScreenState
     final estimateForWorkers = _currentEstimate ?? args.estimate;
     final estimatedHours = estimateForWorkers.size?.estimatedHours ?? 0;
     final selectedWorkers = _requiredWorkersCount(state);
-    final requiredWorkers = estimatedHours <= 0
-        ? 1
-        : (estimatedHours / 8).ceil();
+    final requiredWorkers =
+        estimateForWorkers.requiredWorkers ??
+        (estimatedHours <= 0 ? 1 : (estimatedHours / 8).ceil());
 
     if (selectedWorkers < requiredWorkers) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -711,7 +713,7 @@ class _ClMainServiceScheduleScreenState
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: state.assignmentMode,
-          numberOfWorkers: state.numberOfWorkers,
+          numberOfWorkers: selectedWorkers,
           preferredWorkerIds: selectedWorkerIds,
           cleaningServices: _selectedCleaningServicesPayload(),
           workerRoomAssignments: workerRoomAssignments.isEmpty
@@ -768,7 +770,11 @@ class _ClMainServiceScheduleScreenState
 
     final workerIds = selectedWorkerIds ?? state.selectedWorkerIds;
     final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
-    final assignmentMode = workerIds.length > 1
+    final stateWorkerCount = state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers;
+    final requestedWorkers = workerIds.length > stateWorkerCount
+        ? workerIds.length
+        : stateWorkerCount;
+    final assignmentMode = requestedWorkers > 1
         ? CleaningAssignmentMode.openCount
         : state.assignmentMode;
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
@@ -793,7 +799,7 @@ class _ClMainServiceScheduleScreenState
           addressLatitude: null,
           addressLongitude: null,
           assignmentMode: assignmentMode,
-          numberOfWorkers: state.numberOfWorkers,
+          numberOfWorkers: requestedWorkers,
           preferredWorkerIds: workerIds,
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
