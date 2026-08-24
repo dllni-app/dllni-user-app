@@ -200,7 +200,7 @@ void main() {
     },
   );
 
-  test('preferred worker ids do not drive open-count worker count', () {
+  test('preferred worker ids count toward an open-count team', () {
     final params = EstimateCleaningPriceParams(
       propertyType: 'apartment',
       bedrooms: 1,
@@ -216,8 +216,8 @@ void main() {
 
     final body = params.getBody();
 
-    expect(body['assignmentMode'], 'preferred_worker');
-    expect(body['numberOfWorkers'], 1);
+    expect(body['assignmentMode'], 'open_count');
+    expect(body['numberOfWorkers'], 2);
     expect(body['preferredWorkerIds'], [7, 9]);
   });
 }
