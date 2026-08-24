@@ -104,6 +104,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _continueAsGuest() async {
+    FocusScope.of(context).unfocus();
+    await SharedPreferencesHelper.removeData(key: UserSessionKeys.token);
+    await UserSessionStore.clear();
+    AuthGate.clearPendingAction();
+
+    if (!mounted) return;
+    final nav = context.pushRouteAndRemoveUntil('/main');
+    if (nav != null) await nav;
+  }
+
   void _openLoginHelp() {
     Navigator.of(
       context,
@@ -357,8 +368,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 32),
-                  AuthTrailing(),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    key: const Key('login_continue_as_guest_button'),
+                    onPressed: loading ? null : _continueAsGuest,
+                    icon: const Icon(Icons.person_outline_rounded, size: 20),
+                    label: AppText.bodyMedium(
+                      'المتابعة كزائر',
+                      color: context.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const AuthTrailing(),
                 ],
               ),
             );
