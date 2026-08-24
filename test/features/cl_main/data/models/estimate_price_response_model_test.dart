@@ -25,6 +25,34 @@ void main() {
     },
   );
 
+  test('EstimatePriceResponseModel parses worker capacity fields', () {
+    final model = EstimatePriceResponseModel.fromJson({
+      'requiredWorkers': 2,
+      'maxHoursPerWorker': 8,
+      'size': {
+        'estimatedSqm': 120,
+        'estimatedHours': 13,
+        'sizeTier': 'large',
+      },
+    });
+
+    expect(model.requiredWorkers, 2);
+    expect(model.maxHoursPerWorker, 8.0);
+    expect(model.size?.estimatedHours, 13.0);
+  });
+
+  test('EstimatePriceResponseModel parses nested capacity fields', () {
+    final model = EstimatePriceResponseModel.fromJson({
+      'estimation': {
+        'requiredWorkers': 3,
+        'maxHoursPerWorker': 8,
+      },
+    });
+
+    expect(model.requiredWorkers, 3);
+    expect(model.maxHoursPerWorker, 8.0);
+  });
+
   test('EstimatePriceResponseModel parses workerRoomAssignments', () {
     final model = EstimatePriceResponseModel.fromJson({
       'pricing': {'totalPrice': 12000},
