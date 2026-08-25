@@ -9,8 +9,8 @@ import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../../core/widgets/toast_component.dart';
 import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
+import '../../../orders/view/screens/cleaning_order_details_screen.dart';
 import '../../../profile/domain/models/address_list_item.dart';
-import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../data/models/cleaning_services_response_model.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
@@ -36,7 +36,6 @@ import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/cl_service_worker_assignment_summary_widget.dart';
 import '../widgets/home_details_app_bar.dart';
-import 'cl_main_screen.dart';
 
 @AutoRoutePage()
 class ClMainServiceScheduleScreen extends StatefulWidget {
@@ -118,15 +117,26 @@ class _ClMainServiceScheduleScreenState
           }
           Loading.close();
           if (state.createOrderStatus == BlocStatus.success) {
+            final orderId = state.createOrderResult?.orderId;
+            if (orderId == null) {
+              AppToast.showToast(
+                context: context,
+                message:
+                    'تم إنشاء الطلب، لكن تعذر فتح تفاصيله. يمكنك متابعته من السلة.',
+                type: ToastificationType.warning,
+              );
+              context.pushRouteAndRemoveUntil('/clmain');
+              return;
+            }
             AppToast.showToast(
               context: context,
-              message:
-                  state.createOrderResult?.message ?? 'تم إرسال الطلب بنجاح',
+              message: 'تم إنشاء الطلب بنجاح، وهو الآن قيد الانتظار',
               type: ToastificationType.success,
             );
-            context.pushRoute(
-              '/clmain',
-              arguments: ClMainScreenParams(profileBloc: getIt<ProfileBloc>()),
+            context.pushRouteAndRemoveUntil(
+              '/cleaning-order-details',
+              arguments: CleaningOrderDetailsArgs(orderId: orderId),
+              predicate: (route) => route.settings.name == '/clmain',
             );
           } else if (state.createOrderStatus == BlocStatus.failed) {
             final message = (state.errorMessage ?? '').trim().isNotEmpty
