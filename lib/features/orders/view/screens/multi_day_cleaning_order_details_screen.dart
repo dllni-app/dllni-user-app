@@ -146,17 +146,24 @@ class _MultiDayCleaningOrderDetailsScreenState
 
     final code = await _askText(
       title: 'تأكيد بدء اليوم ${session.sequence}',
-      hint: 'أدخل رمز التحقق الذي يعرضه مقدم الخدمة',
+      hint: 'أدخل رمز التحقق المكوّن من 4 أحرف',
       isRequired: true,
       keyboardType: TextInputType.number,
+      maxLength: 4,
     );
-    if (code == null || code.trim().isEmpty) return;
+    if (!mounted || code == null) return;
+
+    final normalizedCode = code.trim();
+    if (normalizedCode.length != 4) {
+      _toast('رمز التحقق يجب أن يكون 4 أحرف تمامًا', ToastificationType.warning);
+      return;
+    }
 
     await _runAction(() async {
       await getIt<CleaningSessionRemoteDataSource>().confirmStartVerification(
         orderId: widget.orderId,
         sessionId: sessionId,
-        code: code.trim(),
+        code: normalizedCode,
       );
     });
   }
@@ -202,14 +209,21 @@ class _MultiDayCleaningOrderDetailsScreenState
       title: 'العمل غير مكتمل',
       hint: 'اشرح ما الذي يحتاج إلى إكمال',
       isRequired: true,
+      maxLength: 1000,
     );
-    if (message == null || message.trim().isEmpty) return;
+    if (!mounted || message == null || message.trim().isEmpty) return;
+
+    final normalizedMessage = message.trim();
+    if (normalizedMessage.length > 1000) {
+      _toast('الملاحظة يجب ألا تتجاوز 1000 حرف', ToastificationType.warning);
+      return;
+    }
 
     await _runAction(() async {
       await getIt<CleaningSessionRemoteDataSource>().rejectCompletion(
         orderId: widget.orderId,
         sessionId: sessionId,
-        message: message.trim(),
+        message: normalizedMessage,
       );
     });
   }
@@ -217,19 +231,20 @@ class _MultiDayCleaningOrderDetailsScreenState
   Future<void> _requestExtension() async {
     final session = _activeSession;
     final sessionId = session?.id;
-    if (session == null || sessionId == null) return;
+    if (session == null || sessionId == null || !session.canExtend) return;
 
     final minutesText = await _askText(
       title: 'تمديد وقت هذا اليوم',
-      hint: 'عدد الدقائق الإضافية، مثال: 30',
+      hint: 'عدد الدقائق الإضافية من 0 إلى 90، مثال: 30',
       isRequired: true,
       keyboardType: TextInputType.number,
+      maxLength: 2,
     );
     if (!mounted || minutesText == null) return;
 
     final minutes = int.tryParse(minutesText.trim());
-    if (minutes == null || minutes <= 0) {
-      _toast('أدخل مدة إضافية صحيحة بالدقائق', ToastificationType.warning);
+    if (minutes == null || minutes < 0 || minutes > 90) {
+      _toast('أدخل مدة إضافية بين 0 و90 دقيقة', ToastificationType.warning);
       return;
     }
 
@@ -237,15 +252,18 @@ class _MultiDayCleaningOrderDetailsScreenState
       title: 'ملاحظة التمديد',
       hint: 'ملاحظة لمقدم الخدمة (اختياري)',
       isRequired: false,
+      maxLength: 1000,
     );
-    if (message == null) return;
+    if (!mounted || message == null) return;
 
+    final workerId = _extractWorkerIdFromSession(session);
     await _runAction(() async {
       await getIt<CleaningSessionRemoteDataSource>().requestExtension(
         orderId: widget.orderId,
         sessionId: sessionId,
         additionalMinutes: minutes,
         message: message,
+        workerId: workerId,
       );
     });
   }
@@ -253,14 +271,15 @@ class _MultiDayCleaningOrderDetailsScreenState
   Future<void> _cancelSession() async {
     final session = _activeSession;
     final sessionId = session?.id;
-    if (session == null || sessionId == null) return;
+    if (session == null || sessionId == null || !session.canCancel) return;
 
     final reason = await _askText(
       title: 'إلغاء اليوم ${session.sequence}',
       hint: 'سبب إلغاء هذا اليوم',
-      isRequired: true,
+      isRequired: false,
+      maxLength: 1000,
     );
-    if (!mounted || reason == null || reason.trim().isEmpty) return;
+    if (!mounted || reason == null) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -297,6 +316,7 @@ class _MultiDayCleaningOrderDetailsScreenState
     required String hint,
     required bool isRequired,
     TextInputType? keyboardType,
+    int? maxLength,
   }) async {
     final controller = TextEditingController();
 
@@ -308,6 +328,7 @@ class _MultiDayCleaningOrderDetailsScreenState
           content: TextField(
             controller: controller,
             keyboardType: keyboardType,
+            maxLength: maxLength,
             minLines: keyboardType == TextInputType.number ? 1 : 2,
             maxLines: keyboardType == TextInputType.number ? 1 : 5,
             decoration: InputDecoration(hintText: hint),
@@ -399,30 +420,46 @@ class _MultiDayCleaningOrderDetailsScreenState
     };
   }
 
+  int? _extractWorkerIdFromSession(CleaningBookingSessionModel session) {
+    final state = session.workerAssignmentState;
+    final stateWorkerId = state?['workerId'] ?? state?['worker_id'];
+    final parsedStateWorkerId = stateWorkerId is num
+        ? stateWorkerId.toInt()
+        : int.tryParse(stateWorkerId?.toString() ?? '');
+    if (parsedStateWorkerId != null && parsedStateWorkerId > 0) {
+      return parsedStateWorkerId;
+    }
+
+    for (final assignment in session.workerAssignments) {
+      final direct = assignment['workerId'] ?? assignment['worker_id'];
+      if (direct is int && direct > 0) return direct;
+      if (direct is num && direct.toInt() > 0) return direct.toInt();
+
+      final parsed = int.tryParse(direct?.toString() ?? '');
+      if (parsed != null && parsed > 0) return parsed;
+
+      final worker = assignment['worker'];
+      if (worker is Map) {
+        final nested = worker['id'];
+        final nestedParsed = nested is num
+            ? nested.toInt()
+            : int.tryParse(nested?.toString() ?? '');
+        if (nestedParsed != null && nestedParsed > 0) {
+          return nestedParsed;
+        }
+      }
+    }
+
+    return null;
+  }
+
   int? _extractWorkerId() {
     final schedule = _schedule;
     if (schedule == null) return null;
 
     for (final session in schedule.sessions) {
-      for (final assignment in session.workerAssignments) {
-        final direct = assignment['workerId'] ?? assignment['worker_id'];
-        if (direct is int && direct > 0) return direct;
-        if (direct is num && direct.toInt() > 0) return direct.toInt();
-
-        final parsed = int.tryParse(direct?.toString() ?? '');
-        if (parsed != null && parsed > 0) return parsed;
-
-        final worker = assignment['worker'];
-        if (worker is Map) {
-          final nested = worker['id'];
-          final nestedParsed = nested is num
-              ? nested.toInt()
-              : int.tryParse(nested?.toString() ?? '');
-          if (nestedParsed != null && nestedParsed > 0) {
-            return nestedParsed;
-          }
-        }
-      }
+      final workerId = _extractWorkerIdFromSession(session);
+      if (workerId != null) return workerId;
     }
 
     return null;
@@ -638,6 +675,13 @@ class _MultiDayCleaningOrderDetailsScreenState
   }
 
   Widget _actionArea(CleaningBookingSessionModel session) {
+    if (session.id == null) {
+      return const _InfoBanner(
+        icon: Icons.info_outline,
+        text: 'هذه جلسة توافقية قديمة ولا يمكن تنفيذ إجراءات جلسة مباشرة عليها.',
+      );
+    }
+
     if (session.isCompleted) {
       return const _InfoBanner(
         icon: Icons.check_circle_outline,
@@ -709,7 +753,9 @@ class _MultiDayCleaningOrderDetailsScreenState
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _busy ? null : _requestExtension,
+                  onPressed: _busy || !session.canExtend
+                      ? null
+                      : _requestExtension,
                   child: const Text('طلب تمديد'),
                 ),
               ),
