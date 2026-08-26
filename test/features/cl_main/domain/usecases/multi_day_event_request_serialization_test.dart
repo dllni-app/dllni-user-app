@@ -33,7 +33,7 @@ void main() {
 
     expect(body['scheduledDate'], '2026-09-10');
     expect(body['scheduledTime'], '18:00');
-    expect((body['propertyDetails'] as Map)['hours'], 9.0);
+    expect((body['propertyDetails'] as Map)['hours'], 4.0);
     expect(body['schedule'], {
       'mode': 'multi_day',
       'sessions': [
@@ -44,7 +44,7 @@ void main() {
     expect(body['numberOfWorkers'], 3);
   });
 
-  test('event estimate sends schedule and aggregate event hours', () {
+  test('event estimate sends schedule and first-session legacy hours', () {
     final body = EstimateCleaningPriceParams.eventAssistance(
       eventType: 'birthday',
       guestCount: 120,
@@ -56,7 +56,7 @@ void main() {
       numberOfWorkers: 3,
     ).getBody();
 
-    expect((body['propertyDetails'] as Map)['hours'], 9.0);
+    expect((body['propertyDetails'] as Map)['hours'], 4.0);
     expect(body['schedule'], {
       'mode': 'multi_day',
       'sessions': [
@@ -106,6 +106,7 @@ void main() {
       addressId: 18,
     ).getBody();
     expect(estimateBody['schedule'], body['schedule']);
+    expect((estimateBody['propertyDetails'] as Map)['hours'], 4.0);
   });
 
   test('same date with different times is serialized as multi-day sessions', () {
@@ -132,6 +133,7 @@ void main() {
       ],
     ).getBody();
 
+    expect((body['propertyDetails'] as Map)['hours'], 2.0);
     expect(body['schedule'], {
       'mode': 'multi_day',
       'sessions': [
