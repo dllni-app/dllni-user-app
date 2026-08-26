@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import '../../../orders/view/screens/cleaning_order_details_screen.dart';
+import '../../../orders/view/screens/multi_day_cleaning_order_details_screen.dart';
 
 void tryNavigateFromNotificationPayload(
   BuildContext context, {
@@ -31,7 +32,22 @@ void tryNavigateFromNotificationPayload(
       'orderId',
       'order_id',
     ]);
+    final sessionId = _intFromData(data, const [
+      'sessionId',
+      'session_id',
+    ]);
     if (orderId != null) {
+      if (sessionId != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => MultiDayCleaningOrderDetailsScreen(
+              orderId: orderId,
+              initialSessionId: sessionId,
+            ),
+          ),
+        );
+        return;
+      }
       context.pushRoute(
         '/cleaning-order-details',
         arguments: CleaningOrderDetailsArgs(orderId: orderId),
