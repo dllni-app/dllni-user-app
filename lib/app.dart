@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 
+import 'core/auth/auth_gate.dart';
 import 'core/di/injection.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/realtime/cleaning_global_verification_gate_coordinator.dart';
@@ -100,7 +101,9 @@ class _AppState extends State<App> {
       return;
     }
 
-    navigator.pushReplacementNamed('/login');
+    navigator.pushReplacementNamed(
+      AuthGate.isAuthenticated ? '/main' : '/login',
+    );
     unawaited(_verificationCoordinator.start());
   }
 }
