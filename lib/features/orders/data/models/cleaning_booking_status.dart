@@ -7,6 +7,7 @@ abstract class CleaningBookingStatus {
   static const inProgress = 'in_progress';
   static const awaitingCustomerCompletion = 'awaiting_customer_completion';
   static const timeExtensionRequested = 'time_extension_requested';
+  static const partiallyCompleted = 'partially_completed';
   static const completed = 'completed';
   static const cancelled = 'cancelled';
 }

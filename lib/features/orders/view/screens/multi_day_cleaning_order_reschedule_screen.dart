@@ -38,38 +38,50 @@ class _MultiDayCleaningOrderRescheduleScreenState
       _loading = true;
       _error = null;
     });
+
     try {
       final result = await getIt<CleaningSessionRemoteDataSource>()
           .fetchBookingSchedule(widget.orderId);
       final schedule = result.schedule;
       if (!mounted) return;
+
       if (schedule == null || !schedule.isMultiDay) {
         setState(() {
           _loading = false;
-          _error = 'هذا الطلب لا يحتوي جدول مناسبة متعدد الأيام.';
+          _error = 'هذا الطلب لا يحتوي جدول مناسبة متعدد الجلسات.';
         });
         return;
       }
-      final activeSessions = schedule.sessions
-          .where((session) => !session.isCompleted && !session.isCancelled)
+
+      final nonCancelled = schedule.sessions
+          .where((session) => !session.isCancelled)
           .toList(growable: false);
-      final canReschedule = activeSessions.isNotEmpty &&
-          activeSessions.every((session) => session.canReschedule);
+      final parentStatus = (result.status ?? '').trim().toLowerCase();
+      final parentStillEditable = parentStatus.isEmpty || parentStatus == 'pending';
+      final executionNotStarted = nonCancelled.every(
+        (session) => !session.hasStartedExecution && !session.isCompleted,
+      );
+      final backendDidNotForbid = nonCancelled.every(
+        (session) => session.canReschedule != false,
+      );
+      final canReschedule = nonCancelled.isNotEmpty &&
+          parentStillEditable &&
+          executionNotStarted &&
+          backendDidNotForbid;
+
       setState(() {
         _sessions
           ..clear()
           ..addAll(
-            schedule.sessions
-                .where((session) => !session.isCancelled)
-                .map(
-                  (session) => _DraftSession(
-                    id: session.id,
-                    date: session.date ?? DateTime.now().add(const Duration(days: 1)),
-                    time: session.time ?? '09:00',
-                    hours: session.hours > 0 ? session.hours : 1,
-                    locked: session.isCompleted,
-                  ),
-                ),
+            nonCancelled.map(
+              (session) => _DraftSession(
+                id: session.id,
+                date: session.date ?? _today(),
+                time: session.time ?? '09:00',
+                hours: session.hours >= 1 ? session.hours : 1,
+                locked: !canReschedule,
+              ),
+            ),
           );
         _sort();
         _editAllowed = canReschedule;
@@ -84,10 +96,15 @@ class _MultiDayCleaningOrderRescheduleScreenState
     }
   }
 
+  DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
   void _sort() {
     _sessions.sort((a, b) {
-      final date = a.date.compareTo(b.date);
-      if (date != 0) return date;
+      final dateCompare = a.date.compareTo(b.date);
+      if (dateCompare != 0) return dateCompare;
       return a.time.compareTo(b.time);
     });
   }
@@ -100,11 +117,58 @@ class _MultiDayCleaningOrderRescheduleScreenState
   String _hours(double value) =>
       value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 
+  String _slotKey(DateTime date, String time) => '${_dateApi(date)}|$time';
+
+  bool _hasDuplicateSlot({
+    required DateTime date,
+    required String time,
+    int? exceptIndex,
+  }) {
+    final key = _slotKey(date, time);
+    for (var index = 0; index < _sessions.length; index++) {
+      if (exceptIndex == index) continue;
+      final session = _sessions[index];
+      if (_slotKey(session.date, session.time) == key) return true;
+    }
+    return false;
+  }
+
+  String _nextAvailableTime(
+    DateTime date,
+    String preferred, {
+    int? exceptIndex,
+  }) {
+    if (!_hasDuplicateSlot(
+      date: date,
+      time: preferred,
+      exceptIndex: exceptIndex,
+    )) {
+      return preferred;
+    }
+    final parts = preferred.split(':');
+    final startHour = int.tryParse(parts.first) ?? 9;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    for (var step = 1; step < 24; step++) {
+      final hour = (startHour + step) % 24;
+      final candidate =
+          '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      if (!_hasDuplicateSlot(
+        date: date,
+        time: candidate,
+        exceptIndex: exceptIndex,
+      )) {
+        return candidate;
+      }
+    }
+    return preferred;
+  }
+
   Future<void> _pickDate(int index) async {
     if (!_editAllowed || _sessions[index].locked) return;
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    final first = DateTime(tomorrow.year, tomorrow.month, tomorrow.day);
-    final initial = _sessions[index].date.isBefore(first) ? first : _sessions[index].date;
+    final first = _today();
+    final initial = _sessions[index].date.isBefore(first)
+        ? first
+        : _sessions[index].date;
     final selected = await showDatePicker(
       context: context,
       firstDate: first,
@@ -112,13 +176,19 @@ class _MultiDayCleaningOrderRescheduleScreenState
       initialDate: initial,
     );
     if (selected == null) return;
-    final duplicate = _sessions.asMap().entries.any(
-      (entry) => entry.key != index && _sameDay(entry.value.date, selected),
-    );
-    if (duplicate) {
-      _showMessage('هذا اليوم موجود بالفعل في جدول المناسبة.');
+
+    final session = _sessions[index];
+    if (_hasDuplicateSlot(
+      date: selected,
+      time: session.time,
+      exceptIndex: index,
+    )) {
+      _showMessage(
+        'توجد جلسة أخرى في التاريخ والوقت نفسيهما. اختر وقتاً مختلفاً.',
+      );
       return;
     }
+
     setState(() {
       _sessions[index].date = selected;
       _sort();
@@ -134,86 +204,105 @@ class _MultiDayCleaningOrderRescheduleScreenState
     );
     final selected = await showTimePicker(context: context, initialTime: initial);
     if (selected == null) return;
+    final time =
+        '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
+
+    if (_hasDuplicateSlot(
+      date: _sessions[index].date,
+      time: time,
+      exceptIndex: index,
+    )) {
+      _showMessage('لا يمكن تكرار التاريخ والوقت نفسيهما لجلسة أخرى.');
+      return;
+    }
+
     setState(() {
-      _sessions[index].time =
-          '${selected.hour.toString().padLeft(2, '0')}:${selected.minute.toString().padLeft(2, '0')}';
+      _sessions[index].time = time;
+      _sort();
     });
   }
 
   Future<void> _editHours(int index) async {
     if (!_editAllowed || _sessions[index].locked) return;
     final controller = TextEditingController(text: _hours(_sessions[index].hours));
-    final value = await showDialog<double>(
-      context: context,
-      builder: (dialogContext) {
-        String? error;
-        return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: const Text('مدة هذا اليوم'),
-            content: TextField(
-              controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}(\.\d{0,2})?')),
+    try {
+      final value = await showDialog<double>(
+        context: context,
+        builder: (dialogContext) {
+          String? error;
+          return StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: const Text('مدة هذه الجلسة'),
+              content: TextField(
+                controller: controller,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                    RegExp(r'^\d{0,2}(\.\d{0,2})?'),
+                  ),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'الساعات',
+                  errorText: error,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('إلغاء'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final parsed = double.tryParse(controller.text.trim());
+                    if (parsed == null || parsed < 1 || parsed > 24) {
+                      setDialogState(() {
+                        error = 'يجب أن تكون المدة بين 1 و24 ساعة';
+                      });
+                      return;
+                    }
+                    Navigator.of(dialogContext).pop(parsed);
+                  },
+                  child: const Text('حفظ'),
+                ),
               ],
-              decoration: InputDecoration(
-                labelText: 'الساعات',
-                errorText: error,
-              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('إلغاء'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  final parsed = double.tryParse(controller.text.trim());
-                  if (parsed == null || parsed <= 0 || parsed > 24) {
-                    setDialogState(() {
-                      error = 'يجب أن تكون المدة أكبر من 0 وحتى 24 ساعة';
-                    });
-                    return;
-                  }
-                  Navigator.of(dialogContext).pop(parsed);
-                },
-                child: const Text('حفظ'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    controller.dispose();
-    if (value == null) return;
-    setState(() => _sessions[index].hours = value);
+          );
+        },
+      );
+      if (!mounted || value == null) return;
+      setState(() => _sessions[index].hours = value);
+    } finally {
+      controller.dispose();
+    }
   }
 
-  Future<void> _addDay() async {
+  Future<void> _addSession() async {
     if (!_editAllowed || _sessions.length >= 31) return;
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    final first = DateTime(tomorrow.year, tomorrow.month, tomorrow.day);
+    final first = _today();
+    final suggestedDate = _sessions.isEmpty ? first : _sessions.last.date;
+    final initialDate = suggestedDate.isBefore(first) ? first : suggestedDate;
     final selected = await showDatePicker(
       context: context,
       firstDate: first,
       lastDate: first.add(const Duration(days: 365 * 2)),
-      initialDate: _sessions.isEmpty
-          ? first
-          : _sessions.last.date.add(const Duration(days: 1)),
+      initialDate: initialDate,
     );
     if (selected == null) return;
-    if (_sessions.any((session) => _sameDay(session.date, selected))) {
-      _showMessage('هذا اليوم موجود بالفعل في جدول المناسبة.');
+
+    final template = _sessions.isEmpty ? null : _sessions.first;
+    final preferredTime = template?.time ?? '09:00';
+    final time = _nextAvailableTime(selected, preferredTime);
+    if (_hasDuplicateSlot(date: selected, time: time)) {
+      _showMessage('لا يوجد وقت افتراضي متاح لهذا التاريخ. عدّل وقت جلسة أخرى أولاً.');
       return;
     }
-    final template = _sessions.where((session) => !session.locked).isNotEmpty
-        ? _sessions.where((session) => !session.locked).first
-        : (_sessions.isEmpty ? null : _sessions.first);
+
     setState(() {
       _sessions.add(
         _DraftSession(
           date: selected,
-          time: template?.time ?? '09:00',
+          time: time,
           hours: template?.hours ?? 4,
           locked: false,
         ),
@@ -224,54 +313,59 @@ class _MultiDayCleaningOrderRescheduleScreenState
 
   void _remove(int index) {
     if (!_editAllowed || _sessions[index].locked) return;
-    final editableCount = _sessions.where((session) => !session.locked).length;
-    if (editableCount <= 1 && _sessions.where((session) => session.locked).isEmpty) {
-      _showMessage('يجب أن يبقى يوم واحد على الأقل.');
+    if (_sessions.length <= 1) {
+      _showMessage('يجب أن تبقى جلسة واحدة على الأقل.');
       return;
     }
     setState(() => _sessions.removeAt(index));
   }
 
-  void _applyFirstEditableToAll() {
-    if (!_editAllowed) return;
-    final editable = _sessions.where((session) => !session.locked).toList();
-    if (editable.length < 2) return;
-    final source = editable.first;
+  void _applyFirstToAll() {
+    if (!_editAllowed || _sessions.length < 2) return;
+    final source = _sessions.first;
     setState(() {
-      for (final session in _sessions) {
-        if (session.locked) continue;
-        session
-          ..time = source.time
-          ..hours = source.hours;
+      for (var index = 1; index < _sessions.length; index++) {
+        final session = _sessions[index];
+        session.hours = source.hours;
+        session.time = _nextAvailableTime(
+          session.date,
+          source.time,
+          exceptIndex: index,
+        );
       }
+      _sort();
     });
   }
 
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
   Future<void> _save() async {
     if (!_editAllowed || _saving) return;
-    final active = _sessions.where((session) => !session.locked).toList();
-    if (active.isEmpty) {
-      _showMessage('لا يوجد جدول مستقبلي قابل للتعديل.');
+    if (_sessions.isEmpty) {
+      _showMessage('يجب أن تبقى جلسة واحدة على الأقل.');
       return;
     }
     if (_sessions.length > 31) {
-      _showMessage('الحد الأعلى هو 31 يوماً.');
+      _showMessage('الحد الأعلى هو 31 جلسة.');
       return;
     }
+
     final seen = <String>{};
-    for (final session in _sessions) {
-      final key = _dateApi(session.date);
+    for (var index = 0; index < _sessions.length; index++) {
+      final session = _sessions[index];
+      final key = _slotKey(session.date, session.time);
       if (!seen.add(key)) {
-        _showMessage('لا يمكن تكرار اليوم نفسه.');
+        _showMessage('لا يمكن تكرار التاريخ والوقت نفسيهما.');
         return;
       }
-      if (!RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(session.time) ||
-          session.hours <= 0 ||
-          session.hours > 24) {
-        _showMessage('تحقق من الوقت والمدة لكل يوم.');
+      if (session.date.isBefore(_today())) {
+        _showMessage('تاريخ الجلسة ${index + 1} يجب أن يكون اليوم أو في المستقبل.');
+        return;
+      }
+      if (!RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(session.time)) {
+        _showMessage('وقت الجلسة ${index + 1} غير صالح.');
+        return;
+      }
+      if (session.hours < 1 || session.hours > 24) {
+        _showMessage('مدة الجلسة ${index + 1} يجب أن تكون بين 1 و24 ساعة.');
         return;
       }
     }
@@ -280,6 +374,7 @@ class _MultiDayCleaningOrderRescheduleScreenState
       _saving = true;
       _error = null;
     });
+
     try {
       final payload = _sessions
           .map(
@@ -301,12 +396,13 @@ class _MultiDayCleaningOrderRescheduleScreenState
       setState(() {
         _saving = false;
         _error =
-            'تعذر تعديل أيام المناسبة. إذا كان أحد العمال قد قبل الطلب، فلن يسمح النظام بتغيير الجدول ويمكنك إلغاء الأيام المستقبلية حسب السياسة.';
+            'تعذر تعديل الجدول. لا يسمح النظام بتغيير الجلسات بعد قبول عامل أو بعد بدء/إكمال أي جلسة.';
       });
     }
   }
 
   void _showMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
@@ -314,7 +410,7 @@ class _MultiDayCleaningOrderRescheduleScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF3F4F6),
-      appBar: AppBar(title: const Text('تعديل أيام المناسبة')),
+      appBar: AppBar(title: const Text('تعديل جلسات المناسبة')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _sessions.isEmpty
@@ -348,7 +444,7 @@ class _MultiDayCleaningOrderRescheduleScreenState
                           border: Border.all(color: const Color(0xffFDBA74)),
                         ),
                         child: const Text(
-                          'لا يمكن تعديل أيام المناسبة بعد قبول العامل للطلب. يمكنك إلغاء الأيام القادمة حسب سياسة الإلغاء.',
+                          'لا يمكن تعديل جدول المناسبة بعد قبول أحد العمال أو بعد بدء/إكمال جلسة. يمكنك إلغاء الجلسات المستقبلية التي يسمح النظام بإلغائها.',
                         ),
                       ),
                     if (_error != null && _sessions.isNotEmpty)
@@ -371,32 +467,34 @@ class _MultiDayCleaningOrderRescheduleScreenState
                         children: [
                           Expanded(
                             child: Text(
-                              '${_sessions.length} أيام في الجدول',
+                              '${_sessions.length} جلسات في الجدول',
                               style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
                           TextButton.icon(
-                            onPressed: _editAllowed ? _addDay : null,
+                            onPressed: _editAllowed && _sessions.length < 31
+                                ? _addSession
+                                : null,
                             icon: const Icon(Icons.add),
-                            label: const Text('إضافة يوم'),
+                            label: const Text('إضافة جلسة'),
                           ),
                         ],
                       ),
                     ),
-                    if (_sessions.where((session) => !session.locked).length > 1)
+                    if (_sessions.length > 1)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: OutlinedButton.icon(
-                          onPressed: _editAllowed ? _applyFirstEditableToAll : null,
+                          onPressed: _editAllowed ? _applyFirstToAll : null,
                           icon: const Icon(Icons.copy_all_outlined),
-                          label: const Text('تطبيق نفس الوقت والمدة على الأيام المستقبلية'),
+                          label: const Text('تطبيق مدة ووقت الجلسة الأولى'),
                         ),
                       ),
                     Expanded(
                       child: ListView.separated(
                         padding: const EdgeInsets.all(16),
                         itemCount: _sessions.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final session = _sessions[index];
                           return Container(
@@ -414,8 +512,8 @@ class _MultiDayCleaningOrderRescheduleScreenState
                                     Expanded(
                                       child: Text(
                                         session.locked
-                                            ? 'يوم مكتمل - محفوظ في السجل'
-                                            : 'يوم ${index + 1}',
+                                            ? 'جلسة محفوظة وغير قابلة للتعديل'
+                                            : 'الجلسة ${index + 1}',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w800,
                                         ),
@@ -428,26 +526,37 @@ class _MultiDayCleaningOrderRescheduleScreenState
                                       ),
                                   ],
                                 ),
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: const Icon(Icons.calendar_today_outlined),
-                                  title: const Text('التاريخ'),
-                                  trailing: Text(_dateLabel(session.date)),
-                                  onTap: session.locked ? null : () => _pickDate(index),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _editAllowed && !session.locked
+                                            ? () => _pickDate(index)
+                                            : null,
+                                        icon: const Icon(Icons.event_outlined),
+                                        label: Text(_dateLabel(session.date)),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _editAllowed && !session.locked
+                                            ? () => _pickTime(index)
+                                            : null,
+                                        icon: const Icon(Icons.schedule),
+                                        label: Text(session.time),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: const Icon(Icons.schedule),
-                                  title: const Text('وقت البدء'),
-                                  trailing: Text(session.time),
-                                  onTap: session.locked ? null : () => _pickTime(index),
-                                ),
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: const Icon(Icons.timelapse),
-                                  title: const Text('المدة'),
-                                  trailing: Text('${_hours(session.hours)} ساعة'),
-                                  onTap: session.locked ? null : () => _editHours(index),
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: _editAllowed && !session.locked
+                                      ? () => _editHours(index)
+                                      : null,
+                                  icon: const Icon(Icons.timelapse),
+                                  label: Text('${_hours(session.hours)} ساعة'),
                                 ),
                               ],
                             ),
@@ -458,16 +567,22 @@ class _MultiDayCleaningOrderRescheduleScreenState
                     SafeArea(
                       top: false,
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: FilledButton(
-                          onPressed: _editAllowed && !_saving ? _save : null,
-                          child: _saving
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text('حفظ جدول المناسبة'),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: !_editAllowed || _saving ? null : _save,
+                            icon: _saving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.save_outlined),
+                            label: const Text('حفظ الجدول'),
+                          ),
                         ),
                       ),
                     ),
@@ -478,6 +593,12 @@ class _MultiDayCleaningOrderRescheduleScreenState
 }
 
 class _DraftSession {
+  final int? id;
+  DateTime date;
+  String time;
+  double hours;
+  final bool locked;
+
   _DraftSession({
     this.id,
     required this.date,
@@ -485,10 +606,4 @@ class _DraftSession {
     required this.hours,
     required this.locked,
   });
-
-  final int? id;
-  DateTime date;
-  String time;
-  double hours;
-  final bool locked;
 }
