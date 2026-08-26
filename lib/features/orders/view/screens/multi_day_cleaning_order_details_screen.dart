@@ -40,28 +40,23 @@ class _MultiDayCleaningOrderDetailsScreenState
     final selected = schedule.sessionById(_selectedSessionId);
     if (selected != null) return selected;
 
-    final nextSession = schedule.nextSession;
-    if (nextSession != null) {
-      return schedule.sessionById(nextSession.id) ?? nextSession;
-    }
+    final next = schedule.nextSession;
+    if (next != null) return schedule.sessionById(next.id) ?? next;
 
     return schedule.sessions.isEmpty ? null : schedule.sessions.first;
   }
 
   bool get _parentCompleted {
-    if ((_envelope?.status ?? '').trim().toLowerCase() == 'completed') {
-      return true;
-    }
+    final parentStatus = (_envelope?.status ?? '').trim().toLowerCase();
+    if (parentStatus == 'completed') return true;
+    if (parentStatus == 'partially_completed') return false;
 
     final schedule = _schedule;
     if (schedule == null || schedule.sessions.isEmpty) return false;
-
-    final nonCancelledSessions = schedule.sessions
+    final active = schedule.sessions
         .where((session) => !session.isCancelled)
         .toList(growable: false);
-
-    return nonCancelledSessions.isNotEmpty &&
-        nonCancelledSessions.every((session) => session.isCompleted);
+    return active.isNotEmpty && active.every((session) => session.isCompleted);
   }
 
   @override
@@ -89,7 +84,6 @@ class _MultiDayCleaningOrderDetailsScreenState
         _envelope = result;
         _loading = false;
         _error = null;
-
         if (schedule != null &&
             schedule.sessionById(_selectedSessionId) == null) {
           _selectedSessionId = schedule.nextSession?.id ??
@@ -107,7 +101,6 @@ class _MultiDayCleaningOrderDetailsScreenState
 
   Future<void> _runAction(Future<void> Function() action) async {
     if (_busy || !mounted) return;
-
     setState(() {
       _busy = true;
       _error = null;
@@ -120,22 +113,21 @@ class _MultiDayCleaningOrderDetailsScreenState
       if (!mounted) return;
       setState(() => _error = _friendlyError(error));
     } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   String _friendlyError(Object error) {
     final text = error.toString().toLowerCase();
-
     if (text.contains('schedule') && text.contains('accepted')) {
       return 'لا يمكن تعديل جدول المناسبة بعد قبول أحد العمال.';
     }
     if (text.contains('code')) {
       return 'رمز التحقق غير صحيح أو انتهت صلاحيته.';
     }
-
+    if (text.contains('90') || text.contains('additionalminutes')) {
+      return 'مدة التمديد يجب أن تكون بين 0 و90 دقيقة.';
+    }
     return 'تعذر تنفيذ العملية. تحقق من حالة اليوم وحاول مرة أخرى.';
   }
 
@@ -152,10 +144,9 @@ class _MultiDayCleaningOrderDetailsScreenState
       maxLength: 4,
     );
     if (!mounted || code == null) return;
-
-    final normalizedCode = code.trim();
-    if (normalizedCode.length != 4) {
-      _toast('رمز التحقق يجب أن يكون 4 أحرف تمامًا', ToastificationType.warning);
+    final normalized = code.trim();
+    if (normalized.length != 4) {
+      _toast('رمز التحقق يجب أن يتكون من 4 أحرف.', ToastificationType.warning);
       return;
     }
 
@@ -163,7 +154,7 @@ class _MultiDayCleaningOrderDetailsScreenState
       await getIt<CleaningSessionRemoteDataSource>().confirmStartVerification(
         orderId: widget.orderId,
         sessionId: sessionId,
-        code: normalizedCode,
+        code: normalized,
       );
     });
   }
@@ -211,21 +202,25 @@ class _MultiDayCleaningOrderDetailsScreenState
       isRequired: true,
       maxLength: 1000,
     );
-    if (!mounted || message == null || message.trim().isEmpty) return;
-
-    final normalizedMessage = message.trim();
-    if (normalizedMessage.length > 1000) {
-      _toast('الملاحظة يجب ألا تتجاوز 1000 حرف', ToastificationType.warning);
-      return;
-    }
+    if (message == null || message.trim().isEmpty) return;
 
     await _runAction(() async {
       await getIt<CleaningSessionRemoteDataSource>().rejectCompletion(
         orderId: widget.orderId,
         sessionId: sessionId,
-        message: normalizedMessage,
+        message: message.trim(),
       );
     });
+  }
+
+  int? _sessionWorkerId(CleaningBookingSessionModel session) {
+    final direct = session.workerAssignmentState?.workerId;
+    if (direct != null && direct > 0) return direct;
+    for (final assignment in session.workerAssignments) {
+      final workerId = assignment.workerId;
+      if (workerId != null && workerId > 0) return workerId;
+    }
+    return null;
   }
 
   Future<void> _requestExtension() async {
@@ -235,7 +230,7 @@ class _MultiDayCleaningOrderDetailsScreenState
 
     final minutesText = await _askText(
       title: 'تمديد وقت هذا اليوم',
-      hint: 'عدد الدقائق الإضافية من 0 إلى 90، مثال: 30',
+      hint: 'عدد الدقائق الإضافية من 0 إلى 90',
       isRequired: true,
       keyboardType: TextInputType.number,
       maxLength: 2,
@@ -244,7 +239,7 @@ class _MultiDayCleaningOrderDetailsScreenState
 
     final minutes = int.tryParse(minutesText.trim());
     if (minutes == null || minutes < 0 || minutes > 90) {
-      _toast('أدخل مدة إضافية بين 0 و90 دقيقة', ToastificationType.warning);
+      _toast('أدخل مدة بين 0 و90 دقيقة.', ToastificationType.warning);
       return;
     }
 
@@ -254,16 +249,15 @@ class _MultiDayCleaningOrderDetailsScreenState
       isRequired: false,
       maxLength: 1000,
     );
-    if (!mounted || message == null) return;
+    if (message == null) return;
 
-    final workerId = _extractWorkerIdFromSession(session);
     await _runAction(() async {
       await getIt<CleaningSessionRemoteDataSource>().requestExtension(
         orderId: widget.orderId,
         sessionId: sessionId,
         additionalMinutes: minutes,
         message: message,
-        workerId: workerId,
+        workerId: _sessionWorkerId(session),
       );
     });
   }
@@ -275,7 +269,7 @@ class _MultiDayCleaningOrderDetailsScreenState
 
     final reason = await _askText(
       title: 'إلغاء اليوم ${session.sequence}',
-      hint: 'سبب إلغاء هذا اليوم',
+      hint: 'سبب إلغاء هذا اليوم (اختياري)',
       isRequired: false,
       maxLength: 1000,
     );
@@ -319,7 +313,6 @@ class _MultiDayCleaningOrderDetailsScreenState
     int? maxLength,
   }) async {
     final controller = TextEditingController();
-
     try {
       return await showDialog<String>(
         context: context,
@@ -362,7 +355,6 @@ class _MultiDayCleaningOrderDetailsScreenState
   String _dateLabel(CleaningBookingSessionModel session) {
     final date = session.date;
     if (date == null) return '-';
-
     const days = <String>[
       'الاثنين',
       'الثلاثاء',
@@ -372,37 +364,28 @@ class _MultiDayCleaningOrderDetailsScreenState
       'السبت',
       'الأحد',
     ];
-
     return '${days[date.weekday - 1]}، ${date.day}/${date.month}/${date.year}';
   }
 
   String _timeLabel(String? value) {
     if (value == null || value.trim().isEmpty) return '-';
-
     final parts = value.split(':');
     if (parts.length < 2) return value;
-
     final hour = int.tryParse(parts[0]);
     final minute = int.tryParse(parts[1]);
     if (hour == null || minute == null) return value;
-
     final suffix = hour >= 12 ? 'م' : 'ص';
     var displayHour = hour % 12;
     if (displayHour == 0) displayHour = 12;
-
     return '$displayHour:${minute.toString().padLeft(2, '0')} $suffix';
   }
 
-  String _hours(double value) {
-    return value % 1 == 0
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(1);
-  }
+  String _hours(double value) =>
+      value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 
   String _statusLabel(CleaningBookingSessionModel session) {
     final apiLabel = session.statusLabel?.trim();
     if (apiLabel != null && apiLabel.isNotEmpty) return apiLabel;
-
     return switch (session.status) {
       'scheduled' => 'مجدول',
       'worker_assigned' => session.startedTravelAt != null
@@ -420,83 +403,38 @@ class _MultiDayCleaningOrderDetailsScreenState
     };
   }
 
-  int? _extractWorkerIdFromSession(CleaningBookingSessionModel session) {
-    final state = session.workerAssignmentState;
-    final stateWorkerId = state?['workerId'] ?? state?['worker_id'];
-    final parsedStateWorkerId = stateWorkerId is num
-        ? stateWorkerId.toInt()
-        : int.tryParse(stateWorkerId?.toString() ?? '');
-    if (parsedStateWorkerId != null && parsedStateWorkerId > 0) {
-      return parsedStateWorkerId;
-    }
-
-    for (final assignment in session.workerAssignments) {
-      final direct = assignment['workerId'] ?? assignment['worker_id'];
-      if (direct is int && direct > 0) return direct;
-      if (direct is num && direct.toInt() > 0) return direct.toInt();
-
-      final parsed = int.tryParse(direct?.toString() ?? '');
-      if (parsed != null && parsed > 0) return parsed;
-
-      final worker = assignment['worker'];
-      if (worker is Map) {
-        final nested = worker['id'];
-        final nestedParsed = nested is num
-            ? nested.toInt()
-            : int.tryParse(nested?.toString() ?? '');
-        if (nestedParsed != null && nestedParsed > 0) {
-          return nestedParsed;
-        }
-      }
-    }
-
-    return null;
-  }
-
   int? _extractWorkerId() {
     final schedule = _schedule;
     if (schedule == null) return null;
-
     for (final session in schedule.sessions) {
-      final workerId = _extractWorkerIdFromSession(session);
+      final workerId = _sessionWorkerId(session);
       if (workerId != null) return workerId;
     }
-
     return null;
   }
 
   Future<void> _openReview() async {
     if (_busy) return;
-
     final workerId = _extractWorkerId();
     if (workerId == null) {
-      _toast(
-        'تعذر تحديد مقدم الخدمة للتقييم',
-        ToastificationType.warning,
-      );
+      _toast('تعذر تحديد مقدم الخدمة للتقييم', ToastificationType.warning);
       return;
     }
 
     setState(() => _busy = true);
-
     try {
       final response = await getIt<FetchCleaningWorkerProfileUseCase>()(
         FetchCleaningWorkerProfileParams(workerId: workerId),
       );
       if (!mounted) return;
-
       response.fold(
         (failure) => _toast(failure.message, ToastificationType.error),
         (result) {
           final profile = result.data;
           if (profile == null) {
-            _toast(
-              'تعذر تحميل مقدم الخدمة للتقييم',
-              ToastificationType.warning,
-            );
+            _toast('تعذر تحميل مقدم الخدمة للتقييم', ToastificationType.warning);
             return;
           }
-
           Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => CleaningWorkerRatingScreen(
@@ -510,9 +448,7 @@ class _MultiDayCleaningOrderDetailsScreenState
         },
       );
     } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -541,10 +477,7 @@ class _MultiDayCleaningOrderDetailsScreenState
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 5,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: const Color(0xffE2F5F4),
                   borderRadius: BorderRadius.circular(999),
@@ -561,7 +494,7 @@ class _MultiDayCleaningOrderDetailsScreenState
           LinearProgressIndicator(value: progress),
           const SizedBox(height: 10),
           AppText.bodySmall(
-            '${schedule.daysCount} أيام · ${_hours(schedule.totalHours)} ساعة لكل عامل · ${schedule.cancelledDaysCount} ملغي',
+            '${schedule.daysCount} جلسات · ${_hours(schedule.totalHours)} ساعة لكل عامل · ${schedule.cancelledDaysCount} ملغي',
           ),
           if (_envelope?.totalPrice != null) ...[
             const SizedBox(height: 6),
@@ -600,15 +533,13 @@ class _MultiDayCleaningOrderDetailsScreenState
           final session = schedule.sessions[index];
           return ChoiceChip(
             selected: session.id == _selectedSessionId,
-            onSelected: (_) {
-              setState(() => _selectedSessionId = session.id);
-            },
+            onSelected: (_) => setState(() => _selectedSessionId = session.id),
             avatar: session.isCompleted
                 ? const Icon(Icons.check_circle, size: 18)
                 : session.isCancelled
                     ? const Icon(Icons.cancel_outlined, size: 18)
                     : null,
-            label: Text('اليوم ${session.sequence}'),
+            label: Text('الجلسة ${session.sequence}'),
           );
         },
       ),
@@ -620,7 +551,6 @@ class _MultiDayCleaningOrderDetailsScreenState
     CleaningBookingSessionModel session,
   ) {
     final price = session.pricing?.totalPrice;
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -635,15 +565,12 @@ class _MultiDayCleaningOrderDetailsScreenState
             children: [
               Expanded(
                 child: AppText.titleMedium(
-                  'اليوم ${session.sequence} من ${schedule.daysCount}',
+                  'الجلسة ${session.sequence} من ${schedule.daysCount}',
                   fontWeight: FontWeight.w800,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 5,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: const Color(0xffF3F4F6),
                   borderRadius: BorderRadius.circular(999),
@@ -653,10 +580,7 @@ class _MultiDayCleaningOrderDetailsScreenState
             ],
           ),
           const SizedBox(height: 12),
-          AppText.bodyMedium(
-            _dateLabel(session),
-            fontWeight: FontWeight.w700,
-          ),
+          AppText.bodyMedium(_dateLabel(session), fontWeight: FontWeight.w700),
           const SizedBox(height: 4),
           AppText.bodySmall(
             '${_timeLabel(session.time)} · ${_hours(session.hours)} ساعة',
@@ -664,7 +588,7 @@ class _MultiDayCleaningOrderDetailsScreenState
           if (price != null) ...[
             const SizedBox(height: 5),
             AppText.bodySmall(
-              'إجمالي هذا اليوم: ${price.toStringAsFixed(0)} ${session.pricing?.currency ?? _envelope?.currency ?? 'SYP'}',
+              'إجمالي هذه الجلسة: ${price.toStringAsFixed(0)} ${session.pricing?.currency ?? _envelope?.currency ?? 'SYP'}',
             ),
           ],
           const SizedBox(height: 14),
@@ -678,60 +602,52 @@ class _MultiDayCleaningOrderDetailsScreenState
     if (session.id == null) {
       return const _InfoBanner(
         icon: Icons.info_outline,
-        text: 'هذه جلسة توافقية قديمة ولا يمكن تنفيذ إجراءات جلسة مباشرة عليها.',
+        text: 'هذه جلسة توافق قديمة ولا يمكن تنفيذ إجراء خاص بالجلسة عليها.',
       );
     }
-
     if (session.isCompleted) {
       return const _InfoBanner(
         icon: Icons.check_circle_outline,
-        text: 'تم إكمال هذا اليوم بنجاح.',
+        text: 'تم إكمال هذه الجلسة بنجاح.',
       );
     }
-
     if (session.isCancelled) {
       return const _InfoBanner(
         icon: Icons.cancel_outlined,
-        text: 'تم إلغاء هذا اليوم.',
+        text: 'تم إلغاء هذه الجلسة.',
       );
     }
-
     if (session.status == 'under_dispute') {
       return const _InfoBanner(
         icon: Icons.gavel_outlined,
         text: 'هذه الجلسة قيد المراجعة.',
       );
     }
-
     if (session.isAwaitingStartVerification) {
       return FilledButton.icon(
         onPressed: _busy ? null : _confirmStartCode,
         icon: const Icon(Icons.verified_user_outlined),
-        label: const Text('إدخال رمز بدء هذا اليوم'),
+        label: const Text('إدخال رمز بدء هذه الجلسة'),
       );
     }
-
     if (session.status == 'awaiting_worker_start_confirmation') {
       return const _InfoBanner(
         icon: Icons.hourglass_top,
         text: 'تم التحقق من الرمز. بانتظار تأكيد مقدمي الخدمة لبدء العمل.',
       );
     }
-
     if (session.isInProgress) {
       return const _InfoBanner(
         icon: Icons.cleaning_services_outlined,
-        text: 'العمل في هذا اليوم قيد التنفيذ.',
+        text: 'العمل في هذه الجلسة قيد التنفيذ.',
       );
     }
-
     if (session.isExtensionPending) {
       return const _InfoBanner(
         icon: Icons.more_time,
-        text: 'تم إرسال طلب التمديد لهذا اليوم وبانتظار رد مقدم الخدمة.',
+        text: 'تم إرسال طلب التمديد وبانتظار رد مقدم الخدمة.',
       );
     }
-
     if (session.isAwaitingCustomerCompletion) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -739,7 +655,7 @@ class _MultiDayCleaningOrderDetailsScreenState
           FilledButton.icon(
             onPressed: _busy ? null : _confirmCompletion,
             icon: const Icon(Icons.task_alt),
-            label: const Text('تأكيد إكمال هذا اليوم'),
+            label: const Text('تأكيد إكمال هذه الجلسة'),
           ),
           const SizedBox(height: 8),
           Row(
@@ -764,61 +680,51 @@ class _MultiDayCleaningOrderDetailsScreenState
         ],
       );
     }
-
     if (session.canCancel) {
       return OutlinedButton.icon(
         onPressed: _busy ? null : _cancelSession,
         icon: const Icon(Icons.cancel_outlined),
-        label: const Text('إلغاء هذا اليوم'),
+        label: const Text('إلغاء هذه الجلسة'),
       );
     }
-
     return const _InfoBanner(
       icon: Icons.schedule,
-      text: 'بانتظار موعد هذه الجلسة أو تحديث حالتها.',
-    );
-  }
-
-  Widget _loadingBody() {
-    return const Scaffold(
-      backgroundColor: Color(0xffF3F4F6),
-      body: SafeArea(
-        child: Center(child: CircularProgressIndicator()),
-      ),
-    );
-  }
-
-  Widget _loadErrorBody() {
-    return Scaffold(
-      backgroundColor: const Color(0xffF3F4F6),
-      appBar: AppBar(title: const Text('تفاصيل المناسبة')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: () => _refresh(showLoading: true),
-                icon: const Icon(Icons.refresh),
-                label: const Text('إعادة المحاولة'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      text: 'بانتظار موعد هذه الجلسة أو تحديث صلاحياتها من النظام.',
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return _loadingBody();
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Color(0xffF3F4F6),
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
 
     final schedule = _schedule;
     if (_error != null && schedule == null) {
-      return _loadErrorBody();
+      return Scaffold(
+        backgroundColor: const Color(0xffF3F4F6),
+        appBar: AppBar(title: const Text('تفاصيل المناسبة')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: () => _refresh(showLoading: true),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('إعادة المحاولة'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     if (schedule == null || !schedule.isMultiDay) {
@@ -826,13 +732,12 @@ class _MultiDayCleaningOrderDetailsScreenState
         backgroundColor: const Color(0xffF3F4F6),
         appBar: AppBar(title: const Text('تفاصيل المناسبة')),
         body: const Center(
-          child: Text('هذا الطلب لا يحتوي جدولاً متعدد الأيام.'),
+          child: Text('هذا الطلب لا يحتوي جدولاً متعدد الجلسات.'),
         ),
       );
     }
 
     final session = _activeSession;
-
     return Scaffold(
       backgroundColor: const Color(0xffF3F4F6),
       appBar: AppBar(

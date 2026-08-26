@@ -88,6 +88,92 @@ class CleaningSessionPricingModel {
   }
 }
 
+class CleaningSessionWorkerAssignmentModel {
+  final int? id;
+  final int? parentAssignmentId;
+  final int? workerId;
+  final String? workerName;
+  final String? status;
+  final String? startedTravelAt;
+  final String? arrivedAt;
+  final String? locationUpdatedAt;
+  final double? lastLatitude;
+  final double? lastLongitude;
+  final String? startApprovedAt;
+  final String? workStartedAt;
+  final String? workFinishedAt;
+  final String? workerCompletionMessage;
+  final double? serviceShareAmount;
+  final double? travelFee;
+  final double? adminMarginAmount;
+  final double? workerAmount;
+  final String? currency;
+
+  const CleaningSessionWorkerAssignmentModel({
+    this.id,
+    this.parentAssignmentId,
+    this.workerId,
+    this.workerName,
+    this.status,
+    this.startedTravelAt,
+    this.arrivedAt,
+    this.locationUpdatedAt,
+    this.lastLatitude,
+    this.lastLongitude,
+    this.startApprovedAt,
+    this.workStartedAt,
+    this.workFinishedAt,
+    this.workerCompletionMessage,
+    this.serviceShareAmount,
+    this.travelFee,
+    this.adminMarginAmount,
+    this.workerAmount,
+    this.currency,
+  });
+
+  factory CleaningSessionWorkerAssignmentModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningSessionWorkerAssignmentModel(
+      id: _int(json['id']),
+      parentAssignmentId: _int(
+        json['parentAssignmentId'] ?? json['parent_assignment_id'],
+      ),
+      workerId: _int(json['workerId'] ?? json['worker_id']),
+      workerName: _string(json['workerName'] ?? json['worker_name']),
+      status: _string(json['status']),
+      startedTravelAt: _string(
+        json['startedTravelAt'] ?? json['started_travel_at'],
+      ),
+      arrivedAt: _string(json['arrivedAt'] ?? json['arrived_at']),
+      locationUpdatedAt: _string(
+        json['locationUpdatedAt'] ?? json['location_updated_at'],
+      ),
+      lastLatitude: _double(json['lastLatitude'] ?? json['last_latitude']),
+      lastLongitude: _double(json['lastLongitude'] ?? json['last_longitude']),
+      startApprovedAt: _string(
+        json['startApprovedAt'] ?? json['start_approved_at'],
+      ),
+      workStartedAt: _string(json['workStartedAt'] ?? json['work_started_at']),
+      workFinishedAt: _string(
+        json['workFinishedAt'] ?? json['work_finished_at'],
+      ),
+      workerCompletionMessage: _string(
+        json['workerCompletionMessage'] ?? json['worker_completion_message'],
+      ),
+      serviceShareAmount: _double(
+        json['serviceShareAmount'] ?? json['service_share_amount'],
+      ),
+      travelFee: _double(json['travelFee'] ?? json['travel_fee']),
+      adminMarginAmount: _double(
+        json['adminMarginAmount'] ?? json['admin_margin_amount'],
+      ),
+      workerAmount: _double(json['workerAmount'] ?? json['worker_amount']),
+      currency: _string(json['currency']),
+    );
+  }
+}
+
 class CleaningBookingSessionModel {
   final int? id;
   final int sequence;
@@ -104,8 +190,7 @@ class CleaningBookingSessionModel {
   final bool canComplete;
   final bool canExtend;
   final bool canCancel;
-  final bool canStart;
-  final bool canReschedule;
+  final bool? canReschedule;
   final CleaningSessionPricingModel? pricing;
   final String? startedTravelAt;
   final String? arrivedAt;
@@ -115,8 +200,8 @@ class CleaningBookingSessionModel {
   final String? cancelledAt;
   final String? cancellationReason;
   final String? cancelledByRole;
-  final Map<String, dynamic>? workerAssignmentState;
-  final List<Map<String, dynamic>> workerAssignments;
+  final CleaningSessionWorkerAssignmentModel? workerAssignmentState;
+  final List<CleaningSessionWorkerAssignmentModel> workerAssignments;
 
   const CleaningBookingSessionModel({
     this.id,
@@ -134,8 +219,7 @@ class CleaningBookingSessionModel {
     required this.canComplete,
     required this.canExtend,
     required this.canCancel,
-    required this.canStart,
-    required this.canReschedule,
+    this.canReschedule,
     this.pricing,
     this.startedTravelAt,
     this.arrivedAt,
@@ -146,13 +230,14 @@ class CleaningBookingSessionModel {
     this.cancellationReason,
     this.cancelledByRole,
     this.workerAssignmentState,
-    this.workerAssignments = const <Map<String, dynamic>>[],
+    this.workerAssignments = const <CleaningSessionWorkerAssignmentModel>[],
   });
 
   factory CleaningBookingSessionModel.fromJson(Map<String, dynamic> json) {
     final rawAssignments = json['workerAssignments'] ?? json['worker_assignments'];
     final rawAssignmentState =
         json['workerAssignmentState'] ?? json['worker_assignment_state'];
+
     return CleaningBookingSessionModel(
       id: _int(json['id']),
       sequence: _int(json['sequence']) ?? 1,
@@ -166,17 +251,18 @@ class CleaningBookingSessionModel {
       statusLabel: _string(json['statusLabel'] ?? json['status_label']),
       isPast: _bool(json['isPast'] ?? json['is_past']) ?? false,
       isToday: _bool(json['isToday'] ?? json['is_today']) ?? false,
-      canStartTravel:
-          _bool(json['canStartTravel'] ?? json['can_start_travel']) ?? false,
+      canStartTravel: _bool(
+            json['canStartTravel'] ?? json['can_start_travel'],
+          ) ??
+          false,
       canArrive: _bool(json['canArrive'] ?? json['can_arrive']) ?? false,
-      canStartWork:
-          _bool(json['canStartWork'] ?? json['can_start_work']) ?? false,
+      canStartWork: _bool(json['canStartWork'] ?? json['can_start_work']) ??
+          _bool(json['canStart'] ?? json['can_start']) ??
+          false,
       canComplete: _bool(json['canComplete'] ?? json['can_complete']) ?? false,
       canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
-      canStart: _bool(json['canStart'] ?? json['can_start']) ?? false,
-      canReschedule:
-          _bool(json['canReschedule'] ?? json['can_reschedule']) ?? false,
+      canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),
       pricing: json['pricing'] is Map
           ? CleaningSessionPricingModel.fromJson(_map(json['pricing']))
           : null,
@@ -187,12 +273,8 @@ class CleaningBookingSessionModel {
       customerConfirmedAt: _string(
         json['customerConfirmedAt'] ?? json['customer_confirmed_at'],
       ),
-      workStartedAt: _string(
-        json['workStartedAt'] ?? json['work_started_at'],
-      ),
-      workFinishedAt: _string(
-        json['workFinishedAt'] ?? json['work_finished_at'],
-      ),
+      workStartedAt: _string(json['workStartedAt'] ?? json['work_started_at']),
+      workFinishedAt: _string(json['workFinishedAt'] ?? json['work_finished_at']),
       cancelledAt: _string(json['cancelledAt'] ?? json['cancelled_at']),
       cancellationReason: _string(
         json['cancellationReason'] ?? json['cancellation_reason'],
@@ -200,27 +282,46 @@ class CleaningBookingSessionModel {
       cancelledByRole: _string(
         json['cancelledByRole'] ?? json['cancelled_by_role'],
       ),
-      workerAssignmentState:
-          rawAssignmentState is Map ? _map(rawAssignmentState) : null,
+      workerAssignmentState: rawAssignmentState is Map
+          ? CleaningSessionWorkerAssignmentModel.fromJson(
+              _map(rawAssignmentState),
+            )
+          : null,
       workerAssignments: rawAssignments is List
           ? rawAssignments
               .whereType<Map>()
-              .map((item) => _map(item))
+              .map(
+                (item) => CleaningSessionWorkerAssignmentModel.fromJson(
+                  _map(item),
+                ),
+              )
               .toList(growable: false)
-          : const <Map<String, dynamic>>[],
+          : const <CleaningSessionWorkerAssignmentModel>[],
     );
   }
 
+  bool get canStart => canStartWork || canStartTravel;
   bool get isCompleted => status == 'completed';
   bool get isCancelled => status == 'cancelled';
-  bool get isTerminal =>
-      isCompleted || isCancelled || status == 'under_dispute';
-  bool get isAwaitingStartVerification =>
-      status == 'awaiting_start_verification';
-  bool get isAwaitingCustomerCompletion =>
-      status == 'awaiting_customer_completion';
+  bool get isTerminal => isCompleted || isCancelled || status == 'under_dispute';
+  bool get isAwaitingStartVerification => status == 'awaiting_start_verification';
+  bool get isAwaitingCustomerCompletion => status == 'awaiting_customer_completion';
   bool get isInProgress => status == 'in_progress';
   bool get isExtensionPending => status == 'time_extension_requested';
+
+  bool get hasStartedExecution =>
+      startedTravelAt != null ||
+      arrivedAt != null ||
+      customerConfirmedAt != null ||
+      workStartedAt != null ||
+      workFinishedAt != null ||
+      status == 'awaiting_start_verification' ||
+      status == 'awaiting_worker_start_confirmation' ||
+      status == 'in_progress' ||
+      status == 'awaiting_customer_completion' ||
+      status == 'time_extension_requested' ||
+      status == 'under_dispute' ||
+      isCompleted;
 }
 
 class CleaningBookingScheduleModel {
@@ -257,11 +358,11 @@ class CleaningBookingScheduleModel {
             .toList(growable: false)
         : const <CleaningBookingSessionModel>[];
     final rawNext = json['nextSession'] ?? json['next_session'];
+
     return CleaningBookingScheduleModel(
       mode: _string(json['mode']) ??
           (sessions.length > 1 ? 'multi_day' : 'single_day'),
-      daysCount:
-          _int(json['daysCount'] ?? json['days_count']) ?? sessions.length,
+      daysCount: _int(json['daysCount'] ?? json['days_count']) ?? sessions.length,
       completedDaysCount: _int(
             json['completedDaysCount'] ?? json['completed_days_count'],
           ) ??
@@ -326,10 +427,12 @@ class CleaningMultiDayOrderEnvelope {
     final order = _orderMap(root);
     final scheduleRaw = order['schedule'];
     final sessionRaw = root['session'];
+
     return CleaningMultiDayOrderEnvelope(
       bookingId: _int(order['id']),
-      bookingNumber:
-          _string(order['bookingNumber'] ?? order['booking_number']),
+      bookingNumber: _string(
+        order['bookingNumber'] ?? order['booking_number'],
+      ),
       status: _string(order['status']),
       totalPrice: _double(order['totalPrice'] ?? order['total_price']),
       currency: _string(order['currency']),
@@ -343,9 +446,7 @@ class CleaningMultiDayOrderEnvelope {
   }
 }
 
-CleaningMultiDayOrderEnvelope cleaningMultiDayOrderEnvelopeFromJson(
-  dynamic json,
-) {
+CleaningMultiDayOrderEnvelope cleaningMultiDayOrderEnvelopeFromJson(dynamic json) {
   if (json is String) {
     final decoded = jsonDecode(json);
     return CleaningMultiDayOrderEnvelope.fromJson(_map(decoded));

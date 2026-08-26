@@ -55,17 +55,12 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
   Future<CleaningMultiDayOrderEnvelope> confirmCompletion({
     required int orderId,
     required int sessionId,
-    int? workerId,
-    int? assignmentId,
   }) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
         endPoint:
             '/api/v1/user/cleaning/orders/$orderId/sessions/$sessionId/completion/confirm',
-        data: <String, dynamic>{
-          if (workerId != null) 'workerId': workerId,
-          if (assignmentId != null) 'assignmentId': assignmentId,
-        },
+        data: const <String, dynamic>{},
       ),
       jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
     );
@@ -75,18 +70,12 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     required int orderId,
     required int sessionId,
     required String message,
-    int? workerId,
-    int? assignmentId,
   }) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
         endPoint:
             '/api/v1/user/cleaning/orders/$orderId/sessions/$sessionId/completion/reject',
-        data: <String, dynamic>{
-          'message': message,
-          if (workerId != null) 'workerId': workerId,
-          if (assignmentId != null) 'assignmentId': assignmentId,
-        },
+        data: <String, dynamic>{'message': message.trim()},
       ),
       jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
     );
@@ -98,7 +87,6 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     required int additionalMinutes,
     String? message,
     int? workerId,
-    int? assignmentId,
   }) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
@@ -109,7 +97,6 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
           if (message != null && message.trim().isNotEmpty)
             'message': message.trim(),
           if (workerId != null) 'workerId': workerId,
-          if (assignmentId != null) 'assignmentId': assignmentId,
         },
       ),
       jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
@@ -119,13 +106,15 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
   Future<CleaningMultiDayOrderEnvelope> cancelSession({
     required int orderId,
     required int sessionId,
-    required String reason,
+    String? reason,
   }) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
         endPoint:
             '/api/v1/user/cleaning/orders/$orderId/sessions/$sessionId/cancel',
-        data: <String, dynamic>{'reason': reason.trim()},
+        data: <String, dynamic>{
+          if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+        },
       ),
       jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
     );

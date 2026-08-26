@@ -2,7 +2,7 @@ import 'package:dllni_user_app/features/orders/data/models/cleaning_booking_sche
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('parses multi-day booking schedule and next session', () {
+  test('parses multi-day schedule, capability flags and assignments', () {
     final result = cleaningMultiDayOrderEnvelopeFromJson({
       'data': {
         'id': 501,
@@ -43,7 +43,36 @@ void main() {
               'time': '17:30',
               'hours': 5,
               'status': 'worker_assigned',
+              'canStartTravel': true,
+              'canArrive': false,
+              'canStartWork': false,
+              'canComplete': false,
+              'canExtend': true,
               'canCancel': true,
+              'canReschedule': false,
+              'pricing': {
+                'totalPrice': 6400,
+                'travelDistanceKm': 3.5,
+                'currency': 'SYP',
+              },
+              'workerAssignmentState': {
+                'id': 81,
+                'workerId': 14,
+                'workerName': 'Worker Name',
+                'workerAmount': 2700,
+              },
+              'workerAssignments': [
+                {
+                  'id': 81,
+                  'parentAssignmentId': 55,
+                  'workerId': 14,
+                  'serviceShareAmount': 2500,
+                  'travelFee': 500,
+                  'adminMarginAmount': 300,
+                  'workerAmount': 2700,
+                  'currency': 'SYP',
+                },
+              ],
             },
             {
               'id': 103,
@@ -58,6 +87,7 @@ void main() {
       },
     });
 
+    final session = result.schedule?.sessionById(102);
     expect(result.bookingId, 501);
     expect(result.status, 'partially_completed');
     expect(result.schedule?.isMultiDay, isTrue);
@@ -65,7 +95,12 @@ void main() {
     expect(result.schedule?.completedDaysCount, 1);
     expect(result.schedule?.totalHours, 12);
     expect(result.schedule?.nextSession?.id, 102);
-    expect(result.schedule?.sessionById(102)?.canCancel, isTrue);
+    expect(session?.canStartTravel, isTrue);
+    expect(session?.canExtend, isTrue);
+    expect(session?.canCancel, isTrue);
+    expect(session?.pricing?.travelDistanceKm, 3.5);
+    expect(session?.workerAssignmentState?.workerId, 14);
+    expect(session?.workerAssignments.single.workerAmount, 2700);
   });
 
   test('parses action response with session next to order', () {
@@ -92,5 +127,28 @@ void main() {
     expect(result.bookingId, 501);
     expect(result.session?.id, 1001);
     expect(result.session?.isCompleted, isTrue);
+  });
+
+  test('supports synthetic legacy session with nullable id', () {
+    final result = cleaningMultiDayOrderEnvelopeFromJson({
+      'data': {
+        'id': 600,
+        'schedule': {
+          'mode': 'single_day',
+          'daysCount': 1,
+          'sessions': [
+            {
+              'sequence': 1,
+              'date': '2026-09-20',
+              'time': '09:00',
+              'hours': 4,
+              'status': 'scheduled',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(result.schedule?.sessions.single.id, isNull);
   });
 }

@@ -11,6 +11,7 @@ import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../../core/widgets/toast_component.dart';
 import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../orders/view/screens/cleaning_order_details_screen.dart';
+import '../../../orders/view/screens/multi_day_cleaning_order_details_screen.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
@@ -65,9 +66,9 @@ class _ClMainOccasionScheduleScreenState
 
   double get _defaultSessionHours {
     final routedHours = _routeArgs?.hours;
-    if (routedHours != null && routedHours > 0) return routedHours;
+    if (routedHours != null && routedHours >= 1) return routedHours;
     final fromRecommendation = _activeEstimate?.recommendation?.hours;
-    if (fromRecommendation != null && fromRecommendation > 0) {
+    if (fromRecommendation != null && fromRecommendation >= 1) {
       return fromRecommendation;
     }
     return 4;
@@ -108,6 +109,11 @@ class _ClMainOccasionScheduleScreenState
   _EventSessionDraft? get _lastSession =>
       _sessions.isEmpty ? null : _sessions.last;
 
+  DateTime get _today {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = _routeArgs;
@@ -124,13 +130,13 @@ class _ClMainOccasionScheduleScreenState
     final firstSession = _firstSession!;
     final lastSession = _lastSession!;
     final scheduleDayLabel = _isMultiDay
-        ? '${_sessions.length} أيام'
+        ? '${_sessions.length} جلسات'
         : CleaningDateTimeUiFormat.weekday(firstSession.date);
     final scheduleDateLabel = _isMultiDay
         ? '${CleaningDateTimeUiFormat.date(firstSession.date)} - ${CleaningDateTimeUiFormat.date(lastSession.date)}'
         : CleaningDateTimeUiFormat.date(firstSession.date);
     final scheduleTimeRange = _isMultiDay
-        ? 'أوقات متعددة حسب كل يوم'
+        ? 'أوقات متعددة حسب كل جلسة'
         : CleaningDateTimeUiFormat.timeRange(
             firstSession.time,
             firstSession.endTime,
@@ -178,10 +184,21 @@ class _ClMainOccasionScheduleScreenState
             AppToast.showToast(
               context: context,
               message: _isMultiDay
-                  ? 'تم إنشاء طلب المناسبة متعدد الأيام بنجاح'
+                  ? 'تم إنشاء طلب المناسبة متعدد الجلسات بنجاح'
                   : 'تم إنشاء الطلب بنجاح، وهو الآن قيد الانتظار',
               type: ToastificationType.success,
             );
+            if (_isMultiDay) {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute<void>(
+                  builder: (_) => MultiDayCleaningOrderDetailsScreen(
+                    orderId: orderId,
+                  ),
+                ),
+                (route) => route.settings.name == '/clmain',
+              );
+              return;
+            }
             context.pushRouteAndRemoveUntil(
               '/cleaning-order-details',
               arguments: CleaningOrderDetailsArgs(orderId: orderId),
@@ -243,7 +260,7 @@ class _ClMainOccasionScheduleScreenState
                                 ),
                                 const SizedBox(height: 8),
                                 _OccasionInfoRow(
-                                  label: 'عدد الأيام',
+                                  label: 'عدد الجلسات',
                                   value: '${_sessions.length}',
                                 ),
                                 const SizedBox(height: 8),
@@ -284,10 +301,7 @@ class _ClMainOccasionScheduleScreenState
                           ClServiceGenderPreferenceSectionWidget(
                             selectedPreference: state.genderPreference,
                             onChanged: (preference) {
-                              _handleGenderPreferenceChanged(
-                                bloc,
-                                preference,
-                              );
+                              _handleGenderPreferenceChanged(bloc, preference);
                             },
                           ),
                           const SizedBox(height: 10),
@@ -298,12 +312,11 @@ class _ClMainOccasionScheduleScreenState
                             ),
                             selectedWorkerIds: state.selectedWorkerIds,
                             isLoading:
-                                state.previousWorkersStatus ==
-                                BlocStatus.loading,
+                                state.previousWorkersStatus == BlocStatus.loading,
                             errorMessage:
                                 state.previousWorkersStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
+                                    ? state.errorMessage
+                                    : null,
                             onSelectWorker: (workerId) {
                               final updatedWorkerIds = List<int>.from(
                                 state.selectedWorkerIds,
@@ -387,11 +400,12 @@ class _ClMainOccasionScheduleScreenState
   }
 
   Widget _buildMultiDayScheduleCard() {
+    final estimateSchedule = _activeEstimate?.schedule;
     return ClServiceSectionCardWidget(
       key: const Key('occasion_multi_day_schedule_card'),
       step: 0,
       showStepBadge: false,
-      title: 'أيام ووقت المناسبة',
+      title: 'جلسات ووقت المناسبة',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -399,16 +413,16 @@ class _ClMainOccasionScheduleScreenState
             children: [
               Expanded(
                 child: AppText.bodySmall(
-                  '${_sessions.length} ${_sessions.length == 1 ? 'يوم مختار' : 'أيام مختارة'}',
+                  '${_sessions.length} ${_sessions.length == 1 ? 'جلسة مختارة' : 'جلسات مختارة'}',
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF374151),
                 ),
               ),
               TextButton.icon(
                 key: const Key('add_event_session_day'),
-                onPressed: _addSessionDate,
+                onPressed: _sessions.length >= 31 ? null : _addSessionDate,
                 icon: const Icon(Icons.add_circle_outline, size: 18),
-                label: const Text('إضافة يوم'),
+                label: const Text('إضافة جلسة'),
               ),
             ],
           ),
@@ -418,12 +432,13 @@ class _ClMainOccasionScheduleScreenState
               key: const Key('apply_event_time_to_all'),
               onPressed: _applyFirstSessionToAll,
               icon: const Icon(Icons.copy_all_outlined, size: 18),
-              label: const Text('تطبيق وقت ومدة اليوم الأول على جميع الأيام'),
+              label: const Text('تطبيق مدة الجلسة الأولى ووقتها قدر الإمكان'),
             ),
           ],
           const SizedBox(height: 10),
           ...List.generate(_sessions.length, (index) {
             final session = _sessions[index];
+            final estimateSession = estimateSchedule?.sessionAt(index);
             return Padding(
               padding: EdgeInsets.only(
                 bottom: index == _sessions.length - 1 ? 0 : 10,
@@ -432,6 +447,8 @@ class _ClMainOccasionScheduleScreenState
                 sequence: index + 1,
                 session: session,
                 canRemove: _sessions.length > 1,
+                estimatedPrice: estimateSession?.totalPrice,
+                currency: _activeEstimate?.pricing?.currency ?? 'SYP',
                 onEditTime: () => _pickSessionTime(index),
                 onEditDuration: () => _editSessionDuration(index),
                 onRemove: () => _removeSession(index),
@@ -456,9 +473,9 @@ class _ClMainOccasionScheduleScreenState
       _selectedAddress.value = args.defaultAddress;
       _sessions.add(
         _EventSessionDraft(
-          date: CleaningScheduleDateTimeLogic.tomorrowDate(),
+          date: _today,
           time: '09:00',
-          hours: args.hours > 0 ? args.hours : 4,
+          hours: args.hours >= 1 ? args.hours : 4,
         ),
       );
       _sortSessions();
@@ -488,9 +505,57 @@ class _ClMainOccasionScheduleScreenState
     });
   }
 
+  String _slotKey(DateTime date, String time) =>
+      '${CleaningScheduleDateTimeLogic.formatDateApi(date)}|$time';
+
+  bool _hasDuplicateSlot({
+    required DateTime date,
+    required String time,
+    int? exceptIndex,
+  }) {
+    final key = _slotKey(date, time);
+    for (var index = 0; index < _sessions.length; index++) {
+      if (index == exceptIndex) continue;
+      final session = _sessions[index];
+      if (_slotKey(session.date, session.time) == key) return true;
+    }
+    return false;
+  }
+
+  String _nextAvailableTimeForDate(
+    DateTime date,
+    String preferred, {
+    int? exceptIndex,
+  }) {
+    if (!_hasDuplicateSlot(
+      date: date,
+      time: preferred,
+      exceptIndex: exceptIndex,
+    )) {
+      return preferred;
+    }
+    final parts = preferred.split(':');
+    final startHour = int.tryParse(parts.first) ?? 9;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    for (var offset = 1; offset < 24; offset++) {
+      final hour = (startHour + offset) % 24;
+      final candidate =
+          '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      if (!_hasDuplicateSlot(
+        date: date,
+        time: candidate,
+        exceptIndex: exceptIndex,
+      )) {
+        return candidate;
+      }
+    }
+    return preferred;
+  }
+
   Future<void> _addSessionDate() async {
-    final startDate = CleaningScheduleDateTimeLogic.tomorrowDate();
-    final initialDate = _lastSession?.date.add(const Duration(days: 1)) ?? startDate;
+    if (_sessions.length >= 31) return;
+    final startDate = _today;
+    final initialDate = _lastSession?.date ?? startDate;
     final value = await AppPickers.showAppDatePicker(
       context: context,
       startDate: startDate,
@@ -499,21 +564,24 @@ class _ClMainOccasionScheduleScreenState
     if (value.isEmpty) return;
     final date = CleaningScheduleDateTimeLogic.parseDateApi(value);
     if (date == null) return;
-    final duplicate = _sessions.any((session) => _isSameDate(session.date, date));
-    if (duplicate) {
+
+    final template = _firstSession;
+    final preferredTime = template?.time ?? '09:00';
+    final resolvedTime = _nextAvailableTimeForDate(date, preferredTime);
+    if (_hasDuplicateSlot(date: date, time: resolvedTime)) {
       AppToast.showToast(
         context: context,
-        message: 'هذا اليوم مضاف بالفعل إلى جدول المناسبة',
+        message: 'لا يوجد وقت افتراضي متاح لهذا التاريخ. عدّل وقت جلسة أخرى أولاً.',
         type: ToastificationType.warning,
       );
       return;
     }
-    final template = _firstSession;
+
     setState(() {
       _sessions.add(
         _EventSessionDraft(
           date: date,
-          time: template?.time ?? '09:00',
+          time: resolvedTime,
           hours: template?.hours ?? _defaultSessionHours,
         ),
       );
@@ -525,10 +593,22 @@ class _ClMainOccasionScheduleScreenState
   Future<void> _pickSessionTime(int index) async {
     final value = await AppPickers.showAppTimePicker(context: context);
     if (value.isEmpty || index < 0 || index >= _sessions.length) return;
-    setState(() {
-      _sessions[index].time = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(
-        value,
+    final normalized = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
+    final session = _sessions[index];
+    if (_hasDuplicateSlot(
+      date: session.date,
+      time: normalized,
+      exceptIndex: index,
+    )) {
+      AppToast.showToast(
+        context: context,
+        message: 'لا يمكن تكرار التاريخ والوقت نفسيهما لجلسة أخرى.',
+        type: ToastificationType.warning,
       );
+      return;
+    }
+    setState(() {
+      _sessions[index].time = normalized;
       _sortSessions();
     });
     _onScheduleChanged();
@@ -539,56 +619,62 @@ class _ClMainOccasionScheduleScreenState
     final controller = TextEditingController(
       text: _formatHours(_sessions[index].hours),
     );
-    final result = await showDialog<double>(
-      context: context,
-      builder: (dialogContext) {
-        String? errorText;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('مدة الخدمة لهذا اليوم'),
-              content: TextField(
-                controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}(\.\d{0,2})?')),
+    try {
+      final result = await showDialog<double>(
+        context: context,
+        builder: (dialogContext) {
+          String? errorText;
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: const Text('مدة الخدمة لهذه الجلسة'),
+                content: TextField(
+                  controller: controller,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d{0,2}(\.\d{0,2})?'),
+                    ),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'عدد الساعات',
+                    hintText: 'مثال: 4',
+                    errorText: errorText,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('إلغاء'),
+                  ),
+                  FilledButton(
+                    onPressed: () {
+                      final hours = double.tryParse(controller.text.trim());
+                      if (hours == null || hours < 1 || hours > 24) {
+                        setDialogState(() {
+                          errorText = 'يجب أن تكون المدة بين 1 و24 ساعة';
+                        });
+                        return;
+                      }
+                      Navigator.of(dialogContext).pop(hours);
+                    },
+                    child: const Text('حفظ'),
+                  ),
                 ],
-                decoration: InputDecoration(
-                  labelText: 'عدد الساعات',
-                  hintText: 'مثال: 4',
-                  errorText: errorText,
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('إلغاء'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final hours = double.tryParse(controller.text.trim());
-                    if (hours == null || hours <= 0 || hours > 24) {
-                      setDialogState(() {
-                        errorText = 'يجب أن تكون المدة أكبر من 0 وحتى 24 ساعة';
-                      });
-                      return;
-                    }
-                    Navigator.of(dialogContext).pop(hours);
-                  },
-                  child: const Text('حفظ'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-    controller.dispose();
-    if (result == null || !mounted) return;
-    setState(() {
-      _sessions[index].hours = result;
-    });
-    _onScheduleChanged();
+              );
+            },
+          );
+        },
+      );
+      if (!mounted || result == null) return;
+      setState(() {
+        _sessions[index].hours = result;
+      });
+      _onScheduleChanged();
+    } finally {
+      controller.dispose();
+    }
   }
 
   void _removeSession(int index) {
@@ -604,16 +690,18 @@ class _ClMainOccasionScheduleScreenState
     if (source == null || _sessions.length < 2) return;
     setState(() {
       for (var index = 1; index < _sessions.length; index++) {
-        _sessions[index]
-          ..time = source.time
-          ..hours = source.hours;
+        final session = _sessions[index];
+        session.hours = source.hours;
+        session.time = _nextAvailableTimeForDate(
+          session.date,
+          source.time,
+          exceptIndex: index,
+        );
       }
+      _sortSessions();
     });
     _onScheduleChanged();
   }
-
-  bool _isSameDate(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   void _onScheduleChanged() {
     if (_appliedCouponCode != null) {
@@ -812,7 +900,6 @@ class _ClMainOccasionScheduleScreenState
     if (notes != null && notes.isNotEmpty) {
       details['notes'] = notes;
     }
-
     return details;
   }
 
@@ -842,20 +929,23 @@ class _ClMainOccasionScheduleScreenState
   }
 
   String? _validateSchedule() {
-    if (_sessions.isEmpty) return 'يرجى اختيار يوم واحد على الأقل';
-    if (_sessions.length > 31) return 'الحد الأعلى لأيام المناسبة هو 31 يوماً';
-    final seenDates = <String>{};
+    if (_sessions.isEmpty) return 'يرجى اختيار جلسة واحدة على الأقل';
+    if (_sessions.length > 31) return 'الحد الأعلى لجلسات المناسبة هو 31 جلسة';
+    final seenSlots = <String>{};
     for (var index = 0; index < _sessions.length; index++) {
       final session = _sessions[index];
-      final dateKey = CleaningScheduleDateTimeLogic.formatDateApi(session.date);
-      if (!seenDates.add(dateKey)) {
-        return 'لا يمكن إضافة اليوم نفسه أكثر من مرة';
+      if (session.date.isBefore(_today)) {
+        return 'تاريخ الجلسة ${index + 1} يجب أن يكون اليوم أو في المستقبل';
+      }
+      final key = _slotKey(session.date, session.time);
+      if (!seenSlots.add(key)) {
+        return 'لا يمكن تكرار التاريخ والوقت نفسيهما لأكثر من جلسة';
       }
       if (!RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(session.time)) {
-        return 'وقت اليوم ${index + 1} غير صالح';
+        return 'وقت الجلسة ${index + 1} غير صالح';
       }
-      if (session.hours <= 0 || session.hours > 24) {
-        return 'مدة اليوم ${index + 1} يجب أن تكون بين 0 و24 ساعة';
+      if (session.hours < 1 || session.hours > 24) {
+        return 'مدة الجلسة ${index + 1} يجب أن تكون بين 1 و24 ساعة';
       }
     }
     return null;
@@ -865,9 +955,9 @@ class _ClMainOccasionScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')),
+      );
       return;
     }
 
@@ -1033,6 +1123,8 @@ class _EventSessionCard extends StatelessWidget {
   final int sequence;
   final _EventSessionDraft session;
   final bool canRemove;
+  final double? estimatedPrice;
+  final String currency;
   final VoidCallback onEditTime;
   final VoidCallback onEditDuration;
   final VoidCallback onRemove;
@@ -1041,6 +1133,8 @@ class _EventSessionCard extends StatelessWidget {
     required this.sequence,
     required this.session,
     required this.canRemove,
+    required this.estimatedPrice,
+    required this.currency,
     required this.onEditTime,
     required this.onEditDuration,
     required this.onRemove,
@@ -1048,6 +1142,9 @@ class _EventSessionCard extends StatelessWidget {
 
   String _hours(double value) =>
       value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+
+  String _money(double value) =>
+      value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
 
   @override
   Widget build(BuildContext context) {
@@ -1066,16 +1163,19 @@ class _EventSessionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppText.bodyMedium(
-                  'اليوم $sequence',
+                  'الجلسة $sequence',
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF111827),
                 ),
               ),
               if (canRemove)
                 IconButton(
-                  tooltip: 'إزالة اليوم',
+                  tooltip: 'إزالة الجلسة',
                   onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline, color: Color(0xFFB91C1C)),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Color(0xFFB91C1C),
+                  ),
                 ),
             ],
           ),
@@ -1098,6 +1198,13 @@ class _EventSessionCard extends StatelessWidget {
             label: 'المدة',
             value: '${_hours(session.hours)} ساعة',
           ),
+          if (estimatedPrice != null) ...[
+            const SizedBox(height: 6),
+            _OccasionInfoRow(
+              label: 'السعر التقديري',
+              value: '${_money(estimatedPrice!)} $currency',
+            ),
+          ],
           const SizedBox(height: 10),
           Row(
             children: [
