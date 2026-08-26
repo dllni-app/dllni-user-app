@@ -109,9 +109,9 @@ class EstimateCleaningPriceParams with Params {
   List<CleaningEventSessionInput> get _normalizedEventSessions =>
       eventSessions.normalized;
 
-  double? get _resolvedEventHours {
+  double? get _resolvedLegacyEventHours {
     final sessions = _normalizedEventSessions;
-    if (sessions.isNotEmpty) return sessions.totalHours;
+    if (sessions.isNotEmpty) return sessions.first.hours;
     return hours;
   }
 
@@ -172,7 +172,7 @@ class EstimateCleaningPriceParams with Params {
         'guestCount': guestCount,
         'venueType': venueType,
         'customService': customService?.trim(),
-        'hours': _resolvedEventHours,
+        'hours': _resolvedLegacyEventHours,
         if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
           'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
