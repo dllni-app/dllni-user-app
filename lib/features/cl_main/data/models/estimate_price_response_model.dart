@@ -28,6 +28,14 @@ bool? _toBool(dynamic value) {
   return null;
 }
 
+Map<String, dynamic> _toMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map((key, value) => MapEntry(key.toString(), value));
+  }
+  return const <String, dynamic>{};
+}
+
 EstimatePriceResponseModel estimatePriceResponseModelFromJson(dynamic json) {
   if (json is String && json.isNotEmpty) {
     return EstimatePriceResponseModel.fromJson(
@@ -46,6 +54,7 @@ class EstimatePriceResponseModel {
   final EstimateQuoteModel? quote;
   final EstimateRecommendationModel? recommendation;
   final EstimateWorkerAcceptanceModel? workerAcceptance;
+  final EstimateScheduleModel? schedule;
   final CleaningAssignmentMode? assignmentMode;
   final int? requiredWorkers;
   final double? maxHoursPerWorker;
@@ -57,6 +66,7 @@ class EstimatePriceResponseModel {
     this.quote,
     this.recommendation,
     this.workerAcceptance,
+    this.schedule,
     this.assignmentMode,
     this.requiredWorkers,
     this.maxHoursPerWorker,
@@ -94,9 +104,11 @@ class EstimatePriceResponseModel {
           json['workerAcceptance'] is Map<String, dynamic> ||
               json['worker_acceptance'] is Map<String, dynamic>
           ? EstimateWorkerAcceptanceModel.fromJson(
-              (json['workerAcceptance'] ?? json['worker_acceptance'])
-                  as Map<String, dynamic>,
+              _toMap(json['workerAcceptance'] ?? json['worker_acceptance']),
             )
+          : null,
+      schedule: json['schedule'] is Map
+          ? EstimateScheduleModel.fromJson(_toMap(json['schedule']))
           : null,
       assignmentMode: assignmentModeRaw == null
           ? null
@@ -116,6 +128,70 @@ class EstimatePriceResponseModel {
       workerRoomAssignments: parseWorkerRoomAssignments(
         json['workerRoomAssignments'] ?? json['worker_room_assignments'],
       ),
+    );
+  }
+}
+
+class EstimateScheduleModel {
+  final String? mode;
+  final int? daysCount;
+  final double? totalHours;
+  final List<EstimateScheduleSessionModel> sessions;
+
+  const EstimateScheduleModel({
+    this.mode,
+    this.daysCount,
+    this.totalHours,
+    this.sessions = const <EstimateScheduleSessionModel>[],
+  });
+
+  factory EstimateScheduleModel.fromJson(Map<String, dynamic> json) {
+    final rawSessions = json['sessions'];
+    return EstimateScheduleModel(
+      mode: json['mode']?.toString(),
+      daysCount: _toInt(json['daysCount'] ?? json['days_count']),
+      totalHours: _toDouble(json['totalHours'] ?? json['total_hours']),
+      sessions: rawSessions is List
+          ? rawSessions
+              .whereType<Map>()
+              .map((item) => EstimateScheduleSessionModel.fromJson(_toMap(item)))
+              .toList(growable: false)
+          : const <EstimateScheduleSessionModel>[],
+    );
+  }
+}
+
+class EstimateScheduleSessionModel {
+  final int? sequence;
+  final String? date;
+  final String? time;
+  final double? hours;
+  final double? basePrice;
+  final double? travelFee;
+  final double? adminMargin;
+  final double? totalPrice;
+
+  const EstimateScheduleSessionModel({
+    this.sequence,
+    this.date,
+    this.time,
+    this.hours,
+    this.basePrice,
+    this.travelFee,
+    this.adminMargin,
+    this.totalPrice,
+  });
+
+  factory EstimateScheduleSessionModel.fromJson(Map<String, dynamic> json) {
+    return EstimateScheduleSessionModel(
+      sequence: _toInt(json['sequence']),
+      date: json['date']?.toString(),
+      time: json['time']?.toString(),
+      hours: _toDouble(json['hours']),
+      basePrice: _toDouble(json['basePrice'] ?? json['base_price']),
+      travelFee: _toDouble(json['travelFee'] ?? json['travel_fee']),
+      adminMargin: _toDouble(json['adminMargin'] ?? json['admin_margin']),
+      totalPrice: _toDouble(json['totalPrice'] ?? json['total_price']),
     );
   }
 }
