@@ -66,7 +66,14 @@ void main() {
     });
   });
 
-  test('single event day keeps legacy request shape', () {
+  test('single event session sends canonical single-day schedule', () {
+    final singleSession = <CleaningEventSessionInput>[
+      CleaningEventSessionInput(
+        date: DateTime(2026, 9, 10),
+        time: '18:00',
+        hours: 4,
+      ),
+    ];
     final body = CreateCleaningOrderParams.eventAssistance(
       addressId: 18,
       scheduledDate: '2026-09-10',
@@ -76,19 +83,29 @@ void main() {
       venueType: 'villa',
       customService: 'Event assistance',
       hours: 4,
-      eventSessions: <CleaningEventSessionInput>[
-        CleaningEventSessionInput(
-          date: DateTime(2026, 9, 10),
-          time: '18:00',
-          hours: 4,
-        ),
-      ],
+      eventSessions: singleSession,
     ).getBody();
 
-    expect(body.containsKey('schedule'), isFalse);
+    expect(body['schedule'], {
+      'mode': 'single_day',
+      'sessions': [
+        {'date': '2026-09-10', 'time': '18:00', 'hours': 4.0},
+      ],
+    });
     expect(body['scheduledDate'], '2026-09-10');
     expect(body['scheduledTime'], '18:00');
     expect((body['propertyDetails'] as Map)['hours'], 4.0);
+
+    final estimateBody = EstimateCleaningPriceParams.eventAssistance(
+      eventType: 'birthday',
+      guestCount: 20,
+      venueType: 'villa',
+      customService: 'Event assistance',
+      hours: 4,
+      eventSessions: singleSession,
+      addressId: 18,
+    ).getBody();
+    expect(estimateBody['schedule'], body['schedule']);
   });
 
   test('same date with different times is serialized as multi-day sessions', () {
