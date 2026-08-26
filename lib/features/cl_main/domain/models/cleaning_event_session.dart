@@ -16,6 +16,8 @@ class CleaningEventSessionInput {
     return '$y-$m-$d';
   }
 
+  String get slotKey => '$dateApi|$time';
+
   Map<String, dynamic> toJson() => <String, dynamic>{
         'date': dateApi,
         'time': time,
@@ -38,9 +40,9 @@ extension CleaningEventSessionInputListX on Iterable<CleaningEventSessionInput> 
 
   Map<String, dynamic>? get scheduleJson {
     final items = normalized;
-    if (items.length < 2) return null;
+    if (items.isEmpty) return null;
     return <String, dynamic>{
-      'mode': 'multi_day',
+      'mode': items.length > 1 ? 'multi_day' : 'single_day',
       'sessions': items.map((item) => item.toJson()).toList(growable: false),
     };
   }
