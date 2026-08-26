@@ -10,6 +10,7 @@ import '../../data/models/cleaning_orders_api_models.dart';
 import '../../data/source/cleaning_session_remote_data_source.dart';
 import '../helpers/cleaning_event_assistance_helper.dart';
 import '../screens/multi_day_cleaning_order_details_screen.dart';
+import '../screens/multi_day_cleaning_order_reschedule_screen.dart';
 
 class CleaningOrderCard extends StatefulWidget {
   const CleaningOrderCard({
@@ -32,9 +33,10 @@ class CleaningOrderCard extends StatefulWidget {
 }
 
 class _CleaningOrderCardState extends State<CleaningOrderCard> {
-  CleaningBookingScheduleModel? _schedule;
+  CleaningMultiDayOrderEnvelope? _scheduleEnvelope;
 
   CleaningOrderModel get order => widget.order;
+  CleaningBookingScheduleModel? get _schedule => _scheduleEnvelope?.schedule;
 
   bool get _isEventAssistance =>
       (order.propertyType ?? '').trim().toLowerCase() == 'event_assistance';
@@ -52,7 +54,7 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.order.id != widget.order.id ||
         oldWidget.order.status != widget.order.status) {
-      _schedule = null;
+      _scheduleEnvelope = null;
       _loadSchedule();
     }
   }
@@ -64,7 +66,7 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
       final result = await getIt<CleaningSessionRemoteDataSource>()
           .fetchBookingSchedule(orderId);
       if (!mounted) return;
-      setState(() => _schedule = result.schedule);
+      setState(() => _scheduleEnvelope = result);
     } catch (_) {
       // Legacy card remains usable while backend rollout is mixed.
     }
@@ -80,17 +82,18 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
       }
       return 'جاري البحث عن عمال';
     }
-    final status = (order.status ?? '').toLowerCase();
+    final status = (_scheduleEnvelope?.status ?? order.status ?? '').toLowerCase();
     if (status == 'partially_completed') return 'مكتمل جزئياً';
     return cleaningOrderStatusLabelAr(
-      order.status,
+      _scheduleEnvelope?.status ?? order.status,
       startedTravelAt: order.startedTravelAt,
       arrivedAt: order.arrivedAt,
     );
   }
 
   bool get _isTerminalStatus {
-    final normalizedStatus = (order.status ?? '').toLowerCase();
+    final normalizedStatus =
+        (_scheduleEnvelope?.status ?? order.status ?? '').toLowerCase();
     return normalizedStatus != CleaningBookingStatus.pending;
   }
 
@@ -174,10 +177,24 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
             initialSessionId: schedule!.nextSession?.id,
           ),
         ),
-      );
+      ).then((_) => _loadSchedule());
       return;
     }
     widget.onTap?.call();
+  }
+
+  Future<void> _handleReschedule() async {
+    final orderId = order.id;
+    if (_isMultiDay && orderId != null) {
+      final changed = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
+          builder: (_) => MultiDayCleaningOrderRescheduleScreen(orderId: orderId),
+        ),
+      );
+      if (changed == true) await _loadSchedule();
+      return;
+    }
+    widget.onRescheduleTap?.call();
   }
 
   Widget _scheduleContent(BuildContext context) {
@@ -216,7 +233,7 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
             const SizedBox(width: 8),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: widget.onRescheduleTap,
+              onTap: _handleReschedule,
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
@@ -304,7 +321,7 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: TextButton.icon(
-              onPressed: widget.onRescheduleTap,
+              onPressed: _handleReschedule,
               icon: const Icon(Icons.edit_calendar_outlined, size: 18),
               label: const Text('تعديل أيام المناسبة'),
             ),
@@ -316,6 +333,7 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
 
   @override
   Widget build(BuildContext context) {
+    final displayedPrice = _scheduleEnvelope?.totalPrice ?? order.totalPrice;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: _handleTap,
@@ -379,7 +397,7 @@ class _CleaningOrderCardState extends State<CleaningOrderCard> {
                 ),
                 const SizedBox(width: 12),
                 AppText.bodySmall(
-                  order.totalPrice.formatMoney(),
+                  displayedPrice.formatMoney(),
                   color: const Color(0xff1E2A78),
                   fontWeight: FontWeight.w700,
                 ),
