@@ -164,19 +164,26 @@ class _SummaryRowWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isTotal ? const Color(0xFF1E2A78) : const Color(0xFF4B5563);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText.bodyMedium(
-          label,
-          color: color,
-          fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
-          textAlign: TextAlign.right,
+        Flexible(
+          flex: 2,
+          child: AppText.bodyMedium(
+            label,
+            color: color,
+            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
+            textAlign: TextAlign.right,
+          ),
         ),
-        const Spacer(),
-        AppText.bodyMedium(
-          value,
-          color: valueColor ?? color,
-          fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
-          textAlign: TextAlign.right,
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 3,
+          child: AppText.bodyMedium(
+            value,
+            color: valueColor ?? color,
+            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
+            textAlign: TextAlign.end,
+          ),
         ),
       ],
     );

@@ -130,13 +130,13 @@ class _ClMainOccasionScheduleScreenState
     final firstSession = _firstSession!;
     final lastSession = _lastSession!;
     final scheduleDayLabel = _isMultiDay
-        ? '${_sessions.length} جلسات'
+        ? '${_sessions.length} أيام عمل'
         : CleaningDateTimeUiFormat.weekday(firstSession.date);
     final scheduleDateLabel = _isMultiDay
         ? '${CleaningDateTimeUiFormat.date(firstSession.date)} - ${CleaningDateTimeUiFormat.date(lastSession.date)}'
         : CleaningDateTimeUiFormat.date(firstSession.date);
     final scheduleTimeRange = _isMultiDay
-        ? 'أوقات متعددة حسب كل جلسة'
+        ? 'أوقات متعددة حسب كل يوم عمل'
         : CleaningDateTimeUiFormat.timeRange(
             firstSession.time,
             firstSession.endTime,
@@ -144,257 +144,269 @@ class _ClMainOccasionScheduleScreenState
 
     return BlocProvider.value(
       value: bloc,
-      child: BlocConsumer<ClMainBloc, ClMainState>(
-        listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus ||
-            previous.estimatePriceStatus != current.estimatePriceStatus,
-        listener: (context, state) {
-          if (state.estimatePriceStatus == BlocStatus.success &&
-              state.estimatePrice != null) {
-            setState(() {
-              _currentEstimate = state.estimatePrice;
-            });
-          } else if (state.estimatePriceStatus == BlocStatus.failed &&
-              state.errorMessage != null &&
-              state.errorMessage!.isNotEmpty) {
-            AppToast.showToast(
-              context: context,
-              message: state.errorMessage!,
-              type: ToastificationType.error,
-            );
-          }
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<ClMainBloc, ClMainState>(
+            listenWhen: (previous, current) =>
+                previous.estimatePriceStatus != current.estimatePriceStatus,
+            listener: (context, state) {
+              if (state.estimatePriceStatus == BlocStatus.success &&
+                  state.estimatePrice != null) {
+                setState(() {
+                  _currentEstimate = state.estimatePrice;
+                });
+              } else if (state.estimatePriceStatus == BlocStatus.failed &&
+                  state.errorMessage != null &&
+                  state.errorMessage!.isNotEmpty) {
+                AppToast.showToast(
+                  context: context,
+                  message: state.errorMessage!,
+                  type: ToastificationType.error,
+                );
+              }
+            },
+          ),
+          BlocListener<ClMainBloc, ClMainState>(
+            listenWhen: (previous, current) =>
+                previous.createOrderStatus != current.createOrderStatus,
+            listener: (context, state) {
+              if (state.createOrderStatus == BlocStatus.loading) {
+                Loading.show(context);
+                return;
+              }
 
-          if (state.createOrderStatus == BlocStatus.loading) {
-            Loading.show(context);
-            return;
-          }
-          Loading.close();
-          if (state.createOrderStatus == BlocStatus.success) {
-            final orderId = state.createOrderResult?.orderId;
-            if (orderId == null) {
-              AppToast.showToast(
-                context: context,
-                message:
-                    'تم إنشاء الطلب، لكن تعذر فتح تفاصيله. يمكنك متابعته من السلة.',
-                type: ToastificationType.warning,
-              );
-              context.pushRouteAndRemoveUntil('/clmain');
-              return;
-            }
-            AppToast.showToast(
-              context: context,
-              message: _isMultiDay
-                  ? 'تم إنشاء طلب المناسبة متعدد الجلسات بنجاح'
-                  : 'تم إنشاء الطلب بنجاح، وهو الآن قيد الانتظار',
-              type: ToastificationType.success,
-            );
-            if (_isMultiDay) {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute<void>(
-                  builder: (_) => MultiDayCleaningOrderDetailsScreen(
-                    orderId: orderId,
-                  ),
-                ),
-                (route) => route.settings.name == '/clmain',
-              );
-              return;
-            }
-            context.pushRouteAndRemoveUntil(
-              '/cleaning-order-details',
-              arguments: CleaningOrderDetailsArgs(orderId: orderId),
-              predicate: (route) => route.settings.name == '/clmain',
-            );
-          } else if (state.createOrderStatus == BlocStatus.failed) {
-            final message = (state.errorMessage ?? '').trim().isNotEmpty
-                ? state.errorMessage!
-                : 'فشل إرسال طلب المناسبة';
-            AppToast.showToast(
-              context: context,
-              message: message,
-              type: ToastificationType.error,
-            );
-          }
-        },
-        builder: (context, state) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF2F2F2),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  const HomeDetailsAppBar(),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.only(
-                        start: 20,
-                        end: 20,
+              Loading.close();
+              if (state.createOrderStatus == BlocStatus.success) {
+                final orderId = state.createOrderResult?.orderId;
+                if (orderId == null) {
+                  AppToast.showToast(
+                    context: context,
+                    message:
+                        'تم إنشاء الطلب، لكن تعذر فتح تفاصيله. يمكنك متابعته من السلة.',
+                    type: ToastificationType.warning,
+                  );
+                  context.pushRouteAndRemoveUntil('/clmain');
+                  return;
+                }
+                AppToast.showToast(
+                  context: context,
+                  message: _isMultiDay
+                      ? 'تم إنشاء طلب المناسبة متعدد الأيام بنجاح'
+                      : 'تم إنشاء الطلب بنجاح، وهو الآن قيد الانتظار',
+                  type: ToastificationType.success,
+                );
+                if (_isMultiDay) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute<void>(
+                      builder: (_) => MultiDayCleaningOrderDetailsScreen(
+                        orderId: orderId,
                       ),
-                      child: Column(
-                        children: [
-                          ClServiceGradientInfoCardWidget(
-                            estimatedSqm: _estimatedSqm,
-                            estimatedHours: _scheduleTotalHours,
-                            showEstimatedSqm: false,
-                          ),
-                          const SizedBox(height: 10),
-                          ClServiceSectionCardWidget(
-                            key: const Key('occasion_schedule_details_card'),
-                            step: 0,
-                            showStepBadge: false,
-                            title: 'تفاصيل المناسبة',
-                            child: Column(
-                              children: [
-                                _OccasionInfoRow(
-                                  label: 'نوع المناسبة',
-                                  value: args.option.title,
-                                ),
-                                const SizedBox(height: 8),
-                                _OccasionInfoRow(
-                                  label: 'عدد الضيوف',
-                                  value: '${args.guestsCount}',
-                                ),
-                                const SizedBox(height: 8),
-                                _OccasionInfoRow(
-                                  label: 'طبيعة المساعدة',
-                                  value: args.helpTypeLabel,
-                                ),
-                                const SizedBox(height: 8),
-                                _OccasionInfoRow(
-                                  label: 'عدد الجلسات',
-                                  value: '${_sessions.length}',
-                                ),
-                                const SizedBox(height: 8),
-                                _OccasionInfoRow(
-                                  label: 'إجمالي الساعات لكل عامل',
-                                  value: '${_formatHours(_scheduleTotalHours)} ساعة',
-                                ),
-                                const SizedBox(height: 8),
-                                _OccasionInfoRow(
-                                  label: 'عدد العمال',
-                                  value: '$numberOfWorkers',
-                                ),
-                                const SizedBox(height: 8),
-                                _OccasionInfoRow(
-                                  label: 'إجمالي ساعات العمل',
-                                  value:
-                                      '${_formatHours(_scheduleTotalHours * numberOfWorkers)} ساعة',
-                                ),
-                                const SizedBox(height: 8),
-                                _OccasionInfoRow(
-                                  label: 'متطلبات خاصة',
-                                  value: args.specialRequirementLabel,
-                                ),
-                                if (args.notes != null &&
-                                    args.notes!.isNotEmpty) ...[
+                    ),
+                    (route) => route.settings.name == '/clmain',
+                  );
+                  return;
+                }
+                context.pushRouteAndRemoveUntil(
+                  '/cleaning-order-details',
+                  arguments: CleaningOrderDetailsArgs(orderId: orderId),
+                  predicate: (route) => route.settings.name == '/clmain',
+                );
+              } else if (state.createOrderStatus == BlocStatus.failed) {
+                final message = (state.errorMessage ?? '').trim().isNotEmpty
+                    ? state.errorMessage!
+                    : 'فشل إرسال طلب المناسبة';
+                AppToast.showToast(
+                  context: context,
+                  message: message,
+                  type: ToastificationType.error,
+                );
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<ClMainBloc, ClMainState>(
+          builder: (context, state) {
+            return Scaffold(
+              backgroundColor: const Color(0xFFF2F2F2),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    const HomeDetailsAppBar(),
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsetsDirectional.only(
+                          start: 20,
+                          end: 20,
+                        ),
+                        child: Column(
+                          children: [
+                            ClServiceGradientInfoCardWidget(
+                              estimatedSqm: _estimatedSqm,
+                              estimatedHours: _scheduleTotalHours,
+                              showEstimatedSqm: false,
+                            ),
+                            const SizedBox(height: 10),
+                            ClServiceSectionCardWidget(
+                              key: const Key('occasion_schedule_details_card'),
+                              step: 0,
+                              showStepBadge: false,
+                              title: 'تفاصيل المناسبة',
+                              child: Column(
+                                children: [
+                                  _OccasionInfoRow(
+                                    label: 'نوع المناسبة',
+                                    value: args.option.title,
+                                  ),
                                   const SizedBox(height: 8),
                                   _OccasionInfoRow(
-                                    label: 'ملاحظات',
-                                    value: args.notes!,
+                                    label: 'عدد الضيوف',
+                                    value: '${args.guestsCount}',
                                   ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _buildMultiDayScheduleCard(),
-                          const SizedBox(height: 10),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
-                            onChanged: (preference) {
-                              _handleGenderPreferenceChanged(bloc, preference);
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                          ClServicePreviousWorkersSectionWidget(
-                            workers: filterPreviousWorkersByGender(
-                              state.previousWorkers.list,
-                              state.genderPreference,
-                            ),
-                            selectedWorkerIds: state.selectedWorkerIds,
-                            isLoading:
-                                state.previousWorkersStatus == BlocStatus.loading,
-                            errorMessage:
-                                state.previousWorkersStatus == BlocStatus.failed
-                                    ? state.errorMessage
-                                    : null,
-                            onSelectWorker: (workerId) {
-                              final updatedWorkerIds = List<int>.from(
-                                state.selectedWorkerIds,
-                              );
-                              if (updatedWorkerIds.contains(workerId)) {
-                                updatedWorkerIds.remove(workerId);
-                              } else {
-                                updatedWorkerIds.add(workerId);
-                              }
-                              bloc.add(
-                                SetPreferredWorkerEvent(workerId: workerId),
-                              );
-                              _requestUpdatedEstimate(
-                                state,
-                                selectedWorkerIds: updatedWorkerIds,
-                              );
-                            },
-                            onOpenWorkerProfile: (worker) {
-                              context.pushRoute(
-                                '/clworkerprofiledetail',
-                                arguments:
-                                    WorkerProfileRouteArgs.fromPreviousWorker(
-                                      worker,
+                                  const SizedBox(height: 8),
+                                  _OccasionInfoRow(
+                                    label: 'طبيعة المساعدة',
+                                    value: args.helpTypeLabel,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _OccasionInfoRow(
+                                    label: 'عدد الأيام',
+                                    value: '${_sessions.length}',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _OccasionInfoRow(
+                                    label: 'إجمالي الساعات لكل عامل',
+                                    value:
+                                        '${_formatHours(_scheduleTotalHours)} ساعة',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _OccasionInfoRow(
+                                    label: 'عدد العمال',
+                                    value: '$numberOfWorkers',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _OccasionInfoRow(
+                                    label: 'إجمالي ساعات العمل',
+                                    value:
+                                        '${_formatHours(_scheduleTotalHours * numberOfWorkers)} ساعة',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _OccasionInfoRow(
+                                    label: 'متطلبات خاصة',
+                                    value: args.specialRequirementLabel,
+                                  ),
+                                  if (args.notes != null &&
+                                      args.notes!.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    _OccasionInfoRow(
+                                      label: 'ملاحظات',
+                                      value: args.notes!,
                                     ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          ClServiceCouponSectionWidget(
-                            couponController: _couponController,
-                            status: _couponStatus,
-                            message: _couponMessage,
-                            onApply: _onApplyCoupon,
-                          ),
-                          if (_appliedCouponCode != null) ...[
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: AppText.bodySmall(
-                                'الكوبون المطبق: $_appliedCouponCode',
-                                color: const Color(0xFF047857),
-                                fontWeight: FontWeight.w600,
+                                  ],
+                                ],
                               ),
                             ),
+                            const SizedBox(height: 10),
+                            _buildMultiDayScheduleCard(),
+                            const SizedBox(height: 10),
+                            ClServiceGenderPreferenceSectionWidget(
+                              selectedPreference: state.genderPreference,
+                              onChanged: (preference) {
+                                _handleGenderPreferenceChanged(bloc, preference);
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            ClServicePreviousWorkersSectionWidget(
+                              workers: filterPreviousWorkersByGender(
+                                state.previousWorkers.list,
+                                state.genderPreference,
+                              ),
+                              selectedWorkerIds: state.selectedWorkerIds,
+                              isLoading: state.previousWorkersStatus ==
+                                  BlocStatus.loading,
+                              errorMessage: state.previousWorkersStatus ==
+                                      BlocStatus.failed
+                                  ? state.errorMessage
+                                  : null,
+                              onSelectWorker: (workerId) {
+                                final updatedWorkerIds = List<int>.from(
+                                  state.selectedWorkerIds,
+                                );
+                                if (updatedWorkerIds.contains(workerId)) {
+                                  updatedWorkerIds.remove(workerId);
+                                } else {
+                                  updatedWorkerIds.add(workerId);
+                                }
+                                bloc.add(
+                                  SetPreferredWorkerEvent(workerId: workerId),
+                                );
+                                _requestUpdatedEstimate(
+                                  state,
+                                  selectedWorkerIds: updatedWorkerIds,
+                                );
+                              },
+                              onOpenWorkerProfile: (worker) {
+                                context.pushRoute(
+                                  '/clworkerprofiledetail',
+                                  arguments:
+                                      WorkerProfileRouteArgs.fromPreviousWorker(
+                                    worker,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            ClServiceCouponSectionWidget(
+                              couponController: _couponController,
+                              status: _couponStatus,
+                              message: _couponMessage,
+                              onApply: _onApplyCoupon,
+                            ),
+                            if (_appliedCouponCode != null) ...[
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: AppText.bodySmall(
+                                  'الكوبون المطبق: $_appliedCouponCode',
+                                  color: const Color(0xFF047857),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            ClServiceOrderSummarySectionWidget(
+                              basePrice: estimate?.pricing?.basePrice ?? 0,
+                              travelFee: estimate?.pricing?.travelFee ?? 0,
+                              addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
+                              totalPrice: estimate?.pricing?.totalPrice ?? 0,
+                              adminMargin: estimate?.pricing?.adminMargin,
+                              isPricingFinal: estimate?.pricing?.isPricingFinal,
+                              currency: estimate?.pricing?.currency ?? 'SYP',
+                              scheduleDayLabel: scheduleDayLabel,
+                              scheduleDateLabel: scheduleDateLabel,
+                              scheduleTimeRange: scheduleTimeRange,
+                            ),
                           ],
-                          const SizedBox(height: 12),
-                          ClServiceOrderSummarySectionWidget(
-                            basePrice: estimate?.pricing?.basePrice ?? 0,
-                            travelFee: estimate?.pricing?.travelFee ?? 0,
-                            addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
-                            totalPrice: estimate?.pricing?.totalPrice ?? 0,
-                            adminMargin: estimate?.pricing?.adminMargin,
-                            isPricingFinal: estimate?.pricing?.isPricingFinal,
-                            currency: estimate?.pricing?.currency ?? 'SYP',
-                            scheduleDayLabel: scheduleDayLabel,
-                            scheduleDateLabel: scheduleDateLabel,
-                            scheduleTimeRange: scheduleTimeRange,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    color: const Color(0xFFF2F2F2),
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 20,
-                      vertical: 20,
+                    Container(
+                      color: const Color(0xFFF2F2F2),
+                      padding: const EdgeInsetsDirectional.symmetric(
+                        horizontal: 20,
+                        vertical: 20,
+                      ),
+                      child: ClServiceBottomActionsWidget(
+                        onBackPressed: () => context.pop(),
+                        onSubmitPressed: () => _onSubmitPressed(state),
+                      ),
                     ),
-                    child: ClServiceBottomActionsWidget(
-                      onBackPressed: () => context.pop(),
-                      onSubmitPressed: () => _onSubmitPressed(state),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -405,7 +417,7 @@ class _ClMainOccasionScheduleScreenState
       key: const Key('occasion_multi_day_schedule_card'),
       step: 0,
       showStepBadge: false,
-      title: 'جلسات ووقت المناسبة',
+      title: 'أيام وأوقات المناسبة',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -413,7 +425,7 @@ class _ClMainOccasionScheduleScreenState
             children: [
               Expanded(
                 child: AppText.bodySmall(
-                  '${_sessions.length} ${_sessions.length == 1 ? 'جلسة مختارة' : 'جلسات مختارة'}',
+                  '${_sessions.length} ${_sessions.length == 1 ? 'يوم عمل مختار' : 'أيام عمل مختارة'}',
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF374151),
                 ),
@@ -422,7 +434,7 @@ class _ClMainOccasionScheduleScreenState
                 key: const Key('add_event_session_day'),
                 onPressed: _sessions.length >= 31 ? null : _addSessionDate,
                 icon: const Icon(Icons.add_circle_outline, size: 18),
-                label: const Text('إضافة جلسة'),
+                label: const Text('إضافة يوم عمل'),
               ),
             ],
           ),
@@ -432,7 +444,7 @@ class _ClMainOccasionScheduleScreenState
               key: const Key('apply_event_time_to_all'),
               onPressed: _applyFirstSessionToAll,
               icon: const Icon(Icons.copy_all_outlined, size: 18),
-              label: const Text('تطبيق مدة الجلسة الأولى ووقتها قدر الإمكان'),
+              label: const Text('توحيد وقت الخدمة'),
             ),
           ],
           const SizedBox(height: 10),
@@ -571,7 +583,8 @@ class _ClMainOccasionScheduleScreenState
     if (_hasDuplicateSlot(date: date, time: resolvedTime)) {
       AppToast.showToast(
         context: context,
-        message: 'لا يوجد وقت افتراضي متاح لهذا التاريخ. عدّل وقت جلسة أخرى أولاً.',
+        message:
+            'لا يوجد وقت افتراضي متاح لهذا اليوم. عدّل وقت يوم عمل آخر أولاً.',
         type: ToastificationType.warning,
       );
       return;
@@ -602,7 +615,7 @@ class _ClMainOccasionScheduleScreenState
     )) {
       AppToast.showToast(
         context: context,
-        message: 'لا يمكن تكرار التاريخ والوقت نفسيهما لجلسة أخرى.',
+        message: 'لا يمكن تكرار التاريخ والوقت نفسيهما ليوم عمل آخر.',
         type: ToastificationType.warning,
       );
       return;
@@ -627,7 +640,7 @@ class _ClMainOccasionScheduleScreenState
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
-                title: const Text('مدة الخدمة لهذه الجلسة'),
+                title: const Text('مدة الخدمة لهذا اليوم'),
                 content: TextField(
                   controller: controller,
                   keyboardType:
@@ -708,7 +721,7 @@ class _ClMainOccasionScheduleScreenState
       setState(() {
         _appliedCouponCode = null;
         _couponStatus = ClCouponUiStatus.idle;
-        _couponMessage = 'تم تعديل جدول المناسبة. أعد تطبيق الكوبون.';
+        _couponMessage = 'تم تعديل أيام المناسبة. أعد تطبيق الكوبون.';
       });
     }
     _requestPreviousWorkers();
@@ -929,23 +942,25 @@ class _ClMainOccasionScheduleScreenState
   }
 
   String? _validateSchedule() {
-    if (_sessions.isEmpty) return 'يرجى اختيار جلسة واحدة على الأقل';
-    if (_sessions.length > 31) return 'الحد الأعلى لجلسات المناسبة هو 31 جلسة';
+    if (_sessions.isEmpty) return 'يرجى اختيار يوم عمل واحد على الأقل';
+    if (_sessions.length > 31) {
+      return 'الحد الأعلى لأيام عمل المناسبة هو 31 يوم عمل';
+    }
     final seenSlots = <String>{};
     for (var index = 0; index < _sessions.length; index++) {
       final session = _sessions[index];
       if (session.date.isBefore(_today)) {
-        return 'تاريخ الجلسة ${index + 1} يجب أن يكون اليوم أو في المستقبل';
+        return 'تاريخ يوم العمل ${index + 1} يجب أن يكون اليوم أو في المستقبل';
       }
       final key = _slotKey(session.date, session.time);
       if (!seenSlots.add(key)) {
-        return 'لا يمكن تكرار التاريخ والوقت نفسيهما لأكثر من جلسة';
+        return 'لا يمكن تكرار التاريخ والوقت نفسيهما لأكثر من يوم عمل';
       }
       if (!RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(session.time)) {
-        return 'وقت الجلسة ${index + 1} غير صالح';
+        return 'وقت يوم العمل ${index + 1} غير صالح';
       }
       if (session.hours < 1 || session.hours > 24) {
-        return 'مدة الجلسة ${index + 1} يجب أن تكون بين 1 و24 ساعة';
+        return 'مدة يوم العمل ${index + 1} يجب أن تكون بين 1 و24 ساعة';
       }
     }
     return null;
@@ -1163,14 +1178,14 @@ class _EventSessionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppText.bodyMedium(
-                  'الجلسة $sequence',
+                  'اليوم $sequence',
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF111827),
                 ),
               ),
               if (canRemove)
                 IconButton(
-                  tooltip: 'إزالة الجلسة',
+                  tooltip: 'إزالة يوم العمل',
                   onPressed: onRemove,
                   icon: const Icon(
                     Icons.delete_outline,
