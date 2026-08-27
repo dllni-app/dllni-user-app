@@ -127,20 +127,18 @@ class _ClMainOccasionScheduleScreenState
 
     final estimate = _activeEstimate;
     final numberOfWorkers = _resolvedNumberOfWorkers;
-    final firstSession = _firstSession!;
-    final lastSession = _lastSession!;
-    final scheduleDayLabel = _isMultiDay
-        ? '${_sessions.length} أيام عمل'
-        : CleaningDateTimeUiFormat.weekday(firstSession.date);
-    final scheduleDateLabel = _isMultiDay
-        ? '${CleaningDateTimeUiFormat.date(firstSession.date)} - ${CleaningDateTimeUiFormat.date(lastSession.date)}'
-        : CleaningDateTimeUiFormat.date(firstSession.date);
-    final scheduleTimeRange = _isMultiDay
-        ? 'أوقات متعددة حسب كل يوم عمل'
-        : CleaningDateTimeUiFormat.timeRange(
-            firstSession.time,
-            firstSession.endTime,
-          );
+    final scheduleEntries = _sessions
+        .map(
+          (session) => ClServiceScheduleEntry(
+            dayDate:
+                '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}',
+            time: CleaningDateTimeUiFormat.timeRange(
+              session.time,
+              session.endTime,
+            ),
+          ),
+        )
+        .toList(growable: false);
 
     return BlocProvider.value(
       value: bloc,
@@ -382,9 +380,7 @@ class _ClMainOccasionScheduleScreenState
                               adminMargin: estimate?.pricing?.adminMargin,
                               isPricingFinal: estimate?.pricing?.isPricingFinal,
                               currency: estimate?.pricing?.currency ?? 'SYP',
-                              scheduleDayLabel: scheduleDayLabel,
-                              scheduleDateLabel: scheduleDateLabel,
-                              scheduleTimeRange: scheduleTimeRange,
+                              scheduleEntries: scheduleEntries,
                             ),
                           ],
                         ),
@@ -461,6 +457,7 @@ class _ClMainOccasionScheduleScreenState
                 canRemove: _sessions.length > 1,
                 estimatedPrice: estimateSession?.totalPrice,
                 currency: _activeEstimate?.pricing?.currency ?? 'SYP',
+                onEditDate: () => _pickSessionDate(index),
                 onEditTime: () => _pickSessionTime(index),
                 onEditDuration: () => _editSessionDuration(index),
                 onRemove: () => _removeSession(index),
@@ -598,6 +595,43 @@ class _ClMainOccasionScheduleScreenState
           hours: template?.hours ?? _defaultSessionHours,
         ),
       );
+      _sortSessions();
+    });
+    _onScheduleChanged();
+  }
+
+  Future<void> _pickSessionDate(int index) async {
+    if (index < 0 || index >= _sessions.length) return;
+    final currentSession = _sessions[index];
+    final initialDate = currentSession.date.isBefore(_today)
+        ? _today
+        : currentSession.date;
+    final value = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: _today,
+      initialDate: initialDate,
+    );
+    if (value.isEmpty || index < 0 || index >= _sessions.length) return;
+    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);
+    if (selectedDate == null) return;
+
+    final session = _sessions[index];
+    if (_hasDuplicateSlot(
+      date: selectedDate,
+      time: session.time,
+      exceptIndex: index,
+    )) {
+      AppToast.showToast(
+        context: context,
+        message:
+            'يوجد يوم عمل آخر بنفس التاريخ والوقت. غيّر الوقت أولاً أو اختر يوماً مختلفاً.',
+        type: ToastificationType.warning,
+      );
+      return;
+    }
+
+    setState(() {
+      _sessions[index].date = selectedDate;
       _sortSessions();
     });
     _onScheduleChanged();
@@ -1118,7 +1152,7 @@ class _ClMainOccasionScheduleScreenState
 }
 
 class _EventSessionDraft {
-  final DateTime date;
+  DateTime date;
   String time;
   double hours;
 
@@ -1140,6 +1174,7 @@ class _EventSessionCard extends StatelessWidget {
   final bool canRemove;
   final double? estimatedPrice;
   final String currency;
+  final VoidCallback onEditDate;
   final VoidCallback onEditTime;
   final VoidCallback onEditDuration;
   final VoidCallback onRemove;
@@ -1150,6 +1185,7 @@ class _EventSessionCard extends StatelessWidget {
     required this.canRemove,
     required this.estimatedPrice,
     required this.currency,
+    required this.onEditDate,
     required this.onEditTime,
     required this.onEditDuration,
     required this.onRemove,
@@ -1197,6 +1233,12 @@ class _EventSessionCard extends StatelessWidget {
           AppText.bodySmall(
             '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}',
             fontWeight: FontWeight.w700,
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onEditDate,
+            icon: const Icon(Icons.event_outlined, size: 17),
+            label: const Text('تعديل يوم العمل'),
           ),
           const SizedBox(height: 10),
           _OccasionInfoRow(
