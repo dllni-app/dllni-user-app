@@ -238,7 +238,7 @@ class _SummaryRowWidget extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Flexible(
+        Expanded(
           flex: 2,
           child: AppText.bodyMedium(
             label,
