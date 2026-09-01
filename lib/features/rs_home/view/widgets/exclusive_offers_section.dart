@@ -50,9 +50,9 @@ class ExclusiveOffersSection extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppText(
+            AppText(
               'عروض حصرية بالقرب منك',
-              style: TextStyle(
+              style: const TextStyle(
                 color: Color(0xFF1A1A1A),
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -103,7 +103,7 @@ class ExclusiveOffersSection extends StatelessWidget {
                   final originalPrice = product.discountedPrice != null ? product.price : null;
                   final priceText = currentPrice == null
                       ? (offer.restaurantName ?? '')
-                      : originalPrice != null && originalPrice > currentPrice!
+                      : originalPrice != null && originalPrice > currentPrice
                           ? '${currentPrice.toStringAsFixed(0)} ل.س • بدلاً من ${originalPrice.toStringAsFixed(0)}'
                           : '${currentPrice.toStringAsFixed(0)} ل.س';
 
