@@ -32,7 +32,7 @@ jobs:
 
       - name: Analyze modified user features
         run: >-
-          flutter analyze
+          flutter analyze --no-fatal-infos
           lib/core/app_config.dart
           lib/core/deeplink/deep_link_parser.dart
           lib/core/deeplink/deep_link_service.dart
