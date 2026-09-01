@@ -38,8 +38,11 @@ class PlaceStoreOrderParams with Params {
 
   @override
   BodyMap getBody() {
+    final normalizedFulfillmentType = fulfillmentType == 'dine_in'
+        ? 'pickup'
+        : fulfillmentType;
     final body = <String, dynamic>{
-      'fulfillmentType': fulfillmentType,
+      'fulfillmentType': normalizedFulfillmentType,
       'receiveMode': receiveMode,
       'addressId': addressId,
     };
