@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../../../delivery/data/models/delivery_order_models.dart';
@@ -41,6 +42,7 @@ class _RestaurantOrderTrackingScreenState
   bool _loading = true;
   String? _error;
   Timer? _pollTimer;
+  StreamSubscription<RemoteMessage>? _fcmSubscription;
   static const _pollInterval = Duration(seconds: 15);
 
   bool get _isTerminal {
@@ -52,14 +54,41 @@ class _RestaurantOrderTrackingScreenState
         status.contains('cancelled');
   }
 
+  bool _matchesCurrentOrder(RemoteMessage message) {
+    final orderId = widget.args.order.id;
+    final deliveryOrderId = widget.args.order.deliveryOrderId;
+    final data = message.data;
+    final ids = <String>{
+      if (data['orderId'] != null) data['orderId'].toString(),
+      if (data['order_id'] != null) data['order_id'].toString(),
+      if (data['sourceId'] != null) data['sourceId'].toString(),
+      if (data['source_id'] != null) data['source_id'].toString(),
+    };
+    if (orderId != null && ids.contains(orderId.toString())) return true;
+    if (deliveryOrderId != null && ids.contains(deliveryOrderId.toString())) return true;
+
+    final text = <String>[
+      ...data.entries.map((entry) => '${entry.key}:${entry.value}'),
+      message.notification?.title ?? '',
+      message.notification?.body ?? '',
+    ].join(' ').toLowerCase();
+    return text.contains('order') || text.contains('delivery') || text.contains('طلب') || text.contains('توصيل');
+  }
+
   @override
   void initState() {
     super.initState();
     _fetchTracking();
+    _fcmSubscription = FirebaseMessaging.onMessage.listen((message) {
+      if (_matchesCurrentOrder(message)) {
+        _fetchTracking(silent: true);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _fcmSubscription?.cancel();
     _pollTimer?.cancel();
     super.dispose();
   }
