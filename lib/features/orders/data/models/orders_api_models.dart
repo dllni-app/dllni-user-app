@@ -79,23 +79,13 @@ class FetchOrdersModel {
   OrdersMetaModel? meta;
   OrdersLinksModel? links;
 
-  FetchOrdersModel({
-    required this.data,
-    this.meta,
-    this.links,
-  });
+  FetchOrdersModel({required this.data, this.meta, this.links});
 
   factory FetchOrdersModel.fromJson(Map<String, dynamic> json) {
     return FetchOrdersModel(
-      data: _asMapList(json['data'])
-          .map(OrderResourceModel.fromJson)
-          .toList(),
-      meta: json['meta'] == null
-          ? null
-          : OrdersMetaModel.fromJson(_asMap(json['meta'])),
-      links: json['links'] == null
-          ? null
-          : OrdersLinksModel.fromJson(_asMap(json['links'])),
+      data: _asMapList(json['data']).map(OrderResourceModel.fromJson).toList(),
+      meta: json['meta'] == null ? null : OrdersMetaModel.fromJson(_asMap(json['meta'])),
+      links: json['links'] == null ? null : OrdersLinksModel.fromJson(_asMap(json['links'])),
     );
   }
 }
@@ -107,9 +97,7 @@ class FetchOrderDetailsModel {
 
   factory FetchOrderDetailsModel.fromJson(Map<String, dynamic> json) {
     return FetchOrderDetailsModel(
-      data: json['data'] == null
-          ? null
-          : OrderResourceModel.fromJson(_asMap(json['data'])),
+      data: json['data'] == null ? null : OrderResourceModel.fromJson(_asMap(json['data'])),
     );
   }
 }
@@ -120,12 +108,7 @@ class OrdersMetaModel {
   int? perPage;
   int? total;
 
-  OrdersMetaModel({
-    this.currentPage,
-    this.lastPage,
-    this.perPage,
-    this.total,
-  });
+  OrdersMetaModel({this.currentPage, this.lastPage, this.perPage, this.total});
 
   factory OrdersMetaModel.fromJson(Map<String, dynamic> json) {
     return OrdersMetaModel(
@@ -188,27 +171,16 @@ class DeliverySummaryModel {
     return DeliverySummaryModel(
       enabled: _asBool(json['enabled']) ?? false,
       status: _asString(json['status']),
-      statusLabelAr: _asString(json['statusLabelAr']) ??
-          _asString(json['status_label_ar']),
-      currentStage:
-          _asString(json['currentStage']) ?? _asString(json['current_stage']),
-      isTerminal: _asBool(json['isTerminal']) ??
-          _asBool(json['is_terminal']) ??
-          false,
+      statusLabelAr: _asString(json['statusLabelAr']) ?? _asString(json['status_label_ar']),
+      currentStage: _asString(json['currentStage']) ?? _asString(json['current_stage']),
+      isTerminal: _asBool(json['isTerminal']) ?? _asBool(json['is_terminal']) ?? false,
       pickupMode: _asString(json['pickupMode']) ?? _asString(json['pickup_mode']),
-      readyForPickupAt: _asString(json['readyForPickupAt']) ??
-          _asString(json['ready_for_pickup_at']),
-      pickedUpAt:
-          _asString(json['pickedUpAt']) ?? _asString(json['picked_up_at']),
-      completedAt:
-          _asString(json['completedAt']) ?? _asString(json['completed_at']),
-      cancelledAt:
-          _asString(json['cancelledAt']) ?? _asString(json['cancelled_at']),
-      cancellationReason: _asString(json['cancellationReason']) ??
-          _asString(json['cancellation_reason']),
-      timeline: _asMapList(json['timeline'])
-          .map(DeliveryTimelineStageModel.fromJson)
-          .toList(),
+      readyForPickupAt: _asString(json['readyForPickupAt']) ?? _asString(json['ready_for_pickup_at']),
+      pickedUpAt: _asString(json['pickedUpAt']) ?? _asString(json['picked_up_at']),
+      completedAt: _asString(json['completedAt']) ?? _asString(json['completed_at']),
+      cancelledAt: _asString(json['cancelledAt']) ?? _asString(json['cancelled_at']),
+      cancellationReason: _asString(json['cancellationReason']) ?? _asString(json['cancellation_reason']),
+      timeline: _asMapList(json['timeline']).map(DeliveryTimelineStageModel.fromJson).toList(),
     );
   }
 }
@@ -256,30 +228,18 @@ class OrderResourceModel {
 
     return OrderResourceModel(
       id: _asInt(json['id']),
-      deliveryOrderId: _asInt(json['deliveryOrderId']) ??
-          _asInt(json['delivery_order_id']) ??
-          _asInt(deliveryMap['id']),
-      deliverySummary: deliverySummaryJson.isEmpty
-          ? null
-          : DeliverySummaryModel.fromJson(deliverySummaryJson),
+      deliveryOrderId: _asInt(json['deliveryOrderId']) ?? _asInt(json['delivery_order_id']) ?? _asInt(deliveryMap['id']),
+      deliverySummary: deliverySummaryJson.isEmpty ? null : DeliverySummaryModel.fromJson(deliverySummaryJson),
       section: _asString(json['section']),
       orderNumber: _asString(json['orderNumber']),
       status: _asString(json['status']),
       statusLabel: _asString(json['statusLabel']),
-      merchant: json['merchant'] == null
-          ? null
-          : OrderMerchantModel.fromJson(_asMap(json['merchant'])),
-      fulfillment: json['fulfillment'] == null
-          ? null
-          : OrderFulfillmentModel.fromJson(_asMap(json['fulfillment'])),
-      amounts: json['amounts'] == null
-          ? null
-          : OrderAmountsModel.fromJson(_asMap(json['amounts'])),
+      merchant: json['merchant'] == null ? null : OrderMerchantModel.fromJson(_asMap(json['merchant'])),
+      fulfillment: json['fulfillment'] == null ? null : OrderFulfillmentModel.fromJson(_asMap(json['fulfillment'])),
+      amounts: json['amounts'] == null ? null : OrderAmountsModel.fromJson(_asMap(json['amounts'])),
       items: _asMapList(json['items']).map(OrderItemModel.fromJson).toList(),
       timeline: json['timeline'] is List ? json['timeline'] as List : <dynamic>[],
-      actions: json['actions'] == null
-          ? null
-          : OrderActionsModel.fromJson(_asMap(json['actions'])),
+      actions: json['actions'] == null ? null : OrderActionsModel.fromJson(_asMap(json['actions'])),
       createdAt: _asString(json['createdAt']),
       updatedAt: _asString(json['updatedAt']),
     );
@@ -304,16 +264,7 @@ class OrderMerchantModel {
   double? latitude;
   double? longitude;
 
-  OrderMerchantModel({
-    this.id,
-    this.name,
-    this.address,
-    this.city,
-    this.district,
-    this.locationDetails,
-    this.latitude,
-    this.longitude,
-  });
+  OrderMerchantModel({this.id, this.name, this.address, this.city, this.district, this.locationDetails, this.latitude, this.longitude});
 
   factory OrderMerchantModel.fromJson(Map<String, dynamic> json) {
     return OrderMerchantModel(
@@ -322,8 +273,7 @@ class OrderMerchantModel {
       address: _asString(json['address']),
       city: _asString(json['city']),
       district: _asString(json['district']),
-      locationDetails: _asString(json['locationDetails']) ??
-          _asString(json['location_details']),
+      locationDetails: _asString(json['locationDetails']) ?? _asString(json['location_details']),
       latitude: _asDouble(json['latitude']),
       longitude: _asDouble(json['longitude']),
     );
@@ -353,13 +303,7 @@ class OrderAmountsModel {
   double tax;
   double total;
 
-  OrderAmountsModel({
-    this.subtotal = 0,
-    this.discount = 0,
-    this.serviceFee = 0,
-    this.tax = 0,
-    this.total = 0,
-  });
+  OrderAmountsModel({this.subtotal = 0, this.discount = 0, this.serviceFee = 0, this.tax = 0, this.total = 0});
 
   factory OrderAmountsModel.fromJson(Map<String, dynamic> json) {
     return OrderAmountsModel(
@@ -381,15 +325,7 @@ class OrderItemModel {
   double totalPrice;
   String? note;
 
-  OrderItemModel({
-    this.id,
-    this.productId,
-    this.name,
-    this.quantity = 0,
-    this.unitPrice = 0,
-    this.totalPrice = 0,
-    this.note,
-  });
+  OrderItemModel({this.id, this.productId, this.name, this.quantity = 0, this.unitPrice = 0, this.totalPrice = 0, this.note});
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
     return OrderItemModel(
@@ -409,11 +345,7 @@ class OrderActionsModel {
   bool canReorder;
   bool canReschedule;
 
-  OrderActionsModel({
-    this.canCancel = false,
-    this.canReorder = false,
-    this.canReschedule = false,
-  });
+  OrderActionsModel({this.canCancel = false, this.canReorder = false, this.canReschedule = false});
 
   factory OrderActionsModel.fromJson(Map<String, dynamic> json) {
     return OrderActionsModel(
@@ -430,9 +362,7 @@ class OrdersActionResultModel {
   OrdersActionResultModel({this.message});
 
   factory OrdersActionResultModel.fromJson(Map<String, dynamic> json) {
-    return OrdersActionResultModel(
-      message: _asString(json['message']),
-    );
+    return OrdersActionResultModel(message: _asString(json['message']));
   }
 }
 
@@ -445,9 +375,7 @@ class PlaceRestaurantOrderModel {
   factory PlaceRestaurantOrderModel.fromJson(Map<String, dynamic> json) {
     return PlaceRestaurantOrderModel(
       message: _asString(json['message']),
-      data: json['data'] == null
-          ? null
-          : OrderResourceModel.fromJson(_asMap(json['data'])),
+      data: json['data'] == null ? null : OrderResourceModel.fromJson(_asMap(json['data'])),
     );
   }
 }
@@ -459,9 +387,7 @@ class CouponCheckModel {
 
   factory CouponCheckModel.fromJson(Map<String, dynamic> json) {
     return CouponCheckModel(
-      data: json['data'] == null
-          ? null
-          : CouponCheckDataModel.fromJson(_asMap(json['data'])),
+      data: json['data'] == null ? null : CouponCheckDataModel.fromJson(_asMap(json['data'])),
     );
   }
 }
@@ -474,14 +400,7 @@ class CouponCheckDataModel {
   CouponCheckAmountsModel? amounts;
   CouponMetaModel? coupon;
 
-  CouponCheckDataModel({
-    this.section,
-    this.couponCode,
-    this.isAvailable = false,
-    this.reason,
-    this.amounts,
-    this.coupon,
-  });
+  CouponCheckDataModel({this.section, this.couponCode, this.isAvailable = false, this.reason, this.amounts, this.coupon});
 
   factory CouponCheckDataModel.fromJson(Map<String, dynamic> json) {
     return CouponCheckDataModel(
@@ -489,12 +408,8 @@ class CouponCheckDataModel {
       couponCode: _asString(json['couponCode']),
       isAvailable: _asBool(json['isAvailable']) ?? false,
       reason: _asString(json['reason']),
-      amounts: json['amounts'] == null
-          ? null
-          : CouponCheckAmountsModel.fromJson(_asMap(json['amounts'])),
-      coupon: json['coupon'] == null
-          ? null
-          : CouponMetaModel.fromJson(_asMap(json['coupon'])),
+      amounts: json['amounts'] == null ? null : CouponCheckAmountsModel.fromJson(_asMap(json['amounts'])),
+      coupon: json['coupon'] == null ? null : CouponMetaModel.fromJson(_asMap(json['coupon'])),
     );
   }
 }
@@ -504,11 +419,7 @@ class CouponCheckAmountsModel {
   double discount;
   double total;
 
-  CouponCheckAmountsModel({
-    this.subtotal = 0,
-    this.discount = 0,
-    this.total = 0,
-  });
+  CouponCheckAmountsModel({this.subtotal = 0, this.discount = 0, this.total = 0});
 
   factory CouponCheckAmountsModel.fromJson(Map<String, dynamic> json) {
     return CouponCheckAmountsModel(
@@ -526,13 +437,7 @@ class CouponMetaModel {
   double? minOrderAmount;
   double? maxDiscountAmount;
 
-  CouponMetaModel({
-    this.type,
-    this.value,
-    this.percent,
-    this.minOrderAmount,
-    this.maxDiscountAmount,
-  });
+  CouponMetaModel({this.type, this.value, this.percent, this.minOrderAmount, this.maxDiscountAmount});
 
   factory CouponMetaModel.fromJson(Map<String, dynamic> json) {
     return CouponMetaModel(
@@ -552,9 +457,7 @@ class FetchRestaurantCartModel {
 
   factory FetchRestaurantCartModel.fromJson(Map<String, dynamic> json) {
     return FetchRestaurantCartModel(
-      data: json['data'] == null
-          ? null
-          : RestaurantCartDataModel.fromJson(_asMap(json['data'])),
+      data: json['data'] == null ? null : RestaurantCartDataModel.fromJson(_asMap(json['data'])),
     );
   }
 }
@@ -565,42 +468,40 @@ class RestaurantCartDataModel {
   List<RestaurantCartItemModel> items;
   RestaurantCartAmountsModel? amounts;
 
-  RestaurantCartDataModel({
-    this.id,
-    this.merchant,
-    this.items = const <RestaurantCartItemModel>[],
-    this.amounts,
-  });
+  RestaurantCartDataModel({this.id, this.merchant, this.items = const <RestaurantCartItemModel>[], this.amounts});
 
   factory RestaurantCartDataModel.fromJson(Map<String, dynamic> json) {
     return RestaurantCartDataModel(
       id: _asInt(json['id']),
-      merchant: json['merchant'] == null
-          ? null
-          : OrderMerchantModel.fromJson(_asMap(json['merchant'])),
-      items: _asMapList(json['items'])
-          .map(RestaurantCartItemModel.fromJson)
-          .toList(),
-      amounts: json['amounts'] == null
-          ? null
-          : RestaurantCartAmountsModel.fromJson(_asMap(json['amounts'])),
+      merchant: json['merchant'] == null ? null : OrderMerchantModel.fromJson(_asMap(json['merchant'])),
+      items: _asMapList(json['items']).map(RestaurantCartItemModel.fromJson).toList(),
+      amounts: json['amounts'] == null ? null : RestaurantCartAmountsModel.fromJson(_asMap(json['amounts'])),
     );
   }
 }
 
 class RestaurantCartAmountsModel {
   double subtotal;
+  double discount;
+  double discountPercent;
   double total;
 
   RestaurantCartAmountsModel({
     this.subtotal = 0,
+    this.discount = 0,
+    this.discountPercent = 0,
     this.total = 0,
   });
 
   factory RestaurantCartAmountsModel.fromJson(Map<String, dynamic> json) {
+    final subtotal = _asDouble(json['subtotal']) ?? 0;
+    final total = _asDouble(json['total']) ?? 0;
+    final discount = _asDouble(json['discount']) ?? (subtotal > total ? subtotal - total : 0);
     return RestaurantCartAmountsModel(
-      subtotal: _asDouble(json['subtotal']) ?? 0,
-      total: _asDouble(json['total']) ?? 0,
+      subtotal: subtotal,
+      discount: discount,
+      discountPercent: _asDouble(json['discountPercent']) ?? (subtotal > 0 ? (discount / subtotal) * 100 : 0),
+      total: total,
     );
   }
 }
@@ -612,6 +513,11 @@ class RestaurantCartItemModel {
   int quantity;
   double unitPrice;
   double totalPrice;
+  double? originalUnitPrice;
+  double? originalTotalPrice;
+  double? productPrice;
+  double? originalProductPrice;
+  bool hasDiscount;
   List<int> modifierIds;
   int? substituteProductId;
   String? note;
@@ -624,6 +530,11 @@ class RestaurantCartItemModel {
     this.quantity = 0,
     this.unitPrice = 0,
     this.totalPrice = 0,
+    this.originalUnitPrice,
+    this.originalTotalPrice,
+    this.productPrice,
+    this.originalProductPrice,
+    this.hasDiscount = false,
     this.modifierIds = const <int>[],
     this.substituteProductId,
     this.note,
@@ -631,13 +542,24 @@ class RestaurantCartItemModel {
   });
 
   factory RestaurantCartItemModel.fromJson(Map<String, dynamic> json) {
+    final unitPrice = _asDouble(json['unitPrice']) ?? 0;
+    final totalPrice = _asDouble(json['totalPrice']) ?? 0;
+    final originalUnitPrice = _asDouble(json['originalUnitPrice']);
+    final originalTotalPrice = _asDouble(json['originalTotalPrice']);
     return RestaurantCartItemModel(
       id: _asInt(json['id']),
       productId: _asInt(json['productId']),
       name: _asString(json['name']),
       quantity: _asInt(json['quantity']) ?? 0,
-      unitPrice: _asDouble(json['unitPrice']) ?? 0,
-      totalPrice: _asDouble(json['totalPrice']) ?? 0,
+      unitPrice: unitPrice,
+      totalPrice: totalPrice,
+      originalUnitPrice: originalUnitPrice,
+      originalTotalPrice: originalTotalPrice,
+      productPrice: _asDouble(json['productPrice']),
+      originalProductPrice: _asDouble(json['originalProductPrice']),
+      hasDiscount: _asBool(json['hasDiscount']) ??
+          (originalTotalPrice != null && originalTotalPrice > totalPrice) ||
+          (originalUnitPrice != null && originalUnitPrice > unitPrice),
       modifierIds: _asIntList(json['modifierIds']),
       substituteProductId: _asInt(json['substituteProductId']),
       note: _asString(json['note']),
@@ -656,9 +578,7 @@ class FetchRestaurantOrderTrackingModel {
 
   factory FetchRestaurantOrderTrackingModel.fromJson(Map<String, dynamic> json) {
     return FetchRestaurantOrderTrackingModel(
-      data: json['data'] == null
-          ? null
-          : RestaurantOrderTrackingDataModel.fromJson(_asMap(json['data'])),
+      data: json['data'] == null ? null : RestaurantOrderTrackingDataModel.fromJson(_asMap(json['data'])),
     );
   }
 }
@@ -670,35 +590,18 @@ class RestaurantOrderTrackingDataModel {
   RestaurantOrderTrackingMerchantModel? merchant;
   OrderActionsModel? actions;
 
-  RestaurantOrderTrackingDataModel({
-    this.eta,
-    this.map,
-    this.timeline = const <RestaurantOrderTrackingTimelineItemModel>[],
-    this.merchant,
-    this.actions,
-  });
+  RestaurantOrderTrackingDataModel({this.eta, this.map, this.timeline = const <RestaurantOrderTrackingTimelineItemModel>[], this.merchant, this.actions});
 
   factory RestaurantOrderTrackingDataModel.fromJson(Map<String, dynamic> json) {
     return RestaurantOrderTrackingDataModel(
-      eta: json['eta'] == null
-          ? null
-          : RestaurantOrderTrackingEtaModel.fromJson(_asMap(json['eta'])),
-      map: json['map'] == null
-          ? null
-          : RestaurantOrderTrackingMapModel.fromJson(_asMap(json['map'])),
-      timeline: _asMapList(json['timeline'])
-          .map(RestaurantOrderTrackingTimelineItemModel.fromJson)
-          .toList(),
-      merchant: json['merchant'] == null
-          ? null
-          : RestaurantOrderTrackingMerchantModel.fromJson(_asMap(json['merchant'])),
-      actions: json['actions'] == null
-          ? null
-          : OrderActionsModel.fromJson(_asMap(json['actions'])),
+      eta: json['eta'] == null ? null : RestaurantOrderTrackingEtaModel.fromJson(_asMap(json['eta'])),
+      map: json['map'] == null ? null : RestaurantOrderTrackingMapModel.fromJson(_asMap(json['map'])),
+      timeline: _asMapList(json['timeline']).map(RestaurantOrderTrackingTimelineItemModel.fromJson).toList(),
+      merchant: json['merchant'] == null ? null : RestaurantOrderTrackingMerchantModel.fromJson(_asMap(json['merchant'])),
+      actions: json['actions'] == null ? null : OrderActionsModel.fromJson(_asMap(json['actions'])),
     );
   }
 
-  /// Latest order status from timeline (`toStatus` of last meaningful entry).
   String? get latestToStatus {
     for (var i = timeline.length - 1; i >= 0; i--) {
       final s = timeline[i].toStatus;
@@ -712,10 +615,7 @@ class RestaurantOrderTrackingEtaModel {
   int minutes;
   String text;
 
-  RestaurantOrderTrackingEtaModel({
-    this.minutes = 0,
-    this.text = '',
-  });
+  RestaurantOrderTrackingEtaModel({this.minutes = 0, this.text = ''});
 
   factory RestaurantOrderTrackingEtaModel.fromJson(Map<String, dynamic> json) {
     return RestaurantOrderTrackingEtaModel(
@@ -730,11 +630,7 @@ class RestaurantOrderTrackingMapModel {
   double? lat;
   double? lng;
 
-  RestaurantOrderTrackingMapModel({
-    this.enabled = false,
-    this.lat,
-    this.lng,
-  });
+  RestaurantOrderTrackingMapModel({this.enabled = false, this.lat, this.lng});
 
   factory RestaurantOrderTrackingMapModel.fromJson(Map<String, dynamic> json) {
     return RestaurantOrderTrackingMapModel(
@@ -753,12 +649,7 @@ class RestaurantOrderTrackingTimelineItemModel {
   String? note;
   String? changedAt;
 
-  RestaurantOrderTrackingTimelineItemModel({
-    this.fromStatus,
-    this.toStatus,
-    this.note,
-    this.changedAt,
-  });
+  RestaurantOrderTrackingTimelineItemModel({this.fromStatus, this.toStatus, this.note, this.changedAt});
 
   factory RestaurantOrderTrackingTimelineItemModel.fromJson(Map<String, dynamic> json) {
     return RestaurantOrderTrackingTimelineItemModel(
@@ -776,12 +667,7 @@ class RestaurantOrderTrackingMerchantModel {
   String? primaryImageUrl;
   String? bannerImageUrl;
 
-  RestaurantOrderTrackingMerchantModel({
-    this.id,
-    this.name,
-    this.primaryImageUrl,
-    this.bannerImageUrl,
-  });
+  RestaurantOrderTrackingMerchantModel({this.id, this.name, this.primaryImageUrl, this.bannerImageUrl});
 
   factory RestaurantOrderTrackingMerchantModel.fromJson(Map<String, dynamic> json) {
     return RestaurantOrderTrackingMerchantModel(
