@@ -21,6 +21,13 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final discountPercent = subtotal > 0 && discount > 0
+        ? (discount / subtotal * 100).clamp(0, 100)
+        : 0.0;
+    final discountTitle = discountPercent > 0
+        ? 'الخصم (${discountPercent.toStringAsFixed(discountPercent % 1 == 0 ? 0 : 1)}%)'
+        : 'الخصم';
+
     return RestaurantCartCardWrapper(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -37,8 +44,8 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
           if (discount > 0) ...[
             const SizedBox(height: 8),
             RestaurantCartSummaryRow(
-              title: 'قيمة الحسم',
-              value: discount.formatMoney(),
+              title: discountTitle,
+              value: '-${discount.formatMoney()}',
               valueColor: const Color(0xff10B981),
             ),
           ],
@@ -47,7 +54,7 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
             child: Divider(height: 1, color: Color(0xffE5E7EB)),
           ),
           RestaurantCartSummaryRow(
-            title: 'إجمالي أسعار المنتجات',
+            title: 'الإجمالي النهائي',
             value: total.formatMoney(),
             titleStyle: const TextStyle(
               fontSize: 18,
