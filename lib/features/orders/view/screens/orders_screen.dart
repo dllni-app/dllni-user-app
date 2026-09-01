@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:common_package/common_package.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,7 +11,11 @@ import '../widgets/orders_cart_orders_segment_bar.dart';
 import '../widgets/orders_list_tab.dart';
 
 class OrdersScreen extends StatefulWidget {
-  const OrdersScreen({super.key, this.initialSectionIndex = 0, this.initialSegmentIndex = OrdersCartOrdersSegmentBar.ordersIndex});
+  const OrdersScreen({
+    super.key,
+    this.initialSectionIndex = 0,
+    this.initialSegmentIndex = OrdersCartOrdersSegmentBar.ordersIndex,
+  });
 
   final int initialSectionIndex;
   final int initialSegmentIndex;
@@ -19,9 +26,8 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   final ScrollController _scrollController = ScrollController();
-
   late final OrdersBloc ordersBloc;
-
+  StreamSubscription<RemoteMessage>? _fcmSubscription;
 
   Future<void> _refreshOrders(BuildContext context) async {
     final bloc = context.read<OrdersBloc>();
@@ -42,24 +48,48 @@ class _OrdersScreenState extends State<OrdersScreen> {
     });
   }
 
+  bool _isOrderLifecycleMessage(RemoteMessage message) {
+    final values = <String>[
+      ...message.data.entries.map((entry) => '${entry.key}:${entry.value}'),
+      message.notification?.title ?? '',
+      message.notification?.body ?? '',
+    ].join(' ').toLowerCase();
+    return values.contains('order') ||
+        values.contains('restaurant') ||
+        values.contains('supermarket') ||
+        values.contains('delivery') ||
+        values.contains('طلب') ||
+        values.contains('توصيل');
+  }
+
   @override
   void initState() {
-    ordersBloc=getIt<OrdersBloc>()..add(FetchOrdersEvent(isReload: true));
     super.initState();
+    ordersBloc = getIt<OrdersBloc>()
+      ..add(OrdersSectionChangedEvent(widget.initialSectionIndex))
+      ..add(FetchOrdersEvent(isReload: true));
+
+    _fcmSubscription = FirebaseMessaging.onMessage.listen((message) {
+      if (!_isOrderLifecycleMessage(message) || ordersBloc.isClosed) return;
+      ordersBloc.add(FetchOrdersEvent(isReload: true, silentRefresh: true));
+      if (ordersBloc.state.selectedTabIndex != 2) {
+        ordersBloc.add(FetchCartForActiveSectionEvent());
+      }
+    });
   }
 
   @override
   void dispose() {
+    _fcmSubscription?.cancel();
+    ordersBloc.close();
     _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<OrdersBloc>()
-        ..add(OrdersSectionChangedEvent(widget.initialSectionIndex))
-        ..add(FetchOrdersEvent(isReload: true)),
+    return BlocProvider.value(
+      value: ordersBloc,
       child: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
           return Scaffold(
