@@ -7,11 +7,9 @@ class AppConfig {
   static const String privacyPolicyUrl = '$baseUrl/legal/user-app';
   static const String termsAndConditionsUrl = '$baseUrl/legal/user-app/terms';
 
-  /// https://alnadha.net
   /// Pusher public key (same as Laravel `PUSHER_APP_KEY`). Override with
   /// `--dart-define=PUSHER_APP_KEY=...` or legacy `--dart-define=PUSHER_KEY=...`.
-  ///
-  /// **Never** put `PUSHER_APP_SECRET` in the mobile app — it belongs only in backend `.env`.
+  /// Never put `PUSHER_APP_SECRET` in the mobile app.
   static const String pusherKey = String.fromEnvironment(
     'PUSHER_APP_KEY',
     defaultValue: String.fromEnvironment(
@@ -24,15 +22,20 @@ class AppConfig {
     defaultValue: String.fromEnvironment('PUSHER_CLUSTER', defaultValue: 'eu'),
   );
 
-  /// Same as Laravel `PUSHER_APP_ID` (optional; not required by the Pusher client).
   static const String pusherAppId = String.fromEnvironment(
     'PUSHER_APP_ID',
     defaultValue: '2120839',
   );
 
-  /// Canonical scheme + host used in shared deep-link URLs.
-  static const String deepLinkCanonicalScheme = 'https';
+  static const String deepLinkCanonicalScheme = String.fromEnvironment(
+    'DEEP_LINK_CANONICAL_SCHEME',
+    defaultValue: 'https',
+  );
 
-  /// Canonical host for Universal Links / App Links (same deployment as [baseUrl]).
-  static const String deepLinkCanonicalHost = 'alnadha.net';
+  /// Dev builds generate links for the dev deployment by default. Production
+  /// builds can override this with --dart-define or use their branch default.
+  static const String deepLinkCanonicalHost = String.fromEnvironment(
+    'DEEP_LINK_CANONICAL_HOST',
+    defaultValue: 'dllni.mustafafares.com',
+  );
 }
