@@ -1,25 +1,47 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/di/injection.dart';
-import '../../../profile/view/manager/bloc/profile_bloc.dart';
-import '../../../rs_main/view/rs_main_screen.dart';
+import '../../../rs_discover/view/models/restaurant_preview_data.dart';
+import '../../../rs_discover/view/screens/rs_store_details_screen.dart';
 import '../../../sm_main_page.dart';
+import '../../data/models/orders_api_models.dart';
 
 class RestaurantCartAddMoreProductsButton extends StatelessWidget {
   const RestaurantCartAddMoreProductsButton({
     super.key,
     this.isRestaurant = true,
+    this.merchant,
   });
+
   final bool isRestaurant;
+  final OrderMerchantModel? merchant;
+
+  void _openRestaurant(BuildContext context) {
+    final restaurantId = merchant?.id;
+    if (restaurantId == null || restaurantId <= 0) {
+      context.pushRoute('/rsmain');
+      return;
+    }
+
+    context.pushRoute(
+      '/rs_store',
+      arguments: StoreDetailsScreenParams(
+        restaurantId: restaurantId,
+        preview: RestaurantPreviewData(
+          restaurantId: restaurantId,
+          name: merchant?.name ?? 'المطعم',
+          description: merchant?.locationDetails ?? merchant?.address ?? '',
+          address: merchant?.address,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => isRestaurant
-          ? context.pushRoute('/rsmain',arguments: RsMainScreenParams(
-        profileBloc: getIt<ProfileBloc>(),
-
-      ))
+          ? _openRestaurant(context)
           : context.pushRoute(
               '/smmain',
               arguments: SmMainScreenParams(

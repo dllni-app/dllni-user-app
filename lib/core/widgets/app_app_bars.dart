@@ -5,13 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../features/rs_discover/view/manager/bloc/rs_discover_bloc.dart';
+import '../../features/sm_cart/view/screens/sm_cart_screen.dart';
 import '../../features/sm_discover/view/widgets/smart_search_sheet.dart';
 import '../themes/app_colors.dart';
 import 'search_with_type_dropdown.dart';
 
 class AppSimpleAppBar extends StatelessWidget {
   final String title;
-
   final bool canPop;
 
   const AppSimpleAppBar({super.key, required this.title, this.canPop = true});
@@ -117,7 +117,6 @@ class AppSimpleAppBar2 extends StatelessWidget {
 
 class AppSimpleAppBarWithSearch extends StatelessWidget {
   final String title;
-
   final bool isSearchExpand;
   final void Function(SearchType type) onTypeSelected;
 
@@ -161,13 +160,7 @@ class ArrowBackButton extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         padding: EdgeInsets.all(12),
-        // decoration: BoxDecoration(
-        //   color: Color(0xFFF9FAFB),
-        //   borderRadius: BorderRadius.all(Radius.circular(12)),
-        //   border: Border.all(color: Color(0x291E2A78)),
-        // ),
         child: Icon(Icons.arrow_back_ios, size: 16, color: AppColors.white),
-        //AppImage.asset(AppSvgs.arrow, size: 16, color: AppColors.white),
       ),
     );
   }
@@ -177,7 +170,6 @@ enum ArrowBackType { material, cupertino }
 
 class RsAppSimpleAppBarWithSearch extends StatefulWidget {
   final String title;
-
   final void Function(String value)? onSearchChanged;
   final VoidCallback? onBackTap;
   final String searchHintText;
@@ -241,6 +233,25 @@ class _RsAppSimpleAppBarWithSearchState extends State<RsAppSimpleAppBarWithSearc
                   style: TextStyle(color: context.primary, fontSize: 24, fontWeight: FontWeight.w700, height: 32 / 24),
                 ),
               ),
+              if (!widget.isCategory)
+                InkWell(
+                  onTap: () => context.pushRoute(
+                    '/cart',
+                    arguments: SmCartScreenParams(initialSectionIndex: 1),
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Icon(Icons.shopping_cart_outlined, size: 22, color: context.primary),
+                  ),
+                ),
             ],
           ),
           SizedBox(height: 16),
@@ -311,9 +322,8 @@ class _RsAppSimpleAppBarWithSearchState extends State<RsAppSimpleAppBarWithSearc
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-
       backgroundColor: Colors.transparent,
-      builder: (ctx) => const SmartSearchSheet(isSupermarket: false,),
+      builder: (ctx) => const SmartSearchSheet(isSupermarket: false),
     );
     if (!mounted || words == null || words.isEmpty) return;
     final query = words.join(' , ');
@@ -381,7 +391,6 @@ class _SearchModeChip extends StatelessWidget {
 
 class _SearchField extends StatelessWidget {
   final void Function(String value) onChanged;
-
   final void Function()? onTap;
   final String hintText;
   final TextEditingController? controller;
@@ -408,7 +417,6 @@ class _SearchField extends StatelessWidget {
           padding: EdgeInsets.only(right: 16, left: 12),
           child: FaIcon(FontAwesomeIcons.magnifyingGlass, size: 16, color: Color(0xFF9CA3AF)),
         ),
-        // prefixIcon: Icon(Icons.search, size: 32),
         border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
         enabledBorder: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),
         focusedBorder: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(24))),

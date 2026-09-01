@@ -155,24 +155,25 @@ class DeliveryStatusStepper extends StatelessWidget {
   }
 
   String _stageLabel(DeliveryTimelineStageModel stage) {
-    final key = stage.key ?? '';
+    final key = (stage.key ?? '').toLowerCase();
     return switch (key) {
       'waiting_merchant_ready' => 'بانتظار تجهيز الطلب من المتجر',
       'searching_for_driver' => 'جاري البحث عن مندوب',
       'searching_driver' => 'جاري البحث عن مندوب',
       'dispatching' => 'جاري البحث عن مندوب',
       'offered' => 'تم إرسال الطلب إلى المندوب',
-      'accepted' => 'المندوب قبل الطلب',
-      'in_progress' => 'المندوب في الطريق إلى المتجر',
-      'driver_en_route' => 'المندوب في الطريق إلى المتجر',
+      'accepted' => 'تم تعيين مندوب للتوصيل',
+      'in_progress' => 'المندوب في الطريق إلى المطعم',
+      'driver_en_route' => 'المندوب في الطريق إلى المطعم',
       'arrived' => 'وصل المندوب',
-      'arrived_pickup' => 'وصل المندوب إلى المتجر',
-      'handover_complete' => 'تم استلام الطلب من المتجر',
-      'picked_up' => 'تم استلام الطلب من المتجر',
-      'delivered' => 'تم التسليم',
-      'completed' => 'تم التسليم',
+      'arrived_pickup' => 'وصل المندوب إلى المطعم',
+      'handover_complete' => 'تم التسليم لمندوب التوصيل',
+      'picked_up' => 'تم التسليم لمندوب التوصيل',
+      'delivered' => 'تم الاستلام',
+      'completed' => 'مكتمل',
       'cancelled' => 'تم الإلغاء',
       'not_received' => 'لم يتم الاستلام',
+      'stopped' => 'تعذر العثور على مندوب',
       _ => stage.label,
     };
   }

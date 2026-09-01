@@ -47,33 +47,21 @@ class RestaurantCartCheckoutBody extends StatelessWidget {
           return CartEmptyView(onRefresh: onRefresh, isStore: false);
         }
 
-        return Stack(
-          children: [
-            RefreshIndicator(
-              onRefresh: onRefresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
-                children: [
-                  ...carts.map(
-                    (cart) => _MerchantCartCard(
-                      cart: cart,
-                      isMutating: state.isMutatingCartItem,
-                      money: _money,
-                    ),
-                  ),
-                  const RestaurantCartAddMoreProductsButton(),
-                ],
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 20),
+            children: [
+              ...carts.map(
+                (cart) => _MerchantCartCard(
+                  cart: cart,
+                  isMutating: state.isMutatingCartItem,
+                  money: _money,
+                ),
               ),
-            ),
-            if (loading)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -91,20 +79,16 @@ class _MerchantCartCard extends StatelessWidget {
   final bool isMutating;
   final String Function(double value) money;
 
-  double get _itemsSubtotal => cart.items.fold<double>(0, (sum, item) {
-    final calculated = item.unitPrice * item.quantity;
-    return sum + (calculated > 0 ? calculated : item.totalPrice);
-  });
-
   @override
   Widget build(BuildContext context) {
     final cartId = cart.id;
-    final subtotal = _itemsSubtotal;
-    final total = cart.amounts?.total ?? subtotal;
+    final subtotal = cart.amounts?.subtotal ?? 0;
+    final total = cart.amounts?.total ?? 0;
+    final discount = subtotal > total ? subtotal - total : 0.0;
 
     return Container(
       margin: const EdgeInsetsDirectional.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -128,10 +112,10 @@ class _MerchantCartCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           ...cart.items.map(
             (item) => Padding(
-              padding: const EdgeInsetsDirectional.only(bottom: 12),
+              padding: const EdgeInsetsDirectional.only(bottom: 10),
               child: RestaurantCartProductCard(
                 item: item,
                 cartId: cartId,
@@ -152,10 +136,12 @@ class _MerchantCartCard extends StatelessWidget {
           RestaurantCartOrderSummarySection(
             itemsCount: cart.items.length,
             subtotal: subtotal,
-            discount: 0,
+            discount: discount,
             total: total,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
+          RestaurantCartAddMoreProductsButton(merchant: cart.merchant),
+          const SizedBox(height: 10),
           RestaurantCartCheckoutFulfillmentButton(
             onTap: cartId == null
                 ? null

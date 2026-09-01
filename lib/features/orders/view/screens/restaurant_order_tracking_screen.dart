@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../../../delivery/data/models/delivery_order_models.dart';
@@ -41,6 +42,7 @@ class _RestaurantOrderTrackingScreenState
   bool _loading = true;
   String? _error;
   Timer? _pollTimer;
+  StreamSubscription<RemoteMessage>? _fcmSubscription;
   static const _pollInterval = Duration(seconds: 15);
 
   bool get _isTerminal {
@@ -49,17 +51,42 @@ class _RestaurantOrderTrackingScreenState
         .toLowerCase();
     return status.contains('delivered') ||
         status.contains('completed') ||
-        status.contains('cancelled');
+        status.contains('cancelled') ||
+        status.contains('rejected');
+  }
+
+  bool _isRelevantMessage(RemoteMessage message) {
+    final orderId = widget.args.order.id?.toString();
+    final deliveryOrderId = widget.args.order.deliveryOrderId?.toString();
+    final serialized = <String>[
+      ...message.data.entries.map((entry) => '${entry.key}:${entry.value}'),
+      message.notification?.title ?? '',
+      message.notification?.body ?? '',
+    ].join(' ').toLowerCase();
+
+    if (orderId != null && serialized.contains(orderId)) return true;
+    if (deliveryOrderId != null && serialized.contains(deliveryOrderId)) return true;
+    return serialized.contains('order') ||
+        serialized.contains('delivery') ||
+        serialized.contains('restaurant') ||
+        serialized.contains('supermarket') ||
+        serialized.contains('طلب') ||
+        serialized.contains('توصيل');
   }
 
   @override
   void initState() {
     super.initState();
     _fetchTracking();
+    _fcmSubscription = FirebaseMessaging.onMessage.listen((message) {
+      if (!mounted || !_isRelevantMessage(message)) return;
+      _fetchTracking(silent: true);
+    });
   }
 
   @override
   void dispose() {
+    _fcmSubscription?.cancel();
     _pollTimer?.cancel();
     super.dispose();
   }
@@ -132,15 +159,18 @@ class _RestaurantOrderTrackingScreenState
 
     result.fold(
       (Failure f) {
-        setState(() {
-          _error = f.message;
-          _loading = false;
-        });
+        if (!silent) {
+          setState(() {
+            _error = f.message;
+            _loading = false;
+          });
+        }
       },
       (FetchRestaurantOrderTrackingModel r) {
         setState(() {
           _tracking = r.data;
           _loading = false;
+          _error = null;
         });
         _syncPollTimer();
       },
@@ -156,7 +186,7 @@ class _RestaurantOrderTrackingScreenState
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: () => _fetchTracking(),
-            child:  RestaurantOrderTrackingView(
+            child: RestaurantOrderTrackingView(
               order: widget.args.order,
               tracking: _tracking,
               deliveryOrder: _deliveryOrder,
