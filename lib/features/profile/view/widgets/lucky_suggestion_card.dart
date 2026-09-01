@@ -29,6 +29,11 @@ class LuckySuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isProductSuggestion =
+        item.productsCount == 1 && item.details.trim().isNotEmpty;
+    final primaryTitle = isProductSuggestion ? item.details : item.title;
+    final secondaryTitle = isProductSuggestion ? item.title : item.details;
+
     return Material(
       color: context.onPrimary,
       borderRadius: BorderRadius.circular(18),
@@ -57,19 +62,20 @@ class LuckySuggestionCard extends StatelessWidget {
                 children: [
                   Flexible(
                     child: _SuggestionTag(
-                      label:
-                          item.badge.trim().isEmpty ? 'اقتراح' : item.badge,
+                      label: item.badge.trim().isEmpty ? 'اقتراح' : item.badge,
                       backgroundColor: const Color(0xffFFF3E8),
                       foregroundColor: const Color(0xffC75A00),
                     ),
                   ),
                   const SizedBox(width: 8),
                   _SuggestionTag(
-                    label: '${item.productsCount} منتجات',
+                    label: isProductSuggestion
+                        ? 'منتج مقترح'
+                        : '${item.productsCount} منتجات',
                     backgroundColor: const Color(0xffF3F4F6),
                     foregroundColor: const Color(0xff4B5563),
                   ),
-                  const SizedBox(width: 8),
+                  const Spacer(),
                   Container(
                     width: 34,
                     height: 34,
@@ -100,7 +106,9 @@ class LuckySuggestionCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText.titleMedium(
-                          item.title.trim().isEmpty ? 'مطعم مقترح' : item.title,
+                          primaryTitle.trim().isEmpty
+                              ? (isProductSuggestion ? 'منتج مقترح' : 'مطعم مقترح')
+                              : primaryTitle,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xff111827),
                           textAlign: TextAlign.start,
@@ -109,9 +117,11 @@ class LuckySuggestionCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 7),
                         AppText.labelLarge(
-                          item.details.trim().isEmpty
-                              ? 'اضغط لعرض المنتجات المقترحة.'
-                              : item.details,
+                          secondaryTitle.trim().isEmpty
+                              ? (isProductSuggestion
+                                  ? 'اقتراح مناسب لمعايير صندوق الحظ.'
+                                  : 'اضغط لعرض المنتجات المقترحة.')
+                              : secondaryTitle,
                           color: const Color(0xff6B7280),
                           fontWeight: FontWeight.w500,
                           textAlign: TextAlign.start,
@@ -156,7 +166,7 @@ class LuckySuggestionCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     AppText.labelLarge(
-                      'عرض المنتجات',
+                      isProductSuggestion ? 'عرض المنتج' : 'عرض المنتجات',
                       color: context.primary,
                       fontWeight: FontWeight.w700,
                     ),
