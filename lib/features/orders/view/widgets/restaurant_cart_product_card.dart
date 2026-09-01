@@ -31,8 +31,18 @@ class RestaurantCartProductCard extends StatefulWidget {
 
 class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
   double get _displayTotalPrice {
-    final calculated = widget.item.unitPrice * widget.item.quantity;
-    return calculated > 0 ? calculated : widget.item.totalPrice;
+    if (widget.item.totalPrice >= 0) return widget.item.totalPrice;
+    return widget.item.unitPrice * widget.item.quantity;
+  }
+
+  double? get _originalTotalPrice {
+    final direct = widget.item.originalTotalPrice;
+    final calculated = widget.item.originalUnitPrice == null
+        ? null
+        : widget.item.originalUnitPrice! * widget.item.quantity;
+    final original = direct ?? calculated;
+    if (original == null || original <= _displayTotalPrice) return null;
+    return original;
   }
 
   void _updateQuantity(int quantity) {
@@ -57,6 +67,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
 
   @override
   Widget build(BuildContext context) {
+    final originalTotal = _originalTotalPrice;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -94,6 +105,21 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                       fontWeight: FontWeight.w400,
                       color: const Color(0xff6B7280),
                     ),
+                    if (originalTotal != null) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffECFDF5),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: AppText.labelMedium(
+                          'وفر ${(originalTotal - _displayTotalPrice).formatMoney()}',
+                          color: const Color(0xff059669),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -139,10 +165,28 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                   ],
                 ),
               ),
-              AppText.bodyLarge(
-                _displayTotalPrice.formatMoney(),
-                fontWeight: FontWeight.bold,
-                color: const Color(0xff1A237E),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (originalTotal != null)
+                    Text(
+                      originalTotal.formatMoney(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xff9CA3AF),
+                        decoration: TextDecoration.lineThrough,
+                        decorationThickness: 1.5,
+                      ),
+                    ),
+                  AppText.bodyLarge(
+                    _displayTotalPrice.formatMoney(),
+                    fontWeight: FontWeight.bold,
+                    color: originalTotal != null
+                        ? const Color(0xff059669)
+                        : const Color(0xff1A237E),
+                  ),
+                ],
               ),
             ],
           ),
