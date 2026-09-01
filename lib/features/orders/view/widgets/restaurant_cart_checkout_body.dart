@@ -60,7 +60,6 @@ class RestaurantCartCheckoutBody extends StatelessWidget {
                   money: _money,
                 ),
               ),
-              const RestaurantCartAddMoreProductsButton(),
             ],
           ),
         );
@@ -79,11 +78,6 @@ class _MerchantCartCard extends StatelessWidget {
   final RestaurantCartDataModel cart;
   final bool isMutating;
   final String Function(double value) money;
-
-  double get _itemsSubtotal => cart.items.fold<double>(0, (sum, item) {
-    final calculated = item.unitPrice * item.quantity;
-    return sum + (calculated > 0 ? calculated : item.totalPrice);
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +139,8 @@ class _MerchantCartCard extends StatelessWidget {
             discount: discount,
             total: total,
           ),
+          const SizedBox(height: 10),
+          RestaurantCartAddMoreProductsButton(merchant: cart.merchant),
           const SizedBox(height: 10),
           RestaurantCartCheckoutFulfillmentButton(
             onTap: cartId == null
