@@ -159,6 +159,19 @@ class LuckBoxRestaurantModel {
       bannerImageUrl: _lbAsString(json['bannerImageUrl']),
     );
   }
+
+  LuckBoxRestaurantModel copyWith({
+    String? name,
+    String? primaryImageUrl,
+  }) {
+    return LuckBoxRestaurantModel(
+      id: id,
+      name: name ?? this.name,
+      slug: slug,
+      primaryImageUrl: primaryImageUrl ?? this.primaryImageUrl,
+      bannerImageUrl: bannerImageUrl,
+    );
+  }
 }
 
 class LuckBoxLineItemModel {
@@ -236,6 +249,31 @@ class LuckBoxBundleModel {
           : const [],
     );
   }
+
+  List<LuckBoxBundleModel> toProductLevelSuggestions() {
+    if (lineItems.isEmpty) return const [];
+    final restaurantName = restaurant?.name ?? '';
+    return lineItems
+        .where((item) => (item.productId ?? 0) > 0)
+        .map((item) {
+          final quantity = item.quantity ?? 1;
+          final total = item.lineTotal ?? ((item.unitPrice ?? 0) * quantity);
+          return LuckBoxBundleModel(
+            label: label,
+            labelAr: labelAr,
+            restaurant: (restaurant ?? const LuckBoxRestaurantModel()).copyWith(
+              name: item.name?.trim().isNotEmpty == true ? item.name : 'منتج مقترح',
+              primaryImageUrl: item.imageUrl,
+            ),
+            totalProducts: 1,
+            itemsDescription: restaurantName.isEmpty ? 'اقتراح منتج مناسب لك' : 'من $restaurantName',
+            totalPrice: total,
+            estimatedMinutes: estimatedMinutes,
+            lineItems: [item],
+          );
+        })
+        .toList();
+  }
 }
 
 class LuckBoxSuggestResponseModel {
@@ -249,22 +287,28 @@ class LuckBoxSuggestResponseModel {
 
   factory LuckBoxSuggestResponseModel.fromJson(Map<String, dynamic> json) {
     final payload = _unwrapPayload(json);
+    final rawBundles = payload['bundles'] is List
+        ? (payload['bundles'] as List)
+            .whereType<Map>()
+            .map(
+              (e) => LuckBoxBundleModel.fromJson(
+                Map<String, dynamic>.from(e),
+              ),
+            )
+            .toList()
+        : const <LuckBoxBundleModel>[];
+
+    final productBundles = rawBundles
+        .expand((bundle) => bundle.toProductLevelSuggestions())
+        .toList();
+
     return LuckBoxSuggestResponseModel(
       budget: payload['budget'] is Map
           ? LuckBoxBudgetModel.fromJson(
               Map<String, dynamic>.from(payload['budget'] as Map),
             )
           : null,
-      bundles: payload['bundles'] is List
-          ? (payload['bundles'] as List)
-              .whereType<Map>()
-              .map(
-                (e) => LuckBoxBundleModel.fromJson(
-                  Map<String, dynamic>.from(e),
-                ),
-              )
-              .toList()
-          : const [],
+      bundles: productBundles,
     );
   }
 }
