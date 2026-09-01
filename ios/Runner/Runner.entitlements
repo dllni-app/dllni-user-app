@@ -5,6 +5,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:alnadha.net</string>
+		<string>applinks:dllni.mustafafares.com</string>
 	</array>
 </dict>
 </plist>
