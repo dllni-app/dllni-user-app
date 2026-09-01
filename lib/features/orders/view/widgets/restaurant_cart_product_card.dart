@@ -30,9 +30,17 @@ class RestaurantCartProductCard extends StatefulWidget {
 }
 
 class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
-  double get _displayTotalPrice {
-    final calculated = widget.item.unitPrice * widget.item.quantity;
-    return calculated > 0 ? calculated : widget.item.totalPrice;
+  double get _displayTotalPrice => widget.item.totalPrice >= 0
+      ? widget.item.totalPrice
+      : widget.item.unitPrice * widget.item.quantity;
+
+  double? get _originalTotalPrice {
+    final original = widget.item.originalTotalPrice ??
+        (widget.item.originalUnitPrice == null
+            ? null
+            : widget.item.originalUnitPrice! * widget.item.quantity);
+    if (original == null || original <= _displayTotalPrice) return null;
+    return original;
   }
 
   void _updateQuantity(int quantity) {
@@ -57,6 +65,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
 
   @override
   Widget build(BuildContext context) {
+    final originalTotal = _originalTotalPrice;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -97,10 +106,33 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    AppText.bodyMedium(
-                      widget.item.totalPrice.formatMoney(),
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xff1A237E),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (originalTotal != null)
+                          Text(
+                            originalTotal.formatMoney(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xff9CA3AF),
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        AppText.bodyMedium(
+                          _displayTotalPrice.formatMoney(),
+                          fontWeight: FontWeight.bold,
+                          color: originalTotal != null
+                              ? const Color(0xff059669)
+                              : const Color(0xff1A237E),
+                        ),
+                        if (originalTotal != null)
+                          AppText.labelMedium(
+                            'وفر ${(originalTotal - _displayTotalPrice).formatMoney()}',
+                            color: const Color(0xff059669),
+                            fontWeight: FontWeight.w700,
+                          ),
+                      ],
                     ),
                     const Spacer(),
                     Container(
@@ -122,9 +154,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                             visualDensity: VisualDensity.compact,
                             onPressed: widget.isMutating
                                 ? null
-                                : () => _updateQuantity(
-                                      widget.item.quantity + 1,
-                                    ),
+                                : () => _updateQuantity(widget.item.quantity + 1),
                             icon: const Icon(
                               Icons.add,
                               color: Color(0xff1A237E),
@@ -143,12 +173,9 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                             ),
                             padding: EdgeInsets.zero,
                             visualDensity: VisualDensity.compact,
-                            onPressed:
-                                widget.isMutating || widget.item.quantity <= 1
-                                    ? null
-                                    : () => _updateQuantity(
-                                          widget.item.quantity - 1,
-                                        ),
+                            onPressed: widget.isMutating || widget.item.quantity <= 1
+                                ? null
+                                : () => _updateQuantity(widget.item.quantity - 1),
                             icon: const Icon(
                               Icons.remove,
                               color: Color(0xff1A237E),
