@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/search_with_type_dropdown.dart';
+import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 import '../../../sm_discover/view/widgets/smart_search_sheet.dart';
 import '../manager/bloc/rs_discover_bloc.dart';
 import 'rs_main_discover_view.dart';
@@ -41,6 +42,13 @@ class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
         : 1;
   }
 
+  void _openRestaurantCart() {
+    context.pushRoute(
+      '/cart',
+      arguments: SmCartScreenParams(initialSectionIndex: 1),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -50,6 +58,12 @@ class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
         backgroundColor: _selectedView == 0
             ? const Color(0xFFF9FAFB)
             : const Color(0xFFEFEFEF),
+        floatingActionButton: FloatingActionButton.extended(
+          heroTag: 'restaurant_discover_cart',
+          onPressed: _openRestaurantCart,
+          icon: const Icon(Icons.shopping_cart_outlined),
+          label: const Text('السلة'),
+        ),
         body: PopScope(
           canPop: _selectedView == 0,
           onPopInvokedWithResult: (didPop, result) {
