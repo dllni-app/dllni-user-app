@@ -40,9 +40,6 @@ on:
       - 'test/features/orders/data/models/cleaning_booking_schedule_model_test.dart'
       - '.github/workflows/cleaning-suite.yml'
 
-permissions:
-  contents: write
-
 jobs:
   multi-day-event:
     runs-on: ubuntu-latest
@@ -61,51 +58,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Apply multi-day lint and minimum-date fixes
-        if: github.event_name == 'push'
-        shell: bash
+      - name: Check formatting
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          schedule_path = Path('lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart')
-          text = schedule_path.read_text()
-          text = text.replace("import '../../data/models/estimate_price_response_model.dart';\n", '')
-          text = text.replace(
-              "  DateTime get _today {\n    final now = DateTime.now();\n    return DateTime(now.year, now.month, now.day);\n  }",
-              "  DateTime get _minimumDate => CleaningScheduleDateTimeLogic.tomorrowDate();",
-          )
-          text = text.replace('_today', '_minimumDate')
-          text = text.replace(
-              "    );\n    if (value.isEmpty) return;\n    final date = CleaningScheduleDateTimeLogic.parseDateApi(value);",
-              "    );\n    if (!mounted) return;\n    if (value.isEmpty) return;\n    final date = CleaningScheduleDateTimeLogic.parseDateApi(value);",
-              1,
-          )
-          text = text.replace(
-              "    );\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;\n    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);",
-              "    );\n    if (!mounted) return;\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;\n    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);",
-              1,
-          )
-          text = text.replace(
-              "    final value = await AppPickers.showAppTimePicker(context: context);\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;",
-              "    final value = await AppPickers.showAppTimePicker(context: context);\n    if (!mounted) return;\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;",
-              1,
-          )
-          text = text.replace(
-              "يجب أن يكون اليوم أو في المستقبل",
-              "يجب أن يكون غداً أو بعده",
-          )
-          schedule_path.write_text(text)
-
-          details_path = Path('lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart')
-          details = details_path.read_text()
-          details = details.replace('      return const ListView(\n        physics: AlwaysScrollableScrollPhysics(),', '      return ListView(\n        physics: const AlwaysScrollableScrollPhysics(),', 1)
-          details_path.write_text(details)
-          PY
-
-      - name: Format multi-day event sources
-        run: |
-          dart format \
+          dart format --output=none --set-exit-if-changed \
             lib/core/di/injection.dart \
             lib/features/cl_main/data/models/estimate_price_response_model.dart \
             lib/features/cl_main/domain/models/cleaning_event_session.dart \
@@ -121,34 +76,6 @@ jobs:
             test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart \
             test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart \
             test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
-
-      - name: Commit formatter output
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          git add \
-            lib/core/di/injection.dart \
-            lib/features/cl_main/data/models/estimate_price_response_model.dart \
-            lib/features/cl_main/domain/models/cleaning_event_session.dart \
-            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
-            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
-            lib/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart \
-            lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart \
-            lib/features/cl_main/view/widgets/cl_service_order_summary_section_widget.dart \
-            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
-            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
-            lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
-            test/features/cl_main/data/models/estimate_price_response_model_test.dart \
-            test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart \
-            test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart \
-            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix(cleaning): finalize multi-day event UI checks'
-          git push
 
       - name: Analyze multi-day event sources
         run: |
