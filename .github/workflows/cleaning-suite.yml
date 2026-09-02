@@ -22,6 +22,9 @@ on:
       - 'test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart'
       - '.github/workflows/cleaning-suite.yml'
 
+permissions:
+  contents: write
+
 jobs:
   multi-day-event:
     runs-on: ubuntu-latest
@@ -40,14 +43,32 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Check formatting
+      - name: Format multi-day event sources
         run: |
-          dart format --output=none --set-exit-if-changed \
+          dart format \
             lib/features/cl_main/data/models/estimate_price_response_model.dart \
             lib/features/cl_main/domain/models/cleaning_event_session.dart \
             lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
             lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
             test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart
+
+      - name: Commit formatter output
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git add \
+            lib/features/cl_main/data/models/estimate_price_response_model.dart \
+            lib/features/cl_main/domain/models/cleaning_event_session.dart \
+            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
+            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
+            test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'style(cleaning): format user multi-day sources'
+          git push
 
       - name: Analyze multi-day event sources
         run: |
