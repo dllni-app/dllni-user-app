@@ -257,7 +257,6 @@ class CreateCleaningOrderParams with Params {
       'propertyDetails': _buildPropertyDetails(),
       'scheduledDate': _resolvedScheduledDate,
       'scheduledTime': _resolvedScheduledTime,
-      if (schedule != null) 'schedule': schedule,
       if (addressId <= 0 && addressLatitude != null)
         'addressLatitude': addressLatitude,
       if (addressId <= 0 && addressLongitude != null)
@@ -276,15 +275,21 @@ class CreateCleaningOrderParams with Params {
         effectiveAssignmentMode,
       ),
     };
+    if (schedule != null) {
+      body['schedule'] = schedule;
+    }
     if (!_isEventAssistance) {
       final cleanServices = _sanitizeCleaningServices();
-      if (cleanServices.isNotEmpty) body['cleaning_services'] = cleanServices;
+      if (cleanServices.isNotEmpty) {
+        body['cleaning_services'] = cleanServices;
+      }
     }
     final assignments = workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
-    if (assignments != null && assignments.isNotEmpty)
+    if (assignments != null && assignments.isNotEmpty) {
       body['workerRoomAssignments'] = assignments;
+    }
     return body;
   }
 }
