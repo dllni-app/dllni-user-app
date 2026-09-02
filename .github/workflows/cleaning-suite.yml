@@ -61,6 +61,48 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Apply multi-day lint and minimum-date fixes
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          schedule_path = Path('lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart')
+          text = schedule_path.read_text()
+          text = text.replace("import '../../data/models/estimate_price_response_model.dart';\n", '')
+          text = text.replace(
+              "  DateTime get _today {\n    final now = DateTime.now();\n    return DateTime(now.year, now.month, now.day);\n  }",
+              "  DateTime get _minimumDate => CleaningScheduleDateTimeLogic.tomorrowDate();",
+          )
+          text = text.replace('_today', '_minimumDate')
+          text = text.replace(
+              "    );\n    if (value.isEmpty) return;\n    final date = CleaningScheduleDateTimeLogic.parseDateApi(value);",
+              "    );\n    if (!mounted) return;\n    if (value.isEmpty) return;\n    final date = CleaningScheduleDateTimeLogic.parseDateApi(value);",
+              1,
+          )
+          text = text.replace(
+              "    );\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;\n    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);",
+              "    );\n    if (!mounted) return;\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;\n    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);",
+              1,
+          )
+          text = text.replace(
+              "    final value = await AppPickers.showAppTimePicker(context: context);\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;",
+              "    final value = await AppPickers.showAppTimePicker(context: context);\n    if (!mounted) return;\n    if (value.isEmpty || index < 0 || index >= _sessions.length) return;",
+              1,
+          )
+          text = text.replace(
+              "يجب أن يكون اليوم أو في المستقبل",
+              "يجب أن يكون غداً أو بعده",
+          )
+          schedule_path.write_text(text)
+
+          details_path = Path('lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart')
+          details = details_path.read_text()
+          details = details.replace('      return const ListView(\n        physics: AlwaysScrollableScrollPhysics(),', '      return ListView(\n        physics: const AlwaysScrollableScrollPhysics(),', 1)
+          details_path.write_text(details)
+          PY
+
       - name: Format multi-day event sources
         run: |
           dart format \
@@ -105,7 +147,7 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'style(cleaning): format multi-day event UI sources'
+          git commit -m 'fix(cleaning): finalize multi-day event UI checks'
           git push
 
       - name: Analyze multi-day event sources
