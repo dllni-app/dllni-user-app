@@ -203,7 +203,6 @@ class EstimateCleaningPriceParams with Params {
       'propertyType': propertyType,
       if (hasAddressId) 'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
-      if (schedule != null) 'schedule': schedule,
       if (!hasAddressId && addressLatitude != null)
         'addressLatitude': addressLatitude,
       if (!hasAddressId && addressLongitude != null)
@@ -215,6 +214,9 @@ class EstimateCleaningPriceParams with Params {
         effectiveAssignmentMode,
       ),
     };
+    if (schedule != null) {
+      body['schedule'] = schedule;
+    }
 
     final assignments = workerRoomAssignments == null
         ? null
