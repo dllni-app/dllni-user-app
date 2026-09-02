@@ -13,7 +13,6 @@ import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../orders/view/screens/cleaning_order_details_screen.dart';
 import '../../../orders/view/screens/multi_day_cleaning_order_details_screen.dart';
 import '../../../profile/domain/models/address_list_item.dart';
-import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_event_session.dart';
 import '../../domain/repository/cl_main_repo.dart';
@@ -109,10 +108,7 @@ class _ClMainOccasionScheduleScreenState
   _EventSessionDraft? get _lastSession =>
       _sessions.isEmpty ? null : _sessions.last;
 
-  DateTime get _today {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
-  }
+  DateTime get _minimumDate => CleaningScheduleDateTimeLogic.tomorrowDate();
 
   @override
   Widget build(BuildContext context) {
@@ -486,7 +482,7 @@ class _ClMainOccasionScheduleScreenState
       _selectedAddress.value = args.defaultAddress;
       _sessions.add(
         _EventSessionDraft(
-          date: _today,
+          date: _minimumDate,
           time: '09:00',
           hours: args.hours >= 1 ? args.hours : 4,
         ),
@@ -567,13 +563,14 @@ class _ClMainOccasionScheduleScreenState
 
   Future<void> _addSessionDate() async {
     if (_sessions.length >= 31) return;
-    final startDate = _today;
+    final startDate = _minimumDate;
     final initialDate = _lastSession?.date ?? startDate;
     final value = await AppPickers.showAppDatePicker(
       context: context,
       startDate: startDate,
       initialDate: initialDate.isBefore(startDate) ? startDate : initialDate,
     );
+    if (!mounted) return;
     if (value.isEmpty) return;
     final date = CleaningScheduleDateTimeLogic.parseDateApi(value);
     if (date == null) return;
@@ -607,14 +604,15 @@ class _ClMainOccasionScheduleScreenState
   Future<void> _pickSessionDate(int index) async {
     if (index < 0 || index >= _sessions.length) return;
     final currentSession = _sessions[index];
-    final initialDate = currentSession.date.isBefore(_today)
-        ? _today
+    final initialDate = currentSession.date.isBefore(_minimumDate)
+        ? _minimumDate
         : currentSession.date;
     final value = await AppPickers.showAppDatePicker(
       context: context,
-      startDate: _today,
+      startDate: _minimumDate,
       initialDate: initialDate,
     );
+    if (!mounted) return;
     if (value.isEmpty || index < 0 || index >= _sessions.length) return;
     final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);
     if (selectedDate == null) return;
@@ -643,6 +641,7 @@ class _ClMainOccasionScheduleScreenState
 
   Future<void> _pickSessionTime(int index) async {
     final value = await AppPickers.showAppTimePicker(context: context);
+    if (!mounted) return;
     if (value.isEmpty || index < 0 || index >= _sessions.length) return;
     final normalized = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
     final session = _sessions[index];
@@ -987,8 +986,8 @@ class _ClMainOccasionScheduleScreenState
     final seenSlots = <String>{};
     for (var index = 0; index < _sessions.length; index++) {
       final session = _sessions[index];
-      if (session.date.isBefore(_today)) {
-        return 'تاريخ يوم العمل ${index + 1} يجب أن يكون اليوم أو في المستقبل';
+      if (session.date.isBefore(_minimumDate)) {
+        return 'تاريخ يوم العمل ${index + 1} يجب أن يكون غداً أو بعده';
       }
       final key = _slotKey(session.date, session.time);
       if (!seenSlots.add(key)) {

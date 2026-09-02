@@ -71,8 +71,8 @@ class _MultiDayCleaningOrderDetailsScreenState
 
   Widget _buildBody() {
     if (_loading) {
-      return const ListView(
-        physics: AlwaysScrollableScrollPhysics(),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(height: 220),
           Center(child: CircularProgressIndicator.adaptive()),
