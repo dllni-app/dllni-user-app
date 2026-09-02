@@ -64,14 +64,8 @@ class _MultiDayCleaningOrderDetailsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
-      appBar: AppBar(
-        title: const Text('تفاصيل المناسبة'),
-        centerTitle: true,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: _buildBody(),
-      ),
+      appBar: AppBar(title: const Text('تفاصيل المناسبة'), centerTitle: true),
+      body: RefreshIndicator(onRefresh: _load, child: _buildBody()),
     );
   }
 
@@ -167,7 +161,8 @@ class _MultiDayCleaningOrderDetailsScreenState
               const SizedBox(height: 8),
               _infoRow(
                 'إجمالي الطلب',
-                '${_money(_envelope!.totalPrice!)} ${_envelope?.currency ?? ''}'.trim(),
+                '${_money(_envelope!.totalPrice!)} ${_envelope?.currency ?? ''}'
+                    .trim(),
               ),
             ],
           ],
@@ -238,7 +233,8 @@ class _MultiDayCleaningOrderDetailsScreenState
           const SizedBox(height: 7),
           _infoRow(
             'سعر الجلسة',
-            '${_money(session.pricing!.totalPrice!)} ${session.pricing?.currency ?? _envelope?.currency ?? ''}'.trim(),
+            '${_money(session.pricing!.totalPrice!)} ${session.pricing?.currency ?? _envelope?.currency ?? ''}'
+                .trim(),
           ),
         ],
         if (session.isCancelled &&

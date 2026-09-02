@@ -29,11 +29,7 @@ void main() {
     final model = EstimatePriceResponseModel.fromJson({
       'requiredWorkers': 2,
       'maxHoursPerWorker': 8,
-      'size': {
-        'estimatedSqm': 120,
-        'estimatedHours': 13,
-        'sizeTier': 'large',
-      },
+      'size': {'estimatedSqm': 120, 'estimatedHours': 13, 'sizeTier': 'large'},
     });
 
     expect(model.requiredWorkers, 2);
@@ -43,10 +39,7 @@ void main() {
 
   test('EstimatePriceResponseModel parses nested capacity fields', () {
     final model = EstimatePriceResponseModel.fromJson({
-      'estimation': {
-        'requiredWorkers': 3,
-        'maxHoursPerWorker': 8,
-      },
+      'estimation': {'requiredWorkers': 3, 'maxHoursPerWorker': 8},
     });
 
     expect(model.requiredWorkers, 3);

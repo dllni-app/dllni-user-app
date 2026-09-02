@@ -24,10 +24,10 @@ void main() {
   });
 
   test('getParams omits optional filters when null or empty', () {
-    expect(
-      GetPreviousCleaningWorkersParams(page: 1).getParams(),
-      {'page': 1, 'per_page': 10},
-    );
+    expect(GetPreviousCleaningWorkersParams(page: 1).getParams(), {
+      'page': 1,
+      'per_page': 10,
+    });
     expect(
       GetPreviousCleaningWorkersParams(
         page: 1,

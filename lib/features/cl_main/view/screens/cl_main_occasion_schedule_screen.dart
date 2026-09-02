@@ -196,9 +196,8 @@ class _ClMainOccasionScheduleScreenState
                 if (_isMultiDay) {
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute<void>(
-                      builder: (_) => MultiDayCleaningOrderDetailsScreen(
-                        orderId: orderId,
-                      ),
+                      builder: (_) =>
+                          MultiDayCleaningOrderDetailsScreen(orderId: orderId),
                     ),
                     (route) => route.settings.name == '/clmain',
                   );
@@ -310,7 +309,10 @@ class _ClMainOccasionScheduleScreenState
                             ClServiceGenderPreferenceSectionWidget(
                               selectedPreference: state.genderPreference,
                               onChanged: (preference) {
-                                _handleGenderPreferenceChanged(bloc, preference);
+                                _handleGenderPreferenceChanged(
+                                  bloc,
+                                  preference,
+                                );
                               },
                             ),
                             const SizedBox(height: 10),
@@ -320,9 +322,11 @@ class _ClMainOccasionScheduleScreenState
                                 state.genderPreference,
                               ),
                               selectedWorkerIds: state.selectedWorkerIds,
-                              isLoading: state.previousWorkersStatus ==
+                              isLoading:
+                                  state.previousWorkersStatus ==
                                   BlocStatus.loading,
-                              errorMessage: state.previousWorkersStatus ==
+                              errorMessage:
+                                  state.previousWorkersStatus ==
                                       BlocStatus.failed
                                   ? state.errorMessage
                                   : null,
@@ -348,8 +352,8 @@ class _ClMainOccasionScheduleScreenState
                                   '/clworkerprofiledetail',
                                   arguments:
                                       WorkerProfileRouteArgs.fromPreviousWorker(
-                                    worker,
-                                  ),
+                                        worker,
+                                      ),
                                 );
                               },
                             ),
@@ -677,8 +681,9 @@ class _ClMainOccasionScheduleScreenState
                 title: const Text('مدة الخدمة لهذا اليوم'),
                 content: TextField(
                   controller: controller,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(
                       RegExp(r'^\d{0,2}(\.\d{0,2})?'),
@@ -774,7 +779,9 @@ class _ClMainOccasionScheduleScreenState
           page: 1,
           perPage: 20,
           propertyType: 'event_assistance',
-          scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(first.date),
+          scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+            first.date,
+          ),
           scheduledTime: first.time,
           durationHours: first.hours,
           eventSessions: _eventSessionInputs,
@@ -795,10 +802,7 @@ class _ClMainOccasionScheduleScreenState
 
     if (preference != CleaningGenderPreference.female) {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
-      _requestUpdatedEstimate(
-        bloc.state,
-        selectedWorkerIds: selectedWorkerIds,
-      );
+      _requestUpdatedEstimate(bloc.state, selectedWorkerIds: selectedWorkerIds);
       return;
     }
 
@@ -1004,17 +1008,17 @@ class _ClMainOccasionScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تعذر تجهيز بيانات الطلب')));
       return;
     }
 
     final scheduleError = _validateSchedule();
     if (scheduleError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(scheduleError)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(scheduleError)));
       return;
     }
 
@@ -1062,7 +1066,9 @@ class _ClMainOccasionScheduleScreenState
           eventSessions: _eventSessionInputs,
           address: selectedAddress.line1,
           locationName: selectedAddress.label,
-          scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(first.date),
+          scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+            first.date,
+          ),
           scheduledTime: first.time,
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
@@ -1162,10 +1168,8 @@ class _EventSessionDraft {
     required this.hours,
   });
 
-  String get endTime => formatClServiceEndTime(
-    startTime: time,
-    durationHours: hours,
-  );
+  String get endTime =>
+      formatClServiceEndTime(startTime: time, durationHours: hours);
 }
 
 class _EventSessionCard extends StatelessWidget {

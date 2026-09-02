@@ -3,10 +3,7 @@ import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
 class ClServiceScheduleEntry {
-  const ClServiceScheduleEntry({
-    required this.dayDate,
-    required this.time,
-  });
+  const ClServiceScheduleEntry({required this.dayDate, required this.time});
 
   final String dayDate;
   final String time;

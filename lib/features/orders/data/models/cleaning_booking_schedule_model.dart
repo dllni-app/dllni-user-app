@@ -80,9 +80,7 @@ class CleaningSessionPricingModel {
         json['cancellationFee'] ?? json['cancellation_fee'],
       ),
       totalPrice: _double(json['totalPrice'] ?? json['total_price']),
-      isPricingFinal: _bool(
-        json['isPricingFinal'] ?? json['is_pricing_final'],
-      ),
+      isPricingFinal: _bool(json['isPricingFinal'] ?? json['is_pricing_final']),
       currency: _string(json['currency']),
     );
   }
@@ -234,7 +232,8 @@ class CleaningBookingSessionModel {
   });
 
   factory CleaningBookingSessionModel.fromJson(Map<String, dynamic> json) {
-    final rawAssignments = json['workerAssignments'] ?? json['worker_assignments'];
+    final rawAssignments =
+        json['workerAssignments'] ?? json['worker_assignments'];
     final rawAssignmentState =
         json['workerAssignmentState'] ?? json['worker_assignment_state'];
 
@@ -243,7 +242,8 @@ class CleaningBookingSessionModel {
       sequence: _int(json['sequence']) ?? 1,
       date: DateTime.tryParse(_string(json['date']) ?? ''),
       time: _string(json['time']),
-      hours: _double(
+      hours:
+          _double(
             json['hours'] ?? json['durationHours'] ?? json['duration_hours'],
           ) ??
           0,
@@ -251,12 +251,11 @@ class CleaningBookingSessionModel {
       statusLabel: _string(json['statusLabel'] ?? json['status_label']),
       isPast: _bool(json['isPast'] ?? json['is_past']) ?? false,
       isToday: _bool(json['isToday'] ?? json['is_today']) ?? false,
-      canStartTravel: _bool(
-            json['canStartTravel'] ?? json['can_start_travel'],
-          ) ??
-          false,
+      canStartTravel:
+          _bool(json['canStartTravel'] ?? json['can_start_travel']) ?? false,
       canArrive: _bool(json['canArrive'] ?? json['can_arrive']) ?? false,
-      canStartWork: _bool(json['canStartWork'] ?? json['can_start_work']) ??
+      canStartWork:
+          _bool(json['canStartWork'] ?? json['can_start_work']) ??
           _bool(json['canStart'] ?? json['can_start']) ??
           false,
       canComplete: _bool(json['canComplete'] ?? json['can_complete']) ?? false,
@@ -274,7 +273,9 @@ class CleaningBookingSessionModel {
         json['customerConfirmedAt'] ?? json['customer_confirmed_at'],
       ),
       workStartedAt: _string(json['workStartedAt'] ?? json['work_started_at']),
-      workFinishedAt: _string(json['workFinishedAt'] ?? json['work_finished_at']),
+      workFinishedAt: _string(
+        json['workFinishedAt'] ?? json['work_finished_at'],
+      ),
       cancelledAt: _string(json['cancelledAt'] ?? json['cancelled_at']),
       cancellationReason: _string(
         json['cancellationReason'] ?? json['cancellation_reason'],
@@ -289,13 +290,12 @@ class CleaningBookingSessionModel {
           : null,
       workerAssignments: rawAssignments is List
           ? rawAssignments
-              .whereType<Map>()
-              .map(
-                (item) => CleaningSessionWorkerAssignmentModel.fromJson(
-                  _map(item),
-                ),
-              )
-              .toList(growable: false)
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      CleaningSessionWorkerAssignmentModel.fromJson(_map(item)),
+                )
+                .toList(growable: false)
           : const <CleaningSessionWorkerAssignmentModel>[],
     );
   }
@@ -303,9 +303,12 @@ class CleaningBookingSessionModel {
   bool get canStart => canStartWork || canStartTravel;
   bool get isCompleted => status == 'completed';
   bool get isCancelled => status == 'cancelled';
-  bool get isTerminal => isCompleted || isCancelled || status == 'under_dispute';
-  bool get isAwaitingStartVerification => status == 'awaiting_start_verification';
-  bool get isAwaitingCustomerCompletion => status == 'awaiting_customer_completion';
+  bool get isTerminal =>
+      isCompleted || isCancelled || status == 'under_dispute';
+  bool get isAwaitingStartVerification =>
+      status == 'awaiting_start_verification';
+  bool get isAwaitingCustomerCompletion =>
+      status == 'awaiting_customer_completion';
   bool get isInProgress => status == 'in_progress';
   bool get isExtensionPending => status == 'time_extension_requested';
 
@@ -353,29 +356,29 @@ class CleaningBookingScheduleModel {
     final rawSessions = json['sessions'];
     final sessions = rawSessions is List
         ? rawSessions
-            .whereType<Map>()
-            .map((item) => CleaningBookingSessionModel.fromJson(_map(item)))
-            .toList(growable: false)
+              .whereType<Map>()
+              .map((item) => CleaningBookingSessionModel.fromJson(_map(item)))
+              .toList(growable: false)
         : const <CleaningBookingSessionModel>[];
     final rawNext = json['nextSession'] ?? json['next_session'];
 
     return CleaningBookingScheduleModel(
-      mode: _string(json['mode']) ??
+      mode:
+          _string(json['mode']) ??
           (sessions.length > 1 ? 'multi_day' : 'single_day'),
-      daysCount: _int(json['daysCount'] ?? json['days_count']) ?? sessions.length,
-      completedDaysCount: _int(
-            json['completedDaysCount'] ?? json['completed_days_count'],
-          ) ??
+      daysCount:
+          _int(json['daysCount'] ?? json['days_count']) ?? sessions.length,
+      completedDaysCount:
+          _int(json['completedDaysCount'] ?? json['completed_days_count']) ??
           sessions.where((item) => item.isCompleted).length,
-      cancelledDaysCount: _int(
-            json['cancelledDaysCount'] ?? json['cancelled_days_count'],
-          ) ??
+      cancelledDaysCount:
+          _int(json['cancelledDaysCount'] ?? json['cancelled_days_count']) ??
           sessions.where((item) => item.isCancelled).length,
-      remainingDaysCount: _int(
-            json['remainingDaysCount'] ?? json['remaining_days_count'],
-          ) ??
+      remainingDaysCount:
+          _int(json['remainingDaysCount'] ?? json['remaining_days_count']) ??
           sessions.where((item) => !item.isTerminal).length,
-      totalHours: _double(json['totalHours'] ?? json['total_hours']) ??
+      totalHours:
+          _double(json['totalHours'] ?? json['total_hours']) ??
           sessions
               .where((item) => !item.isCancelled)
               .fold<double>(0, (sum, item) => sum + item.hours),
@@ -430,9 +433,7 @@ class CleaningMultiDayOrderEnvelope {
 
     return CleaningMultiDayOrderEnvelope(
       bookingId: _int(order['id']),
-      bookingNumber: _string(
-        order['bookingNumber'] ?? order['booking_number'],
-      ),
+      bookingNumber: _string(order['bookingNumber'] ?? order['booking_number']),
       status: _string(order['status']),
       totalPrice: _double(order['totalPrice'] ?? order['total_price']),
       currency: _string(order['currency']),
@@ -446,7 +447,9 @@ class CleaningMultiDayOrderEnvelope {
   }
 }
 
-CleaningMultiDayOrderEnvelope cleaningMultiDayOrderEnvelopeFromJson(dynamic json) {
+CleaningMultiDayOrderEnvelope cleaningMultiDayOrderEnvelopeFromJson(
+  dynamic json,
+) {
   if (json is String) {
     final decoded = jsonDecode(json);
     return CleaningMultiDayOrderEnvelope.fromJson(_map(decoded));
