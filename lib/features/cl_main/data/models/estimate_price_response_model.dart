@@ -100,9 +100,7 @@ class EstimatePriceResponseModel {
           ? EstimateQuoteModel.fromJson(_toMap(json['quote']))
           : null,
       recommendation: json['recommendation'] is Map
-          ? EstimateRecommendationModel.fromJson(
-              _toMap(json['recommendation']),
-            )
+          ? EstimateRecommendationModel.fromJson(_toMap(json['recommendation']))
           : null,
       workerAcceptance:
           json['workerAcceptance'] is Map || json['worker_acceptance'] is Map
@@ -159,9 +157,10 @@ class EstimateScheduleModel {
     return EstimateScheduleModel(
       mode: (json['mode'] ?? (sessions.length > 1 ? 'multi_day' : 'single_day'))
           .toString(),
-      daysCount: _toInt(json['daysCount'] ?? json['days_count']) ??
-          sessions.length,
-      totalHours: _toDouble(json['totalHours'] ?? json['total_hours']) ??
+      daysCount:
+          _toInt(json['daysCount'] ?? json['days_count']) ?? sessions.length,
+      totalHours:
+          _toDouble(json['totalHours'] ?? json['total_hours']) ??
           sessions.fold<double>(0, (sum, item) => sum + item.hours),
       sessions: sessions,
     );

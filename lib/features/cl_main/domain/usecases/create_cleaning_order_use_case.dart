@@ -13,13 +13,16 @@ import '../repository/cl_main_repo.dart';
 
 @lazySingleton
 class CreateCleaningOrderUseCase
-    implements UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
+    implements
+        UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
   final ClMainRepo clMainRepo;
 
   CreateCleaningOrderUseCase({required this.clMainRepo});
 
   @override
-  DataResponse<CreateCleaningOrderResponseModel> call(CreateCleaningOrderParams params) {
+  DataResponse<CreateCleaningOrderResponseModel> call(
+    CreateCleaningOrderParams params,
+  ) {
     return clMainRepo.createCleaningOrder(params);
   }
 }
@@ -196,24 +199,32 @@ class CreateCleaningOrderParams with Params {
     return normalized;
   }
 
-  int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
+  int? get _resolvedBedrooms =>
+      roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
   int? get _resolvedRooms => roomSizeBreakdown?.legacyRoomsCount ?? rooms;
-  int? get _resolvedBathrooms => roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
-  int? get _resolvedBalconies => roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
+  int? get _resolvedBathrooms =>
+      roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
+  int? get _resolvedBalconies =>
+      roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
   String get _resolvedLivingRoomSize =>
-      roomSizeBreakdown?.legacyLivingRoomSize ?? livingRoomSize ?? CleaningRoomSize.small.apiValue;
+      roomSizeBreakdown?.legacyLivingRoomSize ??
+      livingRoomSize ??
+      CleaningRoomSize.small.apiValue;
 
   Map<String, dynamic> _buildPropertyDetails() {
     if (_isEventAssistance) {
       return {
-        if (address != null && address!.trim().isNotEmpty) 'address': address!.trim(),
-        if (locationName != null && locationName!.trim().isNotEmpty) 'location_name': locationName!.trim(),
+        if (address != null && address!.trim().isNotEmpty)
+          'address': address!.trim(),
+        if (locationName != null && locationName!.trim().isNotEmpty)
+          'location_name': locationName!.trim(),
         'eventType': eventType,
         'guestCount': guestCount,
         'venueType': venueType,
         'customService': customService?.trim(),
         'hours': _resolvedLegacyEventHours,
-        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty) 'specialRequirement': specialRequirement!.trim(),
+        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
+          'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       };
     }
@@ -225,8 +236,10 @@ class CreateCleaningOrderParams with Params {
       'bathrooms': _resolvedBathrooms,
       if (_resolvedBalconies != null) 'balconies': _resolvedBalconies,
       'living_room_size': _resolvedLivingRoomSize,
-      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
-      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (roomSizeBreakdown != null)
+        'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
+      if (cleaningType != null)
+        'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
@@ -245,15 +258,19 @@ class CreateCleaningOrderParams with Params {
       'scheduledDate': _resolvedScheduledDate,
       'scheduledTime': _resolvedScheduledTime,
       if (schedule != null) 'schedule': schedule,
-      if (addressId <= 0 && addressLatitude != null) 'addressLatitude': addressLatitude,
-      if (addressId <= 0 && addressLongitude != null) 'addressLongitude': addressLongitude,
+      if (addressId <= 0 && addressLatitude != null)
+        'addressLatitude': addressLatitude,
+      if (addressId <= 0 && addressLongitude != null)
+        'addressLongitude': addressLongitude,
       'genderPreference': genderPreference.apiValue,
-      if (genderPreference == CleaningGenderPreference.female && workEnvironmentConfirmation != null)
+      if (genderPreference == CleaningGenderPreference.female &&
+          workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
       'assignmentMode': effectiveAssignmentMode.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
-      if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty) 'couponCode': normalizedCouponCode,
+      if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty)
+        'couponCode': normalizedCouponCode,
       'numberOfWorkers': _resolvedNumberOfWorkers(
         workerIds,
         effectiveAssignmentMode,
@@ -266,7 +283,8 @@ class CreateCleaningOrderParams with Params {
     final assignments = workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
-    if (assignments != null && assignments.isNotEmpty) body['workerRoomAssignments'] = assignments;
+    if (assignments != null && assignments.isNotEmpty)
+      body['workerRoomAssignments'] = assignments;
     return body;
   }
 }

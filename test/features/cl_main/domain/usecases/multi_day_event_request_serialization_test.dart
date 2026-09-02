@@ -109,37 +109,40 @@ void main() {
     expect((estimateBody['propertyDetails'] as Map)['hours'], 4.0);
   });
 
-  test('same date with different times is serialized as multi-day sessions', () {
-    final body = CreateCleaningOrderParams.eventAssistance(
-      addressId: 18,
-      scheduledDate: '2026-09-10',
-      scheduledTime: '10:00',
-      eventType: 'birthday',
-      guestCount: 20,
-      venueType: 'villa',
-      customService: 'Event assistance',
-      hours: 5,
-      eventSessions: <CleaningEventSessionInput>[
-        CleaningEventSessionInput(
-          date: DateTime(2026, 9, 10),
-          time: '18:00',
-          hours: 3,
-        ),
-        CleaningEventSessionInput(
-          date: DateTime(2026, 9, 10),
-          time: '10:00',
-          hours: 2,
-        ),
-      ],
-    ).getBody();
+  test(
+    'same date with different times is serialized as multi-day sessions',
+    () {
+      final body = CreateCleaningOrderParams.eventAssistance(
+        addressId: 18,
+        scheduledDate: '2026-09-10',
+        scheduledTime: '10:00',
+        eventType: 'birthday',
+        guestCount: 20,
+        venueType: 'villa',
+        customService: 'Event assistance',
+        hours: 5,
+        eventSessions: <CleaningEventSessionInput>[
+          CleaningEventSessionInput(
+            date: DateTime(2026, 9, 10),
+            time: '18:00',
+            hours: 3,
+          ),
+          CleaningEventSessionInput(
+            date: DateTime(2026, 9, 10),
+            time: '10:00',
+            hours: 2,
+          ),
+        ],
+      ).getBody();
 
-    expect((body['propertyDetails'] as Map)['hours'], 2.0);
-    expect(body['schedule'], {
-      'mode': 'multi_day',
-      'sessions': [
-        {'date': '2026-09-10', 'time': '10:00', 'hours': 2.0},
-        {'date': '2026-09-10', 'time': '18:00', 'hours': 3.0},
-      ],
-    });
-  });
+      expect((body['propertyDetails'] as Map)['hours'], 2.0);
+      expect(body['schedule'], {
+        'mode': 'multi_day',
+        'sessions': [
+          {'date': '2026-09-10', 'time': '10:00', 'hours': 2.0},
+          {'date': '2026-09-10', 'time': '18:00', 'hours': 3.0},
+        ],
+      });
+    },
+  );
 }

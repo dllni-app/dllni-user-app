@@ -19,13 +19,14 @@ class CleaningEventSessionInput {
   String get slotKey => '$dateApi|$time';
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'date': dateApi,
-        'time': time,
-        'hours': hours,
-      };
+    'date': dateApi,
+    'time': time,
+    'hours': hours,
+  };
 }
 
-extension CleaningEventSessionInputListX on Iterable<CleaningEventSessionInput> {
+extension CleaningEventSessionInputListX
+    on Iterable<CleaningEventSessionInput> {
   List<CleaningEventSessionInput> get normalized {
     final items = toList(growable: false)
       ..sort((a, b) {

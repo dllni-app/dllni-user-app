@@ -13,7 +13,8 @@ export '../../data/models/estimate_price_response_model.dart';
 
 @lazySingleton
 class EstimateCleaningPriceUseCase
-    implements UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
+    implements
+        UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
   final ClMainRepo clMainRepo;
 
   EstimateCleaningPriceUseCase({required this.clMainRepo});
@@ -186,7 +187,8 @@ class EstimateCleaningPriceParams with Params {
       'living_room_size': _resolvedLivingRoomSize,
       if (roomSizeBreakdown != null)
         'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
-      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (cleaningType != null)
+        'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
