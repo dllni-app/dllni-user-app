@@ -58,14 +58,16 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     double? latitude,
     double? longitude,
   }) {
+    final data = <String, dynamic>{
+      'emergency_type': emergencyType,
+      'message': message.trim(),
+    };
+    if (latitude != null) data['latitude'] = latitude;
+    if (longitude != null) data['longitude'] = longitude;
+
     return _post(
       '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/sos',
-      data: <String, dynamic>{
-        'emergency_type': emergencyType,
-        'message': message.trim(),
-        if (latitude != null) 'latitude': latitude,
-        if (longitude != null) 'longitude': longitude,
-      },
+      data: data,
     );
   }
 
