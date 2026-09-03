@@ -2,19 +2,28 @@ import 'package:dllni_user_app/features/orders/domain/usecases/submit_cleaning_r
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('event review body omits workerId for one parent-level rating', () {
+  test('event review body sends one independent review per worker', () {
     final body = SubmitCleaningReviewParams(
       orderId: 99,
-      rating: 5,
-      comment: 'ممتاز',
+      reviews: const <CleaningWorkerReviewInput>[
+        CleaningWorkerReviewInput(
+          workerId: 7,
+          rating: 5,
+          comment: 'ممتاز',
+        ),
+        CleaningWorkerReviewInput(workerId: 9, rating: 3),
+      ],
     ).getBody();
 
-    expect(body['rating'], 5);
-    expect(body['comment'], 'ممتاز');
+    expect(body.containsKey('rating'), isFalse);
     expect(body.containsKey('workerId'), isFalse);
+    expect(body['reviews'], <Map<String, dynamic>>[
+      <String, dynamic>{'workerId': 7, 'rating': 5, 'comment': 'ممتاز'},
+      <String, dynamic>{'workerId': 9, 'rating': 3},
+    ]);
   });
 
-  test('regular worker review body keeps workerId', () {
+  test('regular worker review body keeps workerId and rating', () {
     final body = SubmitCleaningReviewParams(
       orderId: 99,
       workerId: 7,
@@ -22,5 +31,7 @@ void main() {
     ).getBody();
 
     expect(body['workerId'], 7);
+    expect(body['rating'], 4);
+    expect(body.containsKey('reviews'), isFalse);
   });
 }
