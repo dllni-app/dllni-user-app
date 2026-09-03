@@ -52,14 +52,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Normalize session SOS type
+      - name: Apply customer analyzer fixes once
         if: github.event_name == 'push'
+        shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart')
-          text = path.read_text()
-          path.write_text(text.replace("emergencyType: 'other'", "emergencyType: 'safety_threat'"))
+
+          screen = Path('lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart')
+          screen_text = screen.read_text()
+          screen_text = screen_text.replace("import 'package:flutter/services.dart';\n", '')
+          screen_text = screen_text.replace("emergencyType: 'other'", "emergencyType: 'safety_threat'")
+          screen.write_text(screen_text)
+
+          source = Path('lib/features/orders/data/source/cleaning_session_remote_data_source.dart')
+          source_text = source.read_text()
+          old = """    return _post(\n      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/sos',\n      data: <String, dynamic>{\n        'emergency_type': emergencyType,\n        'message': message.trim(),\n        if (latitude != null) 'latitude': latitude,\n        if (longitude != null) 'longitude': longitude,\n      },\n    );\n"""
+          new = """    final data = <String, dynamic>{\n      'emergency_type': emergencyType,\n      'message': message.trim(),\n    };\n    if (latitude != null) data['latitude'] = latitude;\n    if (longitude != null) data['longitude'] = longitude;\n\n    return _post(\n      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/sos',\n      data: data,\n    );\n"""
+          if old not in source_text and new not in source_text:
+              raise SystemExit('Could not locate SOS payload block')
+          source.write_text(source_text.replace(old, new, 1))
           PY
 
       - name: Setup Flutter
@@ -90,7 +102,7 @@ jobs:
             test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart \
             test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
 
-      - name: Commit formatter output
+      - name: Commit analyzer and formatter output
         if: github.event_name == 'push'
         shell: bash
         run: |
@@ -115,7 +127,7 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix(cleaning): format customer session lifecycle sources'
+          git commit -m 'fix(cleaning): satisfy customer session analyzer'
           git push
 
       - name: Analyze multi-day event sources
