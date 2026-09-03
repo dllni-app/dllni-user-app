@@ -64,10 +64,53 @@ needle = """                            _SummaryRow(\n                          
 replacement = needle + """                            const SizedBox(height: 12),\n                            OutlinedButton.icon(\n                              onPressed: () async {\n                                await Navigator.of(context).push<void>(\n                                  MaterialPageRoute(\n                                    builder: (_) =>\n                                        MultiDayCleaningOrderDetailsScreen(\n                                          orderId: _activeOrderId,\n                                        ),\n                                  ),\n                                );\n                                if (mounted) {\n                                  await _fetchDetails(showLoading: false);\n                                }\n                              },\n                              icon: const Icon(Icons.event_note_outlined),\n                              label: const Text('عرض أيام وجلسات المناسبة'),\n                            ),\n"""
 replace(path, needle, replacement)
 
-# Model test for backend-owned reschedule capability.
+# Model test for backend-owned reschedule capability. Keep it inside main().
 path = "test/features/orders/data/models/cleaning_booking_schedule_model_test.dart"
 file = Path(path)
-file.write_text(
-    file.read_text()
-    + """\n\ntest('parses backend event schedule reschedule capability', () {\n  final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{\n    'data': <String, dynamic>{\n      'id': 501,\n      'status': 'pending',\n      'schedule': <String, dynamic>{\n        'mode': 'multi_day',\n        'sessions': <Map<String, dynamic>>[\n          <String, dynamic>{\n            'id': 1,\n            'sequence': 1,\n            'date': '2026-09-20',\n            'time': '09:00',\n            'hours': 2,\n            'status': 'scheduled',\n            'canReschedule': true,\n          },\n          <String, dynamic>{\n            'id': 2,\n            'sequence': 2,\n            'date': '2026-09-21',\n            'time': '09:00',\n            'hours': 2,\n            'status': 'scheduled',\n            'canReschedule': true,\n          },\n        ],\n      },\n    },\n  });\n\n  expect(envelope.schedule?.sessions, hasLength(2));\n  expect(\n    envelope.schedule?.sessions.every((session) => session.canReschedule == true),\n    isTrue,\n  );\n});\n"""
-)
+text = file.read_text()
+closing = "\n}\n"
+if not text.endswith(closing):
+    raise SystemExit(f"unexpected test file ending in {path}")
+test_block = """
+
+  test('parses backend event schedule reschedule capability', () {
+    final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
+      'data': <String, dynamic>{
+        'id': 501,
+        'status': 'pending',
+        'schedule': <String, dynamic>{
+          'mode': 'multi_day',
+          'sessions': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 1,
+              'sequence': 1,
+              'date': '2026-09-20',
+              'time': '09:00',
+              'hours': 2,
+              'status': 'scheduled',
+              'canReschedule': true,
+            },
+            <String, dynamic>{
+              'id': 2,
+              'sequence': 2,
+              'date': '2026-09-21',
+              'time': '09:00',
+              'hours': 2,
+              'status': 'scheduled',
+              'canReschedule': true,
+            },
+          ],
+        },
+      },
+    });
+
+    expect(envelope.schedule?.sessions, hasLength(2));
+    expect(
+      envelope.schedule?.sessions.every(
+        (session) => session.canReschedule == true,
+      ),
+      isTrue,
+    );
+  });
+"""
+file.write_text(text[:-len(closing)] + test_block + closing)
