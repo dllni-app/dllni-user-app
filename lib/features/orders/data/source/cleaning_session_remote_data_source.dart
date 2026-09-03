@@ -57,10 +57,7 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
   }) {
     return _post(
       '/api/v1/cleaning-bookings/$orderId/sessions/change-workers',
-      data: <String, dynamic>{
-        'changes': changes,
-        'reason': reason.trim(),
-      },
+      data: <String, dynamic>{'changes': changes, 'reason': reason.trim()},
     );
   }
 
