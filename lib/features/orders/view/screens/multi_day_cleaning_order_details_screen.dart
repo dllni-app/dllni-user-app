@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/cleaning_booking_schedule_model.dart';
 import '../../data/source/cleaning_session_remote_data_source.dart';
+import 'multi_day_cleaning_order_reschedule_screen.dart';
 
 class MultiDayCleaningOrderDetailsScreen extends StatefulWidget {
   const MultiDayCleaningOrderDetailsScreen({
@@ -32,6 +33,13 @@ class _MultiDayCleaningOrderDetailsScreenState
   CleaningBookingScheduleModel? get _schedule => _envelope?.schedule;
   CleaningSessionRemoteDataSource get _sessions =>
       getIt<CleaningSessionRemoteDataSource>();
+
+  bool get _canReschedule {
+    final schedule = _schedule;
+    return schedule != null &&
+        schedule.sessions.isNotEmpty &&
+        schedule.sessions.every((session) => session.canReschedule == true);
+  }
 
   @override
   void initState() {
@@ -92,6 +100,21 @@ class _MultiDayCleaningOrderDetailsScreenState
       });
     } finally {
       if (mounted) setState(() => _busySessionId = null);
+    }
+  }
+
+  Future<void> _openReschedule() async {
+    if (!_canReschedule) return;
+
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) =>
+            MultiDayCleaningOrderRescheduleScreen(orderId: widget.orderId),
+      ),
+    );
+
+    if (changed == true && mounted) {
+      await _load();
     }
   }
 
@@ -317,7 +340,18 @@ class _MultiDayCleaningOrderDetailsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
-      appBar: AppBar(title: const Text('تفاصيل المناسبة'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('تفاصيل المناسبة'),
+        centerTitle: true,
+        actions: [
+          if (_canReschedule)
+            IconButton(
+              tooltip: 'تعديل أيام المناسبة',
+              onPressed: _openReschedule,
+              icon: const Icon(Icons.edit_calendar_outlined),
+            ),
+        ],
+      ),
       body: RefreshIndicator(onRefresh: _load, child: _buildBody()),
     );
   }

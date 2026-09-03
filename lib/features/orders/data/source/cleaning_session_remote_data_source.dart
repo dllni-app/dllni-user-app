@@ -71,6 +71,24 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningMultiDayOrderEnvelope> updateSchedule({
+    required int orderId,
+    required List<Map<String, dynamic>> sessions,
+  }) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.patchData(
+        endPoint: '/api/v1/user/cleaning/orders/$orderId',
+        data: <String, dynamic>{
+          'schedule': <String, dynamic>{
+            'mode': sessions.length > 1 ? 'multi_day' : 'single_day',
+            'sessions': sessions,
+          },
+        },
+      ),
+      jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
+    );
+  }
+
   Future<CleaningMultiDayOrderEnvelope> _post(
     String endpoint, {
     Map<String, dynamic>? data,

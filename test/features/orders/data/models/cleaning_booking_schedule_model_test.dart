@@ -249,4 +249,44 @@ void main() {
     expect(envelope.schedule?.sessions.single.hours, 4);
     expect(envelope.schedule?.sessions.single.canSendSos, isFalse);
   });
+
+  test('parses backend event schedule reschedule capability', () {
+    final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
+      'data': <String, dynamic>{
+        'id': 501,
+        'status': 'pending',
+        'schedule': <String, dynamic>{
+          'mode': 'multi_day',
+          'sessions': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 1,
+              'sequence': 1,
+              'date': '2026-09-20',
+              'time': '09:00',
+              'hours': 2,
+              'status': 'scheduled',
+              'canReschedule': true,
+            },
+            <String, dynamic>{
+              'id': 2,
+              'sequence': 2,
+              'date': '2026-09-21',
+              'time': '09:00',
+              'hours': 2,
+              'status': 'scheduled',
+              'canReschedule': true,
+            },
+          ],
+        },
+      },
+    });
+
+    expect(envelope.schedule?.sessions, hasLength(2));
+    expect(
+      envelope.schedule?.sessions.every(
+        (session) => session.canReschedule == true,
+      ),
+      isTrue,
+    );
+  });
 }
