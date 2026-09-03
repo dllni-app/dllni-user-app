@@ -56,9 +56,8 @@ jobs:
       - name: Run event model tests
         run: flutter test test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
 
-      - name: Restore check-only CI and commit customer UI
+      - name: Commit customer UI
         run: |
-          git checkout 0db7511dad21f41a157f03e290e7a5818202c94c -- .github/workflows/cleaning-suite.yml
           git rm .github/scripts/finalize_event_customer_ui.py
           git add -A
           git config user.name 'github-actions[bot]'
