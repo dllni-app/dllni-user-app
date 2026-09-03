@@ -186,6 +186,9 @@ class CleaningBookingSessionModel {
   final bool canArrive;
   final bool canStartWork;
   final bool canComplete;
+  final bool canConfirmStartVerification;
+  final bool canConfirmCompletion;
+  final bool canSendSos;
   final bool canExtend;
   final bool canCancel;
   final bool? canReschedule;
@@ -215,6 +218,9 @@ class CleaningBookingSessionModel {
     required this.canArrive,
     required this.canStartWork,
     required this.canComplete,
+    required this.canConfirmStartVerification,
+    required this.canConfirmCompletion,
+    required this.canSendSos,
     required this.canExtend,
     required this.canCancel,
     this.canReschedule,
@@ -259,6 +265,19 @@ class CleaningBookingSessionModel {
           _bool(json['canStart'] ?? json['can_start']) ??
           false,
       canComplete: _bool(json['canComplete'] ?? json['can_complete']) ?? false,
+      canConfirmStartVerification:
+          _bool(
+            json['canConfirmStartVerification'] ??
+                json['can_confirm_start_verification'],
+          ) ??
+          false,
+      canConfirmCompletion:
+          _bool(
+            json['canConfirmCompletion'] ?? json['can_confirm_completion'],
+          ) ??
+          false,
+      canSendSos:
+          _bool(json['canSendSos'] ?? json['can_send_sos']) ?? false,
       canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
       canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),
