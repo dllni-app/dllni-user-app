@@ -44,6 +44,37 @@ class _MultiDayCleaningOrderDetailsScreenState
         schedule.sessions.every((session) => session.canReschedule == true);
   }
 
+  List<_EventReviewWorker> get _eventReviewWorkers {
+    final schedule = _schedule;
+    if (schedule == null) return const <_EventReviewWorker>[];
+
+    final workers = <int, _EventReviewWorker>{};
+    for (final session in schedule.sessions) {
+      if (!session.isCompleted) continue;
+
+      for (final assignment in session.workerAssignments) {
+        final workerId = assignment.workerId;
+        final assignmentStatus = assignment.status?.trim().toLowerCase();
+        if (workerId == null || workerId <= 0 || assignmentStatus != 'completed') {
+          continue;
+        }
+
+        final workerName = assignment.workerName?.trim();
+        workers.putIfAbsent(
+          workerId,
+          () => _EventReviewWorker(
+            workerId: workerId,
+            workerName: workerName?.isNotEmpty == true
+                ? workerName!
+                : 'العامل #$workerId',
+          ),
+        );
+      }
+    }
+
+    return workers.values.toList(growable: false);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -312,11 +343,20 @@ class _MultiDayCleaningOrderDetailsScreenState
     final envelope = _envelope;
     if (envelope == null || !envelope.canReview || _submittingReview) return;
 
-    final result = await showDialog<_EventReviewDraft>(
+    final workers = _eventReviewWorkers;
+    if (workers.isEmpty) {
+      setState(() {
+        _actionError =
+            'تعذر تحديد العمال الذين شاركوا في الجلسات المكتملة. حدّث الطلب وحاول مرة أخرى.';
+      });
+      return;
+    }
+
+    final result = await showDialog<List<_EventReviewDraft>>(
       context: context,
-      builder: (dialogContext) => const _EventReviewDialog(),
+      builder: (dialogContext) => _EventReviewDialog(workers: workers),
     );
-    if (!mounted || result == null) return;
+    if (!mounted || result == null || result.isEmpty) return;
 
     setState(() {
       _submittingReview = true;
@@ -327,8 +367,15 @@ class _MultiDayCleaningOrderDetailsScreenState
         await getIt<SubmitCleaningReviewUseCase>()(
           SubmitCleaningReviewParams(
             orderId: widget.orderId,
-            rating: result.rating,
-            comment: result.comment,
+            reviews: result
+                .map(
+                  (review) => CleaningWorkerReviewInput(
+                    workerId: review.workerId,
+                    rating: review.rating,
+                    comment: review.comment,
+                  ),
+                )
+                .toList(growable: false),
           ),
         );
 
@@ -341,7 +388,7 @@ class _MultiDayCleaningOrderDetailsScreenState
       },
       (_) async {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال تقييم المناسبة بنجاح')),
+          const SnackBar(content: Text('تم إرسال تقييمات عمال المناسبة بنجاح')),
         );
         await _load();
       },
@@ -564,7 +611,7 @@ class _MultiDayCleaningOrderDetailsScreenState
             const SizedBox(width: 8),
             Expanded(
               child: AppText.bodyLarge(
-                submitted ? 'تم تقييم المناسبة' : 'تقييم المناسبة',
+                submitted ? 'تم تقييم عمال المناسبة' : 'تقييم عمال المناسبة',
                 fontWeight: FontWeight.w800,
                 textAlign: TextAlign.start,
               ),
@@ -574,8 +621,8 @@ class _MultiDayCleaningOrderDetailsScreenState
         const SizedBox(height: 8),
         AppText.bodySmall(
           submitted
-              ? 'شكراً لك. تم حفظ تقييم واحد لتجربة المناسبة كاملة.'
-              : 'بعد اكتمال جميع أيام المناسبة، أرسل تقييماً واحداً عن التجربة كاملة بدلاً من تقييم كل يوم بشكل منفصل.',
+              ? 'شكراً لك. تم حفظ تقييم مستقل لكل عامل شارك في المناسبة.'
+              : 'بعد اكتمال المناسبة، قيّم كل عامل شارك فيها بشكل مستقل. يظهر العامل مرة واحدة حتى لو شارك في أكثر من يوم.',
           color: const Color(0xFF6B7280),
           fontWeight: FontWeight.w600,
           textAlign: TextAlign.start,
@@ -591,7 +638,7 @@ class _MultiDayCleaningOrderDetailsScreenState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.rate_review_outlined),
-            label: const Text('تقييم المناسبة كاملة'),
+            label: const Text('تقييم عمال المناسبة'),
           ),
         ],
       ],
@@ -889,67 +936,78 @@ class _MultiDayCleaningOrderDetailsScreenState
       value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
 }
 
-class _EventReviewDraft {
-  const _EventReviewDraft({required this.rating, this.comment});
+class _EventReviewWorker {
+  const _EventReviewWorker({required this.workerId, required this.workerName});
 
+  final int workerId;
+  final String workerName;
+}
+
+class _EventReviewDraft {
+  const _EventReviewDraft({
+    required this.workerId,
+    required this.rating,
+    this.comment,
+  });
+
+  final int workerId;
   final int rating;
   final String? comment;
 }
 
 class _EventReviewDialog extends StatefulWidget {
-  const _EventReviewDialog();
+  const _EventReviewDialog({required this.workers});
+
+  final List<_EventReviewWorker> workers;
 
   @override
   State<_EventReviewDialog> createState() => _EventReviewDialogState();
 }
 
 class _EventReviewDialogState extends State<_EventReviewDialog> {
-  int _rating = 0;
-  final TextEditingController _commentController = TextEditingController();
+  final Map<int, int> _ratings = <int, int>{};
+  final Map<int, TextEditingController> _commentControllers =
+      <int, TextEditingController>{};
+
+  @override
+  void initState() {
+    super.initState();
+    for (final worker in widget.workers) {
+      _commentControllers[worker.workerId] = TextEditingController();
+    }
+  }
 
   @override
   void dispose() {
-    _commentController.dispose();
+    for (final controller in _commentControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
+
+  bool get _allWorkersRated => widget.workers.every(
+    (worker) => (_ratings[worker.workerId] ?? 0) >= 1,
+  );
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('تقييم المناسبة كاملة'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text('كيف كانت تجربتك الإجمالية مع فريق المناسبة؟'),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List<Widget>.generate(5, (index) {
-              final selected = _rating >= index + 1;
-              return IconButton(
-                onPressed: () => setState(() => _rating = index + 1),
-                icon: Icon(
-                  Icons.star_rounded,
-                  size: 34,
-                  color: selected
-                      ? const Color(0xFFF59E0B)
-                      : const Color(0xFFD1D5DB),
-                ),
-              );
-            }),
+      title: const Text('تقييم عمال المناسبة'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'قيّم كل عامل شارك في المناسبة. العامل الذي شارك في عدة أيام يظهر مرة واحدة فقط.',
+              ),
+              const SizedBox(height: 14),
+              ...widget.workers.map((worker) => _workerReviewCard(worker)),
+            ],
           ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _commentController,
-            minLines: 2,
-            maxLines: 4,
-            maxLength: 1000,
-            decoration: const InputDecoration(
-              hintText: 'ملاحظات عن تجربة المناسبة (اختياري)',
-            ),
-          ),
-        ],
+        ),
       ),
       actions: [
         TextButton(
@@ -957,20 +1015,75 @@ class _EventReviewDialogState extends State<_EventReviewDialog> {
           child: const Text('إلغاء'),
         ),
         FilledButton(
-          onPressed: _rating < 1
+          onPressed: !_allWorkersRated
               ? null
               : () {
-                  final comment = _commentController.text.trim();
-                  Navigator.of(context).pop(
-                    _EventReviewDraft(
-                      rating: _rating,
+                  final reviews = widget.workers.map((worker) {
+                    final comment =
+                        _commentControllers[worker.workerId]?.text.trim() ?? '';
+                    return _EventReviewDraft(
+                      workerId: worker.workerId,
+                      rating: _ratings[worker.workerId]!,
                       comment: comment.isEmpty ? null : comment,
-                    ),
-                  );
+                    );
+                  }).toList(growable: false);
+                  Navigator.of(context).pop(reviews);
                 },
-          child: const Text('إرسال التقييم'),
+          child: const Text('إرسال التقييمات'),
         ),
       ],
+    );
+  }
+
+  Widget _workerReviewCard(_EventReviewWorker worker) {
+    final rating = _ratings[worker.workerId] ?? 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            worker.workerName,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List<Widget>.generate(5, (index) {
+              final selected = rating >= index + 1;
+              return IconButton(
+                tooltip: '${index + 1} نجوم',
+                onPressed: () => setState(
+                  () => _ratings[worker.workerId] = index + 1,
+                ),
+                icon: Icon(
+                  Icons.star_rounded,
+                  size: 32,
+                  color: selected
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFFD1D5DB),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _commentControllers[worker.workerId],
+            minLines: 2,
+            maxLines: 4,
+            maxLength: 1000,
+            decoration: const InputDecoration(
+              hintText: 'ملاحظات عن هذا العامل (اختياري)',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
