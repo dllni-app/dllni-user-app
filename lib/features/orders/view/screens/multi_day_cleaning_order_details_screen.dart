@@ -1,10 +1,12 @@
 import 'package:common_package/common_package.dart';
+import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/utils/cleaning_date_time_ui_format.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/cleaning_booking_schedule_model.dart';
 import '../../data/source/cleaning_session_remote_data_source.dart';
+import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import 'multi_day_cleaning_order_reschedule_screen.dart';
 
 class MultiDayCleaningOrderDetailsScreen extends StatefulWidget {
@@ -27,6 +29,7 @@ class _MultiDayCleaningOrderDetailsScreenState
   CleaningMultiDayOrderEnvelope? _envelope;
   bool _loading = true;
   int? _busySessionId;
+  bool _submittingReview = false;
   String? _error;
   String? _actionError;
 
@@ -305,6 +308,46 @@ class _MultiDayCleaningOrderDetailsScreenState
     }
   }
 
+  Future<void> _openEventReview() async {
+    final envelope = _envelope;
+    if (envelope == null || !envelope.canReview || _submittingReview) return;
+
+    final result = await showDialog<_EventReviewDraft>(
+      context: context,
+      builder: (dialogContext) => const _EventReviewDialog(),
+    );
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _submittingReview = true;
+      _actionError = null;
+    });
+
+    final Either<Failure, dynamic> response =
+        await getIt<SubmitCleaningReviewUseCase>()(
+          SubmitCleaningReviewParams(
+            orderId: widget.orderId,
+            rating: result.rating,
+            comment: result.comment,
+          ),
+        );
+
+    if (!mounted) return;
+    setState(() => _submittingReview = false);
+
+    await response.fold(
+      (failure) async {
+        setState(() => _actionError = failure.message);
+      },
+      (_) async {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إرسال تقييم المناسبة بنجاح')),
+        );
+        await _load();
+      },
+    );
+  }
+
   Future<bool> _confirmDialog({
     required String title,
     required String message,
@@ -471,6 +514,10 @@ class _MultiDayCleaningOrderDetailsScreenState
             ],
           ],
         ),
+        if (_envelope?.canReview == true || _envelope?.hasReview == true) ...[
+          const SizedBox(height: 12),
+          _eventReviewCard(),
+        ],
         const SizedBox(height: 16),
         AppText.titleSmall(
           'أيام التنفيذ',
@@ -499,6 +546,54 @@ class _MultiDayCleaningOrderDetailsScreenState
             textAlign: TextAlign.start,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _eventReviewCard() {
+    final submitted = _envelope?.hasReview == true;
+
+    return _card(
+      children: [
+        Row(
+          children: [
+            Icon(
+              submitted ? Icons.star_rounded : Icons.star_border_rounded,
+              color: const Color(0xFFF59E0B),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: AppText.bodyLarge(
+                submitted ? 'تم تقييم المناسبة' : 'تقييم المناسبة',
+                fontWeight: FontWeight.w800,
+                textAlign: TextAlign.start,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AppText.bodySmall(
+          submitted
+              ? 'شكراً لك. تم حفظ تقييم واحد لتجربة المناسبة كاملة.'
+              : 'بعد اكتمال جميع أيام المناسبة، أرسل تقييماً واحداً عن التجربة كاملة بدلاً من تقييم كل يوم بشكل منفصل.',
+          color: const Color(0xFF6B7280),
+          fontWeight: FontWeight.w600,
+          textAlign: TextAlign.start,
+        ),
+        if (!submitted) ...[
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _submittingReview ? null : _openEventReview,
+            icon: _submittingReview
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.rate_review_outlined),
+            label: const Text('تقييم المناسبة كاملة'),
+          ),
+        ],
       ],
     );
   }
@@ -792,4 +887,90 @@ class _MultiDayCleaningOrderDetailsScreenState
 
   String _money(double value) =>
       value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
+}
+
+class _EventReviewDraft {
+  const _EventReviewDraft({required this.rating, this.comment});
+
+  final int rating;
+  final String? comment;
+}
+
+class _EventReviewDialog extends StatefulWidget {
+  const _EventReviewDialog();
+
+  @override
+  State<_EventReviewDialog> createState() => _EventReviewDialogState();
+}
+
+class _EventReviewDialogState extends State<_EventReviewDialog> {
+  int _rating = 0;
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('تقييم المناسبة كاملة'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('كيف كانت تجربتك الإجمالية مع فريق المناسبة؟'),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List<Widget>.generate(5, (index) {
+              final selected = _rating >= index + 1;
+              return IconButton(
+                onPressed: () => setState(() => _rating = index + 1),
+                icon: Icon(
+                  Icons.star_rounded,
+                  size: 34,
+                  color: selected
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFFD1D5DB),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _commentController,
+            minLines: 2,
+            maxLines: 4,
+            maxLength: 1000,
+            decoration: const InputDecoration(
+              hintText: 'ملاحظات عن تجربة المناسبة (اختياري)',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          onPressed: _rating < 1
+              ? null
+              : () {
+                  final comment = _commentController.text.trim();
+                  Navigator.of(context).pop(
+                    _EventReviewDraft(
+                      rating: _rating,
+                      comment: comment.isEmpty ? null : comment,
+                    ),
+                  );
+                },
+          child: const Text('إرسال التقييم'),
+        ),
+      ],
+    );
+  }
 }

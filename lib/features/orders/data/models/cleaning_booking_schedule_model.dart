@@ -431,6 +431,8 @@ class CleaningMultiDayOrderEnvelope {
   final String? status;
   final double? totalPrice;
   final String? currency;
+  final bool canReview;
+  final bool hasReview;
   final CleaningBookingScheduleModel? schedule;
   final CleaningBookingSessionModel? session;
 
@@ -440,6 +442,8 @@ class CleaningMultiDayOrderEnvelope {
     this.status,
     this.totalPrice,
     this.currency,
+    this.canReview = false,
+    this.hasReview = false,
     this.schedule,
     this.session,
   });
@@ -455,6 +459,8 @@ class CleaningMultiDayOrderEnvelope {
       status: _string(order['status']),
       totalPrice: _double(order['totalPrice'] ?? order['total_price']),
       currency: _string(order['currency']),
+      canReview: _bool(order['canReview'] ?? order['can_review']) ?? false,
+      hasReview: _bool(order['hasReview'] ?? order['has_review']) ?? false,
       schedule: scheduleRaw is Map
           ? CleaningBookingScheduleModel.fromJson(_map(scheduleRaw))
           : null,
