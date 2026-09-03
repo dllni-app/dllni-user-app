@@ -50,6 +50,20 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningMultiDayOrderEnvelope> changeWorkers({
+    required int orderId,
+    required List<Map<String, dynamic>> changes,
+    required String reason,
+  }) {
+    return _post(
+      '/api/v1/cleaning-bookings/$orderId/sessions/change-workers',
+      data: <String, dynamic>{
+        'changes': changes,
+        'reason': reason.trim(),
+      },
+    );
+  }
+
   Future<CleaningMultiDayOrderEnvelope> sendSos({
     required int orderId,
     required int sessionId,
