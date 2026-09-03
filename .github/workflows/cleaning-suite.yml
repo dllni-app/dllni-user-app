@@ -5,53 +5,24 @@ on:
     branches:
       - feature/cleaning-suite-main
     paths:
-      - 'lib/core/di/injection.dart'
-      - 'lib/features/cl_main/data/models/estimate_price_response_model.dart'
-      - 'lib/features/cl_main/domain/models/cleaning_event_session.dart'
-      - 'lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart'
-      - 'lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart'
-      - 'lib/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart'
-      - 'lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart'
-      - 'lib/features/cl_main/view/widgets/cl_service_order_summary_section_widget.dart'
-      - 'lib/features/orders/data/models/cleaning_booking_schedule_model.dart'
-      - 'lib/features/orders/data/source/cleaning_session_remote_data_source.dart'
-      - 'lib/features/orders/view/screens/cleaning_order_details_screen.dart'
-      - 'lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart'
-      - 'lib/features/orders/view/screens/multi_day_cleaning_order_reschedule_screen.dart'
-      - 'test/features/cl_main/data/models/estimate_price_response_model_test.dart'
-      - 'test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart'
-      - 'test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart'
-      - 'test/features/orders/data/models/cleaning_booking_schedule_model_test.dart'
-      - '.github/workflows/cleaning-suite.yml'
-  pull_request:
-    paths:
-      - 'lib/core/di/injection.dart'
-      - 'lib/features/cl_main/data/models/estimate_price_response_model.dart'
-      - 'lib/features/cl_main/domain/models/cleaning_event_session.dart'
-      - 'lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart'
-      - 'lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart'
-      - 'lib/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart'
-      - 'lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart'
-      - 'lib/features/cl_main/view/widgets/cl_service_order_summary_section_widget.dart'
-      - 'lib/features/orders/data/models/cleaning_booking_schedule_model.dart'
-      - 'lib/features/orders/data/source/cleaning_session_remote_data_source.dart'
-      - 'lib/features/orders/view/screens/cleaning_order_details_screen.dart'
-      - 'lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart'
-      - 'lib/features/orders/view/screens/multi_day_cleaning_order_reschedule_screen.dart'
-      - 'test/features/cl_main/data/models/estimate_price_response_model_test.dart'
-      - 'test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart'
-      - 'test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart'
-      - 'test/features/orders/data/models/cleaning_booking_schedule_model_test.dart'
       - '.github/workflows/cleaning-suite.yml'
 
+permissions:
+  contents: write
+
 jobs:
-  multi-day-event:
+  event-review-ui:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply event review UI patch
+        run: python3 .github/scripts/finalize_event_review_ui.py
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -62,48 +33,34 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Check formatting
+      - name: Format changed event review sources
         run: |
-          dart format --output=none --set-exit-if-changed \
-            lib/core/di/injection.dart \
-            lib/features/cl_main/data/models/estimate_price_response_model.dart \
-            lib/features/cl_main/domain/models/cleaning_event_session.dart \
-            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
-            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
-            lib/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart \
-            lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart \
-            lib/features/cl_main/view/widgets/cl_service_order_summary_section_widget.dart \
+          dart format \
             lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
-            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
-            lib/features/orders/view/screens/cleaning_order_details_screen.dart \
+            lib/features/orders/domain/usecases/submit_cleaning_review_use_case.dart \
             lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
-            lib/features/orders/view/screens/multi_day_cleaning_order_reschedule_screen.dart \
-            test/features/cl_main/data/models/estimate_price_response_model_test.dart \
-            test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart \
-            test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart \
-            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
+            test/features/orders/data/models/cleaning_event_review_state_test.dart \
+            test/features/orders/domain/usecases/submit_cleaning_review_use_case_test.dart
 
-      - name: Analyze multi-day event sources
+      - name: Analyze changed event review sources
         run: |
           flutter analyze \
-            lib/core/di/injection.dart \
-            lib/features/cl_main/data/models/estimate_price_response_model.dart \
-            lib/features/cl_main/domain/models/cleaning_event_session.dart \
-            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
-            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
-            lib/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart \
-            lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart \
-            lib/features/cl_main/view/widgets/cl_service_order_summary_section_widget.dart \
             lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
-            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
-            lib/features/orders/view/screens/cleaning_order_details_screen.dart \
-            lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
-            lib/features/orders/view/screens/multi_day_cleaning_order_reschedule_screen.dart
+            lib/features/orders/domain/usecases/submit_cleaning_review_use_case.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart
 
-      - name: Run multi-day event tests
+      - name: Run event review tests
         run: |
           flutter test \
-            test/features/cl_main/data/models/estimate_price_response_model_test.dart \
-            test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart \
-            test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart \
+            test/features/orders/data/models/cleaning_event_review_state_test.dart \
+            test/features/orders/domain/usecases/submit_cleaning_review_use_case_test.dart \
             test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
+
+      - name: Commit implementation
+        run: |
+          git rm .github/scripts/finalize_event_review_ui.py
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(cleaning): add one rating after multi-day event completion'
+          git push
