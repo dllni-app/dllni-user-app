@@ -22,14 +22,14 @@ class SubmitCleaningReviewUseCase
 class SubmitCleaningReviewParams with Params {
   SubmitCleaningReviewParams({
     required this.orderId,
-    required this.workerId,
+    this.workerId,
     required this.rating,
     this.comment,
     this.tags,
   });
 
   final int orderId;
-  final int workerId;
+  final int? workerId;
   final int rating;
   final String? comment;
   final List<String>? tags;
@@ -38,7 +38,7 @@ class SubmitCleaningReviewParams with Params {
   BodyMap getBody() {
     return <String, dynamic>{
       'rating': rating,
-      'workerId': workerId,
+      if (workerId != null) 'workerId': workerId,
       if (comment != null && comment!.trim().isNotEmpty)
         'comment': comment!.trim(),
       if (tags != null && tags!.isNotEmpty) 'tags': tags,
