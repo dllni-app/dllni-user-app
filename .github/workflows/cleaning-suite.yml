@@ -1,5 +1,6 @@
 name: Cleaning Suite User
 
+# Temporary implementation runner; restored to check-only after success.
 on:
   push:
     branches:
