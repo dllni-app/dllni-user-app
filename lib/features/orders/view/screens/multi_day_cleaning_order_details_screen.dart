@@ -55,7 +55,9 @@ class _MultiDayCleaningOrderDetailsScreenState
       for (final assignment in session.workerAssignments) {
         final workerId = assignment.workerId;
         final assignmentStatus = assignment.status?.trim().toLowerCase();
-        if (workerId == null || workerId <= 0 || assignmentStatus != 'completed') {
+        if (workerId == null ||
+            workerId <= 0 ||
+            assignmentStatus != 'completed') {
           continue;
         }
 
@@ -985,9 +987,8 @@ class _EventReviewDialogState extends State<_EventReviewDialog> {
     super.dispose();
   }
 
-  bool get _allWorkersRated => widget.workers.every(
-    (worker) => (_ratings[worker.workerId] ?? 0) >= 1,
-  );
+  bool get _allWorkersRated =>
+      widget.workers.every((worker) => (_ratings[worker.workerId] ?? 0) >= 1);
 
   @override
   Widget build(BuildContext context) {
@@ -1018,15 +1019,18 @@ class _EventReviewDialogState extends State<_EventReviewDialog> {
           onPressed: !_allWorkersRated
               ? null
               : () {
-                  final reviews = widget.workers.map((worker) {
-                    final comment =
-                        _commentControllers[worker.workerId]?.text.trim() ?? '';
-                    return _EventReviewDraft(
-                      workerId: worker.workerId,
-                      rating: _ratings[worker.workerId]!,
-                      comment: comment.isEmpty ? null : comment,
-                    );
-                  }).toList(growable: false);
+                  final reviews = widget.workers
+                      .map((worker) {
+                        final comment =
+                            _commentControllers[worker.workerId]?.text.trim() ??
+                            '';
+                        return _EventReviewDraft(
+                          workerId: worker.workerId,
+                          rating: _ratings[worker.workerId]!,
+                          comment: comment.isEmpty ? null : comment,
+                        );
+                      })
+                      .toList(growable: false);
                   Navigator.of(context).pop(reviews);
                 },
           child: const Text('إرسال التقييمات'),
@@ -1059,9 +1063,8 @@ class _EventReviewDialogState extends State<_EventReviewDialog> {
               final selected = rating >= index + 1;
               return IconButton(
                 tooltip: '${index + 1} نجوم',
-                onPressed: () => setState(
-                  () => _ratings[worker.workerId] = index + 1,
-                ),
+                onPressed: () =>
+                    setState(() => _ratings[worker.workerId] = index + 1),
                 icon: Icon(
                   Icons.star_rounded,
                   size: 32,

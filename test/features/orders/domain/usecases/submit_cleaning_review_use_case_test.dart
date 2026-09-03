@@ -6,11 +6,7 @@ void main() {
     final body = SubmitCleaningReviewParams(
       orderId: 99,
       reviews: const <CleaningWorkerReviewInput>[
-        CleaningWorkerReviewInput(
-          workerId: 7,
-          rating: 5,
-          comment: 'ممتاز',
-        ),
+        CleaningWorkerReviewInput(workerId: 7, rating: 5, comment: 'ممتاز'),
         CleaningWorkerReviewInput(workerId: 9, rating: 3),
       ],
     ).getBody();
@@ -20,18 +16,12 @@ void main() {
 
     final reviews = body['reviews'] as List<dynamic>;
     expect(reviews, hasLength(2));
-    expect(
-      reviews[0],
-      <String, dynamic>{
-        'workerId': 7,
-        'rating': 5,
-        'comment': 'ممتاز',
-      },
-    );
-    expect(
-      reviews[1],
-      <String, dynamic>{'workerId': 9, 'rating': 3},
-    );
+    expect(reviews[0], <String, dynamic>{
+      'workerId': 7,
+      'rating': 5,
+      'comment': 'ممتاز',
+    });
+    expect(reviews[1], <String, dynamic>{'workerId': 9, 'rating': 3});
   });
 
   test('regular worker review body keeps workerId and rating', () {
