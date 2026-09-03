@@ -17,10 +17,21 @@ void main() {
 
     expect(body.containsKey('rating'), isFalse);
     expect(body.containsKey('workerId'), isFalse);
-    expect(body['reviews'], <Map<String, dynamic>>[
-      <String, dynamic>{'workerId': 7, 'rating': 5, 'comment': 'ممتاز'},
+
+    final reviews = body['reviews'] as List<dynamic>;
+    expect(reviews, hasLength(2));
+    expect(
+      reviews[0],
+      <String, dynamic>{
+        'workerId': 7,
+        'rating': 5,
+        'comment': 'ممتاز',
+      },
+    );
+    expect(
+      reviews[1],
       <String, dynamic>{'workerId': 9, 'rating': 3},
-    ]);
+    );
   });
 
   test('regular worker review body keeps workerId and rating', () {
