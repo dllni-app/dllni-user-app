@@ -40,9 +40,6 @@ on:
       - 'test/features/orders/data/models/cleaning_booking_schedule_model_test.dart'
       - '.github/workflows/cleaning-suite.yml'
 
-permissions:
-  contents: write
-
 jobs:
   multi-day-event:
     runs-on: ubuntu-latest
@@ -51,28 +48,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Apply customer analyzer fixes once
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          screen = Path('lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart')
-          screen_text = screen.read_text()
-          screen_text = screen_text.replace("import 'package:flutter/services.dart';\n", '')
-          screen_text = screen_text.replace("emergencyType: 'other'", "emergencyType: 'safety_threat'")
-          screen.write_text(screen_text)
-
-          source = Path('lib/features/orders/data/source/cleaning_session_remote_data_source.dart')
-          source_text = source.read_text()
-          old = """    return _post(\n      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/sos',\n      data: <String, dynamic>{\n        'emergency_type': emergencyType,\n        'message': message.trim(),\n        if (latitude != null) 'latitude': latitude,\n        if (longitude != null) 'longitude': longitude,\n      },\n    );\n"""
-          new = """    final data = <String, dynamic>{\n      'emergency_type': emergencyType,\n      'message': message.trim(),\n    };\n    if (latitude != null) data['latitude'] = latitude;\n    if (longitude != null) data['longitude'] = longitude;\n\n    return _post(\n      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/sos',\n      data: data,\n    );\n"""
-          if old not in source_text and new not in source_text:
-              raise SystemExit('Could not locate SOS payload block')
-          source.write_text(source_text.replace(old, new, 1))
-          PY
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -83,9 +58,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Format multi-day event sources once
+      - name: Check formatting
         run: |
-          dart format \
+          dart format --output=none --set-exit-if-changed \
             lib/core/di/injection.dart \
             lib/features/cl_main/data/models/estimate_price_response_model.dart \
             lib/features/cl_main/domain/models/cleaning_event_session.dart \
@@ -101,34 +76,6 @@ jobs:
             test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart \
             test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart \
             test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
-
-      - name: Commit analyzer and formatter output
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          git add \
-            lib/core/di/injection.dart \
-            lib/features/cl_main/data/models/estimate_price_response_model.dart \
-            lib/features/cl_main/domain/models/cleaning_event_session.dart \
-            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
-            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
-            lib/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case.dart \
-            lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart \
-            lib/features/cl_main/view/widgets/cl_service_order_summary_section_widget.dart \
-            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
-            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
-            lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
-            test/features/cl_main/data/models/estimate_price_response_model_test.dart \
-            test/features/cl_main/domain/usecases/multi_day_event_request_serialization_test.dart \
-            test/features/cl_main/domain/usecases/get_previous_cleaning_workers_use_case_test.dart \
-            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix(cleaning): satisfy customer session analyzer'
-          git push
 
       - name: Analyze multi-day event sources
         run: |
