@@ -276,8 +276,7 @@ class CleaningBookingSessionModel {
             json['canConfirmCompletion'] ?? json['can_confirm_completion'],
           ) ??
           false,
-      canSendSos:
-          _bool(json['canSendSos'] ?? json['can_send_sos']) ?? false,
+      canSendSos: _bool(json['canSendSos'] ?? json['can_send_sos']) ?? false,
       canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
       canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),

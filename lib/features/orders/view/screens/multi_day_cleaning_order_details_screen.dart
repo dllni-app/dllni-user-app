@@ -178,7 +178,7 @@ class _MultiDayCleaningOrderDetailsScreenState
       () => _sessions.sendSos(
         orderId: widget.orderId,
         sessionId: sessionId,
-        emergencyType: 'other',
+        emergencyType: 'safety_threat',
         message: message,
       ),
     );
@@ -198,7 +198,9 @@ class _MultiDayCleaningOrderDetailsScreenState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('أدخل الرمز المكوّن من 4 أرقام الذي يظهر لدى العامل.'),
+                  const Text(
+                    'أدخل الرمز المكوّن من 4 أرقام الذي يظهر لدى العامل.',
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: controller,
@@ -222,9 +224,9 @@ class _MultiDayCleaningOrderDetailsScreenState
                 ),
                 FilledButton(
                   onPressed: valid
-                      ? () => Navigator.of(dialogContext).pop(
-                            controller.text.trim(),
-                          )
+                      ? () => Navigator.of(
+                          dialogContext,
+                        ).pop(controller.text.trim())
                       : null,
                   child: const Text('تحقق'),
                 ),
@@ -476,7 +478,8 @@ class _MultiDayCleaningOrderDetailsScreenState
         .toSet()
         .toList(growable: false);
     final cancellationFee = session.pricing?.cancellationFee ?? 0;
-    final highlighted = session.id != null && session.id == widget.initialSessionId;
+    final highlighted =
+        session.id != null && session.id == widget.initialSessionId;
     final busy = _busySessionId == session.id;
 
     return Container(
@@ -580,7 +583,8 @@ class _MultiDayCleaningOrderDetailsScreenState
           ),
         ],
         if (session.canCancel || session.canSendSos) ...[
-          if (session.canConfirmStartVerification || session.canConfirmCompletion)
+          if (session.canConfirmStartVerification ||
+              session.canConfirmCompletion)
             const SizedBox(height: 8),
           Row(
             children: [

@@ -145,69 +145,72 @@ void main() {
     expect(schedule.sessions.last.isTerminal, isFalse);
   });
 
-  test('parses cancelled session fee independently from remaining sessions', () {
-    final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
-      'data': <String, dynamic>{
-        'id': 91,
-        'totalPrice': 6850,
-        'currency': 'SYP',
-        'schedule': <String, dynamic>{
-          'mode': 'multi_day',
-          'daysCount': 3,
-          'completedDaysCount': 1,
-          'cancelledDaysCount': 1,
-          'remainingDaysCount': 1,
-          'totalHours': 4,
-          'sessions': <Map<String, dynamic>>[
-            <String, dynamic>{
-              'id': 901,
-              'sequence': 1,
-              'date': '2026-09-10',
-              'time': '10:00',
-              'hours': 2,
-              'status': 'completed',
-            },
-            <String, dynamic>{
-              'id': 902,
-              'sequence': 2,
-              'date': '2026-09-11',
-              'time': '10:00',
-              'hours': 2,
-              'status': 'cancelled',
-              'cancellationReason': 'تم إلغاء اليوم فقط',
-              'canCancel': false,
-              'canSendSos': false,
-              'pricing': <String, dynamic>{
-                'cancellationFee': 250,
-                'totalPrice': 3300,
-                'currency': 'SYP',
+  test(
+    'parses cancelled session fee independently from remaining sessions',
+    () {
+      final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 91,
+          'totalPrice': 6850,
+          'currency': 'SYP',
+          'schedule': <String, dynamic>{
+            'mode': 'multi_day',
+            'daysCount': 3,
+            'completedDaysCount': 1,
+            'cancelledDaysCount': 1,
+            'remainingDaysCount': 1,
+            'totalHours': 4,
+            'sessions': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 901,
+                'sequence': 1,
+                'date': '2026-09-10',
+                'time': '10:00',
+                'hours': 2,
+                'status': 'completed',
               },
-            },
-            <String, dynamic>{
-              'id': 903,
-              'sequence': 3,
-              'date': '2026-09-12',
-              'time': '10:00',
-              'hours': 2,
-              'status': 'worker_assigned',
-              'canCancel': true,
-              'canSendSos': true,
-            },
-          ],
+              <String, dynamic>{
+                'id': 902,
+                'sequence': 2,
+                'date': '2026-09-11',
+                'time': '10:00',
+                'hours': 2,
+                'status': 'cancelled',
+                'cancellationReason': 'تم إلغاء اليوم فقط',
+                'canCancel': false,
+                'canSendSos': false,
+                'pricing': <String, dynamic>{
+                  'cancellationFee': 250,
+                  'totalPrice': 3300,
+                  'currency': 'SYP',
+                },
+              },
+              <String, dynamic>{
+                'id': 903,
+                'sequence': 3,
+                'date': '2026-09-12',
+                'time': '10:00',
+                'hours': 2,
+                'status': 'worker_assigned',
+                'canCancel': true,
+                'canSendSos': true,
+              },
+            ],
+          },
         },
-      },
-    });
+      });
 
-    final cancelled = envelope.schedule!.sessions[1];
-    expect(envelope.totalPrice, 6850);
-    expect(envelope.schedule?.cancelledDaysCount, 1);
-    expect(envelope.schedule?.remainingDaysCount, 1);
-    expect(cancelled.isCancelled, isTrue);
-    expect(cancelled.pricing?.cancellationFee, 250);
-    expect(cancelled.cancellationReason, 'تم إلغاء اليوم فقط');
-    expect(cancelled.canCancel, isFalse);
-    expect(cancelled.canSendSos, isFalse);
-  });
+      final cancelled = envelope.schedule!.sessions[1];
+      expect(envelope.totalPrice, 6850);
+      expect(envelope.schedule?.cancelledDaysCount, 1);
+      expect(envelope.schedule?.remainingDaysCount, 1);
+      expect(cancelled.isCancelled, isTrue);
+      expect(cancelled.pricing?.cancellationFee, 250);
+      expect(cancelled.cancellationReason, 'تم إلغاء اليوم فقط');
+      expect(cancelled.canCancel, isFalse);
+      expect(cancelled.canSendSos, isFalse);
+    },
+  );
 
   test('parses single-day schedule fallback without child session id', () {
     final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
