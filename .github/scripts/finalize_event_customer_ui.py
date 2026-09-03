@@ -18,10 +18,12 @@ replace(
     """  Future<CleaningMultiDayOrderEnvelope> updateSchedule({\n    required int orderId,\n    required List<Map<String, dynamic>> sessions,\n  }) {\n    return wrapHandlingApi(\n      tryCall: () => dioNetwork.patchData(\n        endPoint: '/api/v1/user/cleaning/orders/$orderId',\n        data: <String, dynamic>{\n          'schedule': <String, dynamic>{\n            'mode': sessions.length > 1 ? 'multi_day' : 'single_day',\n            'sessions': sessions,\n          },\n        },\n      ),\n      jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,\n    );\n  }\n\n""" + marker,
 )
 
-# Remove an old arbitrary 31-day UI cap; backend owns validation.
+# Remove stale imports and an old arbitrary 31-day UI cap; backend owns validation.
 path = "lib/features/orders/view/screens/multi_day_cleaning_order_reschedule_screen.dart"
 file = Path(path)
 text = file.read_text()
+text = text.replace("import 'package:common_package/common_package.dart';\n", "")
+text = text.replace("import '../../data/models/cleaning_booking_schedule_model.dart';\n", "")
 text = text.replace("    if (!_editAllowed || _sessions.length >= 31) return;\n", "    if (!_editAllowed) return;\n")
 text = text.replace(
     """    if (_sessions.length > 31) {\n      _showMessage('الحد الأعلى هو 31 جلسة.');\n      return;\n    }\n\n""",
