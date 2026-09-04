@@ -38,6 +38,26 @@ void main() {
     });
   });
 
+  test('allows recurring visits spanning exactly thirty days', () {
+    final sessions = <CleaningRecurringSessionInput>[
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 1), time: '09:00'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 10, 1), time: '09:00'),
+    ];
+
+    expect(sessions.windowDays, cleaningRecurringMaxWindowDays);
+    expect(sessions.exceedsMaxWindow, isFalse);
+  });
+
+  test('rejects recurring visit models spanning more than thirty days', () {
+    final sessions = <CleaningRecurringSessionInput>[
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 1), time: '09:00'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 10, 2), time: '09:00'),
+    ];
+
+    expect(sessions.windowDays, 31);
+    expect(sessions.exceedsMaxWindow, isTrue);
+  });
+
   test('does not serialize a recurring schedule for an empty visit list', () {
     const sessions = <CleaningRecurringSessionInput>[];
 
