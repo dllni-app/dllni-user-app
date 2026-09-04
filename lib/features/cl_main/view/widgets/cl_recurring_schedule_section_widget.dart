@@ -64,7 +64,12 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(
-                    padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 8, 10),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      12,
+                      10,
+                      8,
+                      10,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF9FAFB),
                       borderRadius: BorderRadius.circular(12),

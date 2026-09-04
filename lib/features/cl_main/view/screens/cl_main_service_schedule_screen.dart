@@ -15,6 +15,7 @@ import '../../data/models/cleaning_services_response_model.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
+import '../../domain/models/cleaning_recurring_session.dart';
 import '../../domain/models/cleaning_type.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
@@ -26,6 +27,7 @@ import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_cleaning_services_selector_widget.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
+import '../widgets/cl_recurring_schedule_section_widget.dart';
 import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
@@ -73,6 +75,9 @@ class _ClMainServiceScheduleScreenState
   List<CleaningServiceModel> _availableCleaningServices =
       const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
+  bool _isRecurring = false;
+  List<CleaningRecurringSessionInput> _recurringSessions =
+      const <CleaningRecurringSessionInput>[];
 
   @override
   Widget build(BuildContext context) {
@@ -168,8 +173,7 @@ class _ClMainServiceScheduleScreenState
                           ClServiceGradientInfoCardWidget(
                             estimatedSqm: estimate?.size?.estimatedSqm ?? 0,
                             estimatedHours: _effectiveServiceHours(
-                              estimatedHours:
-                                  estimate?.size?.estimatedHours ?? 0,
+                              estimatedHours: _perVisitEstimatedHours(estimate),
                               numberOfWorkers: _requiredWorkersCount(state),
                             ),
                           ),
@@ -191,13 +195,22 @@ class _ClMainServiceScheduleScreenState
                             onPickFromTime: _pickFromTime,
                           ),
                           const SizedBox(height: 10),
+                          ClRecurringScheduleSectionWidget(
+                            enabled: _isRecurring,
+                            sessions: _recurringSessions,
+                            onEnabledChanged: (enabled) =>
+                                _setRecurringEnabled(enabled, state),
+                            onAddVisit: () => _addRecurringVisit(state),
+                            onEditVisit: (index) =>
+                                _editRecurringVisit(index, state),
+                            onRemoveVisit: (index) =>
+                                _removeRecurringVisit(index, state),
+                          ),
+                          const SizedBox(height: 10),
                           ClServiceGenderPreferenceSectionWidget(
                             selectedPreference: state.genderPreference,
                             onChanged: (preference) {
-                              _handleGenderPreferenceChanged(
-                                bloc,
-                                preference,
-                              );
+                              _handleGenderPreferenceChanged(bloc, preference);
                             },
                           ),
                           const SizedBox(height: 10),
@@ -210,8 +223,7 @@ class _ClMainServiceScheduleScreenState
                                 ),
                             scheduledTime: _fromTimeHhMm,
                             durationHours: _effectiveServiceHours(
-                              estimatedHours:
-                                  estimate?.size?.estimatedHours ?? 0,
+                              estimatedHours: _perVisitEstimatedHours(estimate),
                               numberOfWorkers: _requiredWorkersCount(state),
                             ),
                             onSelectedWorkersChanged: (workerIds) {
@@ -552,7 +564,9 @@ class _ClMainServiceScheduleScreenState
     if (value.isEmpty) return;
     setState(() {
       _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
+      _replacePrimaryRecurringVisit();
     });
+    _requestRecurringEstimateIfPossible();
   }
 
   Future<void> _pickFromTime() async {
@@ -568,13 +582,161 @@ class _ClMainServiceScheduleScreenState
     if (value.isEmpty) return;
     setState(() {
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
+      _replacePrimaryRecurringVisit();
       _syncToTime();
     });
+    _requestRecurringEstimateIfPossible();
+  }
+
+  List<CleaningRecurringSessionInput> get _recurringSessionsForRequest {
+    if (!_isRecurring || _recurringSessions.length < 2) {
+      return const <CleaningRecurringSessionInput>[];
+    }
+    return _recurringSessions.normalized;
+  }
+
+  double _perVisitEstimatedHours(EstimatePriceResponseModel? estimate) {
+    if (_isRecurring) {
+      final sessions = estimate?.schedule?.sessions;
+      if (sessions != null && sessions.isNotEmpty && sessions.first.hours > 0) {
+        return sessions.first.hours;
+      }
+      final total = estimate?.size?.estimatedHours ?? 0;
+      final count = _recurringSessions.length;
+      if (count >= 2 && total > 0) return total / count;
+    }
+    return estimate?.size?.estimatedHours ?? 0;
+  }
+
+  void _setRecurringEnabled(bool enabled, ClMainState state) {
+    setState(() {
+      _isRecurring = enabled;
+      _recurringSessions = enabled
+          ? <CleaningRecurringSessionInput>[
+              CleaningRecurringSessionInput(
+                date: _selectedDate,
+                time: _fromTimeHhMm,
+              ),
+            ]
+          : const <CleaningRecurringSessionInput>[];
+      _resetAppliedCoupon(message: 'تم تغيير نمط الحجز. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  Future<void> _addRecurringVisit(ClMainState state) async {
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
+    final initialDate = _recurringSessions.isEmpty
+        ? _selectedDate
+        : _recurringSessions.last.date.add(const Duration(days: 7));
+    final dateValue = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: tomorrow,
+      initialDate: initialDate,
+    );
+    if (!mounted || dateValue.isEmpty) return;
+    final date = CleaningScheduleDateTimeLogic.parseDateApi(dateValue);
+    if (date == null) return;
+
+    final timeValue = await AppPickers.showAppTimePicker(context: context);
+    if (!mounted || timeValue.isEmpty) return;
+    final time = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(timeValue);
+    final next = CleaningRecurringSessionInput(date: date, time: time);
+    if (_recurringSessions.any((session) => session.slotKey == next.slotKey)) {
+      _showDuplicateRecurringVisit();
+      return;
+    }
+
+    _applyRecurringSessions(<CleaningRecurringSessionInput>[
+      ..._recurringSessions,
+      next,
+    ]);
+    _requestUpdatedEstimate(state);
+  }
+
+  Future<void> _editRecurringVisit(int index, ClMainState state) async {
+    if (index < 0 || index >= _recurringSessions.length) return;
+    final current = _recurringSessions[index];
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
+    final dateValue = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: tomorrow,
+      initialDate: current.date,
+    );
+    if (!mounted || dateValue.isEmpty) return;
+    final date = CleaningScheduleDateTimeLogic.parseDateApi(dateValue);
+    if (date == null) return;
+
+    final timeValue = await AppPickers.showAppTimePicker(context: context);
+    if (!mounted || timeValue.isEmpty) return;
+    final time = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(timeValue);
+    final replacement = CleaningRecurringSessionInput(date: date, time: time);
+    final duplicated = _recurringSessions.indexed.any(
+      (entry) => entry.$1 != index && entry.$2.slotKey == replacement.slotKey,
+    );
+    if (duplicated) {
+      _showDuplicateRecurringVisit();
+      return;
+    }
+
+    final next = _recurringSessions.toList(growable: false);
+    final edited = <CleaningRecurringSessionInput>[...next];
+    edited[index] = replacement;
+    _applyRecurringSessions(edited);
+    _requestUpdatedEstimate(state);
+  }
+
+  void _removeRecurringVisit(int index, ClMainState state) {
+    if (index <= 0 || index >= _recurringSessions.length) return;
+    final next = <CleaningRecurringSessionInput>[..._recurringSessions]
+      ..removeAt(index);
+    _applyRecurringSessions(next);
+    _requestUpdatedEstimate(state);
+  }
+
+  void _applyRecurringSessions(List<CleaningRecurringSessionInput> sessions) {
+    setState(() {
+      _recurringSessions = sessions.normalized;
+      if (_recurringSessions.isNotEmpty) {
+        final first = _recurringSessions.first;
+        _selectedDate = first.date;
+        _fromTimeHhMm = first.time;
+      }
+      _syncToTime();
+      _resetAppliedCoupon(message: 'تم تحديث الزيارات. أعد تطبيق الكوبون.');
+    });
+  }
+
+  void _replacePrimaryRecurringVisit() {
+    if (!_isRecurring || _recurringSessions.isEmpty) return;
+    final updated = <CleaningRecurringSessionInput>[..._recurringSessions];
+    updated[0] = CleaningRecurringSessionInput(
+      date: _selectedDate,
+      time: _fromTimeHhMm,
+    );
+    _recurringSessions = updated.normalized;
+    final first = _recurringSessions.first;
+    _selectedDate = first.date;
+    _fromTimeHhMm = first.time;
+  }
+
+  void _requestRecurringEstimateIfPossible() {
+    if (!_isRecurring || _recurringSessions.length < 2) return;
+    final bloc = _bloc;
+    if (bloc != null) _requestUpdatedEstimate(bloc.state);
+  }
+
+  void _showDuplicateRecurringVisit() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('لا يمكن إضافة نفس تاريخ ووقت الزيارة مرتين.'),
+      ),
+    );
   }
 
   void _syncToTime() {
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
-    final estimatedHours = estimate?.size?.estimatedHours ?? 0;
+    final estimatedHours = _perVisitEstimatedHours(estimate);
     final blocState = _bloc?.state;
     final numberOfWorkers = blocState == null
         ? 1
@@ -668,7 +830,7 @@ class _ClMainServiceScheduleScreenState
     }
 
     final estimateForWorkers = _currentEstimate ?? args.estimate;
-    final estimatedHours = estimateForWorkers.size?.estimatedHours ?? 0;
+    final estimatedHours = _perVisitEstimatedHours(estimateForWorkers);
     final selectedWorkers = _requiredWorkersCount(state);
     final requiredWorkers =
         estimateForWorkers.requiredWorkers ??
@@ -680,6 +842,15 @@ class _ClMainServiceScheduleScreenState
           content: Text(
             'مدة العمل تتجاوز 8 ساعات لكل عامل. يجب طلب $requiredWorkers عمال على الأقل لإتمام هذا الطلب.',
           ),
+        ),
+      );
+      return;
+    }
+
+    if (_isRecurring && _recurringSessions.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الحجز الدوري يحتاج إلى زيارتين على الأقل.'),
         ),
       );
       return;
@@ -725,6 +896,7 @@ class _ClMainServiceScheduleScreenState
           assignmentMode: state.assignmentMode,
           numberOfWorkers: selectedWorkers,
           preferredWorkerIds: selectedWorkerIds,
+          recurringSessions: _recurringSessionsForRequest,
           cleaningServices: _selectedCleaningServicesPayload(),
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
@@ -780,7 +952,9 @@ class _ClMainServiceScheduleScreenState
 
     final workerIds = selectedWorkerIds ?? state.selectedWorkerIds;
     final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
-    final stateWorkerCount = state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers;
+    final stateWorkerCount = state.numberOfWorkers < 1
+        ? 1
+        : state.numberOfWorkers;
     final requestedWorkers = workerIds.length > stateWorkerCount
         ? workerIds.length
         : stateWorkerCount;
@@ -811,6 +985,7 @@ class _ClMainServiceScheduleScreenState
           assignmentMode: assignmentMode,
           numberOfWorkers: requestedWorkers,
           preferredWorkerIds: workerIds,
+          recurringSessions: _recurringSessionsForRequest,
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,

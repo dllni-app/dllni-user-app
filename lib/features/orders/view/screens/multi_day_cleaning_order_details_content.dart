@@ -14,10 +14,12 @@ class MultiDayCleaningOrderDetailsScreen extends StatefulWidget {
     super.key,
     required this.orderId,
     this.initialSessionId,
+    this.recurring = false,
   });
 
   final int orderId;
   final int? initialSessionId;
+  final bool recurring;
 
   @override
   State<MultiDayCleaningOrderDetailsScreen> createState() =>
@@ -39,7 +41,8 @@ class _MultiDayCleaningOrderDetailsScreenState
 
   bool get _canReschedule {
     final schedule = _schedule;
-    return schedule != null &&
+    return !widget.recurring &&
+        schedule != null &&
         schedule.sessions.isNotEmpty &&
         schedule.sessions.every((session) => session.canReschedule == true);
   }
@@ -103,7 +106,9 @@ class _MultiDayCleaningOrderDetailsScreenState
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'تعذر تحميل تفاصيل أيام المناسبة. حاول مرة أخرى.';
+        _error = widget.recurring
+            ? 'تعذر تحميل الزيارات الدورية. حاول مرة أخرى.'
+            : 'تعذر تحميل تفاصيل أيام المناسبة. حاول مرة أخرى.';
       });
     }
   }
@@ -176,9 +181,12 @@ class _MultiDayCleaningOrderDetailsScreenState
     final sessionId = session.id;
     if (sessionId == null || !session.canConfirmCompletion) return;
     final approved = await _confirmDialog(
-      title: 'تأكيد إكمال هذا اليوم',
-      message:
-          'هل تؤكد أن العمل الخاص بهذه الجلسة انتهى؟ سيُغلق هذا اليوم فقط، وتبقى الأيام القادمة ضمن نفس الحجز.',
+      title: widget.recurring
+          ? 'تأكيد إكمال هذه الزيارة'
+          : 'تأكيد إكمال هذا اليوم',
+      message: widget.recurring
+          ? 'هل تؤكد أن العمل الخاص بهذه الزيارة انتهى؟ ستُغلق هذه الزيارة فقط، وتبقى الزيارات القادمة ضمن نفس الحجز.'
+          : 'هل تؤكد أن العمل الخاص بهذه الجلسة انتهى؟ سيُغلق هذا اليوم فقط، وتبقى الأيام القادمة ضمن نفس الحجز.',
       confirmLabel: 'تأكيد الإكمال',
     );
     if (!approved) return;
@@ -196,16 +204,19 @@ class _MultiDayCleaningOrderDetailsScreenState
     final sessionId = session.id;
     if (sessionId == null || !session.canCancel) return;
     final reason = await _askText(
-      title: 'إلغاء هذا اليوم فقط',
+      title: widget.recurring ? 'إلغاء هذه الزيارة فقط' : 'إلغاء هذا اليوم فقط',
       hint: 'سبب الإلغاء',
       confirmLabel: 'إلغاء اليوم',
     );
     if (reason == null) return;
 
     final approved = await _confirmDialog(
-      title: 'تأكيد إلغاء اليوم ${session.sequence}',
-      message:
-          'سيتم إلغاء هذه الجلسة فقط وتحرير العمال المرتبطين بها. الأيام المنفذة وباقي الأيام لن تُلغى.',
+      title: widget.recurring
+          ? 'تأكيد إلغاء الزيارة ${session.sequence}'
+          : 'تأكيد إلغاء اليوم ${session.sequence}',
+      message: widget.recurring
+          ? 'سيتم إلغاء هذه الزيارة فقط وتحرير العمال المرتبطين بها. الزيارات المنفذة وبقية الزيارات لن تُلغى.'
+          : 'سيتم إلغاء هذه الجلسة فقط وتحرير العمال المرتبطين بها. الأيام المنفذة وباقي الأيام لن تُلغى.',
       confirmLabel: 'تأكيد الإلغاء',
       destructive: true,
     );
@@ -433,12 +444,16 @@ class _MultiDayCleaningOrderDetailsScreenState
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Text('تفاصيل المناسبة'),
+        title: Text(
+          widget.recurring ? 'تفاصيل الحجز الدوري' : 'تفاصيل المناسبة',
+        ),
         centerTitle: true,
         actions: [
           if (_canReschedule)
             IconButton(
-              tooltip: 'تعديل أيام المناسبة',
+              tooltip: widget.recurring
+                  ? 'تعديل الزيارات'
+                  : 'تعديل أيام المناسبة',
               onPressed: _openReschedule,
               icon: const Icon(Icons.edit_calendar_outlined),
             ),
@@ -536,8 +551,12 @@ class _MultiDayCleaningOrderDetailsScreenState
                 Expanded(
                   child: AppText.titleMedium(
                     bookingNumber == null || bookingNumber.isEmpty
-                        ? 'مساعدة مناسبة - ${schedule.daysCount} أيام'
-                        : 'مساعدة مناسبة #$bookingNumber',
+                        ? (widget.recurring
+                              ? 'حجز تنظيف دوري - ${schedule.daysCount} زيارات'
+                              : 'مساعدة مناسبة - ${schedule.daysCount} أيام')
+                        : (widget.recurring
+                              ? 'حجز تنظيف دوري #$bookingNumber'
+                              : 'مساعدة مناسبة #$bookingNumber'),
                     fontWeight: FontWeight.w800,
                     textAlign: TextAlign.start,
                   ),
@@ -569,7 +588,7 @@ class _MultiDayCleaningOrderDetailsScreenState
         ],
         const SizedBox(height: 16),
         AppText.titleSmall(
-          'أيام التنفيذ',
+          widget.recurring ? 'الزيارات' : 'أيام التنفيذ',
           fontWeight: FontWeight.w800,
           textAlign: TextAlign.start,
         ),
@@ -589,7 +608,9 @@ class _MultiDayCleaningOrderDetailsScreenState
             border: Border.all(color: const Color(0xFFBFDBFE)),
           ),
           child: AppText.bodySmall(
-            'كل يوم هو جلسة تنفيذ مستقلة داخل نفس رقم الحجز. إكمال يوم لا يغلق المناسبة قبل انتهاء آخر جلسة مطلوبة.',
+            widget.recurring
+                ? 'كل زيارة مستقلة داخل نفس رقم الحجز. غياب عامل أو استبداله في زيارة لا يلغي الزيارات الأخرى.'
+                : 'كل يوم هو جلسة تنفيذ مستقلة داخل نفس رقم الحجز. إكمال يوم لا يغلق المناسبة قبل انتهاء آخر جلسة مطلوبة.',
             color: const Color(0xFF1E3A8A),
             fontWeight: FontWeight.w700,
             textAlign: TextAlign.start,
@@ -679,7 +700,9 @@ class _MultiDayCleaningOrderDetailsScreenState
             children: [
               Expanded(
                 child: AppText.bodyLarge(
-                  'اليوم ${session.sequence} من $totalDays',
+                  widget.recurring
+                      ? 'الزيارة ${session.sequence} من $totalDays'
+                      : 'اليوم ${session.sequence} من $totalDays',
                   fontWeight: FontWeight.w800,
                   textAlign: TextAlign.start,
                 ),
@@ -756,7 +779,11 @@ class _MultiDayCleaningOrderDetailsScreenState
           FilledButton.icon(
             onPressed: busy ? null : () => _confirmCompletion(session),
             icon: const Icon(Icons.task_alt),
-            label: const Text('تأكيد إكمال هذا اليوم'),
+            label: Text(
+              widget.recurring
+                  ? 'تأكيد إكمال هذه الزيارة'
+                  : 'تأكيد إكمال هذا اليوم',
+            ),
           ),
         ],
         if (session.canCancel || session.canSendSos) ...[
@@ -780,7 +807,9 @@ class _MultiDayCleaningOrderDetailsScreenState
                   child: OutlinedButton.icon(
                     onPressed: busy ? null : () => _cancelSession(session),
                     icon: const Icon(Icons.event_busy_outlined),
-                    label: const Text('إلغاء هذا اليوم'),
+                    label: Text(
+                      widget.recurring ? 'إلغاء الزيارة' : 'إلغاء هذا اليوم',
+                    ),
                   ),
                 ),
             ],

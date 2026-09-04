@@ -5,14 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   final visits = <CleaningRecurringSessionInput>[
-    CleaningRecurringSessionInput(
-      date: DateTime(2026, 9, 18),
-      time: '11:00',
-    ),
-    CleaningRecurringSessionInput(
-      date: DateTime(2026, 9, 12),
-      time: '09:30',
-    ),
+    CleaningRecurringSessionInput(date: DateTime(2026, 9, 18), time: '11:00'),
+    CleaningRecurringSessionInput(date: DateTime(2026, 9, 12), time: '09:30'),
   ];
 
   test('create payload sends a canonical recurring schedule', () {

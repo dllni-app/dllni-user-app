@@ -175,6 +175,7 @@ class CleaningSessionWorkerAssignmentModel {
 class CleaningBookingSessionModel {
   final int? id;
   final int sequence;
+  final String? sessionType;
   final DateTime? date;
   final String? time;
   final double hours;
@@ -207,6 +208,7 @@ class CleaningBookingSessionModel {
   const CleaningBookingSessionModel({
     this.id,
     required this.sequence,
+    this.sessionType,
     this.date,
     this.time,
     required this.hours,
@@ -246,6 +248,7 @@ class CleaningBookingSessionModel {
     return CleaningBookingSessionModel(
       id: _int(json['id']),
       sequence: _int(json['sequence']) ?? 1,
+      sessionType: _string(json['sessionType'] ?? json['session_type']),
       date: DateTime.tryParse(_string(json['date']) ?? ''),
       time: _string(json['time']),
       hours:

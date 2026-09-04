@@ -13,14 +13,8 @@ void main() {
     int? removedIndex;
 
     final sessions = <CleaningRecurringSessionInput>[
-      CleaningRecurringSessionInput(
-        date: DateTime(2026, 9, 12),
-        time: '09:00',
-      ),
-      CleaningRecurringSessionInput(
-        date: DateTime(2026, 9, 19),
-        time: '09:00',
-      ),
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 12), time: '09:00'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 19), time: '09:00'),
     ];
 
     await tester.pumpWidget(
