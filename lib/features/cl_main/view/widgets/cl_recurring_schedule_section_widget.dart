@@ -61,7 +61,7 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
             if (enabled) ...[
               const Divider(height: 22),
               DropdownButtonFormField<CleaningRecurringPattern>(
-                value: pattern,
+                initialValue: pattern,
                 decoration: const InputDecoration(
                   labelText: 'نمط التكرار',
                   border: OutlineInputBorder(),
