@@ -45,7 +45,7 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: const Text(
-                'فعّل الخيار إذا أردت تنفيذ نفس خدمة التنظيف في أكثر من موعد ضمن حجز واحد.',
+                'فعّل الخيار لتنفيذ نفس خدمة التنظيف في أكثر من موعد ضمن حجز واحد، خلال فترة لا تتجاوز 30 يوماً.',
               ),
             ),
             if (enabled) ...[
