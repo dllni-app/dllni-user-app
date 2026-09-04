@@ -1,3 +1,4 @@
+# One-time recovery run. Remove after the recurring UI patch is committed.
 name: Apply Recurring Cleaning UI V3
 
 on:
