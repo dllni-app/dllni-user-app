@@ -589,7 +589,9 @@ class _ClMainServiceScheduleScreenState
   }
 
   List<CleaningRecurringSessionInput> get _recurringSessionsForRequest {
-    if (!_isRecurring || _recurringSessions.length < 2) {
+    if (!_isRecurring ||
+        _recurringSessions.length < 2 ||
+        _recurringSessions.exceedsMaxWindow) {
       return const <CleaningRecurringSessionInput>[];
     }
     return _recurringSessions.normalized;
@@ -647,10 +649,16 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
-    _applyRecurringSessions(<CleaningRecurringSessionInput>[
+    final proposed = <CleaningRecurringSessionInput>[
       ..._recurringSessions,
       next,
-    ]);
+    ];
+    if (proposed.exceedsMaxWindow) {
+      _showRecurringWindowLimit();
+      return;
+    }
+
+    _applyRecurringSessions(proposed);
     _requestUpdatedEstimate(state);
   }
 
@@ -682,6 +690,10 @@ class _ClMainServiceScheduleScreenState
     final next = _recurringSessions.toList(growable: false);
     final edited = <CleaningRecurringSessionInput>[...next];
     edited[index] = replacement;
+    if (edited.exceedsMaxWindow) {
+      _showRecurringWindowLimit();
+      return;
+    }
     _applyRecurringSessions(edited);
     _requestUpdatedEstimate(state);
   }
@@ -721,7 +733,11 @@ class _ClMainServiceScheduleScreenState
   }
 
   void _requestRecurringEstimateIfPossible() {
-    if (!_isRecurring || _recurringSessions.length < 2) return;
+    if (!_isRecurring ||
+        _recurringSessions.length < 2 ||
+        _recurringSessions.exceedsMaxWindow) {
+      return;
+    }
     final bloc = _bloc;
     if (bloc != null) _requestUpdatedEstimate(bloc.state);
   }
@@ -730,6 +746,16 @@ class _ClMainServiceScheduleScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('لا يمكن إضافة نفس تاريخ ووقت الزيارة مرتين.'),
+      ),
+    );
+  }
+
+  void _showRecurringWindowLimit() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'يجب أن تقع جميع زيارات الحجز الدوري ضمن فترة لا تتجاوز 30 يوماً.',
+        ),
       ),
     );
   }
@@ -853,6 +879,11 @@ class _ClMainServiceScheduleScreenState
           content: Text('الحجز الدوري يحتاج إلى زيارتين على الأقل.'),
         ),
       );
+      return;
+    }
+
+    if (_isRecurring && _recurringSessions.exceedsMaxWindow) {
+      _showRecurringWindowLimit();
       return;
     }
 
