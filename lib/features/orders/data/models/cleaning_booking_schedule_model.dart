@@ -334,6 +334,7 @@ class CleaningBookingSessionModel {
   bool get isCompleted => status == 'completed';
   bool get isCancelled => status == 'cancelled';
   bool get isSkipped => status == 'skipped';
+  bool get isPaused => status == 'paused';
   bool get isTerminal =>
       isCompleted || isCancelled || isSkipped || status == 'under_dispute';
   bool get isAwaitingStartVerification =>
@@ -360,6 +361,12 @@ class CleaningBookingSessionModel {
 
 class CleaningBookingScheduleModel {
   final String mode;
+  final bool isRecurring;
+  final bool isPaused;
+  final bool canPause;
+  final bool canResume;
+  final String? pausedAt;
+  final String? pauseReason;
   final int daysCount;
   final int completedDaysCount;
   final int cancelledDaysCount;
@@ -373,6 +380,12 @@ class CleaningBookingScheduleModel {
 
   const CleaningBookingScheduleModel({
     required this.mode,
+    this.isRecurring = false,
+    this.isPaused = false,
+    this.canPause = false,
+    this.canResume = false,
+    this.pausedAt,
+    this.pauseReason,
     required this.daysCount,
     required this.completedDaysCount,
     required this.cancelledDaysCount,
@@ -399,6 +412,14 @@ class CleaningBookingScheduleModel {
       mode:
           _string(json['mode']) ??
           (sessions.length > 1 ? 'multi_day' : 'single_day'),
+      isRecurring:
+          _bool(json['isRecurring'] ?? json['is_recurring']) ??
+          sessions.any((item) => item.sessionType == 'recurring_cleaning'),
+      isPaused: _bool(json['isPaused'] ?? json['is_paused']) ?? false,
+      canPause: _bool(json['canPause'] ?? json['can_pause']) ?? false,
+      canResume: _bool(json['canResume'] ?? json['can_resume']) ?? false,
+      pausedAt: _string(json['pausedAt'] ?? json['paused_at']),
+      pauseReason: _string(json['pauseReason'] ?? json['pause_reason']),
       daysCount:
           _int(json['daysCount'] ?? json['days_count']) ?? sessions.length,
       completedDaysCount:
@@ -437,6 +458,8 @@ class CleaningBookingScheduleModel {
 
   bool get isMultiDay => mode == 'multi_day' || sessions.length > 1;
   bool get hasSessions => sessions.isNotEmpty;
+  bool get hasRecurringSeriesState =>
+      isRecurring || isPaused || canPause || canResume;
 
   CleaningBookingSessionModel? sessionById(int? sessionId) {
     if (sessionId == null) return null;

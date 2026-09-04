@@ -31,6 +31,7 @@ class _MultiDayCleaningOrderDetailsScreenState
   CleaningMultiDayOrderEnvelope? _envelope;
   bool _loading = true;
   int? _busySessionId;
+  bool _busySeriesAction = false;
   bool _submittingReview = false;
   String? _error;
   String? _actionError;
@@ -141,6 +142,35 @@ class _MultiDayCleaningOrderDetailsScreenState
       });
     } finally {
       if (mounted) setState(() => _busySessionId = null);
+    }
+  }
+
+  Future<void> _runSeriesAction(
+    Future<CleaningMultiDayOrderEnvelope> Function() action,
+  ) async {
+    if (_busySeriesAction || _busySessionId != null) return;
+
+    setState(() {
+      _busySeriesAction = true;
+      _actionError = null;
+    });
+
+    try {
+      final envelope = await action();
+      if (!mounted) return;
+      if (envelope.schedule != null) {
+        setState(() => _envelope = envelope);
+      } else {
+        await _load();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _actionError =
+            'تعذر تحديث حالة الحجز الدوري. حدّث الطلب وتحقق من حالته ثم حاول مرة أخرى.';
+      });
+    } finally {
+      if (mounted) setState(() => _busySeriesAction = false);
     }
   }
 
@@ -258,6 +288,50 @@ class _MultiDayCleaningOrderDetailsScreenState
         sessionId: sessionId,
         reason: reason,
       ),
+    );
+  }
+
+  Future<void> _pauseRecurringSeries() async {
+    final schedule = _schedule;
+    if (!widget.recurring || schedule == null || !schedule.canPause) return;
+
+    final reason = await _askText(
+      title: 'إيقاف الحجز الدوري مؤقتاً',
+      hint: 'سبب الإيقاف المؤقت',
+      confirmLabel: 'متابعة',
+    );
+    if (reason == null) return;
+
+    final approved = await _confirmDialog(
+      title: 'تأكيد إيقاف الحجز الدوري',
+      message:
+          'سيتم إيقاف الزيارات المستقبلية المؤهلة مؤقتاً وتحرير العمال المرتبطين بها دون اعتبارها ملغاة أو متخطاة. يمكنك استئناف نفس الحجز لاحقاً.',
+      confirmLabel: 'إيقاف مؤقت',
+    );
+    if (!approved) return;
+
+    await _runSeriesAction(
+      () => _sessions.pauseRecurringSeries(
+        orderId: widget.orderId,
+        reason: reason,
+      ),
+    );
+  }
+
+  Future<void> _resumeRecurringSeries() async {
+    final schedule = _schedule;
+    if (!widget.recurring || schedule == null || !schedule.canResume) return;
+
+    final approved = await _confirmDialog(
+      title: 'استئناف الحجز الدوري',
+      message:
+          'ستعود الزيارات المستقبلية للبحث عن عمال. أي زيارة انتهى موعدها أثناء الإيقاف ستُعامل كزيارة متخطاة دون رسوم إلغاء.',
+      confirmLabel: 'استئناف الحجز',
+    );
+    if (!approved) return;
+
+    await _runSeriesAction(
+      () => _sessions.resumeRecurringSeries(orderId: widget.orderId),
     );
   }
 
@@ -612,6 +686,10 @@ class _MultiDayCleaningOrderDetailsScreenState
             ],
           ],
         ),
+        if (widget.recurring && schedule.hasRecurringSeriesState) ...[
+          const SizedBox(height: 12),
+          _recurringSeriesCard(schedule),
+        ],
         if (_envelope?.canReview == true || _envelope?.hasReview == true) ...[
           const SizedBox(height: 12),
           _eventReviewCard(),
@@ -646,6 +724,70 @@ class _MultiDayCleaningOrderDetailsScreenState
             textAlign: TextAlign.start,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _recurringSeriesCard(CleaningBookingScheduleModel schedule) {
+    final paused = schedule.isPaused;
+    final busy = _busySeriesAction;
+
+    return _card(
+      children: [
+        Row(
+          children: [
+            Icon(
+              paused ? Icons.pause_circle_filled_rounded : Icons.repeat_rounded,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: AppText.bodyLarge(
+                paused ? 'الحجز الدوري متوقف مؤقتاً' : 'إدارة الحجز الدوري',
+                fontWeight: FontWeight.w800,
+                textAlign: TextAlign.start,
+              ),
+            ),
+            if (busy)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AppText.bodySmall(
+          paused
+              ? 'الزيارات المستقبلية المتوقفة لا تُعرض للعمال حتى تستأنف هذا الحجز.'
+              : 'يمكنك إيقاف الزيارات المستقبلية مؤقتاً دون إلغاء الحجز أو حذف الزيارات.',
+          color: const Color(0xFF6B7280),
+          fontWeight: FontWeight.w600,
+          textAlign: TextAlign.start,
+        ),
+        if (schedule.pauseReason != null &&
+            schedule.pauseReason!.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _infoRow('سبب الإيقاف', schedule.pauseReason!.trim()),
+        ],
+        if (schedule.canResume) ...[
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: busy || _busySessionId != null
+                ? null
+                : _resumeRecurringSeries,
+            icon: const Icon(Icons.play_circle_outline_rounded),
+            label: const Text('استئناف الحجز الدوري'),
+          ),
+        ] else if (schedule.canPause) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: busy || _busySessionId != null
+                ? null
+                : _pauseRecurringSeries,
+            icon: const Icon(Icons.pause_circle_outline_rounded),
+            label: const Text('إيقاف الحجز مؤقتاً'),
+          ),
+        ],
       ],
     );
   }

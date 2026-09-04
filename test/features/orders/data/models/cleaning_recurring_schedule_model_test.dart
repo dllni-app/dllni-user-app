@@ -66,4 +66,40 @@ void main() {
       expect(schedule.totalHours, 3);
     },
   );
+
+  test('recurring schedule preserves server pause and resume capabilities', () {
+    final schedule = CleaningBookingScheduleModel.fromJson({
+      'mode': 'multi_day',
+      'isRecurring': true,
+      'isPaused': true,
+      'canPause': false,
+      'canResume': true,
+      'pausedAt': '2026-09-10T08:00:00+03:00',
+      'pauseReason': 'سفر لمدة أسبوع',
+      'sessions': [
+        {
+          'id': 101,
+          'sequence': 1,
+          'sessionType': 'recurring_cleaning',
+          'date': '2026-09-12',
+          'time': '09:00',
+          'hours': 2,
+          'status': 'paused',
+          'canSkip': false,
+        },
+      ],
+    });
+
+    expect(schedule.isRecurring, isTrue);
+    expect(schedule.isPaused, isTrue);
+    expect(schedule.canPause, isFalse);
+    expect(schedule.canResume, isTrue);
+    expect(schedule.pausedAt, '2026-09-10T08:00:00+03:00');
+    expect(schedule.pauseReason, 'سفر لمدة أسبوع');
+    expect(schedule.hasRecurringSeriesState, isTrue);
+    expect(schedule.sessions.single.isPaused, isTrue);
+    expect(schedule.sessions.single.isTerminal, isFalse);
+    expect(schedule.remainingDaysCount, 1);
+    expect(schedule.totalHours, 2);
+  });
 }
