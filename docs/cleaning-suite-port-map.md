@@ -62,6 +62,33 @@ Verification:
 
 Status: recurring per-visit details, worker-change and skip parity verified for this slice. This does not declare whole-branch parity.
 
+### Recurring Cleaning pause/resume slice
+
+Implemented end-to-end and ported selectively to both User App feature branches:
+
+- Pause/resume is a series-level action, separate from per-visit skip and cancellation.
+- Backend stores `recurring_paused_at` and `recurring_pause_reason` on the parent booking and uses reversible session status `paused` for eligible future recurring visits.
+- Pausing releases active future session assignments before travel/work starts, which also releases the worker schedule and financial reservation capacity represented by those active assignments.
+- Paused visits remain part of the recurring contract and are not treated as terminal or removed from customer fallback totals merely because the series is paused.
+- Worker acceptance is blocked while a visit is paused.
+- Resuming returns future paused visits to `scheduled/searching` so they can be accepted again.
+- A visit whose scheduled time passed while the series was paused becomes `skipped` on resume without a cancellation penalty; parent financial totals are recalculated through the shared session financial aggregation service.
+- Schedule payload is server-authoritative through `isRecurring`, `isPaused`, `canPause`, `canResume`, `pausedAt` and `pauseReason`.
+- User App calls dedicated `/recurring/pause` and `/recurring/resume` endpoints and presents one series-management card above the individual visits.
+- The Flutter model treats `paused` as non-terminal and relies on server capabilities rather than guessing whether pause/resume is allowed.
+
+Verification:
+
+- Backend pause/resume implementation commit: `d5bfe5841ccc0ebda10c56be5435eeee9af9c944`.
+- Backend permanent recurring CI after staging cleanup: run `33930541324`, green.
+- User main pause/resume UI commit: `9a5e206b2690107f3a36ae6e0b303e3a71e74c89`.
+- User main permanent recurring CI after staging cleanup: run `33930730121`, green.
+- User dev selective four-file pause/resume port commit: `bf9becde21a4518cb563c655a8d0be964a7a9c8b`.
+- User dev permanent recurring CI: run `33930783514`, green.
+- User dev general Cleaning Suite CI for the same port: run `33930783459`, green.
+
+Status: recurring pause/resume parity verified for this slice. This does not declare whole-branch parity.
+
 ### Multi-Day Event Assistance
 
 The Multi-Day customer flow was previously promoted to both feature branches. Broader whole-branch parity is intentionally not inferred from this port map.
@@ -108,14 +135,16 @@ Verified recurring backend capabilities include:
 - Ordinary non-recurring preferred-worker fallback remains available.
 - Customer can skip one recurring visit without cancelling the remaining series; skipped visits are excluded from chargeable parent totals and do not receive a cancellation penalty.
 - Skip eligibility is returned by the schedule presenter and enforced again by the mutation service.
+- Customer can pause and resume a recurring series using reversible future-session state while releasing active worker assignments and their associated schedule/financial capacity.
+- Visits that expire during a pause become penalty-free skipped visits on resume and parent totals are recalculated through shared session financial aggregation.
+- Pause/resume capabilities and state are returned by the schedule presenter and enforced again by the mutation service.
 
-Latest verified backend recurring CI: run `33928467491`, green.
+Latest verified backend recurring CI: run `33930541324`, green.
 
 ## Remaining Recurring Cleaning work
 
 The following items are not marked complete by this map:
 
-- Pause/resume series.
 - Edit future recurrence with repricing and reconfirmation.
 - Task-based versus hour-based recurring modes.
 - Full worker-scope UX for specific worker(s) versus any worker.
