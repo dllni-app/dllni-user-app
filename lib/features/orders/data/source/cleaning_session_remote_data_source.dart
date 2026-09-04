@@ -109,6 +109,43 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningRecurringScheduleRevisionPreviewModel>
+  previewRecurringScheduleRevision({
+    required int orderId,
+    required List<Map<String, dynamic>> sessions,
+  }) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/$orderId/recurring-schedule/preview',
+        data: <String, dynamic>{
+          'schedule': <String, dynamic>{
+            'mode': 'recurring',
+            'sessions': sessions,
+          },
+        },
+      ),
+      jsonConvert: cleaningRecurringScheduleRevisionPreviewFromJson,
+    );
+  }
+
+  Future<CleaningMultiDayOrderEnvelope> confirmRecurringScheduleRevision({
+    required int orderId,
+    required List<Map<String, dynamic>> sessions,
+    required String revisionToken,
+  }) {
+    return _post(
+      '/api/v1/user/cleaning/orders/$orderId/recurring-schedule/confirm',
+      data: <String, dynamic>{
+        'schedule': <String, dynamic>{
+          'mode': 'recurring',
+          'sessions': sessions,
+        },
+        'revisionToken': revisionToken,
+      },
+    );
+  }
+
   Future<CleaningMultiDayOrderEnvelope> updateSchedule({
     required int orderId,
     required List<Map<String, dynamic>> sessions,
