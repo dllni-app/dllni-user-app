@@ -49,6 +49,7 @@ import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_order_sos_screen.dart';
+import 'multi_day_cleaning_order_details_screen.dart';
 import 'cleaning_worker_rating_screen.dart';
 
 class CleaningOrderDetailsArgs {
@@ -367,6 +368,24 @@ class _CleaningOrderDetailsScreenState
                                   ),
                                 ),
                               ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                await Navigator.of(context).push<void>(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        MultiDayCleaningOrderDetailsScreen(
+                                          orderId: _activeOrderId,
+                                        ),
+                                  ),
+                                );
+                                if (mounted) {
+                                  await _fetchDetails(showLoading: false);
+                                }
+                              },
+                              icon: const Icon(Icons.event_note_outlined),
+                              label: const Text('عرض أيام وجلسات المناسبة'),
                             ),
                           ],
                         ),

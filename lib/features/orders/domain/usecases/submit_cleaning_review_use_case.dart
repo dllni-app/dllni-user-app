@@ -19,29 +19,54 @@ class SubmitCleaningReviewUseCase
   }
 }
 
-class SubmitCleaningReviewParams with Params {
-  SubmitCleaningReviewParams({
-    required this.orderId,
+class CleaningWorkerReviewInput {
+  const CleaningWorkerReviewInput({
     required this.workerId,
     required this.rating,
     this.comment,
-    this.tags,
   });
 
-  final int orderId;
   final int workerId;
   final int rating;
   final String? comment;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'workerId': workerId,
+      'rating': rating,
+      if (comment != null && comment!.trim().isNotEmpty)
+        'comment': comment!.trim(),
+    };
+  }
+}
+
+class SubmitCleaningReviewParams with Params {
+  SubmitCleaningReviewParams({
+    required this.orderId,
+    this.workerId,
+    this.rating,
+    this.comment,
+    this.tags,
+    this.reviews,
+  });
+
+  final int orderId;
+  final int? workerId;
+  final int? rating;
+  final String? comment;
   final List<String>? tags;
+  final List<CleaningWorkerReviewInput>? reviews;
 
   @override
   BodyMap getBody() {
     return <String, dynamic>{
-      'rating': rating,
-      'workerId': workerId,
+      if (rating != null) 'rating': rating,
+      if (workerId != null) 'workerId': workerId,
       if (comment != null && comment!.trim().isNotEmpty)
         'comment': comment!.trim(),
       if (tags != null && tags!.isNotEmpty) 'tags': tags,
+      if (reviews != null && reviews!.isNotEmpty)
+        'reviews': reviews!.map((review) => review.toJson()).toList(),
     };
   }
 }

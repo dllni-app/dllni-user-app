@@ -2,6 +2,13 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
+class ClServiceScheduleEntry {
+  const ClServiceScheduleEntry({required this.dayDate, required this.time});
+
+  final String dayDate;
+  final String time;
+}
+
 class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   const ClServiceOrderSummarySectionWidget({
     required this.basePrice,
@@ -17,6 +24,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     this.scheduleDayLabel,
     this.scheduleDateLabel,
     this.scheduleTimeRange,
+    this.scheduleEntries = const <ClServiceScheduleEntry>[],
     super.key,
   });
 
@@ -33,6 +41,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   final String? scheduleDayLabel;
   final String? scheduleDateLabel;
   final String? scheduleTimeRange;
+  final List<ClServiceScheduleEntry> scheduleEntries;
 
   String _formatDistance(double distance) {
     final fixed = distance.toStringAsFixed(3);
@@ -51,6 +60,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final showProvisionalWarning = isPricingFinal == false;
     final scheduleDateLine = _scheduleDateLine;
+    final hasScheduleEntries = scheduleEntries.isNotEmpty;
     final displayedServicePrice = basePrice + (adminMargin ?? 0);
     final hasDiscount = discountAmount != null && discountAmount! > 0;
     // Coupon amounts are calculated on the coupon-eligible subtotal only.
@@ -78,15 +88,39 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
             textAlign: TextAlign.right,
           ),
           const SizedBox(height: 14),
-          if (scheduleDateLine != null) ...[
-            _SummaryRowWidget(label: 'موعد الخدمة', value: scheduleDateLine),
-            const SizedBox(height: 8),
+          if (hasScheduleEntries) ...[
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AppText.bodyMedium(
+                'مواعيد الخدمة',
+                color: const Color(0xFF1E2A78),
+                fontWeight: FontWeight.w800,
+                textAlign: TextAlign.right,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...List.generate(scheduleEntries.length, (index) {
+              final entry = scheduleEntries[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: index == scheduleEntries.length - 1 ? 0 : 9,
+                ),
+                child: _ScheduleEntryRowWidget(entry: entry),
+              );
+            }),
+            const SizedBox(height: 10),
+          ] else ...[
+            if (scheduleDateLine != null) ...[
+              _SummaryRowWidget(label: 'موعد الخدمة', value: scheduleDateLine),
+              const SizedBox(height: 8),
+            ],
+            if (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty) ...[
+              _SummaryRowWidget(label: 'الوقت', value: scheduleTimeRange!),
+              const SizedBox(height: 8),
+            ],
           ],
-          if (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty) ...[
-            _SummaryRowWidget(label: 'الوقت', value: scheduleTimeRange!),
-            const SizedBox(height: 8),
-          ],
-          if (scheduleDateLine != null ||
+          if (hasScheduleEntries ||
+              scheduleDateLine != null ||
               (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty)) ...[
             const Divider(color: Color(0xFFE5E7EB), thickness: 1),
             const SizedBox(height: 8),
@@ -147,6 +181,41 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   }
 }
 
+class _ScheduleEntryRowWidget extends StatelessWidget {
+  const _ScheduleEntryRowWidget({required this.entry});
+
+  final ClServiceScheduleEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      textDirection: TextDirection.rtl,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: AppText.bodyMedium(
+            entry.dayDate,
+            color: const Color(0xFF4B5563),
+            fontWeight: FontWeight.w600,
+            textAlign: TextAlign.right,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: AppText.bodyMedium(
+            entry.time,
+            color: const Color(0xFF111827),
+            fontWeight: FontWeight.w700,
+            textAlign: TextAlign.left,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SummaryRowWidget extends StatelessWidget {
   const _SummaryRowWidget({
     required this.label,
@@ -164,19 +233,26 @@ class _SummaryRowWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isTotal ? const Color(0xFF1E2A78) : const Color(0xFF4B5563);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText.bodyMedium(
-          label,
-          color: color,
-          fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
-          textAlign: TextAlign.right,
+        Flexible(
+          flex: 2,
+          child: AppText.bodyMedium(
+            label,
+            color: color,
+            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
+            textAlign: TextAlign.right,
+          ),
         ),
-        const Spacer(),
-        AppText.bodyMedium(
-          value,
-          color: valueColor ?? color,
-          fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
-          textAlign: TextAlign.right,
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 3,
+          child: AppText.bodyMedium(
+            value,
+            color: valueColor ?? color,
+            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
+            textAlign: TextAlign.end,
+          ),
         ),
       ],
     );

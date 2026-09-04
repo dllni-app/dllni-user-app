@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../data/models/create_cleaning_order_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
+import '../models/cleaning_event_session.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
 import '../models/cl_worker_room_assignment_result.dart';
@@ -12,13 +13,16 @@ import '../repository/cl_main_repo.dart';
 
 @lazySingleton
 class CreateCleaningOrderUseCase
-    implements UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
+    implements
+        UseCase<CreateCleaningOrderResponseModel, CreateCleaningOrderParams> {
   final ClMainRepo clMainRepo;
 
   CreateCleaningOrderUseCase({required this.clMainRepo});
 
   @override
-  DataResponse<CreateCleaningOrderResponseModel> call(CreateCleaningOrderParams params) {
+  DataResponse<CreateCleaningOrderResponseModel> call(
+    CreateCleaningOrderParams params,
+  ) {
     return clMainRepo.createCleaningOrder(params);
   }
 }
@@ -48,6 +52,7 @@ class CreateCleaningOrderParams with Params {
   final String? venueType;
   final String? customService;
   final double? hours;
+  final List<CleaningEventSessionInput> eventSessions;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
@@ -88,6 +93,7 @@ class CreateCleaningOrderParams with Params {
        venueType = null,
        customService = null,
        hours = null,
+       eventSessions = const <CleaningEventSessionInput>[],
        specialRequirement = null,
        notes = null;
 
@@ -101,6 +107,7 @@ class CreateCleaningOrderParams with Params {
     required this.venueType,
     required this.customService,
     required this.hours,
+    this.eventSessions = const <CleaningEventSessionInput>[],
     this.address,
     this.locationName,
     this.addressLatitude,
@@ -126,6 +133,25 @@ class CreateCleaningOrderParams with Params {
        cleaningServices = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
+
+  List<CleaningEventSessionInput> get _normalizedEventSessions =>
+      eventSessions.normalized;
+
+  double? get _resolvedLegacyEventHours {
+    final sessions = _normalizedEventSessions;
+    if (sessions.isNotEmpty) return sessions.first.hours;
+    return hours;
+  }
+
+  String get _resolvedScheduledDate {
+    final sessions = _normalizedEventSessions;
+    return sessions.isEmpty ? scheduledDate : sessions.first.dateApi;
+  }
+
+  String get _resolvedScheduledTime {
+    final sessions = _normalizedEventSessions;
+    return sessions.isEmpty ? scheduledTime : sessions.first.time;
+  }
 
   List<int> _sanitizePreferredWorkerIds() {
     final normalized = <int>[];
@@ -173,24 +199,32 @@ class CreateCleaningOrderParams with Params {
     return normalized;
   }
 
-  int? get _resolvedBedrooms => roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
+  int? get _resolvedBedrooms =>
+      roomSizeBreakdown?.legacyBedroomsCount ?? bedrooms;
   int? get _resolvedRooms => roomSizeBreakdown?.legacyRoomsCount ?? rooms;
-  int? get _resolvedBathrooms => roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
-  int? get _resolvedBalconies => roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
+  int? get _resolvedBathrooms =>
+      roomSizeBreakdown?.legacyBathroomsCount ?? bathrooms;
+  int? get _resolvedBalconies =>
+      roomSizeBreakdown?.legacyBalconiesCount ?? balconies;
   String get _resolvedLivingRoomSize =>
-      roomSizeBreakdown?.legacyLivingRoomSize ?? livingRoomSize ?? CleaningRoomSize.small.apiValue;
+      roomSizeBreakdown?.legacyLivingRoomSize ??
+      livingRoomSize ??
+      CleaningRoomSize.small.apiValue;
 
   Map<String, dynamic> _buildPropertyDetails() {
     if (_isEventAssistance) {
       return {
-        if (address != null && address!.trim().isNotEmpty) 'address': address!.trim(),
-        if (locationName != null && locationName!.trim().isNotEmpty) 'location_name': locationName!.trim(),
+        if (address != null && address!.trim().isNotEmpty)
+          'address': address!.trim(),
+        if (locationName != null && locationName!.trim().isNotEmpty)
+          'location_name': locationName!.trim(),
         'eventType': eventType,
         'guestCount': guestCount,
         'venueType': venueType,
         'customService': customService?.trim(),
-        'hours': hours,
-        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty) 'specialRequirement': specialRequirement!.trim(),
+        'hours': _resolvedLegacyEventHours,
+        if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
+          'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
       };
     }
@@ -202,8 +236,10 @@ class CreateCleaningOrderParams with Params {
       'bathrooms': _resolvedBathrooms,
       if (_resolvedBalconies != null) 'balconies': _resolvedBalconies,
       'living_room_size': _resolvedLivingRoomSize,
-      if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
-      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (roomSizeBreakdown != null)
+        'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
+      if (cleaningType != null)
+        'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
@@ -212,34 +248,48 @@ class CreateCleaningOrderParams with Params {
     final workerIds = _sanitizePreferredWorkerIds();
     final effectiveAssignmentMode = _effectiveAssignmentMode(workerIds);
     final normalizedCouponCode = couponCode?.trim();
+    final schedule = _isEventAssistance
+        ? _normalizedEventSessions.scheduleJson
+        : null;
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
-      'scheduledDate': scheduledDate,
-      'scheduledTime': scheduledTime,
-      if (addressId <= 0 && addressLatitude != null) 'addressLatitude': addressLatitude,
-      if (addressId <= 0 && addressLongitude != null) 'addressLongitude': addressLongitude,
+      'scheduledDate': _resolvedScheduledDate,
+      'scheduledTime': _resolvedScheduledTime,
+      if (addressId <= 0 && addressLatitude != null)
+        'addressLatitude': addressLatitude,
+      if (addressId <= 0 && addressLongitude != null)
+        'addressLongitude': addressLongitude,
       'genderPreference': genderPreference.apiValue,
-      if (genderPreference == CleaningGenderPreference.female && workEnvironmentConfirmation != null)
+      if (genderPreference == CleaningGenderPreference.female &&
+          workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
       'assignmentMode': effectiveAssignmentMode.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
-      if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty) 'couponCode': normalizedCouponCode,
+      if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty)
+        'couponCode': normalizedCouponCode,
       'numberOfWorkers': _resolvedNumberOfWorkers(
         workerIds,
         effectiveAssignmentMode,
       ),
     };
+    if (schedule != null) {
+      body['schedule'] = schedule;
+    }
     if (!_isEventAssistance) {
       final cleanServices = _sanitizeCleaningServices();
-      if (cleanServices.isNotEmpty) body['cleaning_services'] = cleanServices;
+      if (cleanServices.isNotEmpty) {
+        body['cleaning_services'] = cleanServices;
+      }
     }
     final assignments = workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
-    if (assignments != null && assignments.isNotEmpty) body['workerRoomAssignments'] = assignments;
+    if (assignments != null && assignments.isNotEmpty) {
+      body['workerRoomAssignments'] = assignments;
+    }
     return body;
   }
 }

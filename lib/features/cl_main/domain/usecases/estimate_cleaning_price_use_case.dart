@@ -3,6 +3,7 @@ import 'package:injectable/injectable.dart';
 
 import '../../data/models/estimate_price_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
+import '../models/cleaning_event_session.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
 import '../models/cl_worker_room_assignment_result.dart';
@@ -12,7 +13,8 @@ export '../../data/models/estimate_price_response_model.dart';
 
 @lazySingleton
 class EstimateCleaningPriceUseCase
-    implements UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
+    implements
+        UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
   final ClMainRepo clMainRepo;
 
   EstimateCleaningPriceUseCase({required this.clMainRepo});
@@ -44,6 +46,7 @@ class EstimateCleaningPriceParams with Params {
   final String? venueType;
   final String? customService;
   final double? hours;
+  final List<CleaningEventSessionInput> eventSessions;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
@@ -72,6 +75,7 @@ class EstimateCleaningPriceParams with Params {
        venueType = null,
        customService = null,
        hours = null,
+       eventSessions = const <CleaningEventSessionInput>[],
        specialRequirement = null,
        notes = null;
 
@@ -82,6 +86,7 @@ class EstimateCleaningPriceParams with Params {
     required this.venueType,
     required this.customService,
     required this.hours,
+    this.eventSessions = const <CleaningEventSessionInput>[],
     this.addressId,
     this.addressLatitude,
     this.addressLongitude,
@@ -101,6 +106,15 @@ class EstimateCleaningPriceParams with Params {
        cleaningType = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
+
+  List<CleaningEventSessionInput> get _normalizedEventSessions =>
+      eventSessions.normalized;
+
+  double? get _resolvedLegacyEventHours {
+    final sessions = _normalizedEventSessions;
+    if (sessions.isNotEmpty) return sessions.first.hours;
+    return hours;
+  }
 
   List<int> _sanitizePreferredWorkerIds() {
     final normalized = <int>[];
@@ -159,7 +173,7 @@ class EstimateCleaningPriceParams with Params {
         'guestCount': guestCount,
         'venueType': venueType,
         'customService': customService?.trim(),
-        'hours': hours,
+        'hours': _resolvedLegacyEventHours,
         if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
           'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
@@ -173,7 +187,8 @@ class EstimateCleaningPriceParams with Params {
       'living_room_size': _resolvedLivingRoomSize,
       if (roomSizeBreakdown != null)
         'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
-      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (cleaningType != null)
+        'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
@@ -181,6 +196,9 @@ class EstimateCleaningPriceParams with Params {
     final workerIds = _sanitizePreferredWorkerIds();
     final effectiveAssignmentMode = _effectiveAssignmentMode(workerIds);
     final hasAddressId = addressId != null && addressId! > 0;
+    final schedule = _isEventAssistance
+        ? _normalizedEventSessions.scheduleJson
+        : null;
     final body = <String, dynamic>{
       'propertyType': propertyType,
       if (hasAddressId) 'addressId': addressId,
@@ -196,6 +214,9 @@ class EstimateCleaningPriceParams with Params {
         effectiveAssignmentMode,
       ),
     };
+    if (schedule != null) {
+      body['schedule'] = schedule;
+    }
 
     final assignments = workerRoomAssignments == null
         ? null
