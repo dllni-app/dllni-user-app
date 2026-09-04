@@ -76,6 +76,8 @@ class _ClMainServiceScheduleScreenState
       const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
   bool _isRecurring = false;
+  CleaningRecurringPattern _recurringPattern = CleaningRecurringPattern.custom;
+  int _recurringOccurrences = 2;
   List<CleaningRecurringSessionInput> _recurringSessions =
       const <CleaningRecurringSessionInput>[];
 
@@ -197,9 +199,16 @@ class _ClMainServiceScheduleScreenState
                           const SizedBox(height: 10),
                           ClRecurringScheduleSectionWidget(
                             enabled: _isRecurring,
+                            pattern: _recurringPattern,
+                            occurrences: _recurringOccurrences,
+                            maxOccurrences: _recurringMaxOccurrences,
                             sessions: _recurringSessions,
                             onEnabledChanged: (enabled) =>
                                 _setRecurringEnabled(enabled, state),
+                            onPatternChanged: (pattern) =>
+                                _setRecurringPattern(pattern, state),
+                            onOccurrencesChanged: (occurrences) =>
+                                _setRecurringOccurrences(occurrences, state),
                             onAddVisit: () => _addRecurringVisit(state),
                             onEditVisit: (index) =>
                                 _editRecurringVisit(index, state),
@@ -562,8 +571,21 @@ class _ClMainServiceScheduleScreenState
       initialDate: _selectedDate,
     );
     if (value.isEmpty) return;
+    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);
+    if (selectedDate == null) return;
+    if (_isRecurring && _recurringPattern.isGenerated) {
+      final maxOccurrences =
+          CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+            pattern: _recurringPattern,
+            startDate: selectedDate,
+          );
+      if (_recurringOccurrences > maxOccurrences) {
+        _showRecurringPatternDateLimit(maxOccurrences);
+        return;
+      }
+    }
     setState(() {
-      _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
+      _selectedDate = selectedDate;
       _replacePrimaryRecurringVisit();
     });
     _requestRecurringEstimateIfPossible();
@@ -613,6 +635,8 @@ class _ClMainServiceScheduleScreenState
   void _setRecurringEnabled(bool enabled, ClMainState state) {
     setState(() {
       _isRecurring = enabled;
+      _recurringPattern = CleaningRecurringPattern.custom;
+      _recurringOccurrences = 2;
       _recurringSessions = enabled
           ? <CleaningRecurringSessionInput>[
               CleaningRecurringSessionInput(
@@ -626,7 +650,85 @@ class _ClMainServiceScheduleScreenState
     _requestUpdatedEstimate(state);
   }
 
+  int get _recurringMaxOccurrences {
+    if (!_recurringPattern.isGenerated) return 0;
+    return CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+      pattern: _recurringPattern,
+      startDate: _selectedDate,
+    );
+  }
+
+  void _setRecurringPattern(
+    CleaningRecurringPattern pattern,
+    ClMainState state,
+  ) {
+    if (pattern == _recurringPattern) return;
+
+    if (!pattern.isGenerated) {
+      setState(() {
+        _recurringPattern = pattern;
+        _recurringOccurrences = _recurringSessions.length < 2
+            ? 2
+            : _recurringSessions.length;
+        _resetAppliedCoupon(
+          message: 'تم تغيير نمط التكرار. أعد تطبيق الكوبون.',
+        );
+      });
+      _requestUpdatedEstimate(state);
+      return;
+    }
+
+    final maxOccurrences =
+        CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+          pattern: pattern,
+          startDate: _selectedDate,
+        );
+    if (maxOccurrences < 2) {
+      _showRecurringPatternDateLimit(maxOccurrences);
+      return;
+    }
+
+    final generated = CleaningRecurringScheduleGenerator.generate(
+      pattern: pattern,
+      startDate: _selectedDate,
+      time: _fromTimeHhMm,
+      occurrences: 2,
+    );
+    setState(() {
+      _recurringPattern = pattern;
+      _recurringOccurrences = 2;
+      _recurringSessions = generated;
+      _syncToTime();
+      _resetAppliedCoupon(message: 'تم تغيير نمط التكرار. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _setRecurringOccurrences(int occurrences, ClMainState state) {
+    if (!_recurringPattern.isGenerated || occurrences < 2) return;
+    final maxOccurrences = _recurringMaxOccurrences;
+    if (occurrences > maxOccurrences) {
+      _showRecurringPatternDateLimit(maxOccurrences);
+      return;
+    }
+
+    final generated = CleaningRecurringScheduleGenerator.generate(
+      pattern: _recurringPattern,
+      startDate: _selectedDate,
+      time: _fromTimeHhMm,
+      occurrences: occurrences,
+    );
+    setState(() {
+      _recurringOccurrences = occurrences;
+      _recurringSessions = generated;
+      _syncToTime();
+      _resetAppliedCoupon(message: 'تم تحديث عدد الزيارات. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
   Future<void> _addRecurringVisit(ClMainState state) async {
+    if (_recurringPattern != CleaningRecurringPattern.custom) return;
     final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
     final initialDate = _recurringSessions.isEmpty
         ? _selectedDate
@@ -663,6 +765,7 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _editRecurringVisit(int index, ClMainState state) async {
+    if (_recurringPattern != CleaningRecurringPattern.custom) return;
     if (index < 0 || index >= _recurringSessions.length) return;
     final current = _recurringSessions[index];
     final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
@@ -699,6 +802,7 @@ class _ClMainServiceScheduleScreenState
   }
 
   void _removeRecurringVisit(int index, ClMainState state) {
+    if (_recurringPattern != CleaningRecurringPattern.custom) return;
     if (index <= 0 || index >= _recurringSessions.length) return;
     final next = <CleaningRecurringSessionInput>[..._recurringSessions]
       ..removeAt(index);
@@ -721,6 +825,17 @@ class _ClMainServiceScheduleScreenState
 
   void _replacePrimaryRecurringVisit() {
     if (!_isRecurring || _recurringSessions.isEmpty) return;
+
+    if (_recurringPattern.isGenerated) {
+      _recurringSessions = CleaningRecurringScheduleGenerator.generate(
+        pattern: _recurringPattern,
+        startDate: _selectedDate,
+        time: _fromTimeHhMm,
+        occurrences: _recurringOccurrences,
+      );
+      return;
+    }
+
     final updated = <CleaningRecurringSessionInput>[..._recurringSessions];
     updated[0] = CleaningRecurringSessionInput(
       date: _selectedDate,
@@ -758,6 +873,15 @@ class _ClMainServiceScheduleScreenState
         ),
       ),
     );
+  }
+
+  void _showRecurringPatternDateLimit(int maxOccurrences) {
+    final message = maxOccurrences >= 2
+        ? 'التاريخ المختار يسمح بحد أقصى $maxOccurrences زيارات لهذا النمط ضمن 30 يوماً.'
+        : 'لا يمكن إنشاء زيارة ثانية لهذا النمط من التاريخ المختار ضمن نافذة 30 يوماً.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _syncToTime() {

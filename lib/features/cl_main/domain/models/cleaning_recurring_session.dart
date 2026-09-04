@@ -100,7 +100,8 @@ class CleaningRecurringScheduleGenerator {
         occurrence.month,
         occurrence.day,
       );
-      if (normalized.difference(start).inDays > cleaningRecurringMaxWindowDays) {
+      if (normalized.difference(start).inDays >
+          cleaningRecurringMaxWindowDays) {
         break;
       }
       count++;
@@ -118,10 +119,12 @@ class CleaningRecurringScheduleGenerator {
     }
 
     return switch (pattern) {
-      CleaningRecurringPattern.daily =>
-        startDate.add(Duration(days: occurrenceIndex)),
-      CleaningRecurringPattern.weekly =>
-        startDate.add(Duration(days: occurrenceIndex * 7)),
+      CleaningRecurringPattern.daily => startDate.add(
+        Duration(days: occurrenceIndex),
+      ),
+      CleaningRecurringPattern.weekly => startDate.add(
+        Duration(days: occurrenceIndex * 7),
+      ),
       CleaningRecurringPattern.monthly => _addMonthsClamped(
         startDate,
         occurrenceIndex,

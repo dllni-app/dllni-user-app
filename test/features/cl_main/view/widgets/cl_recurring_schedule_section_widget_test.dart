@@ -90,7 +90,10 @@ void main() {
 
     expect(find.text('أسبوعي'), findsOneWidget);
     expect(find.text('عدد الزيارات'), findsOneWidget);
-    expect(find.text('الحد الأقصى لهذا النمط ضمن 30 يوماً: 5 زيارات.'), findsOneWidget);
+    expect(
+      find.text('الحد الأقصى لهذا النمط ضمن 30 يوماً: 5 زيارات.'),
+      findsOneWidget,
+    );
     expect(find.text('إضافة زيارة أخرى'), findsNothing);
     expect(find.byTooltip('تعديل الزيارة'), findsNothing);
     expect(find.byTooltip('حذف الزيارة'), findsNothing);
