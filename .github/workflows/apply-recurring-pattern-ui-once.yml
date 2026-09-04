@@ -1,0 +1,116 @@
+name: Apply Recurring Pattern UI Once
+
+on:
+  push:
+    branches:
+      - feature/cleaning-suite-main
+    paths:
+      - '.github/workflows/apply-recurring-pattern-ui-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/cleaning-suite-main
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Integrate recurring patterns into schedule screen
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart')
+          text = path.read_text()
+
+          replacements = [
+              (
+                  "  bool _isRecurring = false;\n  List<CleaningRecurringSessionInput> _recurringSessions =\n      const <CleaningRecurringSessionInput>[];",
+                  "  bool _isRecurring = false;\n  CleaningRecurringPattern _recurringPattern = CleaningRecurringPattern.custom;\n  int _recurringOccurrences = 2;\n  List<CleaningRecurringSessionInput> _recurringSessions =\n      const <CleaningRecurringSessionInput>[];",
+              ),
+              (
+                  "                          ClRecurringScheduleSectionWidget(\n                            enabled: _isRecurring,\n                            sessions: _recurringSessions,\n                            onEnabledChanged: (enabled) =>\n                                _setRecurringEnabled(enabled, state),\n                            onAddVisit: () => _addRecurringVisit(state),\n                            onEditVisit: (index) =>\n                                _editRecurringVisit(index, state),\n                            onRemoveVisit: (index) =>\n                                _removeRecurringVisit(index, state),\n                          ),",
+                  "                          ClRecurringScheduleSectionWidget(\n                            enabled: _isRecurring,\n                            pattern: _recurringPattern,\n                            occurrences: _recurringOccurrences,\n                            maxOccurrences: _recurringMaxOccurrences,\n                            sessions: _recurringSessions,\n                            onEnabledChanged: (enabled) =>\n                                _setRecurringEnabled(enabled, state),\n                            onPatternChanged: (pattern) =>\n                                _setRecurringPattern(pattern, state),\n                            onOccurrencesChanged: (occurrences) =>\n                                _setRecurringOccurrences(occurrences, state),\n                            onAddVisit: () => _addRecurringVisit(state),\n                            onEditVisit: (index) =>\n                                _editRecurringVisit(index, state),\n                            onRemoveVisit: (index) =>\n                                _removeRecurringVisit(index, state),\n                          ),",
+              ),
+              (
+                  "    if (value.isEmpty) return;\n    setState(() {\n      _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;\n      _replacePrimaryRecurringVisit();\n    });",
+                  "    if (value.isEmpty) return;\n    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);\n    if (selectedDate == null) return;\n    if (_isRecurring && _recurringPattern.isGenerated) {\n      final maxOccurrences =\n          CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(\n            pattern: _recurringPattern,\n            startDate: selectedDate,\n          );\n      if (_recurringOccurrences > maxOccurrences) {\n        _showRecurringPatternDateLimit(maxOccurrences);\n        return;\n      }\n    }\n    setState(() {\n      _selectedDate = selectedDate;\n      _replacePrimaryRecurringVisit();\n    });",
+              ),
+              (
+                  "  void _setRecurringEnabled(bool enabled, ClMainState state) {\n    setState(() {\n      _isRecurring = enabled;\n      _recurringSessions = enabled\n          ? <CleaningRecurringSessionInput>[\n              CleaningRecurringSessionInput(\n                date: _selectedDate,\n                time: _fromTimeHhMm,\n              ),\n            ]\n          : const <CleaningRecurringSessionInput>[];\n      _resetAppliedCoupon(message: 'تم تغيير نمط الحجز. أعد تطبيق الكوبون.');\n    });\n    _requestUpdatedEstimate(state);\n  }",
+                  "  void _setRecurringEnabled(bool enabled, ClMainState state) {\n    setState(() {\n      _isRecurring = enabled;\n      _recurringPattern = CleaningRecurringPattern.custom;\n      _recurringOccurrences = 2;\n      _recurringSessions = enabled\n          ? <CleaningRecurringSessionInput>[\n              CleaningRecurringSessionInput(\n                date: _selectedDate,\n                time: _fromTimeHhMm,\n              ),\n            ]\n          : const <CleaningRecurringSessionInput>[];\n      _resetAppliedCoupon(message: 'تم تغيير نمط الحجز. أعد تطبيق الكوبون.');\n    });\n    _requestUpdatedEstimate(state);\n  }\n\n  int get _recurringMaxOccurrences {\n    if (!_recurringPattern.isGenerated) return 0;\n    return CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(\n      pattern: _recurringPattern,\n      startDate: _selectedDate,\n    );\n  }\n\n  void _setRecurringPattern(\n    CleaningRecurringPattern pattern,\n    ClMainState state,\n  ) {\n    if (pattern == _recurringPattern) return;\n\n    if (!pattern.isGenerated) {\n      setState(() {\n        _recurringPattern = pattern;\n        _recurringOccurrences = _recurringSessions.length < 2\n            ? 2\n            : _recurringSessions.length;\n        _resetAppliedCoupon(message: 'تم تغيير نمط التكرار. أعد تطبيق الكوبون.');\n      });\n      _requestUpdatedEstimate(state);\n      return;\n    }\n\n    final maxOccurrences =\n        CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(\n          pattern: pattern,\n          startDate: _selectedDate,\n        );\n    if (maxOccurrences < 2) {\n      _showRecurringPatternDateLimit(maxOccurrences);\n      return;\n    }\n\n    final generated = CleaningRecurringScheduleGenerator.generate(\n      pattern: pattern,\n      startDate: _selectedDate,\n      time: _fromTimeHhMm,\n      occurrences: 2,\n    );\n    setState(() {\n      _recurringPattern = pattern;\n      _recurringOccurrences = 2;\n      _recurringSessions = generated;\n      _syncToTime();\n      _resetAppliedCoupon(message: 'تم تغيير نمط التكرار. أعد تطبيق الكوبون.');\n    });\n    _requestUpdatedEstimate(state);\n  }\n\n  void _setRecurringOccurrences(int occurrences, ClMainState state) {\n    if (!_recurringPattern.isGenerated || occurrences < 2) return;\n    final maxOccurrences = _recurringMaxOccurrences;\n    if (occurrences > maxOccurrences) {\n      _showRecurringPatternDateLimit(maxOccurrences);\n      return;\n    }\n\n    final generated = CleaningRecurringScheduleGenerator.generate(\n      pattern: _recurringPattern,\n      startDate: _selectedDate,\n      time: _fromTimeHhMm,\n      occurrences: occurrences,\n    );\n    setState(() {\n      _recurringOccurrences = occurrences;\n      _recurringSessions = generated;\n      _syncToTime();\n      _resetAppliedCoupon(message: 'تم تحديث عدد الزيارات. أعد تطبيق الكوبون.');\n    });\n    _requestUpdatedEstimate(state);\n  }",
+              ),
+              (
+                  "  Future<void> _addRecurringVisit(ClMainState state) async {\n    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();",
+                  "  Future<void> _addRecurringVisit(ClMainState state) async {\n    if (_recurringPattern != CleaningRecurringPattern.custom) return;\n    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();",
+              ),
+              (
+                  "  Future<void> _editRecurringVisit(int index, ClMainState state) async {\n    if (index < 0 || index >= _recurringSessions.length) return;",
+                  "  Future<void> _editRecurringVisit(int index, ClMainState state) async {\n    if (_recurringPattern != CleaningRecurringPattern.custom) return;\n    if (index < 0 || index >= _recurringSessions.length) return;",
+              ),
+              (
+                  "  void _removeRecurringVisit(int index, ClMainState state) {\n    if (index <= 0 || index >= _recurringSessions.length) return;",
+                  "  void _removeRecurringVisit(int index, ClMainState state) {\n    if (_recurringPattern != CleaningRecurringPattern.custom) return;\n    if (index <= 0 || index >= _recurringSessions.length) return;",
+              ),
+              (
+                  "  void _replacePrimaryRecurringVisit() {\n    if (!_isRecurring || _recurringSessions.isEmpty) return;\n    final updated = <CleaningRecurringSessionInput>[..._recurringSessions];\n    updated[0] = CleaningRecurringSessionInput(\n      date: _selectedDate,\n      time: _fromTimeHhMm,\n    );\n    _recurringSessions = updated.normalized;\n    final first = _recurringSessions.first;\n    _selectedDate = first.date;\n    _fromTimeHhMm = first.time;\n  }",
+                  "  void _replacePrimaryRecurringVisit() {\n    if (!_isRecurring || _recurringSessions.isEmpty) return;\n\n    if (_recurringPattern.isGenerated) {\n      _recurringSessions = CleaningRecurringScheduleGenerator.generate(\n        pattern: _recurringPattern,\n        startDate: _selectedDate,\n        time: _fromTimeHhMm,\n        occurrences: _recurringOccurrences,\n      );\n      return;\n    }\n\n    final updated = <CleaningRecurringSessionInput>[..._recurringSessions];\n    updated[0] = CleaningRecurringSessionInput(\n      date: _selectedDate,\n      time: _fromTimeHhMm,\n    );\n    _recurringSessions = updated.normalized;\n    final first = _recurringSessions.first;\n    _selectedDate = first.date;\n    _fromTimeHhMm = first.time;\n  }",
+              ),
+              (
+                  "  void _showRecurringWindowLimit() {\n    ScaffoldMessenger.of(context).showSnackBar(\n      const SnackBar(\n        content: Text(\n          'يجب أن تقع جميع زيارات الحجز الدوري ضمن فترة لا تتجاوز 30 يوماً.',\n        ),\n      ),\n    );\n  }",
+                  "  void _showRecurringWindowLimit() {\n    ScaffoldMessenger.of(context).showSnackBar(\n      const SnackBar(\n        content: Text(\n          'يجب أن تقع جميع زيارات الحجز الدوري ضمن فترة لا تتجاوز 30 يوماً.',\n        ),\n      ),\n    );\n  }\n\n  void _showRecurringPatternDateLimit(int maxOccurrences) {\n    final message = maxOccurrences >= 2\n        ? 'التاريخ المختار يسمح بحد أقصى $maxOccurrences زيارات لهذا النمط ضمن 30 يوماً.'\n        : 'لا يمكن إنشاء زيارة ثانية لهذا النمط من التاريخ المختار ضمن نافذة 30 يوماً.';\n    ScaffoldMessenger.of(context).showSnackBar(\n      SnackBar(content: Text(message)),\n    );\n  }",
+              ),
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected one match, found {count}: {old[:110]!r}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+      - name: Format recurring sources
+        run: |
+          dart format \
+            lib/features/cl_main/domain/models/cleaning_recurring_session.dart \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart \
+            test/features/cl_main/domain/models/cleaning_recurring_session_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart
+      - name: Analyze recurring sources
+        run: |
+          flutter analyze \
+            lib/features/cl_main/domain/models/cleaning_recurring_session.dart \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart
+      - name: Run recurring tests
+        run: |
+          flutter test \
+            test/features/cl_main/domain/models/cleaning_recurring_session_test.dart \
+            test/features/cl_main/domain/usecases/create_cleaning_order_use_case_test.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
+            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+      - name: Commit screen integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            lib/features/cl_main/domain/models/cleaning_recurring_session.dart \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart \
+            test/features/cl_main/domain/models/cleaning_recurring_session_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "feat(cleaning): integrate recurring pattern selection"
+          git push origin HEAD:feature/cleaning-suite-main
