@@ -1,4 +1,4 @@
-# Check-only recurring cleaning verification for creation and per-visit lifecycle. This workflow must never modify repository content.
+# Check-only recurring cleaning verification for creation, per-visit lifecycle, and series pause/resume. This workflow must never modify repository content.
 name: Cleaning Recurring User
 
 on:
