@@ -1,0 +1,118 @@
+name: Apply Recurring Cleaning UI V2
+
+on:
+  push:
+    branches:
+      - feature/cleaning-suite-main
+    paths:
+      - '.github/workflows/apply-recurring-cleaning-ui-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feature/cleaning-suite-main
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Narrow ambiguous patch target
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply_recurring_cleaning_ui_patch.py')
+          text = path.read_text()
+          old = '''replace_once(
+              schedule_screen,
+              "                            estimatedHours:\\n                                  estimate?.size?.estimatedHours ?? 0,",
+              "                            estimatedHours: _perVisitEstimatedHours(estimate),",
+          )
+          '''
+          new = '''replace_once(
+              schedule_screen,
+              "                          ClServiceGradientInfoCardWidget(\\n                            estimatedSqm: estimate?.size?.estimatedSqm ?? 0,\\n                            estimatedHours: _effectiveServiceHours(\\n                              estimatedHours:\\n                                  estimate?.size?.estimatedHours ?? 0,",
+              "                          ClServiceGradientInfoCardWidget(\\n                            estimatedSqm: estimate?.size?.estimatedSqm ?? 0,\\n                            estimatedHours: _effectiveServiceHours(\\n                              estimatedHours: _perVisitEstimatedHours(estimate),",
+          )
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one ambiguous patch block, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Apply recurring UI patch
+        run: python scripts/apply_recurring_cleaning_ui_patch.py
+
+      - name: Format recurring UI sources
+        run: |
+          dart format \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/view/screens/cleaning_order_details_screen.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+
+      - name: Analyze recurring UI sources
+        run: |
+          flutter analyze \
+            lib/features/cl_main/domain/models/cleaning_recurring_session.dart \
+            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
+            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
+            lib/features/orders/view/screens/cleaning_order_details_screen.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart
+
+      - name: Run recurring UI tests
+        run: |
+          flutter test \
+            test/features/cl_main/domain/models/cleaning_recurring_session_test.dart \
+            test/features/cl_main/domain/usecases/create_cleaning_order_use_case_test.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
+            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+
+      - name: Commit recurring UI patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/view/screens/cleaning_order_details_screen.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+          if git diff --cached --quiet; then
+            echo "No recurring UI changes to commit."
+            exit 0
+          fi
+          git commit -m "feat(cleaning): add recurring booking UI"
+          git push origin HEAD:feature/cleaning-suite-main
