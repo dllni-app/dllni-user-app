@@ -232,6 +232,35 @@ class _MultiDayCleaningOrderDetailsScreenState
     );
   }
 
+  Future<void> _skipSession(CleaningBookingSessionModel session) async {
+    final sessionId = session.id;
+    if (sessionId == null || !session.canSkip) return;
+
+    final reason = await _askText(
+      title: 'تخطي هذه الزيارة',
+      hint: 'سبب تخطي الزيارة',
+      confirmLabel: 'متابعة',
+    );
+    if (reason == null) return;
+
+    final approved = await _confirmDialog(
+      title: 'تأكيد تخطي الزيارة ${session.sequence}',
+      message:
+          'سيتم تخطي هذه الزيارة فقط وتحرير العامل المرتبط بها دون رسوم إلغاء، وسيُعاد احتساب إجمالي الحجز. بقية الزيارات ستبقى كما هي.',
+      confirmLabel: 'تخطي الزيارة',
+    );
+    if (!approved) return;
+
+    await _runSessionAction(
+      session,
+      () => _sessions.skipSession(
+        orderId: widget.orderId,
+        sessionId: sessionId,
+        reason: reason,
+      ),
+    );
+  }
+
   Future<void> _sendSos(CleaningBookingSessionModel session) async {
     final sessionId = session.id;
     if (sessionId == null || !session.canSendSos) return;
@@ -520,8 +549,9 @@ class _MultiDayCleaningOrderDetailsScreenState
 
     final nextSession = schedule.nextSession;
     final bookingNumber = _envelope?.bookingNumber?.trim();
-    final progressText =
-        '${schedule.completedDaysCount} من ${schedule.daysCount} جلسات مكتملة';
+    final progressText = schedule.skippedDaysCount > 0
+        ? '${schedule.completedDaysCount} من ${schedule.daysCount} جلسات مكتملة • ${schedule.skippedDaysCount} متخطاة'
+        : '${schedule.completedDaysCount} من ${schedule.daysCount} جلسات مكتملة';
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -748,6 +778,12 @@ class _MultiDayCleaningOrderDetailsScreenState
             const SizedBox(height: 7),
             _infoRow('سبب الإلغاء', session.cancellationReason!.trim()),
           ],
+          if (session.isSkipped &&
+              session.skipReason != null &&
+              session.skipReason!.trim().isNotEmpty) ...[
+            const SizedBox(height: 7),
+            _infoRow('سبب التخطي', session.skipReason!.trim()),
+          ],
           if (_hasActions(session)) ...[
             const SizedBox(height: 14),
             _sessionActions(session, busy),
@@ -760,6 +796,7 @@ class _MultiDayCleaningOrderDetailsScreenState
   bool _hasActions(CleaningBookingSessionModel session) {
     return session.canConfirmStartVerification ||
         session.canConfirmCompletion ||
+        session.canSkip ||
         session.canCancel ||
         session.canSendSos;
   }
@@ -786,9 +823,20 @@ class _MultiDayCleaningOrderDetailsScreenState
             ),
           ),
         ],
-        if (session.canCancel || session.canSendSos) ...[
+        if (session.canSkip) ...[
           if (session.canConfirmStartVerification ||
               session.canConfirmCompletion)
+            const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: busy ? null : () => _skipSession(session),
+            icon: const Icon(Icons.skip_next_rounded),
+            label: const Text('تخطي هذه الزيارة'),
+          ),
+        ],
+        if (session.canCancel || session.canSendSos) ...[
+          if (session.canConfirmStartVerification ||
+              session.canConfirmCompletion ||
+              session.canSkip)
             const SizedBox(height: 8),
           Row(
             children: [
@@ -917,6 +965,8 @@ class _MultiDayCleaningOrderDetailsScreenState
         return 'مكتملة';
       case 'cancelled':
         return 'ملغاة';
+      case 'skipped':
+        return 'تم تخطيها';
       case 'under_dispute':
         return 'قيد المراجعة';
       default:
@@ -931,6 +981,8 @@ class _MultiDayCleaningOrderDetailsScreenState
       case 'cancelled':
       case 'under_dispute':
         return const Color(0xFFFEE2E2);
+      case 'skipped':
+        return const Color(0xFFFEF3C7);
       case 'in_progress':
       case 'travel_started':
       case 'arrived':
@@ -949,6 +1001,8 @@ class _MultiDayCleaningOrderDetailsScreenState
       case 'cancelled':
       case 'under_dispute':
         return const Color(0xFF991B1B);
+      case 'skipped':
+        return const Color(0xFF92400E);
       case 'in_progress':
       case 'travel_started':
       case 'arrived':

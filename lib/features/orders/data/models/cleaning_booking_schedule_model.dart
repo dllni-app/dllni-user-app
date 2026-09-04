@@ -192,6 +192,7 @@ class CleaningBookingSessionModel {
   final bool canSendSos;
   final bool canExtend;
   final bool canCancel;
+  final bool canSkip;
   final bool? canReschedule;
   final CleaningSessionPricingModel? pricing;
   final String? startedTravelAt;
@@ -202,6 +203,8 @@ class CleaningBookingSessionModel {
   final String? cancelledAt;
   final String? cancellationReason;
   final String? cancelledByRole;
+  final String? skippedAt;
+  final String? skipReason;
   final CleaningSessionWorkerAssignmentModel? workerAssignmentState;
   final List<CleaningSessionWorkerAssignmentModel> workerAssignments;
 
@@ -225,6 +228,7 @@ class CleaningBookingSessionModel {
     required this.canSendSos,
     required this.canExtend,
     required this.canCancel,
+    this.canSkip = false,
     this.canReschedule,
     this.pricing,
     this.startedTravelAt,
@@ -235,6 +239,8 @@ class CleaningBookingSessionModel {
     this.cancelledAt,
     this.cancellationReason,
     this.cancelledByRole,
+    this.skippedAt,
+    this.skipReason,
     this.workerAssignmentState,
     this.workerAssignments = const <CleaningSessionWorkerAssignmentModel>[],
   });
@@ -282,6 +288,7 @@ class CleaningBookingSessionModel {
       canSendSos: _bool(json['canSendSos'] ?? json['can_send_sos']) ?? false,
       canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
+      canSkip: _bool(json['canSkip'] ?? json['can_skip']) ?? false,
       canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),
       pricing: json['pricing'] is Map
           ? CleaningSessionPricingModel.fromJson(_map(json['pricing']))
@@ -304,6 +311,8 @@ class CleaningBookingSessionModel {
       cancelledByRole: _string(
         json['cancelledByRole'] ?? json['cancelled_by_role'],
       ),
+      skippedAt: _string(json['skippedAt'] ?? json['skipped_at']),
+      skipReason: _string(json['skipReason'] ?? json['skip_reason']),
       workerAssignmentState: rawAssignmentState is Map
           ? CleaningSessionWorkerAssignmentModel.fromJson(
               _map(rawAssignmentState),
@@ -324,8 +333,9 @@ class CleaningBookingSessionModel {
   bool get canStart => canStartWork || canStartTravel;
   bool get isCompleted => status == 'completed';
   bool get isCancelled => status == 'cancelled';
+  bool get isSkipped => status == 'skipped';
   bool get isTerminal =>
-      isCompleted || isCancelled || status == 'under_dispute';
+      isCompleted || isCancelled || isSkipped || status == 'under_dispute';
   bool get isAwaitingStartVerification =>
       status == 'awaiting_start_verification';
   bool get isAwaitingCustomerCompletion =>
@@ -353,6 +363,7 @@ class CleaningBookingScheduleModel {
   final int daysCount;
   final int completedDaysCount;
   final int cancelledDaysCount;
+  final int skippedDaysCount;
   final int remainingDaysCount;
   final double totalHours;
   final DateTime? firstDate;
@@ -365,6 +376,7 @@ class CleaningBookingScheduleModel {
     required this.daysCount,
     required this.completedDaysCount,
     required this.cancelledDaysCount,
+    this.skippedDaysCount = 0,
     required this.remainingDaysCount,
     required this.totalHours,
     this.firstDate,
@@ -395,13 +407,20 @@ class CleaningBookingScheduleModel {
       cancelledDaysCount:
           _int(json['cancelledDaysCount'] ?? json['cancelled_days_count']) ??
           sessions.where((item) => item.isCancelled).length,
+      skippedDaysCount:
+          _int(
+            json['skippedSessionsCount'] ??
+                json['skippedDaysCount'] ??
+                json['skipped_days_count'],
+          ) ??
+          sessions.where((item) => item.isSkipped).length,
       remainingDaysCount:
           _int(json['remainingDaysCount'] ?? json['remaining_days_count']) ??
           sessions.where((item) => !item.isTerminal).length,
       totalHours:
           _double(json['totalHours'] ?? json['total_hours']) ??
           sessions
-              .where((item) => !item.isCancelled)
+              .where((item) => !item.isCancelled && !item.isSkipped)
               .fold<double>(0, (sum, item) => sum + item.hours),
       firstDate: DateTime.tryParse(
         _string(json['firstDate'] ?? json['first_date']) ?? '',
