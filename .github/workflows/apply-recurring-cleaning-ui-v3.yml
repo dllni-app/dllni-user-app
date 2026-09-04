@@ -45,7 +45,7 @@ jobs:
           new = '''replace_once(
               schedule_screen,
               "                          ClServiceGradientInfoCardWidget(\\n                            estimatedSqm: estimate?.size?.estimatedSqm ?? 0,\\n                            estimatedHours: _effectiveServiceHours(\\n                              estimatedHours:\\n                                  estimate?.size?.estimatedHours ?? 0,",
-              "                          ClServiceGradientInfoCardWidget(\\n                            estimatedSqm: estimate?.size?.estimatedSqm ?? 0,\\n                            estimatedHours: _effectiveServiceHours(estimate),",
+              "                          ClServiceGradientInfoCardWidget(\\n                            estimatedSqm: estimate?.size?.estimatedSqm ?? 0,\\n                            estimatedHours: _effectiveServiceHours(\\n                              estimatedHours: _perVisitEstimatedHours(estimate),",
           )
           '''
           if text.count(old) != 1:
