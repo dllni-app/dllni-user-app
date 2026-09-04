@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
 import '../models/cleaning_event_session.dart';
+import '../models/cleaning_recurring_session.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
 import '../models/cl_worker_room_assignment_result.dart';
@@ -47,6 +48,7 @@ class EstimateCleaningPriceParams with Params {
   final String? customService;
   final double? hours;
   final List<CleaningEventSessionInput> eventSessions;
+  final List<CleaningRecurringSessionInput> recurringSessions;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
@@ -67,6 +69,7 @@ class EstimateCleaningPriceParams with Params {
     required this.addressLongitude,
     this.preferredWorkerId,
     this.preferredWorkerIds = const <int>[],
+    this.recurringSessions = const <CleaningRecurringSessionInput>[],
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.workerRoomAssignments,
@@ -103,12 +106,16 @@ class EstimateCleaningPriceParams with Params {
        balconies = null,
        livingRoomSize = null,
        roomSizeBreakdown = null,
-       cleaningType = null;
+       cleaningType = null,
+       recurringSessions = const <CleaningRecurringSessionInput>[];
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
   List<CleaningEventSessionInput> get _normalizedEventSessions =>
       eventSessions.normalized;
+
+  List<CleaningRecurringSessionInput> get _normalizedRecurringSessions =>
+      recurringSessions.normalized;
 
   double? get _resolvedLegacyEventHours {
     final sessions = _normalizedEventSessions;
@@ -198,7 +205,7 @@ class EstimateCleaningPriceParams with Params {
     final hasAddressId = addressId != null && addressId! > 0;
     final schedule = _isEventAssistance
         ? _normalizedEventSessions.scheduleJson
-        : null;
+        : _normalizedRecurringSessions.scheduleJson;
     final body = <String, dynamic>{
       'propertyType': propertyType,
       if (hasAddressId) 'addressId': addressId,
