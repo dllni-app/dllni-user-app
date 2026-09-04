@@ -1,6 +1,6 @@
 # Cleaning Suite Port Map
 
-Updated: 2026-09-04
+Updated: 2026-09-05
 
 ## Porting rule
 
@@ -12,7 +12,7 @@ Temporary implementation workflows may be used only to apply and verify a bounde
 
 Repository: `dllni-app/dllni-user-app`
 
-Recorded heads before this port-map commit:
+Recorded baseline heads before this port-map was introduced:
 
 - `feature/cleaning-suite-main`: `e85f89c1b789e87f45a3010ab8204661ea1a601e`
 - `feature/cleaning-suite-dev`: `dce77f4d0641bf5522b1751ba7c86bc2f726e3c1`
@@ -39,6 +39,28 @@ Verification:
 - Dev permanent recurring CI: run `33927679331`, green.
 
 Status: recurring creation slice parity verified. This does not declare whole-branch parity.
+
+### Recurring Cleaning per-visit management slice
+
+Implemented on both feature branches:
+
+- Recurring bookings expose the shared multi-session details flow from ordinary Cleaning order details.
+- Customer worker replacement remains scoped to the selected future recurring visit.
+- Customer can skip one eligible future recurring visit without cancelling the series.
+- Skip eligibility is server-authoritative through `canSkip`; past visits, non-recurring sessions and visits whose worker started travel cannot be skipped.
+- Skipped visits are terminal in Flutter presentation, display their skip reason and are excluded from fallback remaining-hours calculations.
+- Skip is presented separately from cancellation because the backend applies no cancellation penalty and recalculates parent totals for the remaining chargeable visits.
+
+Verification:
+
+- Backend skip capability commit: `90c352529e58b87239f7d4d8dfd01335ff109944`.
+- Backend permanent recurring CI after presenter coverage: run `33928467491`, green.
+- User main skip UI commit: `32a648bc4f2f93aaac04374a238d1b0ddf0f5fbe`.
+- User main permanent recurring CI: run `33928728561`, green.
+- User dev selective recurring details/skip port commit: `e5c2c1694c1b7f31c6d60a4abe73b9234f58ae13`.
+- User dev permanent recurring CI: run `33928839899`, green.
+
+Status: recurring per-visit details, worker-change and skip parity verified for this slice. This does not declare whole-branch parity.
 
 ### Multi-Day Event Assistance
 
@@ -85,14 +107,14 @@ Verified recurring backend capabilities include:
 - Preferred-worker recurring bookings do not silently fall back to the open worker pool.
 - Ordinary non-recurring preferred-worker fallback remains available.
 - Customer can skip one recurring visit without cancelling the remaining series; skipped visits are excluded from chargeable parent totals and do not receive a cancellation penalty.
+- Skip eligibility is returned by the schedule presenter and enforced again by the mutation service.
 
-Verified backend recurring CI before the skip addition: run `33927637682`, green. The skip flow was separately verified before being moved under the permanent check-only workflow.
+Latest verified backend recurring CI: run `33928467491`, green.
 
 ## Remaining Recurring Cleaning work
 
 The following items are not marked complete by this map:
 
-- User-facing skip action and dev/main parity for that action.
 - Pause/resume series.
 - Edit future recurrence with repricing and reconfirmation.
 - Task-based versus hour-based recurring modes.
