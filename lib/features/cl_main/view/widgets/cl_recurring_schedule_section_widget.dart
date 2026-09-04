@@ -6,16 +6,26 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
   const ClRecurringScheduleSectionWidget({
     super.key,
     required this.enabled,
+    required this.pattern,
+    required this.occurrences,
+    required this.maxOccurrences,
     required this.sessions,
     required this.onEnabledChanged,
+    required this.onPatternChanged,
+    required this.onOccurrencesChanged,
     required this.onAddVisit,
     required this.onEditVisit,
     required this.onRemoveVisit,
   });
 
   final bool enabled;
+  final CleaningRecurringPattern pattern;
+  final int occurrences;
+  final int maxOccurrences;
   final List<CleaningRecurringSessionInput> sessions;
   final ValueChanged<bool> onEnabledChanged;
+  final ValueChanged<CleaningRecurringPattern> onPatternChanged;
+  final ValueChanged<int> onOccurrencesChanged;
   final VoidCallback onAddVisit;
   final ValueChanged<int> onEditVisit;
   final ValueChanged<int> onRemoveVisit;
@@ -50,15 +60,86 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
             ),
             if (enabled) ...[
               const Divider(height: 22),
-              const Text(
-                'أضف زيارتين على الأقل. كل زيارة تبقى مستقلة من حيث العامل والحالة والتنفيذ.',
-                style: TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+              DropdownButtonFormField<CleaningRecurringPattern>(
+                value: pattern,
+                decoration: const InputDecoration(
+                  labelText: 'نمط التكرار',
+                  border: OutlineInputBorder(),
+                  isDense: true,
                 ),
+                items: CleaningRecurringPattern.values
+                    .map(
+                      (item) => DropdownMenuItem<CleaningRecurringPattern>(
+                        value: item,
+                        child: Text(item.labelAr),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  if (value != null) onPatternChanged(value);
+                },
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+              if (pattern.isGenerated) ...[
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'عدد الزيارات',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'تقليل عدد الزيارات',
+                      onPressed: occurrences > 2
+                          ? () => onOccurrencesChanged(occurrences - 1)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 40),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$occurrences',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'زيادة عدد الزيارات',
+                      onPressed: occurrences < maxOccurrences
+                          ? () => onOccurrencesChanged(occurrences + 1)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+                Text(
+                  maxOccurrences >= 2
+                      ? 'الحد الأقصى لهذا النمط ضمن 30 يوماً: $maxOccurrences زيارات.'
+                      : 'لا توجد زيارة ثانية متاحة لهذا النمط ضمن نافذة 30 يوماً من التاريخ المختار.',
+                  style: TextStyle(
+                    color: maxOccurrences >= 2
+                        ? const Color(0xFF6B7280)
+                        : const Color(0xFFB45309),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ] else ...[
+                const Text(
+                  'أضف زيارتين على الأقل. كل زيارة تبقى مستقلة من حيث العامل والحالة والتنفيذ.',
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               ...List.generate(sessions.length, (index) {
                 final session = sessions[index];
                 return Padding(
@@ -117,27 +198,30 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                             ],
                           ),
                         ),
-                        IconButton(
-                          tooltip: 'تعديل الزيارة',
-                          onPressed: () => onEditVisit(index),
-                          icon: const Icon(Icons.edit_calendar_outlined),
-                        ),
-                        if (index > 0)
+                        if (!pattern.isGenerated) ...[
                           IconButton(
-                            tooltip: 'حذف الزيارة',
-                            onPressed: () => onRemoveVisit(index),
-                            icon: const Icon(Icons.delete_outline),
+                            tooltip: 'تعديل الزيارة',
+                            onPressed: () => onEditVisit(index),
+                            icon: const Icon(Icons.edit_calendar_outlined),
                           ),
+                          if (index > 0)
+                            IconButton(
+                              tooltip: 'حذف الزيارة',
+                              onPressed: () => onRemoveVisit(index),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                        ],
                       ],
                     ),
                   ),
                 );
               }),
-              OutlinedButton.icon(
-                onPressed: onAddVisit,
-                icon: const Icon(Icons.add_circle_outline),
-                label: const Text('إضافة زيارة أخرى'),
-              ),
+              if (!pattern.isGenerated)
+                OutlinedButton.icon(
+                  onPressed: onAddVisit,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('إضافة زيارة أخرى'),
+                ),
               if (sessions.length < 2) ...[
                 const SizedBox(height: 8),
                 const Text(
