@@ -1,3 +1,4 @@
+# One-time formatter; delete after the formatting commit lands.
 name: Format Recurring User Once
 
 on:
