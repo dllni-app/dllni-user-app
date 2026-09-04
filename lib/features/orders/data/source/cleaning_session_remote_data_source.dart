@@ -50,6 +50,17 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningMultiDayOrderEnvelope> skipSession({
+    required int orderId,
+    required int sessionId,
+    required String reason,
+  }) {
+    return _post(
+      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/skip',
+      data: <String, dynamic>{'reason': reason.trim()},
+    );
+  }
+
   Future<CleaningMultiDayOrderEnvelope> changeWorkers({
     required int orderId,
     required List<Map<String, dynamic>> changes,

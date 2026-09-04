@@ -44,6 +44,7 @@ import '../widgets/cleaning_accepted_workers_section_widget.dart';
 import '../widgets/cleaning_cancel_reason_dialog.dart';
 import '../widgets/cleaning_completion_decision_sheet.dart';
 import '../widgets/cleaning_preferred_worker_card_widget.dart';
+import '../widgets/cleaning_recurring_schedule_launcher_widget.dart';
 import '../widgets/cleaning_room_assignments_section_widget.dart';
 import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
@@ -391,6 +392,13 @@ class _CleaningOrderDetailsScreenState
                         ),
                       ),
                     ],
+                    if (!CleaningEventAssistanceHelper.isEventAssistance(
+                      order.propertyType,
+                    ))
+                      CleaningRecurringScheduleLauncherWidget(
+                        orderId: _activeOrderId,
+                        onReturn: () => _fetchDetails(showLoading: false),
+                      ),
                     if (searchingForWorkers) ...[
                       const SizedBox(height: 12),
                       if (showPreferredWorkerFallbackBanner) ...[

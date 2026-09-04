@@ -10,10 +10,12 @@ class MultiDayCleaningOrderDetailsScreen extends StatefulWidget {
     super.key,
     required this.orderId,
     this.initialSessionId,
+    this.recurring = false,
   });
 
   final int orderId;
   final int? initialSessionId;
+  final bool recurring;
 
   @override
   State<MultiDayCleaningOrderDetailsScreen> createState() =>
@@ -59,7 +61,11 @@ class _MultiDayCleaningOrderDetailsScreenState
         }
 
         result.add(
-          _WorkerChangeCandidate(session: session, assignment: assignment),
+          _WorkerChangeCandidate(
+            session: session,
+            assignment: assignment,
+            recurring: widget.recurring,
+          ),
         );
       }
     }
@@ -76,7 +82,8 @@ class _MultiDayCleaningOrderDetailsScreenState
   @override
   void didUpdateWidget(covariant MultiDayCleaningOrderDetailsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.orderId != widget.orderId) {
+    if (oldWidget.orderId != widget.orderId ||
+        oldWidget.recurring != widget.recurring) {
       _schedule = null;
       _contentVersion++;
       _refreshChangeOptions();
@@ -135,18 +142,22 @@ class _MultiDayCleaningOrderDetailsScreenState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(20, 4, 20, 12),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 4, 20, 12),
                 child: Text(
-                  'تغيير عامل في يوم قادم',
+                  widget.recurring
+                      ? 'تغيير عامل في زيارة قادمة'
+                      : 'تغيير عامل في يوم قادم',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                   textAlign: TextAlign.start,
                 ),
               ),
-              const Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(20, 0, 20, 12),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 12),
                 child: Text(
-                  'اختر العامل واليوم المطلوب فقط. لن تتأثر الأيام المنفذة أو العمال الآخرون.',
+                  widget.recurring
+                      ? 'اختر العامل والزيارة المطلوبة فقط. لن تتأثر الزيارات الأخرى أو العمال الآخرون.'
+                      : 'اختر العامل واليوم المطلوب فقط. لن تتأثر الأيام المنفذة أو العمال الآخرون.',
                 ),
               ),
               Flexible(
@@ -188,7 +199,9 @@ class _MultiDayCleaningOrderDetailsScreenState
       builder: (dialogContext) => AlertDialog(
         title: const Text('تأكيد طلب الاستبدال'),
         content: Text(
-          'سيتم تحرير ${candidate.workerName} من ${candidate.sessionLabel} فقط، ثم تصبح الخانة متاحة لعامل بديل. بقية أيام المناسبة والعمال لن تتغير.',
+          widget.recurring
+              ? 'سيتم تحرير ${candidate.workerName} من ${candidate.sessionLabel} فقط، ثم تصبح الخانة متاحة لعامل بديل. بقية الزيارات والعمال لن تتغير.'
+              : 'سيتم تحرير ${candidate.workerName} من ${candidate.sessionLabel} فقط، ثم تصبح الخانة متاحة لعامل بديل. بقية أيام المناسبة والعمال لن تتغير.',
         ),
         actions: [
           TextButton(
@@ -236,9 +249,11 @@ class _MultiDayCleaningOrderDetailsScreenState
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'تعذر تغيير العامل. حدّث تفاصيل المناسبة وتأكد أن العامل لم يبدأ التوجه ثم حاول مرة أخرى.',
+            widget.recurring
+                ? 'تعذر تغيير العامل. حدّث الزيارات وتأكد أن العامل لم يبدأ التوجه ثم حاول مرة أخرى.'
+                : 'تعذر تغيير العامل. حدّث تفاصيل المناسبة وتأكد أن العامل لم يبدأ التوجه ثم حاول مرة أخرى.',
           ),
         ),
       );
@@ -298,6 +313,7 @@ class _MultiDayCleaningOrderDetailsScreenState
             key: ValueKey<int>(_contentVersion),
             orderId: widget.orderId,
             initialSessionId: widget.initialSessionId,
+            recurring: widget.recurring,
           ),
         ),
         if (_candidates.isNotEmpty)
@@ -306,7 +322,9 @@ class _MultiDayCleaningOrderDetailsScreenState
             bottom: 20,
             child: SafeArea(
               child: FloatingActionButton.extended(
-                heroTag: 'event-worker-change-${widget.orderId}',
+                heroTag: widget.recurring
+                    ? 'recurring-worker-change-${widget.orderId}'
+                    : 'event-worker-change-${widget.orderId}',
                 onPressed: _changingWorker ? null : _openWorkerChangeSheet,
                 icon: _changingWorker
                     ? const SizedBox(
@@ -328,10 +346,12 @@ class _WorkerChangeCandidate {
   const _WorkerChangeCandidate({
     required this.session,
     required this.assignment,
+    required this.recurring,
   });
 
   final CleaningBookingSessionModel session;
   final CleaningSessionWorkerAssignmentModel assignment;
+  final bool recurring;
 
   String get workerName {
     final name = assignment.workerName?.trim();
@@ -344,7 +364,9 @@ class _WorkerChangeCandidate {
         ? ''
         : '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     final time = session.time?.trim();
-    final parts = <String>['اليوم ${session.sequence}'];
+    final parts = <String>[
+      recurring ? 'الزيارة ${session.sequence}' : 'اليوم ${session.sequence}',
+    ];
     if (dateText.isNotEmpty) parts.add(dateText);
     if (time?.isNotEmpty == true) parts.add(time!);
     return parts.join(' • ');
