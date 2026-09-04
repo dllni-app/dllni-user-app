@@ -1,3 +1,5 @@
+const int cleaningRecurringMaxWindowDays = 30;
+
 class CleaningRecurringSessionInput {
   final DateTime date;
   final String time;
@@ -30,6 +32,24 @@ extension CleaningRecurringSessionInputListX
       });
     return items;
   }
+
+  int get windowDays {
+    final items = normalized;
+    if (items.length < 2) return 0;
+    final first = DateTime(
+      items.first.date.year,
+      items.first.date.month,
+      items.first.date.day,
+    );
+    final last = DateTime(
+      items.last.date.year,
+      items.last.date.month,
+      items.last.date.day,
+    );
+    return last.difference(first).inDays;
+  }
+
+  bool get exceedsMaxWindow => windowDays > cleaningRecurringMaxWindowDays;
 
   Map<String, dynamic>? get scheduleJson {
     final items = normalized;
