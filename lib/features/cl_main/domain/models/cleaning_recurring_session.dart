@@ -2,10 +2,7 @@ class CleaningRecurringSessionInput {
   final DateTime date;
   final String time;
 
-  const CleaningRecurringSessionInput({
-    required this.date,
-    required this.time,
-  });
+  const CleaningRecurringSessionInput({required this.date, required this.time});
 
   String get dateApi {
     final year = date.year.toString().padLeft(4, '0');

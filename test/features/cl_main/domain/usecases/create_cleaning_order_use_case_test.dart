@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   CreateCleaningOrderParams buildParams({
-    CleaningAssignmentMode assignmentMode = CleaningAssignmentMode.preferredWorker,
+    CleaningAssignmentMode assignmentMode =
+        CleaningAssignmentMode.preferredWorker,
     int? numberOfWorkers,
     List<int> preferredWorkerIds = const <int>[],
   }) {

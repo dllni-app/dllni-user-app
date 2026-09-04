@@ -18,28 +18,16 @@ void main() {
 
   test('normalizes visits before serializing the recurring schedule', () {
     final sessions = <CleaningRecurringSessionInput>[
-      CleaningRecurringSessionInput(
-        date: DateTime(2026, 9, 21),
-        time: '18:00',
-      ),
-      CleaningRecurringSessionInput(
-        date: DateTime(2026, 9, 7),
-        time: '09:30',
-      ),
-      CleaningRecurringSessionInput(
-        date: DateTime(2026, 9, 14),
-        time: '12:00',
-      ),
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 21), time: '18:00'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 7), time: '09:30'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 14), time: '12:00'),
     ];
 
-    expect(
-      sessions.normalized.map((item) => item.slotKey).toList(),
-      <String>[
-        '2026-09-07|09:30',
-        '2026-09-14|12:00',
-        '2026-09-21|18:00',
-      ],
-    );
+    expect(sessions.normalized.map((item) => item.slotKey).toList(), <String>[
+      '2026-09-07|09:30',
+      '2026-09-14|12:00',
+      '2026-09-21|18:00',
+    ]);
     expect(sessions.scheduleJson, <String, dynamic>{
       'mode': 'recurring',
       'sessions': <Map<String, dynamic>>[
