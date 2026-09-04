@@ -5,6 +5,7 @@ import '../../../../core/models/cleaning_gender_preference.dart';
 import '../../data/models/create_cleaning_order_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
 import '../models/cleaning_event_session.dart';
+import '../models/cleaning_recurring_session.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
 import '../models/cl_worker_room_assignment_result.dart';
@@ -53,6 +54,7 @@ class CreateCleaningOrderParams with Params {
   final String? customService;
   final double? hours;
   final List<CleaningEventSessionInput> eventSessions;
+  final List<CleaningRecurringSessionInput> recurringSessions;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
@@ -83,6 +85,7 @@ class CreateCleaningOrderParams with Params {
     this.preferredWorkerId,
     this.preferredWorkerIds = const <int>[],
     this.cleaningServices,
+    this.recurringSessions = const <CleaningRecurringSessionInput>[],
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.termsAccepted = true,
@@ -130,12 +133,16 @@ class CreateCleaningOrderParams with Params {
        livingRoomSize = null,
        roomSizeBreakdown = null,
        cleaningType = null,
-       cleaningServices = null;
+       cleaningServices = null,
+       recurringSessions = const <CleaningRecurringSessionInput>[];
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
   List<CleaningEventSessionInput> get _normalizedEventSessions =>
       eventSessions.normalized;
+
+  List<CleaningRecurringSessionInput> get _normalizedRecurringSessions =>
+      recurringSessions.normalized;
 
   double? get _resolvedLegacyEventHours {
     final sessions = _normalizedEventSessions;
@@ -144,12 +151,20 @@ class CreateCleaningOrderParams with Params {
   }
 
   String get _resolvedScheduledDate {
-    final sessions = _normalizedEventSessions;
+    if (_isEventAssistance) {
+      final sessions = _normalizedEventSessions;
+      return sessions.isEmpty ? scheduledDate : sessions.first.dateApi;
+    }
+    final sessions = _normalizedRecurringSessions;
     return sessions.isEmpty ? scheduledDate : sessions.first.dateApi;
   }
 
   String get _resolvedScheduledTime {
-    final sessions = _normalizedEventSessions;
+    if (_isEventAssistance) {
+      final sessions = _normalizedEventSessions;
+      return sessions.isEmpty ? scheduledTime : sessions.first.time;
+    }
+    final sessions = _normalizedRecurringSessions;
     return sessions.isEmpty ? scheduledTime : sessions.first.time;
   }
 
@@ -250,7 +265,7 @@ class CreateCleaningOrderParams with Params {
     final normalizedCouponCode = couponCode?.trim();
     final schedule = _isEventAssistance
         ? _normalizedEventSessions.scheduleJson
-        : null;
+        : _normalizedRecurringSessions.scheduleJson;
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'addressId': addressId,
