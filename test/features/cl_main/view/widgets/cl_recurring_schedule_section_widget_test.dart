@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('shows recurring visits and forwards schedule actions', (
+  testWidgets('shows custom recurring visits and forwards manual actions', (
     tester,
   ) async {
     var enabled = true;
@@ -22,8 +22,13 @@ void main() {
         home: Scaffold(
           body: ClRecurringScheduleSectionWidget(
             enabled: enabled,
+            pattern: CleaningRecurringPattern.custom,
+            occurrences: sessions.length,
+            maxOccurrences: 0,
             sessions: sessions,
             onEnabledChanged: (value) => enabled = value,
+            onPatternChanged: (_) {},
+            onOccurrencesChanged: (_) {},
             onAddVisit: () => addCount++,
             onEditVisit: (index) => editedIndex = index,
             onRemoveVisit: (index) => removedIndex = index,
@@ -33,6 +38,7 @@ void main() {
     );
 
     expect(find.text('حجز دوري لخدمة التنظيف'), findsOneWidget);
+    expect(find.text('تواريخ مخصصة'), findsOneWidget);
     expect(find.text('2026-09-12 • 09:00'), findsOneWidget);
     expect(find.text('2026-09-19 • 09:00'), findsOneWidget);
 
@@ -47,5 +53,52 @@ void main() {
 
     await tester.tap(find.byType(Switch).first);
     expect(enabled, isFalse);
+  });
+
+  testWidgets('shows generated pattern count controls without manual editing', (
+    tester,
+  ) async {
+    var pattern = CleaningRecurringPattern.weekly;
+    var occurrences = 3;
+
+    final sessions = CleaningRecurringScheduleGenerator.generate(
+      pattern: pattern,
+      startDate: DateTime(2026, 9, 12),
+      time: '09:00',
+      occurrences: occurrences,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ClRecurringScheduleSectionWidget(
+            enabled: true,
+            pattern: pattern,
+            occurrences: occurrences,
+            maxOccurrences: 5,
+            sessions: sessions,
+            onEnabledChanged: (_) {},
+            onPatternChanged: (value) => pattern = value,
+            onOccurrencesChanged: (value) => occurrences = value,
+            onAddVisit: () {},
+            onEditVisit: (_) {},
+            onRemoveVisit: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('أسبوعي'), findsOneWidget);
+    expect(find.text('عدد الزيارات'), findsOneWidget);
+    expect(find.text('الحد الأقصى لهذا النمط ضمن 30 يوماً: 5 زيارات.'), findsOneWidget);
+    expect(find.text('إضافة زيارة أخرى'), findsNothing);
+    expect(find.byTooltip('تعديل الزيارة'), findsNothing);
+    expect(find.byTooltip('حذف الزيارة'), findsNothing);
+
+    await tester.tap(find.byTooltip('زيادة عدد الزيارات'));
+    expect(occurrences, 4);
+
+    await tester.tap(find.byTooltip('تقليل عدد الزيارات'));
+    expect(occurrences, 2);
   });
 }
