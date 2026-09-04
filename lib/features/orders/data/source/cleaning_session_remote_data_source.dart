@@ -61,6 +61,22 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningMultiDayOrderEnvelope> pauseRecurringSeries({
+    required int orderId,
+    required String reason,
+  }) {
+    return _post(
+      '/api/v1/cleaning-bookings/$orderId/recurring/pause',
+      data: <String, dynamic>{'reason': reason.trim()},
+    );
+  }
+
+  Future<CleaningMultiDayOrderEnvelope> resumeRecurringSeries({
+    required int orderId,
+  }) {
+    return _post('/api/v1/cleaning-bookings/$orderId/recurring/resume');
+  }
+
   Future<CleaningMultiDayOrderEnvelope> changeWorkers({
     required int orderId,
     required List<Map<String, dynamic>> changes,
