@@ -1,0 +1,62 @@
+name: Apply Recurring Pause Resume User Once
+
+on:
+  push:
+    branches:
+      - feature/cleaning-suite-main
+    paths:
+      - '.github/workflows/apply-recurring-pause-resume-user-once.yml'
+      - 'scripts/apply_recurring_pause_resume_user_patch.py'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/cleaning-suite-main
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Apply recurring pause resume user patch
+        run: python scripts/apply_recurring_pause_resume_user_patch.py
+      - name: Format changes
+        run: |
+          dart format \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+      - name: Analyze recurring pause resume sources
+        run: |
+          flutter analyze \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart
+      - name: Run recurring cleaning tests
+        run: |
+          flutter test \
+            test/features/cl_main/domain/models/cleaning_recurring_session_test.dart \
+            test/features/cl_main/domain/usecases/create_cleaning_order_use_case_test.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
+            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "feat(cleaning): manage recurring pause and resume in user app"
+          git push origin HEAD:feature/cleaning-suite-main
