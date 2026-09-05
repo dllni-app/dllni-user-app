@@ -1,4 +1,4 @@
-# Check-only recurring cleaning verification for creation, per-visit lifecycle, and series pause/resume. This workflow must never modify repository content.
+# Check-only recurring cleaning verification for creation, per-visit lifecycle, series pause/resume, and future schedule repricing/reconfirmation. This workflow must never modify repository content.
 name: Cleaning Recurring User
 
 on:
@@ -18,6 +18,7 @@ on:
       - 'lib/features/orders/view/screens/cleaning_order_details_screen.dart'
       - 'lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart'
       - 'lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart'
+      - 'lib/features/orders/view/screens/recurring_cleaning_schedule_revision_screen.dart'
       - 'lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart'
       - 'test/features/cl_main/domain/models/cleaning_recurring_session_test.dart'
       - 'test/features/cl_main/domain/usecases/create_cleaning_order_use_case_test.dart'
@@ -25,6 +26,7 @@ on:
       - 'test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart'
       - 'test/features/orders/data/models/cleaning_booking_schedule_model_test.dart'
       - 'test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart'
+      - 'test/features/orders/data/models/cleaning_recurring_schedule_revision_model_test.dart'
       - '.github/workflows/cleaning-recurring.yml'
   pull_request:
     paths:
@@ -38,6 +40,7 @@ on:
       - 'lib/features/orders/view/screens/cleaning_order_details_screen.dart'
       - 'lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart'
       - 'lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart'
+      - 'lib/features/orders/view/screens/recurring_cleaning_schedule_revision_screen.dart'
       - 'lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart'
       - 'test/features/cl_main/domain/models/cleaning_recurring_session_test.dart'
       - 'test/features/cl_main/domain/usecases/create_cleaning_order_use_case_test.dart'
@@ -45,6 +48,7 @@ on:
       - 'test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart'
       - 'test/features/orders/data/models/cleaning_booking_schedule_model_test.dart'
       - 'test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart'
+      - 'test/features/orders/data/models/cleaning_recurring_schedule_revision_model_test.dart'
       - '.github/workflows/cleaning-recurring.yml'
 
 permissions:
@@ -81,13 +85,15 @@ jobs:
             lib/features/orders/view/screens/cleaning_order_details_screen.dart \
             lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
             lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            lib/features/orders/view/screens/recurring_cleaning_schedule_revision_screen.dart \
             lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart \
             test/features/cl_main/domain/models/cleaning_recurring_session_test.dart \
             test/features/cl_main/domain/usecases/create_cleaning_order_use_case_test.dart \
             test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
             test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
             test/features/orders/data/models/cleaning_booking_schedule_model_test.dart \
-            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_revision_model_test.dart
 
       - name: Analyze recurring cleaning sources
         run: |
@@ -102,6 +108,7 @@ jobs:
             lib/features/orders/view/screens/cleaning_order_details_screen.dart \
             lib/features/orders/view/screens/multi_day_cleaning_order_details_screen.dart \
             lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            lib/features/orders/view/screens/recurring_cleaning_schedule_revision_screen.dart \
             lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart
 
       - name: Run recurring cleaning tests
@@ -112,4 +119,5 @@ jobs:
             test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
             test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
             test/features/orders/data/models/cleaning_booking_schedule_model_test.dart \
-            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_revision_model_test.dart
