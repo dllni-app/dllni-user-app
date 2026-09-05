@@ -30,6 +30,7 @@ void main() {
     ]);
     expect(sessions.scheduleJson, <String, dynamic>{
       'mode': 'recurring',
+      'calculationMode': 'task',
       'sessions': <Map<String, dynamic>>[
         <String, dynamic>{'date': '2026-09-07', 'time': '09:30'},
         <String, dynamic>{'date': '2026-09-14', 'time': '12:00'},
@@ -37,6 +38,45 @@ void main() {
       ],
     });
   });
+
+  test(
+    'serializes hour-based recurring schedule with half-hour normalization',
+    () {
+      final sessions = <CleaningRecurringSessionInput>[
+        CleaningRecurringSessionInput(
+          date: DateTime(2026, 9, 7),
+          time: '09:00',
+        ),
+        CleaningRecurringSessionInput(
+          date: DateTime(2026, 9, 14),
+          time: '09:00',
+        ),
+      ];
+
+      expect(
+        sessions.scheduleJsonFor(
+          calculationMode: CleaningRecurringCalculationMode.hours,
+          hoursPerVisit: 2.25,
+        ),
+        <String, dynamic>{
+          'mode': 'recurring',
+          'calculationMode': 'hours',
+          'hoursPerVisit': 2.5,
+          'sessions': <Map<String, dynamic>>[
+            <String, dynamic>{'date': '2026-09-07', 'time': '09:00'},
+            <String, dynamic>{'date': '2026-09-14', 'time': '09:00'},
+          ],
+        },
+      );
+      expect(
+        sessions.scheduleJsonFor(
+          calculationMode: CleaningRecurringCalculationMode.hours,
+          hoursPerVisit: 25,
+        ),
+        isNull,
+      );
+    },
+  );
 
   test('generates daily visits from the canonical first visit', () {
     final sessions = CleaningRecurringScheduleGenerator.generate(

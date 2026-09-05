@@ -77,6 +77,9 @@ class _ClMainServiceScheduleScreenState
   final Set<String> _selectedCleaningServiceNames = <String>{};
   bool _isRecurring = false;
   CleaningRecurringPattern _recurringPattern = CleaningRecurringPattern.custom;
+  CleaningRecurringCalculationMode _recurringCalculationMode =
+      CleaningRecurringCalculationMode.task;
+  double _recurringHoursPerVisit = 2;
   int _recurringOccurrences = 2;
   List<CleaningRecurringSessionInput> _recurringSessions =
       const <CleaningRecurringSessionInput>[];
@@ -200,6 +203,8 @@ class _ClMainServiceScheduleScreenState
                           ClRecurringScheduleSectionWidget(
                             enabled: _isRecurring,
                             pattern: _recurringPattern,
+                            calculationMode: _recurringCalculationMode,
+                            hoursPerVisit: _recurringHoursPerVisit,
                             occurrences: _recurringOccurrences,
                             maxOccurrences: _recurringMaxOccurrences,
                             sessions: _recurringSessions,
@@ -207,6 +212,10 @@ class _ClMainServiceScheduleScreenState
                                 _setRecurringEnabled(enabled, state),
                             onPatternChanged: (pattern) =>
                                 _setRecurringPattern(pattern, state),
+                            onCalculationModeChanged: (mode) =>
+                                _setRecurringCalculationMode(mode, state),
+                            onHoursPerVisitChanged: (hours) =>
+                                _setRecurringHoursPerVisit(hours, state),
                             onOccurrencesChanged: (occurrences) =>
                                 _setRecurringOccurrences(occurrences, state),
                             onAddVisit: () => _addRecurringVisit(state),
@@ -636,6 +645,8 @@ class _ClMainServiceScheduleScreenState
     setState(() {
       _isRecurring = enabled;
       _recurringPattern = CleaningRecurringPattern.custom;
+      _recurringCalculationMode = CleaningRecurringCalculationMode.task;
+      _recurringHoursPerVisit = 2;
       _recurringOccurrences = 2;
       _recurringSessions = enabled
           ? <CleaningRecurringSessionInput>[
@@ -646,6 +657,32 @@ class _ClMainServiceScheduleScreenState
             ]
           : const <CleaningRecurringSessionInput>[];
       _resetAppliedCoupon(message: 'تم تغيير نمط الحجز. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _setRecurringCalculationMode(
+    CleaningRecurringCalculationMode mode,
+    ClMainState state,
+  ) {
+    if (mode == _recurringCalculationMode) return;
+    setState(() {
+      _recurringCalculationMode = mode;
+      _resetAppliedCoupon(
+        message: 'تم تغيير طريقة احتساب الزيارات. أعد تطبيق الكوبون.',
+      );
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _setRecurringHoursPerVisit(double hours, ClMainState state) {
+    final normalized = normalizeCleaningRecurringHoursPerVisit(hours);
+    if (normalized == null || normalized == _recurringHoursPerVisit) return;
+    setState(() {
+      _recurringHoursPerVisit = normalized;
+      _resetAppliedCoupon(
+        message: 'تم تغيير ساعات الزيارة. أعد تطبيق الكوبون.',
+      );
     });
     _requestUpdatedEstimate(state);
   }
@@ -1052,6 +1089,12 @@ class _ClMainServiceScheduleScreenState
           numberOfWorkers: selectedWorkers,
           preferredWorkerIds: selectedWorkerIds,
           recurringSessions: _recurringSessionsForRequest,
+          recurringCalculationMode: _recurringCalculationMode,
+          recurringHoursPerVisit:
+              _recurringCalculationMode ==
+                  CleaningRecurringCalculationMode.hours
+              ? _recurringHoursPerVisit
+              : null,
           cleaningServices: _selectedCleaningServicesPayload(),
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
@@ -1141,6 +1184,12 @@ class _ClMainServiceScheduleScreenState
           numberOfWorkers: requestedWorkers,
           preferredWorkerIds: workerIds,
           recurringSessions: _recurringSessionsForRequest,
+          recurringCalculationMode: _recurringCalculationMode,
+          recurringHoursPerVisit:
+              _recurringCalculationMode ==
+                  CleaningRecurringCalculationMode.hours
+              ? _recurringHoursPerVisit
+              : null,
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
