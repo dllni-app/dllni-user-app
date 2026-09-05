@@ -89,6 +89,34 @@ Verification:
 
 Status: recurring pause/resume parity verified for this slice. This does not declare whole-branch parity.
 
+### Recurring Cleaning future schedule revision slice
+
+Implemented end-to-end and ported selectively to both User App feature branches:
+
+- Customer edits only the eligible future recurring visits; completed, skipped, cancelled and already-started history is preserved.
+- Revision uses a server-authoritative two-step contract: preview first, then confirm with the returned `revisionToken`.
+- Preview recalculates the canonical per-visit pricing and returns the current total, proposed total, price delta, discount, editable/preserved/proposed visit counts and whether reconfirmation is required without mutating the booking.
+- Confirm recalculates the proposal again while locking the booking/session state and rejects a stale token if session state, versions, schedule or price changed since preview.
+- Replaced future visits are retained as terminal `superseded` audit rows; they are hidden from the active schedule payload and excluded from parent financial aggregation.
+- Active assignments on replaced future visits are released before the replacement visits are created, and affected workers receive a booking-updated notification.
+- New visits receive fresh pricing snapshots including the revision token and pricing algorithm version.
+- Existing parent discount is preserved when session financial totals are re-aggregated.
+- The recurring 30-day window and duplicate/future-slot validation remain server-authoritative for revisions.
+- A paused recurring series cannot be revised; the User App also hides the revision action while paused.
+- User App shows the recalculated old/new totals and price delta before the customer confirms the exact revision token.
+
+Verification:
+
+- Backend revision implementation commit: `bb15a2fe0992646a6fa8f220620930fe2be05a19`.
+- Backend final permanent recurring CI after staging cleanup/coverage update: run `33931319421`, green.
+- User main revision UI/model/datasource commit: `9e49c6d7fec6cf46a369a59938a52e6a3f958bb8`.
+- User main permanent recurring CI after staging cleanup/coverage update: run `33931541590`, green.
+- User dev selective revision port commit: `bd20439fe79a729897ef3bb502d8d8f1f33171fe`.
+- User dev permanent recurring CI: run `33931611667`, green.
+- User dev general Cleaning Suite CI for the same port: run `33931611665`, green.
+
+Status: recurring future schedule revision, repricing and reconfirmation parity verified for this slice. This does not declare whole-branch parity.
+
 ### Multi-Day Event Assistance
 
 The Multi-Day customer flow was previously promoted to both feature branches. Broader whole-branch parity is intentionally not inferred from this port map.
@@ -138,14 +166,15 @@ Verified recurring backend capabilities include:
 - Customer can pause and resume a recurring series using reversible future-session state while releasing active worker assignments and their associated schedule/financial capacity.
 - Visits that expire during a pause become penalty-free skipped visits on resume and parent totals are recalculated through shared session financial aggregation.
 - Pause/resume capabilities and state are returned by the schedule presenter and enforced again by the mutation service.
+- Customer can preview and confirm replacement of eligible future recurring visits with canonical repricing and stale-token protection.
+- Confirmed revisions preserve historical visits, retain superseded future rows for audit, release affected active assignments, preserve discounts and create fresh session pricing snapshots.
 
-Latest verified backend recurring CI: run `33930541324`, green.
+Latest verified backend recurring CI: run `33931319421`, green.
 
 ## Remaining Recurring Cleaning work
 
 The following items are not marked complete by this map:
 
-- Edit future recurrence with repricing and reconfirmation.
 - Task-based versus hour-based recurring modes.
 - Full worker-scope UX for specific worker(s) versus any worker.
 - Notification delivery/view state and aggregated coverage notifications.
