@@ -8,6 +8,7 @@ import '../../data/models/cleaning_booking_schedule_model.dart';
 import '../../data/source/cleaning_session_remote_data_source.dart';
 import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 import 'multi_day_cleaning_order_reschedule_screen.dart';
+import 'recurring_cleaning_schedule_revision_screen.dart';
 
 class MultiDayCleaningOrderDetailsScreen extends StatefulWidget {
   const MultiDayCleaningOrderDetailsScreen({
@@ -184,6 +185,23 @@ class _MultiDayCleaningOrderDetailsScreenState
       ),
     );
 
+    if (changed == true && mounted) {
+      await _load();
+    }
+  }
+
+  Future<void> _openRecurringRevision() async {
+    final schedule = _schedule;
+    if (!widget.recurring || schedule == null || schedule.isPaused) return;
+
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => RecurringCleaningScheduleRevisionScreen(
+          orderId: widget.orderId,
+          initialSessions: schedule.sessions,
+        ),
+      ),
+    );
     if (changed == true && mounted) {
       await _load();
     }
@@ -768,6 +786,16 @@ class _MultiDayCleaningOrderDetailsScreenState
             schedule.pauseReason!.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
           _infoRow('سبب الإيقاف', schedule.pauseReason!.trim()),
+        ],
+        if (!paused) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: busy || _busySessionId != null
+                ? null
+                : _openRecurringRevision,
+            icon: const Icon(Icons.edit_calendar_outlined),
+            label: const Text('تعديل الزيارات القادمة'),
+          ),
         ],
         if (schedule.canResume) ...[
           const SizedBox(height: 12),

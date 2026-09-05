@@ -470,6 +470,87 @@ class CleaningBookingScheduleModel {
   }
 }
 
+class CleaningRecurringScheduleRevisionPreviewModel {
+  final String revisionToken;
+  final bool requiresReconfirmation;
+  final bool scheduleChanged;
+  final bool priceChanged;
+  final double oldTotal;
+  final double newTotal;
+  final double priceDelta;
+  final double discountAmount;
+  final String currency;
+  final int editableSessionsCount;
+  final int preservedSessionsCount;
+  final int proposedSessionsCount;
+  final double sessionHours;
+
+  const CleaningRecurringScheduleRevisionPreviewModel({
+    required this.revisionToken,
+    required this.requiresReconfirmation,
+    required this.scheduleChanged,
+    required this.priceChanged,
+    required this.oldTotal,
+    required this.newTotal,
+    required this.priceDelta,
+    required this.discountAmount,
+    required this.currency,
+    required this.editableSessionsCount,
+    required this.preservedSessionsCount,
+    required this.proposedSessionsCount,
+    required this.sessionHours,
+  });
+
+  factory CleaningRecurringScheduleRevisionPreviewModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningRecurringScheduleRevisionPreviewModel(
+      revisionToken:
+          _string(json['revisionToken'] ?? json['revision_token']) ?? '',
+      requiresReconfirmation:
+          _bool(
+            json['requiresReconfirmation'] ?? json['requires_reconfirmation'],
+          ) ??
+          false,
+      scheduleChanged:
+          _bool(json['scheduleChanged'] ?? json['schedule_changed']) ?? false,
+      priceChanged:
+          _bool(json['priceChanged'] ?? json['price_changed']) ?? false,
+      oldTotal: _double(json['oldTotal'] ?? json['old_total']) ?? 0,
+      newTotal: _double(json['newTotal'] ?? json['new_total']) ?? 0,
+      priceDelta: _double(json['priceDelta'] ?? json['price_delta']) ?? 0,
+      discountAmount:
+          _double(json['discountAmount'] ?? json['discount_amount']) ?? 0,
+      currency: _string(json['currency']) ?? '',
+      editableSessionsCount:
+          _int(
+            json['editableSessionsCount'] ?? json['editable_sessions_count'],
+          ) ??
+          0,
+      preservedSessionsCount:
+          _int(
+            json['preservedSessionsCount'] ?? json['preserved_sessions_count'],
+          ) ??
+          0,
+      proposedSessionsCount:
+          _int(
+            json['proposedSessionsCount'] ?? json['proposed_sessions_count'],
+          ) ??
+          0,
+      sessionHours: _double(json['sessionHours'] ?? json['session_hours']) ?? 0,
+    );
+  }
+}
+
+CleaningRecurringScheduleRevisionPreviewModel
+cleaningRecurringScheduleRevisionPreviewFromJson(dynamic json) {
+  final root = json is String ? _map(jsonDecode(json)) : _map(json);
+  final data = _map(root['data']);
+  return CleaningRecurringScheduleRevisionPreviewModel.fromJson(
+    _map(data['revision'] ?? root['revision']),
+  );
+}
+
 class CleaningMultiDayOrderEnvelope {
   final int? bookingId;
   final String? bookingNumber;
