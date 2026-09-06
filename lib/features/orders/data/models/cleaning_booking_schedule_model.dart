@@ -86,6 +86,36 @@ class CleaningSessionPricingModel {
   }
 }
 
+class CleaningSessionPaymentModel {
+  final String status;
+  final double? amount;
+  final String? currency;
+  final String? settledAt;
+  final bool isInternalSettlement;
+
+  const CleaningSessionPaymentModel({
+    required this.status,
+    this.amount,
+    this.currency,
+    this.settledAt,
+    this.isInternalSettlement = true,
+  });
+
+  factory CleaningSessionPaymentModel.fromJson(Map<String, dynamic> json) {
+    return CleaningSessionPaymentModel(
+      status: _string(json['status']) ?? 'pending',
+      amount: _double(json['amount']),
+      currency: _string(json['currency']),
+      settledAt: _string(json['settledAt'] ?? json['settled_at']),
+      isInternalSettlement:
+          _bool(
+            json['isInternalSettlement'] ?? json['is_internal_settlement'],
+          ) ??
+          true,
+    );
+  }
+}
+
 class CleaningSessionWorkerAssignmentModel {
   final int? id;
   final int? parentAssignmentId;
@@ -194,6 +224,17 @@ class CleaningBookingSessionModel {
   final bool canCancel;
   final bool canSkip;
   final bool? canReschedule;
+  final CleaningSessionPaymentModel? payment;
+  final String paymentStatus;
+  final String? paymentSettledAt;
+  final bool canReview;
+  final bool hasReview;
+  final List<int> reviewedWorkerIds;
+  final List<int> reviewableWorkerIds;
+  final bool canOpenDispute;
+  final bool hasOpenDispute;
+  final int? disputeId;
+  final String? disputeStatus;
   final CleaningSessionPricingModel? pricing;
   final String? startedTravelAt;
   final String? arrivedAt;
@@ -230,6 +271,17 @@ class CleaningBookingSessionModel {
     required this.canCancel,
     this.canSkip = false,
     this.canReschedule,
+    this.payment,
+    this.paymentStatus = 'pending',
+    this.paymentSettledAt,
+    this.canReview = false,
+    this.hasReview = false,
+    this.reviewedWorkerIds = const <int>[],
+    this.reviewableWorkerIds = const <int>[],
+    this.canOpenDispute = false,
+    this.hasOpenDispute = false,
+    this.disputeId,
+    this.disputeStatus,
     this.pricing,
     this.startedTravelAt,
     this.arrivedAt,
@@ -250,6 +302,10 @@ class CleaningBookingSessionModel {
         json['workerAssignments'] ?? json['worker_assignments'];
     final rawAssignmentState =
         json['workerAssignmentState'] ?? json['worker_assignment_state'];
+    final rawReviewedWorkerIds =
+        json['reviewedWorkerIds'] ?? json['reviewed_worker_ids'];
+    final rawReviewableWorkerIds =
+        json['reviewableWorkerIds'] ?? json['reviewable_worker_ids'];
 
     return CleaningBookingSessionModel(
       id: _int(json['id']),
@@ -290,6 +346,36 @@ class CleaningBookingSessionModel {
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
       canSkip: _bool(json['canSkip'] ?? json['can_skip']) ?? false,
       canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),
+      payment: json['payment'] is Map
+          ? CleaningSessionPaymentModel.fromJson(_map(json['payment']))
+          : null,
+      paymentStatus:
+          _string(json['paymentStatus'] ?? json['payment_status']) ??
+          _string(_map(json['payment'])['status']) ??
+          'pending',
+      paymentSettledAt:
+          _string(json['paymentSettledAt'] ?? json['payment_settled_at']) ??
+          _string(_map(json['payment'])['settledAt']),
+      canReview: _bool(json['canReview'] ?? json['can_review']) ?? false,
+      hasReview: _bool(json['hasReview'] ?? json['has_review']) ?? false,
+      reviewedWorkerIds: rawReviewedWorkerIds is List
+          ? rawReviewedWorkerIds
+                .map(_int)
+                .whereType<int>()
+                .toList(growable: false)
+          : const <int>[],
+      reviewableWorkerIds: rawReviewableWorkerIds is List
+          ? rawReviewableWorkerIds
+                .map(_int)
+                .whereType<int>()
+                .toList(growable: false)
+          : const <int>[],
+      canOpenDispute:
+          _bool(json['canOpenDispute'] ?? json['can_open_dispute']) ?? false,
+      hasOpenDispute:
+          _bool(json['hasOpenDispute'] ?? json['has_open_dispute']) ?? false,
+      disputeId: _int(json['disputeId'] ?? json['dispute_id']),
+      disputeStatus: _string(json['disputeStatus'] ?? json['dispute_status']),
       pricing: json['pricing'] is Map
           ? CleaningSessionPricingModel.fromJson(_map(json['pricing']))
           : null,

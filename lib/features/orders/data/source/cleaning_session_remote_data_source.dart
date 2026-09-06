@@ -88,6 +88,40 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningMultiDayOrderEnvelope> submitSessionReview({
+    required int orderId,
+    required int sessionId,
+    required int workerId,
+    required int rating,
+    String? comment,
+  }) {
+    final data = <String, dynamic>{'workerId': workerId, 'rating': rating};
+    final normalizedComment = comment?.trim();
+    if (normalizedComment != null && normalizedComment.isNotEmpty) {
+      data['comment'] = normalizedComment;
+    }
+
+    return _post(
+      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/review',
+      data: data,
+    );
+  }
+
+  Future<CleaningMultiDayOrderEnvelope> openSessionDispute({
+    required int orderId,
+    required int sessionId,
+    required String description,
+    required String category,
+  }) {
+    return _post(
+      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/disputes',
+      data: <String, dynamic>{
+        'description': description.trim(),
+        'category': category,
+      },
+    );
+  }
+
   Future<CleaningMultiDayOrderEnvelope> sendSos({
     required int orderId,
     required int sessionId,

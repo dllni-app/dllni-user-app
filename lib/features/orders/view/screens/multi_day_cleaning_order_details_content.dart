@@ -374,6 +374,88 @@ class _MultiDayCleaningOrderDetailsScreenState
     );
   }
 
+  Future<void> _reviewRecurringSession(
+    CleaningBookingSessionModel session,
+  ) async {
+    final sessionId = session.id;
+    if (!widget.recurring ||
+        sessionId == null ||
+        !session.canReview ||
+        _busySessionId != null) {
+      return;
+    }
+
+    final reviewableIds = session.reviewableWorkerIds.toSet();
+    final workers = session.workerAssignments
+        .where(
+          (assignment) =>
+              assignment.workerId != null &&
+              reviewableIds.contains(assignment.workerId),
+        )
+        .map(
+          (assignment) => _EventReviewWorker(
+            workerId: assignment.workerId!,
+            workerName: assignment.workerName?.trim().isNotEmpty == true
+                ? assignment.workerName!.trim()
+                : 'العامل #${assignment.workerId}',
+          ),
+        )
+        .toList(growable: false);
+
+    if (workers.isEmpty) {
+      setState(
+        () => _actionError = 'تعذر تحديد العامل القابل للتقييم لهذه الزيارة.',
+      );
+      return;
+    }
+
+    final draft = await showDialog<_RecurringSessionReviewDraft>(
+      context: context,
+      builder: (dialogContext) =>
+          _RecurringSessionReviewDialog(workers: workers),
+    );
+    if (!mounted || draft == null) return;
+
+    await _runSessionAction(
+      session,
+      () => _sessions.submitSessionReview(
+        orderId: widget.orderId,
+        sessionId: sessionId,
+        workerId: draft.workerId,
+        rating: draft.rating,
+        comment: draft.comment,
+      ),
+    );
+  }
+
+  Future<void> _openRecurringSessionDispute(
+    CleaningBookingSessionModel session,
+  ) async {
+    final sessionId = session.id;
+    if (!widget.recurring ||
+        sessionId == null ||
+        !session.canOpenDispute ||
+        _busySessionId != null) {
+      return;
+    }
+
+    final draft = await showDialog<_RecurringSessionDisputeDraft>(
+      context: context,
+      builder: (dialogContext) => const _RecurringSessionDisputeDialog(),
+    );
+    if (!mounted || draft == null) return;
+
+    await _runSessionAction(
+      session,
+      () => _sessions.openSessionDispute(
+        orderId: widget.orderId,
+        sessionId: sessionId,
+        description: draft.description,
+        category: draft.category,
+      ),
+    );
+  }
+
   Future<String?> _askSecurityCode() async {
     final controller = TextEditingController();
     try {
@@ -708,7 +790,8 @@ class _MultiDayCleaningOrderDetailsScreenState
           const SizedBox(height: 12),
           _recurringSeriesCard(schedule),
         ],
-        if (_envelope?.canReview == true || _envelope?.hasReview == true) ...[
+        if (!widget.recurring &&
+            (_envelope?.canReview == true || _envelope?.hasReview == true)) ...[
           const SizedBox(height: 12),
           _eventReviewCard(),
         ],
@@ -934,6 +1017,20 @@ class _MultiDayCleaningOrderDetailsScreenState
                   .trim(),
             ),
           ],
+          if (widget.recurring &&
+              (session.isCompleted ||
+                  session.paymentStatus == 'ready' ||
+                  session.paymentStatus == 'settled')) ...[
+            const SizedBox(height: 7),
+            _infoRow(
+              'التسوية المالية',
+              _paymentStatusLabel(session.paymentStatus),
+            ),
+          ],
+          if (widget.recurring && session.hasOpenDispute) ...[
+            const SizedBox(height: 7),
+            _infoRow('حالة النزاع', _disputeStatusLabel(session.disputeStatus)),
+          ],
           if (session.isCancelled && cancellationFee > 0) ...[
             const SizedBox(height: 7),
             _infoRow(
@@ -968,7 +1065,8 @@ class _MultiDayCleaningOrderDetailsScreenState
         session.canConfirmCompletion ||
         session.canSkip ||
         session.canCancel ||
-        session.canSendSos;
+        session.canSendSos ||
+        (widget.recurring && (session.canReview || session.canOpenDispute));
   }
 
   Widget _sessionActions(CleaningBookingSessionModel session, bool busy) {
@@ -1001,6 +1099,39 @@ class _MultiDayCleaningOrderDetailsScreenState
             onPressed: busy ? null : () => _skipSession(session),
             icon: const Icon(Icons.skip_next_rounded),
             label: const Text('تخطي هذه الزيارة'),
+          ),
+        ],
+        if (widget.recurring &&
+            (session.canReview || session.canOpenDispute)) ...[
+          if (session.canConfirmStartVerification ||
+              session.canConfirmCompletion ||
+              session.canSkip)
+            const SizedBox(height: 8),
+          Row(
+            children: [
+              if (session.canReview)
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: busy
+                        ? null
+                        : () => _reviewRecurringSession(session),
+                    icon: const Icon(Icons.star_outline_rounded),
+                    label: const Text('تقييم الزيارة'),
+                  ),
+                ),
+              if (session.canReview && session.canOpenDispute)
+                const SizedBox(width: 8),
+              if (session.canOpenDispute)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: busy
+                        ? null
+                        : () => _openRecurringSessionDispute(session),
+                    icon: const Icon(Icons.report_problem_outlined),
+                    label: const Text('فتح نزاع'),
+                  ),
+                ),
+            ],
           ),
         ],
         if (session.canCancel || session.canSendSos) ...[
@@ -1184,11 +1315,258 @@ class _MultiDayCleaningOrderDetailsScreenState
     }
   }
 
+  String _paymentStatusLabel(String status) {
+    switch (status.trim().toLowerCase()) {
+      case 'ready':
+        return 'بانتظار تأكيد إكمال الزيارة';
+      case 'settled':
+        return 'تمت تسوية الزيارة';
+      case 'not_required':
+        return 'لا توجد تسوية لهذه الزيارة';
+      default:
+        return 'قيد الانتظار';
+    }
+  }
+
+  String _disputeStatusLabel(String? status) {
+    switch (status?.trim().toLowerCase()) {
+      case 'open':
+        return 'مفتوح';
+      case 'under_review':
+        return 'قيد المراجعة';
+      case 'resolved':
+        return 'تم الحل';
+      case 'closed':
+        return 'مغلق';
+      case 'rejected':
+        return 'مرفوض';
+      default:
+        return 'غير محدد';
+    }
+  }
+
   String _hours(double value) =>
       value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 
   String _money(double value) =>
       value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
+}
+
+class _RecurringSessionReviewDraft {
+  const _RecurringSessionReviewDraft({
+    required this.workerId,
+    required this.rating,
+    this.comment,
+  });
+
+  final int workerId;
+  final int rating;
+  final String? comment;
+}
+
+class _RecurringSessionReviewDialog extends StatefulWidget {
+  const _RecurringSessionReviewDialog({required this.workers});
+
+  final List<_EventReviewWorker> workers;
+
+  @override
+  State<_RecurringSessionReviewDialog> createState() =>
+      _RecurringSessionReviewDialogState();
+}
+
+class _RecurringSessionReviewDialogState
+    extends State<_RecurringSessionReviewDialog> {
+  late int _workerId;
+  int _rating = 0;
+  final TextEditingController _comment = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _workerId = widget.workers.first.workerId;
+  }
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('تقييم هذه الزيارة'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (widget.workers.length > 1) ...[
+            DropdownButtonFormField<int>(
+              initialValue: _workerId,
+              decoration: const InputDecoration(labelText: 'العامل'),
+              items: widget.workers
+                  .map(
+                    (worker) => DropdownMenuItem<int>(
+                      value: worker.workerId,
+                      child: Text(worker.workerName),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (value) {
+                if (value != null) setState(() => _workerId = value);
+              },
+            ),
+            const SizedBox(height: 12),
+          ] else
+            Text(
+              widget.workers.first.workerName,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List<Widget>.generate(5, (index) {
+              final value = index + 1;
+              return IconButton(
+                onPressed: () => setState(() => _rating = value),
+                icon: Icon(
+                  Icons.star_rounded,
+                  color: _rating >= value
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFFD1D5DB),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _comment,
+            minLines: 2,
+            maxLines: 4,
+            maxLength: 1000,
+            decoration: const InputDecoration(
+              hintText: 'ملاحظات عن هذه الزيارة (اختياري)',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          onPressed: _rating < 1
+              ? null
+              : () {
+                  final comment = _comment.text.trim();
+                  Navigator.of(context).pop(
+                    _RecurringSessionReviewDraft(
+                      workerId: _workerId,
+                      rating: _rating,
+                      comment: comment.isEmpty ? null : comment,
+                    ),
+                  );
+                },
+          child: const Text('إرسال التقييم'),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecurringSessionDisputeDraft {
+  const _RecurringSessionDisputeDraft({
+    required this.category,
+    required this.description,
+  });
+
+  final String category;
+  final String description;
+}
+
+class _RecurringSessionDisputeDialog extends StatefulWidget {
+  const _RecurringSessionDisputeDialog();
+
+  @override
+  State<_RecurringSessionDisputeDialog> createState() =>
+      _RecurringSessionDisputeDialogState();
+}
+
+class _RecurringSessionDisputeDialogState
+    extends State<_RecurringSessionDisputeDialog> {
+  static const Map<String, String> _categories = <String, String>{
+    'poor_quality': 'جودة الخدمة',
+    'property_damage': 'ضرر بالممتلكات',
+    'unprofessional': 'سلوك غير مهني',
+    'billing_issue': 'مشكلة مالية',
+    'financial_or_verbal_dispute': 'نزاع مالي أو لفظي',
+    'other': 'سبب آخر',
+  };
+
+  String _category = 'poor_quality';
+  final TextEditingController _description = TextEditingController();
+
+  @override
+  void dispose() {
+    _description.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('فتح نزاع لهذه الزيارة'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DropdownButtonFormField<String>(
+            initialValue: _category,
+            decoration: const InputDecoration(labelText: 'نوع المشكلة'),
+            items: _categories.entries
+                .map(
+                  (entry) => DropdownMenuItem<String>(
+                    value: entry.key,
+                    child: Text(entry.value),
+                  ),
+                )
+                .toList(growable: false),
+            onChanged: (value) {
+              if (value != null) setState(() => _category = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _description,
+            minLines: 3,
+            maxLines: 6,
+            maxLength: 1000,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              hintText: 'اشرح المشكلة الخاصة بهذه الزيارة',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          onPressed: _description.text.trim().length < 3
+              ? null
+              : () => Navigator.of(context).pop(
+                  _RecurringSessionDisputeDraft(
+                    category: _category,
+                    description: _description.text.trim(),
+                  ),
+                ),
+          child: const Text('فتح النزاع'),
+        ),
+      ],
+    );
+  }
 }
 
 class _EventReviewWorker {
