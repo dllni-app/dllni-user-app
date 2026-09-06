@@ -116,12 +116,97 @@ class CleaningSessionPaymentModel {
   }
 }
 
+class CleaningSessionAttendanceIncidentModel {
+  final int? workerId;
+  final String? workerName;
+  final String? lateReportedAt;
+  final String? noTravelReportedAt;
+  final String? action;
+  final String? resolvedAt;
+  final String? note;
+
+  const CleaningSessionAttendanceIncidentModel({
+    this.workerId,
+    this.workerName,
+    this.lateReportedAt,
+    this.noTravelReportedAt,
+    this.action,
+    this.resolvedAt,
+    this.note,
+  });
+
+  factory CleaningSessionAttendanceIncidentModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningSessionAttendanceIncidentModel(
+      workerId: _int(json['workerId'] ?? json['worker_id']),
+      workerName: _string(json['workerName'] ?? json['worker_name']),
+      lateReportedAt: _string(
+        json['lateReportedAt'] ?? json['late_reported_at'],
+      ),
+      noTravelReportedAt: _string(
+        json['noTravelReportedAt'] ?? json['no_travel_reported_at'],
+      ),
+      action: _string(json['action']),
+      resolvedAt: _string(json['resolvedAt'] ?? json['resolved_at']),
+      note: _string(json['note']),
+    );
+  }
+
+  bool get isNoTravel => noTravelReportedAt != null;
+  bool get isResolved => resolvedAt != null;
+}
+
+class CleaningSessionAttendanceModel {
+  final int lateGraceMinutes;
+  final int noTravelGraceMinutes;
+  final int minutesPastStart;
+  final List<CleaningSessionAttendanceIncidentModel> incidents;
+
+  const CleaningSessionAttendanceModel({
+    this.lateGraceMinutes = 15,
+    this.noTravelGraceMinutes = 30,
+    this.minutesPastStart = 0,
+    this.incidents = const <CleaningSessionAttendanceIncidentModel>[],
+  });
+
+  factory CleaningSessionAttendanceModel.fromJson(Map<String, dynamic> json) {
+    final rawIncidents = json['incidents'];
+    return CleaningSessionAttendanceModel(
+      lateGraceMinutes:
+          _int(json['lateGraceMinutes'] ?? json['late_grace_minutes']) ?? 15,
+      noTravelGraceMinutes:
+          _int(
+            json['noTravelGraceMinutes'] ?? json['no_travel_grace_minutes'],
+          ) ??
+          30,
+      minutesPastStart:
+          _int(json['minutesPastStart'] ?? json['minutes_past_start']) ?? 0,
+      incidents: rawIncidents is List
+          ? rawIncidents
+                .whereType<Map>()
+                .map(
+                  (item) => CleaningSessionAttendanceIncidentModel.fromJson(
+                    _map(item),
+                  ),
+                )
+                .toList(growable: false)
+          : const <CleaningSessionAttendanceIncidentModel>[],
+    );
+  }
+}
+
 class CleaningSessionWorkerAssignmentModel {
   final int? id;
   final int? parentAssignmentId;
   final int? workerId;
   final String? workerName;
   final String? status;
+  final String? lateReportedAt;
+  final String? noTravelReportedAt;
+  final String? attendanceAction;
+  final String? attendanceResolvedAt;
+  final String? attendanceNote;
   final String? startedTravelAt;
   final String? arrivedAt;
   final String? locationUpdatedAt;
@@ -143,6 +228,11 @@ class CleaningSessionWorkerAssignmentModel {
     this.workerId,
     this.workerName,
     this.status,
+    this.lateReportedAt,
+    this.noTravelReportedAt,
+    this.attendanceAction,
+    this.attendanceResolvedAt,
+    this.attendanceNote,
     this.startedTravelAt,
     this.arrivedAt,
     this.locationUpdatedAt,
@@ -170,6 +260,21 @@ class CleaningSessionWorkerAssignmentModel {
       workerId: _int(json['workerId'] ?? json['worker_id']),
       workerName: _string(json['workerName'] ?? json['worker_name']),
       status: _string(json['status']),
+      lateReportedAt: _string(
+        json['lateReportedAt'] ?? json['late_reported_at'],
+      ),
+      noTravelReportedAt: _string(
+        json['noTravelReportedAt'] ?? json['no_travel_reported_at'],
+      ),
+      attendanceAction: _string(
+        json['attendanceAction'] ?? json['attendance_action'],
+      ),
+      attendanceResolvedAt: _string(
+        json['attendanceResolvedAt'] ?? json['attendance_resolved_at'],
+      ),
+      attendanceNote: _string(
+        json['attendanceNote'] ?? json['attendance_note'],
+      ),
       startedTravelAt: _string(
         json['startedTravelAt'] ?? json['started_travel_at'],
       ),
@@ -223,6 +328,13 @@ class CleaningBookingSessionModel {
   final bool canExtend;
   final bool canCancel;
   final bool canSkip;
+  final bool canReportLate;
+  final bool canReportNoTravel;
+  final List<int> lateWorkerIds;
+  final List<int> noTravelWorkerIds;
+  final List<int> reportableLateWorkerIds;
+  final List<int> reportableNoTravelWorkerIds;
+  final CleaningSessionAttendanceModel? attendance;
   final bool? canReschedule;
   final CleaningSessionPaymentModel? payment;
   final String paymentStatus;
@@ -270,6 +382,13 @@ class CleaningBookingSessionModel {
     required this.canExtend,
     required this.canCancel,
     this.canSkip = false,
+    this.canReportLate = false,
+    this.canReportNoTravel = false,
+    this.lateWorkerIds = const <int>[],
+    this.noTravelWorkerIds = const <int>[],
+    this.reportableLateWorkerIds = const <int>[],
+    this.reportableNoTravelWorkerIds = const <int>[],
+    this.attendance,
     this.canReschedule,
     this.payment,
     this.paymentStatus = 'pending',
@@ -306,6 +425,14 @@ class CleaningBookingSessionModel {
         json['reviewedWorkerIds'] ?? json['reviewed_worker_ids'];
     final rawReviewableWorkerIds =
         json['reviewableWorkerIds'] ?? json['reviewable_worker_ids'];
+    final rawLateWorkerIds = json['lateWorkerIds'] ?? json['late_worker_ids'];
+    final rawNoTravelWorkerIds =
+        json['noTravelWorkerIds'] ?? json['no_travel_worker_ids'];
+    final rawReportableLateWorkerIds =
+        json['reportableLateWorkerIds'] ?? json['reportable_late_worker_ids'];
+    final rawReportableNoTravelWorkerIds =
+        json['reportableNoTravelWorkerIds'] ??
+        json['reportable_no_travel_worker_ids'];
 
     return CleaningBookingSessionModel(
       id: _int(json['id']),
@@ -345,6 +472,35 @@ class CleaningBookingSessionModel {
       canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
       canSkip: _bool(json['canSkip'] ?? json['can_skip']) ?? false,
+      canReportLate:
+          _bool(json['canReportLate'] ?? json['can_report_late']) ?? false,
+      canReportNoTravel:
+          _bool(json['canReportNoTravel'] ?? json['can_report_no_travel']) ??
+          false,
+      lateWorkerIds: rawLateWorkerIds is List
+          ? rawLateWorkerIds.map(_int).whereType<int>().toList(growable: false)
+          : const <int>[],
+      noTravelWorkerIds: rawNoTravelWorkerIds is List
+          ? rawNoTravelWorkerIds
+                .map(_int)
+                .whereType<int>()
+                .toList(growable: false)
+          : const <int>[],
+      reportableLateWorkerIds: rawReportableLateWorkerIds is List
+          ? rawReportableLateWorkerIds
+                .map(_int)
+                .whereType<int>()
+                .toList(growable: false)
+          : const <int>[],
+      reportableNoTravelWorkerIds: rawReportableNoTravelWorkerIds is List
+          ? rawReportableNoTravelWorkerIds
+                .map(_int)
+                .whereType<int>()
+                .toList(growable: false)
+          : const <int>[],
+      attendance: json['attendance'] is Map
+          ? CleaningSessionAttendanceModel.fromJson(_map(json['attendance']))
+          : null,
       canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),
       payment: json['payment'] is Map
           ? CleaningSessionPaymentModel.fromJson(_map(json['payment']))

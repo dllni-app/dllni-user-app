@@ -341,4 +341,73 @@ void main() {
       isTrue,
     );
   });
+
+  test('parses recurring late and no-travel attendance capabilities', () {
+    final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
+      'data': <String, dynamic>{
+        'id': 700,
+        'schedule': <String, dynamic>{
+          'mode': 'multi_day',
+          'isRecurring': true,
+          'sessions': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 701,
+              'sequence': 1,
+              'sessionType': 'recurring_cleaning',
+              'date': '2026-09-06',
+              'time': '10:00',
+              'hours': 2,
+              'status': 'worker_assigned',
+              'canReportLate': true,
+              'canReportNoTravel': true,
+              'lateWorkerIds': <int>[42],
+              'noTravelWorkerIds': <int>[42],
+              'reportableLateWorkerIds': <int>[42],
+              'reportableNoTravelWorkerIds': <int>[42],
+              'attendance': <String, dynamic>{
+                'lateGraceMinutes': 15,
+                'noTravelGraceMinutes': 30,
+                'minutesPastStart': 35,
+                'incidents': <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'workerId': 42,
+                    'workerName': 'أحمد',
+                    'lateReportedAt': '2026-09-06T10:20:00+03:00',
+                    'noTravelReportedAt': null,
+                    'action': 'wait',
+                    'resolvedAt': null,
+                    'note': 'سأنتظر قليلاً',
+                  },
+                ],
+              },
+              'workerAssignments': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'workerId': 42,
+                  'workerName': 'أحمد',
+                  'status': 'accepted',
+                  'lateReportedAt': '2026-09-06T10:20:00+03:00',
+                  'attendanceAction': 'wait',
+                  'attendanceNote': 'سأنتظر قليلاً',
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    final session = envelope.schedule!.sessions.single;
+    expect(session.canReportLate, isTrue);
+    expect(session.canReportNoTravel, isTrue);
+    expect(session.reportableLateWorkerIds, <int>[42]);
+    expect(session.reportableNoTravelWorkerIds, <int>[42]);
+    expect(session.attendance?.lateGraceMinutes, 15);
+    expect(session.attendance?.noTravelGraceMinutes, 30);
+    expect(session.attendance?.minutesPastStart, 35);
+    expect(session.attendance?.incidents.single.workerName, 'أحمد');
+    expect(session.attendance?.incidents.single.action, 'wait');
+    expect(session.attendance?.incidents.single.isNoTravel, isFalse);
+    expect(session.workerAssignments.single.attendanceAction, 'wait');
+    expect(session.workerAssignments.single.attendanceNote, 'سأنتظر قليلاً');
+  });
 }
