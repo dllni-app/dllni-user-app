@@ -1,26 +1,45 @@
 {
-  "app": {
-    "title": "Dllni",
-    "home": "Home",
-    "welcome": "Welcome"
+  "branchProbe": "User dev branch probe",
+  "cleaning": {
+    "errorMessages": {
+      "invalidCleaningRequest": "We could not validate this cleaning request.",
+      "quoteRequired": "Please refresh the estimate before confirming the booking.",
+      "bookingStatusChanged": "The booking status changed. Please refresh and try again."
+    }
   },
-  "errorMessage": {
-    "noInternetError": "No internet connection. Check your network and try again.",
-    "connectionTimeout": "The connection timed out. Please try again.",
-    "sendTimeout": "The request could not be sent. Please try again.",
-    "receiveTimeout": "The server response timed out. Please try again.",
-    "badCertificate": "The secure connection could not be verified.",
-    "badResponse": "The server returned an invalid response.",
-    "cancelError": "The request was cancelled.",
-    "unknownError": "An unexpected error occurred. Please try again.",
-    "serverError": "A server error occurred. Please try again later.",
-    "unauthorized": "Your session expired. Please log in again.",
-    "forbidden": "You are not allowed to perform this action.",
-    "notFound": "The requested item was not found.",
-    "validationError": "Please check the entered data.",
-    "tooManyRequests": "Too many requests. Please try again later.",
-    "invalidSecurityCode": "The security code is invalid.",
-    "expiredSecurityCode": "The security code has expired. Ask the worker for a new code.",
-    "internalServerError": "A server error occurred. Please try again later."
+  "cleaningExtras": {
+    "materialsTitle": "Cleaning materials",
+    "materialsDescription": "Let the platform calculate the required cleaning materials automatically.",
+    "requestMaterials": "Request cleaning materials",
+    "materialsEstimate": "Estimated materials",
+    "specialServicesTitle": "Special services",
+    "specialServicesDescription": "Add special services and specify their quantity and dirtiness level.",
+    "addSpecialService": "Add special service",
+    "selectSpecialService": "Select a special service",
+    "quantity": "Quantity",
+    "dirtiness": "Dirtiness level",
+    "notesOptional": "Notes (optional)",
+    "removeSpecialService": "Remove service",
+    "specialServicesEstimate": "Estimated special services",
+    "openTimeTitle": "Open-time request",
+    "openTimeDescription": "The final bill is determined by actual work time under the platform rules.",
+    "requestOpenTime": "Request workers for open time",
+    "workerCount": "Number of workers",
+    "openTimeEstimate": "Open-time estimate",
+    "hourlyRate": "Hourly rate",
+    "minimumDuration": "Minimum duration",
+    "actualDuration": "Actual duration",
+    "billableDuration": "Billable duration",
+    "finalPrice": "Final price",
+    "perHour": "per hour",
+    "hours": "hours",
+    "loadingEstimate": "Updating estimate...",
+    "estimateError": "Could not update the estimate. Try again.",
+    "light": "Light",
+    "medium": "Medium",
+    "heavy": "Heavy",
+    "noSpecialServices": "No special services are currently available.",
+    "retry": "Try again",
+    "readOnlyDetails": "Cleaning add-on details"
   }
 }

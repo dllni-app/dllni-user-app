@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/view/widgets/cl_service_address_section_widget.dart';
+import '../../../cl_main/view/widgets/cl_cleaning_extras_section_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_day_preview_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_section_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_time_picker_field_widget.dart';
@@ -848,6 +849,17 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
+                    if (order.materials.isNotEmpty ||
+                        order.specialServices.isNotEmpty ||
+                        order.openTime != null) ...[
+                      const SizedBox(height: 12),
+                      CleaningOrderExtrasDetailsSection(
+                        materials: order.materials,
+                        specialServices: order.specialServices,
+                        openTime: order.openTime,
+                        currency: order.openTime?.currency ?? 'SYP',
+                      ),
+                    ],
                     if (!isTerminalStatus) ...[
                       const SizedBox(height: 14),
                       SizedBox(

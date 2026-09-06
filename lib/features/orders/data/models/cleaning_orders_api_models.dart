@@ -1,4 +1,5 @@
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
+import 'package:dllni_user_app/core/models/cleaning_service_extras.dart';
 
 import 'cleaning_booking_status.dart';
 
@@ -17,6 +18,12 @@ List<Map<String, dynamic>> _toMapList(dynamic value) {
     return value.map((item) => _toMap(item)).toList(growable: false);
   }
   return const <Map<String, dynamic>>[];
+}
+
+CleaningOpenTimeModel? _cleaningOpenTimeFromJson(dynamic value) {
+  return value is Map
+      ? CleaningOpenTimeModel.fromJson(_toMap(value))
+      : null;
 }
 
 List<dynamic>? _toDynamicList(dynamic value) {
@@ -307,6 +314,9 @@ class CleaningOrderModel {
   final CleaningOrderWorkerModel? worker;
   final List<CleaningOrderLineItemModel>? services;
   final List<CleaningOrderLineItemModel>? addons;
+  final List<CleaningMaterialLineModel> materials;
+  final List<CleaningSpecialServiceLineModel> specialServices;
+  final CleaningOpenTimeModel? openTime;
   final Map<String, dynamic>? billingPolicy;
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
@@ -356,6 +366,9 @@ class CleaningOrderModel {
     this.worker,
     this.services,
     this.addons,
+    this.materials = const <CleaningMaterialLineModel>[],
+    this.specialServices = const <CleaningSpecialServiceLineModel>[],
+    this.openTime,
     this.billingPolicy,
     this.timeWarnings,
     this.disputes,
@@ -477,6 +490,11 @@ class CleaningOrderModel {
       addons: _toMapList(
         m['addons'],
       ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
+      materials: cleaningMaterialLinesFromJson(m['materials']),
+      specialServices: cleaningSpecialServiceLinesFromJson(
+        m['specialServices'] ?? m['special_services'],
+      ),
+      openTime: _cleaningOpenTimeFromJson(m['openTime'] ?? m['open_time']),
       billingPolicy: m['billingPolicy'] is Map
           ? _toMap(m['billingPolicy'])
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
@@ -607,6 +625,9 @@ class CleaningOrderDetailModel {
   final CleaningOrderWorkerModel? worker;
   final List<CleaningOrderLineItemModel>? services;
   final List<CleaningOrderLineItemModel>? addons;
+  final List<CleaningMaterialLineModel> materials;
+  final List<CleaningSpecialServiceLineModel> specialServices;
+  final CleaningOpenTimeModel? openTime;
   final Map<String, dynamic>? billingPolicy;
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
@@ -663,6 +684,9 @@ class CleaningOrderDetailModel {
     this.worker,
     this.services,
     this.addons,
+    this.materials = const <CleaningMaterialLineModel>[],
+    this.specialServices = const <CleaningSpecialServiceLineModel>[],
+    this.openTime,
     this.billingPolicy,
     this.timeWarnings,
     this.disputes,
@@ -795,6 +819,11 @@ class CleaningOrderDetailModel {
       addons: _toMapList(
         m['addons'],
       ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
+      materials: cleaningMaterialLinesFromJson(m['materials']),
+      specialServices: cleaningSpecialServiceLinesFromJson(
+        m['specialServices'] ?? m['special_services'],
+      ),
+      openTime: _cleaningOpenTimeFromJson(m['openTime'] ?? m['open_time']),
       billingPolicy: m['billingPolicy'] is Map
           ? _toMap(m['billingPolicy'])
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
@@ -977,6 +1006,9 @@ class CleaningOrderDetailModel {
       worker: worker,
       services: services,
       addons: addons,
+      materials: materials,
+      specialServices: specialServices,
+      openTime: openTime,
       billingPolicy: billingPolicy,
       timeWarnings: timeWarnings,
       disputes: disputes,

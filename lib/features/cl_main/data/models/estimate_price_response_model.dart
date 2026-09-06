@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../../../core/models/cleaning_service_extras.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 
@@ -62,6 +63,9 @@ class EstimatePriceResponseModel {
   final int? requiredWorkers;
   final double? maxHoursPerWorker;
   final List<CleaningWorkerRoomAssignment> workerRoomAssignments;
+  final List<CleaningMaterialLineModel> materials;
+  final List<CleaningSpecialServiceLineModel> specialServices;
+  final CleaningOpenTimeModel? openTime;
 
   const EstimatePriceResponseModel({
     this.size,
@@ -74,6 +78,9 @@ class EstimatePriceResponseModel {
     this.requiredWorkers,
     this.maxHoursPerWorker,
     this.workerRoomAssignments = const [],
+    this.materials = const <CleaningMaterialLineModel>[],
+    this.specialServices = const <CleaningSpecialServiceLineModel>[],
+    this.openTime,
   });
 
   int? get suggestedTeamSize =>
@@ -126,8 +133,29 @@ class EstimatePriceResponseModel {
       workerRoomAssignments: parseWorkerRoomAssignments(
         json['workerRoomAssignments'] ?? json['worker_room_assignments'],
       ),
+      materials: cleaningMaterialLinesFromJson(
+        json['materials'] ??
+            _toMap(json['pricing'])['materials'] ??
+            _toMap(json['pricing'])['material_lines'],
+      ),
+      specialServices: cleaningSpecialServiceLinesFromJson(
+        json['specialServices'] ??
+            json['special_services'] ??
+            _toMap(json['pricing'])['specialServices'] ??
+            _toMap(json['pricing'])['special_services'],
+      ),
+      openTime: _openTimeFromJson(
+        json['openTime'] ??
+            json['open_time'] ??
+            _toMap(json['pricing'])['openTime'] ??
+            _toMap(json['pricing'])['open_time'],
+      ),
     );
   }
+}
+
+CleaningOpenTimeModel? _openTimeFromJson(dynamic value) {
+  return value is Map ? CleaningOpenTimeModel.fromJson(_toMap(value)) : null;
 }
 
 class EstimateScheduleModel {
