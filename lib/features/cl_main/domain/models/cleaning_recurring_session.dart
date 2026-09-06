@@ -1,8 +1,104 @@
+import 'cleaning_assignment_mode.dart';
+
 const int cleaningRecurringMaxWindowDays = 30;
 
 enum CleaningRecurringPattern { custom, daily, weekly, monthly }
 
 enum CleaningRecurringCalculationMode { task, hours }
+
+enum CleaningRecurringWorkerScope { any, specific }
+
+extension CleaningRecurringWorkerScopeX on CleaningRecurringWorkerScope {
+  String get apiValue => switch (this) {
+    CleaningRecurringWorkerScope.any => 'any',
+    CleaningRecurringWorkerScope.specific => 'specific',
+  };
+
+  String get labelAr => switch (this) {
+    CleaningRecurringWorkerScope.any => 'أي عامل متاح',
+    CleaningRecurringWorkerScope.specific => 'عمال محددون فقط',
+  };
+
+  String get descriptionAr => switch (this) {
+    CleaningRecurringWorkerScope.any =>
+      'يمكن لأي عامل مؤهل ومتاح قبول مقعد في كل زيارة.',
+    CleaningRecurringWorkerScope.specific =>
+      'تُحصر الزيارات بالعمال الذين تختارهم فقط، ولن يتم فتحها تلقائياً لعمال آخرين.',
+  };
+}
+
+class CleaningRecurringWorkerSelection {
+  const CleaningRecurringWorkerSelection({
+    required this.scope,
+    required this.workerIds,
+    required this.assignmentMode,
+    required this.numberOfWorkers,
+  });
+
+  final CleaningRecurringWorkerScope scope;
+  final List<int> workerIds;
+  final CleaningAssignmentMode assignmentMode;
+  final int numberOfWorkers;
+
+  static CleaningRecurringWorkerSelection resolve({
+    required bool isRecurring,
+    required CleaningRecurringWorkerScope recurringScope,
+    required List<int> selectedWorkerIds,
+    required CleaningAssignmentMode legacyAssignmentMode,
+    required int? requestedWorkers,
+  }) {
+    final workerIds = <int>[];
+    for (final id in selectedWorkerIds) {
+      if (id <= 0 || workerIds.contains(id)) continue;
+      workerIds.add(id);
+    }
+    final safeRequested = (requestedWorkers ?? 1) < 1
+        ? 1
+        : requestedWorkers ?? 1;
+
+    if (isRecurring) {
+      if (recurringScope == CleaningRecurringWorkerScope.any) {
+        return CleaningRecurringWorkerSelection(
+          scope: recurringScope,
+          workerIds: const <int>[],
+          assignmentMode: CleaningAssignmentMode.openCount,
+          numberOfWorkers: safeRequested,
+        );
+      }
+
+      return CleaningRecurringWorkerSelection(
+        scope: recurringScope,
+        workerIds: List<int>.unmodifiable(workerIds),
+        assignmentMode: workerIds.length <= 1
+            ? CleaningAssignmentMode.preferredWorker
+            : CleaningAssignmentMode.openCount,
+        numberOfWorkers: workerIds.isEmpty ? 1 : workerIds.length,
+      );
+    }
+
+    var effectiveMode = legacyAssignmentMode;
+    if (workerIds.isNotEmpty &&
+        (legacyAssignmentMode == CleaningAssignmentMode.openCount ||
+            safeRequested > 1 ||
+            workerIds.length > 1)) {
+      effectiveMode = CleaningAssignmentMode.openCount;
+    } else if (workerIds.isNotEmpty) {
+      effectiveMode = CleaningAssignmentMode.preferredWorker;
+    }
+
+    final resolvedWorkers =
+        effectiveMode == CleaningAssignmentMode.preferredWorker
+        ? 1
+        : (workerIds.length > safeRequested ? workerIds.length : safeRequested);
+
+    return CleaningRecurringWorkerSelection(
+      scope: recurringScope,
+      workerIds: List<int>.unmodifiable(workerIds),
+      assignmentMode: effectiveMode,
+      numberOfWorkers: resolvedWorkers,
+    );
+  }
+}
 
 extension CleaningRecurringCalculationModeX
     on CleaningRecurringCalculationMode {

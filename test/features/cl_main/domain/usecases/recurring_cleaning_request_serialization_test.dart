@@ -108,4 +108,89 @@ void main() {
       expect(create['hoursPerVisit'], 2.5);
     },
   );
+
+  test('recurring any-worker scope clears preferred workers identically', () {
+    final createBody = CreateCleaningOrderParams(
+      addressId: 1,
+      propertyType: 'apartment',
+      bedrooms: 1,
+      rooms: 1,
+      bathrooms: 1,
+      livingRoomSize: 'small',
+      address: 'حلب',
+      locationName: 'المنزل',
+      scheduledDate: '2026-09-10',
+      scheduledTime: '08:00',
+      addressLatitude: null,
+      addressLongitude: null,
+      recurringSessions: visits,
+      recurringWorkerScope: CleaningRecurringWorkerScope.any,
+      preferredWorkerIds: const <int>[11, 22],
+      numberOfWorkers: 3,
+    ).getBody();
+    final estimateBody = EstimateCleaningPriceParams(
+      propertyType: 'apartment',
+      bedrooms: 1,
+      rooms: 1,
+      bathrooms: 1,
+      livingRoomSize: 'small',
+      addressLatitude: 36.2,
+      addressLongitude: 37.1,
+      recurringSessions: visits,
+      recurringWorkerScope: CleaningRecurringWorkerScope.any,
+      preferredWorkerIds: const <int>[11, 22],
+      numberOfWorkers: 3,
+    ).getBody();
+
+    for (final body in <Map<String, dynamic>>[createBody, estimateBody]) {
+      expect(body['workerScope'], 'any');
+      expect(body['assignmentMode'], 'open_count');
+      expect(body['numberOfWorkers'], 3);
+      expect(body.containsKey('preferredWorkerIds'), isFalse);
+    }
+  });
+
+  test(
+    'recurring specific scope locks the exact selected workers identically',
+    () {
+      final createBody = CreateCleaningOrderParams(
+        addressId: 1,
+        propertyType: 'apartment',
+        bedrooms: 1,
+        rooms: 1,
+        bathrooms: 1,
+        livingRoomSize: 'small',
+        address: 'حلب',
+        locationName: 'المنزل',
+        scheduledDate: '2026-09-10',
+        scheduledTime: '08:00',
+        addressLatitude: null,
+        addressLongitude: null,
+        recurringSessions: visits,
+        recurringWorkerScope: CleaningRecurringWorkerScope.specific,
+        preferredWorkerIds: const <int>[11, 22, 11],
+        numberOfWorkers: 5,
+      ).getBody();
+      final estimateBody = EstimateCleaningPriceParams(
+        propertyType: 'apartment',
+        bedrooms: 1,
+        rooms: 1,
+        bathrooms: 1,
+        livingRoomSize: 'small',
+        addressLatitude: 36.2,
+        addressLongitude: 37.1,
+        recurringSessions: visits,
+        recurringWorkerScope: CleaningRecurringWorkerScope.specific,
+        preferredWorkerIds: const <int>[11, 22, 11],
+        numberOfWorkers: 5,
+      ).getBody();
+
+      for (final body in <Map<String, dynamic>>[createBody, estimateBody]) {
+        expect(body['workerScope'], 'specific');
+        expect(body['assignmentMode'], 'open_count');
+        expect(body['numberOfWorkers'], 2);
+        expect(body['preferredWorkerIds'], const <int>[11, 22]);
+      }
+    },
+  );
 }

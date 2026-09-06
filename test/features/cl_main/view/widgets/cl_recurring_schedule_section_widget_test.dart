@@ -7,6 +7,10 @@ void main() {
   testWidgets('shows custom recurring visits and forwards manual actions', (
     tester,
   ) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(800, 1200);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     var enabled = true;
     var addCount = 0;
     int? editedIndex;
@@ -58,6 +62,10 @@ void main() {
   testWidgets('shows generated pattern count controls without manual editing', (
     tester,
   ) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(800, 1200);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     var pattern = CleaningRecurringPattern.weekly;
     var occurrences = 3;
 
@@ -108,6 +116,10 @@ void main() {
   testWidgets('forwards recurring calculation mode and hour changes', (
     tester,
   ) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(800, 1200);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     var mode = CleaningRecurringCalculationMode.task;
     var hours = 2.0;
     final sessions = <CleaningRecurringSessionInput>[
@@ -150,5 +162,57 @@ void main() {
     expect(find.text('الساعات لكل زيارة'), findsOneWidget);
     await tester.tap(find.byTooltip('زيادة ساعات الزيارة'));
     expect(hours, 2.5);
+  });
+
+  testWidgets('forwards recurring worker scope and explains specific lock', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(800, 1200);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var scope = CleaningRecurringWorkerScope.any;
+    final sessions = <CleaningRecurringSessionInput>[
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 12), time: '09:00'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 19), time: '09:00'),
+    ];
+
+    Future<void> pump() => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ClRecurringScheduleSectionWidget(
+            enabled: true,
+            pattern: CleaningRecurringPattern.custom,
+            workerScope: scope,
+            occurrences: 2,
+            maxOccurrences: 0,
+            sessions: sessions,
+            onEnabledChanged: (_) {},
+            onPatternChanged: (_) {},
+            onWorkerScopeChanged: (value) => scope = value,
+            onOccurrencesChanged: (_) {},
+            onAddVisit: () {},
+            onEditVisit: (_) {},
+            onRemoveVisit: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    await pump();
+    expect(find.text('نطاق العمال لكل زيارة'), findsOneWidget);
+    expect(find.text('أي عامل متاح'), findsOneWidget);
+    await tester.tap(find.text('أي عامل متاح'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('عمال محددون فقط').last);
+    expect(scope, CleaningRecurringWorkerScope.specific);
+
+    await pump();
+    expect(
+      find.text(
+        'تُحصر الزيارات بالعمال الذين تختارهم فقط، ولن يتم فتحها تلقائياً لعمال آخرين.',
+      ),
+      findsOneWidget,
+    );
   });
 }

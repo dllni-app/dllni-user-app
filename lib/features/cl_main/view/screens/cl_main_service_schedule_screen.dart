@@ -79,6 +79,8 @@ class _ClMainServiceScheduleScreenState
   CleaningRecurringPattern _recurringPattern = CleaningRecurringPattern.custom;
   CleaningRecurringCalculationMode _recurringCalculationMode =
       CleaningRecurringCalculationMode.task;
+  CleaningRecurringWorkerScope _recurringWorkerScope =
+      CleaningRecurringWorkerScope.any;
   double _recurringHoursPerVisit = 2;
   int _recurringOccurrences = 2;
   List<CleaningRecurringSessionInput> _recurringSessions =
@@ -203,6 +205,7 @@ class _ClMainServiceScheduleScreenState
                           ClRecurringScheduleSectionWidget(
                             enabled: _isRecurring,
                             pattern: _recurringPattern,
+                            workerScope: _recurringWorkerScope,
                             calculationMode: _recurringCalculationMode,
                             hoursPerVisit: _recurringHoursPerVisit,
                             occurrences: _recurringOccurrences,
@@ -212,6 +215,8 @@ class _ClMainServiceScheduleScreenState
                                 _setRecurringEnabled(enabled, state),
                             onPatternChanged: (pattern) =>
                                 _setRecurringPattern(pattern, state),
+                            onWorkerScopeChanged: (scope) =>
+                                _setRecurringWorkerScope(scope, state),
                             onCalculationModeChanged: (mode) =>
                                 _setRecurringCalculationMode(mode, state),
                             onHoursPerVisitChanged: (hours) =>
@@ -232,26 +237,32 @@ class _ClMainServiceScheduleScreenState
                             },
                           ),
                           const SizedBox(height: 10),
-                          ClScheduledPreviousWorkersSectionWidget(
-                            bloc: bloc,
-                            propertyType: _routeArgs?.propertyType ?? '',
-                            scheduledDate:
-                                CleaningScheduleDateTimeLogic.formatDateApi(
-                                  _selectedDate,
+                          if (!_isRecurring ||
+                              _recurringWorkerScope ==
+                                  CleaningRecurringWorkerScope.specific) ...[
+                            ClScheduledPreviousWorkersSectionWidget(
+                              bloc: bloc,
+                              propertyType: _routeArgs?.propertyType ?? '',
+                              scheduledDate:
+                                  CleaningScheduleDateTimeLogic.formatDateApi(
+                                    _selectedDate,
+                                  ),
+                              scheduledTime: _fromTimeHhMm,
+                              durationHours: _effectiveServiceHours(
+                                estimatedHours: _perVisitEstimatedHours(
+                                  estimate,
                                 ),
-                            scheduledTime: _fromTimeHhMm,
-                            durationHours: _effectiveServiceHours(
-                              estimatedHours: _perVisitEstimatedHours(estimate),
-                              numberOfWorkers: _requiredWorkersCount(state),
+                                numberOfWorkers: _requiredWorkersCount(state),
+                              ),
+                              onSelectedWorkersChanged: (workerIds) {
+                                _requestUpdatedEstimate(
+                                  state,
+                                  selectedWorkerIds: workerIds,
+                                );
+                              },
                             ),
-                            onSelectedWorkersChanged: (workerIds) {
-                              _requestUpdatedEstimate(
-                                state,
-                                selectedWorkerIds: workerIds,
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 10),
+                            const SizedBox(height: 10),
+                          ],
                           CleaningAddressSelectWidget(
                             selectedAddress: selectedAddress,
                             onChangeTap: _selectAddress,
@@ -646,6 +657,9 @@ class _ClMainServiceScheduleScreenState
       _isRecurring = enabled;
       _recurringPattern = CleaningRecurringPattern.custom;
       _recurringCalculationMode = CleaningRecurringCalculationMode.task;
+      _recurringWorkerScope = enabled && state.selectedWorkerIds.isNotEmpty
+          ? CleaningRecurringWorkerScope.specific
+          : CleaningRecurringWorkerScope.any;
       _recurringHoursPerVisit = 2;
       _recurringOccurrences = 2;
       _recurringSessions = enabled
@@ -659,6 +673,25 @@ class _ClMainServiceScheduleScreenState
       _resetAppliedCoupon(message: 'تم تغيير نمط الحجز. أعد تطبيق الكوبون.');
     });
     _requestUpdatedEstimate(state);
+  }
+
+  void _setRecurringWorkerScope(
+    CleaningRecurringWorkerScope scope,
+    ClMainState state,
+  ) {
+    if (!_isRecurring || scope == _recurringWorkerScope) return;
+    setState(() {
+      _recurringWorkerScope = scope;
+      _resetAppliedCoupon(message: 'تم تغيير نطاق العمال. أعد تطبيق الكوبون.');
+    });
+    if (scope == CleaningRecurringWorkerScope.any) {
+      _bloc?.add(ClearPreferredWorkersEvent());
+      _requestUpdatedEstimate(state, selectedWorkerIds: const <int>[]);
+      return;
+    }
+    if (state.selectedWorkerIds.isNotEmpty) {
+      _requestUpdatedEstimate(state);
+    }
   }
 
   void _setRecurringCalculationMode(
@@ -939,10 +972,16 @@ class _ClMainServiceScheduleScreenState
   }
 
   int _requiredWorkersCount(ClMainState state) {
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific) {
+      return state.selectedWorkerIds.isEmpty
+          ? 1
+          : state.selectedWorkerIds.length;
+    }
     final openCount = state.assignmentMode == CleaningAssignmentMode.openCount
         ? (state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers)
         : 1;
-    final preferredCount = state.selectedWorkerIds.length;
+    final preferredCount = _isRecurring ? 0 : state.selectedWorkerIds.length;
     return preferredCount > openCount ? preferredCount : openCount;
   }
 
@@ -1016,6 +1055,17 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific &&
+        state.selectedWorkerIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى اختيار عامل واحد على الأقل للحجز الدوري المحدد.'),
+        ),
+      );
+      return;
+    }
+
     final estimateForWorkers = _currentEstimate ?? args.estimate;
     final estimatedHours = _perVisitEstimatedHours(estimateForWorkers);
     final selectedWorkers = _requiredWorkersCount(state);
@@ -1052,16 +1102,29 @@ class _ClMainServiceScheduleScreenState
     if (!mounted || !acceptedPledge) return;
 
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
+    final selectedWorkerIds =
+        _isRecurring &&
+            _recurringWorkerScope == CleaningRecurringWorkerScope.any
+        ? const <int>[]
+        : state.selectedWorkerIds;
+    final requestAssignmentMode = _isRecurring
+        ? (_recurringWorkerScope == CleaningRecurringWorkerScope.any
+              ? CleaningAssignmentMode.openCount
+              : (selectedWorkerIds.length <= 1
+                    ? CleaningAssignmentMode.preferredWorker
+                    : CleaningAssignmentMode.openCount))
+        : state.assignmentMode;
     final normalizedAssignments = estimate?.workerRoomAssignments ?? const [];
     final workerRoomAssignments = normalizedAssignments.isNotEmpty
         ? workerRoomAssignmentsToRequestJson(normalizedAssignments)
         : buildWorkerRoomAssignmentsJson(
             slotByRoomKey: state.workerRoomAssignments,
             units: enumerateRoomUnits(args.roomSizeBreakdown),
-            preferredWorkerId: state.primarySelectedWorkerId,
-            assignmentMode: state.assignmentMode,
+            preferredWorkerId: selectedWorkerIds.isEmpty
+                ? null
+                : selectedWorkerIds.first,
+            assignmentMode: requestAssignmentMode,
           );
-    final selectedWorkerIds = state.selectedWorkerIds;
 
     bloc.add(
       CreateCleaningOrderEvent(
@@ -1085,7 +1148,7 @@ class _ClMainServiceScheduleScreenState
           addressLongitude: null,
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
-          assignmentMode: state.assignmentMode,
+          assignmentMode: requestAssignmentMode,
           numberOfWorkers: selectedWorkers,
           preferredWorkerIds: selectedWorkerIds,
           recurringSessions: _recurringSessionsForRequest,
@@ -1095,6 +1158,7 @@ class _ClMainServiceScheduleScreenState
                   CleaningRecurringCalculationMode.hours
               ? _recurringHoursPerVisit
               : null,
+          recurringWorkerScope: _recurringWorkerScope,
           cleaningServices: _selectedCleaningServicesPayload(),
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
@@ -1148,17 +1212,37 @@ class _ClMainServiceScheduleScreenState
       });
     }
 
-    final workerIds = selectedWorkerIds ?? state.selectedWorkerIds;
+    final rawWorkerIds = selectedWorkerIds ?? state.selectedWorkerIds;
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific &&
+        rawWorkerIds.isEmpty) {
+      return;
+    }
+    final workerIds =
+        _isRecurring &&
+            _recurringWorkerScope == CleaningRecurringWorkerScope.any
+        ? const <int>[]
+        : rawWorkerIds;
     final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
     final stateWorkerCount = state.numberOfWorkers < 1
         ? 1
         : state.numberOfWorkers;
-    final requestedWorkers = workerIds.length > stateWorkerCount
-        ? workerIds.length
-        : stateWorkerCount;
-    final assignmentMode = requestedWorkers > 1
-        ? CleaningAssignmentMode.openCount
-        : state.assignmentMode;
+    final requestedWorkers = _isRecurring
+        ? (_recurringWorkerScope == CleaningRecurringWorkerScope.specific
+              ? (workerIds.isEmpty ? 1 : workerIds.length)
+              : stateWorkerCount)
+        : (workerIds.length > stateWorkerCount
+              ? workerIds.length
+              : stateWorkerCount);
+    final assignmentMode = _isRecurring
+        ? (_recurringWorkerScope == CleaningRecurringWorkerScope.any
+              ? CleaningAssignmentMode.openCount
+              : (workerIds.length <= 1
+                    ? CleaningAssignmentMode.preferredWorker
+                    : CleaningAssignmentMode.openCount))
+        : (requestedWorkers > 1
+              ? CleaningAssignmentMode.openCount
+              : state.assignmentMode);
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
       slotByRoomKey: state.workerRoomAssignments,
       units: enumerateRoomUnits(args.roomSizeBreakdown),
@@ -1190,6 +1274,7 @@ class _ClMainServiceScheduleScreenState
                   CleaningRecurringCalculationMode.hours
               ? _recurringHoursPerVisit
               : null,
+          recurringWorkerScope: _recurringWorkerScope,
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
