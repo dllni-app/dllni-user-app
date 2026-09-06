@@ -1,0 +1,86 @@
+name: Apply Recurring Worker Scope UI Once
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/cleaning-suite-main
+    paths:
+      - '.github/workflows/apply-recurring-worker-scope-ui-once.yml'
+      - 'scripts/apply_recurring_worker_scope_ui_patch.py'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feature/cleaning-suite-main
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Apply recurring worker scope UI patch
+        run: python3 scripts/apply_recurring_worker_scope_ui_patch.py
+
+      - name: Format
+        run: |
+          dart format \
+            lib/features/cl_main/domain/models/cleaning_recurring_session.dart \
+            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
+            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart
+
+      - name: Analyze changed recurring sources
+        run: |
+          flutter analyze \
+            lib/features/cl_main/domain/models/cleaning_recurring_session.dart \
+            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
+            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart
+
+      - name: Run recurring regression tests
+        run: |
+          flutter test \
+            test/features/cl_main/domain/models/cleaning_recurring_session_test.dart \
+            test/features/cl_main/domain/usecases/create_cleaning_order_use_case_test.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart \
+            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_model_test.dart \
+            test/features/orders/data/models/cleaning_recurring_schedule_revision_model_test.dart
+
+      - name: Commit implementation
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            lib/features/cl_main/domain/models/cleaning_recurring_session.dart \
+            lib/features/cl_main/domain/usecases/create_cleaning_order_use_case.dart \
+            lib/features/cl_main/domain/usecases/estimate_cleaning_price_use_case.dart \
+            lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart \
+            lib/features/cl_main/view/widgets/cl_recurring_schedule_section_widget.dart \
+            test/features/cl_main/domain/usecases/recurring_cleaning_request_serialization_test.dart \
+            test/features/cl_main/view/widgets/cl_recurring_schedule_section_widget_test.dart
+          if git diff --cached --quiet; then
+            echo 'No feature changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat(cleaning): add recurring worker scope UX'
+          git push origin HEAD:feature/cleaning-suite-main
