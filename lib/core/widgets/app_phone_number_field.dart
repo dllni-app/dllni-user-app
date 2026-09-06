@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
@@ -50,8 +51,14 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
           child: TextFormField(
             decoration: _decoration(context),
             initialValue: _phone?.phoneNumber,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+            autofillHints: const <String>[AutofillHints.telephoneNumberNational],
+            inputFormatters: const <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
             onChanged: (value) {
-              final phone = PhoneNumber(phoneNumber: "+963$value");
+              final phone = PhoneNumber(phoneNumber: '+963$value');
               setState(() {
                 _phone = phone;
               });
@@ -59,7 +66,7 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
             },
           ),
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         _buildFlagsButton(),
       ],
     );
@@ -151,9 +158,8 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
 
   Widget _buildFlagWidget() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
