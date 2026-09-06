@@ -1,5 +1,11 @@
 import 'dart:convert';
 
+const List<String> cleaningServiceFallbackDirtinessLevels = <String>[
+  'light',
+  'medium',
+  'heavy',
+];
+
 int? _toInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;
@@ -130,6 +136,29 @@ class CleaningServiceModel {
       pricing: pricing,
     );
   }
+
+  List<String> get selectableDirtinessLevels {
+    final levels = <String>[];
+    for (final rule in dirtinessRules) {
+      final level = rule.level?.trim();
+      if (level == null || level.isEmpty || levels.contains(level)) continue;
+      levels.add(level);
+    }
+    return levels.isEmpty
+        ? cleaningServiceFallbackDirtinessLevels
+        : List<String>.unmodifiable(levels);
+  }
+
+  String normalizeDirtinessLevel(
+    String? value, {
+    String preferredFallback = 'medium',
+  }) {
+    final levels = selectableDirtinessLevels;
+    final normalized = value?.trim();
+    if (normalized != null && levels.contains(normalized)) return normalized;
+    if (levels.contains(preferredFallback)) return preferredFallback;
+    return levels.first;
+  }
 }
 
 class CleaningServiceDirtinessRuleModel {
@@ -147,7 +176,9 @@ class CleaningServiceDirtinessRuleModel {
     Map<String, dynamic> json,
   ) {
     return CleaningServiceDirtinessRuleModel(
-      level: _toString(json['level'] ?? json['dirtinessLevel'] ?? json['dirtiness_level']),
+      level: _toString(
+        json['level'] ?? json['dirtinessLevel'] ?? json['dirtiness_level'],
+      ),
       priceMultiplier: _toDouble(
         json['priceMultiplier'] ?? json['price_multiplier'],
       ),
