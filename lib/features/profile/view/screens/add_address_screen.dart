@@ -195,10 +195,12 @@ class AddAddressBottomActions extends StatelessWidget {
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
   final _cityController = TextEditingController(text: 'حلب');
+  final _neighborhoodSearchController = TextEditingController();
   String? _selectedNeighborhood;
   final _directionsController = TextEditingController();
   final _phoneController = TextEditingController();
   List<String> _neighborhoods = [];
+  String _neighborhoodSearchQuery = '';
 
   String _selectedType = 'المنزل';
   bool _isDefault = true;
@@ -208,6 +210,22 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   bool get _hasSelectedLocation => _latitude != null && _longitude != null;
   bool get _isEditMode => widget.params.addressItem != null;
+
+  List<String> get _filteredNeighborhoods {
+    final query = _neighborhoodSearchQuery.trim().toLowerCase();
+    final selected = _selectedNeighborhood?.trim();
+    final filtered = query.isEmpty
+        ? List<String>.from(_neighborhoods)
+        : _neighborhoods
+              .where((item) => item.toLowerCase().contains(query))
+              .toList(growable: true);
+
+    if (selected != null && selected.isNotEmpty && !filtered.contains(selected)) {
+      filtered.add(selected);
+    }
+
+    return filtered;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -400,13 +418,70 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                 ],
                               ),
                               const SizedBox(height: 8),
+                              TextFormField(
+                                key: const Key('address_neighborhood_search'),
+                                controller: _neighborhoodSearchController,
+                                textInputAction: TextInputAction.search,
+                                decoration: InputDecoration(
+                                  hintText: 'اكتب اسم الحي للبحث',
+                                  prefixIcon: const Icon(Icons.search),
+                                  suffixIcon: _neighborhoodSearchQuery.isEmpty
+                                      ? null
+                                      : IconButton(
+                                          tooltip: 'مسح البحث',
+                                          onPressed: () {
+                                            _neighborhoodSearchController.clear();
+                                            setState(() {
+                                              _neighborhoodSearchQuery = '';
+                                            });
+                                          },
+                                          icon: const Icon(Icons.close),
+                                        ),
+                                  filled: true,
+                                  fillColor: const Color(0xffF9FAFB),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xffE5E7EB),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xffE5E7EB),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide(
+                                      color: context.primary,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                onChanged: (value) => setState(() {
+                                  _neighborhoodSearchQuery = value;
+                                }),
+                              ),
+                              const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
+                                key: ValueKey<String>(
+                                  'address_neighborhood_${_selectedNeighborhood ?? ''}_${_neighborhoodSearchQuery.trim()}',
+                                ),
                                 initialValue:
                                     _selectedNeighborhood?.isEmpty ?? true
                                     ? null
                                     : _selectedNeighborhood,
                                 decoration: InputDecoration(
-                                  hintText: 'اختر الحي',
+                                  hintText: _filteredNeighborhoods.isEmpty
+                                      ? 'لا توجد نتائج مطابقة'
+                                      : 'اختر الحي',
                                   hintStyle: const TextStyle(
                                     color: AppColors.hintText,
                                     fontSize: 14,
@@ -440,7 +515,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                     ),
                                   ),
                                 ),
-                                items: _neighborhoods
+                                items: _filteredNeighborhoods
                                     .map(
                                       (item) => DropdownMenuItem<String>(
                                         value: item,
@@ -519,6 +594,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   @override
   void dispose() {
     _cityController.dispose();
+    _neighborhoodSearchController.dispose();
     _directionsController.dispose();
     _phoneController.dispose();
     super.dispose();
