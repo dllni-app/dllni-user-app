@@ -57,6 +57,7 @@ class CreateCleaningOrderParams with Params {
   final List<CleaningRecurringSessionInput> recurringSessions;
   final CleaningRecurringCalculationMode recurringCalculationMode;
   final double? recurringHoursPerVisit;
+  final CleaningRecurringWorkerScope recurringWorkerScope;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
@@ -90,6 +91,7 @@ class CreateCleaningOrderParams with Params {
     this.recurringSessions = const <CleaningRecurringSessionInput>[],
     this.recurringCalculationMode = CleaningRecurringCalculationMode.task,
     this.recurringHoursPerVisit,
+    this.recurringWorkerScope = CleaningRecurringWorkerScope.any,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.termsAccepted = true,
@@ -140,7 +142,8 @@ class CreateCleaningOrderParams with Params {
        cleaningServices = null,
        recurringSessions = const <CleaningRecurringSessionInput>[],
        recurringCalculationMode = CleaningRecurringCalculationMode.task,
-       recurringHoursPerVisit = null;
+       recurringHoursPerVisit = null,
+       recurringWorkerScope = CleaningRecurringWorkerScope.any;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -183,29 +186,6 @@ class CreateCleaningOrderParams with Params {
       normalized.add(id);
     }
     return normalized;
-  }
-
-  CleaningAssignmentMode _effectiveAssignmentMode(List<int> workerIds) {
-    if (workerIds.isEmpty) return assignmentMode;
-    final requestedWorkers = numberOfWorkers ?? 1;
-    if (assignmentMode == CleaningAssignmentMode.openCount ||
-        requestedWorkers > 1 ||
-        workerIds.length > 1) {
-      return CleaningAssignmentMode.openCount;
-    }
-    return CleaningAssignmentMode.preferredWorker;
-  }
-
-  int _resolvedNumberOfWorkers(
-    List<int> workerIds,
-    CleaningAssignmentMode effectiveAssignmentMode,
-  ) {
-    if (effectiveAssignmentMode == CleaningAssignmentMode.preferredWorker) {
-      return 1;
-    }
-    final requested = numberOfWorkers ?? 1;
-    final safeRequested = requested < 1 ? 1 : requested;
-    return workerIds.length > safeRequested ? workerIds.length : safeRequested;
   }
 
   List<String> _sanitizeCleaningServices() {
@@ -266,8 +246,17 @@ class CreateCleaningOrderParams with Params {
 
   @override
   BodyMap getBody() {
-    final workerIds = _sanitizePreferredWorkerIds();
-    final effectiveAssignmentMode = _effectiveAssignmentMode(workerIds);
+    final sanitizedWorkerIds = _sanitizePreferredWorkerIds();
+    final isRecurring =
+        !_isEventAssistance && _normalizedRecurringSessions.isNotEmpty;
+    final workerSelection = CleaningRecurringWorkerSelection.resolve(
+      isRecurring: isRecurring,
+      recurringScope: recurringWorkerScope,
+      selectedWorkerIds: sanitizedWorkerIds,
+      legacyAssignmentMode: assignmentMode,
+      requestedWorkers: numberOfWorkers,
+    );
+    final workerIds = workerSelection.workerIds;
     final normalizedCouponCode = couponCode?.trim();
     final schedule = _isEventAssistance
         ? _normalizedEventSessions.scheduleJson
@@ -289,15 +278,13 @@ class CreateCleaningOrderParams with Params {
       if (genderPreference == CleaningGenderPreference.female &&
           workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
-      'assignmentMode': effectiveAssignmentMode.apiValue,
+      'assignmentMode': workerSelection.assignmentMode.apiValue,
+      if (isRecurring) 'workerScope': workerSelection.scope.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
       if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty)
         'couponCode': normalizedCouponCode,
-      'numberOfWorkers': _resolvedNumberOfWorkers(
-        workerIds,
-        effectiveAssignmentMode,
-      ),
+      'numberOfWorkers': workerSelection.numberOfWorkers,
     };
     if (schedule != null) {
       body['schedule'] = schedule;

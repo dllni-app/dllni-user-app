@@ -7,6 +7,7 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
     super.key,
     required this.enabled,
     required this.pattern,
+    this.workerScope = CleaningRecurringWorkerScope.any,
     this.calculationMode = CleaningRecurringCalculationMode.task,
     this.hoursPerVisit = 2,
     required this.occurrences,
@@ -14,6 +15,7 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
     required this.sessions,
     required this.onEnabledChanged,
     required this.onPatternChanged,
+    this.onWorkerScopeChanged,
     this.onCalculationModeChanged,
     this.onHoursPerVisitChanged,
     required this.onOccurrencesChanged,
@@ -24,6 +26,7 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
 
   final bool enabled;
   final CleaningRecurringPattern pattern;
+  final CleaningRecurringWorkerScope workerScope;
   final CleaningRecurringCalculationMode calculationMode;
   final double hoursPerVisit;
   final int occurrences;
@@ -31,6 +34,7 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
   final List<CleaningRecurringSessionInput> sessions;
   final ValueChanged<bool> onEnabledChanged;
   final ValueChanged<CleaningRecurringPattern> onPatternChanged;
+  final ValueChanged<CleaningRecurringWorkerScope>? onWorkerScopeChanged;
   final ValueChanged<CleaningRecurringCalculationMode>?
   onCalculationModeChanged;
   final ValueChanged<double>? onHoursPerVisitChanged;
@@ -69,6 +73,35 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
             ),
             if (enabled) ...[
               const Divider(height: 22),
+              DropdownButtonFormField<CleaningRecurringWorkerScope>(
+                initialValue: workerScope,
+                decoration: const InputDecoration(
+                  labelText: 'نطاق العمال لكل زيارة',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: CleaningRecurringWorkerScope.values
+                    .map(
+                      (item) => DropdownMenuItem<CleaningRecurringWorkerScope>(
+                        value: item,
+                        child: Text(item.labelAr),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  if (value != null) onWorkerScopeChanged?.call(value);
+                },
+              ),
+              const SizedBox(height: 6),
+              Text(
+                workerScope.descriptionAr,
+                style: const TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
               DropdownButtonFormField<CleaningRecurringCalculationMode>(
                 initialValue: calculationMode,
                 decoration: const InputDecoration(
