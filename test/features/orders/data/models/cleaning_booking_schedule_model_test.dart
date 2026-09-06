@@ -212,6 +212,58 @@ void main() {
     },
   );
 
+  test('parses recurring session payment review and dispute capabilities', () {
+    final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
+      'data': <String, dynamic>{
+        'id': 712,
+        'schedule': <String, dynamic>{
+          'mode': 'recurring',
+          'isRecurring': true,
+          'sessions': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 991,
+              'sequence': 1,
+              'sessionType': 'recurring_cleaning',
+              'date': '2026-09-11',
+              'time': '10:00',
+              'hours': 2,
+              'status': 'completed',
+              'paymentStatus': 'settled',
+              'paymentSettledAt': '2026-09-11T12:00:00+03:00',
+              'payment': <String, dynamic>{
+                'status': 'settled',
+                'amount': 1100,
+                'currency': 'SYP',
+                'settledAt': '2026-09-11T12:00:00+03:00',
+                'isInternalSettlement': true,
+              },
+              'canReview': true,
+              'hasReview': true,
+              'reviewedWorkerIds': <int>[41],
+              'reviewableWorkerIds': <int>[42],
+              'canOpenDispute': false,
+              'hasOpenDispute': true,
+              'disputeId': 77,
+              'disputeStatus': 'open',
+            },
+          ],
+        },
+      },
+    });
+
+    final session = envelope.schedule!.sessions.single;
+    expect(session.paymentStatus, 'settled');
+    expect(session.payment?.amount, 1100);
+    expect(session.payment?.isInternalSettlement, isTrue);
+    expect(session.canReview, isTrue);
+    expect(session.reviewedWorkerIds, <int>[41]);
+    expect(session.reviewableWorkerIds, <int>[42]);
+    expect(session.hasOpenDispute, isTrue);
+    expect(session.canOpenDispute, isFalse);
+    expect(session.disputeId, 77);
+    expect(session.disputeStatus, 'open');
+  });
+
   test('parses single-day schedule fallback without child session id', () {
     final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
       'data': <String, dynamic>{
