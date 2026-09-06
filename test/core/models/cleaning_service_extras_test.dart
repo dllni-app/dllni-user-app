@@ -39,7 +39,7 @@ void main() {
           'materialId': 7,
           'name': 'Floor cleaner',
           'quantity': 1.5,
-          'unit': 'Liter',
+          'unitCode': 'liter',
           'unitPrice': 25,
           'totalPrice': 37.5,
         },
@@ -47,14 +47,14 @@ void main() {
       final services = cleaningSpecialServiceLinesFromJson(
         <Map<String, dynamic>>[
           <String, dynamic>{
-            'specialServiceId': 5,
+            'serviceId': 5,
             'name': 'Sofa cleaning',
             'quantity': 2,
             'pricingUnit': 'sofa',
             'dirtinessLevel': 'medium',
             'dirtinessLabel': 'Medium',
             'totalPrice': 180,
-            'imageUrl': 'https://example.test/sofa.png',
+            'image': 'https://example.test/sofa.png',
             'notes': 'Pet hair',
           },
         ],
@@ -63,35 +63,49 @@ void main() {
       expect(materials, hasLength(1));
       expect(materials.single.materialId, 7);
       expect(materials.single.quantity, 1.5);
-      expect(materials.single.unit, 'Liter');
+      expect(materials.single.unit, 'liter');
       expect(materials.single.totalPrice, 37.5);
       expect(services, hasLength(1));
       expect(services.single.specialServiceId, 5);
       expect(services.single.pricingUnit, 'sofa');
       expect(services.single.dirtinessLevel, 'medium');
       expect(services.single.totalPrice, 180);
+      expect(services.single.imageUrl, 'https://example.test/sofa.png');
     });
 
-    test('parses open-time final billing fields', () {
+    test('parses canonical Open-Time final billing fields as UI hours', () {
       final openTime = CleaningOpenTimeModel.fromJson(<String, dynamic>{
-        'workerCount': 2,
+        'requestedWorkerCount': 2,
         'hourlyRate': 200,
-        'minimumDuration': 60,
-        'actualDuration': 61,
-        'billableDuration': 90,
-        'totalPrice': 600,
-        'currency': 'SYP',
-        'isPricingFinal': true,
+        'minimumBillableMinutes': 60,
+        'actualDurationMinutes': 61,
+        'billableDurationMinutes': 90,
+        'finalAmount': 600,
+        'isFinalized': true,
       });
 
       expect(openTime.workerCount, 2);
       expect(openTime.hourlyRate, 200);
-      expect(openTime.minimumDuration, 60);
-      expect(openTime.actualDuration, 61);
-      expect(openTime.billableDuration, 90);
+      expect(openTime.minimumDuration, 1);
+      expect(openTime.actualDuration, 1.02);
+      expect(openTime.billableDuration, 1.5);
       expect(openTime.totalPrice, 600);
-      expect(openTime.currency, 'SYP');
       expect(openTime.isPricingFinal, isTrue);
+    });
+
+    test('parses preliminary Open-Time billing fields', () {
+      final openTime = CleaningOpenTimeModel.fromJson(<String, dynamic>{
+        'requestedWorkerCount': 1,
+        'hourlyRate': 100,
+        'minimumBillableMinutes': 60,
+        'preliminaryBillableMinutes': 60,
+        'preliminaryAmount': 100,
+      });
+
+      expect(openTime.workerCount, 1);
+      expect(openTime.minimumDuration, 1);
+      expect(openTime.billableDuration, 1);
+      expect(openTime.totalPrice, 100);
     });
   });
 }
