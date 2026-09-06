@@ -8,9 +8,11 @@ if count != 4:
     raise SystemExit(f'expected 4 widget-test async bodies, found {count}')
 setup = (
     marker
+    + "    tester.view.devicePixelRatio = 1.0;\n"
     + "    tester.view.physicalSize = const Size(800, 1200);\n"
     + "    addTearDown(tester.view.resetPhysicalSize);\n"
+    + "    addTearDown(tester.view.resetDevicePixelRatio);\n"
 )
 text = text.replace(marker, setup)
 path.write_text(text)
-print('recurring worker scope widget viewport adjusted')
+print('recurring worker scope widget viewport normalized')
