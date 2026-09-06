@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/apply-recurring-worker-scope-ui-once.yml'
       - 'scripts/apply_recurring_worker_scope_ui_patch.py'
+      - 'scripts/fix_recurring_worker_scope_widget_test_viewport.py'
 
 permissions:
   contents: write
@@ -33,7 +34,9 @@ jobs:
         run: flutter pub get
 
       - name: Apply recurring worker scope UI patch
-        run: python3 scripts/apply_recurring_worker_scope_ui_patch.py
+        run: |
+          python3 scripts/apply_recurring_worker_scope_ui_patch.py
+          python3 scripts/fix_recurring_worker_scope_widget_test_viewport.py
 
       - name: Format
         run: |
