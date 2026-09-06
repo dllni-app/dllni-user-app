@@ -142,6 +142,33 @@ Verification:
 
 Status: recurring task/hour calculation-mode parity verified for this slice. This does not declare whole-branch parity.
 
+### Recurring Cleaning worker-scope slice
+
+Implemented end-to-end and ported selectively to both User App feature branches:
+
+- Recurring bookings expose an explicit `workerScope=any|specific` contract shared by create and estimate.
+- `any` clears preferred-worker IDs and keeps the recurring visit in the eligible open worker pool with the requested worker-seat count.
+- `specific` requires at least one selected worker and persists the exact selected worker IDs; the requested worker count is locked to that selected set.
+- Multiple selected workers remain a specific closed scope even though the existing multi-seat assignment mode is reused internally; they are not silently reinterpreted as open-pool seats.
+- Backend validation rejects `workerScope` outside recurring Cleaning bookings and rejects `specific` without selected worker IDs.
+- Worker listing, dispatch and acceptance all enforce the same persisted recurring worker scope so non-selected workers cannot see, receive or accept a specific recurring visit.
+- Future recurring schedule revision preserves the parent worker scope instead of reopening specific bookings.
+- User App shows `أي عامل متاح` versus `عمال محددون فقط`; previous-worker selection is shown only when the recurring scope is specific.
+- Switching to `any` clears selected worker IDs from the outgoing recurring request and triggers a fresh server estimate.
+- Create and estimate use the same worker-selection resolver, so pricing/availability previews and final creation cannot drift on worker count or selected IDs.
+
+Verification:
+
+- Backend worker-scope implementation commit: `d0982709c1220bcc31dbb1288dc6f7a39ecd966e`.
+- Backend final permanent recurring CI after staging cleanup: run `34029198646`, green.
+- User main worker-scope UI/serialization commit: `34fdfff8b2d02c51523abd0095337914dbc114a4`.
+- User main final permanent recurring CI: run `34029844064`, green.
+- User dev selective worker-scope port commit: `466a1f2d9208e46546265d160dc519aa00787bad`.
+- User dev permanent recurring CI: run `34030086485`, green.
+- User dev general Cleaning Suite CI for the same port: run `34030086494`, green.
+
+Status: recurring worker-scope parity verified for this slice. This does not declare whole-branch parity.
+
 ### Multi-Day Event Assistance
 
 The Multi-Day customer flow was previously promoted to both feature branches. Broader whole-branch parity is intentionally not inferred from this port map.
@@ -194,14 +221,14 @@ Verified recurring backend capabilities include:
 - Customer can preview and confirm replacement of eligible future recurring visits with canonical repricing and stale-token protection.
 - Confirmed revisions preserve historical visits, retain superseded future rows for audit, release affected active assignments, preserve discounts and create fresh session pricing snapshots.
 - Recurring bookings support explicit task-based and hour-based calculation modes, with legacy task-mode compatibility, half-hour visit normalization and server-authoritative hour pricing/capacity snapshots.
+- Recurring bookings support explicit `any` versus `specific` worker scope; the exact specific-worker set is persisted and enforced consistently by listing, dispatch and acceptance without silent fallback to the open pool.
 
-Latest verified backend recurring CI: run `33932500507`, green.
+Latest verified backend recurring CI: run `34029198646`, green.
 
 ## Remaining Recurring Cleaning work
 
 The following items are not marked complete by this map:
 
-- Full worker-scope UX for specific worker(s) versus any worker.
 - Notification delivery/view state and aggregated coverage notifications.
 - Per-session payment, review and dispute completion.
 - Late/no-travel options and admin reporting.
