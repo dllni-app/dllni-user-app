@@ -5,6 +5,7 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
+import '../../../../core/models/cleaning_service_extras.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../../core/widgets/toast_component.dart';
@@ -26,6 +27,7 @@ import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_cleaning_services_selector_widget.dart';
+import '../widgets/cl_cleaning_extras_section_widget.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_recurring_schedule_section_widget.dart';
 import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
@@ -74,7 +76,13 @@ class _ClMainServiceScheduleScreenState
   String? _cleaningServicesErrorMessage;
   List<CleaningServiceModel> _availableCleaningServices =
       const <CleaningServiceModel>[];
+  BlocStatus _specialServicesStatus = BlocStatus.init;
+  String? _specialServicesErrorMessage;
+  List<CleaningServiceModel> _availableSpecialServices =
+      const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
+  CleaningServiceExtrasRequest _serviceExtras =
+      const CleaningServiceExtrasRequest();
   bool _isRecurring = false;
   CleaningRecurringPattern _recurringPattern = CleaningRecurringPattern.custom;
   CleaningRecurringCalculationMode _recurringCalculationMode =
@@ -287,6 +295,51 @@ class _ClMainServiceScheduleScreenState
                             onRemoveService: _removeCleaningService,
                             onRetry: _loadCleaningServices,
                           ),
+                          const SizedBox(height: 12),
+                          ClCleaningExtrasSectionWidget(
+                            requestMaterials: _serviceExtras.requestMaterials,
+                            specialServices: _serviceExtras.specialServices,
+                            openTime: _serviceExtras.openTime,
+                            availableSpecialServices: _availableSpecialServices,
+                            materials: estimate?.materials ??
+                                const <CleaningMaterialLineModel>[],
+                            estimatedSpecialServices:
+                                estimate?.specialServices ??
+                                    const <CleaningSpecialServiceLineModel>[],
+                            estimatedOpenTime: estimate?.openTime,
+                            isSpecialServicesLoading:
+                                _specialServicesStatus == BlocStatus.loading,
+                            isEstimateLoading:
+                                state.estimatePriceStatus == BlocStatus.loading,
+                            specialServicesError: _specialServicesStatus ==
+                                    BlocStatus.failed
+                                ? _specialServicesErrorMessage
+                                : null,
+                            estimateError: state.estimatePriceStatus ==
+                                    BlocStatus.failed
+                                ? state.errorMessage
+                                : null,
+                            onRequestMaterialsChanged: (value) =>
+                                _updateServiceExtras(
+                                  _serviceExtras.copyWith(
+                                    requestMaterials: value,
+                                  ),
+                                  state,
+                                ),
+                            onAddSpecialService: () =>
+                                _addSpecialService(state),
+                            onSpecialServiceChanged: (index, service) =>
+                                _replaceSpecialService(index, service, state),
+                            onRemoveSpecialService: (index) =>
+                                _removeSpecialService(index, state),
+                            onOpenTimeChanged: (enabled) =>
+                                _setOpenTimeEnabled(enabled, state),
+                            onOpenTimeWorkerCountChanged: (count) =>
+                                _setOpenTimeWorkerCount(count, state),
+                            onRetryEstimate: () =>
+                                _requestUpdatedEstimate(state),
+                            onRetrySpecialServices: _loadSpecialServices,
+                          ),
                           const SizedBox(height: 16),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
@@ -363,6 +416,7 @@ class _ClMainServiceScheduleScreenState
       );
       _syncToTime();
       _loadCleaningServices();
+      _loadSpecialServices();
     } else if (args is AddressListItem) {
       selectedAddress = ValueNotifier(args);
     }
@@ -1018,6 +1072,115 @@ class _ClMainServiceScheduleScreenState
     );
   }
 
+  Future<void> _loadSpecialServices() async {
+    if (!mounted) return;
+    setState(() {
+      _specialServicesStatus = BlocStatus.loading;
+      _specialServicesErrorMessage = null;
+    });
+    final response = await getIt<GetCleaningServicesUseCase>()(
+      GetCleaningServicesParams(category: 'special_service'),
+    );
+    if (!mounted) return;
+    response.fold(
+      (failure) => setState(() {
+        _specialServicesStatus = BlocStatus.failed;
+        _specialServicesErrorMessage = failure.message;
+      }),
+      (result) => setState(() {
+        _specialServicesStatus = BlocStatus.success;
+        _specialServicesErrorMessage = null;
+        _availableSpecialServices = result.data
+            .where(
+              (service) =>
+                  service.id != null && service.name?.trim().isNotEmpty == true,
+            )
+            .toList(growable: false);
+      }),
+    );
+  }
+
+  void _updateServiceExtras(
+    CleaningServiceExtrasRequest extras,
+    ClMainState state,
+  ) {
+    setState(() {
+      _serviceExtras = extras;
+      _resetAppliedCoupon(
+        message: 'تم تغيير إضافات الخدمة. أعد تطبيق الكوبون.',
+      );
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _addSpecialService(ClMainState state) {
+    final firstService = _availableSpecialServices.firstWhere(
+      (service) => service.id != null,
+      orElse: () => const CleaningServiceModel(),
+    );
+    final id = firstService.id;
+    if (id == null) return;
+    _updateServiceExtras(
+      _serviceExtras.copyWith(
+        specialServices: <CleaningSpecialServiceRequest>[
+          ..._serviceExtras.specialServices,
+          CleaningSpecialServiceRequest(
+            specialServiceId: id,
+            quantity: 1,
+            dirtinessLevel: 'medium',
+          ),
+        ],
+      ),
+      state,
+    );
+  }
+
+  void _replaceSpecialService(
+    int index,
+    CleaningSpecialServiceRequest service,
+    ClMainState state,
+  ) {
+    if (index < 0 || index >= _serviceExtras.specialServices.length) return;
+    final services = List<CleaningSpecialServiceRequest>.of(
+      _serviceExtras.specialServices,
+    );
+    services[index] = service;
+    _updateServiceExtras(_serviceExtras.copyWith(specialServices: services), state);
+  }
+
+  void _removeSpecialService(int index, ClMainState state) {
+    if (index < 0 || index >= _serviceExtras.specialServices.length) return;
+    final services = List<CleaningSpecialServiceRequest>.of(
+      _serviceExtras.specialServices,
+    )..removeAt(index);
+    _updateServiceExtras(_serviceExtras.copyWith(specialServices: services), state);
+  }
+
+  void _setOpenTimeEnabled(bool enabled, ClMainState state) {
+    _updateServiceExtras(
+      enabled
+          ? _serviceExtras.copyWith(
+              openTime: CleaningOpenTimeRequest(
+                workerCount: state.numberOfWorkers < 1
+                    ? 1
+                    : state.numberOfWorkers,
+              ),
+            )
+          : _serviceExtras.copyWith(clearOpenTime: true),
+      state,
+    );
+  }
+
+  void _setOpenTimeWorkerCount(int count, ClMainState state) {
+    if (_serviceExtras.openTime == null || count < 1) return;
+    _updateServiceExtras(
+      _serviceExtras.copyWith(
+        openTime: CleaningOpenTimeRequest(workerCount: count),
+      ),
+      state,
+    );
+  }
+
   Future<void> _onSubmitPressed(ClMainState state) async {
     final args = _routeArgs;
     final bloc = _bloc;
@@ -1068,7 +1231,8 @@ class _ClMainServiceScheduleScreenState
 
     final estimateForWorkers = _currentEstimate ?? args.estimate;
     final estimatedHours = _perVisitEstimatedHours(estimateForWorkers);
-    final selectedWorkers = _requiredWorkersCount(state);
+    final selectedWorkers =
+        _serviceExtras.openTime?.workerCount ?? _requiredWorkersCount(state);
     final requiredWorkers =
         estimateForWorkers.requiredWorkers ??
         (estimatedHours <= 0 ? 1 : (estimatedHours / 8).ceil());
@@ -1103,11 +1267,14 @@ class _ClMainServiceScheduleScreenState
 
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final selectedWorkerIds =
-        _isRecurring &&
-            _recurringWorkerScope == CleaningRecurringWorkerScope.any
+        _serviceExtras.openTime != null ||
+            (_isRecurring &&
+                _recurringWorkerScope == CleaningRecurringWorkerScope.any)
         ? const <int>[]
         : state.selectedWorkerIds;
-    final requestAssignmentMode = _isRecurring
+    final requestAssignmentMode = _serviceExtras.openTime != null
+        ? CleaningAssignmentMode.openCount
+        : _isRecurring
         ? (_recurringWorkerScope == CleaningRecurringWorkerScope.any
               ? CleaningAssignmentMode.openCount
               : (selectedWorkerIds.length <= 1
@@ -1163,8 +1330,9 @@ class _ClMainServiceScheduleScreenState
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
-          couponCode: _appliedCouponCode,
-          termsAccepted: true,
+           couponCode: _appliedCouponCode,
+           serviceExtras: _serviceExtras,
+           termsAccepted: true,
         ),
       ),
     );
@@ -1227,14 +1395,17 @@ class _ClMainServiceScheduleScreenState
     final stateWorkerCount = state.numberOfWorkers < 1
         ? 1
         : state.numberOfWorkers;
-    final requestedWorkers = _isRecurring
+    final requestedWorkers = _serviceExtras.openTime?.workerCount ??
+        (_isRecurring
         ? (_recurringWorkerScope == CleaningRecurringWorkerScope.specific
               ? (workerIds.isEmpty ? 1 : workerIds.length)
               : stateWorkerCount)
         : (workerIds.length > stateWorkerCount
               ? workerIds.length
-              : stateWorkerCount);
-    final assignmentMode = _isRecurring
+              : stateWorkerCount));
+    final assignmentMode = _serviceExtras.openTime != null
+        ? CleaningAssignmentMode.openCount
+        : _isRecurring
         ? (_recurringWorkerScope == CleaningRecurringWorkerScope.any
               ? CleaningAssignmentMode.openCount
               : (workerIds.length <= 1
@@ -1275,9 +1446,10 @@ class _ClMainServiceScheduleScreenState
               ? _recurringHoursPerVisit
               : null,
           recurringWorkerScope: _recurringWorkerScope,
-          workerRoomAssignments: workerRoomAssignments.isEmpty
-              ? null
-              : workerRoomAssignments,
+           workerRoomAssignments: workerRoomAssignments.isEmpty
+               ? null
+               : workerRoomAssignments,
+           serviceExtras: _serviceExtras,
         ),
       ),
     );

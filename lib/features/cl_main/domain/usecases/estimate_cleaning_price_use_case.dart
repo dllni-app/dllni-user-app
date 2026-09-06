@@ -1,6 +1,7 @@
 import 'package:common_package/helpers/typedef.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/models/cleaning_service_extras.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
 import '../models/cleaning_event_session.dart';
@@ -57,6 +58,7 @@ class EstimateCleaningPriceParams with Params {
   final int? numberOfWorkers;
   final CleaningAssignmentMode assignmentMode;
   final List<Map<String, dynamic>>? workerRoomAssignments;
+  final CleaningServiceExtrasRequest serviceExtras;
 
   EstimateCleaningPriceParams({
     required this.propertyType,
@@ -79,6 +81,7 @@ class EstimateCleaningPriceParams with Params {
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.workerRoomAssignments,
+    this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : eventType = null,
        guestCount = null,
        venueType = null,
@@ -105,6 +108,7 @@ class EstimateCleaningPriceParams with Params {
     this.notes,
     this.numberOfWorkers,
     this.assignmentMode = CleaningAssignmentMode.openCount,
+    this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : bedrooms = null,
        workerRoomAssignments = null,
        rooms = null,
@@ -216,6 +220,7 @@ class EstimateCleaningPriceParams with Params {
       if (isRecurring) 'workerScope': workerSelection.scope.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'numberOfWorkers': workerSelection.numberOfWorkers,
+      ...serviceExtras.toJson(),
     };
     if (schedule != null) {
       body['schedule'] = schedule;

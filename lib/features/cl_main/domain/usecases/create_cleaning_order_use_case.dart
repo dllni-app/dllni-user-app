@@ -2,6 +2,7 @@ import 'package:common_package/helpers/typedef.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/models/cleaning_gender_preference.dart';
+import '../../../../core/models/cleaning_service_extras.dart';
 import '../../data/models/create_cleaning_order_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
 import '../models/cleaning_event_session.dart';
@@ -66,6 +67,7 @@ class CreateCleaningOrderParams with Params {
   final List<Map<String, dynamic>>? workerRoomAssignments;
   final int addressId;
   final String? couponCode;
+  final CleaningServiceExtrasRequest serviceExtras;
 
   CreateCleaningOrderParams({
     required this.addressId,
@@ -97,6 +99,7 @@ class CreateCleaningOrderParams with Params {
     this.termsAccepted = true,
     this.workerRoomAssignments,
     this.couponCode,
+    this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : eventType = null,
        guestCount = null,
        venueType = null,
@@ -131,6 +134,7 @@ class CreateCleaningOrderParams with Params {
     this.assignmentMode = CleaningAssignmentMode.openCount,
     this.termsAccepted = true,
     this.couponCode,
+    this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : bedrooms = null,
        workerRoomAssignments = null,
        rooms = null,
@@ -285,6 +289,7 @@ class CreateCleaningOrderParams with Params {
       if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty)
         'couponCode': normalizedCouponCode,
       'numberOfWorkers': workerSelection.numberOfWorkers,
+      ...serviceExtras.toJson(),
     };
     if (schedule != null) {
       body['schedule'] = schedule;
