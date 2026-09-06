@@ -104,4 +104,51 @@ void main() {
     await tester.tap(find.byTooltip('تقليل عدد الزيارات'));
     expect(occurrences, 2);
   });
+
+  testWidgets('forwards recurring calculation mode and hour changes', (
+    tester,
+  ) async {
+    var mode = CleaningRecurringCalculationMode.task;
+    var hours = 2.0;
+    final sessions = <CleaningRecurringSessionInput>[
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 12), time: '09:00'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 9, 19), time: '09:00'),
+    ];
+
+    Future<void> pump() => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ClRecurringScheduleSectionWidget(
+            enabled: true,
+            pattern: CleaningRecurringPattern.custom,
+            calculationMode: mode,
+            hoursPerVisit: hours,
+            occurrences: 2,
+            maxOccurrences: 0,
+            sessions: sessions,
+            onEnabledChanged: (_) {},
+            onPatternChanged: (_) {},
+            onCalculationModeChanged: (value) => mode = value,
+            onHoursPerVisitChanged: (value) => hours = value,
+            onOccurrencesChanged: (_) {},
+            onAddVisit: () {},
+            onEditVisit: (_) {},
+            onRemoveVisit: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    await pump();
+    await tester.tap(find.text('حسب المهام'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حسب الساعات').last);
+    expect(mode, CleaningRecurringCalculationMode.hours);
+
+    mode = CleaningRecurringCalculationMode.hours;
+    await pump();
+    expect(find.text('الساعات لكل زيارة'), findsOneWidget);
+    await tester.tap(find.byTooltip('زيادة ساعات الزيارة'));
+    expect(hours, 2.5);
+  });
 }

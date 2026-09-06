@@ -2,6 +2,35 @@ const int cleaningRecurringMaxWindowDays = 30;
 
 enum CleaningRecurringPattern { custom, daily, weekly, monthly }
 
+enum CleaningRecurringCalculationMode { task, hours }
+
+extension CleaningRecurringCalculationModeX
+    on CleaningRecurringCalculationMode {
+  String get apiValue => switch (this) {
+    CleaningRecurringCalculationMode.task => 'task',
+    CleaningRecurringCalculationMode.hours => 'hours',
+  };
+
+  String get labelAr => switch (this) {
+    CleaningRecurringCalculationMode.task => 'حسب المهام',
+    CleaningRecurringCalculationMode.hours => 'حسب الساعات',
+  };
+
+  String get descriptionAr => switch (this) {
+    CleaningRecurringCalculationMode.task =>
+      'تُحسب كل زيارة حسب تفاصيل المنزل والمهام المحددة.',
+    CleaningRecurringCalculationMode.hours =>
+      'يتكرر نفس عدد الساعات المحجوزة في كل زيارة.',
+  };
+}
+
+double? normalizeCleaningRecurringHoursPerVisit(double? value) {
+  if (value == null || !value.isFinite || value < 1 || value > 24) {
+    return null;
+  }
+  return (value * 2).ceilToDouble() / 2;
+}
+
 extension CleaningRecurringPatternX on CleaningRecurringPattern {
   bool get isGenerated => this != CleaningRecurringPattern.custom;
 
@@ -191,12 +220,31 @@ extension CleaningRecurringSessionInputListX
 
   bool get exceedsMaxWindow => windowDays > cleaningRecurringMaxWindowDays;
 
-  Map<String, dynamic>? get scheduleJson {
+  Map<String, dynamic>? get scheduleJson => scheduleJsonFor();
+
+  Map<String, dynamic>? scheduleJsonFor({
+    CleaningRecurringCalculationMode calculationMode =
+        CleaningRecurringCalculationMode.task,
+    double? hoursPerVisit,
+  }) {
     final items = normalized;
     if (items.isEmpty) return null;
-    return <String, dynamic>{
+    final normalizedHours =
+        calculationMode == CleaningRecurringCalculationMode.hours
+        ? normalizeCleaningRecurringHoursPerVisit(hoursPerVisit)
+        : null;
+    if (calculationMode == CleaningRecurringCalculationMode.hours &&
+        normalizedHours == null) {
+      return null;
+    }
+    final schedule = <String, dynamic>{
       'mode': 'recurring',
+      'calculationMode': calculationMode.apiValue,
       'sessions': items.map((item) => item.toJson()).toList(growable: false),
     };
+    if (normalizedHours != null) {
+      schedule['hoursPerVisit'] = normalizedHours;
+    }
+    return schedule;
   }
 }

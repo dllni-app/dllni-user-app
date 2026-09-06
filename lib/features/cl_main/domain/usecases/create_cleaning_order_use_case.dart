@@ -55,6 +55,8 @@ class CreateCleaningOrderParams with Params {
   final double? hours;
   final List<CleaningEventSessionInput> eventSessions;
   final List<CleaningRecurringSessionInput> recurringSessions;
+  final CleaningRecurringCalculationMode recurringCalculationMode;
+  final double? recurringHoursPerVisit;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
@@ -86,6 +88,8 @@ class CreateCleaningOrderParams with Params {
     this.preferredWorkerIds = const <int>[],
     this.cleaningServices,
     this.recurringSessions = const <CleaningRecurringSessionInput>[],
+    this.recurringCalculationMode = CleaningRecurringCalculationMode.task,
+    this.recurringHoursPerVisit,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.termsAccepted = true,
@@ -134,7 +138,9 @@ class CreateCleaningOrderParams with Params {
        roomSizeBreakdown = null,
        cleaningType = null,
        cleaningServices = null,
-       recurringSessions = const <CleaningRecurringSessionInput>[];
+       recurringSessions = const <CleaningRecurringSessionInput>[],
+       recurringCalculationMode = CleaningRecurringCalculationMode.task,
+       recurringHoursPerVisit = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -265,7 +271,10 @@ class CreateCleaningOrderParams with Params {
     final normalizedCouponCode = couponCode?.trim();
     final schedule = _isEventAssistance
         ? _normalizedEventSessions.scheduleJson
-        : _normalizedRecurringSessions.scheduleJson;
+        : _normalizedRecurringSessions.scheduleJsonFor(
+            calculationMode: recurringCalculationMode,
+            hoursPerVisit: recurringHoursPerVisit,
+          );
     final body = <String, dynamic>{
       'propertyType': propertyType,
       'addressId': addressId,

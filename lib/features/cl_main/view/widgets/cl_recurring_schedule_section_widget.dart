@@ -7,11 +7,15 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
     super.key,
     required this.enabled,
     required this.pattern,
+    this.calculationMode = CleaningRecurringCalculationMode.task,
+    this.hoursPerVisit = 2,
     required this.occurrences,
     required this.maxOccurrences,
     required this.sessions,
     required this.onEnabledChanged,
     required this.onPatternChanged,
+    this.onCalculationModeChanged,
+    this.onHoursPerVisitChanged,
     required this.onOccurrencesChanged,
     required this.onAddVisit,
     required this.onEditVisit,
@@ -20,11 +24,16 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
 
   final bool enabled;
   final CleaningRecurringPattern pattern;
+  final CleaningRecurringCalculationMode calculationMode;
+  final double hoursPerVisit;
   final int occurrences;
   final int maxOccurrences;
   final List<CleaningRecurringSessionInput> sessions;
   final ValueChanged<bool> onEnabledChanged;
   final ValueChanged<CleaningRecurringPattern> onPatternChanged;
+  final ValueChanged<CleaningRecurringCalculationMode>?
+  onCalculationModeChanged;
+  final ValueChanged<double>? onHoursPerVisitChanged;
   final ValueChanged<int> onOccurrencesChanged;
   final VoidCallback onAddVisit;
   final ValueChanged<int> onEditVisit;
@@ -60,6 +69,76 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
             ),
             if (enabled) ...[
               const Divider(height: 22),
+              DropdownButtonFormField<CleaningRecurringCalculationMode>(
+                initialValue: calculationMode,
+                decoration: const InputDecoration(
+                  labelText: 'طريقة احتساب كل زيارة',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: CleaningRecurringCalculationMode.values
+                    .map(
+                      (item) =>
+                          DropdownMenuItem<CleaningRecurringCalculationMode>(
+                            value: item,
+                            child: Text(item.labelAr),
+                          ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  if (value != null) onCalculationModeChanged?.call(value);
+                },
+              ),
+              const SizedBox(height: 6),
+              Text(
+                calculationMode.descriptionAr,
+                style: const TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (calculationMode ==
+                  CleaningRecurringCalculationMode.hours) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'الساعات لكل زيارة',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'تقليل ساعات الزيارة',
+                      onPressed: hoursPerVisit > 1
+                          ? () => onHoursPerVisitChanged?.call(
+                              hoursPerVisit - 0.5,
+                            )
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 54),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${hoursPerVisit.toStringAsFixed(hoursPerVisit % 1 == 0 ? 0 : 1)} ساعة',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'زيادة ساعات الزيارة',
+                      onPressed: hoursPerVisit < 24
+                          ? () => onHoursPerVisitChanged?.call(
+                              hoursPerVisit + 0.5,
+                            )
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
               DropdownButtonFormField<CleaningRecurringPattern>(
                 initialValue: pattern,
                 decoration: const InputDecoration(
