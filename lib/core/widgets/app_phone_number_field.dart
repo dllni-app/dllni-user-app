@@ -54,7 +54,7 @@ class AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
             autofillHints: const <String>[AutofillHints.telephoneNumberNational],
-            inputFormatters: const <TextInputFormatter>[
+            inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.digitsOnly,
             ],
             onChanged: (value) {
