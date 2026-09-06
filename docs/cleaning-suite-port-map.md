@@ -169,6 +169,28 @@ Verification:
 
 Status: recurring worker-scope parity verified for this slice. This does not declare whole-branch parity.
 
+### Recurring Cleaning notification interaction/coverage slice
+
+Implemented end-to-end without requiring a Flutter production-code fork because both User and Worker apps already consume the shared notification feed and mark notifications through the existing `/read` contract:
+
+- Notification feed responses now expose explicit `deliveredAt` and `viewedAt` interaction state while retaining `readAt` for backward compatibility.
+- Loading the authenticated notification feed records delivery for entries that have not yet been marked delivered.
+- Marking one notification read records it as viewed and keeps `readAt` compatible with existing clients.
+- Recurring worker-seat coverage changes are summarized at the parent-series level instead of emitting one customer coverage notification per visit.
+- Aggregate coverage payload reports fully covered, partially covered and searching visit counts plus accepted/required/remaining worker seats.
+- Coverage notifications are deduplicated by a deterministic series snapshot fingerprint, so refreshing the same coverage state does not create duplicate feed entries.
+- A distinct completion notification is emitted when all active future recurring seats are covered.
+- Existing generic notification title/body/deep-link handling in Flutter is reused; no recurring-specific notification screen is required.
+
+Verification:
+
+- Backend notification interaction/aggregate coverage feature commit: `9275843478517c097c64bff24d4029fa8670de7a`.
+- Backend formatting normalization commit: `b99d87b4ddf2ba5c763a5da6ab6e50e1280b2528`.
+- Backend general Cleaning Suite CI: run `34031631801`, green.
+- Backend permanent recurring CI including migration, formatting, notification-state tests, aggregate-coverage tests and recurring regressions: run `34031824387`, green.
+
+Status: recurring notification delivery/view state and aggregate coverage slice verified. Existing Flutter notification contracts remain compatible on both feature branches.
+
 ### Multi-Day Event Assistance
 
 The Multi-Day customer flow was previously promoted to both feature branches. Broader whole-branch parity is intentionally not inferred from this port map.
@@ -222,14 +244,15 @@ Verified recurring backend capabilities include:
 - Confirmed revisions preserve historical visits, retain superseded future rows for audit, release affected active assignments, preserve discounts and create fresh session pricing snapshots.
 - Recurring bookings support explicit task-based and hour-based calculation modes, with legacy task-mode compatibility, half-hour visit normalization and server-authoritative hour pricing/capacity snapshots.
 - Recurring bookings support explicit `any` versus `specific` worker scope; the exact specific-worker set is persisted and enforced consistently by listing, dispatch and acceptance without silent fallback to the open pool.
+- Notification feed state distinguishes delivery from viewing while keeping `readAt` backward-compatible.
+- Recurring coverage changes are aggregated and deduplicated at series level with explicit completion state when all future seats are covered.
 
-Latest verified backend recurring CI: run `34029198646`, green.
+Latest verified backend recurring CI: run `34031824387`, green.
 
 ## Remaining Recurring Cleaning work
 
 The following items are not marked complete by this map:
 
-- Notification delivery/view state and aggregated coverage notifications.
 - Per-session payment, review and dispute completion.
 - Late/no-travel options and admin reporting.
 
