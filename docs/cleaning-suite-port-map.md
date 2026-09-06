@@ -1,6 +1,6 @@
 # Cleaning Suite Port Map
 
-Updated: 2026-09-05
+Updated: 2026-09-06
 
 ## Porting rule
 
@@ -117,6 +117,31 @@ Verification:
 
 Status: recurring future schedule revision, repricing and reconfirmation parity verified for this slice. This does not declare whole-branch parity.
 
+### Recurring Cleaning task/hour calculation-mode slice
+
+Implemented end-to-end and ported selectively to both User App feature branches:
+
+- Canonical recurring schedule contract supports `schedule.calculationMode=task|hours`; older clients that omit the field remain on `task` mode.
+- `task` mode keeps the existing room/task estimation flow.
+- `hours` mode requires `hoursPerVisit` between 1 and 24 hours and normalizes to half-hour increments.
+- Hour-mode pricing remains server-authoritative: configured recurring hourly pricing is applied per requested worker seat and visit duration, then the existing commission/travel pricing engine is reused.
+- Child sessions retain their calculation mode, duration and pricing snapshots so worker capacity and later lifecycle logic use the same visit duration that was priced.
+- Future recurring schedule revision preserves the calculation mode and uses canonical repricing before reconfirmation.
+- User App exposes an explicit `حسب المهام / حسب الساعات` selector; hour mode changes visit duration in 0.5-hour increments.
+- Create and estimate share the same recurring serialization source of truth, and the client displays the server estimate rather than calculating an hourly price locally.
+
+Verification:
+
+- Backend task/hour implementation commit: `3b9687fc37dc0994b472e8bc274247e204ed1377`.
+- Backend final permanent recurring CI after staging cleanup/coverage update: run `33932500507`, green.
+- User main task/hour UI and serialization commit: `a8dea1a018664a3795d08aaf7357641c839a0018`.
+- User main final permanent recurring CI: run `33932758826`, green.
+- User dev selective eight-file task/hour port commit: `a5e25ddba991a8b203f19693c06c8d33d3354fba`.
+- User dev permanent recurring CI: run `34027040732`, green.
+- User dev general Cleaning Suite CI for the same port: run `34027040749`, green.
+
+Status: recurring task/hour calculation-mode parity verified for this slice. This does not declare whole-branch parity.
+
 ### Multi-Day Event Assistance
 
 The Multi-Day customer flow was previously promoted to both feature branches. Broader whole-branch parity is intentionally not inferred from this port map.
@@ -168,14 +193,14 @@ Verified recurring backend capabilities include:
 - Pause/resume capabilities and state are returned by the schedule presenter and enforced again by the mutation service.
 - Customer can preview and confirm replacement of eligible future recurring visits with canonical repricing and stale-token protection.
 - Confirmed revisions preserve historical visits, retain superseded future rows for audit, release affected active assignments, preserve discounts and create fresh session pricing snapshots.
+- Recurring bookings support explicit task-based and hour-based calculation modes, with legacy task-mode compatibility, half-hour visit normalization and server-authoritative hour pricing/capacity snapshots.
 
-Latest verified backend recurring CI: run `33931319421`, green.
+Latest verified backend recurring CI: run `33932500507`, green.
 
 ## Remaining Recurring Cleaning work
 
 The following items are not marked complete by this map:
 
-- Task-based versus hour-based recurring modes.
 - Full worker-scope UX for specific worker(s) versus any worker.
 - Notification delivery/view state and aggregated coverage notifications.
 - Per-session payment, review and dispute completion.
