@@ -55,6 +55,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currency = estimatedOpenTime?.currency ?? 'SYP';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -143,6 +144,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                     ),
                     service: specialServices[index],
                     availableServices: availableSpecialServices,
+                    currency: currency,
                     onChanged: (service) =>
                         onSpecialServiceChanged(index, service),
                     onRemove: () => onRemoveSpecialService(index),
@@ -253,6 +255,7 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!_hasContent) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -311,12 +314,14 @@ class _SpecialServiceForm extends StatelessWidget {
     required super.key,
     required this.service,
     required this.availableServices,
+    required this.currency,
     required this.onChanged,
     required this.onRemove,
   });
 
   final CleaningSpecialServiceRequest service;
   final List<CleaningServiceModel> availableServices;
+  final String currency;
   final ValueChanged<CleaningSpecialServiceRequest> onChanged;
   final VoidCallback onRemove;
 
@@ -376,6 +381,13 @@ class _SpecialServiceForm extends StatelessWidget {
               );
             },
           ),
+          if (selectedService != null) ...[
+            const SizedBox(height: 10),
+            _SpecialServiceCatalogPreview(
+              service: selectedService,
+              currency: currency,
+            ),
+          ],
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -413,6 +425,7 @@ class _SpecialServiceForm extends StatelessWidget {
                   }
                 },
               );
+
               if (constraints.maxWidth < 600) {
                 return Column(
                   children: [
@@ -422,6 +435,7 @@ class _SpecialServiceForm extends StatelessWidget {
                   ],
                 );
               }
+
               return Row(
                 children: [
                   Expanded(child: quantity),
@@ -455,6 +469,149 @@ class _SpecialServiceForm extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SpecialServiceCatalogPreview extends StatelessWidget {
+  const _SpecialServiceCatalogPreview({
+    required this.service,
+    required this.currency,
+  });
+
+  final CleaningServiceModel service;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = service.imageUrl?.trim();
+    final equipment = service.equipment
+        .map((item) => item.name?.trim())
+        .whereType<String>()
+        .where((name) => name.isNotEmpty)
+        .toList(growable: false);
+
+    return Semantics(
+      container: true,
+      label: service.name,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (imageUrl != null && imageUrl.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    width: 72,
+                    height: 72,
+                    alignment: Alignment.center,
+                    color: const Color(0xFFF3F4F6),
+                    child: const Icon(
+                      Icons.cleaning_services_outlined,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (service.pricingUnit?.trim().isNotEmpty == true)
+                    _CatalogMetaLine(
+                      label: 'cleaningExtras.pricingUnit'.tr(),
+                      value: service.pricingUnit!.trim(),
+                    ),
+                  if (service.baseUnitPrice != null)
+                    _CatalogMetaLine(
+                      label: 'cleaningExtras.baseUnitPrice'.tr(),
+                      value: _money(service.baseUnitPrice, currency) ?? '-',
+                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'cleaningExtras.requiredEquipment'.tr(),
+                    style: const TextStyle(
+                      color: Color(0xFF374151),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (equipment.isEmpty)
+                    Text(
+                      'cleaningExtras.noRequiredEquipment'.tr(),
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12,
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: equipment
+                          .map(
+                            (name) => Chip(
+                              visualDensity: VisualDensity.compact,
+                              label: Text(name),
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CatalogMetaLine extends StatelessWidget {
+  const _CatalogMetaLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontSize: 12,
+              ),
+            ),
+            TextSpan(
+              text: value,
+              style: const TextStyle(
+                color: Color(0xFF111827),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -522,6 +679,7 @@ class _SpecialServiceLine extends StatelessWidget {
       else if (line.dirtinessLevel?.trim().isNotEmpty == true)
         _dirtinessDisplayLabel(line.dirtinessLevel!.trim()),
     ];
+
     return _DetailLine(
       title: line.name ?? '-',
       subtitle: details.join(' · '),
@@ -568,7 +726,9 @@ class _OpenTimeCard extends StatelessWidget {
           _money(openTime.totalPrice, currency),
         ),
     ];
+
     if (rows.isEmpty) return const SizedBox.shrink();
+
     return _CalculatedLinesCard(
       title: 'cleaningExtras.openTimeEstimate'.tr(),
       children: rows
@@ -600,6 +760,7 @@ class _DetailLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalizedImage = imageUrl?.trim();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
