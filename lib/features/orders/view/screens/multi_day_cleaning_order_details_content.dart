@@ -374,6 +374,129 @@ class _MultiDayCleaningOrderDetailsScreenState
     );
   }
 
+  Future<void> _reportRecurringLate(CleaningBookingSessionModel session) async {
+    final sessionId = session.id;
+    final workerIds = session.attendanceWorkerIdsFor('wait');
+    if (!widget.recurring ||
+        sessionId == null ||
+        !session.allowsAttendanceAction('wait') ||
+        session.hasNoTravelAttendanceActions ||
+        workerIds.isEmpty ||
+        _busySessionId != null) {
+      return;
+    }
+
+    final names = _workerNamesForIds(session, workerIds);
+    final approved = await _confirmDialog(
+      title: 'تأخر العامل',
+      message:
+          'مرّت مهلة التأخير${names.isEmpty ? '' : ' للعامل: ${names.join('، ')}'}. إذا اخترت الانتظار، سنسجل البلاغ وتبقى الزيارة فعالة. إذا لم يبدأ العامل التنقل بعد مهلة عدم التنقل سيظهر لك خيار الاستبدال أو الإلغاء دون رسوم.',
+      confirmLabel: 'سأنتظر العامل',
+    );
+    if (!approved) return;
+
+    await _runSessionAction(
+      session,
+      () => _sessions.reportSessionAttendance(
+        orderId: widget.orderId,
+        sessionId: sessionId,
+        workerIds: workerIds,
+        action: 'wait',
+      ),
+    );
+  }
+
+  Future<void> _handleRecurringNoTravel(
+    CleaningBookingSessionModel session,
+  ) async {
+    final sessionId = session.id;
+    if (!widget.recurring ||
+        sessionId == null ||
+        !session.hasNoTravelAttendanceActions ||
+        _busySessionId != null) {
+      return;
+    }
+
+    final displayWorkerIds = <int>{
+      ...session.attendanceWorkerIdsFor('wait'),
+      ...session.attendanceWorkerIdsFor('replace'),
+      ...session.attendanceWorkerIdsFor('cancel'),
+    }.toList(growable: false);
+    final names = _workerNamesForIds(session, displayWorkerIds);
+    final canWait = session.allowsAttendanceAction('wait');
+    final canReplace = session.allowsAttendanceAction('replace');
+    final canCancel = session.allowsAttendanceAction('cancel');
+
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('لم يبدأ التنقل'),
+        content: Text(
+          '${names.isEmpty ? 'العامل المعيّن' : names.join('، ')} لم يبدأ التنقل بعد انتهاء المهلة المحددة. اختر فقط أحد الإجراءات المتاحة من الخادم لهذه الزيارة.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('رجوع'),
+          ),
+          if (canWait)
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop('wait'),
+              child: const Text('سأنتظر العامل'),
+            ),
+          if (canCancel)
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+              child: const Text('إلغاء الزيارة دون رسوم'),
+            ),
+          if (canReplace)
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop('replace'),
+              child: const Text('استبدال العامل'),
+            ),
+        ],
+      ),
+    );
+    if (!mounted || action == null) return;
+
+    final workerIds = session.attendanceWorkerIdsFor(action);
+    if (workerIds.isEmpty) {
+      setState(() {
+        _actionError =
+            'تغيّرت حالة الزيارة ولم يعد هذا الإجراء متاحاً. حدّث الطلب وحاول مرة أخرى.';
+      });
+      await _load();
+      return;
+    }
+
+    await _runSessionAction(
+      session,
+      () => _sessions.reportSessionAttendance(
+        orderId: widget.orderId,
+        sessionId: sessionId,
+        workerIds: workerIds,
+        action: action,
+      ),
+    );
+  }
+
+  List<String> _workerNamesForIds(
+    CleaningBookingSessionModel session,
+    List<int> workerIds,
+  ) {
+    final ids = workerIds.toSet();
+    return session.workerAssignments
+        .where(
+          (assignment) =>
+              assignment.workerId != null && ids.contains(assignment.workerId),
+        )
+        .map((assignment) => assignment.workerName?.trim())
+        .whereType<String>()
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+  }
+
   Future<void> _reviewRecurringSession(
     CleaningBookingSessionModel session,
   ) async {
@@ -1027,6 +1150,12 @@ class _MultiDayCleaningOrderDetailsScreenState
               _paymentStatusLabel(session.paymentStatus),
             ),
           ],
+          if (widget.recurring &&
+              session.attendance != null &&
+              session.attendance!.incidents.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _attendanceIncidentPanel(session),
+          ],
           if (widget.recurring && session.hasOpenDispute) ...[
             const SizedBox(height: 7),
             _infoRow('حالة النزاع', _disputeStatusLabel(session.disputeStatus)),
@@ -1066,10 +1195,17 @@ class _MultiDayCleaningOrderDetailsScreenState
         session.canSkip ||
         session.canCancel ||
         session.canSendSos ||
-        (widget.recurring && (session.canReview || session.canOpenDispute));
+        (widget.recurring &&
+            (session.hasAttendanceActions ||
+                session.canReview ||
+                session.canOpenDispute));
   }
 
   Widget _sessionActions(CleaningBookingSessionModel session, bool busy) {
+    final hasNoTravelActions = session.hasNoTravelAttendanceActions;
+    final hasLateAction =
+        session.allowsAttendanceAction('wait') && !hasNoTravelActions;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1100,6 +1236,24 @@ class _MultiDayCleaningOrderDetailsScreenState
             icon: const Icon(Icons.skip_next_rounded),
             label: const Text('تخطي هذه الزيارة'),
           ),
+        ],
+        if (widget.recurring && (hasLateAction || hasNoTravelActions)) ...[
+          if (session.canConfirmStartVerification ||
+              session.canConfirmCompletion ||
+              session.canSkip)
+            const SizedBox(height: 8),
+          if (hasNoTravelActions)
+            FilledButton.icon(
+              onPressed: busy ? null : () => _handleRecurringNoTravel(session),
+              icon: const Icon(Icons.no_transfer_rounded),
+              label: const Text('لم يبدأ التنقل'),
+            )
+          else if (hasLateAction)
+            OutlinedButton.icon(
+              onPressed: busy ? null : () => _reportRecurringLate(session),
+              icon: const Icon(Icons.schedule_rounded),
+              label: const Text('تأخر العامل'),
+            ),
         ],
         if (widget.recurring &&
             (session.canReview || session.canOpenDispute)) ...[
@@ -1165,6 +1319,56 @@ class _MultiDayCleaningOrderDetailsScreenState
           ),
         ],
       ],
+    );
+  }
+
+  Widget _attendanceIncidentPanel(CleaningBookingSessionModel session) {
+    final incidents =
+        session.attendance?.incidents ??
+        const <CleaningSessionAttendanceIncidentModel>[];
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppText.bodySmall(
+            'بلاغات التأخر وعدم التنقل',
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF92400E),
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 6),
+          ...incidents.map((incident) {
+            final worker = incident.workerName?.trim().isNotEmpty == true
+                ? incident.workerName!.trim()
+                : 'العامل #${incident.workerId ?? '-'}';
+            final issue = incident.isNoTravel
+                ? 'لم يبدأ التنقل'
+                : 'تم الإبلاغ عن تأخره';
+            final action = switch (incident.action) {
+              'wait' => 'انتظار العامل',
+              'replace' => 'طلب استبدال',
+              'cancel' => 'إلغاء الزيارة دون رسوم',
+              _ => 'بانتظار الإجراء',
+            };
+            final state = incident.isResolved ? 'مغلقة' : 'مفتوحة';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: AppText.bodySmall(
+                '$worker: $issue • $action • $state',
+                color: const Color(0xFF78350F),
+                fontWeight: FontWeight.w600,
+                textAlign: TextAlign.start,
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 

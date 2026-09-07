@@ -34,6 +34,30 @@ String? _string(dynamic value) {
   return text == null || text.isEmpty ? null : text;
 }
 
+List<int> _intList(dynamic value) {
+  if (value is! List) return const <int>[];
+  return value.map(_int).whereType<int>().toList(growable: false);
+}
+
+List<String> _stringList(dynamic value) {
+  if (value is! List) return const <String>[];
+  return value
+      .map(_string)
+      .whereType<String>()
+      .map((item) => item.toLowerCase())
+      .toSet()
+      .toList(growable: false);
+}
+
+Map<String, List<int>> _actionWorkerIds(dynamic value) {
+  final raw = _map(value);
+  if (raw.isEmpty) return const <String, List<int>>{};
+
+  return raw.map(
+    (key, workerIds) => MapEntry(key.trim().toLowerCase(), _intList(workerIds)),
+  );
+}
+
 Map<String, dynamic> _orderMap(Map<String, dynamic> root) {
   for (final key in const ['data', 'order']) {
     final candidate = root[key];
@@ -116,12 +140,122 @@ class CleaningSessionPaymentModel {
   }
 }
 
+class CleaningSessionAttendanceIncidentModel {
+  final int? workerId;
+  final String? workerName;
+  final String? lateReportedAt;
+  final String? noTravelReportedAt;
+  final String? action;
+  final String? resolvedAt;
+  final String? note;
+
+  const CleaningSessionAttendanceIncidentModel({
+    this.workerId,
+    this.workerName,
+    this.lateReportedAt,
+    this.noTravelReportedAt,
+    this.action,
+    this.resolvedAt,
+    this.note,
+  });
+
+  factory CleaningSessionAttendanceIncidentModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningSessionAttendanceIncidentModel(
+      workerId: _int(json['workerId'] ?? json['worker_id']),
+      workerName: _string(json['workerName'] ?? json['worker_name']),
+      lateReportedAt: _string(
+        json['lateReportedAt'] ?? json['late_reported_at'],
+      ),
+      noTravelReportedAt: _string(
+        json['noTravelReportedAt'] ?? json['no_travel_reported_at'],
+      ),
+      action: _string(json['action']),
+      resolvedAt: _string(json['resolvedAt'] ?? json['resolved_at']),
+      note: _string(json['note']),
+    );
+  }
+
+  bool get isNoTravel => noTravelReportedAt != null;
+  bool get isResolved => resolvedAt != null;
+}
+
+class CleaningSessionAttendanceModel {
+  final int lateGraceMinutes;
+  final int noTravelGraceMinutes;
+  final int minutesPastStart;
+  final List<String> allowedActions;
+  final Map<String, List<int>> actionWorkerIds;
+  final bool hasActionContract;
+  final List<CleaningSessionAttendanceIncidentModel> incidents;
+
+  const CleaningSessionAttendanceModel({
+    this.lateGraceMinutes = 15,
+    this.noTravelGraceMinutes = 30,
+    this.minutesPastStart = 0,
+    this.allowedActions = const <String>[],
+    this.actionWorkerIds = const <String, List<int>>{},
+    this.hasActionContract = false,
+    this.incidents = const <CleaningSessionAttendanceIncidentModel>[],
+  });
+
+  factory CleaningSessionAttendanceModel.fromJson(Map<String, dynamic> json) {
+    final rawIncidents = json['incidents'];
+    final hasActionContract =
+        json.containsKey('allowedActions') ||
+        json.containsKey('allowed_actions') ||
+        json.containsKey('actionWorkerIds') ||
+        json.containsKey('action_worker_ids');
+
+    return CleaningSessionAttendanceModel(
+      lateGraceMinutes:
+          _int(json['lateGraceMinutes'] ?? json['late_grace_minutes']) ?? 15,
+      noTravelGraceMinutes:
+          _int(
+            json['noTravelGraceMinutes'] ?? json['no_travel_grace_minutes'],
+          ) ??
+          30,
+      minutesPastStart:
+          _int(json['minutesPastStart'] ?? json['minutes_past_start']) ?? 0,
+      allowedActions: _stringList(
+        json['allowedActions'] ?? json['allowed_actions'],
+      ),
+      actionWorkerIds: _actionWorkerIds(
+        json['actionWorkerIds'] ?? json['action_worker_ids'],
+      ),
+      hasActionContract: hasActionContract,
+      incidents: rawIncidents is List
+          ? rawIncidents
+                .whereType<Map>()
+                .map(
+                  (item) => CleaningSessionAttendanceIncidentModel.fromJson(
+                    _map(item),
+                  ),
+                )
+                .toList(growable: false)
+          : const <CleaningSessionAttendanceIncidentModel>[],
+    );
+  }
+
+  bool allows(String action) =>
+      allowedActions.contains(action.trim().toLowerCase());
+
+  List<int> workerIdsFor(String action) =>
+      actionWorkerIds[action.trim().toLowerCase()] ?? const <int>[];
+}
+
 class CleaningSessionWorkerAssignmentModel {
   final int? id;
   final int? parentAssignmentId;
   final int? workerId;
   final String? workerName;
   final String? status;
+  final String? lateReportedAt;
+  final String? noTravelReportedAt;
+  final String? attendanceAction;
+  final String? attendanceResolvedAt;
+  final String? attendanceNote;
   final String? startedTravelAt;
   final String? arrivedAt;
   final String? locationUpdatedAt;
@@ -143,6 +277,11 @@ class CleaningSessionWorkerAssignmentModel {
     this.workerId,
     this.workerName,
     this.status,
+    this.lateReportedAt,
+    this.noTravelReportedAt,
+    this.attendanceAction,
+    this.attendanceResolvedAt,
+    this.attendanceNote,
     this.startedTravelAt,
     this.arrivedAt,
     this.locationUpdatedAt,
@@ -170,6 +309,21 @@ class CleaningSessionWorkerAssignmentModel {
       workerId: _int(json['workerId'] ?? json['worker_id']),
       workerName: _string(json['workerName'] ?? json['worker_name']),
       status: _string(json['status']),
+      lateReportedAt: _string(
+        json['lateReportedAt'] ?? json['late_reported_at'],
+      ),
+      noTravelReportedAt: _string(
+        json['noTravelReportedAt'] ?? json['no_travel_reported_at'],
+      ),
+      attendanceAction: _string(
+        json['attendanceAction'] ?? json['attendance_action'],
+      ),
+      attendanceResolvedAt: _string(
+        json['attendanceResolvedAt'] ?? json['attendance_resolved_at'],
+      ),
+      attendanceNote: _string(
+        json['attendanceNote'] ?? json['attendance_note'],
+      ),
       startedTravelAt: _string(
         json['startedTravelAt'] ?? json['started_travel_at'],
       ),
@@ -223,6 +377,16 @@ class CleaningBookingSessionModel {
   final bool canExtend;
   final bool canCancel;
   final bool canSkip;
+  final bool canReportLate;
+  final bool canReportNoTravel;
+  final List<int> lateWorkerIds;
+  final List<int> noTravelWorkerIds;
+  final List<int> reportableLateWorkerIds;
+  final List<int> reportableNoTravelWorkerIds;
+  final List<String> allowedAttendanceActions;
+  final Map<String, List<int>> attendanceActionWorkerIds;
+  final bool hasAttendanceActionContract;
+  final CleaningSessionAttendanceModel? attendance;
   final bool? canReschedule;
   final CleaningSessionPaymentModel? payment;
   final String paymentStatus;
@@ -270,6 +434,16 @@ class CleaningBookingSessionModel {
     required this.canExtend,
     required this.canCancel,
     this.canSkip = false,
+    this.canReportLate = false,
+    this.canReportNoTravel = false,
+    this.lateWorkerIds = const <int>[],
+    this.noTravelWorkerIds = const <int>[],
+    this.reportableLateWorkerIds = const <int>[],
+    this.reportableNoTravelWorkerIds = const <int>[],
+    this.allowedAttendanceActions = const <String>[],
+    this.attendanceActionWorkerIds = const <String, List<int>>{},
+    this.hasAttendanceActionContract = false,
+    this.attendance,
     this.canReschedule,
     this.payment,
     this.paymentStatus = 'pending',
@@ -306,6 +480,22 @@ class CleaningBookingSessionModel {
         json['reviewedWorkerIds'] ?? json['reviewed_worker_ids'];
     final rawReviewableWorkerIds =
         json['reviewableWorkerIds'] ?? json['reviewable_worker_ids'];
+    final rawLateWorkerIds = json['lateWorkerIds'] ?? json['late_worker_ids'];
+    final rawNoTravelWorkerIds =
+        json['noTravelWorkerIds'] ?? json['no_travel_worker_ids'];
+    final rawReportableLateWorkerIds =
+        json['reportableLateWorkerIds'] ?? json['reportable_late_worker_ids'];
+    final rawReportableNoTravelWorkerIds =
+        json['reportableNoTravelWorkerIds'] ??
+        json['reportable_no_travel_worker_ids'];
+    final attendance = json['attendance'] is Map
+        ? CleaningSessionAttendanceModel.fromJson(_map(json['attendance']))
+        : null;
+    final hasTopLevelAttendanceActionContract =
+        json.containsKey('allowedAttendanceActions') ||
+        json.containsKey('allowed_attendance_actions') ||
+        json.containsKey('attendanceActionWorkerIds') ||
+        json.containsKey('attendance_action_worker_ids');
 
     return CleaningBookingSessionModel(
       id: _int(json['id']),
@@ -345,6 +535,26 @@ class CleaningBookingSessionModel {
       canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
       canSkip: _bool(json['canSkip'] ?? json['can_skip']) ?? false,
+      canReportLate:
+          _bool(json['canReportLate'] ?? json['can_report_late']) ?? false,
+      canReportNoTravel:
+          _bool(json['canReportNoTravel'] ?? json['can_report_no_travel']) ??
+          false,
+      lateWorkerIds: _intList(rawLateWorkerIds),
+      noTravelWorkerIds: _intList(rawNoTravelWorkerIds),
+      reportableLateWorkerIds: _intList(rawReportableLateWorkerIds),
+      reportableNoTravelWorkerIds: _intList(rawReportableNoTravelWorkerIds),
+      allowedAttendanceActions: _stringList(
+        json['allowedAttendanceActions'] ?? json['allowed_attendance_actions'],
+      ),
+      attendanceActionWorkerIds: _actionWorkerIds(
+        json['attendanceActionWorkerIds'] ??
+            json['attendance_action_worker_ids'],
+      ),
+      hasAttendanceActionContract:
+          hasTopLevelAttendanceActionContract ||
+          (attendance?.hasActionContract ?? false),
+      attendance: attendance,
       canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),
       payment: json['payment'] is Map
           ? CleaningSessionPaymentModel.fromJson(_map(json['payment']))
@@ -358,18 +568,8 @@ class CleaningBookingSessionModel {
           _string(_map(json['payment'])['settledAt']),
       canReview: _bool(json['canReview'] ?? json['can_review']) ?? false,
       hasReview: _bool(json['hasReview'] ?? json['has_review']) ?? false,
-      reviewedWorkerIds: rawReviewedWorkerIds is List
-          ? rawReviewedWorkerIds
-                .map(_int)
-                .whereType<int>()
-                .toList(growable: false)
-          : const <int>[],
-      reviewableWorkerIds: rawReviewableWorkerIds is List
-          ? rawReviewableWorkerIds
-                .map(_int)
-                .whereType<int>()
-                .toList(growable: false)
-          : const <int>[],
+      reviewedWorkerIds: _intList(rawReviewedWorkerIds),
+      reviewableWorkerIds: _intList(rawReviewableWorkerIds),
       canOpenDispute:
           _bool(json['canOpenDispute'] ?? json['can_open_dispute']) ?? false,
       hasOpenDispute:
@@ -415,6 +615,50 @@ class CleaningBookingSessionModel {
           : const <CleaningSessionWorkerAssignmentModel>[],
     );
   }
+
+  List<String> get effectiveAttendanceActions {
+    if (hasAttendanceActionContract) {
+      if (allowedAttendanceActions.isNotEmpty) return allowedAttendanceActions;
+      return attendance?.allowedActions ?? const <String>[];
+    }
+
+    final actions = <String>[];
+    if ((canReportLate && reportableLateWorkerIds.isNotEmpty) ||
+        (canReportNoTravel && reportableNoTravelWorkerIds.isNotEmpty)) {
+      actions.add('wait');
+    }
+    if (canReportNoTravel && reportableNoTravelWorkerIds.isNotEmpty) {
+      actions.addAll(const ['replace', 'cancel']);
+    }
+    return actions;
+  }
+
+  bool allowsAttendanceAction(String action) =>
+      effectiveAttendanceActions.contains(action.trim().toLowerCase());
+
+  List<int> attendanceWorkerIdsFor(String action) {
+    final normalized = action.trim().toLowerCase();
+    if (hasAttendanceActionContract) {
+      final direct = attendanceActionWorkerIds[normalized];
+      if (direct != null) return direct;
+      return attendance?.workerIdsFor(normalized) ?? const <int>[];
+    }
+
+    if (normalized == 'wait') {
+      if (canReportNoTravel && reportableNoTravelWorkerIds.isNotEmpty) {
+        return reportableNoTravelWorkerIds;
+      }
+      return reportableLateWorkerIds;
+    }
+    if (normalized == 'replace' || normalized == 'cancel') {
+      return reportableNoTravelWorkerIds;
+    }
+    return const <int>[];
+  }
+
+  bool get hasAttendanceActions => effectiveAttendanceActions.isNotEmpty;
+  bool get hasNoTravelAttendanceActions =>
+      allowsAttendanceAction('replace') || allowsAttendanceAction('cancel');
 
   bool get canStart => canStartWork || canStartTravel;
   bool get isCompleted => status == 'completed';
