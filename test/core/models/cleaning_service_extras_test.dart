@@ -30,6 +30,28 @@ void main() {
         'openTime': <String, dynamic>{'workerCount': 2},
       });
     });
+
+    test('omits blank optional notes and open-time when not requested', () {
+      const request = CleaningServiceExtrasRequest(
+        specialServices: <CleaningSpecialServiceRequest>[
+          CleaningSpecialServiceRequest(
+            specialServiceId: 15,
+            quantity: 1,
+            dirtinessLevel: 'deep',
+            notes: '   ',
+          ),
+        ],
+      );
+
+      final payload = request.toJson();
+      final service = (payload['specialServices'] as List<dynamic>).single
+          as Map<String, dynamic>;
+
+      expect(payload['requestMaterials'], isFalse);
+      expect(payload.containsKey('openTime'), isFalse);
+      expect(service.containsKey('notes'), isFalse);
+      expect(service['dirtinessLevel'], 'deep');
+    });
   });
 
   group('cleaning extras response parsing', () {
@@ -73,6 +95,43 @@ void main() {
       expect(services.single.imageUrl, 'https://example.test/sofa.png');
     });
 
+    test('accepts snake-case aliases returned by persisted order payloads', () {
+      final materials = cleaningMaterialLinesFromJson(<Map<String, dynamic>>[
+        <String, dynamic>{
+          'material_id': '9',
+          'name': 'Glass cleaner',
+          'quantity': '2.25',
+          'unit_code': 'L',
+          'unit_price': '50',
+          'total_price': '112.5',
+        },
+      ]);
+      final services = cleaningSpecialServiceLinesFromJson(
+        <Map<String, dynamic>>[
+          <String, dynamic>{
+            'special_service_id': '17',
+            'name': 'Carpet cleaning',
+            'quantity': '3',
+            'pricing_unit': 'carpet',
+            'dirtiness_level': 'deep',
+            'dirtiness_label': 'Deep',
+            'total_price': '450',
+            'image_url': 'https://example.test/carpet.png',
+          },
+        ],
+      );
+
+      expect(materials.single.materialId, 9);
+      expect(materials.single.quantity, 2.25);
+      expect(materials.single.unit, 'L');
+      expect(materials.single.totalPrice, 112.5);
+      expect(services.single.specialServiceId, 17);
+      expect(services.single.quantity, 3);
+      expect(services.single.pricingUnit, 'carpet');
+      expect(services.single.dirtinessLevel, 'deep');
+      expect(services.single.imageUrl, 'https://example.test/carpet.png');
+    });
+
     test('parses canonical Open-Time final billing fields as UI hours', () {
       final openTime = CleaningOpenTimeModel.fromJson(<String, dynamic>{
         'requestedWorkerCount': 2,
@@ -100,12 +159,14 @@ void main() {
         'minimumBillableMinutes': 60,
         'preliminaryBillableMinutes': 60,
         'preliminaryAmount': 100,
+        'isPricingFinal': false,
       });
 
       expect(openTime.workerCount, 1);
       expect(openTime.minimumDuration, 1);
       expect(openTime.billableDuration, 1);
       expect(openTime.totalPrice, 100);
+      expect(openTime.isPricingFinal, isFalse);
     });
   });
 }
