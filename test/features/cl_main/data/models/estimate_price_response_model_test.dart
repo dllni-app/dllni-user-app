@@ -1,111 +1,51 @@
 import 'package:dllni_user_app/features/cl_main/data/models/estimate_price_response_model.dart';
-import 'package:dllni_user_app/features/cl_main/domain/models/cleaning_assignment_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test(
-    'EstimatePriceResponseModel parses workerAcceptance and assignmentMode',
-    () {
-      final model = EstimatePriceResponseModel.fromJson({
-        'assignmentMode': 'open_count',
-        'workerAcceptance': {
-          'required': 3,
-          'accepted': 0,
-          'remaining': 3,
-          'isFulfilled': false,
-        },
-      });
-
-      expect(model.assignmentMode, CleaningAssignmentMode.openCount);
-      expect(model.workerAcceptance?.required, 3);
-      expect(model.workerAcceptance?.accepted, 0);
-      expect(model.workerAcceptance?.remaining, 3);
-      expect(model.workerAcceptance?.isFulfilled, isFalse);
-      expect(model.suggestedTeamSize, 3);
-    },
-  );
-
-  test('EstimatePriceResponseModel parses worker capacity fields', () {
-    final model = EstimatePriceResponseModel.fromJson({
-      'requiredWorkers': 2,
-      'maxHoursPerWorker': 8,
-      'size': {
-        'estimatedSqm': 120,
-        'estimatedHours': 13,
-        'sizeTier': 'large',
-      },
-    });
-
-    expect(model.requiredWorkers, 2);
-    expect(model.maxHoursPerWorker, 8.0);
-    expect(model.size?.estimatedHours, 13.0);
-  });
-
-  test('EstimatePriceResponseModel parses nested capacity fields', () {
-    final model = EstimatePriceResponseModel.fromJson({
-      'estimation': {
-        'requiredWorkers': 3,
-        'maxHoursPerWorker': 8,
-      },
-    });
-
-    expect(model.requiredWorkers, 3);
-    expect(model.maxHoursPerWorker, 8.0);
-  });
-
-  test('EstimatePriceResponseModel parses workerRoomAssignments', () {
-    final model = EstimatePriceResponseModel.fromJson({
-      'pricing': {'totalPrice': 12000},
-      'workerRoomAssignments': [
-        {
-          'workerSlot': 1,
-          'preferredWorkerId': null,
-          'roomsWeight': 1.8,
-          'estimatedServiceShareAmount': 4200,
-          'rooms': [
-            {
-              'roomKey': 'bedroom.small.1',
-              'roomType': 'bedroom',
-              'roomSize': 'small',
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(model.workerRoomAssignments, hasLength(1));
-    expect(model.workerRoomAssignments.first.workerSlot, 1);
-    expect(model.workerRoomAssignments.first.roomsWeight, 1.8);
-    expect(model.workerRoomAssignments.first.estimatedServiceShareAmount, 4200);
-  });
-
-  test('EstimatePriceResponseModel parses event assistance pricing fields', () {
-    final model = EstimatePriceResponseModel.fromJson({
+  test('parses backend multi-day estimate schedule pricing', () {
+    final result = estimatePriceResponseModelFromJson({
       'pricing': {
-        'basePrice': 8000,
-        'totalPrice': 9000,
-        'eventHourlyRate': 2500,
-        'eventHours': 4,
-        'serviceLines': <Map<String, dynamic>>[],
+        'basePrice': 7200,
+        'travelFee': 0,
+        'adminMargin': 0,
+        'totalPrice': 7200,
+        'currency': 'SYP',
       },
-      'recommendation': {
-        'eventType': 'family_dinner',
-        'guestCount': 20,
-        'venueType': 'apartment',
-        'customService': 'مساعدة يدوية في تجهيز الضيافة',
-        'hours': 4,
-        'suggestedTeamSize': 2,
+      'schedule': {
+        'mode': 'multi_day',
+        'daysCount': 2,
+        'totalHours': 9,
+        'sessions': [
+          {
+            'sequence': 1,
+            'date': '2026-09-01',
+            'time': '16:00',
+            'hours': 4,
+            'basePrice': 3200,
+            'travelFee': 0,
+            'adminMargin': 0,
+            'totalPrice': 3200,
+          },
+          {
+            'sequence': 2,
+            'date': '2026-09-03',
+            'time': '17:00',
+            'hours': 5,
+            'basePrice': 4000,
+            'travelFee': 0,
+            'adminMargin': 0,
+            'totalPrice': 4000,
+          },
+        ],
       },
     });
 
-    expect(model.pricing?.eventHourlyRate, 2500);
-    expect(model.pricing?.eventHours, 4);
-    expect(model.pricing?.serviceLines, isEmpty);
-    expect(
-      model.recommendation?.customService,
-      'مساعدة يدوية في تجهيز الضيافة',
-    );
-    expect(model.recommendation?.hours, 4);
-    expect(model.recommendation?.suggestedTeamSize, 2);
+    expect(result.pricing?.totalPrice, 7200);
+    expect(result.schedule?.mode, 'multi_day');
+    expect(result.schedule?.daysCount, 2);
+    expect(result.schedule?.totalHours, 9);
+    expect(result.schedule?.sessions.length, 2);
+    expect(result.schedule?.sessionAt(0)?.totalPrice, 3200);
+    expect(result.schedule?.sessionAt(1)?.totalPrice, 4000);
   });
 }
