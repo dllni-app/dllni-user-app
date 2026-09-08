@@ -75,8 +75,25 @@ class _MultiDayCleaningOrderRescheduleScreenState
     return items;
   }
 
-  bool get _hasEditableSession =>
-      _sessions.any((session) => session.canReschedule == true);
+  bool get _hasEditableSession => _sessions.any(_canEditSession);
+
+  bool _canEditSession(CleaningBookingSessionModel session) {
+    if (session.canReschedule != true || session.hasStartedExecution) {
+      return false;
+    }
+
+    final status = session.status.trim().toLowerCase();
+    if (status != 'scheduled' && status != 'worker_assigned') {
+      return false;
+    }
+
+    final date = session.date;
+    if (date == null) return false;
+
+    final today = _today();
+    final sessionDay = DateTime(date.year, date.month, date.day);
+    return !sessionDay.isBefore(today);
+  }
 
   DateTime _today() {
     final now = DateTime.now();
@@ -85,9 +102,7 @@ class _MultiDayCleaningOrderRescheduleScreenState
 
   Future<void> _editSession(CleaningBookingSessionModel session) async {
     final sessionId = session.id;
-    if (sessionId == null ||
-        session.canReschedule != true ||
-        _savingSessionId != null) {
+    if (sessionId == null || !_canEditSession(session) || _savingSessionId != null) {
       return;
     }
 
@@ -271,7 +286,7 @@ class _MultiDayCleaningOrderRescheduleScreenState
                     else
                       ...sessions.map((session) {
                         final busy = _savingSessionId == session.id;
-                        final editable = session.canReschedule == true;
+                        final editable = _canEditSession(session);
                         final workers = session.workerAssignments
                             .map((assignment) => assignment.workerName?.trim())
                             .whereType<String>()
