@@ -102,7 +102,9 @@ class _MultiDayCleaningOrderRescheduleScreenState
 
   Future<void> _editSession(CleaningBookingSessionModel session) async {
     final sessionId = session.id;
-    if (sessionId == null || !_canEditSession(session) || _savingSessionId != null) {
+    if (sessionId == null ||
+        !_canEditSession(session) ||
+        _savingSessionId != null) {
       return;
     }
 
@@ -120,7 +122,9 @@ class _MultiDayCleaningOrderRescheduleScreenState
     if (!mounted || draft == null) return;
 
     if (_duplicatesAnotherSession(session, draft)) {
-      _showMessage('يوجد يوم آخر في التاريخ والوقت نفسيهما. اختر موعداً مختلفاً.');
+      _showMessage(
+        'يوجد يوم آخر في التاريخ والوقت نفسيهما. اختر موعداً مختلفاً.',
+      );
       return;
     }
 
@@ -218,7 +222,9 @@ class _MultiDayCleaningOrderRescheduleScreenState
 
   void _showMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<bool> _handleBack() async {
@@ -514,9 +520,9 @@ class _SessionScheduleEditorState extends State<_SessionScheduleEditor> {
           ),
           const SizedBox(height: 18),
           FilledButton.icon(
-            onPressed: () => Navigator.of(context).pop(
-              _SessionScheduleDraft(date: _date, time: _time),
-            ),
+            onPressed: () => Navigator.of(
+              context,
+            ).pop(_SessionScheduleDraft(date: _date, time: _time)),
             icon: const Icon(Icons.save_outlined),
             label: const Text('حفظ موعد هذا اليوم'),
           ),

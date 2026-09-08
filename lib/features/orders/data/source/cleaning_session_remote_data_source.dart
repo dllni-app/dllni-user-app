@@ -95,10 +95,7 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     required String time,
     double? hours,
   }) {
-    final data = <String, dynamic>{
-      'date': _dateApi(date),
-      'time': time.trim(),
-    };
+    final data = <String, dynamic>{'date': _dateApi(date), 'time': time.trim()};
     if (hours != null) data['hours'] = hours;
 
     return wrapHandlingApi(
