@@ -1,0 +1,36 @@
+name: Agent A Reschedule Gate Fix Once
+
+on:
+  push:
+    branches:
+      - feature/cleaning-suite-agent-a-main-closeout
+    paths:
+      - '.github/workflows/agent-a-reschedule-gate-fix-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch per-session reschedule entry gate
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart')
+          text = path.read_text(encoding='utf-8')
+          old = "schedule.sessions.every((session) => session.canReschedule == true);"
+          new = "schedule.sessions.any((session) => session.canReschedule == true);"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one reschedule gate, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart
+          git commit -m "fix(cleaning): allow rescheduling any eligible future session"
+          git push origin HEAD:feature/cleaning-suite-agent-a-main-closeout
