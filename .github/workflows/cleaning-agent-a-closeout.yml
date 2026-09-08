@@ -1,3 +1,4 @@
+# Agent A branch-local verification gate.
 name: Cleaning Agent A User Closeout
 
 on:
