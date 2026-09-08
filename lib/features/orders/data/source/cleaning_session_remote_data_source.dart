@@ -88,6 +88,26 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningMultiDayOrderEnvelope> rescheduleSession({
+    required int orderId,
+    required int sessionId,
+    required DateTime date,
+    required String time,
+    double? hours,
+  }) {
+    final data = <String, dynamic>{'date': _dateApi(date), 'time': time.trim()};
+    if (hours != null) data['hours'] = hours;
+
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.patchData(
+        endPoint:
+            '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/schedule',
+        data: data,
+      ),
+      jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
+    );
+  }
+
   Future<CleaningMultiDayOrderEnvelope> reportSessionAttendance({
     required int orderId,
     required int sessionId,
@@ -229,4 +249,7 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
       jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
     );
   }
+
+  String _dateApi(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 }

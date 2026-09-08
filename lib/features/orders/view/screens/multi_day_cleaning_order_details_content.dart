@@ -46,7 +46,7 @@ class _MultiDayCleaningOrderDetailsScreenState
     return !widget.recurring &&
         schedule != null &&
         schedule.sessions.isNotEmpty &&
-        schedule.sessions.every((session) => session.canReschedule == true);
+        schedule.sessions.any((session) => session.canReschedule == true);
   }
 
   List<_EventReviewWorker> get _eventReviewWorkers {
@@ -376,10 +376,11 @@ class _MultiDayCleaningOrderDetailsScreenState
 
   Future<void> _reportRecurringLate(CleaningBookingSessionModel session) async {
     final sessionId = session.id;
-    final workerIds = session.reportableLateWorkerIds;
+    final workerIds = session.attendanceWorkerIdsFor('wait');
     if (!widget.recurring ||
         sessionId == null ||
-        !session.canReportLate ||
+        !session.allowsAttendanceAction('wait') ||
+        session.hasNoTravelAttendanceActions ||
         workerIds.isEmpty ||
         _busySessionId != null) {
       return;
@@ -387,7 +388,7 @@ class _MultiDayCleaningOrderDetailsScreenState
 
     final names = _workerNamesForIds(session, workerIds);
     final approved = await _confirmDialog(
-      title: 'العامل متأخر عن موعد الزيارة',
+      title: 'تأخر العامل',
       message:
           'مرّت مهلة التأخير${names.isEmpty ? '' : ' للعامل: ${names.join('، ')}'}. إذا اخترت الانتظار، سنسجل البلاغ وتبقى الزيارة فعالة. إذا لم يبدأ العامل التنقل بعد مهلة عدم التنقل سيظهر لك خيار الاستبدال أو الإلغاء دون رسوم.',
       confirmLabel: 'سأنتظر العامل',
@@ -409,40 +410,64 @@ class _MultiDayCleaningOrderDetailsScreenState
     CleaningBookingSessionModel session,
   ) async {
     final sessionId = session.id;
-    final workerIds = session.reportableNoTravelWorkerIds;
     if (!widget.recurring ||
         sessionId == null ||
-        !session.canReportNoTravel ||
-        workerIds.isEmpty ||
+        !session.hasNoTravelAttendanceActions ||
         _busySessionId != null) {
       return;
     }
 
-    final names = _workerNamesForIds(session, workerIds);
+    final displayWorkerIds = <int>{
+      ...session.attendanceWorkerIdsFor('wait'),
+      ...session.attendanceWorkerIdsFor('replace'),
+      ...session.attendanceWorkerIdsFor('cancel'),
+    }.toList(growable: false);
+    final names = _workerNamesForIds(session, displayWorkerIds);
+    final canWait = session.allowsAttendanceAction('wait');
+    final canReplace = session.allowsAttendanceAction('replace');
+    final canCancel = session.allowsAttendanceAction('cancel');
+
     final action = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('العامل لم يبدأ التنقل'),
+        title: const Text('لم يبدأ التنقل'),
         content: Text(
-          '${names.isEmpty ? 'العامل المعيّن' : names.join('، ')} لم يبدأ التنقل بعد انتهاء المهلة المحددة. يمكنك طلب بديل لهذه الزيارة أو إلغاء الزيارة دون رسوم إلغاء.',
+          '${names.isEmpty ? 'العامل المعيّن' : names.join('، ')} لم يبدأ التنقل بعد انتهاء المهلة المحددة. اختر فقط أحد الإجراءات المتاحة من الخادم لهذه الزيارة.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('رجوع'),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop('cancel'),
-            child: const Text('إلغاء الزيارة دون رسوم'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop('replace'),
-            child: const Text('استبدال العامل'),
-          ),
+          if (canWait)
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop('wait'),
+              child: const Text('سأنتظر العامل'),
+            ),
+          if (canCancel)
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+              child: const Text('إلغاء الزيارة دون رسوم'),
+            ),
+          if (canReplace)
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop('replace'),
+              child: const Text('استبدال العامل'),
+            ),
         ],
       ),
     );
     if (!mounted || action == null) return;
+
+    final workerIds = session.attendanceWorkerIdsFor(action);
+    if (workerIds.isEmpty) {
+      setState(() {
+        _actionError =
+            'تغيّرت حالة الزيارة ولم يعد هذا الإجراء متاحاً. حدّث الطلب وحاول مرة أخرى.';
+      });
+      await _load();
+      return;
+    }
 
     await _runSessionAction(
       session,
@@ -1171,13 +1196,16 @@ class _MultiDayCleaningOrderDetailsScreenState
         session.canCancel ||
         session.canSendSos ||
         (widget.recurring &&
-            (session.canReportLate ||
-                session.canReportNoTravel ||
+            (session.hasAttendanceActions ||
                 session.canReview ||
                 session.canOpenDispute));
   }
 
   Widget _sessionActions(CleaningBookingSessionModel session, bool busy) {
+    final hasNoTravelActions = session.hasNoTravelAttendanceActions;
+    final hasLateAction =
+        session.allowsAttendanceAction('wait') && !hasNoTravelActions;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1209,23 +1237,22 @@ class _MultiDayCleaningOrderDetailsScreenState
             label: const Text('تخطي هذه الزيارة'),
           ),
         ],
-        if (widget.recurring &&
-            (session.canReportLate || session.canReportNoTravel)) ...[
+        if (widget.recurring && (hasLateAction || hasNoTravelActions)) ...[
           if (session.canConfirmStartVerification ||
               session.canConfirmCompletion ||
               session.canSkip)
             const SizedBox(height: 8),
-          if (session.canReportNoTravel)
+          if (hasNoTravelActions)
             FilledButton.icon(
               onPressed: busy ? null : () => _handleRecurringNoTravel(session),
               icon: const Icon(Icons.no_transfer_rounded),
-              label: const Text('العامل لم يبدأ التنقل'),
+              label: const Text('لم يبدأ التنقل'),
             )
-          else if (session.canReportLate)
+          else if (hasLateAction)
             OutlinedButton.icon(
               onPressed: busy ? null : () => _reportRecurringLate(session),
               icon: const Icon(Icons.schedule_rounded),
-              label: const Text('الإبلاغ عن تأخر العامل'),
+              label: const Text('تأخر العامل'),
             ),
         ],
         if (widget.recurring &&
