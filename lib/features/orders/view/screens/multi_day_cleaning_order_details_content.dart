@@ -46,7 +46,7 @@ class _MultiDayCleaningOrderDetailsScreenState
     return !widget.recurring &&
         schedule != null &&
         schedule.sessions.isNotEmpty &&
-        schedule.sessions.every((session) => session.canReschedule == true);
+        schedule.sessions.any((session) => session.canReschedule == true);
   }
 
   List<_EventReviewWorker> get _eventReviewWorkers {
