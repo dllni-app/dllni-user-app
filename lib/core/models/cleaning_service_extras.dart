@@ -105,7 +105,9 @@ class CleaningMaterialLineModel {
       ),
       name: _cleaningExtrasString(json['name']),
       quantity: _cleaningExtrasDouble(json['quantity']),
-      unit: _cleaningExtrasString(json['unit']),
+      unit: _cleaningExtrasString(
+        json['unit'] ?? json['unitCode'] ?? json['unit_code'],
+      ),
       unitPrice: _cleaningExtrasDouble(json['unitPrice'] ?? json['unit_price']),
       totalPrice: _cleaningExtrasDouble(
         json['totalPrice'] ?? json['total_price'],
@@ -140,7 +142,11 @@ class CleaningSpecialServiceLineModel {
   factory CleaningSpecialServiceLineModel.fromJson(Map<String, dynamic> json) {
     return CleaningSpecialServiceLineModel(
       specialServiceId: _cleaningExtrasInt(
-        json['specialServiceId'] ?? json['special_service_id'] ?? json['id'],
+        json['specialServiceId'] ??
+            json['special_service_id'] ??
+            json['serviceId'] ??
+            json['service_id'] ??
+            json['id'],
       ),
       name: _cleaningExtrasString(json['name']),
       quantity: _cleaningExtrasDouble(json['quantity']),
@@ -156,7 +162,9 @@ class CleaningSpecialServiceLineModel {
       totalPrice: _cleaningExtrasDouble(
         json['totalPrice'] ?? json['total_price'],
       ),
-      imageUrl: _cleaningExtrasString(json['imageUrl'] ?? json['image_url']),
+      imageUrl: _cleaningExtrasString(
+        json['imageUrl'] ?? json['image_url'] ?? json['image'],
+      ),
       notes: _cleaningExtrasString(json['notes']),
     );
   }
@@ -184,28 +192,61 @@ class CleaningOpenTimeModel {
   final bool? isPricingFinal;
 
   factory CleaningOpenTimeModel.fromJson(Map<String, dynamic> json) {
+    final minimumMinutes = _cleaningExtrasDouble(
+      json['minimumBillableMinutes'] ?? json['minimum_billable_minutes'],
+    );
+    final actualMinutes = _cleaningExtrasDouble(
+      json['actualDurationMinutes'] ?? json['actual_duration_minutes'],
+    );
+    final billableMinutes = _cleaningExtrasDouble(
+      json['billableDurationMinutes'] ?? json['billable_duration_minutes'],
+    );
+
     return CleaningOpenTimeModel(
       workerCount: _cleaningExtrasInt(
-        json['workerCount'] ?? json['worker_count'],
+        json['workerCount'] ??
+            json['worker_count'] ??
+            json['requestedWorkerCount'] ??
+            json['requested_worker_count'],
       ),
       hourlyRate: _cleaningExtrasDouble(
         json['hourlyRate'] ?? json['hourly_rate'],
       ),
-      minimumDuration: _cleaningExtrasDouble(
-        json['minimumDuration'] ?? json['minimum_duration'],
-      ),
-      actualDuration: _cleaningExtrasDouble(
-        json['actualDuration'] ?? json['actual_duration'],
-      ),
-      billableDuration: _cleaningExtrasDouble(
-        json['billableDuration'] ?? json['billable_duration'],
-      ),
+      minimumDuration:
+          _cleaningExtrasDouble(
+            json['minimumDuration'] ?? json['minimum_duration'],
+          ) ??
+          _minutesToHours(minimumMinutes),
+      actualDuration:
+          _cleaningExtrasDouble(
+            json['actualDuration'] ?? json['actual_duration'],
+          ) ??
+          _minutesToHours(actualMinutes),
+      billableDuration:
+          _cleaningExtrasDouble(
+            json['billableDuration'] ?? json['billable_duration'],
+          ) ??
+          _minutesToHours(billableMinutes) ??
+          _minutesToHours(
+            _cleaningExtrasDouble(
+              json['preliminaryBillableMinutes'] ??
+                  json['preliminary_billable_minutes'],
+            ),
+          ),
       totalPrice: _cleaningExtrasDouble(
-        json['totalPrice'] ?? json['total_price'],
+        json['totalPrice'] ??
+            json['total_price'] ??
+            json['finalAmount'] ??
+            json['final_amount'] ??
+            json['preliminaryAmount'] ??
+            json['preliminary_amount'],
       ),
       currency: _cleaningExtrasString(json['currency']),
       isPricingFinal: _cleaningExtrasBool(
-        json['isPricingFinal'] ?? json['is_pricing_final'],
+        json['isPricingFinal'] ??
+            json['is_pricing_final'] ??
+            json['isFinalized'] ??
+            json['is_finalized'],
       ),
     );
   }
@@ -261,4 +302,9 @@ bool? _cleaningExtrasBool(dynamic value) {
     'false' || '0' => false,
     _ => null,
   };
+}
+
+double? _minutesToHours(double? minutes) {
+  if (minutes == null) return null;
+  return double.parse((minutes / 60).toStringAsFixed(2));
 }

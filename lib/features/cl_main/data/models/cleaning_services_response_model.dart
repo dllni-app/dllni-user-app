@@ -1,5 +1,11 @@
 import 'dart:convert';
 
+const List<String> cleaningServiceFallbackDirtinessLevels = <String>[
+  'light',
+  'medium',
+  'heavy',
+];
+
 int? _toInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;
@@ -24,6 +30,11 @@ bool? _toBool(dynamic value) {
   if (text == 'true' || text == '1') return true;
   if (text == 'false' || text == '0') return false;
   return null;
+}
+
+String? _toString(dynamic value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
 }
 
 CleaningServicesResponseModel cleaningServicesResponseModelFromJson(
@@ -65,6 +76,11 @@ class CleaningServiceModel {
   final String? name;
   final String? category;
   final bool? isActive;
+  final String? imageUrl;
+  final String? pricingUnit;
+  final double? baseUnitPrice;
+  final List<CleaningServiceDirtinessRuleModel> dirtinessRules;
+  final List<CleaningServiceEquipmentModel> equipment;
   final List<CleaningServicePricingModel> pricing;
 
   const CleaningServiceModel({
@@ -72,6 +88,11 @@ class CleaningServiceModel {
     this.name,
     this.category,
     this.isActive,
+    this.imageUrl,
+    this.pricingUnit,
+    this.baseUnitPrice,
+    this.dirtinessRules = const <CleaningServiceDirtinessRuleModel>[],
+    this.equipment = const <CleaningServiceEquipmentModel>[],
     this.pricing = const <CleaningServicePricingModel>[],
   });
 
@@ -84,12 +105,98 @@ class CleaningServiceModel {
               .toList(growable: false)
         : const <CleaningServicePricingModel>[];
 
+    final dirtinessRaw = json['dirtinessRules'] ?? json['dirtiness_rules'];
+    final dirtinessRules = dirtinessRaw is List
+        ? dirtinessRaw
+              .whereType<Map<String, dynamic>>()
+              .map(CleaningServiceDirtinessRuleModel.fromJson)
+              .where((rule) => rule.level != null && rule.isActive != false)
+              .toList(growable: false)
+        : const <CleaningServiceDirtinessRuleModel>[];
+
+    final equipmentRaw = json['equipment'];
+    final equipment = equipmentRaw is List
+        ? equipmentRaw
+              .whereType<Map<String, dynamic>>()
+              .map(CleaningServiceEquipmentModel.fromJson)
+              .where((item) => item.name != null)
+              .toList(growable: false)
+        : const <CleaningServiceEquipmentModel>[];
+
     return CleaningServiceModel(
       id: _toInt(json['id']),
-      name: (json['name'] ?? json['nameAr']) as String?,
-      category: (json['category']) as String?,
+      name: _toString(json['name'] ?? json['nameAr']),
+      category: _toString(json['category']),
       isActive: _toBool(json['isActive'] ?? json['is_active']),
+      imageUrl: _toString(json['image'] ?? json['imageUrl'] ?? json['image_url']),
+      pricingUnit: _toString(json['pricingUnit'] ?? json['pricing_unit']),
+      baseUnitPrice: _toDouble(json['baseUnitPrice'] ?? json['base_unit_price']),
+      dirtinessRules: dirtinessRules,
+      equipment: equipment,
       pricing: pricing,
+    );
+  }
+
+  List<String> get selectableDirtinessLevels {
+    final levels = <String>[];
+    for (final rule in dirtinessRules) {
+      final level = rule.level?.trim();
+      if (level == null || level.isEmpty || levels.contains(level)) continue;
+      levels.add(level);
+    }
+    return levels.isEmpty
+        ? cleaningServiceFallbackDirtinessLevels
+        : List<String>.unmodifiable(levels);
+  }
+
+  String normalizeDirtinessLevel(
+    String? value, {
+    String preferredFallback = 'medium',
+  }) {
+    final levels = selectableDirtinessLevels;
+    final normalized = value?.trim();
+    if (normalized != null && levels.contains(normalized)) return normalized;
+    if (levels.contains(preferredFallback)) return preferredFallback;
+    return levels.first;
+  }
+}
+
+class CleaningServiceDirtinessRuleModel {
+  final String? level;
+  final double? priceMultiplier;
+  final bool? isActive;
+
+  const CleaningServiceDirtinessRuleModel({
+    this.level,
+    this.priceMultiplier,
+    this.isActive,
+  });
+
+  factory CleaningServiceDirtinessRuleModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningServiceDirtinessRuleModel(
+      level: _toString(
+        json['level'] ?? json['dirtinessLevel'] ?? json['dirtiness_level'],
+      ),
+      priceMultiplier: _toDouble(
+        json['priceMultiplier'] ?? json['price_multiplier'],
+      ),
+      isActive: _toBool(json['isActive'] ?? json['is_active']),
+    );
+  }
+}
+
+class CleaningServiceEquipmentModel {
+  final int? id;
+  final String? name;
+
+  const CleaningServiceEquipmentModel({this.id, this.name});
+
+  factory CleaningServiceEquipmentModel.fromJson(Map<String, dynamic> json) {
+    return CleaningServiceEquipmentModel(
+      id: _toInt(json['id']),
+      name: _toString(json['name']),
     );
   }
 }
@@ -111,9 +218,10 @@ class CleaningServicePricingModel {
 
   factory CleaningServicePricingModel.fromJson(Map<String, dynamic> json) {
     return CleaningServicePricingModel(
-      propertyType: (json['propertyType'] ?? json['property_type']) as String?,
-      livingRoomSize:
-          (json['livingRoomSize'] ?? json['living_room_size']) as String?,
+      propertyType: _toString(json['propertyType'] ?? json['property_type']),
+      livingRoomSize: _toString(
+        json['livingRoomSize'] ?? json['living_room_size'],
+      ),
       basePrice: _toDouble(json['basePrice'] ?? json['base_price']),
       pricePerSqm: _toDouble(json['pricePerSqm'] ?? json['price_per_sqm']),
       minHours: _toDouble(json['minHours'] ?? json['min_hours']),

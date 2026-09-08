@@ -55,6 +55,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currency = estimatedOpenTime?.currency ?? 'SYP';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -119,10 +120,12 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (isSpecialServicesLoading)
-                const Center(child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: CircularProgressIndicator(),
-                ))
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
               else if (specialServicesError != null)
                 _InlineFeedback(
                   message: 'cleaningExtras.estimateError'.tr(),
@@ -134,13 +137,14 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                   style: const TextStyle(color: Color(0xFF6B7280)),
                 )
               else ...[
-                for (var index = 0; index < specialServices.length) ...[
+                for (var index = 0; index < specialServices.length; index++) ...[
                   _SpecialServiceForm(
                     key: ValueKey<String>(
                       '${specialServices[index].specialServiceId}-$index',
                     ),
                     service: specialServices[index],
                     availableServices: availableSpecialServices,
+                    currency: currency,
                     onChanged: (service) =>
                         onSpecialServiceChanged(index, service),
                     onRemove: () => onRemoveSpecialService(index),
@@ -218,7 +222,10 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
               ],
               if (estimatedOpenTime != null) ...[
                 const SizedBox(height: 12),
-                _OpenTimeCard(openTime: estimatedOpenTime!, currency: currency),
+                _OpenTimeCard(
+                  openTime: estimatedOpenTime!,
+                  currency: currency,
+                ),
               ],
             ],
           ),
@@ -248,6 +255,7 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!_hasContent) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -271,7 +279,9 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
             _CalculatedLinesCard(
               title: 'cleaningExtras.materialsTitle'.tr(),
               children: materials
-                  .map((line) => _MaterialLine(line: line, currency: currency))
+                  .map(
+                    (line) => _MaterialLine(line: line, currency: currency),
+                  )
                   .toList(growable: false),
             ),
           ],
@@ -281,7 +291,10 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
               title: 'cleaningExtras.specialServicesTitle'.tr(),
               children: specialServices
                   .map(
-                    (line) => _SpecialServiceLine(line: line, currency: currency),
+                    (line) => _SpecialServiceLine(
+                      line: line,
+                      currency: currency,
+                    ),
                   )
                   .toList(growable: false),
             ),
@@ -301,17 +314,33 @@ class _SpecialServiceForm extends StatelessWidget {
     required super.key,
     required this.service,
     required this.availableServices,
+    required this.currency,
     required this.onChanged,
     required this.onRemove,
   });
 
   final CleaningSpecialServiceRequest service;
   final List<CleaningServiceModel> availableServices;
+  final String currency;
   final ValueChanged<CleaningSpecialServiceRequest> onChanged;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
+    final selectedService = _findServiceById(
+      availableServices,
+      service.specialServiceId,
+    );
+    final dirtinessLevels =
+        selectedService?.selectableDirtinessLevels ??
+        cleaningServiceFallbackDirtinessLevels;
+    final selectedDirtiness = selectedService?.normalizeDirtinessLevel(
+          service.dirtinessLevel,
+        ) ??
+        (dirtinessLevels.contains(service.dirtinessLevel)
+            ? service.dirtinessLevel
+            : dirtinessLevels.first);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -338,9 +367,27 @@ class _SpecialServiceForm extends StatelessWidget {
                 )
                 .toList(growable: false),
             onChanged: (id) {
-              if (id != null) onChanged(service.copyWith(specialServiceId: id));
+              if (id == null) return;
+              final nextService = _findServiceById(availableServices, id);
+              final nextDirtiness = nextService?.normalizeDirtinessLevel(
+                    service.dirtinessLevel,
+                  ) ??
+                  service.dirtinessLevel;
+              onChanged(
+                service.copyWith(
+                  specialServiceId: id,
+                  dirtinessLevel: nextDirtiness,
+                ),
+              );
             },
           ),
+          if (selectedService != null) ...[
+            const SizedBox(height: 10),
+            _SpecialServiceCatalogPreview(
+              service: selectedService,
+              currency: currency,
+            ),
+          ],
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -359,16 +406,16 @@ class _SpecialServiceForm extends StatelessWidget {
                 },
               );
               final dirtiness = DropdownButtonFormField<String>(
-                value: service.dirtinessLevel,
+                value: selectedDirtiness,
                 decoration: InputDecoration(
                   labelText: 'cleaningExtras.dirtiness'.tr(),
                   border: const OutlineInputBorder(),
                 ),
-                items: const <String>['light', 'medium', 'heavy']
+                items: dirtinessLevels
                     .map(
                       (value) => DropdownMenuItem<String>(
                         value: value,
-                        child: Text('cleaningExtras.$value'.tr()),
+                        child: Text(_dirtinessDisplayLabel(value)),
                       ),
                     )
                     .toList(growable: false),
@@ -378,6 +425,7 @@ class _SpecialServiceForm extends StatelessWidget {
                   }
                 },
               );
+
               if (constraints.maxWidth < 600) {
                 return Column(
                   children: [
@@ -387,6 +435,7 @@ class _SpecialServiceForm extends StatelessWidget {
                   ],
                 );
               }
+
               return Row(
                 children: [
                   Expanded(child: quantity),
@@ -405,7 +454,10 @@ class _SpecialServiceForm extends StatelessWidget {
               border: const OutlineInputBorder(),
             ),
             onChanged: (value) => onChanged(
-              service.copyWith(notes: value, clearNotes: value.trim().isEmpty),
+              service.copyWith(
+                notes: value,
+                clearNotes: value.trim().isEmpty,
+              ),
             ),
           ),
           Align(
@@ -417,6 +469,149 @@ class _SpecialServiceForm extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SpecialServiceCatalogPreview extends StatelessWidget {
+  const _SpecialServiceCatalogPreview({
+    required this.service,
+    required this.currency,
+  });
+
+  final CleaningServiceModel service;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = service.imageUrl?.trim();
+    final equipment = service.equipment
+        .map((item) => item.name?.trim())
+        .whereType<String>()
+        .where((name) => name.isNotEmpty)
+        .toList(growable: false);
+
+    return Semantics(
+      container: true,
+      label: service.name,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (imageUrl != null && imageUrl.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    width: 72,
+                    height: 72,
+                    alignment: Alignment.center,
+                    color: const Color(0xFFF3F4F6),
+                    child: const Icon(
+                      Icons.cleaning_services_outlined,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (service.pricingUnit?.trim().isNotEmpty == true)
+                    _CatalogMetaLine(
+                      label: 'cleaningExtras.pricingUnit'.tr(),
+                      value: service.pricingUnit!.trim(),
+                    ),
+                  if (service.baseUnitPrice != null)
+                    _CatalogMetaLine(
+                      label: 'cleaningExtras.baseUnitPrice'.tr(),
+                      value: _money(service.baseUnitPrice, currency) ?? '-',
+                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'cleaningExtras.requiredEquipment'.tr(),
+                    style: const TextStyle(
+                      color: Color(0xFF374151),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (equipment.isEmpty)
+                    Text(
+                      'cleaningExtras.noRequiredEquipment'.tr(),
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12,
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: equipment
+                          .map(
+                            (name) => Chip(
+                              visualDensity: VisualDensity.compact,
+                              label: Text(name),
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CatalogMetaLine extends StatelessWidget {
+  const _CatalogMetaLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontSize: 12,
+              ),
+            ),
+            TextSpan(
+              text: value,
+              style: const TextStyle(
+                color: Color(0xFF111827),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -477,12 +672,14 @@ class _SpecialServiceLine extends StatelessWidget {
     final quantity = _number(line.quantity);
     final details = <String>[
       if (quantity != null) quantity,
-      if (line.pricingUnit?.trim().isNotEmpty == true) line.pricingUnit!.trim(),
+      if (line.pricingUnit?.trim().isNotEmpty == true)
+        line.pricingUnit!.trim(),
       if (line.dirtinessLabel?.trim().isNotEmpty == true)
         line.dirtinessLabel!.trim()
       else if (line.dirtinessLevel?.trim().isNotEmpty == true)
-        'cleaningExtras.${line.dirtinessLevel!.trim()}'.tr(),
+        _dirtinessDisplayLabel(line.dirtinessLevel!.trim()),
     ];
+
     return _DetailLine(
       title: line.name ?? '-',
       subtitle: details.join(' · '),
@@ -529,7 +726,9 @@ class _OpenTimeCard extends StatelessWidget {
           _money(openTime.totalPrice, currency),
         ),
     ];
+
     if (rows.isEmpty) return const SizedBox.shrink();
+
     return _CalculatedLinesCard(
       title: 'cleaningExtras.openTimeEstimate'.tr(),
       children: rows
@@ -561,6 +760,7 @@ class _DetailLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final normalizedImage = imageUrl?.trim();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -574,7 +774,8 @@ class _DetailLine extends StatelessWidget {
                 width: 36,
                 height: 36,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox(width: 36, height: 36),
+                errorBuilder: (_, _, _) =>
+                    const SizedBox(width: 36, height: 36),
               ),
             ),
             const SizedBox(width: 8),
@@ -583,11 +784,17 @@ class _DetailLine extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 if (subtitle.trim().isNotEmpty)
                   Text(
                     subtitle,
-                    style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                    ),
                   ),
               ],
             ),
@@ -633,14 +840,32 @@ class _InlineFeedback extends StatelessWidget {
   }
 }
 
+CleaningServiceModel? _findServiceById(
+  List<CleaningServiceModel> services,
+  int id,
+) {
+  for (final service in services) {
+    if (service.id == id) return service;
+  }
+  return null;
+}
+
+String _dirtinessDisplayLabel(String value) {
+  final normalized = value.trim();
+  return switch (normalized) {
+    'light' || 'medium' || 'heavy' => 'cleaningExtras.$normalized'.tr(),
+    _ => normalized.replaceAll('_', ' ').replaceAll('-', ' '),
+  };
+}
+
 String? _number(double? value) {
   if (value == null) return null;
   return value == value.roundToDouble()
       ? value.toInt().toString()
-      : value.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(
-          RegExp(r'\.$'),
-          '',
-        );
+      : value
+            .toStringAsFixed(2)
+            .replaceFirst(RegExp(r'0+$'), '')
+            .replaceFirst(RegExp(r'\.$'), '');
 }
 
 String? _money(double? value, String currency) {

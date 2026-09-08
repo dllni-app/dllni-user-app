@@ -301,22 +301,23 @@ class _ClMainServiceScheduleScreenState
                             specialServices: _serviceExtras.specialServices,
                             openTime: _serviceExtras.openTime,
                             availableSpecialServices: _availableSpecialServices,
-                            materials: estimate?.materials ??
+                            materials:
+                                estimate?.materials ??
                                 const <CleaningMaterialLineModel>[],
                             estimatedSpecialServices:
                                 estimate?.specialServices ??
-                                    const <CleaningSpecialServiceLineModel>[],
+                                const <CleaningSpecialServiceLineModel>[],
                             estimatedOpenTime: estimate?.openTime,
                             isSpecialServicesLoading:
                                 _specialServicesStatus == BlocStatus.loading,
                             isEstimateLoading:
                                 state.estimatePriceStatus == BlocStatus.loading,
-                            specialServicesError: _specialServicesStatus ==
-                                    BlocStatus.failed
+                            specialServicesError:
+                                _specialServicesStatus == BlocStatus.failed
                                 ? _specialServicesErrorMessage
                                 : null,
-                            estimateError: state.estimatePriceStatus ==
-                                    BlocStatus.failed
+                            estimateError:
+                                state.estimatePriceStatus == BlocStatus.failed
                                 ? state.errorMessage
                                 : null,
                             onRequestMaterialsChanged: (value) =>
@@ -1087,17 +1088,48 @@ class _ClMainServiceScheduleScreenState
         _specialServicesStatus = BlocStatus.failed;
         _specialServicesErrorMessage = failure.message;
       }),
-      (result) => setState(() {
-        _specialServicesStatus = BlocStatus.success;
-        _specialServicesErrorMessage = null;
-        _availableSpecialServices = result.data
+      (result) {
+        final catalog = result.data
             .where(
               (service) =>
                   service.id != null && service.name?.trim().isNotEmpty == true,
             )
             .toList(growable: false);
-      }),
+        setState(() {
+          _specialServicesStatus = BlocStatus.success;
+          _specialServicesErrorMessage = null;
+          _availableSpecialServices = catalog;
+          _serviceExtras = _serviceExtras.copyWith(
+            specialServices: _normalizeSpecialServicesForCatalog(
+              _serviceExtras.specialServices,
+              catalog,
+            ),
+          );
+        });
+      },
     );
+  }
+
+  List<CleaningSpecialServiceRequest> _normalizeSpecialServicesForCatalog(
+    List<CleaningSpecialServiceRequest> requests,
+    List<CleaningServiceModel> catalog,
+  ) {
+    if (requests.isEmpty || catalog.isEmpty) return requests;
+    return requests.map((request) {
+      CleaningServiceModel? selected;
+      for (final service in catalog) {
+        if (service.id == request.specialServiceId) {
+          selected = service;
+          break;
+        }
+      }
+      if (selected == null) return request;
+      final normalized = selected.normalizeDirtinessLevel(
+        request.dirtinessLevel,
+      );
+      if (normalized == request.dirtinessLevel) return request;
+      return request.copyWith(dirtinessLevel: normalized);
+    }).toList(growable: false);
   }
 
   void _updateServiceExtras(
@@ -1127,7 +1159,7 @@ class _ClMainServiceScheduleScreenState
           CleaningSpecialServiceRequest(
             specialServiceId: id,
             quantity: 1,
-            dirtinessLevel: 'medium',
+            dirtinessLevel: firstService.normalizeDirtinessLevel(null),
           ),
         ],
       ),
@@ -1141,11 +1173,28 @@ class _ClMainServiceScheduleScreenState
     ClMainState state,
   ) {
     if (index < 0 || index >= _serviceExtras.specialServices.length) return;
+    CleaningServiceModel? catalogService;
+    for (final item in _availableSpecialServices) {
+      if (item.id == service.specialServiceId) {
+        catalogService = item;
+        break;
+      }
+    }
+    final normalizedService = catalogService == null
+        ? service
+        : service.copyWith(
+            dirtinessLevel: catalogService.normalizeDirtinessLevel(
+              service.dirtinessLevel,
+            ),
+          );
     final services = List<CleaningSpecialServiceRequest>.of(
       _serviceExtras.specialServices,
     );
-    services[index] = service;
-    _updateServiceExtras(_serviceExtras.copyWith(specialServices: services), state);
+    services[index] = normalizedService;
+    _updateServiceExtras(
+      _serviceExtras.copyWith(specialServices: services),
+      state,
+    );
   }
 
   void _removeSpecialService(int index, ClMainState state) {
@@ -1153,7 +1202,10 @@ class _ClMainServiceScheduleScreenState
     final services = List<CleaningSpecialServiceRequest>.of(
       _serviceExtras.specialServices,
     )..removeAt(index);
-    _updateServiceExtras(_serviceExtras.copyWith(specialServices: services), state);
+    _updateServiceExtras(
+      _serviceExtras.copyWith(specialServices: services),
+      state,
+    );
   }
 
   void _setOpenTimeEnabled(bool enabled, ClMainState state) {
@@ -1330,9 +1382,9 @@ class _ClMainServiceScheduleScreenState
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
-           couponCode: _appliedCouponCode,
-           serviceExtras: _serviceExtras,
-           termsAccepted: true,
+          couponCode: _appliedCouponCode,
+          serviceExtras: _serviceExtras,
+          termsAccepted: true,
         ),
       ),
     );
@@ -1395,14 +1447,15 @@ class _ClMainServiceScheduleScreenState
     final stateWorkerCount = state.numberOfWorkers < 1
         ? 1
         : state.numberOfWorkers;
-    final requestedWorkers = _serviceExtras.openTime?.workerCount ??
+    final requestedWorkers =
+        _serviceExtras.openTime?.workerCount ??
         (_isRecurring
-        ? (_recurringWorkerScope == CleaningRecurringWorkerScope.specific
-              ? (workerIds.isEmpty ? 1 : workerIds.length)
-              : stateWorkerCount)
-        : (workerIds.length > stateWorkerCount
-              ? workerIds.length
-              : stateWorkerCount));
+            ? (_recurringWorkerScope == CleaningRecurringWorkerScope.specific
+                  ? (workerIds.isEmpty ? 1 : workerIds.length)
+                  : stateWorkerCount)
+            : (workerIds.length > stateWorkerCount
+                  ? workerIds.length
+                  : stateWorkerCount));
     final assignmentMode = _serviceExtras.openTime != null
         ? CleaningAssignmentMode.openCount
         : _isRecurring
@@ -1446,10 +1499,10 @@ class _ClMainServiceScheduleScreenState
               ? _recurringHoursPerVisit
               : null,
           recurringWorkerScope: _recurringWorkerScope,
-           workerRoomAssignments: workerRoomAssignments.isEmpty
-               ? null
-               : workerRoomAssignments,
-           serviceExtras: _serviceExtras,
+          workerRoomAssignments: workerRoomAssignments.isEmpty
+              ? null
+              : workerRoomAssignments,
+          serviceExtras: _serviceExtras,
         ),
       ),
     );
