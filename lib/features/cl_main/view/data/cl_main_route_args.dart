@@ -1,5 +1,6 @@
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/estimate_price_response_model.dart';
+import '../../data/models/cleaning_suite_config_model.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_type.dart';
 import '../manager/bloc/cl_main_bloc.dart';
@@ -21,12 +22,16 @@ class ClMainOccasionOption {
   final String bookingValue;
   final String title;
   final String imagePath;
+  final int? eventTypeId;
+  final List<CleaningDynamicFieldConfigModel> dynamicFields;
 
   const ClMainOccasionOption({
     required String id,
     required this.title,
     required this.imagePath,
     String? bookingValue,
+    this.eventTypeId,
+    this.dynamicFields = const <CleaningDynamicFieldConfigModel>[],
   }) : bookingValue = bookingValue ?? id,
        id = (bookingValue ?? id) == 'birthday'
            ? 'birthday_party'
@@ -64,6 +69,8 @@ class ClMainOccasionScheduleArgs {
   final String specialRequirementLabel;
   final AddressListItem? defaultAddress;
   final String? notes;
+  final int? eventTypeId;
+  final Map<String, dynamic> eventDynamicAnswers;
 
   const ClMainOccasionScheduleArgs({
     required this.option,
@@ -82,6 +89,8 @@ class ClMainOccasionScheduleArgs {
     required this.specialRequirementLabel,
     this.defaultAddress,
     this.notes,
+    this.eventTypeId,
+    this.eventDynamicAnswers = const <String, dynamic>{},
   });
 }
 

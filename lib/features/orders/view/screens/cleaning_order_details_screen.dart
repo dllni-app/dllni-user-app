@@ -45,8 +45,10 @@ import '../widgets/cleaning_accepted_workers_section_widget.dart';
 import '../widgets/cleaning_cancel_reason_dialog.dart';
 import '../widgets/cleaning_completion_decision_sheet.dart';
 import '../widgets/cleaning_preferred_worker_card_widget.dart';
+import '../widgets/cleaning_open_time_live_card.dart';
 import '../widgets/cleaning_recurring_schedule_launcher_widget.dart';
 import '../widgets/cleaning_room_assignments_section_widget.dart';
+import '../widgets/cleaning_schedule_change_resolution_card.dart';
 import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
 import 'cleaning_order_reschedule_screen.dart';
@@ -849,6 +851,14 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
+                    if (order.scheduleChangeRequest != null) ...[
+                      const SizedBox(height: 12),
+                      CleaningScheduleChangeResolutionCard(
+                        change: order.scheduleChangeRequest!,
+                        requiredWorkers: order.numberOfWorkers ?? 1,
+                        onResolved: () => _fetchDetails(showLoading: false),
+                      ),
+                    ],
                     if (order.materials.isNotEmpty ||
                         order.specialServices.isNotEmpty ||
                         order.openTime != null) ...[
@@ -859,6 +869,13 @@ class _CleaningOrderDetailsScreenState
                         openTime: order.openTime,
                         currency: order.openTime?.currency ?? 'SYP',
                       ),
+                      if (order.openTime != null) ...[
+                        const SizedBox(height: 12),
+                        CleaningOpenTimeLiveCard(
+                          orderId: order.id ?? _activeOrderId,
+                          initialValue: order.openTime!,
+                        ),
+                      ],
                     ],
                     if (!isTerminalStatus) ...[
                       const SizedBox(height: 14),

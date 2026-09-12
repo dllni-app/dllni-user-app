@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/cleaning_booking_schedule_model.dart';
 import '../../data/source/cleaning_session_remote_data_source.dart';
 import '../../domain/usecases/submit_cleaning_review_use_case.dart';
+import '../widgets/cleaning_open_time_live_card.dart';
 import 'multi_day_cleaning_order_reschedule_screen.dart';
 import 'recurring_cleaning_schedule_revision_screen.dart';
 
@@ -45,6 +46,7 @@ class _MultiDayCleaningOrderDetailsScreenState
     final schedule = _schedule;
     return !widget.recurring &&
         schedule != null &&
+        !schedule.isOpenTime &&
         schedule.sessions.isNotEmpty &&
         schedule.sessions.any((session) => session.canReschedule == true);
   }
@@ -878,10 +880,14 @@ class _MultiDayCleaningOrderDetailsScreenState
                 Expanded(
                   child: AppText.titleMedium(
                     bookingNumber == null || bookingNumber.isEmpty
-                        ? (widget.recurring
+                        ? (schedule.isOpenTime
+                              ? 'طلب وقت مفتوح - ${schedule.daysCount} جلسات'
+                              : widget.recurring
                               ? 'حجز تنظيف دوري - ${schedule.daysCount} زيارات'
                               : 'مساعدة مناسبة - ${schedule.daysCount} أيام')
-                        : (widget.recurring
+                        : (schedule.isOpenTime
+                              ? 'طلب وقت مفتوح #$bookingNumber'
+                              : widget.recurring
                               ? 'حجز تنظيف دوري #$bookingNumber'
                               : 'مساعدة مناسبة #$bookingNumber'),
                     fontWeight: FontWeight.w800,
@@ -920,7 +926,11 @@ class _MultiDayCleaningOrderDetailsScreenState
         ],
         const SizedBox(height: 16),
         AppText.titleSmall(
-          widget.recurring ? 'الزيارات' : 'أيام التنفيذ',
+          schedule.isOpenTime
+              ? 'جلسات الوقت المفتوح'
+              : widget.recurring
+              ? 'الزيارات'
+              : 'أيام التنفيذ',
           fontWeight: FontWeight.w800,
           textAlign: TextAlign.start,
         ),
@@ -940,7 +950,9 @@ class _MultiDayCleaningOrderDetailsScreenState
             border: Border.all(color: const Color(0xFFBFDBFE)),
           ),
           child: AppText.bodySmall(
-            widget.recurring
+            schedule.isOpenTime
+                ? 'لكل جلسة عداد وفاتورة وطلب تمديد أو إنهاء مستقل. انتهاء جلسة لا يغلق الجلسات الأخرى.'
+                : widget.recurring
                 ? 'كل زيارة مستقلة داخل نفس رقم الحجز. غياب عامل أو استبداله في زيارة لا يلغي الزيارات الأخرى.'
                 : 'كل يوم هو جلسة تنفيذ مستقلة داخل نفس رقم الحجز. إكمال يوم لا يغلق المناسبة قبل انتهاء آخر جلسة مطلوبة.',
             color: const Color(0xFF1E3A8A),
@@ -1106,7 +1118,9 @@ class _MultiDayCleaningOrderDetailsScreenState
             children: [
               Expanded(
                 child: AppText.bodyLarge(
-                  widget.recurring
+                  session.isOpenTime
+                      ? 'الجلسة ${session.sequence} من $totalDays'
+                      : widget.recurring
                       ? 'الزيارة ${session.sequence} من $totalDays'
                       : 'اليوم ${session.sequence} من $totalDays',
                   fontWeight: FontWeight.w800,
@@ -1138,6 +1152,15 @@ class _MultiDayCleaningOrderDetailsScreenState
               'سعر الجلسة',
               '${_money(session.pricing!.totalPrice!)} ${session.pricing?.currency ?? _envelope?.currency ?? ''}'
                   .trim(),
+            ),
+          ],
+          if (session.openTime != null && session.id != null) ...[
+            const SizedBox(height: 12),
+            CleaningOpenTimeLiveCard(
+              key: ValueKey<String>('open-time-session-${session.id}'),
+              orderId: widget.orderId,
+              sessionId: session.id,
+              initialValue: session.openTime!,
             ),
           ],
           if (widget.recurring &&

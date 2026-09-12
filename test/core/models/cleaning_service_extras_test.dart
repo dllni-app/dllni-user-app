@@ -19,6 +19,7 @@ void main() {
 
       expect(request.toJson(), <String, dynamic>{
         'requestMaterials': true,
+        'materials': <String, dynamic>{'providedByPlatform': true},
         'specialServices': <Map<String, dynamic>>[
           <String, dynamic>{
             'specialServiceId': 12,
@@ -27,7 +28,10 @@ void main() {
             'notes': 'focus on edges',
           },
         ],
-        'openTime': <String, dynamic>{'workerCount': 2},
+        'openTime': <String, dynamic>{
+          'workerCount': 2,
+          'expectedMaxMinutes': 480,
+        },
       });
     });
 
@@ -44,10 +48,14 @@ void main() {
       );
 
       final payload = request.toJson();
-      final service = (payload['specialServices'] as List<dynamic>).single
-          as Map<String, dynamic>;
+      final service =
+          (payload['specialServices'] as List<dynamic>).single
+              as Map<String, dynamic>;
 
       expect(payload['requestMaterials'], isFalse);
+      expect(payload['materials'], <String, dynamic>{
+        'providedByPlatform': false,
+      });
       expect(payload.containsKey('openTime'), isFalse);
       expect(service.containsKey('notes'), isFalse);
       expect(service['dirtinessLevel'], 'deep');
@@ -167,6 +175,71 @@ void main() {
       expect(openTime.billableDuration, 1);
       expect(openTime.totalPrice, 100);
       expect(openTime.isPricingFinal, isFalse);
+    });
+
+    test('serializes selected sessions and decimal special-service items', () {
+      const request = CleaningServiceExtrasRequest(
+        specialServices: <CleaningSpecialServiceRequest>[
+          CleaningSpecialServiceRequest(
+            specialServiceId: 4,
+            sessionIds: <int>[2, 4],
+            items: <CleaningSpecialServiceItemRequest>[
+              CleaningSpecialServiceItemRequest(
+                quantity: 2.75,
+                dirtinessLevelId: 3,
+                notes: 'بقعة جانبية',
+                attachments: <String>['before/a.jpg'],
+              ),
+            ],
+          ),
+        ],
+        openTime: CleaningOpenTimeRequest(
+          workerCount: 2,
+          expectedMaxMinutes: 240,
+          sessions: <CleaningOpenTimeSessionRequest>[
+            CleaningOpenTimeSessionRequest(date: '2026-09-12', time: '10:00'),
+          ],
+        ),
+      );
+
+      final payload = request.toJson();
+      final special = (payload['specialServices'] as List).single as Map;
+      final item = (special['items'] as List).single as Map;
+      expect(special['sessionIds'], <int>[2, 4]);
+      expect(item['quantity'], 2.75);
+      expect(item['dirtinessLevelId'], 3);
+      expect((payload['openTime'] as Map)['expectedMaxMinutes'], 240);
+      expect((payload['openTime'] as Map)['sessions'], hasLength(1));
+    });
+
+    test('parses live Open-Time policy and pending extension', () {
+      final openTime = cleaningOpenTimeEnvelopeFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'openTime': <String, dynamic>{
+            'serverNow': '2026-09-09T10:00:00Z',
+            'ceilingEndsAt': '2026-09-09T14:00:00Z',
+            'expectedMaxMinutes': 240,
+            'hardMaxMinutes': 480,
+            'warningMinutes': 30,
+            'extensionOptions': <int>[15, 30, 60],
+            'remainingMinutes': 240,
+            'liveAmount': 350,
+            'liveBillableMinutes': 60,
+            'endStatus': 'pending',
+            'pendingExtension': <String, dynamic>{
+              'id': 9,
+              'requestedMinutes': 30,
+              'status': 'pending',
+            },
+          },
+        },
+      });
+
+      expect(openTime.expectedMaxMinutes, 240);
+      expect(openTime.hardMaxMinutes, 480);
+      expect(openTime.extensionOptions, <int>[15, 30, 60]);
+      expect(openTime.pendingExtension?.id, 9);
+      expect(openTime.liveAmount, 350);
     });
   });
 }

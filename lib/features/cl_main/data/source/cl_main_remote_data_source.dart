@@ -9,6 +9,7 @@ import '../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../models/cleaning_banners_response_model.dart';
 import '../models/cleaning_services_response_model.dart';
+import '../models/cleaning_suite_config_model.dart';
 import '../models/create_cleaning_order_response_model.dart';
 import '../models/female_worker_safety_policy_model.dart';
 import '../models/previous_workers_response_model.dart';
@@ -78,6 +79,14 @@ class ClMainRemoteDataSource with HandlingApiManager {
         endPoint: '/api/v1/user/cleaning/orders/female-worker-safety-policy',
       ),
       jsonConvert: (json) => FemaleWorkerSafetyPolicyModel.fromJson(json),
+    );
+  }
+
+  Future<CleaningSuiteConfigModel> getCleaningSuiteConfig() {
+    return wrapHandlingApi(
+      tryCall: () =>
+          dioNetwork.getData(endPoint: '/api/v1/cleaning/suite-config'),
+      jsonConvert: cleaningSuiteConfigModelFromJson,
     );
   }
 

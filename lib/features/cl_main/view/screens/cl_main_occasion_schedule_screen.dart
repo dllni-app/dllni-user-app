@@ -1058,6 +1058,8 @@ class _ClMainOccasionScheduleScreenState
         params: CreateCleaningOrderParams.eventAssistance(
           addressId: addressId,
           eventType: args.eventType,
+          eventTypeId: args.eventTypeId,
+          eventDynamicAnswers: args.eventDynamicAnswers,
           guestCount: args.guestsCount,
           venueType: args.venueType,
           customService: args.customService,
@@ -1112,6 +1114,8 @@ class _ClMainOccasionScheduleScreenState
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams.eventAssistance(
           eventType: args.eventType,
+          eventTypeId: args.eventTypeId,
+          eventDynamicAnswers: args.eventDynamicAnswers,
           guestCount: args.guestsCount,
           venueType: args.venueType,
           customService: args.customService,

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:dllni_user_app/core/models/cleaning_service_extras.dart';
+
 Map<String, dynamic> _map(dynamic value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) {
@@ -375,6 +377,8 @@ class CleaningBookingSessionModel {
   final bool canConfirmCompletion;
   final bool canSendSos;
   final bool canExtend;
+  final bool canRequestOpenTimeExtension;
+  final bool canRequestOpenTimeEnd;
   final bool canCancel;
   final bool canSkip;
   final bool canReportLate;
@@ -412,6 +416,7 @@ class CleaningBookingSessionModel {
   final String? skipReason;
   final CleaningSessionWorkerAssignmentModel? workerAssignmentState;
   final List<CleaningSessionWorkerAssignmentModel> workerAssignments;
+  final CleaningOpenTimeModel? openTime;
 
   const CleaningBookingSessionModel({
     this.id,
@@ -432,6 +437,8 @@ class CleaningBookingSessionModel {
     required this.canConfirmCompletion,
     required this.canSendSos,
     required this.canExtend,
+    this.canRequestOpenTimeExtension = false,
+    this.canRequestOpenTimeEnd = false,
     required this.canCancel,
     this.canSkip = false,
     this.canReportLate = false,
@@ -469,6 +476,7 @@ class CleaningBookingSessionModel {
     this.skipReason,
     this.workerAssignmentState,
     this.workerAssignments = const <CleaningSessionWorkerAssignmentModel>[],
+    this.openTime,
   });
 
   factory CleaningBookingSessionModel.fromJson(Map<String, dynamic> json) {
@@ -533,6 +541,17 @@ class CleaningBookingSessionModel {
           false,
       canSendSos: _bool(json['canSendSos'] ?? json['can_send_sos']) ?? false,
       canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
+      canRequestOpenTimeExtension:
+          _bool(
+            json['canRequestOpenTimeExtension'] ??
+                json['can_request_open_time_extension'],
+          ) ??
+          false,
+      canRequestOpenTimeEnd:
+          _bool(
+            json['canRequestOpenTimeEnd'] ?? json['can_request_open_time_end'],
+          ) ??
+          false,
       canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
       canSkip: _bool(json['canSkip'] ?? json['can_skip']) ?? false,
       canReportLate:
@@ -613,6 +632,11 @@ class CleaningBookingSessionModel {
                 )
                 .toList(growable: false)
           : const <CleaningSessionWorkerAssignmentModel>[],
+      openTime: (json['openTime'] ?? json['open_time']) is Map
+          ? CleaningOpenTimeModel.fromJson(
+              _map(json['openTime'] ?? json['open_time']),
+            )
+          : null,
     );
   }
 
@@ -661,6 +685,7 @@ class CleaningBookingSessionModel {
       allowsAttendanceAction('replace') || allowsAttendanceAction('cancel');
 
   bool get canStart => canStartWork || canStartTravel;
+  bool get isOpenTime => sessionType == 'open_time' || openTime != null;
   bool get isCompleted => status == 'completed';
   bool get isCancelled => status == 'cancelled';
   bool get isSkipped => status == 'skipped';
@@ -692,6 +717,7 @@ class CleaningBookingSessionModel {
 class CleaningBookingScheduleModel {
   final String mode;
   final bool isRecurring;
+  final bool isOpenTime;
   final bool isPaused;
   final bool canPause;
   final bool canResume;
@@ -711,6 +737,7 @@ class CleaningBookingScheduleModel {
   const CleaningBookingScheduleModel({
     required this.mode,
     this.isRecurring = false,
+    this.isOpenTime = false,
     this.isPaused = false,
     this.canPause = false,
     this.canResume = false,
@@ -745,6 +772,9 @@ class CleaningBookingScheduleModel {
       isRecurring:
           _bool(json['isRecurring'] ?? json['is_recurring']) ??
           sessions.any((item) => item.sessionType == 'recurring_cleaning'),
+      isOpenTime:
+          _bool(json['isOpenTime'] ?? json['is_open_time']) ??
+          sessions.any((item) => item.isOpenTime),
       isPaused: _bool(json['isPaused'] ?? json['is_paused']) ?? false,
       canPause: _bool(json['canPause'] ?? json['can_pause']) ?? false,
       canResume: _bool(json['canResume'] ?? json['can_resume']) ?? false,

@@ -3,6 +3,7 @@ import 'package:common_package/helpers/dio_network.dart';
 import 'package:injectable/injectable.dart';
 
 import '../models/cleaning_booking_schedule_model.dart';
+import '../models/cleaning_orders_api_models.dart';
 
 @lazySingleton
 class CleaningSessionRemoteDataSource with HandlingApiManager {
@@ -234,6 +235,36 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
         },
       ),
       jsonConvert: cleaningMultiDayOrderEnvelopeFromJson,
+    );
+  }
+
+  Future<List<CleaningReplacementWorkerOptionModel>>
+  fetchScheduleChangeReplacementOptions(int changeRequestId) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(
+        endPoint:
+            '/api/v1/user/cleaning/schedule-change-requests/$changeRequestId/replacement-options',
+      ),
+      jsonConvert: cleaningReplacementWorkersEnvelopeFromJson,
+    );
+  }
+
+  Future<CleaningScheduleChangeRequestModel> resolveScheduleChange({
+    required int changeRequestId,
+    required String resolution,
+    List<int> replacementWorkerIds = const <int>[],
+  }) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/schedule-change-requests/$changeRequestId/resolve',
+        data: <String, dynamic>{
+          'resolution': resolution,
+          if (replacementWorkerIds.isNotEmpty)
+            'replacementWorkerIds': replacementWorkerIds,
+        },
+      ),
+      jsonConvert: cleaningScheduleChangeEnvelopeFromJson,
     );
   }
 

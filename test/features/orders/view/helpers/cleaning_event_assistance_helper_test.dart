@@ -123,8 +123,11 @@ void main() {
       ).getBody();
 
       expect(body, <String, dynamic>{
-        'emergency_type': 'safety_threat',
-        'message': 'Need urgent help',
+        'kind': 'emergency',
+        'bookingId': 44,
+        'bookingType': 'cleaning_booking',
+        'emergencyType': 'safety_threat',
+        'description': 'Need urgent help',
         'latitude': 33.5138,
         'longitude': 36.2765,
       });

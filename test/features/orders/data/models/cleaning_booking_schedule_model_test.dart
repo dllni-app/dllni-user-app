@@ -145,6 +145,57 @@ void main() {
     expect(schedule.sessions.last.isTerminal, isFalse);
   });
 
+  test('parses independent open-time session meters and actions', () {
+    final envelope = cleaningMultiDayOrderEnvelopeFromJson(<String, dynamic>{
+      'data': <String, dynamic>{
+        'id': 88,
+        'schedule': <String, dynamic>{
+          'mode': 'multi_day',
+          'isOpenTime': true,
+          'daysCount': 2,
+          'sessions': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 8801,
+              'sequence': 1,
+              'sessionType': 'open_time',
+              'date': '2026-09-12',
+              'time': '09:00',
+              'hours': 4,
+              'status': 'in_progress',
+              'canRequestOpenTimeExtension': true,
+              'canRequestOpenTimeEnd': true,
+              'openTime': <String, dynamic>{
+                'isOpenTime': true,
+                'serverNow': '2026-09-12T10:00:00+03:00',
+                'ceilingEndsAt': '2026-09-12T13:00:00+03:00',
+                'expectedMaxMinutes': 240,
+                'hardMaxMinutes': 480,
+                'remainingMinutes': 180,
+                'liveAmount': 300,
+                'liveBillableMinutes': 60,
+                'pendingExtension': <String, dynamic>{
+                  'id': 71,
+                  'requestedMinutes': 30,
+                  'status': 'pending',
+                },
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    final schedule = envelope.schedule!;
+    final session = schedule.sessions.single;
+    expect(schedule.isOpenTime, isTrue);
+    expect(session.isOpenTime, isTrue);
+    expect(session.canRequestOpenTimeExtension, isTrue);
+    expect(session.canRequestOpenTimeEnd, isTrue);
+    expect(session.openTime?.remainingMinutes, 180);
+    expect(session.openTime?.liveAmount, 300);
+    expect(session.openTime?.pendingExtension?.id, 71);
+  });
+
   test(
     'parses cancelled session fee independently from remaining sessions',
     () {

@@ -58,16 +58,19 @@ void main() {
       expect(service.normalizeDirtinessLevel('medium'), 'normal');
     });
 
-    test('uses the legacy three-level fallback only when server has no rules', () {
-      const service = CleaningServiceModel();
+    test(
+      'uses the legacy three-level fallback only when server has no rules',
+      () {
+        const service = CleaningServiceModel();
 
-      expect(
-        service.selectableDirtinessLevels,
-        cleaningServiceFallbackDirtinessLevels,
-      );
-      expect(service.normalizeDirtinessLevel('medium'), 'medium');
-      expect(service.normalizeDirtinessLevel('unknown'), 'medium');
-    });
+        expect(
+          service.selectableDirtinessLevels,
+          cleaningServiceFallbackDirtinessLevels,
+        );
+        expect(service.normalizeDirtinessLevel('medium'), 'medium');
+        expect(service.normalizeDirtinessLevel('unknown'), 'medium');
+      },
+    );
 
     test('deduplicates repeated server levels while preserving order', () {
       const service = CleaningServiceModel(
@@ -79,6 +82,43 @@ void main() {
       );
 
       expect(service.selectableDirtinessLevels, <String>['deep', 'extreme']);
+    });
+
+    test('parses v2 item input and global dirtiness definitions', () {
+      final response = CleaningServicesResponseModel.fromJson(<String, dynamic>{
+        'data': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 22,
+            'name': 'Carpet cleaning',
+            'categoryId': 4,
+            'categoryName': 'Textiles',
+            'inputType': 'decimal',
+            'unitCode': 'm2',
+            'supportsDirtiness': true,
+            'estimatedDurationMinutes': 75,
+            'requiresBeforeImage': true,
+            'dirtinessLevels': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'id': 8,
+                'name': 'Heavy',
+                'slug': 'heavy',
+                'priceMultiplier': 1.5,
+                'isActive': true,
+              },
+            ],
+          },
+        ],
+      });
+
+      final service = response.data.single;
+      expect(service.categoryId, 4);
+      expect(service.categoryName, 'Textiles');
+      expect(service.inputType, 'decimal');
+      expect(service.unitCode, 'm2');
+      expect(service.estimatedDurationMinutes, 75);
+      expect(service.requiresBeforeImage, isTrue);
+      expect(service.dirtinessRules.single.id, 8);
+      expect(service.dirtinessRules.single.level, 'heavy');
     });
   });
 }

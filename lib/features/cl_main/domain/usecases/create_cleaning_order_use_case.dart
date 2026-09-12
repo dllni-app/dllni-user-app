@@ -50,6 +50,8 @@ class CreateCleaningOrderParams with Params {
   final List<int> preferredWorkerIds;
   final List<String>? cleaningServices;
   final String? eventType;
+  final int? eventTypeId;
+  final Map<String, dynamic> eventDynamicAnswers;
   final int? guestCount;
   final String? venueType;
   final String? customService;
@@ -101,6 +103,8 @@ class CreateCleaningOrderParams with Params {
     this.couponCode,
     this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : eventType = null,
+       eventTypeId = null,
+       eventDynamicAnswers = const <String, dynamic>{},
        guestCount = null,
        venueType = null,
        customService = null,
@@ -115,6 +119,8 @@ class CreateCleaningOrderParams with Params {
     required this.scheduledDate,
     required this.scheduledTime,
     required this.eventType,
+    this.eventTypeId,
+    this.eventDynamicAnswers = const <String, dynamic>{},
     required this.guestCount,
     required this.venueType,
     required this.customService,
@@ -272,6 +278,11 @@ class CreateCleaningOrderParams with Params {
       'propertyType': propertyType,
       'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
+      if (_isEventAssistance && eventTypeId != null)
+        'event': <String, dynamic>{
+          'eventTypeId': eventTypeId,
+          'dynamicAnswers': eventDynamicAnswers,
+        },
       'scheduledDate': _resolvedScheduledDate,
       'scheduledTime': _resolvedScheduledTime,
       if (addressId <= 0 && addressLatitude != null)

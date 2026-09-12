@@ -108,7 +108,7 @@ void main() {
     }) {
       return CleaningRebookPolicy(
         cancelOrder: (_) async =>
-            const Right(CleaningCancelResultModel(message: 'unused')),
+            Right(CleaningCancelResultModel(message: 'unused')),
         createOrder: (_) async => const Right(
           CreateCleaningOrderResponseModel(success: true, orderId: 999),
         ),
@@ -120,18 +120,19 @@ void main() {
 
     test('schedule edit PATCHes only changed schedule fields', () async {
       PatchCleaningOrderParams? sent;
-      final result = await policy(
-        current: currentOrder(),
-        patch: (params) async {
-          sent = params;
-          return Right(OrdersActionResultModel(message: 'updated'));
-        },
-      ).execute(
-        request: request(
-          scheduledDate: '2026-05-26',
-          scheduledTime: '11:30',
-        ),
-      );
+      final result =
+          await policy(
+            current: currentOrder(),
+            patch: (params) async {
+              sent = params;
+              return Right(OrdersActionResultModel(message: 'updated'));
+            },
+          ).execute(
+            request: request(
+              scheduledDate: '2026-05-26',
+              scheduledTime: '11:30',
+            ),
+          );
 
       expect(result.isRight(), isTrue);
       expect(sent!.cleaningOrderId, 12);
@@ -186,19 +187,22 @@ void main() {
       expect(sent!.getBody(), {'scheduledTime': '12:00'});
     });
 
-    test('rejects protected configuration edit after worker acceptance', () async {
-      bool patchCalled = false;
-      final result = await policy(
-        current: currentOrder(acceptedWorkers: 1),
-        patch: (_) async {
-          patchCalled = true;
-          return Right(OrdersActionResultModel(message: 'updated'));
-        },
-      ).execute(request: request(address: 'New address'));
+    test(
+      'rejects protected configuration edit after worker acceptance',
+      () async {
+        bool patchCalled = false;
+        final result = await policy(
+          current: currentOrder(acceptedWorkers: 1),
+          patch: (_) async {
+            patchCalled = true;
+            return Right(OrdersActionResultModel(message: 'updated'));
+          },
+        ).execute(request: request(address: 'New address'));
 
-      expect(result.isLeft(), isTrue);
-      expect(patchCalled, isFalse);
-    });
+        expect(result.isLeft(), isTrue);
+        expect(patchCalled, isFalse);
+      },
+    );
 
     test('does not call PATCH when nothing changed', () async {
       bool patchCalled = false;

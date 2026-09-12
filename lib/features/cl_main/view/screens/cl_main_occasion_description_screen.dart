@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../profile/domain/models/address_list_item.dart';
+import '../../data/models/cleaning_suite_config_model.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../data/cl_main_route_args.dart';
@@ -37,6 +38,9 @@ class _ClMainOccasionDescriptionScreenState
   final TextEditingController _customServiceController =
       TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final Map<String, TextEditingController> _dynamicControllers =
+      <String, TextEditingController>{};
+  final Map<String, dynamic> _dynamicValues = <String, dynamic>{};
   late final ValueNotifier<AddressListItem?> _selectedAddress;
 
   bool _enableNotes = false;
@@ -135,8 +139,14 @@ class _ClMainOccasionDescriptionScreenState
             id: 'hospitality_setup',
             label: 'تجهيز كامل لمنطقة الضيافة',
           ),
-          const _MenuOption(id: 'reception_support', label: 'دعم استقبال الضيوف'),
-          const _MenuOption(id: 'food_refill', label: 'متابعة إعادة تعبئة الطعام'),
+          const _MenuOption(
+            id: 'reception_support',
+            label: 'دعم استقبال الضيوف',
+          ),
+          const _MenuOption(
+            id: 'food_refill',
+            label: 'متابعة إعادة تعبئة الطعام',
+          ),
           const _MenuOption(
             id: 'full_cleanup',
             label: 'تنظيف شامل وتنسيق بعد المناسبة',
@@ -147,7 +157,10 @@ class _ClMainOccasionDescriptionScreenState
             id: 'separate_teams',
             label: 'توزيع فريق العمل على أقسام',
           ),
-          const _MenuOption(id: 'valet_support', label: 'المساعدة في تنظيم المواقف'),
+          const _MenuOption(
+            id: 'valet_support',
+            label: 'المساعدة في تنظيم المواقف',
+          ),
           const _MenuOption(
             id: 'security_awareness',
             label: 'انتباه وتنسيق حركة الضيوف',
@@ -168,8 +181,14 @@ class _ClMainOccasionDescriptionScreenState
             id: 'hospitality_setup',
             label: 'تجهيز ركن القهوة والضيافة',
           ),
-          const _MenuOption(id: 'serving_support', label: 'تقديم مستمر للضيافة'),
-          const _MenuOption(id: 'silent_service', label: 'خدمة هادئة غير ملفتة'),
+          const _MenuOption(
+            id: 'serving_support',
+            label: 'تقديم مستمر للضيافة',
+          ),
+          const _MenuOption(
+            id: 'silent_service',
+            label: 'خدمة هادئة غير ملفتة',
+          ),
           const _MenuOption(
             id: 'cleanup_support',
             label: 'تنظيف وتغيير أكواب الضيافة',
@@ -185,7 +204,10 @@ class _ClMainOccasionDescriptionScreenState
             id: 'high_traffic',
             label: 'عناية إضافية بالمداخل والممرات',
           ),
-          const _MenuOption(id: 'restrooms', label: 'متابعة نظافة دورات المياه'),
+          const _MenuOption(
+            id: 'restrooms',
+            label: 'متابعة نظافة دورات المياه',
+          ),
         ];
         break;
 
@@ -253,6 +275,8 @@ class _ClMainOccasionDescriptionScreenState
               specialRequirementLabel: specialRequirement ?? 'لا يوجد',
               defaultAddress: _selectedAddress.value,
               notes: _enableNotes ? _notesController.text.trim() : null,
+              eventTypeId: _routeArgs!.option.eventTypeId,
+              eventDynamicAnswers: _eventDynamicAnswers,
             );
             await context.pushRoute(
               '/clmainoccasionschedule',
@@ -434,6 +458,10 @@ class _ClMainOccasionDescriptionScreenState
                             ),
                           ),
                           const SizedBox(height: 10),
+                          _buildDynamicFieldsCard(),
+                          if (_routeArgs?.option.dynamicFields.isNotEmpty ==
+                              true)
+                            const SizedBox(height: 10),
                           CleaningAddressSelectWidget(
                             selectedAddress: _selectedAddress,
                             onChangeTap: _selectAddress,
@@ -537,6 +565,15 @@ class _ClMainOccasionDescriptionScreenState
     final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
     if (args is ClMainOccasionDescriptionArgs) {
       _routeArgs = args;
+      for (final field in args.option.dynamicFields) {
+        if (field.type == 'boolean' || field.type == 'bool') {
+          _dynamicValues.putIfAbsent(field.key, () => false);
+        } else if (field.type != 'select' &&
+            field.type != 'choice' &&
+            field.type != 'dropdown') {
+          _dynamicControllers.putIfAbsent(field.key, TextEditingController.new);
+        }
+      }
       _bloc = args.bloc;
       _bloc?.add(
         SetGenderPreferenceEvent(preference: CleaningGenderPreference.male),
@@ -549,6 +586,9 @@ class _ClMainOccasionDescriptionScreenState
   void dispose() {
     _customServiceController.dispose();
     _notesController.dispose();
+    for (final controller in _dynamicControllers.values) {
+      controller.dispose();
+    }
     _selectedAddress.dispose();
     super.dispose();
   }
@@ -565,6 +605,7 @@ class _ClMainOccasionDescriptionScreenState
   }
 
   String _eventTypeFromOption(ClMainOccasionOption option) {
+    if (option.bookingValue.trim().isNotEmpty) return option.bookingValue;
     switch (option.id) {
       case 'family_dinner':
         return 'family_dinner';
@@ -607,6 +648,13 @@ class _ClMainOccasionDescriptionScreenState
       );
       return;
     }
+    final invalidDynamicField = _firstInvalidDynamicField();
+    if (invalidDynamicField != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('يرجى تعبئة حقل ${invalidDynamicField.label}.')),
+      );
+      return;
+    }
     final selectedAddress = _selectedAddress.value;
     final addressId = int.tryParse(selectedAddress?.id ?? '') ?? 0;
     if (selectedAddress == null || addressId <= 0) {
@@ -636,6 +684,8 @@ class _ClMainOccasionDescriptionScreenState
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams.eventAssistance(
           eventType: eventType,
+          eventTypeId: args.option.eventTypeId,
+          eventDynamicAnswers: _eventDynamicAnswers,
           guestCount: _guestsCount,
           venueType: 'apartment',
           customService: customService,
@@ -649,6 +699,155 @@ class _ClMainOccasionDescriptionScreenState
           specialRequirement: specialRequirement,
           notes: _enableNotes ? _notesController.text.trim() : null,
         ),
+      ),
+    );
+  }
+
+  CleaningDynamicFieldConfigModel? _firstInvalidDynamicField() {
+    for (final field in _routeArgs?.option.dynamicFields ?? const []) {
+      if (!field.required) continue;
+      final value = _eventDynamicAnswers[field.key];
+      if (value == null || value == '' || (value is List && value.isEmpty)) {
+        return field;
+      }
+    }
+    return null;
+  }
+
+  Map<String, dynamic> get _eventDynamicAnswers {
+    final result = <String, dynamic>{..._dynamicValues};
+    for (final entry in _dynamicControllers.entries) {
+      final text = entry.value.text.trim();
+      if (text.isEmpty) continue;
+      final field = (_routeArgs?.option.dynamicFields ?? const [])
+          .where((item) => item.key == entry.key)
+          .firstOrNull;
+      result[entry.key] = field?.type == 'number'
+          ? (num.tryParse(text) ?? text)
+          : text;
+    }
+    result.removeWhere(
+      (_, value) =>
+          value == null || value == '' || (value is List && value.isEmpty),
+    );
+    return result;
+  }
+
+  Widget _buildDynamicFieldsCard() {
+    final fields = _routeArgs?.option.dynamicFields ?? const [];
+    if (fields.isEmpty) return const SizedBox.shrink();
+    return ClHomeDescriptionTitleCardWidget(
+      step: 6,
+      title: 'تفاصيل المناسبة',
+      subtitle: 'أدخل التفاصيل المطلوبة لهذا النوع من المناسبات.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var index = 0; index < fields.length; index++) ...[
+            _buildDynamicField(fields[index]),
+            if (index < fields.length - 1) const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDynamicField(CleaningDynamicFieldConfigModel field) {
+    final label = field.required ? '${field.label} *' : field.label;
+    if (field.type == 'yes_no') {
+      return Semantics(
+        label: field.label,
+        toggled: _dynamicValues[field.key] == true,
+        child: SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: Text(label),
+          subtitle: const Text('اختر نعم عند انطباق هذا الخيار.'),
+          value: _dynamicValues[field.key] == true,
+          onChanged: (value) => setState(() {
+            _dynamicValues[field.key] = value;
+          }),
+        ),
+      );
+    }
+
+    final options = field.options
+        .map((value) => value.toString().trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    if (field.type == 'single_select') {
+      return DropdownButtonFormField<String>(
+        initialValue: _dynamicValues[field.key] as String?,
+        decoration: InputDecoration(
+          labelText: label,
+          helperText: field.required ? 'هذا الحقل مطلوب.' : 'اختياري',
+          border: const OutlineInputBorder(),
+        ),
+        items: options
+            .map(
+              (value) =>
+                  DropdownMenuItem<String>(value: value, child: Text(value)),
+            )
+            .toList(growable: false),
+        onChanged: (value) => setState(() {
+          _dynamicValues[field.key] = value;
+        }),
+      );
+    }
+
+    if (field.type == 'multi_select') {
+      final selected =
+          (_dynamicValues[field.key] as List?)
+              ?.map((value) => value.toString())
+              .toSet() ??
+          <String>{};
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: options
+                .map(
+                  (value) => ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: FilterChip(
+                      label: Text(value),
+                      selected: selected.contains(value),
+                      onSelected: (enabled) => setState(() {
+                        final next = <String>{...selected};
+                        enabled ? next.add(value) : next.remove(value);
+                        _dynamicValues[field.key] = next.toList();
+                      }),
+                    ),
+                  ),
+                )
+                .toList(growable: false),
+          ),
+          Text(
+            field.required ? 'اختر خياراً واحداً على الأقل.' : 'اختياري',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      );
+    }
+
+    final controller = _dynamicControllers.putIfAbsent(
+      field.key,
+      TextEditingController.new,
+    );
+    return TextFormField(
+      controller: controller,
+      keyboardType: field.type == 'number'
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      minLines: field.type == 'textarea' ? 2 : 1,
+      maxLines: field.type == 'textarea' ? 4 : 1,
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: field.required ? 'هذا الحقل مطلوب.' : 'اختياري',
+        border: const OutlineInputBorder(),
       ),
     );
   }

@@ -24,6 +24,7 @@ class CleaningRecurringScheduleLauncherWidget extends StatefulWidget {
 class _CleaningRecurringScheduleLauncherWidgetState
     extends State<CleaningRecurringScheduleLauncherWidget> {
   bool _visible = false;
+  bool _isRecurring = false;
 
   CleaningSessionRemoteDataSource get _sessions =>
       getIt<CleaningSessionRemoteDataSource>();
@@ -41,6 +42,7 @@ class _CleaningRecurringScheduleLauncherWidgetState
     super.didUpdateWidget(oldWidget);
     if (oldWidget.orderId != widget.orderId) {
       _visible = false;
+      _isRecurring = false;
       _load();
     }
   }
@@ -54,11 +56,21 @@ class _CleaningRecurringScheduleLauncherWidgetState
           schedule.sessions.any(
             (session) => session.sessionType == 'recurring_cleaning',
           );
+      final isMultiSessionOpenTime =
+          schedule != null &&
+          schedule.sessions.length > 1 &&
+          schedule.sessions.any((session) => session.isOpenTime);
       if (!mounted) return;
-      setState(() => _visible = isRecurring);
+      setState(() {
+        _isRecurring = isRecurring;
+        _visible = isRecurring || isMultiSessionOpenTime;
+      });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _visible = false);
+      setState(() {
+        _visible = false;
+        _isRecurring = false;
+      });
     }
   }
 
@@ -67,7 +79,7 @@ class _CleaningRecurringScheduleLauncherWidgetState
       MaterialPageRoute(
         builder: (_) => MultiDayCleaningOrderDetailsScreen(
           orderId: widget.orderId,
-          recurring: true,
+          recurring: _isRecurring,
         ),
       ),
     );
@@ -87,8 +99,14 @@ class _CleaningRecurringScheduleLauncherWidgetState
         width: double.infinity,
         child: OutlinedButton.icon(
           onPressed: _open,
-          icon: const Icon(Icons.repeat_rounded),
-          label: const Text('عرض الزيارات الدورية وإدارتها'),
+          icon: Icon(
+            _isRecurring ? Icons.repeat_rounded : Icons.timer_outlined,
+          ),
+          label: Text(
+            _isRecurring
+                ? 'عرض الزيارات الدورية وإدارتها'
+                : 'عرض جلسات الوقت المفتوح وإدارتها',
+          ),
         ),
       ),
     );

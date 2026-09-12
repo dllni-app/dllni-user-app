@@ -16,6 +16,8 @@ import 'package:dllni_user_app/features/profile/domain/usecases/create_group_ord
 import 'package:dllni_user_app/features/profile/domain/usecases/create_shopping_list_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/create_vote_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/delete_address_use_case.dart';
+import 'package:dllni_user_app/features/profile/domain/usecases/delete_all_notifications_use_case.dart';
+import 'package:dllni_user_app/features/profile/domain/usecases/delete_notification_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/delete_group_order_item_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/delete_shopping_list_item_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/end_vote_use_case.dart';
@@ -416,6 +418,8 @@ ProfileBloc _buildBloc(
     FetchNotificationsUseCase(profileRepo: repo),
     MarkAllNotificationsReadUseCase(profileRepo: repo),
     MarkNotificationReadUseCase(profileRepo: repo),
+    DeleteNotificationUseCase(profileRepo: repo),
+    DeleteAllNotificationsUseCase(profileRepo: repo),
     FetchFavoriteRestaurantsUseCase(profileRepo: repo),
     RemoveFavoriteRestaurantUseCase(profileRepo: repo),
     CreateVoteUseCase(profileRepo: repo),
@@ -451,7 +455,9 @@ ProfileBloc _buildBloc(
 }
 
 Future<_FakeProfileRepo> _setUpTestDeps() async {
-  SharedPreferences.setMockInitialValues(const <String, Object>{'customer_id': 10});
+  SharedPreferences.setMockInitialValues(const <String, Object>{
+    'customer_id': 10,
+  });
   await SharedPreferencesHelper.init();
 
   if (getIt.isRegistered<PusherManager>()) {

@@ -44,6 +44,8 @@ class EstimateCleaningPriceParams with Params {
   final int? preferredWorkerId;
   final List<int> preferredWorkerIds;
   final String? eventType;
+  final int? eventTypeId;
+  final Map<String, dynamic> eventDynamicAnswers;
   final int? guestCount;
   final String? venueType;
   final String? customService;
@@ -83,6 +85,8 @@ class EstimateCleaningPriceParams with Params {
     this.workerRoomAssignments,
     this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : eventType = null,
+       eventTypeId = null,
+       eventDynamicAnswers = const <String, dynamic>{},
        guestCount = null,
        venueType = null,
        customService = null,
@@ -94,6 +98,8 @@ class EstimateCleaningPriceParams with Params {
   EstimateCleaningPriceParams.eventAssistance({
     this.propertyType = 'event_assistance',
     required this.eventType,
+    this.eventTypeId,
+    this.eventDynamicAnswers = const <String, dynamic>{},
     required this.guestCount,
     required this.venueType,
     required this.customService,
@@ -212,6 +218,11 @@ class EstimateCleaningPriceParams with Params {
       'propertyType': propertyType,
       if (hasAddressId) 'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
+      if (_isEventAssistance && eventTypeId != null)
+        'event': <String, dynamic>{
+          'eventTypeId': eventTypeId,
+          'dynamicAnswers': eventDynamicAnswers,
+        },
       if (!hasAddressId && addressLatitude != null)
         'addressLatitude': addressLatitude,
       if (!hasAddressId && addressLongitude != null)

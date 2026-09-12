@@ -1,4 +1,3 @@
-import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/models/cleaning_service_extras.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -24,10 +23,14 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
     required this.onRemoveSpecialService,
     required this.onOpenTimeChanged,
     required this.onOpenTimeWorkerCountChanged,
+    required this.onOpenTimeExpectedMaxMinutesChanged,
     required this.onRetryEstimate,
     required this.onRetrySpecialServices,
     this.specialServicesError,
     this.estimateError,
+    this.openTimeDurationOptions = const <int>[60, 120, 180, 240, 480],
+    this.selectableSessionIds = const <int>[],
+    this.sessionLabels = const <int, String>{},
     super.key,
   });
 
@@ -47,10 +50,14 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
   final ValueChanged<int> onRemoveSpecialService;
   final ValueChanged<bool> onOpenTimeChanged;
   final ValueChanged<int> onOpenTimeWorkerCountChanged;
+  final ValueChanged<int> onOpenTimeExpectedMaxMinutesChanged;
   final VoidCallback onRetryEstimate;
   final VoidCallback onRetrySpecialServices;
   final String? specialServicesError;
   final String? estimateError;
+  final List<int> openTimeDurationOptions;
+  final List<int> selectableSessionIds;
+  final Map<int, String> sessionLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -99,10 +106,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                   title: 'cleaningExtras.materialsEstimate'.tr(),
                   children: materials
                       .map(
-                        (line) => _MaterialLine(
-                          line: line,
-                          currency: currency,
-                        ),
+                        (line) => _MaterialLine(line: line, currency: currency),
                       )
                       .toList(growable: false),
                 ),
@@ -137,7 +141,11 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                   style: const TextStyle(color: Color(0xFF6B7280)),
                 )
               else ...[
-                for (var index = 0; index < specialServices.length; index++) ...[
+                for (
+                  var index = 0;
+                  index < specialServices.length;
+                  index++
+                ) ...[
                   _SpecialServiceForm(
                     key: ValueKey<String>(
                       '${specialServices[index].specialServiceId}-$index',
@@ -145,6 +153,8 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                     service: specialServices[index],
                     availableServices: availableSpecialServices,
                     currency: currency,
+                    selectableSessionIds: selectableSessionIds,
+                    sessionLabels: sessionLabels,
                     onChanged: (service) =>
                         onSpecialServiceChanged(index, service),
                     onRemove: () => onRemoveSpecialService(index),
@@ -167,10 +177,8 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                   title: 'cleaningExtras.specialServicesEstimate'.tr(),
                   children: estimatedSpecialServices
                       .map(
-                        (line) => _SpecialServiceLine(
-                          line: line,
-                          currency: currency,
-                        ),
+                        (line) =>
+                            _SpecialServiceLine(line: line, currency: currency),
                       )
                       .toList(growable: false),
                 ),
@@ -200,32 +208,57 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
               if (openTime != null) ...[
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  value: openTime!.workerCount,
+                  initialValue: openTime!.workerCount,
                   decoration: InputDecoration(
                     labelText: 'cleaningExtras.workerCount'.tr(),
                     border: const OutlineInputBorder(),
                   ),
-                  items: List<DropdownMenuItem<int>>.generate(
-                    20,
-                    (index) {
-                      final count = index + 1;
-                      return DropdownMenuItem<int>(
-                        value: count,
-                        child: Text('$count'),
-                      );
-                    },
-                  ),
+                  items: List<DropdownMenuItem<int>>.generate(20, (index) {
+                    final count = index + 1;
+                    return DropdownMenuItem<int>(
+                      value: count,
+                      child: Text('$count'),
+                    );
+                  }),
                   onChanged: (count) {
                     if (count != null) onOpenTimeWorkerCountChanged(count);
                   },
                 ),
+                const SizedBox(height: 12),
+                Semantics(
+                  label: 'الحد المتوقع لمدة الطلب المفتوح',
+                  child: DropdownButtonFormField<int>(
+                    initialValue:
+                        openTimeDurationOptions.contains(
+                          openTime!.expectedMaxMinutes,
+                        )
+                        ? openTime!.expectedMaxMinutes
+                        : null,
+                    decoration: const InputDecoration(
+                      labelText: 'المدة القصوى المتوقعة',
+                      helperText:
+                          'يُحجز وقت العامل حتى هذا الحد، والفوترة حسب الوقت الفعلي.',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: openTimeDurationOptions
+                        .map(
+                          (minutes) => DropdownMenuItem<int>(
+                            value: minutes,
+                            child: Text(_durationLabel(minutes)),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onChanged: (minutes) {
+                      if (minutes != null) {
+                        onOpenTimeExpectedMaxMinutesChanged(minutes);
+                      }
+                    },
+                  ),
+                ),
               ],
               if (estimatedOpenTime != null) ...[
                 const SizedBox(height: 12),
-                _OpenTimeCard(
-                  openTime: estimatedOpenTime!,
-                  currency: currency,
-                ),
+                _OpenTimeCard(openTime: estimatedOpenTime!, currency: currency),
               ],
             ],
           ),
@@ -260,17 +293,17 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             'cleaningExtras.readOnlyDetails'.tr(),
-            style: const TextStyle(
-              color: Color(0xFF1F2937),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -279,9 +312,7 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
             _CalculatedLinesCard(
               title: 'cleaningExtras.materialsTitle'.tr(),
               children: materials
-                  .map(
-                    (line) => _MaterialLine(line: line, currency: currency),
-                  )
+                  .map((line) => _MaterialLine(line: line, currency: currency))
                   .toList(growable: false),
             ),
           ],
@@ -291,10 +322,8 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
               title: 'cleaningExtras.specialServicesTitle'.tr(),
               children: specialServices
                   .map(
-                    (line) => _SpecialServiceLine(
-                      line: line,
-                      currency: currency,
-                    ),
+                    (line) =>
+                        _SpecialServiceLine(line: line, currency: currency),
                   )
                   .toList(growable: false),
             ),
@@ -317,6 +346,8 @@ class _SpecialServiceForm extends StatelessWidget {
     required this.currency,
     required this.onChanged,
     required this.onRemove,
+    required this.selectableSessionIds,
+    required this.sessionLabels,
   });
 
   final CleaningSpecialServiceRequest service;
@@ -324,6 +355,8 @@ class _SpecialServiceForm extends StatelessWidget {
   final String currency;
   final ValueChanged<CleaningSpecialServiceRequest> onChanged;
   final VoidCallback onRemove;
+  final List<int> selectableSessionIds;
+  final Map<int, String> sessionLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -334,25 +367,36 @@ class _SpecialServiceForm extends StatelessWidget {
     final dirtinessLevels =
         selectedService?.selectableDirtinessLevels ??
         cleaningServiceFallbackDirtinessLevels;
-    final selectedDirtiness = selectedService?.normalizeDirtinessLevel(
-          service.dirtinessLevel,
-        ) ??
+    final selectedDirtiness =
+        selectedService?.normalizeDirtinessLevel(service.dirtinessLevel) ??
         (dirtinessLevels.contains(service.dirtinessLevel)
             ? service.dirtinessLevel
             : dirtinessLevels.first);
+    final selectedDirtinessRule = selectedService?.dirtinessRules
+        .where((rule) => rule.level == selectedDirtiness)
+        .firstOrNull;
+    final effectiveItems = service.items.isNotEmpty
+        ? service.items
+        : <CleaningSpecialServiceItemRequest>[
+            CleaningSpecialServiceItemRequest(
+              quantity: service.quantity.toDouble(),
+              dirtinessLevelId: selectedDirtinessRule?.id,
+            ),
+          ];
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DropdownButtonFormField<int>(
-            value: service.specialServiceId,
+            isExpanded: true,
+            initialValue: service.specialServiceId,
             decoration: InputDecoration(
               labelText: 'cleaningExtras.selectSpecialService'.tr(),
               border: const OutlineInputBorder(),
@@ -362,14 +406,20 @@ class _SpecialServiceForm extends StatelessWidget {
                 .map(
                   (item) => DropdownMenuItem<int>(
                     value: item.id,
-                    child: Text(item.name!),
+                    child: Text(
+                      item.categoryName?.trim().isNotEmpty == true
+                          ? '${item.categoryName!.trim()} — ${item.name!}'
+                          : item.name!,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 )
                 .toList(growable: false),
             onChanged: (id) {
               if (id == null) return;
               final nextService = _findServiceById(availableServices, id);
-              final nextDirtiness = nextService?.normalizeDirtinessLevel(
+              final nextDirtiness =
+                  nextService?.normalizeDirtinessLevel(
                     service.dirtinessLevel,
                   ) ??
                   service.dirtinessLevel;
@@ -377,6 +427,7 @@ class _SpecialServiceForm extends StatelessWidget {
                 service.copyWith(
                   specialServiceId: id,
                   dirtinessLevel: nextDirtiness,
+                  items: _normalizeItemsForService(effectiveItems, nextService),
                 ),
               );
             },
@@ -388,60 +439,72 @@ class _SpecialServiceForm extends StatelessWidget {
               currency: currency,
             ),
           ],
-          const SizedBox(height: 10),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final quantity = TextFormField(
-                initialValue: service.quantity.toString(),
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'cleaningExtras.quantity'.tr(),
-                  border: const OutlineInputBorder(),
-                ),
-                onChanged: (value) {
-                  final parsed = int.tryParse(value);
-                  if (parsed != null && parsed > 0) {
-                    onChanged(service.copyWith(quantity: parsed));
-                  }
-                },
-              );
-              final dirtiness = DropdownButtonFormField<String>(
-                value: selectedDirtiness,
-                decoration: InputDecoration(
-                  labelText: 'cleaningExtras.dirtiness'.tr(),
-                  border: const OutlineInputBorder(),
-                ),
-                items: dirtinessLevels
-                    .map(
-                      (value) => DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(_dirtinessDisplayLabel(value)),
+          if (selectableSessionIds.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                'الجلسات المختارة للخدمة',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: selectableSessionIds
+                  .map((sessionId) {
+                    final selected = service.sessionIds.contains(sessionId);
+                    return ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: FilterChip(
+                        label: Text(
+                          sessionLabels[sessionId] ?? 'جلسة $sessionId',
+                        ),
+                        selected: selected,
+                        onSelected: (enabled) {
+                          final ids = <int>{...service.sessionIds};
+                          enabled ? ids.add(sessionId) : ids.remove(sessionId);
+                          final ordered = ids.toList()..sort();
+                          onChanged(service.copyWith(sessionIds: ordered));
+                        },
                       ),
-                    )
-                    .toList(growable: false),
-                onChanged: (value) {
-                  if (value != null) {
-                    onChanged(service.copyWith(dirtinessLevel: value));
-                  }
-                },
+                    );
+                  })
+                  .toList(growable: false),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              service.sessionIds.isEmpty
+                  ? 'اختر جلسة واحدة على الأقل لهذه الخدمة.'
+                  : 'ستُحسب وتُنفذ الخدمة في الجلسات المحددة فقط.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: service.sessionIds.isEmpty
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          _SpecialServiceItemsEditor(
+            items: effectiveItems,
+            catalogService: selectedService,
+            onChanged: (items) {
+              final totalQuantity = items.fold<double>(
+                0,
+                (total, item) => total + item.quantity,
               );
-
-              if (constraints.maxWidth < 600) {
-                return Column(
-                  children: [
-                    quantity,
-                    const SizedBox(height: 10),
-                    dirtiness,
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: quantity),
-                  const SizedBox(width: 10),
-                  Expanded(child: dirtiness),
-                ],
+              final legacyQuantity = totalQuantity.ceil();
+              final firstLevelId = items.firstOrNull?.dirtinessLevelId;
+              final firstLevel = selectedService?.dirtinessRules
+                  .where((rule) => rule.id == firstLevelId)
+                  .firstOrNull;
+              onChanged(
+                service.copyWith(
+                  items: items,
+                  quantity: legacyQuantity > 0 ? legacyQuantity : 1,
+                  dirtinessLevel: firstLevel?.level ?? service.dirtinessLevel,
+                ),
               );
             },
           ),
@@ -454,10 +517,7 @@ class _SpecialServiceForm extends StatelessWidget {
               border: const OutlineInputBorder(),
             ),
             onChanged: (value) => onChanged(
-              service.copyWith(
-                notes: value,
-                clearNotes: value.trim().isEmpty,
-              ),
+              service.copyWith(notes: value, clearNotes: value.trim().isEmpty),
             ),
           ),
           Align(
@@ -468,6 +528,257 @@ class _SpecialServiceForm extends StatelessWidget {
               label: Text('cleaningExtras.removeSpecialService'.tr()),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpecialServiceItemsEditor extends StatelessWidget {
+  const _SpecialServiceItemsEditor({
+    required this.items,
+    required this.catalogService,
+    required this.onChanged,
+  });
+
+  final List<CleaningSpecialServiceItemRequest> items;
+  final CleaningServiceModel? catalogService;
+  final ValueChanged<List<CleaningSpecialServiceItemRequest>> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final service = catalogService;
+    final rules = service?.supportsDirtiness == false
+        ? const <CleaningServiceDirtinessRuleModel>[]
+        : service?.dirtinessRules ??
+              const <CleaningServiceDirtinessRuleModel>[];
+
+    return Semantics(
+      container: true,
+      label: 'عناصر الخدمة الخاصة',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'عناصر الخدمة',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+              Text('${items.length}'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (var index = 0; index < items.length; index++) ...[
+            _SpecialServiceItemEditor(
+              key: ValueKey<String>('${service?.id ?? 0}-item-$index'),
+              index: index,
+              item: items[index],
+              inputType: service?.inputType,
+              unitCode: service?.unitCode ?? service?.pricingUnit,
+              dirtinessRules: rules,
+              canRemove: items.length > 1,
+              requiresBeforeImage: service?.requiresBeforeImage == true,
+              onChanged: (item) {
+                final updated = List<CleaningSpecialServiceItemRequest>.of(
+                  items,
+                );
+                updated[index] = item;
+                onChanged(updated);
+              },
+              onRemove: () {
+                final updated = List<CleaningSpecialServiceItemRequest>.of(
+                  items,
+                )..removeAt(index);
+                onChanged(updated);
+              },
+            ),
+            if (index != items.length - 1) const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              key: ValueKey<String>(
+                'special-service-${service?.id ?? 0}-add-item',
+              ),
+              onPressed: items.length >= 50
+                  ? null
+                  : () => onChanged(<CleaningSpecialServiceItemRequest>[
+                      ...items,
+                      CleaningSpecialServiceItemRequest(
+                        quantity: 1,
+                        dirtinessLevelId: rules.firstOrNull?.id,
+                      ),
+                    ]),
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text('إضافة عنصر آخر'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpecialServiceItemEditor extends StatelessWidget {
+  const _SpecialServiceItemEditor({
+    required super.key,
+    required this.index,
+    required this.item,
+    required this.inputType,
+    required this.unitCode,
+    required this.dirtinessRules,
+    required this.canRemove,
+    required this.requiresBeforeImage,
+    required this.onChanged,
+    required this.onRemove,
+  });
+
+  final int index;
+  final CleaningSpecialServiceItemRequest item;
+  final String? inputType;
+  final String? unitCode;
+  final List<CleaningServiceDirtinessRuleModel> dirtinessRules;
+  final bool canRemove;
+  final bool requiresBeforeImage;
+  final ValueChanged<CleaningSpecialServiceItemRequest> onChanged;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedLevel =
+        dirtinessRules.any((rule) => rule.id == item.dirtinessLevelId)
+        ? item.dirtinessLevelId
+        : dirtinessRules.firstOrNull?.id;
+    final unit = unitCode?.trim();
+    final quantityLabel = unit == null || unit.isEmpty
+        ? 'الكمية أو القياس'
+        : 'الكمية أو القياس ($unit)';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'العنصر ${index + 1}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (canRemove)
+                Semantics(
+                  button: true,
+                  label: 'حذف العنصر ${index + 1}',
+                  child: IconButton(
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'حذف العنصر',
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            initialValue: _number(item.quantity),
+            keyboardType: TextInputType.numberWithOptions(
+              decimal: inputType != 'quantity',
+            ),
+            decoration: InputDecoration(
+              labelText: quantityLabel,
+              helperText:
+                  'أدخل قيمة أكبر من صفر، ويمكن استخدام الكسور العشرية.',
+              errorText: item.quantity <= 0
+                  ? 'القيمة مطلوبة وأكبر من صفر.'
+                  : null,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              final parsed = double.tryParse(value.replaceAll(',', '.'));
+              if (parsed != null && parsed > 0) {
+                onChanged(item.copyWith(quantity: parsed));
+              }
+            },
+          ),
+          if (dirtinessRules.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            DropdownButtonFormField<int>(
+              isExpanded: true,
+              initialValue: selectedLevel,
+              decoration: const InputDecoration(
+                labelText: 'مستوى الاتساخ لهذا العنصر',
+                helperText: 'اختر الوصف الأقرب لحالة هذا العنصر.',
+                border: OutlineInputBorder(),
+              ),
+              items: dirtinessRules
+                  .where((rule) => rule.id != null)
+                  .map(
+                    (rule) => DropdownMenuItem<int>(
+                      value: rule.id,
+                      child: Text(
+                        rule.name?.trim().isNotEmpty == true
+                            ? rule.name!.trim()
+                            : _dirtinessDisplayLabel(
+                                rule.level ?? rule.slug ?? '',
+                              ),
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (id) => onChanged(
+                item.copyWith(
+                  dirtinessLevelId: id,
+                  clearDirtinessLevel: id == null,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          TextFormField(
+            initialValue: item.notes,
+            maxLength: 2000,
+            minLines: 1,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'ملاحظات العنصر (اختياري)',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) => onChanged(
+              item.copyWith(notes: value, clearNotes: value.trim().isEmpty),
+            ),
+          ),
+          if (requiresBeforeImage || item.attachments.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.photo_camera_outlined, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    item.attachments.isEmpty
+                        ? 'تتطلب هذه الخدمة صورة قبل التنفيذ؛ سيظهر التحقق قبل تأكيد الطلب.'
+                        : 'تم إرفاق ${item.attachments.length} صورة لهذا العنصر.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -498,9 +809,11 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,10 +830,10 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
                     width: 72,
                     height: 72,
                     alignment: Alignment.center,
-                    color: const Color(0xFFF3F4F6),
-                    child: const Icon(
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                    child: Icon(
                       Icons.cleaning_services_outlined,
-                      color: Color(0xFF9CA3AF),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -531,6 +844,13 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (service.description?.trim().isNotEmpty == true) ...[
+                    Text(
+                      service.description!.trim(),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 6),
+                  ],
                   if (service.pricingUnit?.trim().isNotEmpty == true)
                     _CatalogMetaLine(
                       label: 'cleaningExtras.pricingUnit'.tr(),
@@ -541,11 +861,16 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
                       label: 'cleaningExtras.baseUnitPrice'.tr(),
                       value: _money(service.baseUnitPrice, currency) ?? '-',
                     ),
+                  if (service.estimatedDurationMinutes != null)
+                    _CatalogMetaLine(
+                      label: 'المدة التقديرية',
+                      value: _durationLabel(service.estimatedDurationMinutes!),
+                    ),
                   const SizedBox(height: 4),
                   Text(
                     'cleaningExtras.requiredEquipment'.tr(),
-                    style: const TextStyle(
-                      color: Color(0xFF374151),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -554,8 +879,8 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
                   if (equipment.isEmpty)
                     Text(
                       'cleaningExtras.noRequiredEquipment'.tr(),
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     )
@@ -597,15 +922,15 @@ class _CatalogMetaLine extends StatelessWidget {
           children: [
             TextSpan(
               text: '$label: ',
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 12,
               ),
             ),
             TextSpan(
               text: value,
-              style: const TextStyle(
-                color: Color(0xFF111827),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -628,7 +953,7 @@ class _CalculatedLinesCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
+        color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -671,13 +996,15 @@ class _SpecialServiceLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final quantity = _number(line.quantity);
     final details = <String>[
-      if (quantity != null) quantity,
-      if (line.pricingUnit?.trim().isNotEmpty == true)
-        line.pricingUnit!.trim(),
+      ?quantity,
+      if (line.pricingUnit?.trim().isNotEmpty == true) line.pricingUnit!.trim(),
       if (line.dirtinessLabel?.trim().isNotEmpty == true)
         line.dirtinessLabel!.trim()
       else if (line.dirtinessLevel?.trim().isNotEmpty == true)
         _dirtinessDisplayLabel(line.dirtinessLevel!.trim()),
+      if (line.items.isNotEmpty) '${line.items.length} عناصر',
+      if (line.executionStatus?.trim().isNotEmpty == true)
+        line.executionStatus!.trim(),
     ];
 
     return _DetailLine(
@@ -723,7 +1050,7 @@ class _OpenTimeCard extends StatelessWidget {
       if (openTime.totalPrice != null)
         MapEntry(
           'cleaningExtras.finalPrice'.tr(),
-          _money(openTime.totalPrice, currency),
+          _money(openTime.totalPrice, currency)!,
         ),
     ];
 
@@ -733,11 +1060,8 @@ class _OpenTimeCard extends StatelessWidget {
       title: 'cleaningExtras.openTimeEstimate'.tr(),
       children: rows
           .map(
-            (row) => _DetailLine(
-              title: row.key,
-              subtitle: row.value,
-              amount: null,
-            ),
+            (row) =>
+                _DetailLine(title: row.key, subtitle: row.value, amount: null),
           )
           .toList(growable: false),
     );
@@ -820,13 +1144,16 @@ class _InlineFeedback extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF2F2),
+          color: Theme.of(context).colorScheme.errorContainer,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFFECACA)),
+          border: Border.all(color: Theme.of(context).colorScheme.error),
         ),
         child: Row(
           children: [
-            const Icon(Icons.error_outline, color: Color(0xFFB91C1C)),
+            Icon(
+              Icons.error_outline,
+              color: Theme.of(context).colorScheme.onErrorContainer,
+            ),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
             TextButton(
@@ -850,6 +1177,34 @@ CleaningServiceModel? _findServiceById(
   return null;
 }
 
+List<CleaningSpecialServiceItemRequest> _normalizeItemsForService(
+  List<CleaningSpecialServiceItemRequest> items,
+  CleaningServiceModel? service,
+) {
+  if (service == null) return items;
+  if (!service.supportsDirtiness) {
+    return items
+        .map((item) => item.copyWith(clearDirtinessLevel: true))
+        .toList(growable: false);
+  }
+
+  final validIds = service.dirtinessRules
+      .map((rule) => rule.id)
+      .whereType<int>()
+      .toSet();
+  final fallbackId = validIds.firstOrNull;
+  return items
+      .map(
+        (item) => validIds.contains(item.dirtinessLevelId)
+            ? item
+            : item.copyWith(
+                dirtinessLevelId: fallbackId,
+                clearDirtinessLevel: fallbackId == null,
+              ),
+      )
+      .toList(growable: false);
+}
+
 String _dirtinessDisplayLabel(String value) {
   final normalized = value.trim();
   return switch (normalized) {
@@ -866,6 +1221,14 @@ String? _number(double? value) {
             .toStringAsFixed(2)
             .replaceFirst(RegExp(r'0+$'), '')
             .replaceFirst(RegExp(r'\.$'), '');
+}
+
+String _durationLabel(int minutes) {
+  if (minutes < 60) return '$minutes دقيقة';
+  final hours = minutes ~/ 60;
+  final remainder = minutes % 60;
+  if (remainder == 0) return '$hours ساعة';
+  return '$hours ساعة و$remainder دقيقة';
 }
 
 String? _money(double? value, String currency) {
