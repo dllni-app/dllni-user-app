@@ -1,6 +1,7 @@
 import 'package:common_package/helpers/api_handler.dart';
 import 'package:common_package/helpers/dio_network.dart';
 import 'package:injectable/injectable.dart';
+import '../../../../core/models/cleaning_service_extras.dart';
 
 import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/check_restaurant_coupon_use_case.dart';
@@ -121,6 +122,54 @@ class OrdersRemoteDataSource with HandlingApiManager {
         endPoint: '/api/v1/user/cleaning/orders/${params.orderId}',
       ),
       jsonConvert: fetchCleaningOrderDetailsModelFromJson,
+    );
+  }
+
+  Future<CleaningOpenTimeModel> fetchCleaningOpenTimeMeter(
+    int orderId, {
+    int? sessionId,
+  }) {
+    final endpoint = sessionId == null
+        ? '/api/v1/user/cleaning/orders/$orderId/open-time/meter'
+        : '/api/v1/user/cleaning/orders/$orderId/sessions/$sessionId/open-time/meter';
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.getData(endPoint: endpoint),
+      jsonConvert: cleaningOpenTimeEnvelopeFromJson,
+    );
+  }
+
+  Future<CleaningOpenTimeModel> requestCleaningOpenTimeExtension({
+    required int orderId,
+    required int minutes,
+    required String idempotencyKey,
+    int? sessionId,
+  }) {
+    final endpoint = sessionId == null
+        ? '/api/v1/user/cleaning/orders/$orderId/open-time/extensions'
+        : '/api/v1/user/cleaning/orders/$orderId/sessions/$sessionId/open-time/extensions';
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: endpoint,
+        data: <String, dynamic>{'minutes': minutes},
+        headers: <String, dynamic>{'Idempotency-Key': idempotencyKey},
+      ),
+      jsonConvert: cleaningOpenTimeEnvelopeFromJson,
+    );
+  }
+
+  Future<CleaningOpenTimeModel> requestCleaningOpenTimeEnd(
+    int orderId, {
+    int? sessionId,
+  }) {
+    final endpoint = sessionId == null
+        ? '/api/v1/user/cleaning/orders/$orderId/open-time/end'
+        : '/api/v1/user/cleaning/orders/$orderId/sessions/$sessionId/open-time/end';
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: endpoint,
+        data: const <String, dynamic>{},
+      ),
+      jsonConvert: cleaningOpenTimeEnvelopeFromJson,
     );
   }
 

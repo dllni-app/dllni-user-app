@@ -51,28 +51,31 @@ class _RestaurantOrderTrackingScreenState
         .toLowerCase();
     return status.contains('delivered') ||
         status.contains('completed') ||
-        status.contains('cancelled');
+        status.contains('cancelled') ||
+        status.contains('rejected');
   }
 
-  bool _matchesCurrentOrder(RemoteMessage message) {
-    final orderId = widget.args.order.id;
-    final deliveryOrderId = widget.args.order.deliveryOrderId;
-    final data = message.data;
-    final ids = <String>{
-      if (data['orderId'] != null) data['orderId'].toString(),
-      if (data['order_id'] != null) data['order_id'].toString(),
-      if (data['sourceId'] != null) data['sourceId'].toString(),
-      if (data['source_id'] != null) data['source_id'].toString(),
-    };
-    if (orderId != null && ids.contains(orderId.toString())) return true;
-    if (deliveryOrderId != null && ids.contains(deliveryOrderId.toString())) return true;
-
-    final text = <String>[
-      ...data.entries.map((entry) => '${entry.key}:${entry.value}'),
+  bool _isRelevantMessage(RemoteMessage message) {
+    final orderId = widget.args.order.id?.toString();
+    final deliveryOrderId = widget.args.order.deliveryOrderId?.toString();
+    final serialized = <String>[
+      ...message.data.entries.map((entry) => '${entry.key}:${entry.value}'),
       message.notification?.title ?? '',
       message.notification?.body ?? '',
     ].join(' ').toLowerCase();
-    return text.contains('order') || text.contains('delivery') || text.contains('طلب') || text.contains('توصيل');
+
+    if (orderId != null && serialized.contains(orderId)) {
+      return true;
+    }
+    if (deliveryOrderId != null && serialized.contains(deliveryOrderId)) {
+      return true;
+    }
+    return serialized.contains('order') ||
+        serialized.contains('delivery') ||
+        serialized.contains('restaurant') ||
+        serialized.contains('supermarket') ||
+        serialized.contains('طلب') ||
+        serialized.contains('توصيل');
   }
 
   @override
@@ -80,9 +83,8 @@ class _RestaurantOrderTrackingScreenState
     super.initState();
     _fetchTracking();
     _fcmSubscription = FirebaseMessaging.onMessage.listen((message) {
-      if (_matchesCurrentOrder(message)) {
-        _fetchTracking(silent: true);
-      }
+      if (!mounted || !_isRelevantMessage(message)) return;
+      _fetchTracking(silent: true);
     });
   }
 
@@ -150,26 +152,29 @@ class _RestaurantOrderTrackingScreenState
 
     final Either<Failure, FetchRestaurantOrderTrackingModel> result =
         widget.args.section == 'supermarket'
-            ? await getIt<FetchStoreOrderTrackingUseCase>()(
-                FetchRestaurantOrderTrackingParams(orderId: id),
-              )
-            : await getIt<FetchRestaurantOrderTrackingUseCase>()(
-                FetchRestaurantOrderTrackingParams(orderId: id),
-              );
+        ? await getIt<FetchStoreOrderTrackingUseCase>()(
+            FetchRestaurantOrderTrackingParams(orderId: id),
+          )
+        : await getIt<FetchRestaurantOrderTrackingUseCase>()(
+            FetchRestaurantOrderTrackingParams(orderId: id),
+          );
 
     if (!mounted) return;
 
     result.fold(
       (Failure f) {
-        setState(() {
-          _error = f.message;
-          _loading = false;
-        });
+        if (!silent) {
+          setState(() {
+            _error = f.message;
+            _loading = false;
+          });
+        }
       },
       (FetchRestaurantOrderTrackingModel r) {
         setState(() {
           _tracking = r.data;
           _loading = false;
+          _error = null;
         });
         _syncPollTimer();
       },

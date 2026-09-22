@@ -18,7 +18,9 @@ class CleaningLifecycleErrorMapper {
       return 'غير مسموح بتنفيذ التحقق لهذا الطلب حالياً.';
     }
     if (statusCode == _statusUnprocessable) {
-      return _mapVerificationMessage(failure.message);
+      final mapped = _mapVerificationMessage(failure.message);
+      if (mapped != failure.message) return mapped;
+      return 'رمز الوصول غير صحيح أو منتهي الصلاحية.';
     }
     return _mapVerificationMessage(failure.message);
   }

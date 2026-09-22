@@ -1,0 +1,968 @@
+import 'dart:convert';
+
+import 'package:dllni_user_app/core/models/cleaning_service_extras.dart';
+
+Map<String, dynamic> _map(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map((key, value) => MapEntry(key.toString(), value));
+  }
+  return const <String, dynamic>{};
+}
+
+int? _int(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '');
+}
+
+double? _double(dynamic value) {
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '');
+}
+
+bool? _bool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final normalized = value?.toString().trim().toLowerCase();
+  if (normalized == 'true' || normalized == '1') return true;
+  if (normalized == 'false' || normalized == '0') return false;
+  return null;
+}
+
+String? _string(dynamic value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
+}
+
+List<int> _intList(dynamic value) {
+  if (value is! List) return const <int>[];
+  return value.map(_int).whereType<int>().toList(growable: false);
+}
+
+List<String> _stringList(dynamic value) {
+  if (value is! List) return const <String>[];
+  return value
+      .map(_string)
+      .whereType<String>()
+      .map((item) => item.toLowerCase())
+      .toSet()
+      .toList(growable: false);
+}
+
+Map<String, List<int>> _actionWorkerIds(dynamic value) {
+  final raw = _map(value);
+  if (raw.isEmpty) return const <String, List<int>>{};
+
+  return raw.map(
+    (key, workerIds) => MapEntry(key.trim().toLowerCase(), _intList(workerIds)),
+  );
+}
+
+Map<String, dynamic> _orderMap(Map<String, dynamic> root) {
+  for (final key in const ['data', 'order']) {
+    final candidate = root[key];
+    if (candidate is Map) return _map(candidate);
+  }
+  return root;
+}
+
+class CleaningSessionPricingModel {
+  final double? basePrice;
+  final double? travelFee;
+  final double? travelDistanceKm;
+  final double? adminMargin;
+  final double? extensionFeeTotal;
+  final double? cancellationFee;
+  final double? totalPrice;
+  final bool? isPricingFinal;
+  final String? currency;
+
+  const CleaningSessionPricingModel({
+    this.basePrice,
+    this.travelFee,
+    this.travelDistanceKm,
+    this.adminMargin,
+    this.extensionFeeTotal,
+    this.cancellationFee,
+    this.totalPrice,
+    this.isPricingFinal,
+    this.currency,
+  });
+
+  factory CleaningSessionPricingModel.fromJson(Map<String, dynamic> json) {
+    return CleaningSessionPricingModel(
+      basePrice: _double(json['basePrice'] ?? json['base_price']),
+      travelFee: _double(json['travelFee'] ?? json['travel_fee']),
+      travelDistanceKm: _double(
+        json['travelDistanceKm'] ?? json['travel_distance_km'],
+      ),
+      adminMargin: _double(json['adminMargin'] ?? json['admin_margin']),
+      extensionFeeTotal: _double(
+        json['extensionFeeTotal'] ?? json['extension_fee_total'],
+      ),
+      cancellationFee: _double(
+        json['cancellationFee'] ?? json['cancellation_fee'],
+      ),
+      totalPrice: _double(json['totalPrice'] ?? json['total_price']),
+      isPricingFinal: _bool(json['isPricingFinal'] ?? json['is_pricing_final']),
+      currency: _string(json['currency']),
+    );
+  }
+}
+
+class CleaningSessionPaymentModel {
+  final String status;
+  final double? amount;
+  final String? currency;
+  final String? settledAt;
+  final bool isInternalSettlement;
+
+  const CleaningSessionPaymentModel({
+    required this.status,
+    this.amount,
+    this.currency,
+    this.settledAt,
+    this.isInternalSettlement = true,
+  });
+
+  factory CleaningSessionPaymentModel.fromJson(Map<String, dynamic> json) {
+    return CleaningSessionPaymentModel(
+      status: _string(json['status']) ?? 'pending',
+      amount: _double(json['amount']),
+      currency: _string(json['currency']),
+      settledAt: _string(json['settledAt'] ?? json['settled_at']),
+      isInternalSettlement:
+          _bool(
+            json['isInternalSettlement'] ?? json['is_internal_settlement'],
+          ) ??
+          true,
+    );
+  }
+}
+
+class CleaningSessionAttendanceIncidentModel {
+  final int? workerId;
+  final String? workerName;
+  final String? lateReportedAt;
+  final String? noTravelReportedAt;
+  final String? action;
+  final String? resolvedAt;
+  final String? note;
+
+  const CleaningSessionAttendanceIncidentModel({
+    this.workerId,
+    this.workerName,
+    this.lateReportedAt,
+    this.noTravelReportedAt,
+    this.action,
+    this.resolvedAt,
+    this.note,
+  });
+
+  factory CleaningSessionAttendanceIncidentModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningSessionAttendanceIncidentModel(
+      workerId: _int(json['workerId'] ?? json['worker_id']),
+      workerName: _string(json['workerName'] ?? json['worker_name']),
+      lateReportedAt: _string(
+        json['lateReportedAt'] ?? json['late_reported_at'],
+      ),
+      noTravelReportedAt: _string(
+        json['noTravelReportedAt'] ?? json['no_travel_reported_at'],
+      ),
+      action: _string(json['action']),
+      resolvedAt: _string(json['resolvedAt'] ?? json['resolved_at']),
+      note: _string(json['note']),
+    );
+  }
+
+  bool get isNoTravel => noTravelReportedAt != null;
+  bool get isResolved => resolvedAt != null;
+}
+
+class CleaningSessionAttendanceModel {
+  final int lateGraceMinutes;
+  final int noTravelGraceMinutes;
+  final int minutesPastStart;
+  final List<String> allowedActions;
+  final Map<String, List<int>> actionWorkerIds;
+  final bool hasActionContract;
+  final List<CleaningSessionAttendanceIncidentModel> incidents;
+
+  const CleaningSessionAttendanceModel({
+    this.lateGraceMinutes = 15,
+    this.noTravelGraceMinutes = 30,
+    this.minutesPastStart = 0,
+    this.allowedActions = const <String>[],
+    this.actionWorkerIds = const <String, List<int>>{},
+    this.hasActionContract = false,
+    this.incidents = const <CleaningSessionAttendanceIncidentModel>[],
+  });
+
+  factory CleaningSessionAttendanceModel.fromJson(Map<String, dynamic> json) {
+    final rawIncidents = json['incidents'];
+    final hasActionContract =
+        json.containsKey('allowedActions') ||
+        json.containsKey('allowed_actions') ||
+        json.containsKey('actionWorkerIds') ||
+        json.containsKey('action_worker_ids');
+
+    return CleaningSessionAttendanceModel(
+      lateGraceMinutes:
+          _int(json['lateGraceMinutes'] ?? json['late_grace_minutes']) ?? 15,
+      noTravelGraceMinutes:
+          _int(
+            json['noTravelGraceMinutes'] ?? json['no_travel_grace_minutes'],
+          ) ??
+          30,
+      minutesPastStart:
+          _int(json['minutesPastStart'] ?? json['minutes_past_start']) ?? 0,
+      allowedActions: _stringList(
+        json['allowedActions'] ?? json['allowed_actions'],
+      ),
+      actionWorkerIds: _actionWorkerIds(
+        json['actionWorkerIds'] ?? json['action_worker_ids'],
+      ),
+      hasActionContract: hasActionContract,
+      incidents: rawIncidents is List
+          ? rawIncidents
+                .whereType<Map>()
+                .map(
+                  (item) => CleaningSessionAttendanceIncidentModel.fromJson(
+                    _map(item),
+                  ),
+                )
+                .toList(growable: false)
+          : const <CleaningSessionAttendanceIncidentModel>[],
+    );
+  }
+
+  bool allows(String action) =>
+      allowedActions.contains(action.trim().toLowerCase());
+
+  List<int> workerIdsFor(String action) =>
+      actionWorkerIds[action.trim().toLowerCase()] ?? const <int>[];
+}
+
+class CleaningSessionWorkerAssignmentModel {
+  final int? id;
+  final int? parentAssignmentId;
+  final int? workerId;
+  final String? workerName;
+  final String? status;
+  final String? lateReportedAt;
+  final String? noTravelReportedAt;
+  final String? attendanceAction;
+  final String? attendanceResolvedAt;
+  final String? attendanceNote;
+  final String? startedTravelAt;
+  final String? arrivedAt;
+  final String? locationUpdatedAt;
+  final double? lastLatitude;
+  final double? lastLongitude;
+  final String? startApprovedAt;
+  final String? workStartedAt;
+  final String? workFinishedAt;
+  final String? workerCompletionMessage;
+  final double? serviceShareAmount;
+  final double? travelFee;
+  final double? adminMarginAmount;
+  final double? workerAmount;
+  final String? currency;
+
+  const CleaningSessionWorkerAssignmentModel({
+    this.id,
+    this.parentAssignmentId,
+    this.workerId,
+    this.workerName,
+    this.status,
+    this.lateReportedAt,
+    this.noTravelReportedAt,
+    this.attendanceAction,
+    this.attendanceResolvedAt,
+    this.attendanceNote,
+    this.startedTravelAt,
+    this.arrivedAt,
+    this.locationUpdatedAt,
+    this.lastLatitude,
+    this.lastLongitude,
+    this.startApprovedAt,
+    this.workStartedAt,
+    this.workFinishedAt,
+    this.workerCompletionMessage,
+    this.serviceShareAmount,
+    this.travelFee,
+    this.adminMarginAmount,
+    this.workerAmount,
+    this.currency,
+  });
+
+  factory CleaningSessionWorkerAssignmentModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningSessionWorkerAssignmentModel(
+      id: _int(json['id']),
+      parentAssignmentId: _int(
+        json['parentAssignmentId'] ?? json['parent_assignment_id'],
+      ),
+      workerId: _int(json['workerId'] ?? json['worker_id']),
+      workerName: _string(json['workerName'] ?? json['worker_name']),
+      status: _string(json['status']),
+      lateReportedAt: _string(
+        json['lateReportedAt'] ?? json['late_reported_at'],
+      ),
+      noTravelReportedAt: _string(
+        json['noTravelReportedAt'] ?? json['no_travel_reported_at'],
+      ),
+      attendanceAction: _string(
+        json['attendanceAction'] ?? json['attendance_action'],
+      ),
+      attendanceResolvedAt: _string(
+        json['attendanceResolvedAt'] ?? json['attendance_resolved_at'],
+      ),
+      attendanceNote: _string(
+        json['attendanceNote'] ?? json['attendance_note'],
+      ),
+      startedTravelAt: _string(
+        json['startedTravelAt'] ?? json['started_travel_at'],
+      ),
+      arrivedAt: _string(json['arrivedAt'] ?? json['arrived_at']),
+      locationUpdatedAt: _string(
+        json['locationUpdatedAt'] ?? json['location_updated_at'],
+      ),
+      lastLatitude: _double(json['lastLatitude'] ?? json['last_latitude']),
+      lastLongitude: _double(json['lastLongitude'] ?? json['last_longitude']),
+      startApprovedAt: _string(
+        json['startApprovedAt'] ?? json['start_approved_at'],
+      ),
+      workStartedAt: _string(json['workStartedAt'] ?? json['work_started_at']),
+      workFinishedAt: _string(
+        json['workFinishedAt'] ?? json['work_finished_at'],
+      ),
+      workerCompletionMessage: _string(
+        json['workerCompletionMessage'] ?? json['worker_completion_message'],
+      ),
+      serviceShareAmount: _double(
+        json['serviceShareAmount'] ?? json['service_share_amount'],
+      ),
+      travelFee: _double(json['travelFee'] ?? json['travel_fee']),
+      adminMarginAmount: _double(
+        json['adminMarginAmount'] ?? json['admin_margin_amount'],
+      ),
+      workerAmount: _double(json['workerAmount'] ?? json['worker_amount']),
+      currency: _string(json['currency']),
+    );
+  }
+}
+
+class CleaningBookingSessionModel {
+  final int? id;
+  final int sequence;
+  final String? sessionType;
+  final DateTime? date;
+  final String? time;
+  final double hours;
+  final String status;
+  final String? statusLabel;
+  final bool isPast;
+  final bool isToday;
+  final bool canStartTravel;
+  final bool canArrive;
+  final bool canStartWork;
+  final bool canComplete;
+  final bool canConfirmStartVerification;
+  final bool canConfirmCompletion;
+  final bool canSendSos;
+  final bool canExtend;
+  final bool canRequestOpenTimeExtension;
+  final bool canRequestOpenTimeEnd;
+  final bool canCancel;
+  final bool canSkip;
+  final bool canReportLate;
+  final bool canReportNoTravel;
+  final List<int> lateWorkerIds;
+  final List<int> noTravelWorkerIds;
+  final List<int> reportableLateWorkerIds;
+  final List<int> reportableNoTravelWorkerIds;
+  final List<String> allowedAttendanceActions;
+  final Map<String, List<int>> attendanceActionWorkerIds;
+  final bool hasAttendanceActionContract;
+  final CleaningSessionAttendanceModel? attendance;
+  final bool? canReschedule;
+  final CleaningSessionPaymentModel? payment;
+  final String paymentStatus;
+  final String? paymentSettledAt;
+  final bool canReview;
+  final bool hasReview;
+  final List<int> reviewedWorkerIds;
+  final List<int> reviewableWorkerIds;
+  final bool canOpenDispute;
+  final bool hasOpenDispute;
+  final int? disputeId;
+  final String? disputeStatus;
+  final CleaningSessionPricingModel? pricing;
+  final String? startedTravelAt;
+  final String? arrivedAt;
+  final String? customerConfirmedAt;
+  final String? workStartedAt;
+  final String? workFinishedAt;
+  final String? cancelledAt;
+  final String? cancellationReason;
+  final String? cancelledByRole;
+  final String? skippedAt;
+  final String? skipReason;
+  final CleaningSessionWorkerAssignmentModel? workerAssignmentState;
+  final List<CleaningSessionWorkerAssignmentModel> workerAssignments;
+  final CleaningOpenTimeModel? openTime;
+
+  const CleaningBookingSessionModel({
+    this.id,
+    required this.sequence,
+    this.sessionType,
+    this.date,
+    this.time,
+    required this.hours,
+    required this.status,
+    this.statusLabel,
+    required this.isPast,
+    required this.isToday,
+    required this.canStartTravel,
+    required this.canArrive,
+    required this.canStartWork,
+    required this.canComplete,
+    required this.canConfirmStartVerification,
+    required this.canConfirmCompletion,
+    required this.canSendSos,
+    required this.canExtend,
+    this.canRequestOpenTimeExtension = false,
+    this.canRequestOpenTimeEnd = false,
+    required this.canCancel,
+    this.canSkip = false,
+    this.canReportLate = false,
+    this.canReportNoTravel = false,
+    this.lateWorkerIds = const <int>[],
+    this.noTravelWorkerIds = const <int>[],
+    this.reportableLateWorkerIds = const <int>[],
+    this.reportableNoTravelWorkerIds = const <int>[],
+    this.allowedAttendanceActions = const <String>[],
+    this.attendanceActionWorkerIds = const <String, List<int>>{},
+    this.hasAttendanceActionContract = false,
+    this.attendance,
+    this.canReschedule,
+    this.payment,
+    this.paymentStatus = 'pending',
+    this.paymentSettledAt,
+    this.canReview = false,
+    this.hasReview = false,
+    this.reviewedWorkerIds = const <int>[],
+    this.reviewableWorkerIds = const <int>[],
+    this.canOpenDispute = false,
+    this.hasOpenDispute = false,
+    this.disputeId,
+    this.disputeStatus,
+    this.pricing,
+    this.startedTravelAt,
+    this.arrivedAt,
+    this.customerConfirmedAt,
+    this.workStartedAt,
+    this.workFinishedAt,
+    this.cancelledAt,
+    this.cancellationReason,
+    this.cancelledByRole,
+    this.skippedAt,
+    this.skipReason,
+    this.workerAssignmentState,
+    this.workerAssignments = const <CleaningSessionWorkerAssignmentModel>[],
+    this.openTime,
+  });
+
+  factory CleaningBookingSessionModel.fromJson(Map<String, dynamic> json) {
+    final rawAssignments =
+        json['workerAssignments'] ?? json['worker_assignments'];
+    final rawAssignmentState =
+        json['workerAssignmentState'] ?? json['worker_assignment_state'];
+    final rawReviewedWorkerIds =
+        json['reviewedWorkerIds'] ?? json['reviewed_worker_ids'];
+    final rawReviewableWorkerIds =
+        json['reviewableWorkerIds'] ?? json['reviewable_worker_ids'];
+    final rawLateWorkerIds = json['lateWorkerIds'] ?? json['late_worker_ids'];
+    final rawNoTravelWorkerIds =
+        json['noTravelWorkerIds'] ?? json['no_travel_worker_ids'];
+    final rawReportableLateWorkerIds =
+        json['reportableLateWorkerIds'] ?? json['reportable_late_worker_ids'];
+    final rawReportableNoTravelWorkerIds =
+        json['reportableNoTravelWorkerIds'] ??
+        json['reportable_no_travel_worker_ids'];
+    final attendance = json['attendance'] is Map
+        ? CleaningSessionAttendanceModel.fromJson(_map(json['attendance']))
+        : null;
+    final hasTopLevelAttendanceActionContract =
+        json.containsKey('allowedAttendanceActions') ||
+        json.containsKey('allowed_attendance_actions') ||
+        json.containsKey('attendanceActionWorkerIds') ||
+        json.containsKey('attendance_action_worker_ids');
+
+    return CleaningBookingSessionModel(
+      id: _int(json['id']),
+      sequence: _int(json['sequence']) ?? 1,
+      sessionType: _string(json['sessionType'] ?? json['session_type']),
+      date: DateTime.tryParse(_string(json['date']) ?? ''),
+      time: _string(json['time']),
+      hours:
+          _double(
+            json['hours'] ?? json['durationHours'] ?? json['duration_hours'],
+          ) ??
+          0,
+      status: _string(json['status']) ?? 'scheduled',
+      statusLabel: _string(json['statusLabel'] ?? json['status_label']),
+      isPast: _bool(json['isPast'] ?? json['is_past']) ?? false,
+      isToday: _bool(json['isToday'] ?? json['is_today']) ?? false,
+      canStartTravel:
+          _bool(json['canStartTravel'] ?? json['can_start_travel']) ?? false,
+      canArrive: _bool(json['canArrive'] ?? json['can_arrive']) ?? false,
+      canStartWork:
+          _bool(json['canStartWork'] ?? json['can_start_work']) ??
+          _bool(json['canStart'] ?? json['can_start']) ??
+          false,
+      canComplete: _bool(json['canComplete'] ?? json['can_complete']) ?? false,
+      canConfirmStartVerification:
+          _bool(
+            json['canConfirmStartVerification'] ??
+                json['can_confirm_start_verification'],
+          ) ??
+          false,
+      canConfirmCompletion:
+          _bool(
+            json['canConfirmCompletion'] ?? json['can_confirm_completion'],
+          ) ??
+          false,
+      canSendSos: _bool(json['canSendSos'] ?? json['can_send_sos']) ?? false,
+      canExtend: _bool(json['canExtend'] ?? json['can_extend']) ?? false,
+      canRequestOpenTimeExtension:
+          _bool(
+            json['canRequestOpenTimeExtension'] ??
+                json['can_request_open_time_extension'],
+          ) ??
+          false,
+      canRequestOpenTimeEnd:
+          _bool(
+            json['canRequestOpenTimeEnd'] ?? json['can_request_open_time_end'],
+          ) ??
+          false,
+      canCancel: _bool(json['canCancel'] ?? json['can_cancel']) ?? false,
+      canSkip: _bool(json['canSkip'] ?? json['can_skip']) ?? false,
+      canReportLate:
+          _bool(json['canReportLate'] ?? json['can_report_late']) ?? false,
+      canReportNoTravel:
+          _bool(json['canReportNoTravel'] ?? json['can_report_no_travel']) ??
+          false,
+      lateWorkerIds: _intList(rawLateWorkerIds),
+      noTravelWorkerIds: _intList(rawNoTravelWorkerIds),
+      reportableLateWorkerIds: _intList(rawReportableLateWorkerIds),
+      reportableNoTravelWorkerIds: _intList(rawReportableNoTravelWorkerIds),
+      allowedAttendanceActions: _stringList(
+        json['allowedAttendanceActions'] ?? json['allowed_attendance_actions'],
+      ),
+      attendanceActionWorkerIds: _actionWorkerIds(
+        json['attendanceActionWorkerIds'] ??
+            json['attendance_action_worker_ids'],
+      ),
+      hasAttendanceActionContract:
+          hasTopLevelAttendanceActionContract ||
+          (attendance?.hasActionContract ?? false),
+      attendance: attendance,
+      canReschedule: _bool(json['canReschedule'] ?? json['can_reschedule']),
+      payment: json['payment'] is Map
+          ? CleaningSessionPaymentModel.fromJson(_map(json['payment']))
+          : null,
+      paymentStatus:
+          _string(json['paymentStatus'] ?? json['payment_status']) ??
+          _string(_map(json['payment'])['status']) ??
+          'pending',
+      paymentSettledAt:
+          _string(json['paymentSettledAt'] ?? json['payment_settled_at']) ??
+          _string(_map(json['payment'])['settledAt']),
+      canReview: _bool(json['canReview'] ?? json['can_review']) ?? false,
+      hasReview: _bool(json['hasReview'] ?? json['has_review']) ?? false,
+      reviewedWorkerIds: _intList(rawReviewedWorkerIds),
+      reviewableWorkerIds: _intList(rawReviewableWorkerIds),
+      canOpenDispute:
+          _bool(json['canOpenDispute'] ?? json['can_open_dispute']) ?? false,
+      hasOpenDispute:
+          _bool(json['hasOpenDispute'] ?? json['has_open_dispute']) ?? false,
+      disputeId: _int(json['disputeId'] ?? json['dispute_id']),
+      disputeStatus: _string(json['disputeStatus'] ?? json['dispute_status']),
+      pricing: json['pricing'] is Map
+          ? CleaningSessionPricingModel.fromJson(_map(json['pricing']))
+          : null,
+      startedTravelAt: _string(
+        json['startedTravelAt'] ?? json['started_travel_at'],
+      ),
+      arrivedAt: _string(json['arrivedAt'] ?? json['arrived_at']),
+      customerConfirmedAt: _string(
+        json['customerConfirmedAt'] ?? json['customer_confirmed_at'],
+      ),
+      workStartedAt: _string(json['workStartedAt'] ?? json['work_started_at']),
+      workFinishedAt: _string(
+        json['workFinishedAt'] ?? json['work_finished_at'],
+      ),
+      cancelledAt: _string(json['cancelledAt'] ?? json['cancelled_at']),
+      cancellationReason: _string(
+        json['cancellationReason'] ?? json['cancellation_reason'],
+      ),
+      cancelledByRole: _string(
+        json['cancelledByRole'] ?? json['cancelled_by_role'],
+      ),
+      skippedAt: _string(json['skippedAt'] ?? json['skipped_at']),
+      skipReason: _string(json['skipReason'] ?? json['skip_reason']),
+      workerAssignmentState: rawAssignmentState is Map
+          ? CleaningSessionWorkerAssignmentModel.fromJson(
+              _map(rawAssignmentState),
+            )
+          : null,
+      workerAssignments: rawAssignments is List
+          ? rawAssignments
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      CleaningSessionWorkerAssignmentModel.fromJson(_map(item)),
+                )
+                .toList(growable: false)
+          : const <CleaningSessionWorkerAssignmentModel>[],
+      openTime: (json['openTime'] ?? json['open_time']) is Map
+          ? CleaningOpenTimeModel.fromJson(
+              _map(json['openTime'] ?? json['open_time']),
+            )
+          : null,
+    );
+  }
+
+  List<String> get effectiveAttendanceActions {
+    if (hasAttendanceActionContract) {
+      if (allowedAttendanceActions.isNotEmpty) return allowedAttendanceActions;
+      return attendance?.allowedActions ?? const <String>[];
+    }
+
+    final actions = <String>[];
+    if ((canReportLate && reportableLateWorkerIds.isNotEmpty) ||
+        (canReportNoTravel && reportableNoTravelWorkerIds.isNotEmpty)) {
+      actions.add('wait');
+    }
+    if (canReportNoTravel && reportableNoTravelWorkerIds.isNotEmpty) {
+      actions.addAll(const ['replace', 'cancel']);
+    }
+    return actions;
+  }
+
+  bool allowsAttendanceAction(String action) =>
+      effectiveAttendanceActions.contains(action.trim().toLowerCase());
+
+  List<int> attendanceWorkerIdsFor(String action) {
+    final normalized = action.trim().toLowerCase();
+    if (hasAttendanceActionContract) {
+      final direct = attendanceActionWorkerIds[normalized];
+      if (direct != null) return direct;
+      return attendance?.workerIdsFor(normalized) ?? const <int>[];
+    }
+
+    if (normalized == 'wait') {
+      if (canReportNoTravel && reportableNoTravelWorkerIds.isNotEmpty) {
+        return reportableNoTravelWorkerIds;
+      }
+      return reportableLateWorkerIds;
+    }
+    if (normalized == 'replace' || normalized == 'cancel') {
+      return reportableNoTravelWorkerIds;
+    }
+    return const <int>[];
+  }
+
+  bool get hasAttendanceActions => effectiveAttendanceActions.isNotEmpty;
+  bool get hasNoTravelAttendanceActions =>
+      allowsAttendanceAction('replace') || allowsAttendanceAction('cancel');
+
+  bool get canStart => canStartWork || canStartTravel;
+  bool get isOpenTime => sessionType == 'open_time' || openTime != null;
+  bool get isCompleted => status == 'completed';
+  bool get isCancelled => status == 'cancelled';
+  bool get isSkipped => status == 'skipped';
+  bool get isPaused => status == 'paused';
+  bool get isTerminal =>
+      isCompleted || isCancelled || isSkipped || status == 'under_dispute';
+  bool get isAwaitingStartVerification =>
+      status == 'awaiting_start_verification';
+  bool get isAwaitingCustomerCompletion =>
+      status == 'awaiting_customer_completion';
+  bool get isInProgress => status == 'in_progress';
+  bool get isExtensionPending => status == 'time_extension_requested';
+
+  bool get hasStartedExecution =>
+      startedTravelAt != null ||
+      arrivedAt != null ||
+      customerConfirmedAt != null ||
+      workStartedAt != null ||
+      workFinishedAt != null ||
+      status == 'awaiting_start_verification' ||
+      status == 'awaiting_worker_start_confirmation' ||
+      status == 'in_progress' ||
+      status == 'awaiting_customer_completion' ||
+      status == 'time_extension_requested' ||
+      status == 'under_dispute' ||
+      isCompleted;
+}
+
+class CleaningBookingScheduleModel {
+  final String mode;
+  final bool isRecurring;
+  final bool isOpenTime;
+  final bool isPaused;
+  final bool canPause;
+  final bool canResume;
+  final String? pausedAt;
+  final String? pauseReason;
+  final int daysCount;
+  final int completedDaysCount;
+  final int cancelledDaysCount;
+  final int skippedDaysCount;
+  final int remainingDaysCount;
+  final double totalHours;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+  final CleaningBookingSessionModel? nextSession;
+  final List<CleaningBookingSessionModel> sessions;
+
+  const CleaningBookingScheduleModel({
+    required this.mode,
+    this.isRecurring = false,
+    this.isOpenTime = false,
+    this.isPaused = false,
+    this.canPause = false,
+    this.canResume = false,
+    this.pausedAt,
+    this.pauseReason,
+    required this.daysCount,
+    required this.completedDaysCount,
+    required this.cancelledDaysCount,
+    this.skippedDaysCount = 0,
+    required this.remainingDaysCount,
+    required this.totalHours,
+    this.firstDate,
+    this.lastDate,
+    this.nextSession,
+    this.sessions = const <CleaningBookingSessionModel>[],
+  });
+
+  factory CleaningBookingScheduleModel.fromJson(Map<String, dynamic> json) {
+    final rawSessions = json['sessions'];
+    final sessions = rawSessions is List
+        ? rawSessions
+              .whereType<Map>()
+              .map((item) => CleaningBookingSessionModel.fromJson(_map(item)))
+              .toList(growable: false)
+        : const <CleaningBookingSessionModel>[];
+    final rawNext = json['nextSession'] ?? json['next_session'];
+
+    return CleaningBookingScheduleModel(
+      mode:
+          _string(json['mode']) ??
+          (sessions.length > 1 ? 'multi_day' : 'single_day'),
+      isRecurring:
+          _bool(json['isRecurring'] ?? json['is_recurring']) ??
+          sessions.any((item) => item.sessionType == 'recurring_cleaning'),
+      isOpenTime:
+          _bool(json['isOpenTime'] ?? json['is_open_time']) ??
+          sessions.any((item) => item.isOpenTime),
+      isPaused: _bool(json['isPaused'] ?? json['is_paused']) ?? false,
+      canPause: _bool(json['canPause'] ?? json['can_pause']) ?? false,
+      canResume: _bool(json['canResume'] ?? json['can_resume']) ?? false,
+      pausedAt: _string(json['pausedAt'] ?? json['paused_at']),
+      pauseReason: _string(json['pauseReason'] ?? json['pause_reason']),
+      daysCount:
+          _int(json['daysCount'] ?? json['days_count']) ?? sessions.length,
+      completedDaysCount:
+          _int(json['completedDaysCount'] ?? json['completed_days_count']) ??
+          sessions.where((item) => item.isCompleted).length,
+      cancelledDaysCount:
+          _int(json['cancelledDaysCount'] ?? json['cancelled_days_count']) ??
+          sessions.where((item) => item.isCancelled).length,
+      skippedDaysCount:
+          _int(
+            json['skippedSessionsCount'] ??
+                json['skippedDaysCount'] ??
+                json['skipped_days_count'],
+          ) ??
+          sessions.where((item) => item.isSkipped).length,
+      remainingDaysCount:
+          _int(json['remainingDaysCount'] ?? json['remaining_days_count']) ??
+          sessions.where((item) => !item.isTerminal).length,
+      totalHours:
+          _double(json['totalHours'] ?? json['total_hours']) ??
+          sessions
+              .where((item) => !item.isCancelled && !item.isSkipped)
+              .fold<double>(0, (sum, item) => sum + item.hours),
+      firstDate: DateTime.tryParse(
+        _string(json['firstDate'] ?? json['first_date']) ?? '',
+      ),
+      lastDate: DateTime.tryParse(
+        _string(json['lastDate'] ?? json['last_date']) ?? '',
+      ),
+      nextSession: rawNext is Map
+          ? CleaningBookingSessionModel.fromJson(_map(rawNext))
+          : null,
+      sessions: sessions,
+    );
+  }
+
+  bool get isMultiDay => mode == 'multi_day' || sessions.length > 1;
+  bool get hasSessions => sessions.isNotEmpty;
+  bool get hasRecurringSeriesState =>
+      isRecurring || isPaused || canPause || canResume;
+
+  CleaningBookingSessionModel? sessionById(int? sessionId) {
+    if (sessionId == null) return null;
+    for (final session in sessions) {
+      if (session.id == sessionId) return session;
+    }
+    return null;
+  }
+}
+
+class CleaningRecurringScheduleRevisionPreviewModel {
+  final String revisionToken;
+  final bool requiresReconfirmation;
+  final bool scheduleChanged;
+  final bool priceChanged;
+  final double oldTotal;
+  final double newTotal;
+  final double priceDelta;
+  final double discountAmount;
+  final String currency;
+  final int editableSessionsCount;
+  final int preservedSessionsCount;
+  final int proposedSessionsCount;
+  final double sessionHours;
+
+  const CleaningRecurringScheduleRevisionPreviewModel({
+    required this.revisionToken,
+    required this.requiresReconfirmation,
+    required this.scheduleChanged,
+    required this.priceChanged,
+    required this.oldTotal,
+    required this.newTotal,
+    required this.priceDelta,
+    required this.discountAmount,
+    required this.currency,
+    required this.editableSessionsCount,
+    required this.preservedSessionsCount,
+    required this.proposedSessionsCount,
+    required this.sessionHours,
+  });
+
+  factory CleaningRecurringScheduleRevisionPreviewModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningRecurringScheduleRevisionPreviewModel(
+      revisionToken:
+          _string(json['revisionToken'] ?? json['revision_token']) ?? '',
+      requiresReconfirmation:
+          _bool(
+            json['requiresReconfirmation'] ?? json['requires_reconfirmation'],
+          ) ??
+          false,
+      scheduleChanged:
+          _bool(json['scheduleChanged'] ?? json['schedule_changed']) ?? false,
+      priceChanged:
+          _bool(json['priceChanged'] ?? json['price_changed']) ?? false,
+      oldTotal: _double(json['oldTotal'] ?? json['old_total']) ?? 0,
+      newTotal: _double(json['newTotal'] ?? json['new_total']) ?? 0,
+      priceDelta: _double(json['priceDelta'] ?? json['price_delta']) ?? 0,
+      discountAmount:
+          _double(json['discountAmount'] ?? json['discount_amount']) ?? 0,
+      currency: _string(json['currency']) ?? '',
+      editableSessionsCount:
+          _int(
+            json['editableSessionsCount'] ?? json['editable_sessions_count'],
+          ) ??
+          0,
+      preservedSessionsCount:
+          _int(
+            json['preservedSessionsCount'] ?? json['preserved_sessions_count'],
+          ) ??
+          0,
+      proposedSessionsCount:
+          _int(
+            json['proposedSessionsCount'] ?? json['proposed_sessions_count'],
+          ) ??
+          0,
+      sessionHours: _double(json['sessionHours'] ?? json['session_hours']) ?? 0,
+    );
+  }
+}
+
+CleaningRecurringScheduleRevisionPreviewModel
+cleaningRecurringScheduleRevisionPreviewFromJson(dynamic json) {
+  final root = json is String ? _map(jsonDecode(json)) : _map(json);
+  final data = _map(root['data']);
+  return CleaningRecurringScheduleRevisionPreviewModel.fromJson(
+    _map(data['revision'] ?? root['revision']),
+  );
+}
+
+class CleaningMultiDayOrderEnvelope {
+  final int? bookingId;
+  final String? bookingNumber;
+  final String? status;
+  final double? totalPrice;
+  final String? currency;
+  final bool canReview;
+  final bool hasReview;
+  final CleaningBookingScheduleModel? schedule;
+  final CleaningBookingSessionModel? session;
+
+  const CleaningMultiDayOrderEnvelope({
+    this.bookingId,
+    this.bookingNumber,
+    this.status,
+    this.totalPrice,
+    this.currency,
+    this.canReview = false,
+    this.hasReview = false,
+    this.schedule,
+    this.session,
+  });
+
+  factory CleaningMultiDayOrderEnvelope.fromJson(Map<String, dynamic> root) {
+    final order = _orderMap(root);
+    final scheduleRaw = order['schedule'];
+    final sessionRaw = root['session'];
+
+    return CleaningMultiDayOrderEnvelope(
+      bookingId: _int(order['id']),
+      bookingNumber: _string(order['bookingNumber'] ?? order['booking_number']),
+      status: _string(order['status']),
+      totalPrice: _double(order['totalPrice'] ?? order['total_price']),
+      currency: _string(order['currency']),
+      canReview: _bool(order['canReview'] ?? order['can_review']) ?? false,
+      hasReview: _bool(order['hasReview'] ?? order['has_review']) ?? false,
+      schedule: scheduleRaw is Map
+          ? CleaningBookingScheduleModel.fromJson(_map(scheduleRaw))
+          : null,
+      session: sessionRaw is Map
+          ? CleaningBookingSessionModel.fromJson(_map(sessionRaw))
+          : null,
+    );
+  }
+}
+
+CleaningMultiDayOrderEnvelope cleaningMultiDayOrderEnvelopeFromJson(
+  dynamic json,
+) {
+  if (json is String) {
+    final decoded = jsonDecode(json);
+    return CleaningMultiDayOrderEnvelope.fromJson(_map(decoded));
+  }
+  return CleaningMultiDayOrderEnvelope.fromJson(_map(json));
+}

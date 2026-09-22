@@ -1,8 +1,11 @@
 import 'package:common_package/helpers/typedef.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/models/cleaning_service_extras.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../models/cleaning_assignment_mode.dart';
+import '../models/cleaning_event_session.dart';
+import '../models/cleaning_recurring_session.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
 import '../models/cl_worker_room_assignment_result.dart';
@@ -12,7 +15,8 @@ export '../../data/models/estimate_price_response_model.dart';
 
 @lazySingleton
 class EstimateCleaningPriceUseCase
-    implements UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
+    implements
+        UseCase<EstimatePriceResponseModel, EstimateCleaningPriceParams> {
   final ClMainRepo clMainRepo;
 
   EstimateCleaningPriceUseCase({required this.clMainRepo});
@@ -40,15 +44,23 @@ class EstimateCleaningPriceParams with Params {
   final int? preferredWorkerId;
   final List<int> preferredWorkerIds;
   final String? eventType;
+  final int? eventTypeId;
+  final Map<String, dynamic> eventDynamicAnswers;
   final int? guestCount;
   final String? venueType;
   final String? customService;
   final double? hours;
+  final List<CleaningEventSessionInput> eventSessions;
+  final List<CleaningRecurringSessionInput> recurringSessions;
+  final CleaningRecurringCalculationMode recurringCalculationMode;
+  final double? recurringHoursPerVisit;
+  final CleaningRecurringWorkerScope recurringWorkerScope;
   final String? specialRequirement;
   final String? notes;
   final int? numberOfWorkers;
   final CleaningAssignmentMode assignmentMode;
   final List<Map<String, dynamic>>? workerRoomAssignments;
+  final CleaningServiceExtrasRequest serviceExtras;
 
   EstimateCleaningPriceParams({
     required this.propertyType,
@@ -64,24 +76,35 @@ class EstimateCleaningPriceParams with Params {
     required this.addressLongitude,
     this.preferredWorkerId,
     this.preferredWorkerIds = const <int>[],
+    this.recurringSessions = const <CleaningRecurringSessionInput>[],
+    this.recurringCalculationMode = CleaningRecurringCalculationMode.task,
+    this.recurringHoursPerVisit,
+    this.recurringWorkerScope = CleaningRecurringWorkerScope.any,
     this.assignmentMode = CleaningAssignmentMode.preferredWorker,
     this.numberOfWorkers,
     this.workerRoomAssignments,
+    this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : eventType = null,
+       eventTypeId = null,
+       eventDynamicAnswers = const <String, dynamic>{},
        guestCount = null,
        venueType = null,
        customService = null,
        hours = null,
+       eventSessions = const <CleaningEventSessionInput>[],
        specialRequirement = null,
        notes = null;
 
   EstimateCleaningPriceParams.eventAssistance({
     this.propertyType = 'event_assistance',
     required this.eventType,
+    this.eventTypeId,
+    this.eventDynamicAnswers = const <String, dynamic>{},
     required this.guestCount,
     required this.venueType,
     required this.customService,
     required this.hours,
+    this.eventSessions = const <CleaningEventSessionInput>[],
     this.addressId,
     this.addressLatitude,
     this.addressLongitude,
@@ -91,6 +114,7 @@ class EstimateCleaningPriceParams with Params {
     this.notes,
     this.numberOfWorkers,
     this.assignmentMode = CleaningAssignmentMode.openCount,
+    this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : bedrooms = null,
        workerRoomAssignments = null,
        rooms = null,
@@ -98,9 +122,25 @@ class EstimateCleaningPriceParams with Params {
        balconies = null,
        livingRoomSize = null,
        roomSizeBreakdown = null,
-       cleaningType = null;
+       cleaningType = null,
+       recurringSessions = const <CleaningRecurringSessionInput>[],
+       recurringCalculationMode = CleaningRecurringCalculationMode.task,
+       recurringHoursPerVisit = null,
+       recurringWorkerScope = CleaningRecurringWorkerScope.any;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
+
+  List<CleaningEventSessionInput> get _normalizedEventSessions =>
+      eventSessions.normalized;
+
+  List<CleaningRecurringSessionInput> get _normalizedRecurringSessions =>
+      recurringSessions.normalized;
+
+  double? get _resolvedLegacyEventHours {
+    final sessions = _normalizedEventSessions;
+    if (sessions.isNotEmpty) return sessions.first.hours;
+    return hours;
+  }
 
   List<int> _sanitizePreferredWorkerIds() {
     final normalized = <int>[];
@@ -111,29 +151,6 @@ class EstimateCleaningPriceParams with Params {
       normalized.add(id);
     }
     return normalized;
-  }
-
-  CleaningAssignmentMode _effectiveAssignmentMode(List<int> workerIds) {
-    if (workerIds.isEmpty) return assignmentMode;
-    final requestedWorkers = numberOfWorkers ?? 1;
-    if (assignmentMode == CleaningAssignmentMode.openCount ||
-        requestedWorkers > 1 ||
-        workerIds.length > 1) {
-      return CleaningAssignmentMode.openCount;
-    }
-    return CleaningAssignmentMode.preferredWorker;
-  }
-
-  int _resolvedNumberOfWorkers(
-    List<int> workerIds,
-    CleaningAssignmentMode effectiveAssignmentMode,
-  ) {
-    if (effectiveAssignmentMode == CleaningAssignmentMode.preferredWorker) {
-      return 1;
-    }
-    final requested = numberOfWorkers ?? 1;
-    final safeRequested = requested < 1 ? 1 : requested;
-    return workerIds.length > safeRequested ? workerIds.length : safeRequested;
   }
 
   int? get _resolvedBedrooms =>
@@ -159,7 +176,7 @@ class EstimateCleaningPriceParams with Params {
         'guestCount': guestCount,
         'venueType': venueType,
         'customService': customService?.trim(),
-        'hours': hours,
+        'hours': _resolvedLegacyEventHours,
         if (specialRequirement != null && specialRequirement!.trim().isNotEmpty)
           'specialRequirement': specialRequirement!.trim(),
         if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
@@ -173,29 +190,52 @@ class EstimateCleaningPriceParams with Params {
       'living_room_size': _resolvedLivingRoomSize,
       if (roomSizeBreakdown != null)
         'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
-      if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (cleaningType != null)
+        'cleaning_mode': cleaningType!.cleaningModeValue,
     };
   }
 
   Map<String, dynamic> _buildBody() {
-    final workerIds = _sanitizePreferredWorkerIds();
-    final effectiveAssignmentMode = _effectiveAssignmentMode(workerIds);
+    final sanitizedWorkerIds = _sanitizePreferredWorkerIds();
+    final isRecurring =
+        !_isEventAssistance && _normalizedRecurringSessions.isNotEmpty;
+    final workerSelection = CleaningRecurringWorkerSelection.resolve(
+      isRecurring: isRecurring,
+      recurringScope: recurringWorkerScope,
+      selectedWorkerIds: sanitizedWorkerIds,
+      legacyAssignmentMode: assignmentMode,
+      requestedWorkers: numberOfWorkers,
+    );
+    final workerIds = workerSelection.workerIds;
     final hasAddressId = addressId != null && addressId! > 0;
+    final schedule = _isEventAssistance
+        ? _normalizedEventSessions.scheduleJson
+        : _normalizedRecurringSessions.scheduleJsonFor(
+            calculationMode: recurringCalculationMode,
+            hoursPerVisit: recurringHoursPerVisit,
+          );
     final body = <String, dynamic>{
       'propertyType': propertyType,
       if (hasAddressId) 'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
+      if (_isEventAssistance && eventTypeId != null)
+        'event': <String, dynamic>{
+          'eventTypeId': eventTypeId,
+          'dynamicAnswers': eventDynamicAnswers,
+        },
       if (!hasAddressId && addressLatitude != null)
         'addressLatitude': addressLatitude,
       if (!hasAddressId && addressLongitude != null)
         'addressLongitude': addressLongitude,
-      'assignmentMode': effectiveAssignmentMode.apiValue,
+      'assignmentMode': workerSelection.assignmentMode.apiValue,
+      if (isRecurring) 'workerScope': workerSelection.scope.apiValue,
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
-      'numberOfWorkers': _resolvedNumberOfWorkers(
-        workerIds,
-        effectiveAssignmentMode,
-      ),
+      'numberOfWorkers': workerSelection.numberOfWorkers,
+      ...serviceExtras.toJson(),
     };
+    if (schedule != null) {
+      body['schedule'] = schedule;
+    }
 
     final assignments = workerRoomAssignments == null
         ? null

@@ -2,7 +2,14 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class ClServiceSectionCardWidget extends StatelessWidget {
-  const ClServiceSectionCardWidget({required this.title, required this.step, required this.child, this.subtitle, this.showStepBadge = true, super.key});
+  const ClServiceSectionCardWidget({
+    required this.title,
+    required this.step,
+    required this.child,
+    this.subtitle,
+    this.showStepBadge = true,
+    super.key,
+  });
 
   final String title;
   final String? subtitle;
@@ -12,41 +19,61 @@ class ClServiceSectionCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: colors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        side: BorderSide(color: colors.outlineVariant),
       ),
-      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 14),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              if (showStepBadge) ...[
-                CircleAvatar(
-                  radius: 15,
-                  backgroundColor: const Color(0xFF11B9C8),
-                  child: AppText.bodyMedium('$step', color: Colors.white, fontWeight: FontWeight.w700),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                if (showStepBadge) ...[
+                  CircleAvatar(
+                    radius: 15,
+                    backgroundColor: colors.primary,
+                    child: AppText.bodyMedium(
+                      '$step',
+                      color: colors.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.headlineSmall(
+                        title,
+                        color: colors.primary,
+                        fontWeight: FontWeight.w700,
+                        textAlign: TextAlign.start,
+                      ),
+                      if (subtitle != null && subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        AppText.bodySmall(
+                          subtitle!,
+                          color: colors.onSurfaceVariant,
+                          textAlign: TextAlign.right,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 10),
               ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText.headlineSmall(title, color: const Color(0xFF11B9C8), fontWeight: FontWeight.w700, textAlign: TextAlign.start),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[const SizedBox(height: 2), AppText.bodySmall(subtitle!, color: const Color(0xFF6B7280), textAlign: TextAlign.right)],
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(color: Color(0xFFE5E7EB), thickness: 1),
-          const SizedBox(height: 10),
-          child,
-        ],
+            ),
+            const SizedBox(height: 10),
+            Divider(color: colors.outlineVariant, thickness: 1),
+            const SizedBox(height: 10),
+            child,
+          ],
+        ),
       ),
     );
   }

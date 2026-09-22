@@ -5,6 +5,43 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CleaningOrderDetailModel parsing', () {
+    test('parses a recurring schedule change approval state', () {
+      final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 101,
+          'scheduleChangeRequest': <String, dynamic>{
+            'id': 44,
+            'status': 'rejected',
+            'priceDelta': 1250,
+            'proposedSnapshot': <String, dynamic>{
+              'sessions': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'date': '2026-09-20',
+                  'time': '11:30',
+                  'hours': 2.5,
+                },
+              ],
+            },
+            'decisions': <Map<String, dynamic>>[
+              <String, dynamic>{
+                'workerId': 8,
+                'workerName': 'Omar',
+                'decision': 'rejected',
+                'reason': 'Schedule conflict',
+              },
+            ],
+          },
+        },
+      });
+
+      final change = model.data?.scheduleChangeRequest;
+      expect(change?.id, 44);
+      expect(change?.isRejected, isTrue);
+      expect(change?.priceDelta, 1250);
+      expect(change?.sessions.single.hours, 2.5);
+      expect(change?.decisions.single.workerName, 'Omar');
+    });
+
     test('parses full payload with tracking and key aliases', () {
       final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
         'data': <String, dynamic>{

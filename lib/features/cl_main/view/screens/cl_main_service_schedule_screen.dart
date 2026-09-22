@@ -5,6 +5,7 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
+import '../../../../core/models/cleaning_service_extras.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../../core/widgets/toast_component.dart';
@@ -12,9 +13,12 @@ import '../../../orders/domain/usecases/check_restaurant_coupon_use_case.dart';
 import '../../../orders/view/screens/cleaning_order_details_screen.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/cleaning_services_response_model.dart';
+import '../../data/models/cleaning_suite_config_model.dart';
+import '../../data/source/cl_main_remote_data_source.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
+import '../../domain/models/cleaning_recurring_session.dart';
 import '../../domain/models/cleaning_type.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
@@ -25,7 +29,10 @@ import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_cleaning_services_selector_widget.dart';
+import '../widgets/cl_cleaning_extras_section_widget.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
+import '../widgets/cl_open_time_sessions_section_widget.dart';
+import '../widgets/cl_recurring_schedule_section_widget.dart';
 import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
@@ -72,7 +79,26 @@ class _ClMainServiceScheduleScreenState
   String? _cleaningServicesErrorMessage;
   List<CleaningServiceModel> _availableCleaningServices =
       const <CleaningServiceModel>[];
+  BlocStatus _specialServicesStatus = BlocStatus.init;
+  String? _specialServicesErrorMessage;
+  List<CleaningServiceModel> _availableSpecialServices =
+      const <CleaningServiceModel>[];
   final Set<String> _selectedCleaningServiceNames = <String>{};
+  CleaningServiceExtrasRequest _serviceExtras =
+      const CleaningServiceExtrasRequest();
+  CleaningSuiteConfigModel _suiteConfig = const CleaningSuiteConfigModel();
+  bool _isRecurring = false;
+  CleaningRecurringPattern _recurringPattern = CleaningRecurringPattern.custom;
+  CleaningRecurringCalculationMode _recurringCalculationMode =
+      CleaningRecurringCalculationMode.task;
+  CleaningRecurringWorkerScope _recurringWorkerScope =
+      CleaningRecurringWorkerScope.any;
+  double _recurringHoursPerVisit = 2;
+  int _recurringOccurrences = 2;
+  List<CleaningRecurringSessionInput> _recurringSessions =
+      const <CleaningRecurringSessionInput>[];
+  List<CleaningOpenTimeSessionRequest> _openTimeSessions =
+      const <CleaningOpenTimeSessionRequest>[];
 
   @override
   Widget build(BuildContext context) {
@@ -168,8 +194,7 @@ class _ClMainServiceScheduleScreenState
                           ClServiceGradientInfoCardWidget(
                             estimatedSqm: estimate?.size?.estimatedSqm ?? 0,
                             estimatedHours: _effectiveServiceHours(
-                              estimatedHours:
-                                  estimate?.size?.estimatedHours ?? 0,
+                              estimatedHours: _perVisitEstimatedHours(estimate),
                               numberOfWorkers: _requiredWorkersCount(state),
                             ),
                           ),
@@ -191,37 +216,67 @@ class _ClMainServiceScheduleScreenState
                             onPickFromTime: _pickFromTime,
                           ),
                           const SizedBox(height: 10),
+                          ClRecurringScheduleSectionWidget(
+                            enabled: _isRecurring,
+                            pattern: _recurringPattern,
+                            workerScope: _recurringWorkerScope,
+                            calculationMode: _recurringCalculationMode,
+                            hoursPerVisit: _recurringHoursPerVisit,
+                            occurrences: _recurringOccurrences,
+                            maxOccurrences: _recurringMaxOccurrences,
+                            sessions: _recurringSessions,
+                            onEnabledChanged: (enabled) =>
+                                _setRecurringEnabled(enabled, state),
+                            onPatternChanged: (pattern) =>
+                                _setRecurringPattern(pattern, state),
+                            onWorkerScopeChanged: (scope) =>
+                                _setRecurringWorkerScope(scope, state),
+                            onCalculationModeChanged: (mode) =>
+                                _setRecurringCalculationMode(mode, state),
+                            onHoursPerVisitChanged: (hours) =>
+                                _setRecurringHoursPerVisit(hours, state),
+                            onOccurrencesChanged: (occurrences) =>
+                                _setRecurringOccurrences(occurrences, state),
+                            onAddVisit: () => _addRecurringVisit(state),
+                            onEditVisit: (index) =>
+                                _editRecurringVisit(index, state),
+                            onRemoveVisit: (index) =>
+                                _removeRecurringVisit(index, state),
+                          ),
+                          const SizedBox(height: 10),
                           ClServiceGenderPreferenceSectionWidget(
                             selectedPreference: state.genderPreference,
                             onChanged: (preference) {
-                              _handleGenderPreferenceChanged(
-                                bloc,
-                                preference,
-                              );
+                              _handleGenderPreferenceChanged(bloc, preference);
                             },
                           ),
                           const SizedBox(height: 10),
-                          ClScheduledPreviousWorkersSectionWidget(
-                            bloc: bloc,
-                            propertyType: _routeArgs?.propertyType ?? '',
-                            scheduledDate:
-                                CleaningScheduleDateTimeLogic.formatDateApi(
-                                  _selectedDate,
+                          if (!_isRecurring ||
+                              _recurringWorkerScope ==
+                                  CleaningRecurringWorkerScope.specific) ...[
+                            ClScheduledPreviousWorkersSectionWidget(
+                              bloc: bloc,
+                              propertyType: _routeArgs?.propertyType ?? '',
+                              scheduledDate:
+                                  CleaningScheduleDateTimeLogic.formatDateApi(
+                                    _selectedDate,
+                                  ),
+                              scheduledTime: _fromTimeHhMm,
+                              durationHours: _effectiveServiceHours(
+                                estimatedHours: _perVisitEstimatedHours(
+                                  estimate,
                                 ),
-                            scheduledTime: _fromTimeHhMm,
-                            durationHours: _effectiveServiceHours(
-                              estimatedHours:
-                                  estimate?.size?.estimatedHours ?? 0,
-                              numberOfWorkers: _requiredWorkersCount(state),
+                                numberOfWorkers: _requiredWorkersCount(state),
+                              ),
+                              onSelectedWorkersChanged: (workerIds) {
+                                _requestUpdatedEstimate(
+                                  state,
+                                  selectedWorkerIds: workerIds,
+                                );
+                              },
                             ),
-                            onSelectedWorkersChanged: (workerIds) {
-                              _requestUpdatedEstimate(
-                                state,
-                                selectedWorkerIds: workerIds,
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 10),
+                            const SizedBox(height: 10),
+                          ],
                           CleaningAddressSelectWidget(
                             selectedAddress: selectedAddress,
                             onChangeTap: _selectAddress,
@@ -246,6 +301,88 @@ class _ClMainServiceScheduleScreenState
                             onRemoveService: _removeCleaningService,
                             onRetry: _loadCleaningServices,
                           ),
+                          const SizedBox(height: 12),
+                          ClCleaningExtrasSectionWidget(
+                            requestMaterials: _serviceExtras.requestMaterials,
+                            specialServices: _serviceExtras.specialServices,
+                            openTime: _serviceExtras.openTime,
+                            availableSpecialServices: _availableSpecialServices,
+                            materials:
+                                estimate?.materials ??
+                                const <CleaningMaterialLineModel>[],
+                            estimatedSpecialServices:
+                                estimate?.specialServices ??
+                                const <CleaningSpecialServiceLineModel>[],
+                            estimatedOpenTime: estimate?.openTime,
+                            isSpecialServicesLoading:
+                                _specialServicesStatus == BlocStatus.loading,
+                            isEstimateLoading:
+                                state.estimatePriceStatus == BlocStatus.loading,
+                            specialServicesError:
+                                _specialServicesStatus == BlocStatus.failed
+                                ? _specialServicesErrorMessage
+                                : null,
+                            estimateError:
+                                state.estimatePriceStatus == BlocStatus.failed
+                                ? state.errorMessage
+                                : null,
+                            onRequestMaterialsChanged: (value) =>
+                                _setMaterialsRequested(value, state),
+                            onAddSpecialService: () =>
+                                _addSpecialService(state),
+                            onSpecialServiceChanged: (index, service) =>
+                                _replaceSpecialService(index, service, state),
+                            onRemoveSpecialService: (index) =>
+                                _removeSpecialService(index, state),
+                            onOpenTimeChanged: (enabled) =>
+                                _setOpenTimeEnabled(enabled, state),
+                            onOpenTimeWorkerCountChanged: (count) =>
+                                _setOpenTimeWorkerCount(count, state),
+                            onOpenTimeExpectedMaxMinutesChanged: (minutes) =>
+                                _setOpenTimeExpectedMaxMinutes(minutes, state),
+                            openTimeDurationOptions:
+                                _suiteConfig.openTime.durationOptions,
+                            selectableSessionIds: _isRecurring
+                                ? List<int>.generate(
+                                    _recurringSessions.length,
+                                    (index) => index + 1,
+                                  )
+                                : const <int>[],
+                            sessionLabels: _isRecurring
+                                ? <int, String>{
+                                    for (
+                                      var index = 0;
+                                      index < _recurringSessions.length;
+                                      index++
+                                    )
+                                      index + 1: 'الجلسة ${index + 1}',
+                                  }
+                                : const <int, String>{},
+                            onRetryEstimate: () =>
+                                _requestUpdatedEstimate(state),
+                            onRetrySpecialServices: _loadSpecialServices,
+                          ),
+                          if (_serviceExtras.openTime != null) ...[
+                            const SizedBox(height: 12),
+                            ClOpenTimeSessionsSectionWidget(
+                              sessions: _openTimeSessions,
+                              durationOptions:
+                                  _suiteConfig.openTime.durationOptions,
+                              defaultExpectedMaxMinutes:
+                                  _serviceExtras.openTime!.expectedMaxMinutes,
+                              onAddSession: () => _addOpenTimeSession(state),
+                              onEditSession: (index) =>
+                                  _editOpenTimeSession(index, state),
+                              onRemoveSession: (index) =>
+                                  _removeOpenTimeSession(index, state),
+                              onDurationChanged: (index, minutes) =>
+                                  _setOpenTimeSessionDuration(
+                                    index,
+                                    minutes,
+                                    state,
+                                  ),
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
@@ -322,6 +459,8 @@ class _ClMainServiceScheduleScreenState
       );
       _syncToTime();
       _loadCleaningServices();
+      _loadSpecialServices();
+      _loadSuiteConfig();
     } else if (args is AddressListItem) {
       selectedAddress = ValueNotifier(args);
     }
@@ -550,9 +689,25 @@ class _ClMainServiceScheduleScreenState
       initialDate: _selectedDate,
     );
     if (value.isEmpty) return;
+    final selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value);
+    if (selectedDate == null) return;
+    if (_isRecurring && _recurringPattern.isGenerated) {
+      final maxOccurrences =
+          CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+            pattern: _recurringPattern,
+            startDate: selectedDate,
+          );
+      if (_recurringOccurrences > maxOccurrences) {
+        _showRecurringPatternDateLimit(maxOccurrences);
+        return;
+      }
+    }
     setState(() {
-      _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
+      _selectedDate = selectedDate;
+      _replacePrimaryRecurringVisit();
+      _replacePrimaryOpenTimeSession();
     });
+    _requestRecurringEstimateIfPossible();
   }
 
   Future<void> _pickFromTime() async {
@@ -568,13 +723,344 @@ class _ClMainServiceScheduleScreenState
     if (value.isEmpty) return;
     setState(() {
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
+      _replacePrimaryRecurringVisit();
+      _replacePrimaryOpenTimeSession();
       _syncToTime();
     });
+    _requestRecurringEstimateIfPossible();
+  }
+
+  List<CleaningRecurringSessionInput> get _recurringSessionsForRequest {
+    if (!_isRecurring ||
+        _recurringSessions.length < 2 ||
+        _recurringSessions.exceedsMaxWindow) {
+      return const <CleaningRecurringSessionInput>[];
+    }
+    return _recurringSessions.normalized;
+  }
+
+  double _perVisitEstimatedHours(EstimatePriceResponseModel? estimate) {
+    if (_isRecurring) {
+      final sessions = estimate?.schedule?.sessions;
+      if (sessions != null && sessions.isNotEmpty && sessions.first.hours > 0) {
+        return sessions.first.hours;
+      }
+      final total = estimate?.size?.estimatedHours ?? 0;
+      final count = _recurringSessions.length;
+      if (count >= 2 && total > 0) return total / count;
+    }
+    return estimate?.size?.estimatedHours ?? 0;
+  }
+
+  void _setRecurringEnabled(bool enabled, ClMainState state) {
+    setState(() {
+      _isRecurring = enabled;
+      if (enabled) {
+        _serviceExtras = _serviceExtras.copyWith(clearOpenTime: true);
+        _openTimeSessions = const <CleaningOpenTimeSessionRequest>[];
+      }
+      _recurringPattern = CleaningRecurringPattern.custom;
+      _recurringCalculationMode = CleaningRecurringCalculationMode.task;
+      _recurringWorkerScope = enabled && state.selectedWorkerIds.isNotEmpty
+          ? CleaningRecurringWorkerScope.specific
+          : CleaningRecurringWorkerScope.any;
+      _recurringHoursPerVisit = 2;
+      _recurringOccurrences = 2;
+      _recurringSessions = enabled
+          ? <CleaningRecurringSessionInput>[
+              CleaningRecurringSessionInput(
+                date: _selectedDate,
+                time: _fromTimeHhMm,
+              ),
+            ]
+          : const <CleaningRecurringSessionInput>[];
+      _resetAppliedCoupon(message: 'تم تغيير نمط الحجز. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _setRecurringWorkerScope(
+    CleaningRecurringWorkerScope scope,
+    ClMainState state,
+  ) {
+    if (!_isRecurring || scope == _recurringWorkerScope) return;
+    setState(() {
+      _recurringWorkerScope = scope;
+      _resetAppliedCoupon(message: 'تم تغيير نطاق العمال. أعد تطبيق الكوبون.');
+    });
+    if (scope == CleaningRecurringWorkerScope.any) {
+      _bloc?.add(ClearPreferredWorkersEvent());
+      _requestUpdatedEstimate(state, selectedWorkerIds: const <int>[]);
+      return;
+    }
+    if (state.selectedWorkerIds.isNotEmpty) {
+      _requestUpdatedEstimate(state);
+    }
+  }
+
+  void _setRecurringCalculationMode(
+    CleaningRecurringCalculationMode mode,
+    ClMainState state,
+  ) {
+    if (mode == _recurringCalculationMode) return;
+    setState(() {
+      _recurringCalculationMode = mode;
+      _resetAppliedCoupon(
+        message: 'تم تغيير طريقة احتساب الزيارات. أعد تطبيق الكوبون.',
+      );
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _setRecurringHoursPerVisit(double hours, ClMainState state) {
+    final normalized = normalizeCleaningRecurringHoursPerVisit(hours);
+    if (normalized == null || normalized == _recurringHoursPerVisit) return;
+    setState(() {
+      _recurringHoursPerVisit = normalized;
+      _resetAppliedCoupon(
+        message: 'تم تغيير ساعات الزيارة. أعد تطبيق الكوبون.',
+      );
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  int get _recurringMaxOccurrences {
+    if (!_recurringPattern.isGenerated) return 0;
+    return CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+      pattern: _recurringPattern,
+      startDate: _selectedDate,
+    );
+  }
+
+  void _setRecurringPattern(
+    CleaningRecurringPattern pattern,
+    ClMainState state,
+  ) {
+    if (pattern == _recurringPattern) return;
+
+    if (!pattern.isGenerated) {
+      setState(() {
+        _recurringPattern = pattern;
+        _recurringOccurrences = _recurringSessions.length < 2
+            ? 2
+            : _recurringSessions.length;
+        _resetAppliedCoupon(
+          message: 'تم تغيير نمط التكرار. أعد تطبيق الكوبون.',
+        );
+      });
+      _requestUpdatedEstimate(state);
+      return;
+    }
+
+    final maxOccurrences =
+        CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+          pattern: pattern,
+          startDate: _selectedDate,
+        );
+    if (maxOccurrences < 2) {
+      _showRecurringPatternDateLimit(maxOccurrences);
+      return;
+    }
+
+    final generated = CleaningRecurringScheduleGenerator.generate(
+      pattern: pattern,
+      startDate: _selectedDate,
+      time: _fromTimeHhMm,
+      occurrences: 2,
+    );
+    setState(() {
+      _recurringPattern = pattern;
+      _recurringOccurrences = 2;
+      _recurringSessions = generated;
+      _syncToTime();
+      _resetAppliedCoupon(message: 'تم تغيير نمط التكرار. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _setRecurringOccurrences(int occurrences, ClMainState state) {
+    if (!_recurringPattern.isGenerated || occurrences < 2) return;
+    final maxOccurrences = _recurringMaxOccurrences;
+    if (occurrences > maxOccurrences) {
+      _showRecurringPatternDateLimit(maxOccurrences);
+      return;
+    }
+
+    final generated = CleaningRecurringScheduleGenerator.generate(
+      pattern: _recurringPattern,
+      startDate: _selectedDate,
+      time: _fromTimeHhMm,
+      occurrences: occurrences,
+    );
+    setState(() {
+      _recurringOccurrences = occurrences;
+      _recurringSessions = generated;
+      _syncToTime();
+      _resetAppliedCoupon(message: 'تم تحديث عدد الزيارات. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  Future<void> _addRecurringVisit(ClMainState state) async {
+    if (_recurringPattern != CleaningRecurringPattern.custom) return;
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
+    final initialDate = _recurringSessions.isEmpty
+        ? _selectedDate
+        : _recurringSessions.last.date.add(const Duration(days: 7));
+    final dateValue = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: tomorrow,
+      initialDate: initialDate,
+    );
+    if (!mounted || dateValue.isEmpty) return;
+    final date = CleaningScheduleDateTimeLogic.parseDateApi(dateValue);
+    if (date == null) return;
+
+    final timeValue = await AppPickers.showAppTimePicker(context: context);
+    if (!mounted || timeValue.isEmpty) return;
+    final time = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(timeValue);
+    final next = CleaningRecurringSessionInput(date: date, time: time);
+    if (_recurringSessions.any((session) => session.slotKey == next.slotKey)) {
+      _showDuplicateRecurringVisit();
+      return;
+    }
+
+    final proposed = <CleaningRecurringSessionInput>[
+      ..._recurringSessions,
+      next,
+    ];
+    if (proposed.exceedsMaxWindow) {
+      _showRecurringWindowLimit();
+      return;
+    }
+
+    _applyRecurringSessions(proposed);
+    _requestUpdatedEstimate(state);
+  }
+
+  Future<void> _editRecurringVisit(int index, ClMainState state) async {
+    if (_recurringPattern != CleaningRecurringPattern.custom) return;
+    if (index < 0 || index >= _recurringSessions.length) return;
+    final current = _recurringSessions[index];
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
+    final dateValue = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: tomorrow,
+      initialDate: current.date,
+    );
+    if (!mounted || dateValue.isEmpty) return;
+    final date = CleaningScheduleDateTimeLogic.parseDateApi(dateValue);
+    if (date == null) return;
+
+    final timeValue = await AppPickers.showAppTimePicker(context: context);
+    if (!mounted || timeValue.isEmpty) return;
+    final time = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(timeValue);
+    final replacement = CleaningRecurringSessionInput(date: date, time: time);
+    final duplicated = _recurringSessions.indexed.any(
+      (entry) => entry.$1 != index && entry.$2.slotKey == replacement.slotKey,
+    );
+    if (duplicated) {
+      _showDuplicateRecurringVisit();
+      return;
+    }
+
+    final next = _recurringSessions.toList(growable: false);
+    final edited = <CleaningRecurringSessionInput>[...next];
+    edited[index] = replacement;
+    if (edited.exceedsMaxWindow) {
+      _showRecurringWindowLimit();
+      return;
+    }
+    _applyRecurringSessions(edited);
+    _requestUpdatedEstimate(state);
+  }
+
+  void _removeRecurringVisit(int index, ClMainState state) {
+    if (_recurringPattern != CleaningRecurringPattern.custom) return;
+    if (index <= 0 || index >= _recurringSessions.length) return;
+    final next = <CleaningRecurringSessionInput>[..._recurringSessions]
+      ..removeAt(index);
+    _applyRecurringSessions(next);
+    _requestUpdatedEstimate(state);
+  }
+
+  void _applyRecurringSessions(List<CleaningRecurringSessionInput> sessions) {
+    setState(() {
+      _recurringSessions = sessions.normalized;
+      if (_recurringSessions.isNotEmpty) {
+        final first = _recurringSessions.first;
+        _selectedDate = first.date;
+        _fromTimeHhMm = first.time;
+      }
+      _syncToTime();
+      _resetAppliedCoupon(message: 'تم تحديث الزيارات. أعد تطبيق الكوبون.');
+    });
+  }
+
+  void _replacePrimaryRecurringVisit() {
+    if (!_isRecurring || _recurringSessions.isEmpty) return;
+
+    if (_recurringPattern.isGenerated) {
+      _recurringSessions = CleaningRecurringScheduleGenerator.generate(
+        pattern: _recurringPattern,
+        startDate: _selectedDate,
+        time: _fromTimeHhMm,
+        occurrences: _recurringOccurrences,
+      );
+      return;
+    }
+
+    final updated = <CleaningRecurringSessionInput>[..._recurringSessions];
+    updated[0] = CleaningRecurringSessionInput(
+      date: _selectedDate,
+      time: _fromTimeHhMm,
+    );
+    _recurringSessions = updated.normalized;
+    final first = _recurringSessions.first;
+    _selectedDate = first.date;
+    _fromTimeHhMm = first.time;
+  }
+
+  void _requestRecurringEstimateIfPossible() {
+    if (!_isRecurring ||
+        _recurringSessions.length < 2 ||
+        _recurringSessions.exceedsMaxWindow) {
+      return;
+    }
+    final bloc = _bloc;
+    if (bloc != null) _requestUpdatedEstimate(bloc.state);
+  }
+
+  void _showDuplicateRecurringVisit() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('لا يمكن إضافة نفس تاريخ ووقت الزيارة مرتين.'),
+      ),
+    );
+  }
+
+  void _showRecurringWindowLimit() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'يجب أن تقع جميع زيارات الحجز الدوري ضمن فترة لا تتجاوز 30 يوماً.',
+        ),
+      ),
+    );
+  }
+
+  void _showRecurringPatternDateLimit(int maxOccurrences) {
+    final message = maxOccurrences >= 2
+        ? 'التاريخ المختار يسمح بحد أقصى $maxOccurrences زيارات لهذا النمط ضمن 30 يوماً.'
+        : 'لا يمكن إنشاء زيارة ثانية لهذا النمط من التاريخ المختار ضمن نافذة 30 يوماً.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _syncToTime() {
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
-    final estimatedHours = estimate?.size?.estimatedHours ?? 0;
+    final estimatedHours = _perVisitEstimatedHours(estimate);
     final blocState = _bloc?.state;
     final numberOfWorkers = blocState == null
         ? 1
@@ -590,10 +1076,16 @@ class _ClMainServiceScheduleScreenState
   }
 
   int _requiredWorkersCount(ClMainState state) {
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific) {
+      return state.selectedWorkerIds.isEmpty
+          ? 1
+          : state.selectedWorkerIds.length;
+    }
     final openCount = state.assignmentMode == CleaningAssignmentMode.openCount
         ? (state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers)
         : 1;
-    final preferredCount = state.selectedWorkerIds.length;
+    final preferredCount = _isRecurring ? 0 : state.selectedWorkerIds.length;
     return preferredCount > openCount ? preferredCount : openCount;
   }
 
@@ -627,6 +1119,439 @@ class _ClMainServiceScheduleScreenState
             .where((service) => service.name?.trim().isNotEmpty == true)
             .toList(growable: false);
       }),
+    );
+  }
+
+  Future<void> _loadSpecialServices() async {
+    if (!mounted) return;
+    setState(() {
+      _specialServicesStatus = BlocStatus.loading;
+      _specialServicesErrorMessage = null;
+    });
+    final response = await getIt<GetCleaningServicesUseCase>()(
+      GetCleaningServicesParams(category: 'special_service'),
+    );
+    if (!mounted) return;
+    response.fold(
+      (failure) => setState(() {
+        _specialServicesStatus = BlocStatus.failed;
+        _specialServicesErrorMessage = failure.message;
+      }),
+      (result) {
+        final catalog = result.data
+            .where(
+              (service) =>
+                  service.id != null && service.name?.trim().isNotEmpty == true,
+            )
+            .toList(growable: false);
+        setState(() {
+          _specialServicesStatus = BlocStatus.success;
+          _specialServicesErrorMessage = null;
+          _availableSpecialServices = catalog;
+          _serviceExtras = _serviceExtras.copyWith(
+            specialServices: _normalizeSpecialServicesForCatalog(
+              _serviceExtras.specialServices,
+              catalog,
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  Future<void> _loadSuiteConfig() async {
+    try {
+      final config = await getIt<ClMainRemoteDataSource>()
+          .getCleaningSuiteConfig();
+      if (!mounted) return;
+      setState(() {
+        _suiteConfig = config;
+        final current = _serviceExtras.openTime;
+        if (current != null &&
+            !config.openTime.durationOptions.contains(
+              current.expectedMaxMinutes,
+            )) {
+          _serviceExtras = _serviceExtras.copyWith(
+            openTime: current.copyWith(
+              expectedMaxMinutes: config.openTime.legacyDefaultMinutes,
+            ),
+          );
+        }
+      });
+    } catch (_) {
+      // The v1 fallback policy keeps older servers and cached flows usable.
+    }
+  }
+
+  List<CleaningSpecialServiceRequest> _normalizeSpecialServicesForCatalog(
+    List<CleaningSpecialServiceRequest> requests,
+    List<CleaningServiceModel> catalog,
+  ) {
+    if (requests.isEmpty || catalog.isEmpty) return requests;
+    return requests
+        .map((request) {
+          CleaningServiceModel? selected;
+          for (final service in catalog) {
+            if (service.id == request.specialServiceId) {
+              selected = service;
+              break;
+            }
+          }
+          if (selected == null) return request;
+          final normalized = selected.normalizeDirtinessLevel(
+            request.dirtinessLevel,
+          );
+          if (normalized == request.dirtinessLevel) return request;
+          return request.copyWith(dirtinessLevel: normalized);
+        })
+        .toList(growable: false);
+  }
+
+  void _updateServiceExtras(
+    CleaningServiceExtrasRequest extras,
+    ClMainState state,
+  ) {
+    setState(() {
+      _serviceExtras = extras;
+      _resetAppliedCoupon(
+        message: 'تم تغيير إضافات الخدمة. أعد تطبيق الكوبون.',
+      );
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _addSpecialService(ClMainState state) {
+    if (_serviceExtras.openTime != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يمكن جمع الخدمات الخاصة مع طلب الوقت المفتوح.'),
+        ),
+      );
+      return;
+    }
+    final firstService = _availableSpecialServices.firstWhere(
+      (service) => service.id != null,
+      orElse: () => const CleaningServiceModel(),
+    );
+    final id = firstService.id;
+    if (id == null) return;
+    _updateServiceExtras(
+      _serviceExtras.copyWith(
+        specialServices: <CleaningSpecialServiceRequest>[
+          ..._serviceExtras.specialServices,
+          CleaningSpecialServiceRequest(
+            specialServiceId: id,
+            quantity: 1,
+            dirtinessLevel: firstService.normalizeDirtinessLevel(null),
+            items: <CleaningSpecialServiceItemRequest>[
+              CleaningSpecialServiceItemRequest(
+                quantity: 1,
+                dirtinessLevelId: firstService.dirtinessRules
+                    .map((rule) => rule.id)
+                    .whereType<int>()
+                    .firstOrNull,
+              ),
+            ],
+            sessionIds: _isRecurring
+                ? List<int>.generate(
+                    _recurringSessions.length,
+                    (index) => index + 1,
+                  )
+                : const <int>[],
+          ),
+        ],
+      ),
+      state,
+    );
+  }
+
+  void _replaceSpecialService(
+    int index,
+    CleaningSpecialServiceRequest service,
+    ClMainState state,
+  ) {
+    if (index < 0 || index >= _serviceExtras.specialServices.length) return;
+    CleaningServiceModel? catalogService;
+    for (final item in _availableSpecialServices) {
+      if (item.id == service.specialServiceId) {
+        catalogService = item;
+        break;
+      }
+    }
+    final normalizedService = catalogService == null
+        ? service
+        : service.copyWith(
+            dirtinessLevel: catalogService.normalizeDirtinessLevel(
+              service.dirtinessLevel,
+            ),
+          );
+    final services = List<CleaningSpecialServiceRequest>.of(
+      _serviceExtras.specialServices,
+    );
+    services[index] = normalizedService;
+    _updateServiceExtras(
+      _serviceExtras.copyWith(specialServices: services),
+      state,
+    );
+  }
+
+  void _removeSpecialService(int index, ClMainState state) {
+    if (index < 0 || index >= _serviceExtras.specialServices.length) return;
+    final services = List<CleaningSpecialServiceRequest>.of(
+      _serviceExtras.specialServices,
+    )..removeAt(index);
+    _updateServiceExtras(
+      _serviceExtras.copyWith(specialServices: services),
+      state,
+    );
+  }
+
+  void _setOpenTimeEnabled(bool enabled, ClMainState state) {
+    final minutes =
+        _suiteConfig.openTime.durationOptions.firstOrNull ??
+        _suiteConfig.openTime.legacyDefaultMinutes;
+    setState(() {
+      if (enabled) {
+        _isRecurring = false;
+        _recurringSessions = const <CleaningRecurringSessionInput>[];
+        _openTimeSessions = <CleaningOpenTimeSessionRequest>[
+          CleaningOpenTimeSessionRequest(
+            date: CleaningScheduleDateTimeLogic.formatDateApi(_selectedDate),
+            time: _fromTimeHhMm,
+            expectedMaxMinutes: minutes,
+          ),
+        ];
+        _serviceExtras = CleaningServiceExtrasRequest(
+          openTime: CleaningOpenTimeRequest(
+            workerCount: state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers,
+            expectedMaxMinutes: minutes,
+          ),
+        );
+      } else {
+        _openTimeSessions = const <CleaningOpenTimeSessionRequest>[];
+        _serviceExtras = _serviceExtras.copyWith(clearOpenTime: true);
+      }
+      _resetAppliedCoupon(message: 'تم تغيير نمط الطلب. أعد تطبيق الكوبون.');
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _setMaterialsRequested(bool value, ClMainState state) {
+    if (value && _serviceExtras.openTime != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يمكن جمع مواد التنظيف مع طلب الوقت المفتوح.'),
+        ),
+      );
+      return;
+    }
+    _updateServiceExtras(
+      _serviceExtras.copyWith(requestMaterials: value),
+      state,
+    );
+  }
+
+  void _setOpenTimeWorkerCount(int count, ClMainState state) {
+    if (_serviceExtras.openTime == null || count < 1) return;
+    _updateServiceExtras(
+      _serviceExtras.copyWith(
+        openTime: _serviceExtras.openTime!.copyWith(workerCount: count),
+      ),
+      state,
+    );
+  }
+
+  void _setOpenTimeExpectedMaxMinutes(int minutes, ClMainState state) {
+    final current = _serviceExtras.openTime;
+    if (current == null ||
+        !_suiteConfig.openTime.durationOptions.contains(minutes)) {
+      return;
+    }
+    final sessions = <CleaningOpenTimeSessionRequest>[
+      for (var index = 0; index < _openTimeSessions.length; index++)
+        index == 0
+            ? CleaningOpenTimeSessionRequest(
+                date: _openTimeSessions[index].date,
+                time: _openTimeSessions[index].time,
+                expectedMaxMinutes: minutes,
+              )
+            : _openTimeSessions[index],
+    ];
+    _updateServiceExtras(
+      _serviceExtras.copyWith(
+        openTime: current.copyWith(
+          expectedMaxMinutes: minutes,
+          sessions: sessions.length > 1
+              ? sessions
+              : const <CleaningOpenTimeSessionRequest>[],
+        ),
+      ),
+      state,
+    );
+    setState(() => _openTimeSessions = sessions);
+  }
+
+  Future<void> _addOpenTimeSession(ClMainState state) async {
+    if (_serviceExtras.openTime == null || _openTimeSessions.length >= 30) {
+      return;
+    }
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
+    final lastDate = _openTimeSessions.isEmpty
+        ? _selectedDate
+        : DateTime.tryParse(_openTimeSessions.last.date) ?? _selectedDate;
+    final dateValue = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: tomorrow,
+      initialDate: lastDate.add(const Duration(days: 1)),
+    );
+    if (!mounted || dateValue.isEmpty) return;
+    final date = CleaningScheduleDateTimeLogic.parseDateApi(dateValue);
+    if (date == null) return;
+
+    final timeValue = await AppPickers.showAppTimePicker(context: context);
+    if (!mounted || timeValue.isEmpty) return;
+    final next = CleaningOpenTimeSessionRequest(
+      date: CleaningScheduleDateTimeLogic.formatDateApi(date),
+      time: CleaningScheduleDateTimeLogic.normalizeTimeHhMm(timeValue),
+      expectedMaxMinutes: _serviceExtras.openTime!.expectedMaxMinutes,
+    );
+    if (_openTimeSessions.any(
+      (session) => session.date == next.date && session.time == next.time,
+    )) {
+      _showDuplicateOpenTimeSession();
+      return;
+    }
+
+    _applyOpenTimeSessions(<CleaningOpenTimeSessionRequest>[
+      ..._openTimeSessions,
+      next,
+    ], state);
+  }
+
+  Future<void> _editOpenTimeSession(int index, ClMainState state) async {
+    if (_serviceExtras.openTime == null ||
+        index < 0 ||
+        index >= _openTimeSessions.length) {
+      return;
+    }
+    final current = _openTimeSessions[index];
+    final tomorrow = CleaningScheduleDateTimeLogic.tomorrowDate();
+    final dateValue = await AppPickers.showAppDatePicker(
+      context: context,
+      startDate: tomorrow,
+      initialDate: DateTime.tryParse(current.date) ?? _selectedDate,
+    );
+    if (!mounted || dateValue.isEmpty) return;
+    final date = CleaningScheduleDateTimeLogic.parseDateApi(dateValue);
+    if (date == null) return;
+
+    final timeValue = await AppPickers.showAppTimePicker(context: context);
+    if (!mounted || timeValue.isEmpty) return;
+    final replacement = CleaningOpenTimeSessionRequest(
+      date: CleaningScheduleDateTimeLogic.formatDateApi(date),
+      time: CleaningScheduleDateTimeLogic.normalizeTimeHhMm(timeValue),
+      expectedMaxMinutes: current.expectedMaxMinutes,
+    );
+    if (_openTimeSessions.indexed.any(
+      (entry) =>
+          entry.$1 != index &&
+          entry.$2.date == replacement.date &&
+          entry.$2.time == replacement.time,
+    )) {
+      _showDuplicateOpenTimeSession();
+      return;
+    }
+
+    final sessions = <CleaningOpenTimeSessionRequest>[..._openTimeSessions];
+    sessions[index] = replacement;
+    _applyOpenTimeSessions(sessions, state);
+  }
+
+  void _removeOpenTimeSession(int index, ClMainState state) {
+    if (index <= 0 || index >= _openTimeSessions.length) return;
+    final sessions = <CleaningOpenTimeSessionRequest>[..._openTimeSessions]
+      ..removeAt(index);
+    _applyOpenTimeSessions(sessions, state);
+  }
+
+  void _setOpenTimeSessionDuration(int index, int minutes, ClMainState state) {
+    if (index < 0 ||
+        index >= _openTimeSessions.length ||
+        !_suiteConfig.openTime.durationOptions.contains(minutes)) {
+      return;
+    }
+    final current = _openTimeSessions[index];
+    final sessions = <CleaningOpenTimeSessionRequest>[..._openTimeSessions];
+    sessions[index] = CleaningOpenTimeSessionRequest(
+      date: current.date,
+      time: current.time,
+      expectedMaxMinutes: minutes,
+    );
+    _applyOpenTimeSessions(sessions, state, updatePrimaryDateTime: false);
+  }
+
+  void _applyOpenTimeSessions(
+    List<CleaningOpenTimeSessionRequest> sessions,
+    ClMainState state, {
+    bool updatePrimaryDateTime = true,
+  }) {
+    final current = _serviceExtras.openTime;
+    if (current == null || sessions.isEmpty) return;
+    final normalized = <CleaningOpenTimeSessionRequest>[...sessions]
+      ..sort((left, right) {
+        final dateCompare = left.date.compareTo(right.date);
+        return dateCompare != 0 ? dateCompare : left.time.compareTo(right.time);
+      });
+
+    setState(() {
+      _openTimeSessions = normalized;
+      if (updatePrimaryDateTime) {
+        final first = normalized.first;
+        _selectedDate = DateTime.tryParse(first.date) ?? _selectedDate;
+        _fromTimeHhMm = first.time;
+        _syncToTime();
+      }
+      _serviceExtras = _serviceExtras.copyWith(
+        openTime: current.copyWith(
+          expectedMaxMinutes:
+              normalized.first.expectedMaxMinutes ?? current.expectedMaxMinutes,
+          sessions: normalized.length > 1
+              ? normalized
+              : const <CleaningOpenTimeSessionRequest>[],
+        ),
+      );
+      _resetAppliedCoupon(
+        message: 'تم تحديث جلسات الوقت المفتوح. أعد تطبيق الكوبون.',
+      );
+    });
+    _requestUpdatedEstimate(state);
+  }
+
+  void _replacePrimaryOpenTimeSession() {
+    if (_serviceExtras.openTime == null || _openTimeSessions.isEmpty) return;
+    final current = _openTimeSessions.first;
+    _openTimeSessions = <CleaningOpenTimeSessionRequest>[
+      CleaningOpenTimeSessionRequest(
+        date: CleaningScheduleDateTimeLogic.formatDateApi(_selectedDate),
+        time: _fromTimeHhMm,
+        expectedMaxMinutes: current.expectedMaxMinutes,
+      ),
+      ..._openTimeSessions.skip(1),
+    ];
+    _serviceExtras = _serviceExtras.copyWith(
+      openTime: _serviceExtras.openTime!.copyWith(
+        sessions: _openTimeSessions.length > 1
+            ? _openTimeSessions
+            : const <CleaningOpenTimeSessionRequest>[],
+      ),
+    );
+  }
+
+  void _showDuplicateOpenTimeSession() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('هذا التاريخ والوقت مضافان مسبقاً للطلب المفتوح.'),
+      ),
     );
   }
 
@@ -667,9 +1592,21 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific &&
+        state.selectedWorkerIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى اختيار عامل واحد على الأقل للحجز الدوري المحدد.'),
+        ),
+      );
+      return;
+    }
+
     final estimateForWorkers = _currentEstimate ?? args.estimate;
-    final estimatedHours = estimateForWorkers.size?.estimatedHours ?? 0;
-    final selectedWorkers = _requiredWorkersCount(state);
+    final estimatedHours = _perVisitEstimatedHours(estimateForWorkers);
+    final selectedWorkers =
+        _serviceExtras.openTime?.workerCount ?? _requiredWorkersCount(state);
     final requiredWorkers =
         estimateForWorkers.requiredWorkers ??
         (estimatedHours <= 0 ? 1 : (estimatedHours / 8).ceil());
@@ -685,20 +1622,50 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
+    if (_isRecurring && _recurringSessions.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الحجز الدوري يحتاج إلى زيارتين على الأقل.'),
+        ),
+      );
+      return;
+    }
+
+    if (_isRecurring && _recurringSessions.exceedsMaxWindow) {
+      _showRecurringWindowLimit();
+      return;
+    }
+
     final acceptedPledge = await _showPersonalPropertyPledgeDialog();
     if (!mounted || !acceptedPledge) return;
 
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
+    final selectedWorkerIds =
+        _serviceExtras.openTime != null ||
+            (_isRecurring &&
+                _recurringWorkerScope == CleaningRecurringWorkerScope.any)
+        ? const <int>[]
+        : state.selectedWorkerIds;
+    final requestAssignmentMode = _serviceExtras.openTime != null
+        ? CleaningAssignmentMode.openCount
+        : _isRecurring
+        ? (_recurringWorkerScope == CleaningRecurringWorkerScope.any
+              ? CleaningAssignmentMode.openCount
+              : (selectedWorkerIds.length <= 1
+                    ? CleaningAssignmentMode.preferredWorker
+                    : CleaningAssignmentMode.openCount))
+        : state.assignmentMode;
     final normalizedAssignments = estimate?.workerRoomAssignments ?? const [];
     final workerRoomAssignments = normalizedAssignments.isNotEmpty
         ? workerRoomAssignmentsToRequestJson(normalizedAssignments)
         : buildWorkerRoomAssignmentsJson(
             slotByRoomKey: state.workerRoomAssignments,
             units: enumerateRoomUnits(args.roomSizeBreakdown),
-            preferredWorkerId: state.primarySelectedWorkerId,
-            assignmentMode: state.assignmentMode,
+            preferredWorkerId: selectedWorkerIds.isEmpty
+                ? null
+                : selectedWorkerIds.first,
+            assignmentMode: requestAssignmentMode,
           );
-    final selectedWorkerIds = state.selectedWorkerIds;
 
     bloc.add(
       CreateCleaningOrderEvent(
@@ -722,14 +1689,23 @@ class _ClMainServiceScheduleScreenState
           addressLongitude: null,
           genderPreference: state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
-          assignmentMode: state.assignmentMode,
+          assignmentMode: requestAssignmentMode,
           numberOfWorkers: selectedWorkers,
           preferredWorkerIds: selectedWorkerIds,
+          recurringSessions: _recurringSessionsForRequest,
+          recurringCalculationMode: _recurringCalculationMode,
+          recurringHoursPerVisit:
+              _recurringCalculationMode ==
+                  CleaningRecurringCalculationMode.hours
+              ? _recurringHoursPerVisit
+              : null,
+          recurringWorkerScope: _recurringWorkerScope,
           cleaningServices: _selectedCleaningServicesPayload(),
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
           couponCode: _appliedCouponCode,
+          serviceExtras: _serviceExtras,
           termsAccepted: true,
         ),
       ),
@@ -778,15 +1754,41 @@ class _ClMainServiceScheduleScreenState
       });
     }
 
-    final workerIds = selectedWorkerIds ?? state.selectedWorkerIds;
+    final rawWorkerIds = selectedWorkerIds ?? state.selectedWorkerIds;
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific &&
+        rawWorkerIds.isEmpty) {
+      return;
+    }
+    final workerIds =
+        _isRecurring &&
+            _recurringWorkerScope == CleaningRecurringWorkerScope.any
+        ? const <int>[]
+        : rawWorkerIds;
     final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
-    final stateWorkerCount = state.numberOfWorkers < 1 ? 1 : state.numberOfWorkers;
-    final requestedWorkers = workerIds.length > stateWorkerCount
-        ? workerIds.length
-        : stateWorkerCount;
-    final assignmentMode = requestedWorkers > 1
+    final stateWorkerCount = state.numberOfWorkers < 1
+        ? 1
+        : state.numberOfWorkers;
+    final requestedWorkers =
+        _serviceExtras.openTime?.workerCount ??
+        (_isRecurring
+            ? (_recurringWorkerScope == CleaningRecurringWorkerScope.specific
+                  ? (workerIds.isEmpty ? 1 : workerIds.length)
+                  : stateWorkerCount)
+            : (workerIds.length > stateWorkerCount
+                  ? workerIds.length
+                  : stateWorkerCount));
+    final assignmentMode = _serviceExtras.openTime != null
         ? CleaningAssignmentMode.openCount
-        : state.assignmentMode;
+        : _isRecurring
+        ? (_recurringWorkerScope == CleaningRecurringWorkerScope.any
+              ? CleaningAssignmentMode.openCount
+              : (workerIds.length <= 1
+                    ? CleaningAssignmentMode.preferredWorker
+                    : CleaningAssignmentMode.openCount))
+        : (requestedWorkers > 1
+              ? CleaningAssignmentMode.openCount
+              : state.assignmentMode);
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
       slotByRoomKey: state.workerRoomAssignments,
       units: enumerateRoomUnits(args.roomSizeBreakdown),
@@ -811,9 +1813,18 @@ class _ClMainServiceScheduleScreenState
           assignmentMode: assignmentMode,
           numberOfWorkers: requestedWorkers,
           preferredWorkerIds: workerIds,
+          recurringSessions: _recurringSessionsForRequest,
+          recurringCalculationMode: _recurringCalculationMode,
+          recurringHoursPerVisit:
+              _recurringCalculationMode ==
+                  CleaningRecurringCalculationMode.hours
+              ? _recurringHoursPerVisit
+              : null,
+          recurringWorkerScope: _recurringWorkerScope,
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
+          serviceExtras: _serviceExtras,
         ),
       ),
     );

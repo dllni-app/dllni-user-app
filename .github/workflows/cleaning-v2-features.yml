@@ -1,0 +1,82 @@
+name: Cleaning v2 User App Gates
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [v2]
+    paths:
+      - 'lib/core/models/cleaning_service_extras.dart'
+      - 'lib/features/cl_main/**'
+      - 'lib/features/orders/**'
+      - 'test/core/models/cleaning_service_extras_test.dart'
+      - 'test/features/cl_main/**'
+      - 'test/features/orders/**'
+      - 'pubspec.lock'
+      - '.github/workflows/cleaning-v2-features.yml'
+  pull_request:
+    branches: [v2]
+    paths:
+      - 'lib/core/models/cleaning_service_extras.dart'
+      - 'lib/features/cl_main/**'
+      - 'lib/features/orders/**'
+      - 'test/core/models/cleaning_service_extras_test.dart'
+      - 'test/features/cl_main/**'
+      - 'test/features/orders/**'
+      - 'pubspec.lock'
+      - '.github/workflows/cleaning-v2-features.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.5'
+          cache: true
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib/core/models/cleaning_service_extras.dart lib/features/cl_main/data/models/cleaning_services_response_model.dart lib/features/cl_main/data/models/cleaning_suite_config_model.dart lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart lib/features/cl_main/view/widgets/cl_cleaning_extras_section_widget.dart lib/features/cl_main/view/widgets/cl_open_time_sessions_section_widget.dart lib/features/cl_main/view/widgets/cl_service_section_card_widget.dart lib/features/orders/data/models/cleaning_booking_schedule_model.dart lib/features/orders/data/models/cleaning_orders_api_models.dart lib/features/orders/data/source/cleaning_session_remote_data_source.dart lib/features/orders/data/source/orders_remote_data_source.dart lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart lib/features/orders/view/widgets/cleaning_open_time_live_card.dart lib/features/orders/view/widgets/cleaning_recurring_schedule_launcher_widget.dart lib/features/orders/view/widgets/cleaning_schedule_change_resolution_card.dart test/features/cl_main/data/models/cleaning_services_response_model_test.dart test/features/cl_main/data/models/cleaning_suite_config_model_test.dart test/features/cl_main/view/widgets/cl_cleaning_extras_section_widget_test.dart
+      - name: Analyze application without fatal baseline warnings
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Run full model, RTL and accessibility suite
+        run: |
+          set -o pipefail
+          flutter test --coverage 2>&1 | tee cleaning-v2-flutter-test.log
+      - name: Build Android application
+        run: flutter build apk --debug
+      - name: Upload app reports and APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleaning-v2-user-app
+          path: |
+            cleaning-v2-flutter-test.log
+            coverage/lcov.info
+            build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: ignore
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.5'
+          cache: true
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Build iOS without signing
+        run: flutter build ios --no-codesign
+      - name: Upload iOS application
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleaning-v2-user-ios
+          path: build/ios/iphoneos/Runner.app
+          if-no-files-found: error

@@ -18,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/view/widgets/cl_service_address_section_widget.dart';
+import '../../../cl_main/view/widgets/cl_cleaning_extras_section_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_day_preview_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_section_card_widget.dart';
 import '../../../cl_main/view/widgets/cl_service_time_picker_field_widget.dart';
@@ -44,11 +45,15 @@ import '../widgets/cleaning_accepted_workers_section_widget.dart';
 import '../widgets/cleaning_cancel_reason_dialog.dart';
 import '../widgets/cleaning_completion_decision_sheet.dart';
 import '../widgets/cleaning_preferred_worker_card_widget.dart';
+import '../widgets/cleaning_open_time_live_card.dart';
+import '../widgets/cleaning_recurring_schedule_launcher_widget.dart';
 import '../widgets/cleaning_room_assignments_section_widget.dart';
+import '../widgets/cleaning_schedule_change_resolution_card.dart';
 import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_order_sos_screen.dart';
+import 'multi_day_cleaning_order_details_screen.dart';
 import 'cleaning_worker_rating_screen.dart';
 
 class CleaningOrderDetailsArgs {
@@ -368,10 +373,35 @@ class _CleaningOrderDetailsScreenState
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                await Navigator.of(context).push<void>(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        MultiDayCleaningOrderDetailsScreen(
+                                          orderId: _activeOrderId,
+                                        ),
+                                  ),
+                                );
+                                if (mounted) {
+                                  await _fetchDetails(showLoading: false);
+                                }
+                              },
+                              icon: const Icon(Icons.event_note_outlined),
+                              label: const Text('عرض أيام وجلسات المناسبة'),
+                            ),
                           ],
                         ),
                       ),
                     ],
+                    if (!CleaningEventAssistanceHelper.isEventAssistance(
+                      order.propertyType,
+                    ))
+                      CleaningRecurringScheduleLauncherWidget(
+                        orderId: _activeOrderId,
+                        onReturn: () => _fetchDetails(showLoading: false),
+                      ),
                     if (searchingForWorkers) ...[
                       const SizedBox(height: 12),
                       if (showPreferredWorkerFallbackBanner) ...[
@@ -821,6 +851,32 @@ class _CleaningOrderDetailsScreenState
                         ],
                       ),
                     ),
+                    if (order.scheduleChangeRequest != null) ...[
+                      const SizedBox(height: 12),
+                      CleaningScheduleChangeResolutionCard(
+                        change: order.scheduleChangeRequest!,
+                        requiredWorkers: order.numberOfWorkers ?? 1,
+                        onResolved: () => _fetchDetails(showLoading: false),
+                      ),
+                    ],
+                    if (order.materials.isNotEmpty ||
+                        order.specialServices.isNotEmpty ||
+                        order.openTime != null) ...[
+                      const SizedBox(height: 12),
+                      CleaningOrderExtrasDetailsSection(
+                        materials: order.materials,
+                        specialServices: order.specialServices,
+                        openTime: order.openTime,
+                        currency: order.openTime?.currency ?? 'SYP',
+                      ),
+                      if (order.openTime != null) ...[
+                        const SizedBox(height: 12),
+                        CleaningOpenTimeLiveCard(
+                          orderId: order.id ?? _activeOrderId,
+                          initialValue: order.openTime!,
+                        ),
+                      ],
+                    ],
                     if (!isTerminalStatus) ...[
                       const SizedBox(height: 14),
                       SizedBox(

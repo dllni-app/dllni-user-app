@@ -10,6 +10,8 @@ import '../../../../core/widgets/failure_widget.dart';
 import '../../../../generated/assets.dart';
 import '../../../rs_home/view/widgets/home_app_bar.dart';
 import '../../data/models/cleaning_banners_response_model.dart';
+import '../../data/models/cleaning_suite_config_model.dart';
+import '../../data/source/cl_main_remote_data_source.dart';
 import '../../domain/usecases/get_cleaning_banners_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../manager/bloc/cl_main_bloc.dart';
@@ -114,6 +116,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
   List<CleaningBannerModel> _cleaningBanners = const <CleaningBannerModel>[];
   List<CleaningHomeTypeModel> _propertyTypes = _fallbackPropertyTypes;
   List<CleaningHomeTypeModel> _occasionTypes = _fallbackOccasionTypes;
+  Map<String, CleaningEventTypeConfigModel> _eventTypesBySlug =
+      const <String, CleaningEventTypeConfigModel>{};
   BlocStatus _cleaningBannersStatus = BlocStatus.init;
   String? _cleaningBannersErrorMessage;
   int _lengthOfBanners = 0;
@@ -125,6 +129,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
     super.initState();
     _cleaningBannersPageController = PageController();
     _loadCleaningHomeContent();
+    _loadSuiteConfig();
     _startCleaningBannersAutoScroll();
   }
 
@@ -194,6 +199,33 @@ class _ClMainScreenState extends State<ClMainScreen> {
     );
   }
 
+  Future<void> _loadSuiteConfig() async {
+    try {
+      final config = await getIt<ClMainRemoteDataSource>()
+          .getCleaningSuiteConfig();
+      if (!mounted || config.eventTypes.isEmpty) return;
+      setState(() {
+        _eventTypesBySlug = <String, CleaningEventTypeConfigModel>{
+          for (final type in config.eventTypes) type.slug: type,
+        };
+        _occasionTypes = config.eventTypes
+            .map(
+              (type) => CleaningHomeTypeModel(
+                section: 'occasion',
+                code: type.slug,
+                value: type.slug,
+                title: type.name,
+                imageUrl: _occasionFallbackImage(type.slug),
+                sortOrder: type.id,
+              ),
+            )
+            .toList(growable: false);
+      });
+    } catch (_) {
+      // Keep the server home-content/legacy list when suite config is absent.
+    }
+  }
+
   Future<void> _showBannerPreview(CleaningBannerModel banner) async {
     final imageUrl = banner.imageUrl?.trim();
     if (imageUrl == null || imageUrl.isEmpty) return;
@@ -206,7 +238,10 @@ class _ClMainScreenState extends State<ClMainScreen> {
         return Dialog(
           key: const Key('cl_main_banner_preview_dialog'),
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -342,8 +377,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
             ),
             _buildCleaningBannersSection(),
             Expanded(
-              child:
-                  _selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex
+              child: _selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex
                   ? ListView.separated(
                       key: const Key('cl_main_cleaning_list'),
                       padding: const EdgeInsets.symmetric(
@@ -379,6 +413,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
                       itemBuilder: (context, index) {
                         final item = _occasionTypes[index];
                         final bookingValue = _nonEmpty(item.value, 'other');
+                        final eventConfig = _eventTypesBySlug[bookingValue];
                         final option = ClMainOccasionOption(
                           id: _nonEmpty(item.code, bookingValue),
                           bookingValue: bookingValue,
@@ -387,6 +422,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
                             item.imageUrl,
                             _occasionFallbackImage(bookingValue),
                           ),
+                          eventTypeId: eventConfig?.id,
+                          dynamicFields: eventConfig?.fields ?? const [],
                         );
                         return ClOccasionTypeCardWidget(
                           title: option.title,

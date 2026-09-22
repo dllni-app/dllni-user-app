@@ -20,8 +20,11 @@ import 'package:dllni_user_app/features/cl_main/domain/usecases/get_previous_cle
 import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_order_cancel_api_models.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_orders_api_models.dart';
+import 'package:dllni_user_app/features/orders/data/models/orders_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/repository/orders_repo.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/cancel_cleaning_order_use_case.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/fetch_cleaning_order_details_use_case.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/patch_cleaning_order_use_case.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_reschedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,12 +98,20 @@ class _FakeClMainRepo implements ClMainRepo {
 }
 
 class _FakeOrdersRepo implements OrdersRepo {
-  _FakeOrdersRepo(this._cancelHandler);
+  _FakeOrdersRepo(this._cancelHandler, {this.fetchHandler, this.patchHandler});
 
   final DataResponse<CleaningCancelResultModel> Function(
     CancelCleaningOrderParams params,
   )
   _cancelHandler;
+  final DataResponse<FetchCleaningOrderDetailsModel> Function(
+    FetchCleaningOrderDetailsParams params,
+  )?
+  fetchHandler;
+  final DataResponse<OrdersActionResultModel> Function(
+    PatchCleaningOrderParams params,
+  )?
+  patchHandler;
 
   @override
   DataResponse<CleaningCancelResultModel> cancelCleaningOrder(
@@ -108,6 +119,16 @@ class _FakeOrdersRepo implements OrdersRepo {
   ) {
     return _cancelHandler(params);
   }
+
+  @override
+  DataResponse<FetchCleaningOrderDetailsModel> fetchCleaningOrderDetails(
+    FetchCleaningOrderDetailsParams params,
+  ) => fetchHandler!(params);
+
+  @override
+  DataResponse<OrdersActionResultModel> patchCleaningOrder(
+    PatchCleaningOrderParams params,
+  ) => patchHandler!(params);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -122,6 +143,10 @@ Future<void> _pumpScreen(
   WidgetTester tester,
   EstimateCleaningPriceUseCase useCase, {
   CleaningOrderModel? order,
+  DataResponse<OrdersActionResultModel> Function(
+    PatchCleaningOrderParams params,
+  )?
+  patchHandler,
 }) async {
   if (getIt.isRegistered<ClMainBloc>()) {
     await getIt.unregister<ClMainBloc>();
@@ -132,31 +157,12 @@ Future<void> _pumpScreen(
   if (getIt.isRegistered<CancelCleaningOrderUseCase>()) {
     await getIt.unregister<CancelCleaningOrderUseCase>();
   }
-
-  final createUseCase = CreateCleaningOrderUseCase(
-    clMainRepo: useCase.clMainRepo,
-  );
-  final workersUseCase = GetPreviousCleaningWorkersUseCase(
-    clMainRepo: useCase.clMainRepo,
-  );
-  final cancelUseCase = CancelCleaningOrderUseCase(
-    ordersRepo: _FakeOrdersRepo(
-      (_) async => Right(CleaningCancelResultModel(message: 'cancelled')),
-    ),
-  );
-
-  getIt.registerLazySingleton<CreateCleaningOrderUseCase>(() => createUseCase);
-  getIt.registerLazySingleton<CancelCleaningOrderUseCase>(() => cancelUseCase);
-  getIt.registerFactory<ClMainBloc>(
-    () => ClMainBloc(
-      estimateCleaningPriceUseCase: useCase,
-      getCleaningServicesUseCase: GetCleaningServicesUseCase(
-        clMainRepo: useCase.clMainRepo,
-      ),
-      getPreviousCleaningWorkersUseCase: workersUseCase,
-      createCleaningOrderUseCase: createUseCase,
-    ),
-  );
+  if (getIt.isRegistered<FetchCleaningOrderDetailsUseCase>()) {
+    await getIt.unregister<FetchCleaningOrderDetailsUseCase>();
+  }
+  if (getIt.isRegistered<PatchCleaningOrderUseCase>()) {
+    await getIt.unregister<PatchCleaningOrderUseCase>();
+  }
 
   final fallbackOrder = CleaningOrderModel(
     id: 7,
@@ -171,6 +177,53 @@ Future<void> _pumpScreen(
       rooms: 3,
       bathrooms: 1,
       livingRoomSize: 'large',
+    ),
+  );
+  final sourceOrder = order ?? fallbackOrder;
+  final detailOrder = CleaningOrderDetailModel(
+    id: sourceOrder.id,
+    status: sourceOrder.status,
+    propertyType: sourceOrder.propertyType,
+    propertyDetails: sourceOrder.propertyDetails,
+    addressLatitude: sourceOrder.addressLatitude,
+    addressLongitude: sourceOrder.addressLongitude,
+    locationName: sourceOrder.locationName,
+    scheduledDate: sourceOrder.scheduledDate,
+    scheduledTime: sourceOrder.scheduledTime,
+    genderPreference: sourceOrder.genderPreference,
+  );
+  final createUseCase = CreateCleaningOrderUseCase(
+    clMainRepo: useCase.clMainRepo,
+  );
+  final workersUseCase = GetPreviousCleaningWorkersUseCase(
+    clMainRepo: useCase.clMainRepo,
+  );
+  final ordersRepo = _FakeOrdersRepo(
+    (_) async => Right(CleaningCancelResultModel(message: 'cancelled')),
+    fetchHandler: (_) async =>
+        Right(FetchCleaningOrderDetailsModel(data: detailOrder)),
+    patchHandler:
+        patchHandler ??
+        (_) async => Right(OrdersActionResultModel(message: 'updated')),
+  );
+  final cancelUseCase = CancelCleaningOrderUseCase(ordersRepo: ordersRepo);
+
+  getIt.registerLazySingleton<CreateCleaningOrderUseCase>(() => createUseCase);
+  getIt.registerLazySingleton<CancelCleaningOrderUseCase>(() => cancelUseCase);
+  getIt.registerLazySingleton<FetchCleaningOrderDetailsUseCase>(
+    () => FetchCleaningOrderDetailsUseCase(ordersRepo: ordersRepo),
+  );
+  getIt.registerLazySingleton<PatchCleaningOrderUseCase>(
+    () => PatchCleaningOrderUseCase(ordersRepo: ordersRepo),
+  );
+  getIt.registerFactory<ClMainBloc>(
+    () => ClMainBloc(
+      estimateCleaningPriceUseCase: useCase,
+      getCleaningServicesUseCase: GetCleaningServicesUseCase(
+        clMainRepo: useCase.clMainRepo,
+      ),
+      getPreviousCleaningWorkersUseCase: workersUseCase,
+      createCleaningOrderUseCase: createUseCase,
     ),
   );
 
@@ -198,6 +251,12 @@ void main() {
     }
     if (getIt.isRegistered<CancelCleaningOrderUseCase>()) {
       await getIt.unregister<CancelCleaningOrderUseCase>();
+    }
+    if (getIt.isRegistered<FetchCleaningOrderDetailsUseCase>()) {
+      await getIt.unregister<FetchCleaningOrderDetailsUseCase>();
+    }
+    if (getIt.isRegistered<PatchCleaningOrderUseCase>()) {
+      await getIt.unregister<PatchCleaningOrderUseCase>();
     }
   });
 
@@ -288,11 +347,11 @@ void main() {
     final maleChip = tester.widget<ChoiceChip>(
       find.byKey(const Key('cleaning_gender_pref_male')),
     );
-    final anyChip = tester.widget<ChoiceChip>(
-      find.byKey(const Key('cleaning_gender_pref_any')),
+    final femaleChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('cleaning_gender_pref_female')),
     );
     expect(maleChip.selected, isTrue);
-    expect(anyChip.selected, isFalse);
+    expect(femaleChip.selected, isFalse);
   });
 
   testWidgets('falls back to any as initial gender selection', (
@@ -307,16 +366,20 @@ void main() {
     await _pumpScreen(tester, useCase);
     await tester.pumpAndSettle();
 
-    final anyChip = tester.widget<ChoiceChip>(
-      find.byKey(const Key('cleaning_gender_pref_any')),
+    final maleChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('cleaning_gender_pref_male')),
     );
-    expect(anyChip.selected, isTrue);
+    final femaleChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('cleaning_gender_pref_female')),
+    );
+    expect(maleChip.selected, isFalse);
+    expect(femaleChip.selected, isFalse);
   });
 
-  testWidgets('save flow sends selected gender preference in create request', (
+  testWidgets('save flow sends selected gender preference in patch request', (
     WidgetTester tester,
   ) async {
-    CreateCleaningOrderParams? sentCreateParams;
+    PatchCleaningOrderParams? sentPatchParams;
     final useCase = EstimateCleaningPriceUseCase(
       clMainRepo: _FakeClMainRepo(
         estimateHandler: (_) async => const Right(
@@ -329,16 +392,17 @@ void main() {
             ),
           ),
         ),
-        createOrderHandler: (params) async {
-          sentCreateParams = params;
-          return const Right(
-            CreateCleaningOrderResponseModel(success: true, orderId: 90),
-          );
-        },
       ),
     );
 
-    await _pumpScreen(tester, useCase);
+    await _pumpScreen(
+      tester,
+      useCase,
+      patchHandler: (params) async {
+        sentPatchParams = params;
+        return Right(OrdersActionResultModel(message: 'updated'));
+      },
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('cleaning_gender_pref_female')));
@@ -347,7 +411,10 @@ void main() {
     await tester.tap(find.byType(ElevatedButton).first);
     await tester.pumpAndSettle();
 
-    expect(sentCreateParams, isNotNull);
-    expect(sentCreateParams!.genderPreference, CleaningGenderPreference.female);
+    expect(sentPatchParams, isNotNull);
+    expect(
+      sentPatchParams!.getBody()['genderPreference'],
+      CleaningGenderPreference.female.apiValue,
+    );
   });
 }

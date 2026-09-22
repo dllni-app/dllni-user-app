@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/realtime/pusher_manager.dart';
 import 'package:dllni_user_app/core/session/session_expired_handler.dart';
+import 'package:dllni_user_app/features/orders/data/source/cleaning_session_remote_data_source.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import '../app_config.dart';
@@ -23,6 +24,11 @@ Future<GetIt> configureInjection() async {
   $initGetIt(getIt);
   if (!getIt.isRegistered<PusherManager>()) {
     getIt.registerLazySingleton<PusherManager>(() => PusherManager());
+  }
+  if (!getIt.isRegistered<CleaningSessionRemoteDataSource>()) {
+    getIt.registerLazySingleton<CleaningSessionRemoteDataSource>(
+      () => CleaningSessionRemoteDataSource(dioNetwork: getIt<DioNetwork>()),
+    );
   }
   if (!getIt.isRegistered<FetchRestaurantCartProductsCountUseCase>()) {
     getIt.registerLazySingleton<FetchRestaurantCartProductsCountUseCase>(

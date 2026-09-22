@@ -18,18 +18,20 @@ class ClHomeAppBar extends StatefulWidget {
 }
 
 class _ClHomeAppBarState extends State<ClHomeAppBar> {
-  late final ProfileBloc profileBloc;
+  ProfileBloc? profileBloc;
 
   @override
   void initState() {
-    profileBloc = getIt<ProfileBloc>()
-      ..add(
-        FetchNotificationsEvent(
-          params: FetchNotificationsParams(),
-          isReload: true,
-        ),
-      );
     super.initState();
+    if (getIt.isRegistered<ProfileBloc>()) {
+      profileBloc = getIt<ProfileBloc>()
+        ..add(
+          FetchNotificationsEvent(
+            params: FetchNotificationsParams(),
+            isReload: true,
+          ),
+        );
+    }
   }
 
   @override
@@ -91,21 +93,42 @@ class _ClHomeAppBarState extends State<ClHomeAppBar> {
                 },
               ),
               SizedBox(width: 12),
-              _AppBarNotificationWidget(
-                profileBloc: profileBloc,
-                icon: FontAwesomeIcons.bell,
-                onTap: () {
-                  context.pushRoute(
-                    '/notifications',
-                    arguments: NotificationsScreenParams(
-                      profileBloc: profileBloc,
-                    ),
-                  );
-                },
-              ),
+              if (profileBloc != null)
+                _AppBarNotificationWidget(
+                  profileBloc: profileBloc!,
+                  icon: FontAwesomeIcons.bell,
+                  onTap: () {
+                    context.pushRoute(
+                      '/notifications',
+                      arguments: NotificationsScreenParams(
+                        profileBloc: profileBloc!,
+                      ),
+                    );
+                  },
+                )
+              else
+                const _AppBarUnavailableNotificationIcon(),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AppBarUnavailableNotificationIcon extends StatelessWidget {
+  const _AppBarUnavailableNotificationIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'الإشعارات غير متاحة حالياً',
+      child: const SizedBox(
+        width: 48,
+        height: 48,
+        child: Center(
+          child: FaIcon(FontAwesomeIcons.bell, color: Color(0xFF9CA3AF)),
+        ),
       ),
     );
   }

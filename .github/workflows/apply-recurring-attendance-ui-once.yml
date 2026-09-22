@@ -1,0 +1,68 @@
+name: Apply Recurring Attendance UI Once
+
+on:
+  push:
+    branches:
+      - feature/cleaning-suite-main
+    paths:
+      - 'scripts/apply_recurring_attendance_ui_patch.py'
+      - '.github/workflows/apply-recurring-attendance-ui-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feature/cleaning-suite-main
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Apply bounded patch
+        run: python scripts/apply_recurring_attendance_ui_patch.py
+
+      - name: Format changed Dart
+        run: |
+          dart format \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
+
+      - name: Analyze changed sources
+        run: |
+          flutter analyze \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart
+
+      - name: Run attendance model tests
+        run: flutter test test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
+
+      - name: Commit verified feature files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            lib/features/orders/data/models/cleaning_booking_schedule_model.dart \
+            lib/features/orders/data/source/cleaning_session_remote_data_source.dart \
+            lib/features/orders/view/screens/multi_day_cleaning_order_details_content.dart \
+            test/features/orders/data/models/cleaning_booking_schedule_model_test.dart
+          if git diff --cached --quiet; then
+            echo 'No feature changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat(cleaning): add recurring late and no-travel UI'
+          git push origin HEAD:feature/cleaning-suite-main

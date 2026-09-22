@@ -18,6 +18,7 @@ import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.d
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/widgets/cl_service_bottom_actions_widget.dart';
 import 'package:dllni_user_app/features/cl_main/view/widgets/cl_service_previous_workers_section_widget.dart';
+import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -131,7 +132,11 @@ void main() {
   testWidgets('shows previous workers section', (WidgetTester tester) async {
     final repo = _FakeClMainRepo(
       previousWorkers: const <PreviousWorkerModel>[
-        PreviousWorkerModel(id: 77, name: 'Worker 77'),
+        PreviousWorkerModel(
+          id: 77,
+          name: 'Worker 77',
+          gender: CleaningGenderPreference.male,
+        ),
       ],
     );
     final bloc = _buildBloc(repo);

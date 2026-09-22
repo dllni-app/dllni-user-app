@@ -1,4 +1,5 @@
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
+import 'package:dllni_user_app/core/models/cleaning_service_extras.dart';
 
 import 'cleaning_booking_status.dart';
 
@@ -17,6 +18,10 @@ List<Map<String, dynamic>> _toMapList(dynamic value) {
     return value.map((item) => _toMap(item)).toList(growable: false);
   }
   return const <Map<String, dynamic>>[];
+}
+
+CleaningOpenTimeModel? _cleaningOpenTimeFromJson(dynamic value) {
+  return value is Map ? CleaningOpenTimeModel.fromJson(_toMap(value)) : null;
 }
 
 List<dynamic>? _toDynamicList(dynamic value) {
@@ -272,6 +277,136 @@ class CleaningExtensionRangeModel {
   int? get requestMinutes => endMinutes ?? startMinutes;
 }
 
+class CleaningScheduleChangeSessionModel {
+  const CleaningScheduleChangeSessionModel({
+    required this.date,
+    required this.time,
+    this.hours,
+  });
+
+  final String date;
+  final String time;
+  final double? hours;
+
+  factory CleaningScheduleChangeSessionModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningScheduleChangeSessionModel(
+      date: _toStringValue(json['date']) ?? '',
+      time: _toStringValue(json['time']) ?? '',
+      hours: _toDouble(json['hours']),
+    );
+  }
+}
+
+class CleaningScheduleChangeDecisionModel {
+  const CleaningScheduleChangeDecisionModel({
+    this.workerId,
+    this.workerName,
+    required this.decision,
+    this.reason,
+  });
+
+  final int? workerId;
+  final String? workerName;
+  final String decision;
+  final String? reason;
+
+  factory CleaningScheduleChangeDecisionModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningScheduleChangeDecisionModel(
+      workerId: _toInt(json['workerId'] ?? json['worker_id']),
+      workerName: _toStringValue(json['workerName'] ?? json['worker_name']),
+      decision: _toStringValue(json['decision']) ?? 'pending',
+      reason: _toStringValue(json['reason']),
+    );
+  }
+}
+
+class CleaningScheduleChangeRequestModel {
+  const CleaningScheduleChangeRequestModel({
+    required this.id,
+    required this.status,
+    required this.priceDelta,
+    required this.sessions,
+    required this.decisions,
+  });
+
+  final int id;
+  final String status;
+  final double priceDelta;
+  final List<CleaningScheduleChangeSessionModel> sessions;
+  final List<CleaningScheduleChangeDecisionModel> decisions;
+
+  bool get isPending => status == 'pending';
+  bool get isRejected => status == 'rejected';
+
+  factory CleaningScheduleChangeRequestModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final proposed = _toMap(
+      json['proposedSnapshot'] ?? json['proposed_snapshot'],
+    );
+    return CleaningScheduleChangeRequestModel(
+      id: _toInt(json['id']) ?? 0,
+      status: _toStringValue(json['status']) ?? '',
+      priceDelta: _toDouble(json['priceDelta'] ?? json['price_delta']) ?? 0,
+      sessions: _toMapList(proposed['sessions'])
+          .map(CleaningScheduleChangeSessionModel.fromJson)
+          .toList(growable: false),
+      decisions: _toMapList(json['decisions'])
+          .map(CleaningScheduleChangeDecisionModel.fromJson)
+          .toList(growable: false),
+    );
+  }
+}
+
+class CleaningReplacementWorkerOptionModel {
+  const CleaningReplacementWorkerOptionModel({
+    required this.id,
+    required this.name,
+    this.gender,
+    this.rating = 0,
+  });
+
+  final int id;
+  final String name;
+  final String? gender;
+  final double rating;
+
+  factory CleaningReplacementWorkerOptionModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return CleaningReplacementWorkerOptionModel(
+      id: _toInt(json['id']) ?? 0,
+      name: _toStringValue(json['name']) ?? '',
+      gender: _toStringValue(json['gender']),
+      rating: _toDouble(json['rating']) ?? 0,
+    );
+  }
+}
+
+CleaningScheduleChangeRequestModel cleaningScheduleChangeEnvelopeFromJson(
+  dynamic json,
+) {
+  final root = _toMap(json);
+  final data = _toMap(root['data']);
+  return CleaningScheduleChangeRequestModel.fromJson(
+    _toMap(data['changeRequest'] ?? data['change_request'] ?? data),
+  );
+}
+
+List<CleaningReplacementWorkerOptionModel>
+cleaningReplacementWorkersEnvelopeFromJson(dynamic json) {
+  final root = _toMap(json);
+  final data = _toMap(root['data']);
+  return _toMapList(data['workers'])
+      .map(CleaningReplacementWorkerOptionModel.fromJson)
+      .where((worker) => worker.id > 0 && worker.name.isNotEmpty)
+      .toList(growable: false);
+}
+
 class CleaningOrderModel {
   final int? id;
   final int? customerId;
@@ -307,6 +442,10 @@ class CleaningOrderModel {
   final CleaningOrderWorkerModel? worker;
   final List<CleaningOrderLineItemModel>? services;
   final List<CleaningOrderLineItemModel>? addons;
+  final List<CleaningMaterialLineModel> materials;
+  final List<CleaningSpecialServiceLineModel> specialServices;
+  final CleaningOpenTimeModel? openTime;
+  final CleaningScheduleChangeRequestModel? scheduleChangeRequest;
   final Map<String, dynamic>? billingPolicy;
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
@@ -356,6 +495,10 @@ class CleaningOrderModel {
     this.worker,
     this.services,
     this.addons,
+    this.materials = const <CleaningMaterialLineModel>[],
+    this.specialServices = const <CleaningSpecialServiceLineModel>[],
+    this.openTime,
+    this.scheduleChangeRequest,
     this.billingPolicy,
     this.timeWarnings,
     this.disputes,
@@ -477,6 +620,19 @@ class CleaningOrderModel {
       addons: _toMapList(
         m['addons'],
       ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
+      materials: cleaningMaterialLinesFromJson(m['materials']),
+      specialServices: cleaningSpecialServiceLinesFromJson(
+        m['specialServices'] ?? m['special_services'],
+      ),
+      openTime: _cleaningOpenTimeFromJson(m['openTime'] ?? m['open_time']),
+      scheduleChangeRequest:
+          (m['scheduleChangeRequest'] ?? m['schedule_change_request']) is Map
+          ? CleaningScheduleChangeRequestModel.fromJson(
+              _toMap(
+                m['scheduleChangeRequest'] ?? m['schedule_change_request'],
+              ),
+            )
+          : null,
       billingPolicy: m['billingPolicy'] is Map
           ? _toMap(m['billingPolicy'])
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
@@ -607,6 +763,10 @@ class CleaningOrderDetailModel {
   final CleaningOrderWorkerModel? worker;
   final List<CleaningOrderLineItemModel>? services;
   final List<CleaningOrderLineItemModel>? addons;
+  final List<CleaningMaterialLineModel> materials;
+  final List<CleaningSpecialServiceLineModel> specialServices;
+  final CleaningOpenTimeModel? openTime;
+  final CleaningScheduleChangeRequestModel? scheduleChangeRequest;
   final Map<String, dynamic>? billingPolicy;
   final List<dynamic>? timeWarnings;
   final List<dynamic>? disputes;
@@ -663,6 +823,10 @@ class CleaningOrderDetailModel {
     this.worker,
     this.services,
     this.addons,
+    this.materials = const <CleaningMaterialLineModel>[],
+    this.specialServices = const <CleaningSpecialServiceLineModel>[],
+    this.openTime,
+    this.scheduleChangeRequest,
     this.billingPolicy,
     this.timeWarnings,
     this.disputes,
@@ -795,6 +959,19 @@ class CleaningOrderDetailModel {
       addons: _toMapList(
         m['addons'],
       ).map(CleaningOrderLineItemModel.fromJson).toList(growable: false),
+      materials: cleaningMaterialLinesFromJson(m['materials']),
+      specialServices: cleaningSpecialServiceLinesFromJson(
+        m['specialServices'] ?? m['special_services'],
+      ),
+      openTime: _cleaningOpenTimeFromJson(m['openTime'] ?? m['open_time']),
+      scheduleChangeRequest:
+          (m['scheduleChangeRequest'] ?? m['schedule_change_request']) is Map
+          ? CleaningScheduleChangeRequestModel.fromJson(
+              _toMap(
+                m['scheduleChangeRequest'] ?? m['schedule_change_request'],
+              ),
+            )
+          : null,
       billingPolicy: m['billingPolicy'] is Map
           ? _toMap(m['billingPolicy'])
           : (m['billing_policy'] is Map ? _toMap(m['billing_policy']) : null),
@@ -977,6 +1154,10 @@ class CleaningOrderDetailModel {
       worker: worker,
       services: services,
       addons: addons,
+      materials: materials,
+      specialServices: specialServices,
+      openTime: openTime,
+      scheduleChangeRequest: scheduleChangeRequest,
       billingPolicy: billingPolicy,
       timeWarnings: timeWarnings,
       disputes: disputes,
