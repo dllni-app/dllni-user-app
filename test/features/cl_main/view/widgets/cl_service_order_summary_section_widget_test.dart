@@ -21,7 +21,7 @@ void main() {
   }
 
   testWidgets(
-    'folds admin margin into service price, keeps pure travel fee',
+    'uses authoritative total minus travel for service value',
     (tester) async {
       await tester.pumpWidget(_buildWidget(isPricingFinal: false));
 
@@ -30,11 +30,35 @@ void main() {
       expect(find.text('المسافة'), findsOneWidget);
       expect(find.text('الإجمالي'), findsOneWidget);
       expect(find.text('هامش الإدارة'), findsNothing);
-      // Service = basePrice (1000) + adminMargin (100).
-      expect(find.textContaining('1,100'), findsOneWidget);
-      // Pure travel fee only (120), not folded with admin margin (220).
+      // Service = totalPrice (1300) - travelFee (120) = 1180.
+      // This includes add-ons/commission exactly once, as priced by backend.
+      expect(find.textContaining('1,180'), findsOneWidget);
       expect(find.textContaining('120'), findsOneWidget);
-      expect(find.textContaining('220'), findsNothing);
+      expect(find.textContaining('1,100'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'does not add admin margin again when minimum price already includes it',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ClServiceOrderSummarySectionWidget(
+              basePrice: 1500,
+              travelFee: 0,
+              addonsTotal: 0,
+              totalPrice: 1500,
+              adminMargin: 375,
+              isPricingFinal: false,
+              currency: 'SYP',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('1,500'), findsNWidgets(2));
+      expect(find.textContaining('1,875'), findsNothing);
     },
   );
 
