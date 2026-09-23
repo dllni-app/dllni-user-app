@@ -51,7 +51,12 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final showProvisionalWarning = isPricingFinal == false;
     final scheduleDateLine = _scheduleDateLine;
-    final displayedServicePrice = basePrice + (adminMargin ?? 0);
+    // totalPrice is the backend-authoritative customer amount before any coupon.
+    // Derive the service value from it so commission that is already embedded in
+    // a configured minimum price is not added a second time. Travel stays separate.
+    final displayedServicePrice = (totalPrice - travelFee)
+        .clamp(0, double.infinity)
+        .toDouble();
     final hasDiscount = discountAmount != null && discountAmount! > 0;
     // Coupon amounts are calculated on the coupon-eligible subtotal only.
     // Keep non-coupon charges (for example admin margin/travel) in the final
