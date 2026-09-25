@@ -1,0 +1,126 @@
+﻿You are redesigning the Dllni CUSTOMER Flutter app in this repository as an editable pen.dev design handoff.
+
+Repository behavior is the source of truth. Inspect the actual Dart code, routes, models, BLoC/Cubit state, widgets, existing design-system docs, and assets. Do NOT invent backend behavior, endpoints, booking rules, pricing rules, lifecycle states, or navigation that do not exist.
+
+GOAL
+Create a complete, customer-facing UI/UX redesign in one organized .pen file, suitable for BOTH client review and direct Flutter implementation. This is a visual/UX redesign only. Preserve all current business logic and API contracts.
+
+VISUAL DIRECTION
+- Arabic-first RTL, Cairo typography, Western 0-9 numerals in visible UI.
+- Keep Dllni brand family: deep indigo/blue primary, restrained secondary violet, turquoise/green positive accent, warm orange only where useful, neutral off-white canvas, white elevated surfaces.
+- More polished and consumer-friendly than the worker app while visually belonging to the same product family.
+- 16-20px cards, clear hierarchy, generous but efficient spacing, 44-48dp minimum touch targets.
+- No newspaper-style dense layouts. Avoid excessive boxed sections. Prefer progressive disclosure and strong summaries.
+- Responsive phone-first; consider 375px, large phone, tablet, safe areas, keyboard, long Arabic text, 200% text scale.
+
+ARCHITECTURE / ORGANIZATION IN PEN
+Create top-level groups in this order:
+00 Cover + Product Map
+01 Design System
+02 Shared Components
+03 Authentication
+04 Main Home + Global Navigation
+05 Profile + Settings
+06 Addresses + Location
+07 Notifications + Coupons
+08 Cleaning Discovery
+09 Cleaning Booking Builder
+10 Cleaning Booking Review + Confirmation
+11 Cleaning Orders List
+12 Cleaning Order Details / Lifecycle
+13 Cleaning Recovery / Support / Rating
+14 Multi-day Events + Recurring + Open-Time
+15 Commerce Compatibility (restaurant/supermarket/delivery shared shell + representative order surfaces)
+16 Loading / Empty / Error / Disabled / Success States
+17 Developer Handoff / Screen Map
+
+DESIGN SYSTEM
+Build editable components/variables for colors, type, spacing, radius, shadows, icon containers, buttons, inputs, OTP cells, chips, tabs, segmented controls, section headers, service cards, bottom nav, top bars, sticky action bars, state surfaces, pricing rows, room rows, quantity controls, worker cards, address cards, order cards, status chips, timeline, map card, alerts, modals/bottom sheets.
+Reuse components consistently. Add developer-facing names and short implementation notes.
+
+AUTH FLOW
+Redesign existing login/register/account recovery/login help/verify account (OTP) screens. Include loading, validation, wrong OTP, resend countdown, success, keyboard states. Do not alter authentication logic.
+
+HOME / MAIN SHELL
+Redesign MainScreen + HomeScreen + BottomNav. Home must clearly separate Services (Cleaning) and Shopping (Restaurants / Supermarket), show offers/banners elegantly, notification entry point, profile context where current app supports it, and avoid icon-grid emptiness. Include guest/authenticated differences if code supports them.
+
+PROFILE / SETTINGS
+Redesign profile, personal details, notifications, coupons, addresses, add address, terms, shopping lists/group order/lucky box screens that are first-class profile utilities. Group settings semantically. Make personal identity/status clear without technical wording.
+
+CLEANING DISCOVERY
+Redesign cl_main screen, cleaning vs occasions tabs, banners, property-type cards, occasion cards, worker profile/reviews where relevant. Make the next step obvious.
+
+CRITICAL: CLEANING BOOKING BUILDER UX
+Completely rethink the CURRENT booking creation experience while preserving all fields/rules and API data.
+Do not present one huge technical form. Use a clear step-based or section-progressive flow with persistent summary and a sticky primary action.
+Suggested information sequence based on existing code/data:
+1. Cleaning context: property / occasion and cleaning type.
+2. Rooms and sizes.
+3. Workers / assignment mode / preferred workers / gender rules.
+4. Extras: cleaning materials + special services.
+5. Schedule: one-time / recurring / open-time / multi-day sessions as supported.
+6. Address/location.
+7. Coupon and optional notes where supported.
+8. Review + price breakdown + confirmation.
+
+ROOM PRICING REQUIREMENT (VERY IMPORTANT)
+The user must understand the price of EVERY room type and EVERY size before confirmation.
+Inspect the room-size models, estimate-price response, service config, and existing widgets. Design an editable Room Pricing Selector that shows:
+- Arabic room name.
+- Size option (small / medium / large or actual API labels).
+- Unit price for that exact room+size when available from API/config.
+- Quantity +/-.
+- Line subtotal = unit price x quantity.
+- Selected summary per room.
+- Overall rooms subtotal.
+- If the API only returns aggregate estimates for some modes, clearly label values as estimate and never fabricate a unit price.
+- Keep prices visually stable and use Western digits.
+- Include examples for bedroom, living room, bathroom, kitchen and any other room types actually present in code/config.
+- Include disabled/unavailable state and validation messaging.
+The design must make it impossible for the customer to confuse room quantity, room size, and price.
+
+PRICE TRANSPARENCY
+Review existing estimate model and checkout data. Design a customer-friendly summary that can represent: room/service subtotal, worker count impact, travel/transport amount if exposed, special services, materials, coupon discount, admin/platform values ONLY if customer-facing today, and final payable amount. Do not expose internal-only worker/admin calculations. Use the actual data contracts.
+
+ASSIGNMENT / WORKERS
+Preserve existing modes and rules for automatic assignment, saved/previous/preselected worker choices, gender preference, multi-worker orders, room-worker assignment, and female-worker safety confirmation. Clarify each choice in plain Arabic and show unavailable/blocked reasons before the user reaches a dead-end.
+
+SCHEDULE TYPES
+Design all current modes from code/docs:
+- Scheduled one-time cleaning.
+- Recurring cleaning.
+- Open-time cleaning.
+- Multi-day occasion/event sessions.
+Show selected dates/times/sessions in compact summary cards. Preserve current 24h or eligibility rules from code; explain them before disabled actions.
+
+ORDER REVIEW / CONFIRMATION
+Make this one of the strongest screens: summary grouped by service, rooms, workers, extras, schedule, address, coupon, and final amount. Allow edit links back to each section without losing state. Primary CTA must be unambiguous.
+
+ORDERS
+Redesign general Orders screen so cleaning, restaurant, supermarket/delivery orders can coexist without visual confusion. Use service-type identity + status + next action. Design representative cards for each type while sharing structure.
+
+CLEANING ORDER DETAILS / LIFECYCLE
+Inspect cleaning_order_details_screen and all related lifecycle widgets/helpers. Create frames for every meaningful customer-visible state supported by code, including team search/worker assignment, scheduled/confirmed, traveling/tracking, start verification/security code, in progress, open-time live session, extension decisions, awaiting completion, completion confirmation/rejection/problem report, completed, cancelled, recurring schedule changes, multi-day event session state, preferred-worker rejection/recovery, SOS, reschedule/cancellation, and rating.
+Keep only the current valid action(s) prominent for each state.
+
+COMMERCE COMPATIBILITY
+Do a lighter redesign pass for restaurant/supermarket/delivery surfaces that interact with global Home/Orders/Profile: representative order card, tracking header/status/timeline, cart/order summary styles, and shared shell. Do not spend most of the file recreating every product catalog screen; focus on app-wide consistency and shared patterns unless a screen is essential to the main navigation.
+
+STATES
+For each major flow include relevant loading, empty, network error/retry, validation, disabled eligibility, success, and destructive confirmation states.
+
+DEVELOPER HANDOFF
+For each screen/frame add a compact developer note containing:
+- Flutter source file(s)
+- Route name if identifiable
+- Main existing BLoC/Cubit/provider dependency
+- Reused Pen components
+- What must NOT change in behavior
+- Primary CTA destination/event
+Use developer-friendly component names and variables. Avoid exposing raw API/technical wording in customer-facing screens.
+
+REFERENCE
+Use the existing design-system/MASTER.md and page overrides as constraints. Also inspect the sibling worker app design at ../dllni_cleaning_owner_app/design/worker-app-redesign for organization and product-family consistency, but DO NOT clone worker-oriented UX into the customer app.
+
+OUTPUT QUALITY BAR
+This should feel like a final product design, not a wireframe. All visible UI must be editable Pen layers/components, not screenshots. Make the file organized enough that a Flutter developer can implement screen-by-screen without guessing behavior.

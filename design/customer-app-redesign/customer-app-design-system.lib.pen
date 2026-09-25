@@ -1,0 +1,1471 @@
+{
+  "version": "2.18",
+  "children": [
+    {
+      "type": "frame",
+      "id": "C000070",
+      "name": "01 — Design System",
+      "width": 1740,
+      "fill": "#F7F8FC",
+      "padding": 32,
+      "gap": 24,
+      "layout": "vertical",
+      "stroke": "#E2E8F0",
+      "strokeWidth": 1,
+      "children": [
+        {
+          "type": "frame",
+          "id": "C000069",
+          "name": "Board Header",
+          "width": "fill_container",
+          "gap": 14,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "C000065",
+              "name": "No",
+              "width": 42,
+              "height": 42,
+              "fill": "#1E2A7B",
+              "cornerRadius": 12,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C000064",
+                  "name": "Text",
+                  "content": "01",
+                  "fontFamily": "Cairo",
+                  "fontSize": 12,
+                  "fontWeight": "800",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C000068",
+              "name": "Title",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C000066",
+                  "name": "Text",
+                  "content": "Design System",
+                  "fontFamily": "Cairo",
+                  "fontSize": 28,
+                  "fontWeight": "800",
+                  "fill": "#0F172A",
+                  "width": "fill_container",
+                  "textGrowth": "fixed-width",
+                  "lineHeight": 1.45
+                },
+                {
+                  "type": "text",
+                  "id": "C000067",
+                  "name": "Text",
+                  "content": "Client review + Flutter developer handoff",
+                  "fontFamily": "Cairo",
+                  "fontSize": 11,
+                  "fontWeight": "600",
+                  "fill": "#64748B",
+                  "width": "fill_container",
+                  "textGrowth": "fixed-width",
+                  "lineHeight": 1.45
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "C000063",
+          "name": "Foundations",
+          "width": "fill_container",
+          "gap": 12,
+          "children": [
+            {
+              "type": "frame",
+              "id": "C000044",
+              "name": "Row ألوان المنتج",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C000040",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C000039",
+                      "name": "palette",
+                      "icon": "palette",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C000043",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C000041",
+                      "name": "Text",
+                      "content": "ألوان المنتج",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C000042",
+                      "name": "Text",
+                      "content": "Indigo + neutral surfaces + semantic states",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C000050",
+              "name": "Row Typography",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C000046",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C000045",
+                      "name": "type",
+                      "icon": "type",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C000049",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C000047",
+                      "name": "Text",
+                      "content": "Typography",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C000048",
+                      "name": "Text",
+                      "content": "Cairo · Arabic-first RTL",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C000056",
+              "name": "Row Spacing",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C000052",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C000051",
+                      "name": "ruler",
+                      "icon": "ruler",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C000055",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C000053",
+                      "name": "Text",
+                      "content": "Spacing",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C000054",
+                      "name": "Text",
+                      "content": "4 / 8 / 12 / 16 / 24 / 32",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C000062",
+              "name": "Row Accessibility",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C000058",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C000057",
+                      "name": "accessibility",
+                      "icon": "accessibility",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C000061",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C000059",
+                      "name": "Text",
+                      "content": "Accessibility",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C000060",
+                      "name": "Text",
+                      "content": "44dp targets · 200% text scale",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "x": 0,
+      "y": 0
+    },
+    {
+      "type": "frame",
+      "id": "C000091",
+      "name": "02 — Shared Components",
+      "width": 1740,
+      "fill": "#F7F8FC",
+      "padding": 32,
+      "gap": 24,
+      "layout": "vertical",
+      "stroke": "#E2E8F0",
+      "strokeWidth": 1,
+      "children": [
+        {
+          "type": "frame",
+          "id": "C000090",
+          "name": "Board Header",
+          "width": "fill_container",
+          "gap": 14,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "C000086",
+              "name": "No",
+              "width": 42,
+              "height": 42,
+              "fill": "#1E2A7B",
+              "cornerRadius": 12,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C000085",
+                  "name": "Text",
+                  "content": "02",
+                  "fontFamily": "Cairo",
+                  "fontSize": 12,
+                  "fontWeight": "800",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C000089",
+              "name": "Title",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C000087",
+                  "name": "Text",
+                  "content": "Shared Components",
+                  "fontFamily": "Cairo",
+                  "fontSize": 28,
+                  "fontWeight": "800",
+                  "fill": "#0F172A",
+                  "width": "fill_container",
+                  "textGrowth": "fixed-width",
+                  "lineHeight": 1.45
+                },
+                {
+                  "type": "text",
+                  "id": "C000088",
+                  "name": "Text",
+                  "content": "Client review + Flutter developer handoff",
+                  "fontFamily": "Cairo",
+                  "fontSize": 11,
+                  "fontWeight": "600",
+                  "fill": "#64748B",
+                  "width": "fill_container",
+                  "textGrowth": "fixed-width",
+                  "lineHeight": 1.45
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "C000084",
+          "name": "Library",
+          "width": "fill_container",
+          "gap": 14,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "C000072",
+              "name": "Button متابعة",
+              "width": "fill_container",
+              "height": 50,
+              "fill": "#1E2A7B",
+              "cornerRadius": 14,
+              "padding": [
+                0,
+                16
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "strokeWidth": 0,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C000071",
+                  "name": "Text",
+                  "content": "متابعة",
+                  "fontFamily": "Cairo",
+                  "fontSize": 14,
+                  "fontWeight": "700",
+                  "fill": "#FFFFFF"
+                }
+              ],
+              "reusable": true,
+              "metadata": {
+                "type": "developer-component",
+                "implementation": "presentation only",
+                "rtl": true,
+                "westernNumerals": true
+              }
+            },
+            {
+              "type": "frame",
+              "id": "C000078",
+              "name": "Row العنوان الحالي",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C000074",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C000073",
+                      "name": "map-pin",
+                      "icon": "map-pin",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C000077",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C000075",
+                      "name": "Text",
+                      "content": "العنوان الحالي",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C000076",
+                      "name": "Text",
+                      "content": "المنزل · المزة",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ],
+              "reusable": true,
+              "metadata": {
+                "type": "developer-component",
+                "implementation": "presentation only",
+                "rtl": true,
+                "westernNumerals": true
+              }
+            },
+            {
+              "type": "frame",
+              "id": "C000080",
+              "name": "Chip قيد التنفيذ",
+              "fill": "#ECFDF5",
+              "cornerRadius": 999,
+              "padding": [
+                6,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C000079",
+                  "name": "Text",
+                  "content": "قيد التنفيذ",
+                  "fontFamily": "Cairo",
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "fill": "#059669"
+                }
+              ],
+              "reusable": true,
+              "metadata": {
+                "type": "developer-component",
+                "implementation": "presentation only",
+                "rtl": true,
+                "westernNumerals": true
+              }
+            },
+            {
+              "type": "frame",
+              "id": "C000083",
+              "name": "Price الإجمالي",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C000081",
+                  "name": "Text",
+                  "content": "195,000 ل.س",
+                  "fontFamily": "Cairo",
+                  "fontSize": 13,
+                  "fontWeight": "800",
+                  "fill": "#1E2A7B"
+                },
+                {
+                  "type": "text",
+                  "id": "C000082",
+                  "name": "Text",
+                  "content": "الإجمالي",
+                  "fontFamily": "Cairo",
+                  "fontSize": 12,
+                  "fontWeight": "700",
+                  "fill": "#0F172A"
+                }
+              ],
+              "reusable": true,
+              "metadata": {
+                "type": "developer-component",
+                "implementation": "presentation only",
+                "rtl": true,
+                "westernNumerals": true
+              }
+            }
+          ]
+        }
+      ],
+      "x": 0,
+      "y": 2100
+    },
+    {
+      "type": "frame",
+      "id": "C001732",
+      "name": "17 — Developer Handoff / Screen Map",
+      "width": 1740,
+      "fill": "#F7F8FC",
+      "padding": 32,
+      "gap": 24,
+      "layout": "vertical",
+      "stroke": "#E2E8F0",
+      "strokeWidth": 1,
+      "children": [
+        {
+          "type": "frame",
+          "id": "C001731",
+          "name": "Board Header",
+          "width": "fill_container",
+          "gap": 14,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "C001727",
+              "name": "No",
+              "width": 42,
+              "height": 42,
+              "fill": "#1E2A7B",
+              "cornerRadius": 12,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C001726",
+                  "name": "Text",
+                  "content": "17",
+                  "fontFamily": "Cairo",
+                  "fontSize": 12,
+                  "fontWeight": "800",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C001730",
+              "name": "Title",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C001728",
+                  "name": "Text",
+                  "content": "Developer Handoff / Screen Map",
+                  "fontFamily": "Cairo",
+                  "fontSize": 28,
+                  "fontWeight": "800",
+                  "fill": "#0F172A",
+                  "width": "fill_container",
+                  "textGrowth": "fixed-width",
+                  "lineHeight": 1.45
+                },
+                {
+                  "type": "text",
+                  "id": "C001729",
+                  "name": "Text",
+                  "content": "Client review + Flutter developer handoff",
+                  "fontFamily": "Cairo",
+                  "fontSize": 11,
+                  "fontWeight": "600",
+                  "fill": "#64748B",
+                  "width": "fill_container",
+                  "textGrowth": "fixed-width",
+                  "lineHeight": 1.45
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "C001724",
+          "name": "Contract",
+          "width": "fill_container",
+          "fill": "#FFFFFF",
+          "cornerRadius": 18,
+          "padding": 18,
+          "gap": 8,
+          "layout": "vertical",
+          "stroke": "#E2E8F0",
+          "strokeWidth": 1,
+          "children": [
+            {
+              "type": "text",
+              "id": "C001720",
+              "name": "Text",
+              "content": "Visual source: customer-app-redesign.pen",
+              "fontFamily": "Cairo",
+              "fontSize": 14,
+              "fontWeight": "800",
+              "fill": "#0F172A"
+            },
+            {
+              "type": "text",
+              "id": "C001721",
+              "name": "Text",
+              "content": "Behavior source: current Flutter dev branch",
+              "fontFamily": "Cairo",
+              "fontSize": 13,
+              "fontWeight": "700",
+              "fill": "#1E2A7B"
+            },
+            {
+              "type": "text",
+              "id": "C001722",
+              "name": "Text",
+              "content": "لا تغيّر API أو التسعير أو الأهلية أو lifecycle أثناء التنفيذ.",
+              "fontFamily": "Cairo",
+              "fontSize": 13,
+              "fontWeight": "700",
+              "fill": "#D92341"
+            },
+            {
+              "type": "text",
+              "id": "C001723",
+              "name": "Text",
+              "content": "Arabic RTL · Western 0–9 · Directional APIs · 44dp targets",
+              "fontFamily": "Cairo",
+              "fontSize": 12,
+              "fontWeight": "600",
+              "fill": "#64748B"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "C001725",
+          "name": "Map",
+          "width": "fill_container",
+          "gap": 8,
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "C001695",
+              "name": "Row Auth",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C001691",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C001690",
+                      "name": "code",
+                      "icon": "code",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C001694",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C001692",
+                      "name": "Text",
+                      "content": "Auth",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C001693",
+                      "name": "Text",
+                      "content": "lib/features/auth/view/screens/",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C001701",
+              "name": "Row Home",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C001697",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C001696",
+                      "name": "code",
+                      "icon": "code",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C001700",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C001698",
+                      "name": "Text",
+                      "content": "Home",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C001699",
+                      "name": "Text",
+                      "content": "lib/features/home/view/screens/home_screen.dart",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C001707",
+              "name": "Row Profile",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C001703",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C001702",
+                      "name": "code",
+                      "icon": "code",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C001706",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C001704",
+                      "name": "Text",
+                      "content": "Profile",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C001705",
+                      "name": "Text",
+                      "content": "lib/features/profile/view/screens/",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C001713",
+              "name": "Row Cleaning",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C001709",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C001708",
+                      "name": "code",
+                      "icon": "code",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C001712",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C001710",
+                      "name": "Text",
+                      "content": "Cleaning",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C001711",
+                      "name": "Text",
+                      "content": "lib/features/cl_main/view/screens/",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "C001719",
+              "name": "Row Orders",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 16,
+              "padding": 12,
+              "gap": 10,
+              "alignItems": "center",
+              "stroke": "#E2E8F0",
+              "strokeWidth": 1,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C001715",
+                  "name": "Icon",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#EEF2FF",
+                  "cornerRadius": 12,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C001714",
+                      "name": "code",
+                      "icon": "code",
+                      "library": "lucide",
+                      "fill": "#1E2A7B",
+                      "width": 20,
+                      "height": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C001718",
+                  "name": "Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C001716",
+                      "name": "Text",
+                      "content": "Orders",
+                      "fontFamily": "Cairo",
+                      "fontSize": 14,
+                      "fontWeight": "700",
+                      "fill": "#0F172A",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    },
+                    {
+                      "type": "text",
+                      "id": "C001717",
+                      "name": "Text",
+                      "content": "lib/features/orders/view/screens/",
+                      "fontFamily": "Cairo",
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "fill": "#64748B",
+                      "width": "fill_container",
+                      "textGrowth": "fixed-width",
+                      "lineHeight": 1.45
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "x": 0,
+      "y": 4200
+    }
+  ],
+  "themes": {
+    "Appearance": [
+      "Light"
+    ],
+    "Device": [
+      "Compact 360",
+      "Standard 390",
+      "Large 430"
+    ]
+  },
+  "variables": {
+    "brand-primary": {
+      "type": "color",
+      "value": "#1E2A7B"
+    },
+    "brand-primary-700": {
+      "type": "color",
+      "value": "#28399B"
+    },
+    "brand-primary-100": {
+      "type": "color",
+      "value": "#E9ECF8"
+    },
+    "accent": {
+      "type": "color",
+      "value": "#2EC4B6"
+    },
+    "secondary": {
+      "type": "color",
+      "value": "#6C63FF"
+    },
+    "neutral-0": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "neutral-50": {
+      "type": "color",
+      "value": "#F8FAFC"
+    },
+    "neutral-100": {
+      "type": "color",
+      "value": "#F1F5F9"
+    },
+    "neutral-200": {
+      "type": "color",
+      "value": "#E2E8F0"
+    },
+    "neutral-500": {
+      "type": "color",
+      "value": "#64748B"
+    },
+    "neutral-700": {
+      "type": "color",
+      "value": "#334155"
+    },
+    "neutral-900": {
+      "type": "color",
+      "value": "#0F172A"
+    },
+    "success": {
+      "type": "color",
+      "value": "#059669"
+    },
+    "success-soft": {
+      "type": "color",
+      "value": "#ECFDF5"
+    },
+    "warning": {
+      "type": "color",
+      "value": "#D97706"
+    },
+    "warning-soft": {
+      "type": "color",
+      "value": "#FFF7ED"
+    },
+    "danger": {
+      "type": "color",
+      "value": "#D92341"
+    },
+    "danger-soft": {
+      "type": "color",
+      "value": "#FFF1F2"
+    },
+    "info": {
+      "type": "color",
+      "value": "#0284C7"
+    },
+    "info-soft": {
+      "type": "color",
+      "value": "#F0F9FF"
+    },
+    "font-ar": {
+      "type": "string",
+      "value": "Cairo"
+    },
+    "radius-sm": {
+      "type": "number",
+      "value": 10
+    },
+    "radius-md": {
+      "type": "number",
+      "value": 14
+    },
+    "radius-lg": {
+      "type": "number",
+      "value": 20
+    },
+    "color.brand.primary": {
+      "type": "color",
+      "value": "$brand-primary"
+    },
+    "color.brand.primaryStrong": {
+      "type": "color",
+      "value": "$brand-primary-700"
+    },
+    "color.brand.accent": {
+      "type": "color",
+      "value": "$accent"
+    },
+    "color.surface.canvas": {
+      "type": "color",
+      "value": "$neutral-50"
+    },
+    "color.surface.default": {
+      "type": "color",
+      "value": "$neutral-0"
+    },
+    "color.surface.subtle": {
+      "type": "color",
+      "value": "$neutral-100"
+    },
+    "color.text.primary": {
+      "type": "color",
+      "value": "$neutral-900"
+    },
+    "color.text.secondary": {
+      "type": "color",
+      "value": "$neutral-500"
+    },
+    "color.border.default": {
+      "type": "color",
+      "value": "$neutral-200"
+    },
+    "color.action.primary": {
+      "type": "color",
+      "value": "$brand-primary"
+    },
+    "color.action.danger": {
+      "type": "color",
+      "value": "$danger"
+    },
+    "color.state.success": {
+      "type": "color",
+      "value": "$success"
+    },
+    "color.state.warning": {
+      "type": "color",
+      "value": "$warning"
+    },
+    "color.state.info": {
+      "type": "color",
+      "value": "$info"
+    },
+    "component.button.primary.fill": {
+      "type": "color",
+      "value": "$color.action.primary"
+    },
+    "component.button.primary.label": {
+      "type": "color",
+      "value": "$neutral-0"
+    },
+    "component.card.background": {
+      "type": "color",
+      "value": "$color.surface.default"
+    },
+    "component.card.border": {
+      "type": "color",
+      "value": "$color.border.default"
+    },
+    "component.status.success.fill": {
+      "type": "color",
+      "value": "$success-soft"
+    },
+    "component.status.warning.fill": {
+      "type": "color",
+      "value": "$warning-soft"
+    },
+    "component.status.danger.fill": {
+      "type": "color",
+      "value": "$danger-soft"
+    },
+    "space.xs": {
+      "type": "number",
+      "value": 4
+    },
+    "space.sm": {
+      "type": "number",
+      "value": 8
+    },
+    "space.md": {
+      "type": "number",
+      "value": 16
+    },
+    "space.lg": {
+      "type": "number",
+      "value": 24
+    },
+    "space.xl": {
+      "type": "number",
+      "value": 32
+    },
+    "space.xxl": {
+      "type": "number",
+      "value": 40
+    },
+    "size.control": {
+      "type": "number",
+      "value": 52
+    },
+    "size.targetComfortable": {
+      "type": "number",
+      "value": 44
+    },
+    "size.icon.sm": {
+      "type": "number",
+      "value": 16
+    },
+    "size.icon.md": {
+      "type": "number",
+      "value": 20
+    },
+    "size.icon.lg": {
+      "type": "number",
+      "value": 24
+    },
+    "radius.control": {
+      "type": "number",
+      "value": "$radius-md"
+    },
+    "radius.surface": {
+      "type": "number",
+      "value": "$radius-lg"
+    },
+    "motion.controlMs": {
+      "type": "number",
+      "value": 120
+    },
+    "motion.stateChangeMs": {
+      "type": "number",
+      "value": 180
+    },
+    "motion.overlayMs": {
+      "type": "number",
+      "value": 240
+    },
+    "customer-canvas": {
+      "type": "color",
+      "value": "#F7F8FC"
+    },
+    "customer-surface": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "customer-soft-blue": {
+      "type": "color",
+      "value": "#EEF2FF"
+    },
+    "customer-soft-mint": {
+      "type": "color",
+      "value": "#ECFDF8"
+    },
+    "customer-soft-orange": {
+      "type": "color",
+      "value": "#FFF7ED"
+    }
+  },
+  "fileToken": "06bff81d-3a45-4ab1-9993-6f4b8b7a9513"
+}
