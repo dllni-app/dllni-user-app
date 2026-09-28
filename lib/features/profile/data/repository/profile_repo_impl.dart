@@ -240,6 +240,13 @@ class ProfileRepoImpl with HandlingException implements ProfileRepo {
   }
 
   @override
+  DataResponse<ActionResultModel> deleteAccount() {
+    return wrapHandlingException(
+      tryCall: () => profileRemoteDataSource.deleteAccount(),
+    );
+  }
+
+  @override
   Future<void> updatePersonalDetails(PersonalDetailsUpdateInput input) async {
     await Future<void>.delayed(const Duration(milliseconds: 600));
   }
