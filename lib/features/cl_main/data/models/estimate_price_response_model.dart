@@ -286,6 +286,8 @@ class EstimatePricingModel {
   final double? distanceKm;
   final double? adminMargin;
   final bool? isPricingFinal;
+  final double? minimumOrderPrice;
+  final bool minimumOrderApplied;
   final String? currency;
   final double? eventHourlyRate;
   final double? eventHours;
@@ -299,6 +301,8 @@ class EstimatePricingModel {
     this.distanceKm,
     this.adminMargin,
     this.isPricingFinal,
+    this.minimumOrderPrice,
+    this.minimumOrderApplied = false,
     this.currency,
     this.eventHourlyRate,
     this.eventHours,
@@ -307,6 +311,9 @@ class EstimatePricingModel {
 
   factory EstimatePricingModel.fromJson(Map<String, dynamic> json) {
     final serviceLinesRaw = json['serviceLines'] ?? json['service_lines'];
+    final pricingAlgorithm = _toMap(
+      json['pricingAlgorithm'] ?? json['pricing_algorithm'],
+    );
     final serviceLines = serviceLinesRaw is List
         ? serviceLinesRaw
               .whereType<Map>()
@@ -324,6 +331,16 @@ class EstimatePricingModel {
       isPricingFinal: _toBool(
         json['isPricingFinal'] ?? json['is_pricing_final'],
       ),
+      minimumOrderPrice: _toDouble(
+        pricingAlgorithm['minimumOrderPrice'] ??
+            pricingAlgorithm['minimum_order_price'],
+      ),
+      minimumOrderApplied:
+          _toBool(
+            pricingAlgorithm['minimumOrderApplied'] ??
+                pricingAlgorithm['minimum_order_applied'],
+          ) ??
+          false,
       currency: json['currency'] as String?,
       eventHourlyRate: _toDouble(
         json['eventHourlyRate'] ?? json['event_hourly_rate'],
