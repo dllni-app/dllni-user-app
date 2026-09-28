@@ -411,6 +411,10 @@ class _ClMainServiceScheduleScreenState
                             totalAfterDiscount: _appliedCouponTotal,
                             adminMargin: estimate?.pricing?.adminMargin,
                             isPricingFinal: estimate?.pricing?.isPricingFinal,
+                            minimumOrderPrice:
+                                estimate?.pricing?.minimumOrderPrice,
+                            minimumOrderApplied:
+                                estimate?.pricing?.minimumOrderApplied ?? false,
                             currency: estimate?.pricing?.currency ?? 'SYP',
                             scheduleDayLabel: dayAr,
                             scheduleDateLabel: dayDate,
