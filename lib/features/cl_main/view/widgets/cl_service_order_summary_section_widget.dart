@@ -13,6 +13,8 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     this.distanceKm,
     this.adminMargin,
     this.isPricingFinal,
+    this.minimumOrderPrice,
+    this.minimumOrderApplied = false,
     required this.currency,
     this.scheduleDayLabel,
     this.scheduleDateLabel,
@@ -29,6 +31,8 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   final double? distanceKm;
   final double? adminMargin;
   final bool? isPricingFinal;
+  final double? minimumOrderPrice;
+  final bool minimumOrderApplied;
   final String currency;
   final String? scheduleDayLabel;
   final String? scheduleDateLabel;
@@ -49,7 +53,10 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showProvisionalWarning = isPricingFinal == false;
+    final showMinimumOrderWarning =
+        minimumOrderApplied &&
+        minimumOrderPrice != null &&
+        minimumOrderPrice! > 0;
     final scheduleDateLine = _scheduleDateLine;
     // totalPrice is the backend-authoritative customer amount before any coupon.
     // Derive the service value from it so commission that is already embedded in
@@ -128,7 +135,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
             value: displayedTotal.formatMoney(),
             isTotal: true,
           ),
-          if (showProvisionalWarning) ...[
+          if (showMinimumOrderWarning) ...[
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
@@ -139,7 +146,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFF3D6A1)),
               ),
               child: AppText.bodySmall(
-                'السعر المعروض تقديري وغير نهائي، وسيتم اضافة رسوم التنقل بعد قبول مقدم الخدمة للطلب.',
+                'الحد الأدنى لقيمة طلب التنظيف هو ${minimumOrderPrice!.formatMoney()}، لذلك تم اعتماد الحد الأدنى لهذا الطلب.',
                 color: const Color(0xFF8A5A12),
                 fontWeight: FontWeight.w600,
                 textAlign: TextAlign.right,
