@@ -403,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _supportSection(context),
                   SizedBox(height: 16),
                   InkWell(
-                    onTap: _isDeletingAccount ? null : _deleteAccount,
+                    onTap: _logout,
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
                       decoration: BoxDecoration(
@@ -441,7 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(height: 12),
                   InkWell(
                     key: const Key('profile_delete_account_button'),
-                    onTap: _logout,
+                    onTap: _isDeletingAccount ? null : _deleteAccount,
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
                       decoration: BoxDecoration(
