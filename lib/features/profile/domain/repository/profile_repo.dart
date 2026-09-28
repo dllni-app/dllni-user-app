@@ -109,6 +109,8 @@ abstract class ProfileRepo {
     UpdateAccountPasswordParams params,
   );
 
+  DataResponse<ActionResultModel> deleteAccount();
+
   Future<void> updatePersonalDetails(PersonalDetailsUpdateInput input);
 
   DataResponse<GetShoppingListModel> getShoppingList(GetShoppingListParams params);
