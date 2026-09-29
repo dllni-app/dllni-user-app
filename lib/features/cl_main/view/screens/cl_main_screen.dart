@@ -30,8 +30,16 @@ class ClMainScreenParams {
 class ClMainScreen extends StatefulWidget {
   final ClMainScreenParams? params;
   final ClMainBloc? bloc;
+  final GetCleaningBannersUseCase? cleaningBannersUseCase;
+  final Future<CleaningSuiteConfigModel> Function()? cleaningSuiteConfigLoader;
 
-  const ClMainScreen({super.key, this.params, this.bloc});
+  const ClMainScreen({
+    super.key,
+    this.params,
+    this.bloc,
+    this.cleaningBannersUseCase,
+    this.cleaningSuiteConfigLoader,
+  });
 
   @override
   State<ClMainScreen> createState() => _ClMainScreenState();
@@ -130,7 +138,6 @@ class _ClMainScreenState extends State<ClMainScreen> {
     _cleaningBannersPageController = PageController();
     _loadCleaningHomeContent();
     _loadSuiteConfig();
-    _startCleaningBannersAutoScroll();
   }
 
   @override
@@ -142,6 +149,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
 
   void _startCleaningBannersAutoScroll() {
     _cleaningBannersTimer?.cancel();
+    if (_lengthOfBanners < 2) return;
     _cleaningBannersTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (!mounted ||
           _lengthOfBanners < 2 ||
@@ -171,9 +179,9 @@ class _ClMainScreenState extends State<ClMainScreen> {
       _cleaningBannersErrorMessage = null;
     });
 
-    final result = await getIt<GetCleaningBannersUseCase>()(
-      GetCleaningBannersParams(),
-    );
+    final useCase =
+        widget.cleaningBannersUseCase ?? getIt<GetCleaningBannersUseCase>();
+    final result = await useCase(GetCleaningBannersParams());
     if (!mounted) return;
     result.fold(
       (failure) {
@@ -195,14 +203,16 @@ class _ClMainScreenState extends State<ClMainScreen> {
           _lengthOfBanners = response.banners.length;
           _cleaningBannersErrorMessage = null;
         });
+        _startCleaningBannersAutoScroll();
       },
     );
   }
 
   Future<void> _loadSuiteConfig() async {
     try {
-      final config = await getIt<ClMainRemoteDataSource>()
-          .getCleaningSuiteConfig();
+      final config = widget.cleaningSuiteConfigLoader != null
+          ? await widget.cleaningSuiteConfigLoader!()
+          : await getIt<ClMainRemoteDataSource>().getCleaningSuiteConfig();
       if (!mounted || config.eventTypes.isEmpty) return;
       setState(() {
         _eventTypesBySlug = <String, CleaningEventTypeConfigModel>{
