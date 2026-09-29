@@ -21,8 +21,22 @@ class BrowseStoresParams with Params {
   final String? search;
   final int page;
   final String? sort;
+  final double? latitude;
+  final double? longitude;
+  final bool? openNow;
+  final bool? isFeatured;
+  final double? averageRatingMin;
 
-  BrowseStoresParams({this.search, this.page = 1, this.sort});
+  BrowseStoresParams({
+    this.search,
+    this.page = 1,
+    this.sort,
+    this.latitude,
+    this.longitude,
+    this.openNow,
+    this.isFeatured,
+    this.averageRatingMin,
+  });
 
   @override
   QueryParams getParams() => {
@@ -30,5 +44,10 @@ class BrowseStoresParams with Params {
     "perPage": 10,
     if (search != null && search != "") "search": search,
     if (sort != null) "sort": sort,
+    if (latitude != null) "latitude": latitude,
+    if (longitude != null) "longitude": longitude,
+    if (openNow != null) "filter[openNow]": openNow,
+    if (isFeatured != null) "filter[isFeatured]": isFeatured,
+    if (averageRatingMin != null) "filter[averageRatingMin]": averageRatingMin,
   };
 }

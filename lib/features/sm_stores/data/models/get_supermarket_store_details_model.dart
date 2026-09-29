@@ -102,12 +102,9 @@ class SupermarketStoreDetailsOwner {
 
 GetSupermarketStoreDetailsModel getSupermarketStoreDetailsModelFromJson(
   dynamic str,
-) =>
-    GetSupermarketStoreDetailsModel.fromJson(
-      str is Map<String, dynamic>
-          ? str
-          : Map<String, dynamic>.from(str as Map),
-    );
+) => GetSupermarketStoreDetailsModel.fromJson(
+  str is Map<String, dynamic> ? str : Map<String, dynamic>.from(str as Map),
+);
 
 class GetSupermarketStoreDetailsModel {
   SupermarketStoreDetailsStore? store;
@@ -161,6 +158,7 @@ class SupermarketStoreDetailsStore {
   List<SupermarketStoreDetailsCategory>? categories;
   List<SmStoreProductSummary>? products;
   List<SupermarketStoreDetailsOffer>? offers;
+  List<SupermarketStoreDetailsCoupon>? coupons;
 
   SupermarketStoreDetailsStore({
     this.id,
@@ -195,6 +193,7 @@ class SupermarketStoreDetailsStore {
     this.categories,
     this.products,
     this.offers,
+    this.coupons,
   });
 
   factory SupermarketStoreDetailsStore.fromJson(Map<String, dynamic> json) {
@@ -271,6 +270,16 @@ class SupermarketStoreDetailsStore {
                 )
                 .toList()
           : null,
+      coupons: json['coupons'] is List
+          ? (json['coupons'] as List)
+                .whereType<Map>()
+                .map(
+                  (e) => SupermarketStoreDetailsCoupon.fromJson(
+                    Map<String, dynamic>.from(e),
+                  ),
+                )
+                .toList()
+          : null,
     );
   }
 
@@ -308,8 +317,63 @@ class SupermarketStoreDetailsStore {
       'categories': categories?.map((e) => e.toJson()).toList(),
       'products': products?.map((e) => e.toJson()).toList(),
       'offers': offers?.map((e) => e.toJson()).toList(),
+      'coupons': coupons?.map((e) => e.toJson()).toList(),
     };
   }
+}
+
+class SupermarketStoreDetailsCoupon {
+  int? id;
+  String? code;
+  String? type;
+  dynamic value;
+  dynamic percent;
+  dynamic minOrderAmount;
+  dynamic maxDiscountAmount;
+  String? startsAt;
+  String? endsAt;
+  bool? isActive;
+
+  SupermarketStoreDetailsCoupon({
+    this.id,
+    this.code,
+    this.type,
+    this.value,
+    this.percent,
+    this.minOrderAmount,
+    this.maxDiscountAmount,
+    this.startsAt,
+    this.endsAt,
+    this.isActive,
+  });
+
+  factory SupermarketStoreDetailsCoupon.fromJson(Map<String, dynamic> json) {
+    return SupermarketStoreDetailsCoupon(
+      id: _asInt(json['id']),
+      code: _asString(json['code']),
+      type: _asString(json['type']),
+      value: _asDynamic(json['value']),
+      percent: _asDynamic(json['percent']),
+      minOrderAmount: _asDynamic(json['minOrderAmount']),
+      maxDiscountAmount: _asDynamic(json['maxDiscountAmount']),
+      startsAt: _asString(json['startsAt']),
+      endsAt: _asString(json['endsAt']),
+      isActive: _asBool(json['isActive']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'code': code,
+    'type': type,
+    'value': value,
+    'percent': percent,
+    'minOrderAmount': minOrderAmount,
+    'maxDiscountAmount': maxDiscountAmount,
+    'startsAt': startsAt,
+    'endsAt': endsAt,
+    'isActive': isActive,
+  };
 }
 
 class SupermarketStoreDetailsHour {
@@ -543,7 +607,8 @@ String _supermarketStoreDetailsHourDayRangeLabelAr(
   return '${supermarketStoreDetailsHourDayLabelAr(startDay)} - ${supermarketStoreDetailsHourDayLabelAr(endDay)}';
 }
 
-List<({int startIdx, int endIdx})> _supermarketStoreDetailsHourGroupConsecutiveSame(
+List<({int startIdx, int endIdx})>
+_supermarketStoreDetailsHourGroupConsecutiveSame(
   List<SupermarketStoreDetailsHour> sorted,
 ) {
   if (sorted.isEmpty) return [];
@@ -558,7 +623,8 @@ List<({int startIdx, int endIdx})> _supermarketStoreDetailsHourGroupConsecutiveS
       final consecutive =
           (supermarketStoreDetailsHourDayIndex(next.dayOfWeek) ?? -1) ==
           (supermarketStoreDetailsHourDayIndex(prev.dayOfWeek) ?? -2) + 1;
-      if (!consecutive || !_supermarketStoreDetailsHourSameSchedule(head, next)) {
+      if (!consecutive ||
+          !_supermarketStoreDetailsHourSameSchedule(head, next)) {
         break;
       }
       j++;
@@ -585,8 +651,10 @@ List<SupermarketStoreDetailsHourUiRow> supermarketStoreDetailsGroupedHourUiRows(
   return _supermarketStoreDetailsHourGroupConsecutiveSame(hours).map((range) {
     final first = hours[range.startIdx];
     final last = hours[range.endIdx];
-    final dayLabel =
-        _supermarketStoreDetailsHourDayRangeLabelAr(first.dayOfWeek, last.dayOfWeek);
+    final dayLabel = _supermarketStoreDetailsHourDayRangeLabelAr(
+      first.dayOfWeek,
+      last.dayOfWeek,
+    );
     if (first.isClosed == true) {
       return (dayLabel: dayLabel, timeText: 'مغلق');
     }

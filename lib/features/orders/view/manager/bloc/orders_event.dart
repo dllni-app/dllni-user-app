@@ -139,6 +139,12 @@ class PlaceStoreOrderEvent extends OrdersEvent {
   PlaceStoreOrderEvent({required this.cartId});
 }
 
+class PreviewStoreCheckoutEvent extends OrdersEvent {
+  final int cartId;
+
+  PreviewStoreCheckoutEvent({required this.cartId});
+}
+
 class FetchSupermarketCartEvent extends OrdersEvent {
   final FetchSupermarketCartParams params;
 

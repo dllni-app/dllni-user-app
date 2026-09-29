@@ -30,6 +30,9 @@ class OrdersState {
   final BlocStatus? placeOrderStatus;
   final String? placeOrderErrorMessage;
   final OrderResourceModel? placedRestaurantOrder;
+  final BlocStatus? storeCheckoutPreviewStatus;
+  final CheckoutPreviewDataModel? storeCheckoutPreview;
+  final String? storeCheckoutPreviewError;
   final BlocStatus? placeStoreOrderStatus;
   final String? placeStoreOrderErrorMessage;
   final OrderResourceModel? placedStoreOrder;
@@ -44,7 +47,9 @@ class OrdersState {
 
   OrdersState({
     this.orders = const PaginationStateModel<OrderResourceModel>(perPage: 10),
-    this.cleaningOrders = const PaginationStateModel<CleaningOrderModel>(perPage: 10),
+    this.cleaningOrders = const PaginationStateModel<CleaningOrderModel>(
+      perPage: 10,
+    ),
     this.selectedTabIndex = 0,
     this.errorMessage,
     this.restaurantCartStatus,
@@ -66,6 +71,9 @@ class OrdersState {
     this.placeOrderStatus,
     this.placeOrderErrorMessage,
     this.placedRestaurantOrder,
+    this.storeCheckoutPreviewStatus,
+    this.storeCheckoutPreview,
+    this.storeCheckoutPreviewError,
     this.placeStoreOrderStatus,
     this.placeStoreOrderErrorMessage,
     this.placedStoreOrder,
@@ -122,6 +130,10 @@ class OrdersState {
     bool clearPlaceOrderError = false,
     OrderResourceModel? placedRestaurantOrder,
     bool clearPlacedRestaurantOrder = false,
+    BlocStatus? storeCheckoutPreviewStatus,
+    CheckoutPreviewDataModel? storeCheckoutPreview,
+    String? storeCheckoutPreviewError,
+    bool clearStoreCheckoutPreviewError = false,
     BlocStatus? placeStoreOrderStatus,
     String? placeStoreOrderErrorMessage,
     bool clearPlaceStoreOrderError = false,
@@ -162,12 +174,12 @@ class OrdersState {
       restaurantCart: clearRestaurantCart
           ? null
           : (replaceRestaurantCart
-              ? restaurantCart
-              : (restaurantCart ??
-                  this.restaurantCart ??
-                  (resolvedRestaurantCarts.isEmpty
-                      ? null
-                      : resolvedRestaurantCarts.first))),
+                ? restaurantCart
+                : (restaurantCart ??
+                      this.restaurantCart ??
+                      (resolvedRestaurantCarts.isEmpty
+                          ? null
+                          : resolvedRestaurantCarts.first))),
       restaurantCartErrorMessage: clearRestaurantCartError
           ? null
           : (restaurantCartErrorMessage ?? this.restaurantCartErrorMessage),
@@ -176,10 +188,12 @@ class OrdersState {
       storeCart: clearStoreCart
           ? null
           : (replaceStoreCart
-              ? storeCart
-              : (storeCart ??
-                  this.storeCart ??
-                  (resolvedStoreCarts.isEmpty ? null : resolvedStoreCarts.first))),
+                ? storeCart
+                : (storeCart ??
+                      this.storeCart ??
+                      (resolvedStoreCarts.isEmpty
+                          ? null
+                          : resolvedStoreCarts.first))),
       storeCartErrorMessage: clearStoreCartError
           ? null
           : (storeCartErrorMessage ?? this.storeCartErrorMessage),
@@ -188,8 +202,9 @@ class OrdersState {
           isMutatingStoreCartItem ?? this.isMutatingStoreCartItem,
       couponStatus: couponStatus ?? this.couponStatus,
       couponData: couponData ?? this.couponData,
-      couponErrorMessage:
-          clearCouponError ? null : (couponErrorMessage ?? this.couponErrorMessage),
+      couponErrorMessage: clearCouponError
+          ? null
+          : (couponErrorMessage ?? this.couponErrorMessage),
       storeCouponStatus: storeCouponStatus ?? this.storeCouponStatus,
       storeCouponData: storeCouponData ?? this.storeCouponData,
       storeCouponErrorMessage: clearStoreCouponError
@@ -202,13 +217,20 @@ class OrdersState {
       placedRestaurantOrder: clearPlacedRestaurantOrder
           ? null
           : (placedRestaurantOrder ?? this.placedRestaurantOrder),
+      storeCheckoutPreviewStatus:
+          storeCheckoutPreviewStatus ?? this.storeCheckoutPreviewStatus,
+      storeCheckoutPreview: storeCheckoutPreview ?? this.storeCheckoutPreview,
+      storeCheckoutPreviewError: clearStoreCheckoutPreviewError
+          ? null
+          : (storeCheckoutPreviewError ?? this.storeCheckoutPreviewError),
       placeStoreOrderStatus:
           placeStoreOrderStatus ?? this.placeStoreOrderStatus,
       placeStoreOrderErrorMessage: clearPlaceStoreOrderError
           ? null
           : (placeStoreOrderErrorMessage ?? this.placeStoreOrderErrorMessage),
-      placedStoreOrder:
-          clearPlacedStoreOrder ? null : (placedStoreOrder ?? this.placedStoreOrder),
+      placedStoreOrder: clearPlacedStoreOrder
+          ? null
+          : (placedStoreOrder ?? this.placedStoreOrder),
       cancelCleaningStatus: cancelCleaningStatus ?? this.cancelCleaningStatus,
       cancelCleaningErrorMessage: clearCancelCleaningError
           ? null
@@ -224,7 +246,8 @@ class OrdersState {
           ? selectedAddress
           : (selectedAddress ?? this.selectedAddress),
       supermarketCart: supermarketCart ?? this.supermarketCart,
-      supermarketCartStatus: supermarketCartStatus ?? this.supermarketCartStatus,
+      supermarketCartStatus:
+          supermarketCartStatus ?? this.supermarketCartStatus,
       removeSupermarketCart:
           removeSupermarketCart ?? this.removeSupermarketCart,
       removeSupermarketCartStatus:
@@ -267,9 +290,8 @@ class OrdersState {
   BlocStatus? activePlaceOrderStatus() =>
       isStoresSection() ? placeStoreOrderStatus : placeOrderStatus;
 
-  String? activePlaceOrderError() => isStoresSection()
-      ? placeStoreOrderErrorMessage
-      : placeOrderErrorMessage;
+  String? activePlaceOrderError() =>
+      isStoresSection() ? placeStoreOrderErrorMessage : placeOrderErrorMessage;
 
   int get totalCartBadgeCount =>
       restaurantCarts.fold<int>(0, (sum, cart) => sum + cart.productsCount) +

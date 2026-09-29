@@ -1,15 +1,36 @@
-import 'dart:ui';
-
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/themes/app_colors.dart';
+import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/app_app_bars.dart';
+import '../../../../core/widgets/failure_widget.dart';
+import '../../../sm_home/data/models/get_featured_offers_model.dart';
+import '../../../sm_home/data/source/sm_home_remote_data_source.dart';
+import '../../../sm_home/domain/usecases/get_featured_offers_use_case.dart';
+import '../../../sm_stores/view/screens/sm_store_details_screen.dart';
 
 @AutoRoutePage(path: "/sm_offers")
-class SmOffersScreen extends StatelessWidget {
+class SmOffersScreen extends StatefulWidget {
   const SmOffersScreen({super.key});
+
+  @override
+  State<SmOffersScreen> createState() => _SmOffersScreenState();
+}
+
+class _SmOffersScreenState extends State<SmOffersScreen> {
+  late Future<GetFeaturedOffersModel> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  void _reload() {
+    _future = getIt<SmHomeRemoteDataSource>().getFeaturedOffers(
+      GetFeaturedOffersParams(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,155 +38,77 @@ class SmOffersScreen extends StatelessWidget {
       body: Column(
         children: [
           AppSimpleAppBar2(
-            title: "حسومات",
+            title: "العروض",
             arrowBackType: ArrowBackType.cupertino,
             canPop: context.canPop(),
           ),
           Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              itemCount: 3,
-              separatorBuilder: (_, _) => SizedBox(height: 16),
-              itemBuilder: (_, _) => Container(
-                height: 192,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [AppColors.accent, Color(0xFFA24D00)],
-                  ),
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                  boxShadow: [
-                    BoxShadow(
-                      offset: Offset(0, 4),
-                      blurRadius: 6,
-                      spreadRadius: -4,
-                      color: Color(0x1A000000),
-                    ),
-                    BoxShadow(
-                      offset: Offset(0, 10),
-                      blurRadius: 15,
-                      spreadRadius: -3,
-                      color: Color(0x1A000000),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0x33FFFFFF),
-                        borderRadius: BorderRadius.all(Radius.circular(50)),
-                      ),
-                      child: AppText(
-                        "خصم 100%",
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          height: 16 / 12,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    AppText(
-                      "للمستخدمين الجدد",
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        height: 28 / 18,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Expanded(
-                      child: AppText(
-                        "احصل على توصيل مجاني",
-                        textAlign: TextAlign.start,
-                        style: TextStyle(
-                          color: Color(0xE5FFFFFF),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 20 / 14,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(4)),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              color: Color(0x33FFFFFF),
-                              child: Text(
-                                "صالح حتى 31 ديسمبر",
-                                style: TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 12,
-                                  height: 16 / 12,
-                                ),
+            child: FutureBuilder<GetFeaturedOffersModel>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return FailureWidget(
+                    message: snapshot.error.toString(),
+                    onRetry: () => setState(_reload),
+                  );
+                }
+                final offers = snapshot.data?.offers ?? const [];
+                if (offers.isEmpty) {
+                  return const Center(child: Text('لا توجد عروض متاحة حالياً'));
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    setState(_reload);
+                    await _future;
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: offers.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (_, index) {
+                      final offer = offers[index];
+                      final storeId = offer.store?.id;
+                      final discount = offer.discountPercent != null
+                          ? offer.discountPercent.toString() + '%'
+                          : (offer.discountValue?.toString() ?? '') + ' ل.س';
+                      return Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(12),
+                          leading: SizedBox(
+                            width: 64,
+                            height: 64,
+                            child: AppImage.network(
+                              offer.imageUrl ?? offer.store?.cover ?? '',
+                              fit: BoxFit.cover,
+                              errorWidget: const Icon(
+                                Icons.local_offer_outlined,
                               ),
                             ),
                           ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                          title: Text(offer.name ?? 'عرض'),
+                          subtitle: Text(
+                            (offer.description ?? '') + '\nخصم ' + discount,
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.all(Radius.circular(6)),
-                            boxShadow: [
-                              BoxShadow(
-                                offset: Offset(0, 4),
-                                blurRadius: 4,
-                                color: Color(0x1A000000),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(width: 10),
-                              AppText(
-                                "#freedelivery",
-                                textDirection: TextDirection.ltr,
-                                style: TextStyle(
-                                  color: AppColors.accent,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  height: 20 / 14,
+                          isThreeLine: true,
+                          trailing: const Icon(Icons.chevron_left),
+                          onTap: storeId == null
+                              ? null
+                              : () => context.pushRoute(
+                                  '/store',
+                                  arguments: SmStoreDetailsScreenArgs(
+                                    storeId: storeId,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 10),
-                              FaIcon(
-                                FontAwesomeIcons.copy,
-                                size: 24,
-                                color: AppColors.accent,
-                              ),
-                            ],
-                          ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
         ],

@@ -36,7 +36,10 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
     on<LoadSupermarketStoreDetailsEvent>(_loadSupermarketStoreDetails);
     on<LoadSupermarketProductDetailsEvent>(_loadSupermarketProductDetails);
 
-    on<GetCompareProductsEvent>(_getCompareProducts, transformer: paginationEventTransformer());
+    on<GetCompareProductsEvent>(
+      _getCompareProducts,
+      transformer: paginationEventTransformer(),
+    );
     on<AddSupermarketCartItemEvent>(_addSupermarketCartItem);
     on<LoadShoppingListsEvent>(_loadShoppingLists);
   }
@@ -79,9 +82,7 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
     LoadSupermarketProductDetailsEvent event,
     Emitter<SmStoresState> emit,
   ) async {
-    emit(
-      state.toProductDetailsLoading(),
-    );
+    emit(state.toProductDetailsLoading());
     final res = await getSupermarketProductDetailsUseCase(
       GetSupermarketProductDetailsParams(productId: event.productId),
     );
@@ -139,24 +140,41 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
     );
   }
 
-  FutureOr<void> _getCompareProducts(GetCompareProductsEvent event, Emitter<SmStoresState> emit) async {
+  FutureOr<void> _getCompareProducts(
+    GetCompareProductsEvent event,
+    Emitter<SmStoresState> emit,
+  ) async {
     if (!state.compareProducts!.isEndPage || event.isReload) {
-      emit(state.copyWith(
-        compareProducts: state.compareProducts!.setLoading(isReload: event.isReload),
-      ));
+      emit(
+        state.copyWith(
+          compareProducts: state.compareProducts!.setLoading(
+            isReload: event.isReload,
+          ),
+        ),
+      );
       final res = await getCompareProductsUseCase(event.params);
-      res.fold((l) {
-        emit(state.copyWith(
-          compareProducts: state.compareProducts!.setFaild(errorMessage: l.message),
-          errorMessage: l.message,
-        ));
-      }, (r) {
-        emit(state.copyWith(
-          compareProducts: state.compareProducts!.setSuccess(
-            total: r.meta?.total ?? 0,
-            data: r.data!),
-        ));
-      });
+      res.fold(
+        (l) {
+          emit(
+            state.copyWith(
+              compareProducts: state.compareProducts!.setFaild(
+                errorMessage: l.message,
+              ),
+              errorMessage: l.message,
+            ),
+          );
+        },
+        (r) {
+          emit(
+            state.copyWith(
+              compareProducts: state.compareProducts!.setSuccess(
+                total: r.meta?.total ?? 0,
+                data: r.data!,
+              ),
+            ),
+          );
+        },
+      );
     }
   }
 
@@ -176,6 +194,9 @@ class SmStoresBloc extends Bloc<SmStoresEvent, SmStoresState> {
       AddSupermarketCartItemParams(
         productId: event.productId,
         quantity: event.quantity,
+        modifierIds: event.modifierIds,
+        substituteProductId: event.substituteProductId,
+        note: event.note,
       ),
     );
 

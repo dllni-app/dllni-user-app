@@ -22,6 +22,7 @@ import '../../domain/usecases/get_compare_products_use_case.dart';
 import '../manager/bloc/sm_stores_bloc.dart';
 import '../widgets/dialogs/related_products_dialog.dart';
 import '../widgets/dialogs/shopping_lists_dialog.dart';
+import '../widgets/supermarket_product_customization_section.dart';
 
 String _smDescriptionText(SupermarketProductDetailsProduct? product) {
   final d = product?.description;
@@ -141,7 +142,8 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
   late SmDiscoverBloc _bloc;
   final TextEditingController _notesController = TextEditingController();
   final PageController _imagePageController = PageController();
-  final List<String> _savedNotes = <String>[];
+  final Set<int> _selectedModifierIds = <int>{};
+  int? _substituteProductId;
   int _currentImagePage = 0;
   int _quantity = 1;
   bool _didRequestRecommendations = false;
@@ -588,6 +590,26 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                   },
                                 ),
                               ),
+                            if (product != null)
+                              SupermarketProductCustomizationSection(
+                                groups: product.options ?? const <dynamic>[],
+                                selectedIds: _selectedModifierIds,
+                                onModifierChanged: (id, selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedModifierIds.add(id);
+                                    } else {
+                                      _selectedModifierIds.remove(id);
+                                    }
+                                  });
+                                },
+                                noteController: _notesController,
+                                alternatives: _sameStoreProducts,
+                                substituteProductId: _substituteProductId,
+                                onSubstituteChanged: (value) {
+                                  setState(() => _substituteProductId = value);
+                                },
+                              ),
                             if (_sameStoreProducts.isNotEmpty) ...[
                               const SizedBox(height: 6),
                               ProductRecommendationsSection(
@@ -631,6 +653,9 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                           AddSupermarketCartItemEvent(
                             productId: widget.args.productId,
                             quantity: _quantity,
+                            modifierIds: _selectedModifierIds.toList(),
+                            substituteProductId: _substituteProductId,
+                            note: _notesController.text,
                           ),
                         );
                       },
@@ -670,9 +695,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
 
     _didRequestRecommendations = true;
     if (storeId != null && storeId > 0) {
-      unawaited(
-        _loadSameStoreProducts(storeId: storeId, storeName: storeName),
-      );
+      unawaited(_loadSameStoreProducts(storeId: storeId, storeName: storeName));
     }
     unawaited(
       _loadRelatedSupermarketProducts(
@@ -697,9 +720,7 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
       for (final product in result.data ?? <BrowseProductsModelDataItem>[]) {
         final id = product.id;
         if (id == null || id <= 0 || !seenIds.add(id)) continue;
-        recommendations.add(
-          _browseProductRecommendation(product, storeName),
-        );
+        recommendations.add(_browseProductRecommendation(product, storeName));
         if (recommendations.length >= 10) break;
       }
 
@@ -889,21 +910,5 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
         child: ShoppingListsDialog(masterProductId: masterId),
       ),
     );
-  }
-
-  void _removeSavedNote(int index) {
-    if (index < 0 || index >= _savedNotes.length) return;
-    setState(() {
-      _savedNotes.removeAt(index);
-    });
-  }
-
-  void _saveCurrentNote() {
-    final note = _notesController.text.trim();
-    if (note.isEmpty) return;
-    setState(() {
-      _savedNotes.add(note);
-      _notesController.clear();
-    });
   }
 }

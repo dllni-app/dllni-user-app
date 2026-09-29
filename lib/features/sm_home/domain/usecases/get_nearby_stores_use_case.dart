@@ -5,8 +5,8 @@ import '../repository/sm_home_repo.dart';
 import '../../data/models/get_nearby_stores_model.dart';
 
 @lazySingleton
-class GetNearbyStoresUseCase implements UseCase<GetNearbyStoresModel, GetNearbyStoresParams> {
-
+class GetNearbyStoresUseCase
+    implements UseCase<GetNearbyStoresModel, GetNearbyStoresParams> {
   final SmHomeRepo smHome;
 
   GetNearbyStoresUseCase({required this.smHome});
@@ -17,4 +17,17 @@ class GetNearbyStoresUseCase implements UseCase<GetNearbyStoresModel, GetNearbyS
   }
 }
 
-class GetNearbyStoresParams with Params{}
+class GetNearbyStoresParams with Params {
+  final double? latitude;
+  final double? longitude;
+  final int? limit;
+
+  GetNearbyStoresParams({this.latitude, this.longitude, this.limit});
+
+  @override
+  QueryParams getParams() => {
+    if (latitude != null) 'latitude': latitude,
+    if (longitude != null) 'longitude': longitude,
+    if (limit != null) 'limit': limit,
+  };
+}

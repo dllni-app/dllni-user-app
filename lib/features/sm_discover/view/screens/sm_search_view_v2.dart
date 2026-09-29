@@ -34,6 +34,10 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
   late TextEditingController searchController;
   late Future<PopularSearchesModel> _popularSearchesFuture;
   bool isSearching = false;
+  bool _availableOnly = false;
+  String _productSort = 'name';
+  double? _priceMin;
+  double? _priceMax;
 
   @override
   void initState() {
@@ -127,8 +131,7 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
                         title: 'الأكثر بحثاً من قبل المستخدمين',
                         emptyText: 'لا توجد عمليات بحث شائعة حالياً',
                         searches: snapshot.data?.searches ?? const <String>[],
-                        onSearchTap: (search) =>
-                            _submitSearch(context, search),
+                        onSearchTap: (search) => _submitSearch(context, search),
                       );
                     },
                   ),
@@ -175,6 +178,67 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
           ),
         ),
         const SizedBox(height: 12),
+        if (widget.type == SearchType.product) ...[
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                FilterChip(
+                  label: const Text('متوفر فقط'),
+                  selected: _availableOnly,
+                  onSelected: (value) {
+                    setState(() => _availableOnly = value);
+                    _makeSearch(context, searchController.text);
+                  },
+                ),
+                const SizedBox(width: 8),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    setState(() => _productSort = value);
+                    _makeSearch(context, searchController.text);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'name', child: Text('الاسم: أ-ي')),
+                    PopupMenuItem(value: '-name', child: Text('الاسم: ي-أ')),
+                    PopupMenuItem(
+                      value: 'price',
+                      child: Text('السعر: الأقل أولاً'),
+                    ),
+                    PopupMenuItem(
+                      value: '-price',
+                      child: Text('السعر: الأعلى أولاً'),
+                    ),
+                  ],
+                  child: Chip(
+                    avatar: const Icon(Icons.sort, size: 18),
+                    label: Text(
+                      _productSort == 'price'
+                          ? 'السعر تصاعدياً'
+                          : _productSort == '-price'
+                          ? 'السعر تنازلياً'
+                          : _productSort == '-name'
+                          ? 'الاسم تنازلياً'
+                          : 'الاسم تصاعدياً',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.tune, size: 18),
+                  label: Text(
+                    _priceMin == null && _priceMax == null
+                        ? 'نطاق السعر'
+                        : 'السعر: ${_priceMin?.toStringAsFixed(0) ?? '0'} - ${_priceMax?.toStringAsFixed(0) ?? '∞'}',
+                  ),
+                  onPressed: () => _showPriceFilter(context),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         Expanded(
           child: widget.type == SearchType.product
               ? _buildProductResults(context)
@@ -221,9 +285,8 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
                   context.read<SmDiscoverBloc>().add(
                     BrowseProductsEvent(
                       isReload: false,
-                      params: BrowseProductsParams(
+                      params: _productParams(
                         page: state.browseProducts!.pageNumber,
-                        search: searchController.text.trim(),
                       ),
                     ),
                   );
@@ -344,7 +407,7 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
       widget.type == SearchType.product
           ? BrowseProductsEvent(
               isReload: true,
-              params: BrowseProductsParams(search: normalized),
+              params: _productParams(search: normalized),
             )
           : BrowseStoresEvent(
               isReload: true,
@@ -352,6 +415,91 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
             ),
     );
     setState(() {});
+  }
+
+  BrowseProductsParams _productParams({String? search, int page = 1}) {
+    final resolvedSearch = (search ?? searchController.text).trim();
+    return BrowseProductsParams(
+      search: resolvedSearch,
+      page: page,
+      isAvailable: _availableOnly ? true : null,
+      priceMin: _priceMin,
+      priceMax: _priceMax,
+      sort: _productSort,
+    );
+  }
+
+  Future<void> _showPriceFilter(BuildContext context) async {
+    final minController = TextEditingController(
+      text: _priceMin?.toStringAsFixed(0) ?? '',
+    );
+    final maxController = TextEditingController(
+      text: _priceMax?.toStringAsFixed(0) ?? '',
+    );
+
+    final result = await showDialog<(double?, double?)>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('نطاق السعر'),
+        content: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: minController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'من',
+                  suffixText: 'ل.س',
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: maxController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'إلى',
+                  suffixText: 'ل.س',
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop((null, null)),
+            child: const Text('مسح'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final min = double.tryParse(minController.text.trim());
+              final max = double.tryParse(maxController.text.trim());
+              Navigator.of(dialogContext).pop((min, max));
+            },
+            child: const Text('تطبيق'),
+          ),
+        ],
+      ),
+    );
+
+    minController.dispose();
+    maxController.dispose();
+    if (!mounted || result == null) return;
+    if (result.$1 != null && result.$2 != null && result.$2! < result.$1!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الحد الأعلى يجب أن يكون أكبر من الحد الأدنى.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _priceMin = result.$1;
+      _priceMax = result.$2;
+    });
+    _makeSearch(context, searchController.text);
   }
 
   void _rememberSearch(String search) {

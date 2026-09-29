@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/deeplink/deep_link_share_targets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
@@ -76,6 +77,64 @@ extension SupermarketStoreDetailsStoreStarterX on SupermarketStoreDetailsStore {
 
 List<String> _sortedHourLines(SupermarketStoreDetailsStore store) {
   return supermarketStoreDetailsGroupedHourLines(store.storeHours);
+}
+
+class _StoreCouponsSection extends StatelessWidget {
+  const _StoreCouponsSection({required this.coupons});
+
+  final List<SupermarketStoreDetailsCoupon> coupons;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'كوبونات المتجر',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          ...coupons.map((coupon) {
+            final discount = coupon.type == 'percentage'
+                ? (coupon.percent?.toString() ?? coupon.value?.toString() ?? '')
+                : (coupon.value?.toString() ?? '');
+            final suffix = coupon.type == 'percentage' ? '%' : ' ل.س';
+            return Card(
+              child: ListTile(
+                leading: const Icon(Icons.local_offer_outlined),
+                title: Text(coupon.code ?? ''),
+                subtitle: Text(
+                  discount.isEmpty
+                      ? 'استخدم هذا الكود عند الدفع'
+                      : 'خصم ' +
+                            discount +
+                            suffix +
+                            ' — استخدم الكود عند الدفع',
+                ),
+                trailing: IconButton(
+                  tooltip: 'نسخ الكوبون',
+                  icon: const Icon(Icons.copy),
+                  onPressed: (coupon.code ?? '').trim().isEmpty
+                      ? null
+                      : () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: coupon.code!.trim()),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('تم نسخ كود الكوبون')),
+                          );
+                        },
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }
 
 @AutoRoutePage(path: "/store")
@@ -207,6 +266,10 @@ class _SmStoreDetailsScreenState extends State<SmStoreDetailsScreen> {
                       ),
                       SizedBox(height: 16),
                       SpecialOffersSection(offers: store.offers),
+                      if (store.coupons?.isNotEmpty == true) ...[
+                        const SizedBox(height: 16),
+                        _StoreCouponsSection(coupons: store.coupons!),
+                      ],
                       SizedBox(height: 24),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),

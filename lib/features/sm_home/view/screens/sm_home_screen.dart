@@ -9,12 +9,14 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/failure_widget.dart';
+import '../../../profile/domain/services/user_location_service.dart';
 import '../../data/models/get_featured_offers_model.dart';
 import '../../domain/usecases/get_featured_offers_use_case.dart';
 import '../../domain/usecases/get_nearby_stores_use_case.dart';
 import '../manager/bloc/sm_home_bloc.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/near_stores_section.dart';
+import '../../../sm_stores/view/screens/sm_store_details_screen.dart';
 
 class LoadingPageView extends StatefulWidget {
   const LoadingPageView({super.key});
@@ -28,82 +30,91 @@ class OfferCard extends StatelessWidget {
   const OfferCard({super.key, required this.offer});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 130,
-      width: context.width,
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      margin: EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(100, 16, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  offer.name ?? "",
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    height: 20 / 16,
-                  ),
-                ),
-                SizedBox(height: 12),
-                AppText(
-                  offer.description ?? "",
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 24 / 13,
-                  ),
-                ),
-              ],
+    return InkWell(
+      onTap: offer.store?.id == null
+          ? null
+          : () => context.pushRoute(
+              '/store',
+              arguments: SmStoreDetailsScreenArgs(storeId: offer.store!.id!),
             ),
-          ),
-          Positioned(
-            left: -36,
-            top: 16,
-            child: CircleAvatar(
-              backgroundColor: AppColors.white,
-              radius: 68,
-              child: AppImage.network(
-                offer.imageUrl ?? "",
-                fit: BoxFit.cover,
-                size: 136,
-                errorWidget: Icon(Icons.error_outline, color: Colors.black),
-                borderRadius: BorderRadius.all(Radius.circular(68)),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 130,
+        width: context.width,
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        margin: EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(100, 16, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppText(
+                    offer.name ?? "",
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      height: 20 / 16,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  AppText(
+                    offer.description ?? "",
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 24 / 13,
+                    ),
+                  ),
+                ],
               ),
             ),
-            // AppImage.network(
-            //   offer.imageUrl ?? "",
-            //   size: 135,
-            //   errorWidget: CircleAvatar(
-            //     radius: 65,
-            //     backgroundColor: AppColors.white,
-            //     child: Icon(Icons.error_outline, color: Colors.black),
-            //   ),
-            //   loadingBuilder: (_) => CircleAvatar(
-            //     radius: 65,
-            //     backgroundColor: AppColors.white,
-            //     child: SizedBox(
-            //       width: 30,
-            //       height: 30,
-            //       child: CircularProgressIndicator(),
-            //     ),
-            //   ),
-            //   borderRadius: BorderRadius.all(Radius.circular(120)),
-            // ),
-          ),
-        ],
+            Positioned(
+              left: -36,
+              top: 16,
+              child: CircleAvatar(
+                backgroundColor: AppColors.white,
+                radius: 68,
+                child: AppImage.network(
+                  offer.imageUrl ?? "",
+                  fit: BoxFit.cover,
+                  size: 136,
+                  errorWidget: Icon(Icons.error_outline, color: Colors.black),
+                  borderRadius: BorderRadius.all(Radius.circular(68)),
+                ),
+              ),
+              // AppImage.network(
+              //   offer.imageUrl ?? "",
+              //   size: 135,
+              //   errorWidget: CircleAvatar(
+              //     radius: 65,
+              //     backgroundColor: AppColors.white,
+              //     child: Icon(Icons.error_outline, color: Colors.black),
+              //   ),
+              //   loadingBuilder: (_) => CircleAvatar(
+              //     radius: 65,
+              //     backgroundColor: AppColors.white,
+              //     child: SizedBox(
+              //       width: 30,
+              //       height: 30,
+              //       child: CircularProgressIndicator(),
+              //     ),
+              //   ),
+              //   borderRadius: BorderRadius.all(Radius.circular(120)),
+              // ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -164,7 +175,7 @@ class _LoadingPageViewState extends State<LoadingPageView> {
               onDotClicked: (index) {},
             ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -206,9 +217,12 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocProvider(
-        create: (context) => getIt<SmHomeBloc>()
-          ..add(GetFeaturedOffersEvent(params: GetFeaturedOffersParams()))
-          ..add(GetNearbyStoresEvent(params: GetNearbyStoresParams())),
+        create: (context) {
+          final bloc = getIt<SmHomeBloc>()
+            ..add(GetFeaturedOffersEvent(params: GetFeaturedOffersParams()));
+          _loadNearbyStores(bloc);
+          return bloc;
+        },
         child: Column(
           children: [
             HomeAppBar(),
@@ -312,6 +326,19 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadNearbyStores(SmHomeBloc bloc) async {
+    final location = await getIt<UserLocationService>().getCurrentPosition();
+    if (!mounted || bloc.isClosed) return;
+    bloc.add(
+      GetNearbyStoresEvent(
+        params: GetNearbyStoresParams(
+          latitude: location.latitude,
+          longitude: location.longitude,
         ),
       ),
     );

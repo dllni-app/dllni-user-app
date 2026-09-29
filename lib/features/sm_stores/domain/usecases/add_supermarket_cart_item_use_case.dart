@@ -23,15 +23,24 @@ class AddSupermarketCartItemUseCase
 class AddSupermarketCartItemParams with Params {
   final int productId;
   final int quantity;
+  final List<int> modifierIds;
+  final int? substituteProductId;
+  final String? note;
 
   AddSupermarketCartItemParams({
     required this.productId,
     required this.quantity,
+    this.modifierIds = const <int>[],
+    this.substituteProductId,
+    this.note,
   });
 
   @override
   BodyMap getBody() => {
-        'productId': productId,
-        'quantity': quantity,
-      };
+    'productId': productId,
+    'quantity': quantity,
+    if (modifierIds.isNotEmpty) 'modifierIds': modifierIds,
+    if (substituteProductId != null) 'substituteProductId': substituteProductId,
+    if (note != null && note!.trim().isNotEmpty) 'note': note!.trim(),
+  };
 }

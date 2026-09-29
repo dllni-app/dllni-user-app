@@ -20,9 +20,23 @@ class BrowseProductsUseCase
 class BrowseProductsParams with Params {
   final String? search;
   final int? storeId;
+  final int? categoryId;
+  final double? priceMin;
+  final double? priceMax;
+  final bool? isAvailable;
+  final String? sort;
   final int page;
 
-  BrowseProductsParams({this.search, this.storeId, this.page = 1});
+  BrowseProductsParams({
+    this.search,
+    this.storeId,
+    this.categoryId,
+    this.priceMin,
+    this.priceMax,
+    this.isAvailable,
+    this.sort,
+    this.page = 1,
+  });
 
   @override
   QueryParams getParams() {
@@ -31,6 +45,11 @@ class BrowseProductsParams with Params {
       "page": page,
       if (search != null && search != "") "search": search,
       if (storeId != null) "filter[storeId]": storeId,
+      if (categoryId != null) "filter[categoryId]": categoryId,
+      if (priceMin != null) "price_min": priceMin,
+      if (priceMax != null) "price_max": priceMax,
+      if (isAvailable != null) "filter[isAvailable]": isAvailable,
+      if (sort != null) "sort": sort,
     };
   }
 }

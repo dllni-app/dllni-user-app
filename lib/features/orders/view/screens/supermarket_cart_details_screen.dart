@@ -13,7 +13,6 @@ import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../sm_stores/view/screens/sm_store_details_screen.dart';
 import '../../data/models/fetch_supermarket_cart_model.dart';
-import '../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../../domain/usecases/get_single_supermarket_cart_use_case.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../widgets/restaurant_cart_checkout_fulfillment_button.dart';
@@ -127,178 +126,175 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<OrdersBloc>(),
-      child: ClipRRect(
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-        child: Stack(
-          children: [
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                border: Border.all(color: Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-                boxShadow: [
-                  BoxShadow(
-                    offset: Offset(0, 1),
-                    blurRadius: 2,
-                    color: Color(0x0D000000),
-                  ),
-                ],
-              ),
-              child: Column(
-                spacing: 12,
-                children: [
-                  Row(
-                    children: [
-                      AppImage.network(
-                        widget.imageUrl,
-                        size: 96,
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 4,
-                          children: [
-                            Text(
-                              widget.name,
-                              style: TextStyle(
-                                color: Color(0xFF1F2937),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                height: 23 / 18,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(text: "الإضافات: "),
-                                  TextSpan(
-                                    text: widget.addons,
-                                    style: TextStyle(color: Color(0xFF6B7280)),
-                                  ),
-                                ],
-                              ),
-                              style: TextStyle(
-                                color: Color(0xFF1F2937),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                height: 16 / 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
-                          border: Border.all(color: Color(0xFFE5E7EB)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: InkWell(
-                                onTap: _decrement,
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(8),
-                                ),
-                                child: Center(
-                                  child: FaIcon(
-                                    FontAwesomeIcons.minus,
-                                    size: 12,
-                                    color: Color(0xFF1A237E),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 30,
-                              child: Text(
-                                _count.toString(),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Color(0xFF1F2937),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  height: 20 / 14,
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: InkWell(
-                                onTap: _increment,
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(8),
-                                ),
-                                child: Center(
-                                  child: FaIcon(
-                                    FontAwesomeIcons.plus,
-                                    size: 12,
-                                    color: Color(0xFF1A237E),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
+    return ClipRRect(
+      borderRadius: BorderRadius.all(Radius.circular(16)),
+      child: Stack(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              border: Border.all(color: Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              boxShadow: [
+                BoxShadow(
+                  offset: Offset(0, 1),
+                  blurRadius: 2,
+                  color: Color(0x0D000000),
+                ),
+              ],
+            ),
+            child: Column(
+              spacing: 12,
+              children: [
+                Row(
+                  children: [
+                    AppImage.network(
+                      widget.imageUrl,
+                      size: 96,
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 4,
                         children: [
-                          if (widget.discount != null)
-                            Text(
-                              "${widget.price.toStringAsFixed(2)} ل.س",
-                              style: TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: Color(0xFF6B7280),
-                                color: Color(0xFF6B7280),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                height: 16 / 12,
-                              ),
-                            ),
                           Text(
-                            "${widget.finalPrice.toStringAsFixed(2)} ل.س",
+                            widget.name,
                             style: TextStyle(
-                              color: Color(0xFF1A237E),
-                              fontSize: 16,
+                              color: Color(0xFF1F2937),
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              height: 24 / 16,
+                              height: 23 / 18,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: "الإضافات: "),
+                                TextSpan(
+                                  text: widget.addons,
+                                  style: TextStyle(color: Color(0xFF6B7280)),
+                                ),
+                              ],
+                            ),
+                            style: TextStyle(
+                              color: Color(0xFF1F2937),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              height: 16 / 12,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  Center(
-                    child: _TextButtonWithIcon(
-                      label: "حذف",
-                      icon: FontAwesomeIcons.trash,
-                      color: Color(0xFFFF4C51),
-                      onTap: widget.onDelete,
                     ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                        border: Border.all(color: Color(0xFFE5E7EB)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: InkWell(
+                              onTap: _decrement,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(8),
+                              ),
+                              child: Center(
+                                child: FaIcon(
+                                  FontAwesomeIcons.minus,
+                                  size: 12,
+                                  color: Color(0xFF1A237E),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 30,
+                            child: Text(
+                              _count.toString(),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF1F2937),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                height: 20 / 14,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: InkWell(
+                              onTap: _increment,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(8),
+                              ),
+                              child: Center(
+                                child: FaIcon(
+                                  FontAwesomeIcons.plus,
+                                  size: 12,
+                                  color: Color(0xFF1A237E),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 4,
+                      children: [
+                        if (widget.discount != null)
+                          Text(
+                            "${widget.price.toStringAsFixed(2)} ل.س",
+                            style: TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: Color(0xFF6B7280),
+                              color: Color(0xFF6B7280),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              height: 16 / 12,
+                            ),
+                          ),
+                        Text(
+                          "${widget.finalPrice.toStringAsFixed(2)} ل.س",
+                          style: TextStyle(
+                            color: Color(0xFF1A237E),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            height: 24 / 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Center(
+                  child: _TextButtonWithIcon(
+                    label: "حذف",
+                    icon: FontAwesomeIcons.trash,
+                    color: Color(0xFFFF4C51),
+                    onTap: widget.onDelete,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -309,6 +305,20 @@ class _ProductCardState extends State<ProductCard> {
     super.initState();
   }
 
+  @override
+  void didUpdateWidget(covariant ProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.count != widget.count) {
+      _count = widget.count;
+    }
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
   void _decrement() {
     if (_count == 1) return;
     _count--;
@@ -317,6 +327,7 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   void _increment() {
+    if (_count >= 200) return;
     setState(() => _count++);
     _restartTimer();
   }
@@ -339,6 +350,9 @@ class _ProductCardState extends State<ProductCard> {
 
 class _SupermarketCartDetailsScreenState
     extends State<SupermarketCartDetailsScreen> {
+  String? _lastShownCartError;
+  bool _deleteSuccessHandled = false;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -351,15 +365,64 @@ class _SupermarketCartDetailsScreenState
             ),
             Expanded(
               child: BlocConsumer<OrdersBloc, OrdersState>(
+                listenWhen: (previous, current) =>
+                    previous.singleSupermarketCartStatus !=
+                        current.singleSupermarketCartStatus ||
+                    previous.storeCartErrorMessage !=
+                        current.storeCartErrorMessage ||
+                    previous.deleteStoreCartItemStatus !=
+                        current.deleteStoreCartItemStatus,
                 listener: (context, state) {
-                  if (state.singleSupermarketCartStatus == BlocStatus.success) {
+                  if (state.singleSupermarketCartStatus == BlocStatus.success &&
+                      state.singleSupermarketCart != null) {
                     widget.args.cart = state.singleSupermarketCart;
                     setState(() {});
+                  }
+
+                  final error = state.storeCartErrorMessage?.trim();
+                  if (error != null &&
+                      error.isNotEmpty &&
+                      error != _lastShownCartError) {
+                    _lastShownCartError = error;
+                    AppToast.showToast(
+                      context: context,
+                      message: error,
+                      type: ToastificationType.error,
+                    );
+                  } else if (error == null || error.isEmpty) {
+                    _lastShownCartError = null;
+                  }
+
+                  if (state.deleteStoreCartItemStatus == BlocStatus.loading) {
+                    _deleteSuccessHandled = false;
+                  }
+                  if (state.deleteStoreCartItemStatus == BlocStatus.success &&
+                      !_deleteSuccessHandled) {
+                    _deleteSuccessHandled = true;
+                    final currentCartId = widget.args.cart?.id;
+                    final activeCartId = state.storeCart?.id;
+                    if (currentCartId != null &&
+                        activeCartId != currentCartId) {
+                      AppToast.showToast(
+                        context: context,
+                        message: 'تم حذف السلة بنجاح',
+                        type: ToastificationType.success,
+                      );
+                      context.pop();
+                    } else {
+                      AppToast.showToast(
+                        context: context,
+                        message: 'تم حذف المنتج بنجاح',
+                        type: ToastificationType.success,
+                      );
+                    }
                   }
                 },
                 buildWhen: (previous, current) =>
                     previous.singleSupermarketCartStatus !=
-                    current.singleSupermarketCartStatus,
+                        current.singleSupermarketCartStatus ||
+                    previous.isMutatingStoreCartItem !=
+                        current.isMutatingStoreCartItem,
                 builder: (context, state) {
                   // if(state.supermarketCartStatus == BlocStatus.loading) {
                   //   return Center(child: CircularProgressIndicator());
@@ -406,170 +469,107 @@ class _SupermarketCartDetailsScreenState
                             shrinkWrap: true,
                             padding: EdgeInsets.zero,
                             physics: NeverScrollableScrollPhysics(),
-                            itemBuilder: (_, index) => BlocProvider(
-                              create: (context) => getIt<OrdersBloc>(),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.all(Radius.circular(16)),
-                                child: Stack(
-                                  children: [
-                                    Builder(
-                                      builder: (innerContext) {
-                                        return ProductCard(
-                                          onDelete: () {
-                                            innerContext.read<OrdersBloc>().add(
-                                              DeleteStoreCartItemEvent(
-                                                cartId: widget.args.cart?.id ?? 0,
-                                                itemId:
-                                                    widget
-                                                        .args
-                                                        .cart
-                                                        ?.items?[index]
-                                                        .id ??
-                                                    0,
-                                              ),
-                                            );
-                                          },
-                                          cartId: widget.args.cart?.id ?? 0,
-                                          itemId:
-                                              widget
-                                                  .args
-                                                  .cart
-                                                  ?.items?[index]
-                                                  .id ??
-                                              0,
-                                
-                                          imageUrl:
-                                              widget
-                                                  .args
-                                                  .cart
-                                                  ?.items?[index]
-                                                  .product
-                                                  ?.primaryImageUrl ??
-                                              '',
-                                          name:
-                                              widget
-                                                  .args
-                                                  .cart
-                                                  ?.items?[index]
-                                                  .product
-                                                  ?.name ??
-                                              '',
-                                          addons:
-                                              widget
+                            itemBuilder: (_, index) => ClipRRect(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(16),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Builder(
+                                    builder: (innerContext) {
+                                      return ProductCard(
+                                        onDelete: () {
+                                          innerContext.read<OrdersBloc>().add(
+                                            DeleteStoreCartItemEvent(
+                                              cartId: widget.args.cart?.id ?? 0,
+                                              itemId:
+                                                  widget
+                                                      .args
+                                                      .cart
+                                                      ?.items?[index]
+                                                      .id ??
+                                                  0,
+                                            ),
+                                          );
+                                        },
+                                        cartId: widget.args.cart?.id ?? 0,
+                                        itemId:
+                                            widget
+                                                .args
+                                                .cart
+                                                ?.items?[index]
+                                                .id ??
+                                            0,
+
+                                        imageUrl:
+                                            widget
+                                                .args
+                                                .cart
+                                                ?.items?[index]
+                                                .product
+                                                ?.primaryImageUrl ??
+                                            '',
+                                        name:
+                                            widget
+                                                .args
+                                                .cart
+                                                ?.items?[index]
+                                                .product
+                                                ?.name ??
+                                            '',
+                                        addons:
+                                            widget
+                                                    .args
+                                                    .cart
+                                                    ?.items?[index]
+                                                    .product
+                                                    ?.additions
+                                                    ?.isEmpty ??
+                                                true
+                                            ? 'لا يوجد إضافات'
+                                            : widget
                                                       .args
                                                       .cart
                                                       ?.items?[index]
                                                       .product
                                                       ?.additions
-                                                      ?.isEmpty ??
-                                                  true
-                                              ? 'لا يوجد إضافات'
-                                              : widget
-                                                        .args
-                                                        .cart
-                                                        ?.items?[index]
-                                                        .product
-                                                        ?.additions
-                                                        ?.join(', ') ??
-                                                    '',
-                                          price:
-                                              widget
-                                                  .args
-                                                  .cart
-                                                  ?.items?[index]
-                                                  .product
-                                                  ?.price ??
-                                              0,
-                                          discount: widget
-                                              .args
-                                              .cart
-                                              ?.items?[index]
-                                              .product
-                                              ?.discountedPrice,
-                                          finalPrice:
-                                              widget
-                                                  .args
-                                                  .cart
-                                                  ?.items?[index]
-                                                  .product
-                                                  ?.finalPrice ??
-                                              0,
-                                          count:
-                                              widget
-                                                  .args
-                                                  .cart
-                                                  ?.items?[index]
-                                                  .quantity ??
-                                              0,
-                                        );
-                                      },
-                                    ),
-                                    BlocConsumer<OrdersBloc, OrdersState>(
-                                      buildWhen: (previous, current) =>
-                                          previous.deleteStoreCartItemStatus !=
-                                          current.deleteStoreCartItemStatus,
-                                      listenWhen: (previous, current) =>
-                                          previous.deleteStoreCartItemStatus !=
-                                          current.deleteStoreCartItemStatus,
-                                      listener: (innerContext, state) {
-                                        if (state.deleteStoreCartItemStatus ==
-                                            BlocStatus.failed) {
-                                          AppToast.showToast(
-                                            context: innerContext,
-                                            message:
-                                                state.errorMessage ??
-                                                'حدث خطأ ما',
-                                            type: ToastificationType.error,
-                                          );
-                                        }
-                                        if (state.deleteStoreCartItemStatus ==
-                                            BlocStatus.success) {
-                                          widget.args.cart?.items?.removeAt(
-                                            index,
-                                          );
-                                          setState(() {});
-                                          if (widget.args.cart?.items?.isEmpty ??
-                                              true) {
-                                            context.read<OrdersBloc>().add(
-                                              FetchSupermarketCartEvent(
-                                                params:
-                                                    FetchSupermarketCartParams(),
-                                              ),
-                                            );
-                                            AppToast.showToast(
-                                              context: context,
-                                              message: 'تم حذف سلة بنجاح',
-                                              type: ToastificationType.success,
-                                            );
-                                            innerContext.pop();
-                                          } else {
-                                            context.read<OrdersBloc>().add(
-                                              GetSingleSupermarketCartEvent(
-                                                params:
-                                                    GetSingleSupermarketCartParams(
-                                                      cartId:
-                                                          widget.args.cart?.id ??
-                                                          0,
-                                                    ),
-                                              ),
-                                            );
-                                            AppToast.showToast(
-                                              context: innerContext,
-                                              message: 'تم حذف المنتج بنجاح',
-                                              type: ToastificationType.success,
-                                            );
-                                          }
-                                        }
-                                      },
-                                      builder: (context, state) {
-                                        return state.deleteStoreCartItemStatus ==
-                                                BlocStatus.loading
-                                            ? Positioned.fill(child: AppLoading())
-                                            : SizedBox.shrink();
-                                      },
-                                    ),
-                                  ],
-                                ),
+                                                      ?.join(', ') ??
+                                                  '',
+                                        price:
+                                            widget
+                                                .args
+                                                .cart
+                                                ?.items?[index]
+                                                .product
+                                                ?.price ??
+                                            0,
+                                        discount: widget
+                                            .args
+                                            .cart
+                                            ?.items?[index]
+                                            .product
+                                            ?.discountedPrice,
+                                        finalPrice:
+                                            widget
+                                                .args
+                                                .cart
+                                                ?.items?[index]
+                                                .product
+                                                ?.finalPrice ??
+                                            0,
+                                        count:
+                                            widget
+                                                .args
+                                                .cart
+                                                ?.items?[index]
+                                                .quantity ??
+                                            0,
+                                      );
+                                    },
+                                  ),
+                                  if (state.isMutatingStoreCartItem)
+                                    Positioned.fill(child: AppLoading()),
+                                ],
                               ),
                             ),
                             separatorBuilder: (_, _) => SizedBox(height: 16),
@@ -614,10 +614,10 @@ class _SupermarketCartDetailsScreenState
                                     ?.toDouble() ??
                                 0,
                             discount:
-                                (widget.args.cart?.amounts?.total?.toDouble() ??
-                                    0) -
                                 (widget.args.cart?.amounts?.subtotal
                                         ?.toDouble() ??
+                                    0) -
+                                (widget.args.cart?.amounts?.total?.toDouble() ??
                                     0),
                             total:
                                 widget.args.cart?.amounts?.total?.toDouble() ??

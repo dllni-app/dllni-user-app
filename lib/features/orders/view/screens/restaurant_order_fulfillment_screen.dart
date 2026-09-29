@@ -29,10 +29,7 @@ class RestaurantOrderFulfillmentArgs {
 
 @AutoRoutePage(path: '/restaurant-order-fulfillment')
 class RestaurantOrderFulfillmentScreen extends StatelessWidget {
-  const RestaurantOrderFulfillmentScreen({
-    super.key,
-    required this.args,
-  });
+  const RestaurantOrderFulfillmentScreen({super.key, required this.args});
 
   final RestaurantOrderFulfillmentArgs args;
 
@@ -56,8 +53,9 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
     final selected = state.singleSupermarketCart;
     if (selected?.id == args.cartId) return selected;
 
-    for (final cart in state.supermarketCart?.data ??
-        const <FetchSupermarketCartModelDataItem>[]) {
+    for (final cart
+        in state.supermarketCart?.data ??
+            const <FetchSupermarketCartModelDataItem>[]) {
       if (cart.id == args.cartId) return cart;
     }
     return null;
@@ -154,10 +152,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 const Text(
                   'تم إنشاء طلبك بنجاح',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -223,16 +218,14 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
   }) {
     final rootContext = _rootContext();
     if (rootContext != null && rootContext.mounted) {
-      ScaffoldMessenger.of(rootContext).showSnackBar(
-        const SnackBar(content: Text('تم تاكيد الطلب بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        rootContext,
+      ).showSnackBar(const SnackBar(content: Text('تم تاكيد الطلب بنجاح')));
     }
 
     if (args.section == 'supermarket') {
       context.read<OrdersBloc>().add(
-        FetchSupermarketCartEvent(
-          params: FetchSupermarketCartParams(),
-        ),
+        FetchSupermarketCartEvent(params: FetchSupermarketCartParams()),
       );
     }
 
@@ -260,7 +253,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
           child: BlocConsumer<OrdersBloc, OrdersState>(
             listenWhen: (previous, current) => args.section == 'supermarket'
                 ? previous.placeStoreOrderStatus !=
-                    current.placeStoreOrderStatus
+                          current.placeStoreOrderStatus ||
+                      previous.storeCouponStatus != current.storeCouponStatus
                 : previous.placeOrderStatus != current.placeOrderStatus,
             listener: (context, state) {
               final status = args.section == 'supermarket'
@@ -270,6 +264,16 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   ? state.placeStoreOrderErrorMessage
                   : state.placeOrderErrorMessage;
 
+              if (args.section == 'supermarket' &&
+                  state.storeCouponStatus == BlocStatus.success &&
+                  state.placeStoreOrderStatus != BlocStatus.loading &&
+                  state.placeStoreOrderStatus != BlocStatus.success &&
+                  args.cartId != null) {
+                context.read<OrdersBloc>().add(
+                  PreviewStoreCheckoutEvent(cartId: args.cartId!),
+                );
+              }
+
               if (status == BlocStatus.success) {
                 final placedOrder = args.section == 'supermarket'
                     ? state.placedStoreOrder
@@ -278,9 +282,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               } else if (status == BlocStatus.failed) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                      errorMessage ?? 'تعذر تاكيد الطلب حالياً.',
-                    ),
+                    content: Text(errorMessage ?? 'تعذر تاكيد الطلب حالياً.'),
                   ),
                 );
               }
@@ -299,6 +301,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               final couponData = isStoreFlow
                   ? state.storeCouponData
                   : state.couponData;
+              final preview = isStoreFlow ? state.storeCheckoutPreview : null;
+              final previewAmounts = preview?.amounts;
               final baseSubtotal = isStoreFlow
                   ? supermarketCart?.amounts?.subtotal?.toDouble()
                   : cart?.amounts?.subtotal;
@@ -306,13 +310,27 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   ? supermarketCart?.amounts?.total?.toDouble()
                   : cart?.amounts?.total;
               final subtotal =
-                  couponData?.amounts?.subtotal ?? baseSubtotal ?? 0;
+                  previewAmounts?.subtotal ??
+                  couponData?.amounts?.subtotal ??
+                  baseSubtotal ??
+                  0;
               final discount =
+                  previewAmounts?.discount ??
                   couponData?.amounts?.discount ??
                   ((baseSubtotal ?? 0) - (baseTotal ?? baseSubtotal ?? 0));
-              final deliveryFee = isDelivery ? 0.0 : 0.0;
-              final total = couponData?.amounts?.total ?? baseTotal ?? 0;
-              final merchantName = cart?.merchant?.name ??
+              final deliveryFee = isDelivery
+                  ? (previewAmounts?.deliveryFee ?? 0)
+                  : 0.0;
+              final total =
+                  previewAmounts?.total ??
+                  couponData?.amounts?.total ??
+                  baseTotal ??
+                  0;
+              final storePreviewReady =
+                  !isStoreFlow ||
+                  state.storeCheckoutPreviewStatus == BlocStatus.success;
+              final merchantName =
+                  cart?.merchant?.name ??
                   supermarketCart?.merchant?.name ??
                   supermarketCart?.store?.name ??
                   (isStoreFlow ? 'المتجر' : 'المطعم');
@@ -321,6 +339,17 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                 cart: cart,
                 supermarketCart: supermarketCart,
               );
+
+              if (isStoreFlow &&
+                  args.cartId != null &&
+                  state.storeCheckoutPreviewStatus == null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!context.mounted) return;
+                  context.read<OrdersBloc>().add(
+                    PreviewStoreCheckoutEvent(cartId: args.cartId!),
+                  );
+                });
+              }
 
               return Column(
                 children: [
@@ -349,11 +378,19 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                             icon: Icons.delivery_dining,
                             selected: isDelivery,
                             onTap: () {
-                              context.read<OrdersBloc>().add(
+                              final bloc = context.read<OrdersBloc>();
+                              bloc.add(
                                 CartFulfillmentTypeChangedEvent(
                                   fulfillmentType: 'delivery',
                                 ),
                               );
+                              if (isStoreFlow && args.cartId != null) {
+                                bloc.add(
+                                  PreviewStoreCheckoutEvent(
+                                    cartId: args.cartId!,
+                                  ),
+                                );
+                              }
                             },
                           ),
                           const SizedBox(height: 24),
@@ -365,11 +402,19 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                             icon: Icons.storefront_outlined,
                             selected: !isDelivery,
                             onTap: () {
-                              context.read<OrdersBloc>().add(
+                              final bloc = context.read<OrdersBloc>();
+                              bloc.add(
                                 CartFulfillmentTypeChangedEvent(
                                   fulfillmentType: 'pickup',
                                 ),
                               );
+                              if (isStoreFlow && args.cartId != null) {
+                                bloc.add(
+                                  PreviewStoreCheckoutEvent(
+                                    cartId: args.cartId!,
+                                  ),
+                                );
+                              }
                             },
                           ),
                           const SizedBox(height: 24),
@@ -384,14 +429,27 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                 );
                                 if (!context.mounted) return;
                                 if (selected is AddressListItem) {
-                                  context.read<OrdersBloc>().add(
+                                  final bloc = context.read<OrdersBloc>();
+                                  bloc.add(
                                     CartSelectedAddressChangedEvent(
                                       address: selected,
                                     ),
                                   );
+                                  if (isStoreFlow && args.cartId != null) {
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (!context.mounted) return;
+                                          context.read<OrdersBloc>().add(
+                                            PreviewStoreCheckoutEvent(
+                                              cartId: args.cartId!,
+                                            ),
+                                          );
+                                        });
+                                  }
                                 }
                               },
-                              line1: state.selectedAddress?.line1 ??
+                              line1:
+                                  state.selectedAddress?.line1 ??
                                   'لم يتم تحديد العنوان',
                               line2: state.selectedAddress?.street ?? '',
                             )
@@ -405,6 +463,106 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   ? merchantLocation
                                   : 'الموقع غير متوفر',
                             ),
+                          if (isStoreFlow && isDelivery) ...[
+                            const SizedBox(height: 24),
+                            _StoreReceiveScheduleCard(
+                              receiveMode: state.storeReceiveMode,
+                              scheduledAt: state.storeScheduledAt,
+                              onModeChanged: (mode) {
+                                final bloc = context.read<OrdersBloc>();
+                                bloc.add(
+                                  StoreReceiveModeChangedEvent(
+                                    receiveMode: mode,
+                                  ),
+                                );
+                                if (args.cartId != null) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (!context.mounted) return;
+                                    context.read<OrdersBloc>().add(
+                                      PreviewStoreCheckoutEvent(
+                                        cartId: args.cartId!,
+                                      ),
+                                    );
+                                  });
+                                }
+                              },
+                              onPickSchedule: () async {
+                                final now = DateTime.now();
+                                final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: now.add(const Duration(days: 1)),
+                                  firstDate: now,
+                                  lastDate: now.add(const Duration(days: 90)),
+                                );
+                                if (date == null || !context.mounted) return;
+                                final time = await showTimePicker(
+                                  context: context,
+                                  initialTime: TimeOfDay.fromDateTime(
+                                    now.add(const Duration(hours: 1)),
+                                  ),
+                                );
+                                if (time == null || !context.mounted) return;
+                                final scheduled = DateTime(
+                                  date.year,
+                                  date.month,
+                                  date.day,
+                                  time.hour,
+                                  time.minute,
+                                );
+                                if (!scheduled.isAfter(DateTime.now())) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'يرجى اختيار موعد مستقبلي.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final bloc = context.read<OrdersBloc>();
+                                bloc.add(
+                                  StoreScheduledAtChangedEvent(
+                                    scheduledAt: scheduled.toIso8601String(),
+                                  ),
+                                );
+                                if (args.cartId != null) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (!context.mounted) return;
+                                    context.read<OrdersBloc>().add(
+                                      PreviewStoreCheckoutEvent(
+                                        cartId: args.cartId!,
+                                      ),
+                                    );
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                          if (isStoreFlow &&
+                              state.storeCheckoutPreviewStatus ==
+                                  BlocStatus.failed) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF1F2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                state.storeCheckoutPreviewError ??
+                                    'تعذر احتساب السعر النهائي.',
+                                style: const TextStyle(
+                                  color: Color(0xFFBE123C),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                           if (args.cartId case final cartId?) ...[
                             const SizedBox(height: 24),
                             MerchantCheckoutCouponSection(
@@ -492,16 +650,14 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: isPlacingOrder
+                        onPressed: isPlacingOrder || !storePreviewReady
                             ? null
                             : () {
                                 final cartId = args.cartId;
                                 if (cartId == null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text(
-                                        'تعذر تحديد السلة الحالية',
-                                      ),
+                                      content: Text('تعذر تحديد السلة الحالية'),
                                     ),
                                   );
                                   return;
@@ -564,6 +720,73 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
   }
 }
 
+class _StoreReceiveScheduleCard extends StatelessWidget {
+  const _StoreReceiveScheduleCard({
+    required this.receiveMode,
+    required this.scheduledAt,
+    required this.onModeChanged,
+    required this.onPickSchedule,
+  });
+
+  final String receiveMode;
+  final String? scheduledAt;
+  final ValueChanged<String> onModeChanged;
+  final VoidCallback onPickSchedule;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheduled = receiveMode == 'scheduled';
+    final parsed = DateTime.tryParse(scheduledAt ?? '');
+    final label = parsed == null
+        ? 'اختر التاريخ والوقت'
+        : parsed.year.toString() +
+              '/' +
+              parsed.month.toString().padLeft(2, '0') +
+              '/' +
+              parsed.day.toString().padLeft(2, '0') +
+              '  ' +
+              parsed.hour.toString().padLeft(2, '0') +
+              ':' +
+              parsed.minute.toString().padLeft(2, '0');
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppText.bodyMedium(
+            'موعد استلام الطلب',
+            fontWeight: FontWeight.bold,
+            color: const Color(0xff1F2937),
+          ),
+          const SizedBox(height: 12),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'immediate', label: Text('فوري')),
+              ButtonSegment(value: 'scheduled', label: Text('مجدول')),
+            ],
+            selected: <String>{receiveMode},
+            onSelectionChanged: (value) => onModeChanged(value.first),
+          ),
+          if (scheduled) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onPickSchedule,
+              icon: const Icon(Icons.schedule),
+              label: Text(label),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _FulfillmentCard extends StatelessWidget {
   const _FulfillmentCard({
     required this.title,
@@ -590,9 +813,7 @@ class _FulfillmentCard extends StatelessWidget {
           color: selected ? const Color(0xffFFF7ED) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected
-                ? const Color(0xffF97316)
-                : const Color(0xffE5E7EB),
+            color: selected ? const Color(0xffF97316) : const Color(0xffE5E7EB),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -712,15 +933,9 @@ class _LocationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.labelLarge(
-                  line1,
-                  color: const Color(0xff111827),
-                ),
+                AppText.labelLarge(line1, color: const Color(0xff111827)),
                 if (line2.isNotEmpty)
-                  AppText.labelMedium(
-                    line2,
-                    color: const Color(0xff6B7280),
-                  ),
+                  AppText.labelMedium(line2, color: const Color(0xff6B7280)),
               ],
             ),
           ),
@@ -752,7 +967,8 @@ class _SummaryRow extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: titleStyle ??
+            style:
+                titleStyle ??
                 const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -762,7 +978,8 @@ class _SummaryRow extends StatelessWidget {
         ),
         Text(
           value,
-          style: valueStyle ??
+          style:
+              valueStyle ??
               TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

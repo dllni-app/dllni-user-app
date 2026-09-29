@@ -110,8 +110,24 @@ class _HomeAppBarState extends State<HomeAppBar> {
           ),
           SizedBox(height: 16),
           SearchFieldWithVoice(
-            onSearch: (search) {},
-            onVoiceTap: () {},
+            onSearch: (_) {
+              context.pushRoute(
+                '/smmain',
+                arguments: SmMainScreenParams(
+                  initialPage: 1,
+                  expandSearch: true,
+                ),
+              );
+            },
+            onVoiceTap: () {
+              context.pushRoute(
+                '/smmain',
+                arguments: SmMainScreenParams(
+                  initialPage: 1,
+                  expandSearch: true,
+                ),
+              );
+            },
             onTap: () {
               context.pushRoute(
                 '/smmain',

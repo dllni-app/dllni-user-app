@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/download_more.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../core/widgets/loading_list.dart';
 import '../../../../core/widgets/search_with_type_dropdown.dart';
+import '../../../profile/domain/services/user_location_service.dart';
 import '../../domain/usecases/browse_stores_use_case.dart';
 import '../manager/bloc/sm_discover_bloc.dart';
 import '../widgets/store_card.dart';
@@ -29,17 +31,45 @@ class SmMainDiscoverView extends StatefulWidget {
 
 class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
   String _selectedSort = 'nearestBy';
-  final List<String> _sortOptions = ['nearestBy', 'alphabet'];
+  final List<String> _sortOptions = ['nearestBy', 'rating', 'alphabet'];
+  double? _latitude;
+  double? _longitude;
+  bool _openNowOnly = false;
+  bool _featuredOnly = false;
+  double? _minimumRating;
 
   @override
   void initState() {
+    super.initState();
+    _loadStoresWithLocation();
+  }
+
+  Future<void> _loadStoresWithLocation() async {
+    final location = await getIt<UserLocationService>().getCurrentPosition();
+    if (!mounted) return;
+    _latitude = location.latitude;
+    _longitude = location.longitude;
+    if ((_latitude == null || _longitude == null) &&
+        _selectedSort == 'nearestBy') {
+      _selectedSort = 'rating';
+    }
+    _reloadStores();
+  }
+
+  void _reloadStores() {
     context.read<SmDiscoverBloc>().add(
       BrowseStoresEvent(
         isReload: true,
-        params: BrowseStoresParams(sort: _selectedSort),
+        params: BrowseStoresParams(
+          sort: _selectedSort,
+          latitude: _latitude,
+          longitude: _longitude,
+          openNow: _openNowOnly ? true : null,
+          isFeatured: _featuredOnly ? true : null,
+          averageRatingMin: _minimumRating,
+        ),
       ),
     );
-    super.initState();
   }
 
   @override
@@ -80,12 +110,7 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                     onSelected: (value) {
                       if (value == _selectedSort) return;
                       setState(() => _selectedSort = value);
-                      context.read<SmDiscoverBloc>().add(
-                        BrowseStoresEvent(
-                          isReload: true,
-                          params: BrowseStoresParams(sort: _selectedSort),
-                        ),
-                      );
+                      _reloadStores();
                     },
                     itemBuilder: (_) => _sortOptions
                         .map(
@@ -94,6 +119,8 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                             child: AppText(
                               option == 'alphabet'
                                   ? 'الترتيب الأبجدي'
+                                  : option == 'rating'
+                                  ? 'الأعلى تقييماً'
                                   : 'الأقرب إلي',
                               style: TextStyle(
                                 color: _selectedSort == option
@@ -111,7 +138,12 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                       child: Row(
                         children: [
                           AppText(
-                            'ترتيب حسب: ${_selectedSort == 'alphabet' ? 'الترتيب الأبجدي' : 'الأقرب إلي'}',
+                            'ترتيب حسب: ' +
+                                (_selectedSort == 'alphabet'
+                                    ? 'الترتيب الأبجدي'
+                                    : _selectedSort == 'rating'
+                                    ? 'الأعلى تقييماً'
+                                    : 'الأقرب إلي'),
                             style: const TextStyle(
                               color: AppColors.primary,
                               fontSize: 14,
@@ -129,6 +161,42 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                       ),
                     ),
                   );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              FilterChip(
+                label: const Text('مفتوح الآن'),
+                selected: _openNowOnly,
+                onSelected: (value) {
+                  setState(() => _openNowOnly = value);
+                  _reloadStores();
+                },
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('متاجر مميزة'),
+                selected: _featuredOnly,
+                onSelected: (value) {
+                  setState(() => _featuredOnly = value);
+                  _reloadStores();
+                },
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('4+ نجوم'),
+                selected: _minimumRating == 4,
+                onSelected: (value) {
+                  setState(() => _minimumRating = value ? 4 : null);
+                  _reloadStores();
                 },
               ),
             ],
@@ -173,6 +241,12 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                               isReload: false,
                               params: BrowseStoresParams(
                                 page: state.browseStores!.pageNumber,
+                                sort: _selectedSort,
+                                latitude: _latitude,
+                                longitude: _longitude,
+                                openNow: _openNowOnly ? true : null,
+                                isFeatured: _featuredOnly ? true : null,
+                                averageRatingMin: _minimumRating,
                               ),
                             ),
                           );
@@ -188,23 +262,11 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                   child: FailureWidget(
                     message: state.errorMessage.toString(),
                     onRetry: () {
-                      context.read<SmDiscoverBloc>().add(
-                        BrowseStoresEvent(
-                          isReload: true,
-                          params: BrowseStoresParams(sort: _selectedSort),
-                        ),
-                      );
+                      _reloadStores();
                     },
                   ),
                 ),
-                onTapRetry: () {
-                  context.read<SmDiscoverBloc>().add(
-                    BrowseStoresEvent(
-                      isReload: true,
-                      params: BrowseStoresParams(sort: _selectedSort),
-                    ),
-                  );
-                },
+                onTapRetry: _reloadStores,
               );
             },
           ),

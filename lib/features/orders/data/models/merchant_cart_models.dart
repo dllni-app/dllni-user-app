@@ -45,9 +45,9 @@ class FetchMerchantCartsModel {
 
   factory FetchMerchantCartsModel.fromJson(Map<String, dynamic> json) {
     return FetchMerchantCartsModel(
-      data: _asMapList(json['data'])
-          .map(RestaurantCartDataModel.fromJson)
-          .toList(),
+      data: _asMapList(
+        json['data'],
+      ).map(RestaurantCartDataModel.fromJson).toList(),
     );
   }
 }
@@ -104,6 +104,7 @@ class CheckoutPreviewAmountsModel {
   final double subtotal;
   final double discount;
   final double serviceFee;
+  final double deliveryFee;
   final double tax;
   final double total;
 
@@ -111,6 +112,7 @@ class CheckoutPreviewAmountsModel {
     this.subtotal = 0,
     this.discount = 0,
     this.serviceFee = 0,
+    this.deliveryFee = 0,
     this.tax = 0,
     this.total = 0,
   });
@@ -120,6 +122,7 @@ class CheckoutPreviewAmountsModel {
       subtotal: _asDouble(json['subtotal']) ?? 0,
       discount: _asDouble(json['discount']) ?? 0,
       serviceFee: _asDouble(json['serviceFee']) ?? 0,
+      deliveryFee: _asDouble(json['deliveryFee']) ?? 0,
       tax: _asDouble(json['tax']) ?? 0,
       total: _asDouble(json['total']) ?? 0,
     );

@@ -26,10 +26,16 @@ class GetCompareProductsEvent extends SmStoresEvent with EventWithReload {
 class AddSupermarketCartItemEvent extends SmStoresEvent {
   final int productId;
   final int quantity;
+  final List<int> modifierIds;
+  final int? substituteProductId;
+  final String? note;
 
   AddSupermarketCartItemEvent({
     required this.productId,
     required this.quantity,
+    this.modifierIds = const <int>[],
+    this.substituteProductId,
+    this.note,
   });
 }
 

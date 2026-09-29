@@ -39,8 +39,9 @@ class RestaurantOrderTrackingView extends StatelessWidget {
   String _money(double v) => '${v.toStringAsFixed(0)} ل.س';
 
   String _etaLabel() {
-    final status = (deliveryOrder?.status ?? order.deliverySummary?.status ?? '')
-        .toLowerCase();
+    final status =
+        (deliveryOrder?.status ?? order.deliverySummary?.status ?? '')
+            .toLowerCase();
     if (status == 'waiting_merchant_ready') return 'بانتظار جاهزية المتجر';
     if (status == 'searching_for_driver' || status == 'dispatching') {
       return 'جاري البحث عن مندوب';
@@ -62,9 +63,12 @@ class RestaurantOrderTrackingView extends StatelessWidget {
 
   bool _isTerminal() {
     if (deliveryOrder?.isTerminal == true) return true;
-    final status = (
-      deliveryOrder?.status ?? tracking?.latestToStatus ?? order.status ?? ''
-    ).toLowerCase();
+    final status =
+        (deliveryOrder?.status ??
+                tracking?.latestToStatus ??
+                order.status ??
+                '')
+            .toLowerCase();
     return status == 'delivered' ||
         status == 'completed' ||
         status == 'cancelled' ||
@@ -79,7 +83,7 @@ class RestaurantOrderTrackingView extends StatelessWidget {
   Widget build(BuildContext context) {
     final amounts = order.amounts;
     final subtotal = amounts?.subtotal ?? 0;
-    final deliveryFee = amounts?.serviceFee ?? 0;
+    final deliveryFee = amounts?.deliveryFee ?? 0;
     final total = amounts?.total ?? subtotal + deliveryFee;
 
     final merchantName =
