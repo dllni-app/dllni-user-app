@@ -10,12 +10,10 @@ class LoginParams with Params {
 
   @override
   BodyMap getBody() {
-    final body = <String, dynamic>{
+    return <String, dynamic>{
       'phone': phone,
       'password': password,
       'module': 'user',
     };
-    FcmTokenHelper.appendToBody(body, tokenKey: fcmTokenPrefsKey);
-    return body;
   }
 }

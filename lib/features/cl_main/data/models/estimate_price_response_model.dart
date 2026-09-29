@@ -3,6 +3,16 @@ import 'dart:convert';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cl_worker_room_assignment_result.dart';
 
+Map<String, dynamic> _toMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map(
+      (key, entry) => MapEntry(key.toString(), entry),
+    );
+  }
+  return const <String, dynamic>{};
+}
+
 double? _toDouble(dynamic value) {
   if (value is double) return value;
   if (value is num) return value.toDouble();
