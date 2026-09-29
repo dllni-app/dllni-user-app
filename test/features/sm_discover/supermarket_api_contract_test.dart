@@ -1,4 +1,5 @@
 import 'package:dllni_user_app/features/orders/data/models/merchant_cart_models.dart';
+import 'package:dllni_user_app/features/orders/data/models/fetch_supermarket_cart_model.dart';
 import 'package:dllni_user_app/features/sm_discover/domain/usecases/browse_products_use_case.dart';
 import 'package:dllni_user_app/features/sm_discover/domain/usecases/browse_stores_use_case.dart';
 import 'package:dllni_user_app/features/sm_stores/domain/usecases/add_supermarket_cart_item_use_case.dart';
@@ -93,5 +94,29 @@ void main() {
       expect(model.data?.amounts?.serviceFee, 0);
       expect(model.data?.amounts?.total, 14000);
     });
+    test('supermarket cart models preserve explicit product discount', () {
+      final payload = {
+        'data': [
+          {
+            'id': 1,
+            'productsCount': 2,
+            'items': <Map<String, dynamic>>[],
+            'amounts': {
+              'subtotal': 1600,
+              'discount': 400,
+              'total': 1600,
+            },
+          },
+        ],
+      };
+
+      final supermarketCart = fetchSupermarketCartModelFromJson(payload);
+      final merchantCarts = fetchMerchantCartsModelFromJson(payload);
+
+      expect(supermarketCart.data?.first.amounts?.discount, 400);
+      expect(merchantCarts.data.first.amounts?.discount, 400);
+      expect(merchantCarts.data.first.amounts?.total, 1600);
+    });
+
   });
 }
