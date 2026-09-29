@@ -254,21 +254,27 @@ class FetchSupermarketCartModelDataItem {
 
 class FetchSupermarketCartModelDataItemAmounts {
   int? subtotal;
+  int? discount;
   int? total;
 
-  FetchSupermarketCartModelDataItemAmounts({this.subtotal, this.total});
+  FetchSupermarketCartModelDataItemAmounts({
+    this.subtotal,
+    this.discount,
+    this.total,
+  });
 
   factory FetchSupermarketCartModelDataItemAmounts.fromJson(
     Map<String, dynamic> json,
   ) {
     return FetchSupermarketCartModelDataItemAmounts(
       subtotal: _asInt(json['subtotal']),
+      discount: _asInt(json['discount']),
       total: _asInt(json['total']),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'subtotal': subtotal, 'total': total};
+    return {'subtotal': subtotal, 'discount': discount, 'total': total};
   }
 }
 
