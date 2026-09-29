@@ -610,15 +610,15 @@ class _SupermarketCartDetailsScreenState
                           RestaurantCartOrderSummarySection(
                             itemsCount: widget.args.cart?.productsCount ?? 0,
                             subtotal:
-                                widget.args.cart?.amounts?.subtotal
+                                (widget.args.cart?.amounts?.total?.toDouble() ??
+                                    0) +
+                                (widget.args.cart?.amounts?.discount
+                                        ?.toDouble() ??
+                                    0),
+                            discount:
+                                widget.args.cart?.amounts?.discount
                                     ?.toDouble() ??
                                 0,
-                            discount:
-                                (widget.args.cart?.amounts?.subtotal
-                                        ?.toDouble() ??
-                                    0) -
-                                (widget.args.cart?.amounts?.total?.toDouble() ??
-                                    0),
                             total:
                                 widget.args.cart?.amounts?.total?.toDouble() ??
                                 0,
