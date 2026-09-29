@@ -62,7 +62,7 @@ void main() {
     },
   );
 
-  testWidgets('shows provisional warning when pricing is not final', (
+  testWidgets('never shows the obsolete provisional travel-fee warning', (
     tester,
   ) async {
     await tester.pumpWidget(_buildWidget(isPricingFinal: false));
@@ -71,20 +71,33 @@ void main() {
       find.text(
         'السعر المعروض تقديري وغير نهائي، وسيتم اضافة رسوم التنقل بعد قبول مقدم الخدمة للطلب.',
       ),
-      findsOneWidget,
+      findsNothing,
     );
   });
 
-  testWidgets('hides provisional warning when pricing is final', (
+  testWidgets('shows backend minimum-order warning only when applied', (
     tester,
   ) async {
-    await tester.pumpWidget(_buildWidget(isPricingFinal: true));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ClServiceOrderSummarySectionWidget(
+            basePrice: 1000,
+            travelFee: 300,
+            addonsTotal: 0,
+            totalPrice: 1800,
+            minimumOrderPrice: 1500,
+            minimumOrderApplied: true,
+            currency: 'SYP',
+          ),
+        ),
+      ),
+    );
 
     expect(
-      find.text(
-        'السعر المعروض تقديري وغير نهائي، وسيتم اضافة رسوم التنقل بعد قبول مقدم الخدمة للطلب.',
-      ),
-      findsNothing,
+      find.textContaining('أقل قيمة لطلب التنظيف هي'),
+      findsOneWidget,
     );
+    expect(find.textContaining('1,500'), findsOneWidget);
   });
 }
