@@ -137,7 +137,8 @@ class RsHomeRemoteDataSource with HandlingApiManager {
   ) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
-        endPoint: '/api/v1/user/restaurants/home/category-products',
+        endPoint:
+            '/api/v1/user/restaurants/products/by-category/${params.categoryId}',
         params: params.getParams(),
         data: params.getBody().isEmpty ? null : params.getBody(),
       ),
