@@ -123,6 +123,21 @@ abstract class OrdersRepo {
     FetchRestaurantOrderTrackingParams params,
   );
 
+  DataResponse<bool> cancelMerchantOrder({
+    required String section,
+    required int orderId,
+    String? reason,
+  });
+  DataResponse<bool> reorderMerchantOrder({
+    required String section,
+    required int orderId,
+  });
+  DataResponse<bool> rescheduleMerchantOrder({
+    required String section,
+    required int orderId,
+    required String scheduledAt,
+  });
+
   DataResponse<UserSosResponseModel> createUserSos(CreateUserSosParams params);
 
   DataResponse<FetchSosAlertsModel> fetchSosAlerts(FetchSosAlertsParams params);
