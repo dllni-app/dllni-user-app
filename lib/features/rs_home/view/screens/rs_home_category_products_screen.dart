@@ -9,17 +9,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/rs_app_product_card.dart';
-import '../../../rs_discover/view/manager/bloc/rs_discover_bloc.dart';
 import '../../data/models/fetch_restaurant_home_categories_model.dart';
-import '../../data/models/fetch_restaurant_home_suggested_products_model.dart';
-import '../../domain/usecases/fetch_restaurant_home_suggested_products_use_case.dart';
+import '../../data/models/fetch_restaurant_home_category_products_model.dart';
+import '../../domain/usecases/fetch_restaurant_home_category_products_use_case.dart';
 import '../manager/bloc/rs_home_bloc.dart';
 
 class RsHomeCategoryProductsScreenParams {
   final List<RestaurantHomeCategoryItem> categories;
   final int initialCategoryIndex;
 
-  RsHomeCategoryProductsScreenParams({required this.categories, required this.initialCategoryIndex});
+  RsHomeCategoryProductsScreenParams({
+    required this.categories,
+    required this.initialCategoryIndex,
+  });
 }
 
 @AutoRoutePage()
@@ -29,109 +31,196 @@ class RsHomeCategoryProductsScreen extends StatefulWidget {
   final RsHomeCategoryProductsScreenParams params;
 
   @override
-  State<RsHomeCategoryProductsScreen> createState() => _RsHomeCategoryProductsScreenState();
+  State<RsHomeCategoryProductsScreen> createState() =>
+      _RsHomeCategoryProductsScreenState();
 }
 
-class _RsHomeCategoryProductsScreenState extends State<RsHomeCategoryProductsScreen> {
-  late final List<String> _tabTitles;
-  int _selectedTabIndex = 0;
+class _RsHomeCategoryProductsScreenState
+    extends State<RsHomeCategoryProductsScreen> {
+  late int _selectedTabIndex;
   String _searchQuery = '';
+  int _lastRequestedPage = 1;
+
+  List<RestaurantHomeCategoryItem> get _categories => widget.params.categories;
 
   @override
   void initState() {
     super.initState();
-    final tabTitleSet = <String>{...widget.params.categories.map((e) => (e.name ?? '').trim()).where((e) => e.isNotEmpty)};
-    _tabTitles = tabTitleSet.toList();
+    if (_categories.isEmpty) {
+      _selectedTabIndex = 0;
+    } else {
+      _selectedTabIndex = widget.params.initialCategoryIndex
+          .clamp(0, _categories.length - 1);
+    }
+  }
 
-    _selectedTabIndex=  widget.params.initialCategoryIndex ;
+  int? get _selectedCategoryId {
+    if (_categories.isEmpty || _selectedTabIndex >= _categories.length) {
+      return null;
+    }
+    return _categories[_selectedTabIndex].id;
+  }
+
+  void _requestCategory(RsHomeBloc bloc, {int page = 1}) {
+    final categoryId = _selectedCategoryId;
+    if (categoryId == null) return;
+    _lastRequestedPage = page;
+    bloc.add(
+      FetchRestaurantHomeCategoryProductsEvent(
+        params: FetchRestaurantHomeCategoryProductsParams(
+          categoryId: categoryId,
+          page: page,
+          perPage: 30,
+        ),
+      ),
+    );
+  }
+
+  void _loadMore(
+    BuildContext context,
+    FetchRestaurantHomeCategoryProductsModel? model,
+  ) {
+    if (model == null || model.currentPage >= model.lastPage) return;
+    final nextPage = model.currentPage + 1;
+    if (nextPage <= _lastRequestedPage) return;
+    _requestCategory(context.read<RsHomeBloc>(), page: nextPage);
   }
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) =>
-              getIt<RsHomeBloc>()..add(FetchRestaurantHomeSuggestedProductsEvent(params: FetchRestaurantHomeSuggestedProductsParams())),
-        ),
-        BlocProvider(create: (context) => getIt<RsDiscoverBloc>()),
-      ],
+    return BlocProvider(
+      create: (_) {
+        final bloc = getIt<RsHomeBloc>();
+        _requestCategory(bloc);
+        return bloc;
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FAFB),
         body: Column(
           children: [
             RsAppSimpleAppBarWithSearch(
-              title: "التصنيفات",
+              title: 'التصنيفات',
               isCategory: true,
               onBackTap: () => context.maybePop(),
-              searchHintText: "ابحث عن منتج...",
+              searchHintText: 'ابحث عن منتج...',
               onSearchChanged: (value) {
                 setState(() {
-                  _searchQuery = value.trim();
+                  _searchQuery = value.trim().toLowerCase();
                 });
               },
             ),
-            DiscoverTabBar(
-              items: _tabTitles.map((title) => DiscoverTabBarItem(title: title)).toList(),
-              initialIndex: _selectedTabIndex,
-              onChanged: (index) {
-                setState(() {
-                  _selectedTabIndex = index;
-                });
-              },
-            ),
+            if (_categories.isNotEmpty)
+              DiscoverTabBar(
+                items: _categories
+                    .map(
+                      (category) => DiscoverTabBarItem(
+                        title: (category.name ?? '').trim().isEmpty
+                            ? 'تصنيف'
+                            : category.name!.trim(),
+                      ),
+                    )
+                    .toList(),
+                initialIndex: _selectedTabIndex,
+                onChanged: (index) {
+                  setState(() {
+                    _selectedTabIndex = index;
+                    _lastRequestedPage = 1;
+                  });
+                  _requestCategory(context.read<RsHomeBloc>());
+                },
+              ),
             const SizedBox(height: 8),
             Expanded(
               child: BlocBuilder<RsHomeBloc, RsHomeState>(
                 builder: (context, state) {
-                  final status = state.restaurantSuggestedProductsStatus;
-                  final products = state.restaurantSuggestedProducts?.suggestedProducts ?? const [];
-                  if (status == BlocStatus.loading || status == null || status == BlocStatus.init) {
+                  final status = state.restaurantCategoryProductsStatus;
+                  final model = state.restaurantCategoryProducts;
+                  final products = model?.products ??
+                      const <RestaurantHomeCategoryProductsItem>[];
+
+                  if (_categories.isEmpty) {
+                    return const Center(child: Text('لا توجد تصنيفات متاحة'));
+                  }
+                  if ((status == BlocStatus.loading ||
+                          status == null ||
+                          status == BlocStatus.init) &&
+                      products.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (status == BlocStatus.failed) {
+                  if (status == BlocStatus.failed && products.isEmpty) {
                     return Center(
-                      child: AppText(state.errorMessage ?? 'حدث خطا ما', style: const TextStyle(color: Color(0xFF6B7280))),
+                      child: TextButton(
+                        onPressed: () =>
+                            _requestCategory(context.read<RsHomeBloc>()),
+                        child: Text(state.errorMessage ?? 'إعادة المحاولة'),
+                      ),
                     );
                   }
-                  final selectedCategory = _tabTitles[_selectedTabIndex];
+
                   final visibleProducts = products.where((item) {
-                    final categoryMatches = selectedCategory == 'الكل' || _matchesCategory(item, selectedCategory);
-                    final searchMatches = _searchQuery.isEmpty || _matchesSearch(item, _searchQuery);
-                    return categoryMatches && searchMatches;
-                  }).toList();
-                  if (visibleProducts.isEmpty) {
-                    return Center(
-                      child: AppText('لا توجد منتجات مطابقة', style: TextStyle(color: Color(0xFF6B7280))),
+                    if (_searchQuery.isEmpty) return true;
+                    final values = <String>[
+                      item.name ?? '',
+                      item.restaurantName ?? '',
+                      item.description ?? '',
+                    ];
+                    return values.any(
+                      (value) => value.toLowerCase().contains(_searchQuery),
                     );
+                  }).toList();
+
+                  if (visibleProducts.isEmpty) {
+                    return const Center(child: Text('لا توجد منتجات مطابقة'));
                   }
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: visibleProducts.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: .65,
-                    ),
-                    itemBuilder: (_, index) {
-                      return RsAppProductCard(
-                        onTap: visibleProducts[index].productId == null
-                            ? () {}
-                            : () {
-                                context.pushRoute(
-                                  '/rs_product',
-                                  arguments: ProductDetailsScreenParams(product: ProductPreviewData.fromSuggestedItem(visibleProducts[index])),
-                                );
-                              },
-                        productId: visibleProducts[index].productId ?? 0,
-                        title: visibleProducts[index].name ?? '',
-                        image: visibleProducts[index].primaryImageUrl ?? '',
-                        offer: null,
-                        price: visibleProducts[index].displayPrice.formatMoney(),
-                        restaurant: visibleProducts[index].restaurantName ?? 'restaurant',
-                      );
+
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (notification.metrics.extentAfter < 300) {
+                        _loadMore(context, model);
+                      }
+                      return false;
                     },
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: visibleProducts.length +
+                          ((model?.currentPage ?? 1) < (model?.lastPage ?? 1)
+                              ? 1
+                              : 0),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: .65,
+                      ),
+                      itemBuilder: (_, index) {
+                        if (index >= visibleProducts.length) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        final item = visibleProducts[index];
+                        return RsAppProductCard(
+                          onTap: (item.productId ?? 0) <= 0
+                              ? () {}
+                              : () {
+                                  context.pushRoute(
+                                    '/rs_product',
+                                    arguments: ProductDetailsScreenParams(
+                                      product: ProductPreviewData
+                                          .fromCategoryProductItem(item),
+                                    ),
+                                  );
+                                },
+                          productId: item.productId ?? 0,
+                          title: item.name ?? '',
+                          image: item.primaryImageUrl ?? '',
+                          offer: null,
+                          price: (item.displayPrice ?? 0).formatMoney(),
+                          restaurant: item.restaurantName ?? 'المطعم',
+                        );
+                      },
+                    ),
                   );
                 },
               ),
@@ -141,22 +230,4 @@ class _RsHomeCategoryProductsScreenState extends State<RsHomeCategoryProductsScr
       ),
     );
   }
-}
-
-bool _matchesCategory(RestaurantHomeSuggestedProductItem item, String category) {
-  final normalizedCategory = category.trim().toLowerCase();
-  final tags = item.tags ?? const <String>[];
-  for (final tag in tags) {
-    if (tag.trim().toLowerCase() == normalizedCategory) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool _matchesSearch(RestaurantHomeSuggestedProductItem item, String query) {
-  final q = query.trim().toLowerCase();
-  if (q.isEmpty) return true;
-  final candidates = <String>[item.name ?? '', item.restaurantName ?? '', item.location ?? '', ...(item.tags ?? const <String>[])];
-  return candidates.any((value) => value.toLowerCase().contains(q));
 }
