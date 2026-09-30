@@ -806,8 +806,9 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     final scheduledAt = receiveMode == 'scheduled'
         ? state.storeScheduledAt
         : null;
-    final couponCode = state.storeCouponData?.isAvailable == true
-        ? state.storeCouponData?.couponCode
+    final couponData = isRestaurant ? state.couponData : state.storeCouponData;
+    final couponCode = couponData?.isAvailable == true
+        ? couponData?.couponCode
         : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
 
