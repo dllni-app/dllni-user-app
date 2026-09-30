@@ -50,7 +50,8 @@ class _RsHomeCategoryProductsScreenState
       _selectedTabIndex = 0;
     } else {
       _selectedTabIndex = widget.params.initialCategoryIndex
-          .clamp(0, _categories.length - 1);
+          .clamp(0, _categories.length - 1)
+          .toInt();
     }
   }
 
