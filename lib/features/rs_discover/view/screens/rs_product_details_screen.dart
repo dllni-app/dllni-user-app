@@ -1002,6 +1002,35 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
       return;
     }
 
+    final modifierGroups =
+        _discoverBloc.state.productDetails?.modifierGroups ??
+        const <RestaurantProductDetailsModifierGroup>[];
+    RestaurantProductDetailsModifierGroup? invalidRequiredGroup;
+    for (final group in modifierGroups) {
+      final requiredMinimum = group.isRequired
+          ? (group.minSelections > 0 ? group.minSelections : 1)
+          : group.minSelections;
+      if (requiredMinimum > 0 &&
+          _selectedForGroup(group).length < requiredMinimum) {
+        invalidRequiredGroup = group;
+        break;
+      }
+    }
+    if (invalidRequiredGroup != null) {
+      final requiredMinimum = invalidRequiredGroup.isRequired
+          ? (invalidRequiredGroup.minSelections > 0
+                ? invalidRequiredGroup.minSelections
+                : 1)
+          : invalidRequiredGroup.minSelections;
+      AppToast.showToast(
+        context: context,
+        message:
+            'يرجى اختيار $requiredMinimum على الأقل من ${invalidRequiredGroup.name ?? 'الإضافات المطلوبة'}',
+        type: ToastificationType.warning,
+      );
+      return;
+    }
+
     final modifierIds =
         _selectedModifierIdsByGroup.values.expand((ids) => ids).toSet().toList()
           ..sort();
