@@ -141,8 +141,12 @@ class PlaceStoreOrderEvent extends OrdersEvent {
 
 class PreviewStoreCheckoutEvent extends OrdersEvent {
   final int cartId;
+  final String section;
 
-  PreviewStoreCheckoutEvent({required this.cartId});
+  PreviewStoreCheckoutEvent({
+    required this.cartId,
+    this.section = 'supermarket',
+  });
 }
 
 class FetchSupermarketCartEvent extends OrdersEvent {
