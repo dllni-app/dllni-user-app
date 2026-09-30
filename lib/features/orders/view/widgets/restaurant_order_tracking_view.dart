@@ -24,8 +24,12 @@ class RestaurantOrderTrackingView extends StatelessWidget {
     this.tracking,
     this.deliveryOrder,
     this.isLoading = false,
+    this.isActionLoading = false,
     this.loadError,
     this.onRetry,
+    this.onCancel,
+    this.onReorder,
+    this.onReschedule,
   });
 
   final OrderResourceModel order;
@@ -33,8 +37,12 @@ class RestaurantOrderTrackingView extends StatelessWidget {
   final RestaurantOrderTrackingDataModel? tracking;
   final DeliveryOrderModel? deliveryOrder;
   final bool isLoading;
+  final bool isActionLoading;
   final String? loadError;
   final VoidCallback? onRetry;
+  final VoidCallback? onCancel;
+  final VoidCallback? onReorder;
+  final VoidCallback? onReschedule;
 
   String _money(double v) => '${v.toStringAsFixed(0)} ل.س';
 
@@ -94,6 +102,11 @@ class RestaurantOrderTrackingView extends StatelessWidget {
     final deliveryStages = deliveryTracking?.stages.isNotEmpty == true
         ? deliveryTracking!.stages
         : deliveryTracking?.timeline ?? deliveryOrder?.timeline ?? const [];
+    final actions = tracking?.actions ?? order.actions;
+    final hasOrderActions =
+        actions?.canCancel == true ||
+        actions?.canReorder == true ||
+        actions?.canReschedule == true;
 
     return Column(
       children: [
@@ -185,6 +198,16 @@ class RestaurantOrderTrackingView extends StatelessWidget {
                         money: _money,
                         createdAt: order.createdAt,
                       ),
+                      if (hasOrderActions) ...[
+                        const SizedBox(height: 14),
+                        _RestaurantOrderActionsCard(
+                          actions: actions!,
+                          isLoading: isActionLoading,
+                          onCancel: onCancel,
+                          onReorder: onReorder,
+                          onReschedule: onReschedule,
+                        ),
+                      ],
                       if (order.id != null && !_isTerminal()) ...[
                         const SizedBox(height: 14),
                         OutlinedButton.icon(
@@ -217,5 +240,82 @@ class RestaurantOrderTrackingView extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('قريباً')));
+  }
+}
+
+
+class _RestaurantOrderActionsCard extends StatelessWidget {
+  const _RestaurantOrderActionsCard({
+    required this.actions,
+    required this.isLoading,
+    this.onCancel,
+    this.onReorder,
+    this.onReschedule,
+  });
+
+  final OrderActionsModel actions;
+  final bool isLoading;
+  final VoidCallback? onCancel;
+  final VoidCallback? onReorder;
+  final VoidCallback? onReschedule;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xffE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'إجراءات الطلب',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xff1F2937),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.start,
+            children: [
+              if (actions.canReschedule)
+                OutlinedButton.icon(
+                  onPressed: isLoading ? null : onReschedule,
+                  icon: const Icon(Icons.schedule_outlined),
+                  label: const Text('تغيير الموعد'),
+                ),
+              if (actions.canReorder)
+                OutlinedButton.icon(
+                  onPressed: isLoading ? null : onReorder,
+                  icon: const Icon(Icons.replay_outlined),
+                  label: const Text('إعادة الطلب'),
+                ),
+              if (actions.canCancel)
+                OutlinedButton.icon(
+                  onPressed: isLoading ? null : onCancel,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xffDC2626),
+                    side: const BorderSide(color: Color(0xffFCA5A5)),
+                  ),
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('إلغاء الطلب'),
+                ),
+            ],
+          ),
+          if (isLoading) ...[
+            const SizedBox(height: 10),
+            const LinearProgressIndicator(),
+          ],
+        ],
+      ),
+    );
   }
 }
