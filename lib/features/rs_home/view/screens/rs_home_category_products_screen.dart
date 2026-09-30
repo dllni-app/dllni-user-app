@@ -38,6 +38,7 @@ class RsHomeCategoryProductsScreen extends StatefulWidget {
 class _RsHomeCategoryProductsScreenState
     extends State<RsHomeCategoryProductsScreen> {
   late int _selectedTabIndex;
+  late final RsHomeBloc _bloc;
   String _searchQuery = '';
   int _lastRequestedPage = 1;
 
@@ -53,6 +54,14 @@ class _RsHomeCategoryProductsScreenState
           .clamp(0, _categories.length - 1)
           .toInt();
     }
+    _bloc = getIt<RsHomeBloc>();
+    _requestCategory(_bloc);
+  }
+
+  @override
+  void dispose() {
+    _bloc.close();
+    super.dispose();
   }
 
   int? get _selectedCategoryId {
@@ -78,23 +87,18 @@ class _RsHomeCategoryProductsScreenState
   }
 
   void _loadMore(
-    BuildContext context,
     FetchRestaurantHomeCategoryProductsModel? model,
   ) {
     if (model == null || model.currentPage >= model.lastPage) return;
     final nextPage = model.currentPage + 1;
     if (nextPage <= _lastRequestedPage) return;
-    _requestCategory(context.read<RsHomeBloc>(), page: nextPage);
+    _requestCategory(_bloc, page: nextPage);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) {
-        final bloc = getIt<RsHomeBloc>();
-        _requestCategory(bloc);
-        return bloc;
-      },
+    return BlocProvider.value(
+      value: _bloc,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FAFB),
         body: Column(
@@ -127,7 +131,7 @@ class _RsHomeCategoryProductsScreenState
                     _selectedTabIndex = index;
                     _lastRequestedPage = 1;
                   });
-                  _requestCategory(context.read<RsHomeBloc>());
+                  _requestCategory(_bloc);
                 },
               ),
             const SizedBox(height: 8),
@@ -152,7 +156,7 @@ class _RsHomeCategoryProductsScreenState
                     return Center(
                       child: TextButton(
                         onPressed: () =>
-                            _requestCategory(context.read<RsHomeBloc>()),
+                            _requestCategory(_bloc),
                         child: Text(state.errorMessage ?? 'إعادة المحاولة'),
                       ),
                     );
@@ -177,7 +181,7 @@ class _RsHomeCategoryProductsScreenState
                   return NotificationListener<ScrollNotification>(
                     onNotification: (notification) {
                       if (notification.metrics.extentAfter < 300) {
-                        _loadMore(context, model);
+                        _loadMore(model);
                       }
                       return false;
                     },
