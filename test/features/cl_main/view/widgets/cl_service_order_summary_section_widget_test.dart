@@ -98,6 +98,6 @@ void main() {
       find.textContaining('أقل قيمة لطلب التنظيف هي'),
       findsOneWidget,
     );
-    expect(find.textContaining('1,500'), findsOneWidget);
+    expect(find.textContaining('1,500'), findsNWidgets(2));
   });
 }
