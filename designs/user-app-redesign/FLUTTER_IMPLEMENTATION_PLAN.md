@@ -1,80 +1,111 @@
-# Flutter Implementation Plan — User App MAIN Cleaning Redesign
+# Flutter Implementation Plan — User App DEV UI/UX Redesign
 
 ## Goal
-Implement the approved PEN booking UX in `dllni-user-app` without changing backend behavior or breaking the existing cleaning API contracts.
+Implement the approved PEN redesign in `dllni-user-app` on the existing `dev` branch, while preserving current backend contracts, pricing behavior, and cleaning-order lifecycle rules.
 
-## Phase 1 — UI Foundations
-- Add reusable booking step header / progress indicator.
-- Normalize Arabic RTL spacing, card radius, button height, segmented controls, counters, worker cards, date/time chips, and status badges.
-- Keep existing app theme tokens where practical; introduce feature-level tokens only where the current theme cannot express the PEN design cleanly.
+## Phase 1 — Shared UI Foundations
+- Introduce reusable RTL components matching the PEN design: step/progress header, buttons, segmented controls, counters, cards, status badges, date/time chips, confirmation sheets, and empty states.
+- Reuse current application theme tokens where possible and keep the deep-navy + teal/cyan visual language.
+- Keep touch targets at least 44–48px and add safe-area handling for sticky CTAs.
 
-## Phase 2 — Split the Current Home Description Screen
-Current source: `lib/features/cl_main/view/screens/cl_main_home_description_screen.dart`.
+## Phase 2 — Cleaning Home + Booking Flow
+Primary sources:
+- `lib/features/cl_main/view/screens/cl_main_screen.dart`
+- `lib/features/cl_main/view/screens/cl_main_home_description_screen.dart`
+- `lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart`
 
-Refactor the current all-in-one screen into progressive presentation steps/state:
-1. Service location / property confirmation.
+Refactor the existing dense flow into progressive presentation steps:
+1. Cleaning entry/property context.
 2. Room counts.
-3. Room sizes per materialized room unit.
+3. Individual room sizes.
 4. Cleaning type.
+5. Add-ons.
+6. Schedule/address.
+7. Worker selection.
+8. Optional manual room assignment.
+9. Review and confirmation.
+10. Booking success.
 
-Important: preserve `CleaningRoomSizeBreakdown` as the internal request model. The new UI should adapt room-unit selections back into the same model before estimation.
+Preserve `CleaningRoomSizeBreakdown` / `room_size_breakdown` internally. The new room-unit UI must adapt back into the current estimate/create request models.
 
-## Phase 3 — Add-ons and Schedule
-Current source: `lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart` and related widgets.
+## Phase 3 — Occasion / Event Cleaning
+Primary sources:
+- `cl_main_occasion_description_screen.dart`
+- `cl_main_occasion_schedule_screen.dart`
 
-- Present add-ons as a focused step.
-- Present date and time as a focused step.
-- Continue to use backend estimate/quote as source of truth.
-- Preserve address IDs/coordinates and schedule validation.
+Apply the same visual system and progressive hierarchy while preserving only fields and behavior supported by the current dev implementation.
 
-## Phase 4 — Worker Selection
-Reuse existing BLoC state/events for:
-- assignment mode
-- previous/preferred workers
-- number of workers
-- worker room assignments
+## Phase 4 — App Shell + Home
+Primary sources:
+- `lib/features/main`
+- `lib/features/home`
 
-UX changes:
-- automatic team selection is the recommended/default path.
-- previous worker selection is a distinct option.
-- worker count appears only where open-count/multi-worker is relevant.
-- manual room assignment is optional; do not force it during the normal booking path.
+Implement:
+- Cleaning-focused main Home.
+- Active/upcoming booking card.
+- First-use/no-upcoming state.
+- Three-item navigation: الرئيسية / طلباتي / حسابي.
+- Notifications entry and supported address summary.
 
-## Phase 5 — Review and Confirmation
-Add a final review presentation before the existing create-order action.
-Show:
-- cleaning type
-- property/location
-- rooms summary
-- add-ons
-- schedule
-- worker mode/count
-- backend-provided price breakdown / total
+Keep commerce-specific destinations outside this redesign scope.
 
-The final CTA invokes the existing create flow. Do not trust locally calculated totals.
-
-## Phase 6 — Booking Success
-Use the returned booking number and created order data. Provide clear next actions: follow the order and return home.
-
-## Phase 7 — Existing Order Lifecycle Redesign
-After the booking flow is stable, redesign the existing order surfaces without changing lifecycle rules:
+## Phase 5 — Orders & Cleaning Lifecycle
+Primary sources:
+- `lib/features/orders/view/screens/orders_screen.dart`
 - `lib/features/orders/view/widgets/cleaning_order_card.dart`
 - `lib/features/orders/view/screens/cleaning_order_details_screen.dart`
-- start verification
-- worker search / travel / arrival states
-- completion confirm/reject/extension
-- SOS
-- review
+- related cleaning reschedule/problem/SOS/verification/completion/rating widgets and screens.
+
+Implement:
+- Active/history/empty lists.
+- Timeline-driven order details.
+- Team search and preferred-worker states.
+- Live tracking and arrival verification.
+- In-progress state.
+- Reschedule and problem reporting.
+- Emergency-help flow.
+- Completion / extension / success.
+- Rating/review.
+
+Do not alter valid lifecycle transitions; CTA availability remains derived from current state/backend behavior.
+
+## Phase 6 — Worker Surfaces
+Implement the redesigned cleaning worker profile and reviews using existing worker data and actions only. Do not invent trust/verification attributes that the API does not expose.
+
+## Phase 7 — Account
+Primary source: `lib/features/profile` plus the current terms screen.
+
+Implement:
+- Account overview.
+- Personal details.
+- Saved addresses.
+- Add/edit address.
+- Notifications.
+- Support/help.
+- Terms.
+- Logout confirmation.
+- Delete-account confirmation.
+
+For this cleaning-focused redesign, do not surface restaurant/supermarket/shopping-list/group-order/lucky-box/voting destinations.
+
+## Backend & Data Rules
+- Backend remains source of truth for estimates, totals, lifecycle, worker availability, and booking state.
+- Do not calculate authoritative pricing locally.
+- Preserve address IDs/coordinates and validation.
+- Preserve previous/preferred-worker and open-count semantics.
+- Keep automatic distribution and manual room assignment mutually exclusive in UI state.
 
 ## Testing
-- Widget tests for each new progressive booking step.
-- State preservation when navigating back/forward.
-- Adapter tests from room-unit UI state to `CleaningRoomSizeBreakdown`.
-- Estimate payload regression tests.
-- Preferred worker vs open-count tests.
+- Widget tests for every progressive booking step.
+- Back/forward state-preservation tests.
+- Room-unit -> `CleaningRoomSizeBreakdown` adapter tests.
+- Estimate/create payload regression tests.
+- Preferred-worker and open-count tests.
 - Manual room-assignment mapping tests.
-- Golden/screenshot tests for RTL overflow on common phone widths.
-- Existing cleaning feature tests must remain green.
+- Order lifecycle CTA/state tests.
+- RTL golden/screenshot tests at common phone widths.
+- Accessibility/touch-target checks.
+- Existing cleaning tests must remain green.
 
-## Branch Safety
-Implementation should be performed from `main` in a new feature branch, then opened as a PR back to the requested integration branch after review. Do not implement from the currently checked-out local `dev` working tree without explicitly switching/using a clean MAIN-based worktree.
+## Branch Workflow
+Work directly in the existing `dev` branch on this machine. Do not create a separate worktree unless explicitly requested later. Keep design and implementation changes scoped to `dllni-user-app`, run the relevant Flutter tests/analyzer before committing, and do not modify backend contracts as part of the UI implementation.
