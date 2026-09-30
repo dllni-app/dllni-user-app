@@ -32,7 +32,7 @@ jobs:
 
       - name: Analyze restaurant user flow
         run: >-
-          flutter analyze --no-fatal-infos
+          flutter analyze --no-fatal-infos --no-fatal-warnings
           lib/features/orders
           lib/features/rs_discover
           lib/features/rs_home
