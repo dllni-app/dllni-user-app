@@ -453,6 +453,50 @@ class OrdersRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<bool> cancelMerchantOrder({
+    required String section,
+    required int orderId,
+    String? reason,
+  }) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/orders/$section/$orderId/cancel',
+        data: <String, dynamic>{
+          if (reason != null && reason.trim().isNotEmpty)
+            'reason': reason.trim(),
+        },
+      ),
+      jsonConvert: (_) => true,
+    );
+  }
+
+  Future<bool> reorderMerchantOrder({
+    required String section,
+    required int orderId,
+  }) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint: '/api/v1/user/orders/$section/$orderId/reorder',
+        data: const <String, dynamic>{},
+      ),
+      jsonConvert: (_) => true,
+    );
+  }
+
+  Future<bool> rescheduleMerchantOrder({
+    required String section,
+    required int orderId,
+    required String scheduledAt,
+  }) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.patchData(
+        endPoint: '/api/v1/user/orders/$section/$orderId/schedule',
+        data: <String, dynamic>{'scheduledAt': scheduledAt},
+      ),
+      jsonConvert: (_) => true,
+    );
+  }
+
   Future<UserSosResponseModel> createUserSos(CreateUserSosParams params) {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
