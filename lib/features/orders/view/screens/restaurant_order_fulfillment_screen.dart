@@ -499,6 +499,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                     context.read<OrdersBloc>().add(
                                       PreviewStoreCheckoutEvent(
                                         cartId: args.cartId!,
+                                        section: args.section,
                                       ),
                                     );
                                   });
@@ -551,6 +552,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                     context.read<OrdersBloc>().add(
                                       PreviewStoreCheckoutEvent(
                                         cartId: args.cartId!,
+                                        section: args.section,
                                       ),
                                     );
                                   });
