@@ -367,6 +367,9 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       state.copyWith(
         replaceRestaurantCart: true,
         restaurantCart: _cartById(state.restaurantCarts, event.cartId),
+        storeReceiveMode: 'immediate',
+        storeScheduledAt: null,
+        replaceStoreScheduledAt: true,
       ),
     );
   }
