@@ -8,8 +8,16 @@ fetchRestaurantHomeCategoryProductsModelFromJson(dynamic json) =>
 
 class FetchRestaurantHomeCategoryProductsModel {
   final List<RestaurantHomeCategoryProductsItem> products;
+  final int currentPage;
+  final int lastPage;
+  final int total;
 
-  FetchRestaurantHomeCategoryProductsModel({this.products = const []});
+  FetchRestaurantHomeCategoryProductsModel({
+    this.products = const [],
+    this.currentPage = 1,
+    this.lastPage = 1,
+    this.total = 0,
+  });
 
   factory FetchRestaurantHomeCategoryProductsModel.fromJson(
     Map<String, dynamic> json,
@@ -17,6 +25,9 @@ class FetchRestaurantHomeCategoryProductsModel {
     final dynamic listDynamic =
         json['products'] ?? json['data'] ?? json['items'] ?? const <dynamic>[];
     final list = listDynamic is List ? listDynamic : const <dynamic>[];
+    final meta = json['meta'] is Map
+        ? Map<String, dynamic>.from(json['meta'] as Map)
+        : const <String, dynamic>{};
     return FetchRestaurantHomeCategoryProductsModel(
       products: list
           .whereType<Map>()
@@ -26,6 +37,10 @@ class FetchRestaurantHomeCategoryProductsModel {
             ),
           )
           .toList(),
+      currentPage:
+          _firstInt(meta, const ['current_page', 'currentPage']) ?? 1,
+      lastPage: _firstInt(meta, const ['last_page', 'lastPage']) ?? 1,
+      total: _firstInt(meta, const ['total']) ?? list.length,
     );
   }
 }
