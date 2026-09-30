@@ -36,8 +36,7 @@ class FetchRestaurantHomeCategoryProductsParams with Params {
 
   @override
   QueryParams getParams() => {
-    'categoryId': categoryId,
     'page': page,
-    'perPage': perPage,
+    'per_page': perPage,
   };
 }
