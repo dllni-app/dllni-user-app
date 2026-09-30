@@ -193,15 +193,52 @@ class RsHomeBloc extends Bloc<RsHomeEvent, RsHomeState> {
     );
   }
 
-  FutureOr<void> _fetchRestaurantHomeCategoryProducts(FetchRestaurantHomeCategoryProductsEvent event, Emitter<RsHomeState> emit) async {
-    emit(state.copyWith(restaurantCategoryProductsStatus: BlocStatus.loading));
+  FutureOr<void> _fetchRestaurantHomeCategoryProducts(
+    FetchRestaurantHomeCategoryProductsEvent event,
+    Emitter<RsHomeState> emit,
+  ) async {
+    final isLoadMore = event.params.page > 1;
+    if (!isLoadMore) {
+      emit(
+        state.copyWith(
+          restaurantCategoryProductsStatus: BlocStatus.loading,
+        ),
+      );
+    }
+
     final res = await fetchRestaurantHomeCategoryProductsUseCase(event.params);
     res.fold(
       (l) {
-        emit(state.copyWith(restaurantCategoryProductsStatus: BlocStatus.failed, errorMessage: l.message));
+        emit(
+          state.copyWith(
+            restaurantCategoryProductsStatus: isLoadMore
+                ? BlocStatus.success
+                : BlocStatus.failed,
+            errorMessage: l.message,
+          ),
+        );
       },
       (r) {
-        emit(state.copyWith(restaurantCategoryProductsStatus: BlocStatus.success, restaurantCategoryProducts: r));
+        final previous = isLoadMore
+            ? state.restaurantCategoryProducts?.products ??
+                const <RestaurantHomeCategoryProductsItem>[]
+            : const <RestaurantHomeCategoryProductsItem>[];
+        final merged = <RestaurantHomeCategoryProductsItem>[
+          ...previous,
+          ...r.products,
+        ];
+        emit(
+          state.copyWith(
+            restaurantCategoryProductsStatus: BlocStatus.success,
+            restaurantCategoryProducts:
+                FetchRestaurantHomeCategoryProductsModel(
+              products: merged,
+              currentPage: r.currentPage,
+              lastPage: r.lastPage,
+              total: r.total,
+            ),
+          ),
+        );
       },
     );
   }
