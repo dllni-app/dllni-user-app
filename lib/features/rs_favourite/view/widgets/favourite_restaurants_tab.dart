@@ -186,7 +186,8 @@ RestaurantHomeNearestRestaurantItem _mapFavouriteRestaurantToHomeCard(
     discountOfferBadge: item.listingOffer?.offerBadgeText,
     popularOrdersCount: item.totalReviews,
     isFavorited: true,
-    deliveryFee: item.minimumOrderAmount,
+    deliveryFee: null,
+    minimumOrderAmount: item.minimumOrderAmount,
     currency: 'د.أ',
   );
 }
