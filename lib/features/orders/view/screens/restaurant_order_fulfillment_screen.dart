@@ -271,7 +271,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               final placeStatus = args.section == 'supermarket'
                   ? state.placeStoreOrderStatus
                   : state.placeOrderStatus;
-              if (couponStatus == BlocStatus.success &&
+              if (couponStatus != BlocStatus.loading &&
                   placeStatus != BlocStatus.loading &&
                   placeStatus != BlocStatus.success &&
                   args.cartId != null) {
@@ -310,7 +310,10 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               final couponData = isStoreFlow
                   ? state.storeCouponData
                   : state.couponData;
-              final preview = state.storeCheckoutPreview;
+              final preview =
+                  state.storeCheckoutPreview?.cartId == args.cartId
+                  ? state.storeCheckoutPreview
+                  : null;
               final previewAmounts = preview?.amounts;
               final baseSubtotal = isStoreFlow
                   ? supermarketCart?.amounts?.subtotal?.toDouble()
@@ -338,7 +341,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   baseTotal ??
                   0;
               final checkoutPreviewReady =
-                  state.storeCheckoutPreviewStatus == BlocStatus.success;
+                  state.storeCheckoutPreviewStatus == BlocStatus.success &&
+                  preview?.cartId == args.cartId;
               final merchantName =
                   cart?.merchant?.name ??
                   supermarketCart?.merchant?.name ??
