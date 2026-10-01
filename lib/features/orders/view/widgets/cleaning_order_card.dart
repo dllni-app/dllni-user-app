@@ -1,8 +1,6 @@
-import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/extensions/num_extensions.dart';
+import '../../../../core/extensions/extentions.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../helpers/cleaning_event_assistance_helper.dart';
@@ -40,20 +38,12 @@ class CleaningOrderCard extends StatelessWidget {
     );
   }
 
-  bool get _isTerminalStatus {
-    final normalizedStatus = (order.status ?? '').toLowerCase();
-    return normalizedStatus != CleaningBookingStatus.pending;
-  }
-
   String get _bookingLabel {
-    final bookingNumber = order.bookingNumber;
-    if (bookingNumber == null || bookingNumber.isEmpty) {
-      return '#${order.id ?? '-'}';
-    }
-    return '#$bookingNumber';
+    final bookingNumber = order.bookingNumber?.trim();
+    return bookingNumber == null || bookingNumber.isEmpty
+        ? '#${order.id ?? '-'}'
+        : '#$bookingNumber';
   }
-
-
 
   String get _serviceTitle {
     return CleaningEventAssistanceHelper.serviceTitle(
@@ -62,197 +52,251 @@ class CleaningOrderCard extends StatelessWidget {
     );
   }
 
-  String get _timeLabel {
-    final value = order.scheduledTime;
-    if (value == null || value.isEmpty) return '-';
-    final parts = value.split(':');
-    if (parts.length < 2) return value;
-    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  bool get _isPrevious {
+    final status = (order.status ?? '').toLowerCase();
+    return status == CleaningBookingStatus.completed ||
+        status == CleaningBookingStatus.cancelled;
   }
 
-  String get _dateLabel {
-    final rawDate = order.scheduledDate;
-    if (rawDate == null || rawDate.isEmpty) return '-';
-    final date = DateTime.tryParse(rawDate);
-    if (date == null) return rawDate;
-    final year = date.year.toString();
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '$year.$month.$day';
-  }
-
-  String get _dayLabel {
-    final rawDate = order.scheduledDate;
-    if (rawDate == null || rawDate.isEmpty) return '-';
-    final date = DateTime.tryParse(rawDate);
-    if (date == null) return '-';
-    const arabicDays = <String>[
-      'الاثنين',
-      'الثلاثاء',
-      'الأربعاء',
-      'الخميس',
-      'الجمعة',
-      'السبت',
-      'الأحد',
+  String get _scheduleLabel {
+    final rawDate = order.scheduledDate?.trim();
+    final rawTime = order.scheduledTime?.trim();
+    final values = <String>[
+      if (rawDate != null && rawDate.isNotEmpty) _formatDate(rawDate),
+      if (rawTime != null && rawTime.isNotEmpty) _formatTime(rawTime),
     ];
-    return arabicDays[date.weekday - 1];
+    return values.isEmpty ? 'الموعد غير محدد' : values.join(' • ');
+  }
+
+  String _formatDate(String raw) {
+    final date = DateTime.tryParse(raw);
+    if (date == null) return raw;
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
+  }
+
+  String _formatTime(String raw) {
+    final parts = raw.split(':');
+    if (parts.length < 2) return raw;
+    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xffE5E7EB)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: AppText.bodySmall(
-                    _bookingLabel,
-                    color: const Color(0xff9CA3AF),
-                    fontWeight: FontWeight.w500,
-                    textAlign: TextAlign.start,
+    final location = order.locationName?.trim();
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE4E7EC)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A101828),
+                blurRadius: 12,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _serviceTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.start,
+                          style: const TextStyle(
+                            color: Color(0xFF172033),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _bookingLabel,
+                          textAlign: TextAlign.start,
+                          style: const TextStyle(
+                            color: Color(0xFF98A2B3),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsetsDirectional.symmetric(
-                    horizontal: 14,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2F5F4),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: AppText.labelLarge(
-                    _statusLabel,
-                    color: const Color(0xff0CBBC7),
-                    fontWeight: FontWeight.w600,
-                  ),
+                  const SizedBox(width: 10),
+                  _StatusBadge(label: _statusLabel, previous: _isPrevious),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _OrderMetaRow(
+                icon: Icons.calendar_today_outlined,
+                value: _scheduleLabel,
+              ),
+              if (location != null && location.isNotEmpty) ...[
+                const SizedBox(height: 9),
+                _OrderMetaRow(
+                  icon: Icons.location_on_outlined,
+                  value: location,
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: AppText.bodyLarge(
-                    _serviceTitle,
-                    color: const Color(0xff111827),
-                    fontWeight: FontWeight.w700,
-                    maxLines: 1,
-                    textAlign: TextAlign.start,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
                 ),
-                const SizedBox(width: 12),
-                AppText.bodySmall(
-                  order.totalPrice.formatMoney(),
-                  color: const Color(0xff1E2A78),
-                  fontWeight: FontWeight.w700,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F8FA),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Divider(color: const Color(0xffE5E7EB), height: 1),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: context.primary.withAlpha(25),
-                  child: Icon(
-                    Icons.calendar_today,
-                    color: context.primary,
-                    size: 20,
-                  ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'الإجمالي',
+                        style: TextStyle(
+                          color: Color(0xFF667085),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      (order.totalPrice ?? 0).formatMoney(),
+                      style: const TextStyle(
+                        color: Color(0xFF1E2A78),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText.labelMedium(
-                        _dayLabel,
-                        fontWeight: FontWeight.bold,
-                        textAlign: TextAlign.start,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton(
+                      onPressed: onTap,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        backgroundColor: const Color(0xFF1E2A78),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(13),
+                        ),
                       ),
-                      AppText.labelMedium(
-                        '$_dateLabel - $_timeLabel',
-                        color: const Color(0xff6B7280),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ],
-                  ),
-                ),
-                if (!_isTerminalStatus && onRescheduleTap != null) ...[
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onRescheduleTap,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: context.primary.withAlpha(30),
-                      ),
-                      padding: EdgeInsetsDirectional.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      child: AppText.labelLarge(
-                        'تغيير موعد الخدمة',
-                        fontWeight: FontWeight.bold,
-                        color: context.primary,
+                      child: Text(
+                        _isPrevious ? 'عرض الطلب' : 'متابعة الطلب',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),
+                  if (onRescheduleTap != null && !_isPrevious) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onRescheduleTap,
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(46),
+                          foregroundColor: const Color(0xFF1E2A78),
+                          side: const BorderSide(color: Color(0xFFD0D5DD)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                        ),
+                        child: const Text(
+                          'الموعد',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-            if (!_isTerminalStatus) ...[
-              const SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: const Color(0xffEF4444).withAlpha(25),
-                  border: Border.all(color: const Color(0xffEF4444), width: 1),
-                ),
-                width: context.width,
-                padding: EdgeInsetsDirectional.symmetric(
-                  horizontal: 10,
-                  vertical: 10,
-                ),
-                child: InkWell(
-                  onTap: onCancelTap ?? onReportIssueTap,
-                  borderRadius: BorderRadius.circular(8),
-                  child: AppText.labelLarge(
-                    'إلغاء الطلب',
-                    fontWeight: FontWeight.bold,
-                    textAlign: TextAlign.center,
-                    color: const Color(0xffDC2626),
-                  ),
-                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label, required this.previous});
+
+  final String label;
+  final bool previous;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 150),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: previous ? const Color(0xFFF2F4F7) : const Color(0xFFE9F9FA),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(
+          color: previous ? const Color(0xFFD0D5DD) : const Color(0xFFB6ECEF),
+        ),
+      ),
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: previous ? const Color(0xFF475467) : const Color(0xFF0B7480),
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderMetaRow extends StatelessWidget {
+  const _OrderMetaRow({required this.icon, required this.value});
+
+  final IconData icon;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF667085)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.start,
+            style: const TextStyle(
+              color: Color(0xFF475467),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

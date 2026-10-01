@@ -1,7 +1,4 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-
-import 'orders_filter_tap_bar.dart';
 
 class OrdersAppBar extends StatelessWidget {
   const OrdersAppBar({
@@ -16,28 +13,30 @@ class OrdersAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(27),
-            offset: Offset(0, 4),
-            blurRadius: 5,
-            spreadRadius: 0,
-          ),
-        ],
+        border: Border(bottom: BorderSide(color: Color(0xFFE7EAF0))),
       ),
-      width: context.width,
-      child: Column(
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: 20 + MediaQuery.paddingOf(context).top),
-          AppText.titleLarge(
+          Text(
             'طلباتي',
-            fontWeight: FontWeight.bold,
-            color: Color(0xff1E2A78),
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              color: Color(0xFF172033),
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          SizedBox(height: 25),
-          CategoriesTabBar(selectedIndex: selectedIndex, onChanged: onChanged),
+          SizedBox(height: 4),
+          Text(
+            'تابع طلبات التنظيف الحالية والسابقة',
+            textAlign: TextAlign.start,
+            style: TextStyle(color: Color(0xFF667085), fontSize: 12),
+          ),
         ],
       ),
     );

@@ -66,7 +66,42 @@ class OrdersListBody extends StatelessWidget {
         ],
       );
     }
-    if (listLength == 0 && pagination.isEndPage) {
+    if (listLength == 0 &&
+        (pagination.isEndPage || pagination.status == BlocStatus.success)) {
+      if (isCleaningSection) {
+        return ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 72),
+          children: [
+            Icon(
+              showCompletedCleaningOrders
+                  ? Icons.history_rounded
+                  : Icons.cleaning_services_outlined,
+              size: 44,
+              color: const Color(0xFF98A2B3),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              showCompletedCleaningOrders
+                  ? 'لا توجد طلبات سابقة'
+                  : 'لا توجد طلبات تنظيف حالية',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF172033),
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              showCompletedCleaningOrders
+                  ? 'ستظهر الطلبات المكتملة أو الملغاة هنا.'
+                  : 'ابدأ طلب تنظيف جديد من الصفحة الرئيسية.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFF667085), fontSize: 12),
+            ),
+          ],
+        );
+      }
       return ListView(
         children: [
           SizedBox(height: context.height * .2),

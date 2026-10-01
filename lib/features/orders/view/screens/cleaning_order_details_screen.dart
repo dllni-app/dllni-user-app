@@ -50,7 +50,9 @@ import '../widgets/cleaning_recurring_schedule_launcher_widget.dart';
 import '../widgets/cleaning_room_assignments_section_widget.dart';
 import '../widgets/cleaning_schedule_change_resolution_card.dart';
 import '../widgets/cleaning_team_search_banner_widget.dart';
+import '../widgets/cleaning_lifecycle_timeline_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
+import 'cleaning_order_problem_report_screen.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_order_sos_screen.dart';
 import 'multi_day_cleaning_order_details_screen.dart';
@@ -212,23 +214,30 @@ class _CleaningOrderDetailsScreenState
         : ((order.totalPrice ?? 0) - travelFee)
               .clamp(0, double.infinity)
               .toDouble();
+    final primaryAction = cleaningLifecyclePrimaryAction(order.status);
 
     Widget? sosTrailing;
     if (!isTerminalStatus) {
-      sosTrailing = FilledButton(
+      sosTrailing = OutlinedButton.icon(
         onPressed: () => context.pushRoute(
           '/cleaning-order-sos',
           arguments: CleaningOrderSosArgs(orderId: _activeOrderId),
         ),
-        style: FilledButton.styleFrom(
-          backgroundColor: context.error,
-          foregroundColor: context.onError,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFB42318),
+          side: const BorderSide(color: Color(0xFFFECACA)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
-        child: const Text('SOS'),
+        icon: const Icon(Icons.sos_outlined, size: 17),
+        label: const Text(
+          'مساعدة',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       );
     }
 
@@ -264,6 +273,15 @@ class _CleaningOrderDetailsScreenState
                       ),
                       const SizedBox(height: 12),
                     ],
+                    CleaningLifecycleTimelineWidget(
+                      status: order.status,
+                      startedTravelAt: order.startedTravelAt,
+                      arrivedAt: order.arrivedAt,
+                      forceTravelling: _liveWorkerTravelling,
+                      acceptedWorkers: acceptedWorkers,
+                      requiredWorkers: requiredWorkers,
+                    ),
+                    const SizedBox(height: 12),
                     _card(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -878,23 +896,18 @@ class _CleaningOrderDetailsScreenState
                       ],
                     ],
                     if (!isTerminalStatus) ...[
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        height: 52,
-                        child: ElevatedButton(
+                      const SizedBox(height: 12),
+                      Center(
+                        child: TextButton.icon(
                           onPressed: () => _cancelOrder(order),
-                          style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            backgroundColor: const Color(0xffFEE2E2),
-                            foregroundColor: const Color(0xffDC2626),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: const BorderSide(color: Color(0xffEF4444)),
+                          icon: const Icon(Icons.cancel_outlined, size: 18),
+                          label: const Text('إلغاء الطلب'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFB42318),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
                             ),
-                          ),
-                          child: const Text(
-                            'إلغاء الطلب',
-                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
                       ),
@@ -903,10 +916,113 @@ class _CleaningOrderDetailsScreenState
                 ),
               ),
             ),
+            if (primaryAction.kind != CleaningLifecycleActionKind.none)
+              _buildLifecycleActionBar(
+                order: order,
+                action: primaryAction,
+                isTerminalStatus: isTerminalStatus,
+              ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildLifecycleActionBar({
+    required CleaningOrderDetailModel order,
+    required CleaningLifecycleActionSpec action,
+    required bool isTerminalStatus,
+  }) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Color(0xFFE7EAF0))),
+        ),
+        child: Row(
+          children: [
+            if (!isTerminalStatus) ...[
+              OutlinedButton(
+                onPressed: () {
+                  context.pushRoute(
+                    '/cleaning-order-problem',
+                    arguments: CleaningOrderProblemReportArgs(
+                      order: order.toCleaningOrderModel(),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  foregroundColor: const Color(0xFF475467),
+                  side: const BorderSide(color: Color(0xFFD0D5DD)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                ),
+                child: const Icon(Icons.report_problem_outlined, size: 20),
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => _handleLifecyclePrimaryAction(order, action),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  backgroundColor: const Color(0xFF1E2A78),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                ),
+                icon: Icon(action.icon, size: 19),
+                label: Text(
+                  action.label,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleLifecyclePrimaryAction(
+    CleaningOrderDetailModel order,
+    CleaningLifecycleActionSpec action,
+  ) async {
+    switch (action.kind) {
+      case CleaningLifecycleActionKind.verifyStart:
+        final coordinator =
+            CleaningGlobalVerificationGateCoordinator.activeInstance;
+        if (coordinator != null) {
+          await coordinator.requestStartVerificationPrompt(
+            orderId: order.id ?? _activeOrderId,
+            force: true,
+          );
+        } else {
+          await _fetchDetails(showLoading: false, triggerGatePrompts: true);
+        }
+        return;
+      case CleaningLifecycleActionKind.completionDecision:
+        await _openCompletionSheet(force: true);
+        return;
+      case CleaningLifecycleActionKind.rateService:
+        await _navigateToRating(order, workerId: order.workerId);
+        return;
+      case CleaningLifecycleActionKind.refreshSearch:
+      case CleaningLifecycleActionKind.trackTeam:
+      case CleaningLifecycleActionKind.waitingForWorkerStart:
+      case CleaningLifecycleActionKind.followProgress:
+      case CleaningLifecycleActionKind.waitingExtension:
+        await _fetchDetails(showLoading: false, triggerGatePrompts: true);
+        return;
+      case CleaningLifecycleActionKind.none:
+        return;
+    }
   }
 
   @override

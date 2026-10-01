@@ -13,7 +13,7 @@ import '../widgets/orders_list_tab.dart';
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({
     super.key,
-    this.initialSectionIndex = 0,
+    this.initialSectionIndex = 2,
     this.initialSegmentIndex = OrdersCartOrdersSegmentBar.ordersIndex,
   });
 
@@ -33,7 +33,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final bloc = context.read<OrdersBloc>();
     bloc.add(FetchOrdersEvent(isReload: true));
     await bloc.stream.firstWhere((state) {
-      final pagination = state.selectedTabIndex == 2 ? state.cleaningOrders : state.orders;
+      final pagination = state.selectedTabIndex == 2
+          ? state.cleaningOrders
+          : state.orders;
       return pagination.status != BlocStatus.loading;
     });
   }
@@ -43,7 +45,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final waitingForStores = bloc.state.isStoresSection();
     bloc.add(FetchCartForActiveSectionEvent());
     await bloc.stream.firstWhere((state) {
-      final status = waitingForStores ? state.storeCartStatus : state.restaurantCartStatus;
+      final status = waitingForStores
+          ? state.storeCartStatus
+          : state.restaurantCartStatus;
       return status != BlocStatus.loading;
     });
   }
@@ -66,8 +70,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   void initState() {
     super.initState();
     ordersBloc = getIt<OrdersBloc>()
-      ..add(OrdersSectionChangedEvent(widget.initialSectionIndex))
-      ..add(FetchOrdersEvent(isReload: true));
+      ..add(OrdersSectionChangedEvent(widget.initialSectionIndex));
 
     _fcmSubscription = FirebaseMessaging.onMessage.listen((message) {
       if (!_isOrderLifecycleMessage(message) || ordersBloc.isClosed) return;
@@ -93,6 +96,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: BlocBuilder<OrdersBloc, OrdersState>(
         builder: (context, state) {
           return Scaffold(
+            backgroundColor: const Color(0xFFF7F8FA),
             body: OrdersListTab(
               state: state,
               initialSegmentIndex: widget.initialSegmentIndex,
@@ -100,7 +104,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
               onRefresh: () => _refreshOrders(context),
               onRefreshCart: () => _refreshCart(context),
               onSectionChanged: (index) {
-                context.read<OrdersBloc>().add(OrdersSectionChangedEvent(index));
+                context.read<OrdersBloc>().add(
+                  OrdersSectionChangedEvent(index),
+                );
               },
             ),
           );
