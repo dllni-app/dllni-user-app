@@ -1,81 +1,134 @@
-import 'package:common_package/common_package.dart';
-import 'package:common_package/extensions/size_extensions.dart';
-import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../generated/assets.dart';
+import '../../../../core/auth/auth_gate.dart';
+import '../../../../core/themes/app_colors.dart';
 
-class BottomNavBar extends StatefulWidget {
+class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key, required this.controller});
 
   final TabController controller;
 
-  @override
-  State<BottomNavBar> createState() => _BottomNavBarState();
-}
-
-class _BottomNavBarState extends State<BottomNavBar> {
-  void _selectTab(int index) {
-    widget.controller.animateTo(index);
-    setState(() {});
-  }
-
-  Future<void> _onTabTap(int index) async {
+  Future<void> _onTabTap(BuildContext context, int index) async {
     if (index == 1) {
       await AuthGate.requireAuth(
         context,
-        onAuthenticated: () => _selectTab(index),
+        onAuthenticated: () => controller.animateTo(index),
         message: 'سجّل الدخول لعرض طلباتك',
       );
       return;
     }
-
-    _selectTab(index);
+    controller.animateTo(index);
   }
 
   @override
   Widget build(BuildContext context) {
-    List<String> titles = ['الرئيسية', 'طلباتي', 'حسابي'];
-    List<String> images = [Assets.images.mainHome.path, Assets.images.mainOrders.path, Assets.images.mainProfile.path];
-
-    return Container(
-      padding: EdgeInsets.only(bottom: context.navigationBarHeight,top: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(27), offset: Offset(0, -2), blurRadius: 12, spreadRadius: 0)],
+    const items = <_BottomNavItem>[
+      _BottomNavItem(
+        label: 'الرئيسية',
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home_rounded,
       ),
-      width: context.width,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: List.generate(
-              titles.length,
-              (i) => Expanded(
-                child: InkWell(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  onTap: () => _onTabTap(i),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AppImage.asset(images[i], color: i == widget.controller.index ? Color(0xff1E2A78) : Color(0xff9CA3AF), width: 20, height: 20),
-                      SizedBox(height: 8),
-                      AppText.labelMedium(
-                        titles[i],
-                        fontWeight: FontWeight.w300,
-                        color: i == widget.controller.index ? Color(0xff1E2A78) : Color(0xff9CA3AF),
-                      ),
-                    ],
-                  ),
+      _BottomNavItem(
+        label: 'طلباتي',
+        icon: Icons.receipt_long_outlined,
+        activeIcon: Icons.receipt_long_rounded,
+      ),
+      _BottomNavItem(
+        label: 'حسابي',
+        icon: Icons.person_outline_rounded,
+        activeIcon: Icons.person_rounded,
+      ),
+    ];
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFE7EAF0))),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x0D101828),
+                  blurRadius: 18,
+                  offset: Offset(0, -3),
                 ),
-              ),
+              ],
+            ),
+            child: Row(
+              children: List.generate(items.length, (index) {
+                final item = items[index];
+                final selected = controller.index == index;
+                return Expanded(
+                  child: Semantics(
+                    selected: selected,
+                    button: true,
+                    label: item.label,
+                    child: InkWell(
+                      onTap: () => _onTabTap(context, index),
+                      borderRadius: BorderRadius.circular(14),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        constraints: const BoxConstraints(minHeight: 54),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? const Color(0xFFE9F9FA)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              selected ? item.activeIcon : item.icon,
+                              size: 23,
+                              color: selected
+                                  ? AppColors.primary
+                                  : const Color(0xFF98A2B3),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.label,
+                              style: TextStyle(
+                                color: selected
+                                    ? AppColors.primary
+                                    : const Color(0xFF667085),
+                                fontSize: 12,
+                                fontWeight: selected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+}
+
+class _BottomNavItem {
+  const _BottomNavItem({
+    required this.label,
+    required this.icon,
+    required this.activeIcon,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
 }

@@ -1,9 +1,9 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/features/profile/view/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../../home/view/screens/home_screen.dart';
 import '../../../orders/view/screens/orders_screen.dart';
+import '../../../profile/view/screens/profile_screen.dart';
 import '../widgets/bottom_nav_bar.dart';
 
 @AutoRoutePage()
@@ -18,29 +18,40 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
-  late TabController controller;
+  late final TabController controller;
 
   @override
   void initState() {
     super.initState();
-    controller = TabController(length: 3, vsync: this);
-    if (widget.returnedIndex != null) {
-      controller.index = widget.returnedIndex!;
-      setState(() {});
-    }
+    final initialIndex = (widget.returnedIndex ?? 0).clamp(0, 2);
+    controller = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialIndex,
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: TabBarView(
-          controller: controller,
-          physics: NeverScrollableScrollPhysics(),
-          children: [HomeScreen(), OrdersScreen(), ProfileScreen()],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F8FA),
+        body: SafeArea(
+          child: TabBarView(
+            controller: controller,
+            physics: const NeverScrollableScrollPhysics(),
+            children: const [HomeScreen(), OrdersScreen(), ProfileScreen()],
+          ),
         ),
+        bottomNavigationBar: BottomNavBar(controller: controller),
       ),
-      bottomNavigationBar: BottomNavBar(controller: controller),
     );
   }
 }
