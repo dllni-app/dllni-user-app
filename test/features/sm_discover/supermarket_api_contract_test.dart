@@ -21,10 +21,20 @@ void main() {
       expect(params.getParams(), containsPair('sort', 'nearestBy'));
       expect(params.getParams(), containsPair('latitude', 36.2));
       expect(params.getParams(), containsPair('longitude', 37.1));
-      expect(params.getParams(), containsPair('filter[openNow]', true));
-      expect(params.getParams(), containsPair('filter[isFeatured]', true));
+      expect(params.getParams(), containsPair('filter[openNow]', 1));
+      expect(params.getParams(), containsPair('filter[isFeatured]', 1));
       expect(params.getParams(), containsPair('filter[averageRatingMin]', 4));
     });
+    test('serializes false supermarket booleans as zero', () {
+      final params = BrowseStoresParams(
+        openNow: false,
+        isFeatured: false,
+      );
+
+      expect(params.getParams(), containsPair('filter[openNow]', 0));
+      expect(params.getParams(), containsPair('filter[isFeatured]', 0));
+    });
+
     test('product discovery serializes supported filters', () {
       final params = BrowseProductsParams(
         search: 'حليب',
