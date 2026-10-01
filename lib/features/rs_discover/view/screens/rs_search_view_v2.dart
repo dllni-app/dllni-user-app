@@ -20,11 +20,7 @@ import '../widgets/smart_search_sheet.dart';
 import 'rs_product_details_screen.dart';
 
 class RsSearchViewV2 extends StatefulWidget {
-  const RsSearchViewV2({
-    super.key,
-    required this.type,
-    this.initialSearch,
-  });
+  const RsSearchViewV2({super.key, required this.type, this.initialSearch});
 
   final SearchType type;
   final String? initialSearch;
@@ -129,8 +125,7 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
                         title: 'الأكثر بحثاً من قبل المستخدمين',
                         emptyText: 'لا توجد عمليات بحث شائعة حالياً',
                         searches: snapshot.data?.searches ?? const <String>[],
-                        onSearchTap: (search) =>
-                            _submitSearch(context, search),
+                        onSearchTap: (search) => _submitSearch(context, search),
                       );
                     },
                   ),
@@ -145,7 +140,9 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
                     onDeleteAllTap: () async {
                       if (searchHistory.isEmpty) return;
                       searchHistory = <String>[];
-                      await SharedPreferencesHelper.removeData(key: _historyKey);
+                      await SharedPreferencesHelper.removeData(
+                        key: _historyKey,
+                      );
                       if (mounted) setState(() {});
                     },
                   ),
@@ -195,10 +192,7 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
           emptyWidget: Center(
             child: AppText(
               'لا توجد مطاعم',
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 16),
             ),
           ),
           failedWidget: Center(
@@ -260,10 +254,7 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
           emptyWidget: Center(
             child: AppText(
               'لا توجد وجبات',
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 16),
             ),
           ),
           failedWidget: Center(
@@ -279,7 +270,7 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 16,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.65,
             ),
             itemBuilder: (_, index) {
               if (index >= products.list.length) {
@@ -338,7 +329,9 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
       searchController.clear();
     } else {
       searchController.text = search;
-      searchController.selection = TextSelection.collapsed(offset: search.length);
+      searchController.selection = TextSelection.collapsed(
+        offset: search.length,
+      );
     }
 
     if (widget.type == SearchType.product) {

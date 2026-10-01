@@ -145,7 +145,9 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                             child: AppText.bodyMedium(
                               widget.title,
                               fontWeight: FontWeight.bold,
-                              maxLines: 3,
+                              maxLines: 1,
+                              softWrap: true,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (widget.offer?.badgeText != null)

@@ -205,22 +205,20 @@ class _ScheduleEntryRowWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          flex: 3,
           child: AppText.bodyMedium(
             entry.dayDate,
             color: const Color(0xFF4B5563),
             fontWeight: FontWeight.w600,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          flex: 2,
           child: AppText.bodyMedium(
             entry.time,
             color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
-            textAlign: TextAlign.left,
+            textAlign: TextAlign.end,
           ),
         ),
       ],
@@ -247,18 +245,16 @@ class _SummaryRowWidget extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Flexible(
-          flex: 2,
+        Expanded(
           child: AppText.bodyMedium(
             label,
             color: color,
             fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          flex: 3,
           child: AppText.bodyMedium(
             value,
             color: valueColor ?? color,
