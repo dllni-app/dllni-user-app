@@ -39,14 +39,6 @@ bool? _toBool(dynamic value) {
   return null;
 }
 
-Map<String, dynamic> _toMap(dynamic value) {
-  if (value is Map<String, dynamic>) return value;
-  if (value is Map) {
-    return value.map((key, value) => MapEntry(key.toString(), value));
-  }
-  return const <String, dynamic>{};
-}
-
 EstimatePriceResponseModel estimatePriceResponseModelFromJson(dynamic json) {
   if (json is String && json.isNotEmpty) {
     return EstimatePriceResponseModel.fromJson(
