@@ -12,7 +12,6 @@ import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_sc
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_service_schedule_screen.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_profile_detail_screen.dart';
-import 'package:dllni_user_app/features/cl_main/view/data/cl_worker_profile_mock_data.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_worker_reviews_all_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_order_tracking_screen.dart';
 import 'package:dllni_user_app/features/delivery/presentation/screens/delivery_orders_screen.dart';
