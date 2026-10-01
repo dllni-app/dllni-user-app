@@ -30,79 +30,80 @@ class PersonalDetailsAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedBackgroundColor = backgroundColor ?? context.onPrimary;
-    final resolvedForegroundColor = foregroundColor ?? context.primary;
-    final featureDescription = _featureDescription;
+    final description = _featureDescription;
+    final background = backgroundColor ?? const Color(0xFF1E2A78);
+    final foreground = foregroundColor ?? Colors.white;
 
     return Container(
+      width: double.infinity,
+      padding: EdgeInsetsDirectional.fromSTEB(
+        14,
+        12,
+        14,
+        description == null ? 14 : 12,
+      ),
       decoration: BoxDecoration(
-        color: resolvedBackgroundColor,
-        border: Border(
-          bottom: BorderSide(color: context.primaryContainer, width: 3),
-        ),
-        borderRadius: BorderRadius.only(
-          bottomRight: Radius.circular(24),
+        color: background,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(27),
-            offset: Offset(0, -2),
+            color: Colors.black.withAlpha(18),
             blurRadius: 12,
-            spreadRadius: 0,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      width: context.width,
-      height: featureDescription == null ? 70 : 104,
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
       child: Row(
+        crossAxisAlignment: description == null
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
         children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => context.pop(),
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: context.onPrimary,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xffE5E7EB)),
-              ),
-              child: Icon(Icons.arrow_back, color: resolvedForegroundColor),
+          IconButton(
+            onPressed: () => context.pop(),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withAlpha(28),
+              foregroundColor: foreground,
+              minimumSize: const Size(44, 44),
             ),
+            icon: const Icon(Icons.arrow_forward_rounded),
           ),
-          SizedBox(width: 9),
+          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.headlineMedium(
-                  title,
-                  color: resolvedForegroundColor,
-                  fontWeight: FontWeight.bold,
-                  textAlign: TextAlign.start,
-                ),
-                if (featureDescription != null) ...[
-                  const SizedBox(height: 4),
+            child: Padding(
+              padding: EdgeInsets.only(top: description == null ? 8 : 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    featureDescription,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: Color(0xff6B7280),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      height: 1.45,
+                    title,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
+                  if (description != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        color: foreground.withAlpha(205),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-          if (trailing != null) trailing!,
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     );

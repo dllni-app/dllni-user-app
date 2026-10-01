@@ -32,8 +32,7 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
   Future<void> _confirmDeleteAddress(
     AddressListItem item,
     ProfileBloc bloc,
-  )
-  async {
+  ) async {
     final id = int.tryParse(item.id);
     if (id == null) return;
     final confirmed = await showDialog<bool>(
@@ -91,8 +90,7 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
   AddressListItem? _resolveCreatedAddress(
     List<AddressListItem> addresses,
     CreatedAddressSelectionHint hint,
-  )
-  {
+  ) {
     bool closeEnough(double? a, double? b) {
       if (a == null || b == null) return false;
       return (a - b).abs() < 0.00001;
@@ -147,33 +145,17 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
   }
 
   Widget _addAddressButton(ProfileBloc bloc, BuildContext context) {
-    return ElevatedButton(
+    return FilledButton.icon(
       onPressed: () => _openAddAddress(bloc),
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        backgroundColor: context.primaryContainer,
-        foregroundColor: context.onPrimaryContainer,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: 20,
-          vertical: 12,
-        ),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(50),
+        backgroundColor: const Color(0xFF1E2A78),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AppText.labelLarge(
-            'إضافة عنوان جديد',
-            color: context.onPrimaryContainer,
-            fontWeight: FontWeight.w700,
-          ),
-          const SizedBox(width: 10),
-          CircleAvatar(
-            radius: 12,
-            backgroundColor: context.onPrimaryContainer,
-            child: Icon(Icons.add, size: 16, color: context.primaryContainer),
-          ),
-        ],
+      icon: const Icon(Icons.add_location_alt_outlined, size: 20),
+      label: const Text(
+        'إضافة عنوان جديد',
+        style: TextStyle(fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -186,7 +168,7 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
           getIt<ProfileBloc>()
             ..add(FetchAddressesEvent(params: FetchAddressesParams())),
       child: Scaffold(
-        backgroundColor: const Color(0xffF9FAFB),
+        backgroundColor: const Color(0xFFF7F8FA),
         body: SafeArea(
           child: Column(
             children: [
@@ -226,8 +208,41 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
                             children: [
                               _addAddressButton(bloc, context),
                               const SizedBox(height: 24),
-                              const Center(
-                                child: Text('لا توجد عناوين محفوظة'),
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(0xFFE4E7EC),
+                                  ),
+                                ),
+                                child: const Column(
+                                  children: [
+                                    Icon(
+                                      Icons.location_off_outlined,
+                                      size: 42,
+                                      color: Color(0xFF98A2B3),
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'لا توجد عناوين محفوظة',
+                                      style: TextStyle(
+                                        color: Color(0xFF172033),
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    Text(
+                                      'أضف عنوان الخدمة لتسريع حجز التنظيف القادم.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Color(0xFF667085),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

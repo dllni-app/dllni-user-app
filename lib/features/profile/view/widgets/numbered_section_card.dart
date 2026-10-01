@@ -1,7 +1,5 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-/// White card with orange numbered circle and section title.
 class NumberedSectionCard extends StatelessWidget {
   const NumberedSectionCard({
     super.key,
@@ -16,40 +14,51 @@ class NumberedSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = context.primaryContainer;
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
         color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE4E7EC)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(15),
+            color: Colors.black.withAlpha(6),
+            blurRadius: 12,
             offset: const Offset(0, 4),
-            blurRadius: 18,
-            spreadRadius: -2,
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                backgroundColor: accent,
-                radius: 15,
-                child: AppText.labelLarge(
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9F9FA),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
                   sectionNumber,
-                  color: context.onPrimary,
-                  fontWeight: FontWeight.w700,
+                  style: const TextStyle(
+                    color: Color(0xFF0F8E98),
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
-              AppText.titleMedium(
-                title,
-                color: accent,
-                fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF172033),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
             ],
           ),

@@ -1,4 +1,3 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class PersonalDetailsFooter extends StatelessWidget {
@@ -18,31 +17,28 @@ class PersonalDetailsFooter extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          flex: 3,
-          child: ElevatedButton(
+          flex: 2,
+          child: FilledButton(
             onPressed: isSaving ? null : onSave,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.primary,
-              foregroundColor: context.onPrimary,
-              elevation: 0,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              backgroundColor: const Color(0xFF1E2A78),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             child: isSaving
-                ? SizedBox(
+                ? const SizedBox(
                     height: 22,
                     width: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: context.onPrimary,
+                      color: Colors.white,
                     ),
                   )
-                : AppText.labelLarge(
+                : const Text(
                     'حفظ التغييرات',
-                    color: context.onPrimary,
-                    fontWeight: FontWeight.w700,
+                    style: TextStyle(fontWeight: FontWeight.w800),
                   ),
           ),
         ),
@@ -51,16 +47,16 @@ class PersonalDetailsFooter extends StatelessWidget {
           child: OutlinedButton(
             onPressed: isSaving ? null : onCancel,
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: context.error.withAlpha(200)),
+              minimumSize: const Size.fromHeight(50),
+              foregroundColor: const Color(0xFF475467),
+              side: const BorderSide(color: Color(0xFFD0D5DD)),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            child: AppText.labelLarge(
+            child: const Text(
               'إلغاء',
-              color: context.error,
-              fontWeight: FontWeight.w600,
+              style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
         ),

@@ -4,14 +4,11 @@ import 'dart:io';
 
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
-import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_password_use_case.dart';
 import 'package:dllni_user_app/features/profile/domain/usecases/update_account_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:toastification/toastification.dart';
 
@@ -271,12 +268,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final accent = context.primaryContainer;
 
     return Scaffold(
-      backgroundColor: const Color(0xffF9FAFB),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
         child: Column(
           children: [
             const PersonalDetailsAppBar(title: 'التفاصيل الشخصية'),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 24),

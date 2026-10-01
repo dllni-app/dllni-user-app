@@ -1,18 +1,18 @@
 import 'dart:convert';
+
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
+import 'package:dllni_user_app/core/session/user_session_store.dart';
+import 'package:dllni_user_app/core/widgets/support_whatsapp_launcher.dart';
+import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import 'package:dllni_user_app/features/profile/domain/repository/profile_repo.dart';
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:toastification/toastification.dart';
-import '../../../../../generated/assets.dart';
-import '../../../../core/session/user_session_store.dart';
-import '../../../../core/widgets/support_whatsapp_launcher.dart';
-import '../../../auth/data/models/login_response_model.dart';
+
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
 import '../widgets/section_card.dart';
@@ -28,7 +28,6 @@ LoggedInUserModel? _readLoggedInUser() {
   try {
     final decoded = jsonDecode('$raw');
     if (decoded is! Map) return null;
-
     return LoggedInUserModel.fromJson(Map<String, dynamic>.from(decoded));
   } catch (_) {
     return null;
@@ -43,6 +42,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const _navy = Color(0xFF1E2A78);
+  static const _danger = Color(0xFFD92D20);
+
   late final ProfileBloc profileBloc = getIt<ProfileBloc>();
   bool _isDeletingAccount = false;
 
@@ -60,44 +62,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _logout() async {
     await _clearLocalSession();
-    if (!context.mounted) return;
+    if (!mounted) return;
     context.pushRouteAndRemoveUntil('/main');
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('تسجيل الخروج'),
+        content: const Text('هل تريد تسجيل الخروج من حسابك؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: _navy),
+            child: const Text('تسجيل الخروج'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) await _logout();
   }
 
   Future<void> _deleteAccount() async {
     if (_isDeletingAccount) return;
-
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('حذف الحساب نهائياً'),
-          content: const Text(
-            'سيتم حذف بيانات حسابك الشخصية وإلغاء جميع جلسات تسجيل الدخول. '
-            'قد يتم الاحتفاظ فقط بسجلات المعاملات التي يلزم الاحتفاظ بها '
-            'لأسباب قانونية أو محاسبية بعد إزالة بياناتك الشخصية منها. '
-            'لا يمكن التراجع عن هذا الإجراء.',
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('حذف الحساب نهائياً'),
+        content: const Text(
+          'سيتم حذف بيانات حسابك الشخصية وإلغاء جميع جلسات تسجيل الدخول. '
+          'قد يتم الاحتفاظ فقط بسجلات المعاملات التي يلزم الاحتفاظ بها '
+          'لأسباب قانونية أو محاسبية بعد إزالة بياناتك الشخصية منها. '
+          'لا يمكن التراجع عن هذا الإجراء.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('إلغاء'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('إلغاء'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('حذف الحساب نهائياً'),
-            ),
-          ],
-        );
-      },
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: _danger),
+            child: const Text('حذف الحساب نهائياً'),
+          ),
+        ],
+      ),
     );
-
     if (confirmed != true || !mounted) return;
 
     setState(() => _isDeletingAccount = true);
-
     final result = await getIt<ProfileRepo>().deleteAccount();
-
     if (!mounted) return;
 
     await result.fold(
@@ -123,92 +142,96 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _supportSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionTitle(title: 'الدعم والمساعدة'),
-        SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            color: context.onPrimaryContainer,
-            border: Border.all(color: Color(0xffF3F4F6), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(6),
-                offset: Offset(0, 2),
-                blurRadius: 10,
-              ),
-            ],
-          ),
-          padding: EdgeInsetsDirectional.all(16),
-          child: SectionCard(
-            containerColor: Color(0xff6366F1).withAlpha(25),
-            image: Icon(
-              Icons.headphones,
-              size: 18,
-              color: Color(0xff6366F1),
-            ),
-            title: 'الدعم والمساعدة',
-            subtitle: 'التواصل مع الدعم الفني',
-            onTap: _openSupport,
-          ),
-        ),
-      ],
+  Future<void> _openPersonalDetails() async {
+    await context.pushRoute(
+      '/personaldetails',
+      arguments: _personalDetailsParams,
+    );
+    if (mounted) setState(() {});
+  }
+
+  void _openNotifications() {
+    context.pushRoute(
+      '/notifications',
+      arguments: NotificationsScreenParams(profileBloc: profileBloc),
     );
   }
 
+  Widget _menuGroup(List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _divider() => const Divider(height: 1, color: Color(0xFFEAECF0));
+
   Widget _guestProfile(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          ProfileAppBar(),
-          SizedBox(height: 16),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ColoredBox(
+      color: const Color(0xFFF7F8FA),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const ProfileAppBar(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
                 children: [
                   Container(
+                    padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      color: context.onPrimaryContainer,
-                      border: Border.all(color: Color(0xffF3F4F6), width: 1),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFE4E7EC)),
                     ),
-                    padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
                         Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: context.primary.withAlpha(20),
+                          width: 68,
+                          height: 68,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE9F9FA),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.person_outline,
-                            color: context.primary,
+                          child: const Icon(
+                            Icons.person_outline_rounded,
                             size: 34,
+                            color: _navy,
                           ),
                         ),
                         const SizedBox(height: 14),
-                        AppText.titleMedium(
+                        const Text(
                           'أهلاً بك',
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xff1E2A78),
-                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFF172033),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        AppText.bodyMedium(
-                          'سجّل الدخول لإدارة طلباتك وعناوينك وإشعاراتك.',
-                          color: const Color(0xff6B7280),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'سجّل الدخول لإدارة حجوزات التنظيف وعناوين الخدمة والإشعارات من مكان واحد.',
                           textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFF667085),
+                            height: 1.5,
+                          ),
                         ),
                         const SizedBox(height: 18),
-                        InkWell(
-                          onTap: () async {
+                        FilledButton(
+                          onPressed: () async {
                             await AuthGate.requireAuth(
                               context,
                               message: '',
@@ -217,271 +240,183 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               },
                             );
                           },
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: context.primary,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            backgroundColor: _navy,
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: AppText.labelLarge(
-                              'تسجيل الدخول',
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              textAlign: TextAlign.center,
-                            ),
+                          ),
+                          child: const Text(
+                            'تسجيل الدخول',
+                            style: TextStyle(fontWeight: FontWeight.w800),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         TextButton(
                           onPressed: () => context.pushRoute('/register'),
-                          child: AppText.bodyMedium(
-                            'إنشاء حساب جديد',
-                            color: context.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          child: const Text('إنشاء حساب جديد'),
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 16),
-                  _supportSection(context),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 18),
+                  SectionTitle(title: 'المساعدة والمعلومات'),
+                  const SizedBox(height: 10),
+                  _menuGroup([
+                    SectionCard(
+                      containerColor: const Color(0xFFE9F9FA),
+                      image: const Icon(
+                        Icons.support_agent_rounded,
+                        color: Color(0xFF0F8E98),
+                      ),
+                      title: 'الدعم والمساعدة',
+                      subtitle: 'تواصل مع فريق الدعم عبر واتساب',
+                      onTap: _openSupport,
+                    ),
+                    _divider(),
+                    SectionCard(
+                      containerColor: const Color(0xFFF2F4FF),
+                      image: const Icon(
+                        Icons.description_outlined,
+                        color: _navy,
+                      ),
+                      title: 'الشروط والخصوصية',
+                      subtitle: 'راجع الروابط القانونية الرسمية للتطبيق',
+                      onTap: () => context.pushRoute('/termsAndConditions'),
+                    ),
+                  ]),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!AuthGate.isAuthenticated) {
-      return _guestProfile(context);
-    }
+    if (!AuthGate.isAuthenticated) return _guestProfile(context);
 
-    final personalDetailsParams = _personalDetailsParams;
-    return SafeArea(
-      child: Column(
-        children: [
-          ProfileAppBar(),
-          SizedBox(height: 16),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
-              child: Column(
+    final personalDetails = _personalDetailsParams;
+    return ColoredBox(
+      color: const Color(0xFFF7F8FA),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const ProfileAppBar(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
                   ProfileSummaryCard(
-                    params: personalDetailsParams,
-                    onEditTap: () async {
-                      await context.pushRoute(
-                        '/personaldetails',
-                        arguments: personalDetailsParams,
-                      );
-                      setState(() {});
-                    },
+                    params: personalDetails,
+                    onEditTap: _openPersonalDetails,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   SectionTitle(title: 'إدارة الحساب'),
-                  SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      color: context.onPrimaryContainer,
-                      border: Border.all(color: Color(0xffF3F4F6), width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(6),
-                          offset: Offset(0, 2),
-                          blurRadius: 10,
-                        ),
-                      ],
+                  const SizedBox(height: 10),
+                  _menuGroup([
+                    SectionCard(
+                      containerColor: const Color(0xFFF2F4FF),
+                      image: const Icon(
+                        Icons.person_outline_rounded,
+                        color: _navy,
+                      ),
+                      title: 'البيانات الشخصية',
+                      subtitle: 'الاسم والصورة ورقم الهاتف وكلمة المرور',
+                      onTap: _openPersonalDetails,
                     ),
-                    padding: EdgeInsetsDirectional.all(16),
-                    child: Column(
-                      children: [
-                        SectionCard(
-                          containerColor: Color(0xff1E2A78).withAlpha(25),
-                          image: Icon(
-                            Icons.delivery_dining_rounded,
-                            size: 18,
-                            color: Color(0xff1E2A78),
-                          ),
-                          title: 'طلبات التوصيل',
-                          subtitle: 'تتبع حالة توصيل الطلبات',
-                          onTap: () {
-                            context.pushRoute('/delivery/orders');
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(
-                            vertical: 16,
-                          ),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
-                          containerColor: Color(0xff3B82F6).withAlpha(25),
-                          image: Icon(
-                            Icons.location_on,
-                            size: 18,
-                            color: Color(0xff3B82F6),
-                          ),
-                          title: 'عناويني',
-                          subtitle: 'إدارة عناوين التوصيل المحفوظة',
-                          onTap: () {
-                            context.pushRoute('/myaddresses', arguments: false);
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(
-                            vertical: 16,
-                          ),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
-                          containerColor: Color(0xffEAB308).withAlpha(25),
-                          image: Assets.images.rsProfileCoupon.svg(
-                            width: 18,
-                            color: Color(0xffEAB308),
-                          ),
-                          title: 'الكوبونات',
-                          subtitle: 'عرض الكوبونات المتاحة',
-                          onTap: () {
-                            context.pushRoute('/coupons');
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(
-                            vertical: 16,
-                          ),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
-                          containerColor: Color(0xffA855F7).withAlpha(25),
-                          image: Icon(
-                            Icons.notifications,
-                            size: 18,
-                            color: Color(0xffA855F7),
-                          ),
-                          title: 'الإشعارات',
-                          subtitle: 'إشعارات الطلبات والعروض',
-                          onTap: () {
-                            context.pushRoute(
-                              '/notifications',
-                              arguments: NotificationsScreenParams(
-                                profileBloc: profileBloc,
+                    _divider(),
+                    SectionCard(
+                      containerColor: const Color(0xFFE9F9FA),
+                      image: const Icon(
+                        Icons.location_on_outlined,
+                        color: Color(0xFF0F8E98),
+                      ),
+                      title: 'العناوين المحفوظة',
+                      subtitle: 'أدر عناوين خدمة التنظيف والعنوان الافتراضي',
+                      onTap: () =>
+                          context.pushRoute('/myaddresses', arguments: false),
+                    ),
+                    _divider(),
+                    SectionCard(
+                      containerColor: const Color(0xFFFFF7E6),
+                      image: const Icon(
+                        Icons.notifications_none_rounded,
+                        color: Color(0xFFB54708),
+                      ),
+                      title: 'الإشعارات',
+                      subtitle: 'تابع تحديثات الحجوزات والتنبيهات المهمة',
+                      onTap: _openNotifications,
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
+                  SectionTitle(title: 'المساعدة والمعلومات'),
+                  const SizedBox(height: 10),
+                  _menuGroup([
+                    SectionCard(
+                      containerColor: const Color(0xFFE9F9FA),
+                      image: const Icon(
+                        Icons.support_agent_rounded,
+                        color: Color(0xFF0F8E98),
+                      ),
+                      title: 'الدعم والمساعدة',
+                      subtitle: 'تواصل مع فريق الدعم عبر واتساب',
+                      onTap: _openSupport,
+                    ),
+                    _divider(),
+                    SectionCard(
+                      containerColor: const Color(0xFFF2F4FF),
+                      image: const Icon(
+                        Icons.description_outlined,
+                        color: _navy,
+                      ),
+                      title: 'الشروط والخصوصية',
+                      subtitle: 'راجع الروابط القانونية الرسمية للتطبيق',
+                      onTap: () => context.pushRoute('/termsAndConditions'),
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
+                  SectionTitle(title: 'إجراءات الحساب'),
+                  const SizedBox(height: 10),
+                  _menuGroup([
+                    SectionCard(
+                      containerColor: const Color(0xFFFFF1F0),
+                      image: const Icon(Icons.logout_rounded, color: _danger),
+                      title: 'تسجيل الخروج',
+                      subtitle: 'إنهاء جلسة حسابك على هذا الجهاز',
+                      onTap: _confirmLogout,
+                    ),
+                    _divider(),
+                    SectionCard(
+                      containerColor: const Color(0xFFFFF1F0),
+                      image: _isDeletingAccount
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: _danger,
                               ),
-                            );
-                          },
-                        ),
-                        Padding(
-                          padding: EdgeInsetsDirectional.symmetric(
-                            vertical: 16,
-                          ),
-                          child: Divider(color: context.surface, thickness: .5),
-                        ),
-                        SectionCard(
-                          containerColor: Color(0xFF22C55E).withAlpha(35),
-                          image: FaIcon(
-                            FontAwesomeIcons.basketShopping,
-                            size: 16,
-                            color: Color(0xFF22C55E),
-                          ),
-                          title: 'قائمة التسوق',
-                          subtitle: 'يمكنك إضافة قائمة تسوق لسرعة وسهولة الطلب',
-                          onTap: () {
-                            context.pushRoute('/shopping_list');
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  _supportSection(context),
-                  SizedBox(height: 16),
-                  InkWell(
-                    onTap: _logout,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Color(0xffEF4444).withAlpha(6),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Color(0xffEF4444).withAlpha(52),
-                        ),
-                      ),
-                      padding: EdgeInsetsDirectional.symmetric(vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xffEF4444).withAlpha(25),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: EdgeInsetsDirectional.all(13),
-                            child: Icon(
-                              Icons.logout_rounded,
-                              color: Color(0xffEF4444),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          AppText.bodyMedium(
-                            'تسجيل الخروج',
-                            color: Color(0xffEF4444),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  InkWell(
-                    key: const Key('profile_delete_account_button'),
-                    onTap: _isDeletingAccount ? null : _deleteAccount,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Color(0xffEF4444).withAlpha(6),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Color(0xffEF4444).withAlpha(52),
-                        ),
-                      ),
-                      padding: EdgeInsetsDirectional.symmetric(vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xffEF4444).withAlpha(25),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: EdgeInsetsDirectional.all(13),
-                            child: Icon(
+                            )
+                          : const Icon(
                               Icons.delete_forever_outlined,
-                              color: Color(0xffEF4444),
+                              color: _danger,
                             ),
-                          ),
-                          SizedBox(width: 12),
-                          AppText.bodyMedium(
-                            _isDeletingAccount ? 'جاري حذف الحساب...' : 'حذف الحساب',
-                            color: Color(0xffEF4444),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ],
-                      ),
+                      title: _isDeletingAccount
+                          ? 'جاري حذف الحساب...'
+                          : 'حذف الحساب',
+                      subtitle: 'حذف بيانات الحساب نهائياً',
+                      onTap: _isDeletingAccount ? () {} : _deleteAccount,
                     ),
-                  ),
-                  SizedBox(height: 16),
+                  ]),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

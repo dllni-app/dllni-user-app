@@ -136,7 +136,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
       },
       child: Scaffold(
-        backgroundColor: const Color(0xffF9FAFB),
+        backgroundColor: const Color(0xFFF7F8FA),
         body: SafeArea(
           child: Column(
             children: [
@@ -170,7 +170,44 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (notifications.isEmpty) {
-                      return const Center(child: Text('لا توجد إشعارات'));
+                      return Center(
+                        child: Container(
+                          margin: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(28),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE4E7EC)),
+                          ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.notifications_none_rounded,
+                                size: 44,
+                                color: Color(0xFF98A2B3),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'لا توجد إشعارات حالياً',
+                                style: TextStyle(
+                                  color: Color(0xFF172033),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                'ستظهر هنا تحديثات الحجوزات والتنبيهات المهمة.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFF667085),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
                     }
                     return RefreshIndicator(
                       onRefresh: () async =>
@@ -204,13 +241,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             for (final section in sections)
                               if (groups[section]!.isNotEmpty) ...[
                                 Padding(
-                                  padding:
-                                      const EdgeInsetsDirectional.fromSTEB(
-                                        16,
-                                        10,
-                                        16,
-                                        8,
-                                      ),
+                                  padding: const EdgeInsetsDirectional.fromSTEB(
+                                    16,
+                                    10,
+                                    16,
+                                    8,
+                                  ),
                                   child: AppText.labelLarge(
                                     section,
                                     color: const Color(0xff9CA3AF),
@@ -222,9 +258,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   color: context.onPrimary,
                                   child: Column(
                                     children: [
-                                      for (var i = 0;
-                                          i < groups[section]!.length;
-                                          i++) ...[
+                                      for (
+                                        var i = 0;
+                                        i < groups[section]!.length;
+                                        i++
+                                      ) ...[
                                         Dismissible(
                                           key: ValueKey(
                                             'notification_${section}_${i}_${groups[section]![i].id ?? groups[section]![i].createdAt ?? 'unknown'}',
@@ -232,26 +270,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                           direction:
                                               DismissDirection.endToStart,
                                           background: Container(
-                                            alignment: AlignmentDirectional
-                                                .centerEnd,
+                                            alignment:
+                                                AlignmentDirectional.centerEnd,
                                             color: const Color(0xffEF4444),
                                             padding:
-                                                const EdgeInsetsDirectional
-                                                    .only(end: 20),
+                                                const EdgeInsetsDirectional.only(
+                                                  end: 20,
+                                                ),
                                             child: const Icon(
                                               Icons.delete_outline,
                                               color: Colors.white,
                                             ),
                                           ),
                                           onDismissed: (_) {
-                                            final id =
-                                                groups[section]![i].id;
-                                            if (id != null &&
-                                                id.isNotEmpty) {
+                                            final id = groups[section]![i].id;
+                                            if (id != null && id.isNotEmpty) {
                                               profileBloc.add(
-                                                DeleteNotificationEvent(
-                                                  id: id,
-                                                ),
+                                                DeleteNotificationEvent(id: id),
                                               );
                                             }
                                           },
@@ -284,8 +319,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             ),
                                           ),
                                         ),
-                                        if (i !=
-                                            groups[section]!.length - 1)
+                                        if (i != groups[section]!.length - 1)
                                           const Divider(
                                             height: 1,
                                             thickness: 1,
@@ -323,10 +357,7 @@ class _NotificationsAppBar extends StatelessWidget {
   final bool showDeleteAll;
   final VoidCallback? onDeleteAll;
 
-  const _NotificationsAppBar({
-    this.showDeleteAll = false,
-    this.onDeleteAll,
-  });
+  const _NotificationsAppBar({this.showDeleteAll = false, this.onDeleteAll});
 
   @override
   Widget build(BuildContext context) {
@@ -334,9 +365,9 @@ class _NotificationsAppBar extends StatelessWidget {
       height: 70,
       width: context.width,
       decoration: BoxDecoration(
-        color: context.onPrimary,
-        border: Border(
-          bottom: BorderSide(color: context.primaryContainer, width: 2),
+        color: const Color(0xFF1E2A78),
+        border: const Border(
+          bottom: BorderSide(color: Color(0xFF12B8C4), width: 2),
         ),
         borderRadius: const BorderRadius.only(
           bottomRight: Radius.circular(20),
@@ -360,29 +391,32 @@ class _NotificationsAppBar extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: context.onPrimary,
+                color: Colors.white.withAlpha(28),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xffE5E7EB)),
+                border: Border.all(color: Colors.white.withAlpha(40)),
               ),
-              child: Icon(Icons.arrow_back, color: context.primary),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: AppText.headlineMedium(
               'الإشعارات',
-              color: context.primary,
-              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
             ),
           ),
           if (showDeleteAll)
             TextButton(
               onPressed: onDeleteAll,
-              child: Text(
+              child: const Text(
                 'حذف الكل',
                 style: TextStyle(
-                  color: const Color(0xffEF4444),
-                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFFFD5D2),
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),

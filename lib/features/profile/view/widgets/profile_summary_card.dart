@@ -1,6 +1,5 @@
 import 'dart:ui' as ui;
 
-import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 
@@ -17,134 +16,107 @@ class ProfileSummaryCard extends StatelessWidget {
   final LoggedInUserModel params;
   final VoidCallback onEditTap;
 
-  ImageProvider? get _avatarProvider {
-    final url = UserSessionStore.userNotifier.value?.primaryImage?.url;
-    if (url != null && url.isNotEmpty) {
-      return NetworkImage(url);
-    }
+  ImageProvider? _avatarProvider(LoggedInUserModel? user) {
+    final url = user?.primaryImage?.url ?? params.primaryImage?.url;
+    if (url != null && url.trim().isNotEmpty) return NetworkImage(url);
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final accentOrange = context.primaryContainer;
-    final avatarRadius = 44.0;
+    return ValueListenableBuilder<LoggedInUserModel?>(
+      valueListenable: UserSessionStore.userNotifier,
+      builder: (context, user, _) {
+        final resolvedUser = user ?? params;
+        final avatar = _avatarProvider(resolvedUser);
+        final name = resolvedUser.name?.trim();
+        final phone = resolvedUser.phone?.trim();
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: context.onPrimaryContainer,
-        border: Border.all(color: const Color(0xffF3F4F6), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(6),
-            offset: const Offset(0, 2),
-            blurRadius: 10,
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFFE4E7EC)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(6),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      width: context.width,
-      padding: const EdgeInsetsDirectional.symmetric(vertical: 20),
-      child: ValueListenableBuilder(
-        valueListenable: UserSessionStore.userNotifier,
-        builder: (context, user, _) {
-          return Column(
+          child: Row(
             children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: avatarRadius,
-                    backgroundColor: const Color(0xffE5E7EB),
-                    backgroundImage: _avatarProvider,
-                    child: _avatarProvider == null
-                        ? Icon(
-                            Icons.person,
-                            size: 48,
-                            color: Colors.grey.shade500,
-                          )
-                        : null,
-                  ),
-                  PositionedDirectional(
-                    start: 8,
-                    bottom: 4,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: const Color(0xff22C55E),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: context.onPrimaryContainer,
-                          width: 2,
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE9F9FA),
+                  shape: BoxShape.circle,
+                ),
+                child: CircleAvatar(
+                  radius: 34,
+                  backgroundColor: const Color(0xFFF2F4F7),
+                  backgroundImage: avatar,
+                  child: avatar == null
+                      ? const Icon(
+                          Icons.person_outline_rounded,
+                          size: 34,
+                          color: Color(0xFF667085),
+                        )
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name == null || name.isEmpty ? 'مستخدم التطبيق' : name,
+                      style: const TextStyle(
+                        color: Color(0xFF172033),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    if (phone != null && phone.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      PhoneNumberText(
+                        phone: phone.formatAsPhoneNumber,
+                        style: const TextStyle(
+                          color: Color(0xFF667085),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: onEditTap,
+                      icon: const Icon(Icons.edit_outlined, size: 17),
+                      label: const Text('تعديل البيانات'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1E2A78),
+                        side: const BorderSide(color: Color(0xFFBFC5E5)),
+                        visualDensity: VisualDensity.compact,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              AppText.bodyLarge(
-                user?.name ?? 'مستخدم التطبيق',
-                fontWeight: FontWeight.bold,
-                color: context.primary,
-                textAlign: TextAlign.center,
-              ),
-              if (user?.phone != null &&
-                  (user?.phone?.isNotEmpty ?? false)) ...[
-                const SizedBox(height: 6),
-
-                PhoneNumberText(
-                  phone: user?.phone?.formatAsPhoneNumber ?? '',
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const SizedBox(height: 20),
-              Material(
-                color: accentOrange.withAlpha(26),
-                borderRadius: BorderRadius.circular(999),
-                child: InkWell(
-                  onTap: onEditTap,
-                  borderRadius: BorderRadius.circular(999),
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      vertical: 8,
-                      horizontal: 16,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: accentOrange,
-                        ),
-                        const SizedBox(width: 8),
-                        AppText.bodyMedium(
-                          'تعديل التفاصيل الشخصية',
-                          fontWeight: FontWeight.w600,
-                          color: accentOrange,
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
 class PhoneNumberText extends StatelessWidget {
-  final String phone;
-  final TextStyle? style;
-  final TextAlign textAlign;
-  final int? maxLines;
-  final TextOverflow? overflow;
-
   const PhoneNumberText({
     super.key,
     required this.phone,
@@ -153,6 +125,12 @@ class PhoneNumberText extends StatelessWidget {
     this.maxLines = 1,
     this.overflow,
   });
+
+  final String phone;
+  final TextStyle? style;
+  final TextAlign textAlign;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   @override
   Widget build(BuildContext context) {

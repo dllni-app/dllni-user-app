@@ -1,4 +1,3 @@
-import 'package:common_package/widgets/app_text.dart';
 import 'package:flutter/material.dart';
 
 class SectionTitle extends StatelessWidget {
@@ -10,16 +9,23 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SizedBox(
+        Container(
+          width: 4,
           height: 20,
-          child: VerticalDivider(
-            color: Colors.black,
-            thickness: 4,
-            radius: BorderRadius.circular(9999),
+          decoration: BoxDecoration(
+            color: const Color(0xFF12B8C4),
+            borderRadius: BorderRadius.circular(999),
           ),
         ),
-        SizedBox(width: 8),
-        AppText.titleMedium(title, fontWeight: FontWeight.bold),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF172033),
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
       ],
     );
   }

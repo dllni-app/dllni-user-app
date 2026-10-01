@@ -132,8 +132,8 @@ class AddAddressBottomActions extends StatelessWidget {
         onPressed: isSubmitting ? null : onSubmitPressed,
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: context.primary,
-          foregroundColor: context.onPrimary,
+          backgroundColor: const Color(0xFF1E2A78),
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -141,7 +141,7 @@ class AddAddressBottomActions extends StatelessWidget {
         ),
         child: AppText.labelLarge(
           submitLabel,
-          color: context.onPrimary,
+          color: Colors.white,
           fontWeight: FontWeight.w700,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -154,7 +154,7 @@ class AddAddressBottomActions extends StatelessWidget {
         key: cancelButtonKey,
         onPressed: isSubmitting ? null : onCancelPressed,
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: context.error),
+          side: const BorderSide(color: Color(0xFFD0D5DD)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -162,7 +162,7 @@ class AddAddressBottomActions extends StatelessWidget {
         ),
         child: AppText.labelLarge(
           'إلغاء',
-          color: context.error,
+          color: const Color(0xFF475467),
           fontWeight: FontWeight.w700,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -220,7 +220,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               .where((item) => item.toLowerCase().contains(query))
               .toList(growable: true);
 
-    if (selected != null && selected.isNotEmpty && !filtered.contains(selected)) {
+    if (selected != null &&
+        selected.isNotEmpty &&
+        !filtered.contains(selected)) {
       filtered.add(selected);
     }
 
@@ -267,7 +269,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: const Color(0xffF9FAFB),
+        backgroundColor: const Color(0xFFF7F8FA),
         body: SafeArea(
           child: Column(
             children: [
@@ -309,6 +311,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: _pickAddressFromMap,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF1E2A78),
+                              side: const BorderSide(color: Color(0xFFBFC5E5)),
+                              minimumSize: const Size.fromHeight(48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
                             icon: const Icon(Icons.map_outlined),
                             label: Text(
                               _hasSelectedLocation
@@ -430,7 +440,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                       : IconButton(
                                           tooltip: 'مسح البحث',
                                           onPressed: () {
-                                            _neighborhoodSearchController.clear();
+                                            _neighborhoodSearchController
+                                                .clear();
                                             setState(() {
                                               _neighborhoodSearchQuery = '';
                                             });
