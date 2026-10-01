@@ -104,20 +104,6 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     _scheduleVoteFallbackRefresh(fallbackReason: 'vote_updated');
   }
 
-  Map<String, dynamic> _extractVotePayload(Map<String, dynamic> payload) {
-    final directVote =
-        payload['vote'] is Map ||
-        payload['options'] is List ||
-        payload['voters'] is List;
-    if (directVote) {
-      return payload;
-    }
-    if (payload['data'] is Map) {
-      return Map<String, dynamic>.from(payload['data'] as Map);
-    }
-    return payload;
-  }
-
   void _scheduleVoteFallbackRefresh({required String fallbackReason}) {
     _voteFallbackRefreshDebounce?.cancel();
     _voteFallbackRefreshDebounce = Timer(_fallbackDebounce, () {
@@ -196,7 +182,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
       optionId: option.id,
       name: option.label ?? '-',
       size: 'افتراضي',
-      price: unitPrice == null ? '-' : '$unitPrice \$',
+      price: unitPrice == null ? '-' : '$unitPrice ل.س',
       progress: percent / 100,
       votes: option.voteCount ?? 0,
     );
@@ -245,9 +231,13 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     }
 
     final serverSelectedId =
-        _toInt(voteMap['currentUserVote'] is Map
-            ? Map<String, dynamic>.from(voteMap['currentUserVote'] as Map)['optionId']
-            : null) ??
+        _toInt(
+          voteMap['currentUserVote'] is Map
+              ? Map<String, dynamic>.from(
+                  voteMap['currentUserVote'] as Map,
+                )['optionId']
+              : null,
+        ) ??
         _toInt(voteMap['currentUserOptionId']) ??
         _toInt(rawData['currentUserOptionId']) ??
         _toInt(voteMap['myVotedOptionId']) ??
@@ -426,7 +416,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     }
 
     final safeWinnerName = (winnerName == null || winnerName!.isEmpty)
-        ? 'بيتزا مارغريتا'
+        ? 'الخيار الفائز'
         : winnerName!;
     return _WinnerSheetData(winnerName: safeWinnerName);
   }
@@ -483,7 +473,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
     final normalizedWinnerName = winnerLabel?.trim();
     final winnerName =
         normalizedWinnerName == null || normalizedWinnerName.isEmpty
-        ? 'بيتزا مارغريتا'
+        ? 'الخيار الفائز'
         : normalizedWinnerName;
     showDialog<void>(
       context: context,
@@ -577,7 +567,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                     },
                     icon: FaIcon(
                       FontAwesomeIcons.shareNodes,
-                      color: context.primary,
+                      color: const Color(0xFF6C63FF),
                       size: 20,
                     ),
                   ),

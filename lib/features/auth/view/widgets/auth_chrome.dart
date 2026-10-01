@@ -20,66 +20,111 @@ class AuthScreenChrome extends StatelessWidget {
   final Widget primaryButton;
   final Widget? belowPrimary;
 
-  static const Color _pageBg = Color(0xFFF3F4F6);
-  static const Color _muted = Color(0xFF6B7280);
-  static const Color _linkBlue = Color(0xFF2563EB);
-
   @override
   Widget build(BuildContext context) {
+    final subtitle = title == 'تسجيل الدخول'
+        ? 'سجّل الدخول لمتابعة طلباتك وخدماتك.'
+        : title == 'إنشاء حساب جديد'
+        ? 'أنشئ حسابك لتجربة أسرع وأكثر تخصيصاً.'
+        : title == 'تفعيل الحساب'
+        ? 'أكّد رقم الجوال لإكمال إعداد حسابك.'
+        : 'استعد الوصول إلى حسابك بخطوات آمنة.';
+
     return Scaffold(
-      backgroundColor: _pageBg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsetsDirectional.fromSTEB(
+              24,
+              MediaQuery.paddingOf(context).top + 22,
+              24,
+              24,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
+                colors: [
+                  Color(0xFF172554),
+                  Color(0xFF1E2A78),
+                  Color(0xFF6C63FF),
+                ],
+              ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(28),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withAlpha(34)),
+                  ),
+                  child: AppImage.asset(
+                    Assets.images.appLogo.path,
+                    fit: BoxFit.contain,
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppImage.asset(
-                      Assets.images.appLogo.path,
-                      width: 160,
-                      height: 145,
-                    ),
-                    const SizedBox(height: 32),
-                    AppText(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: context.primary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Material(
-                      elevation: 6,
-                      shadowColor: Colors.black26,
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                        child: cardChild,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    primaryButton,
-                    if (belowPrimary != null) ...[
-                      const SizedBox(height: 20),
-                      belowPrimary!,
+                const SizedBox(height: 14),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFE7E9FF),
+                    fontSize: 12,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      cardChild,
+                      const SizedBox(height: 22),
+                      primaryButton,
+                      if (belowPrimary != null) ...[
+                        const SizedBox(height: 18),
+                        belowPrimary!,
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -198,7 +243,7 @@ class AuthGradientButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         child: Ink(
-          decoration: BoxDecoration(color: context.primary),
+          decoration: const BoxDecoration(color: Color(0xFF1E2A78)),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(

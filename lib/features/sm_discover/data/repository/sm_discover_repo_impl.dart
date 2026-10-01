@@ -14,6 +14,8 @@ import '../../domain/usecases/change_product_favorite_use_case.dart';
 import '../models/change_product_favorite_model.dart';
 import '../../domain/usecases/normalize_product_text_use_case.dart';
 import '../models/normalize_product_text_model.dart';
+import '../../domain/usecases/smart_search_use_case.dart';
+import '../models/smart_search_model.dart';
 
 @LazySingleton(as: SmDiscoverRepo)
 class SmDiscoverRepoImpl with HandlingException implements SmDiscoverRepo {
@@ -29,31 +31,45 @@ class SmDiscoverRepoImpl with HandlingException implements SmDiscoverRepo {
   }
 
   @override
-  DataResponse<BrowseProductsModel> browseProducts(BrowseProductsParams params) {
+  DataResponse<BrowseProductsModel> browseProducts(
+    BrowseProductsParams params,
+  ) {
     return wrapHandlingException(
       tryCall: () => smDiscoverRemoteDataSource.browseProducts(params),
     );
   }
 
   @override
-  DataResponse<ChangeStoreFavoriteModel> changeStoreFavorite(ChangeStoreFavoriteParams params) {
+  DataResponse<ChangeStoreFavoriteModel> changeStoreFavorite(
+    ChangeStoreFavoriteParams params,
+  ) {
     return wrapHandlingException(
       tryCall: () => smDiscoverRemoteDataSource.changeStoreFavorite(params),
     );
   }
 
   @override
-  DataResponse<ChangeProductFavoriteModel> changeProductFavorite(ChangeProductFavoriteParams params) {
+  DataResponse<ChangeProductFavoriteModel> changeProductFavorite(
+    ChangeProductFavoriteParams params,
+  ) {
     return wrapHandlingException(
       tryCall: () => smDiscoverRemoteDataSource.changeProductFavorite(params),
     );
   }
 
   @override
-  DataResponse<NormalizeProductTextModel> normalizeProductText(NormalizeProductTextParams params) {
+  DataResponse<NormalizeProductTextModel> normalizeProductText(
+    NormalizeProductTextParams params,
+  ) {
     return wrapHandlingException(
       tryCall: () => smDiscoverRemoteDataSource.normalizeProductText(params),
     );
   }
-}
 
+  @override
+  DataResponse<SmartSearchModel> smartSearch(SmartSearchParams params) {
+    return wrapHandlingException(
+      tryCall: () => smDiscoverRemoteDataSource.smartSearch(params),
+    );
+  }
+}

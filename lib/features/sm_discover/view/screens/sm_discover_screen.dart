@@ -6,6 +6,8 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/search_with_type_dropdown.dart';
 import '../manager/bloc/sm_discover_bloc.dart';
 import '../widgets/smart_search_sheet.dart';
+import '../../data/models/smart_search_model.dart';
+import 'smart_search_results_screen.dart';
 import 'sm_main_discover_view.dart';
 import 'sm_search_view_v2.dart';
 
@@ -62,7 +64,7 @@ class _SmDiscoverScreenState extends State<SmDiscoverScreen> {
                 expandSearch: widget.params.expandSearch,
                 onTypeSelected: (type) async {
                   if (type == SearchType.smartSearch) {
-                    final words = await showModalBottomSheet<List<String>>(
+                    final result = await showModalBottomSheet<SmartSearchModel>(
                       context: context,
                       isScrollControlled: true,
                       useSafeArea: true,
@@ -76,13 +78,14 @@ class _SmDiscoverScreenState extends State<SmDiscoverScreen> {
                         child: const SmartSearchSheet(isSupermarket: true),
                       ),
                     );
-                    if (!context.mounted || words == null || words.isEmpty) {
+                    if (!context.mounted || result == null) {
                       return;
                     }
-                    searchType = SearchType.product;
-                    _smartSearchInitialQuery = words.join(' , ');
-                    _selectedView = 1;
-                    setState(() {});
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => SmartSearchResultsScreen(model: result),
+                      ),
+                    );
                     return;
                   }
 

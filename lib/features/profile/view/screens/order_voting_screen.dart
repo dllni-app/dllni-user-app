@@ -204,7 +204,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 final title = AppText.titleMedium(
                   'اختر خيارات التصويت',
                   fontWeight: FontWeight.w700,
-                  color: context.primary,
+                  color: const Color(0xFF6C63FF),
                 );
 
                 final isLoading =
@@ -263,7 +263,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                             },
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: context.primary,
+                              backgroundColor: const Color(0xFF6C63FF),
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -348,7 +348,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 ),
                                 trailing: Checkbox(
                                   value: isSelected,
-                                  activeColor: context.primaryContainer,
+                                  activeColor: const Color(0xFF6C63FF),
                                   onChanged: (value) {
                                     setModalState(() {
                                       if (value == true) {
@@ -384,7 +384,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                             },
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: context.primary,
+                              backgroundColor: const Color(0xFF6C63FF),
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -429,7 +429,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 final title = AppText.titleMedium(
                   'حدد نوع المطعم',
                   fontWeight: FontWeight.w700,
-                  color: context.primary,
+                  color: const Color(0xFF6C63FF),
                 );
 
                 final isLoading =
@@ -487,7 +487,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 _commitMealSearch(forceRetry: true),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: context.primary,
+                              backgroundColor: const Color(0xFF6C63FF),
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -575,7 +575,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   groupValue: current.isEmpty
                                       ? null
                                       : current.first,
-                                  activeColor: context.primaryContainer,
+                                  activeColor: const Color(0xFF6C63FF),
                                   onChanged: (value) {
                                     setModalState(() {
                                       current
@@ -603,7 +603,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 Navigator.of(modalContext).pop(current),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: context.primary,
+                              backgroundColor: const Color(0xFF6C63FF),
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -649,7 +649,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 final title = AppText.titleMedium(
                   'حدد مدة التصويت',
                   fontWeight: FontWeight.w700,
-                  color: context.primary,
+                  color: const Color(0xFF6C63FF),
                 );
 
                 final isLoading =
@@ -706,7 +706,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 _commitMealSearch(forceRetry: true),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: context.primary,
+                              backgroundColor: const Color(0xFF6C63FF),
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -791,7 +791,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   groupValue: current.isEmpty
                                       ? null
                                       : current.first,
-                                  activeColor: context.primaryContainer,
+                                  activeColor: const Color(0xFF6C63FF),
                                   onChanged: (value) {
                                     setModalState(() {
                                       current
@@ -819,7 +819,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 Navigator.of(modalContext).pop(current),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: context.primary,
+                              backgroundColor: const Color(0xFF6C63FF),
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -1118,7 +1118,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
                                     borderSide: BorderSide(
-                                      color: context.primary,
+                                      color: const Color(0xFF6C63FF),
                                       width: 1.2,
                                     ),
                                   ),
@@ -1318,7 +1318,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   ? null
                                   : _createVoteAndContinue,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: context.primary,
+                                backgroundColor: const Color(0xFF6C63FF),
                                 foregroundColor: context.onPrimary,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(

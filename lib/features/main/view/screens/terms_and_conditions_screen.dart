@@ -164,10 +164,10 @@ class _LegalLinkCard extends StatelessWidget {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9F9FA),
+                  color: const Color(0xFFEEF0FA),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: const Color(0xFF0F8E98)),
+                child: Icon(icon, color: const Color(0xFF1E2A78)),
               ),
               const SizedBox(width: 12),
               Expanded(

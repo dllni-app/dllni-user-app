@@ -7,11 +7,13 @@ class OrderVotingModeButton extends StatelessWidget {
     required this.title,
     required this.isActive,
     required this.onTap,
+    this.activeColor = const Color(0xFF6C63FF),
   });
 
   final String title;
   final bool isActive;
   final VoidCallback onTap;
+  final Color activeColor;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class OrderVotingModeButton extends StatelessWidget {
         padding: const EdgeInsetsDirectional.symmetric(vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: isActive ? context.primary : context.onPrimary,
+          color: isActive ? activeColor : context.onPrimary,
         ),
         child: AppText.labelLarge(
           title,

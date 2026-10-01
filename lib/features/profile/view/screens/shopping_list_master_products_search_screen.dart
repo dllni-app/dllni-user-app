@@ -4,7 +4,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../domain/repository/shopping_lists_repo.dart';
@@ -122,7 +122,7 @@ class _ShoppingListMasterProductsSearchScreenState
                             size: 22,
                             color: count == 0
                                 ? const Color(0xFF9CA3AF)
-                                : AppColors.primary,
+                                : SharedPlatformColors.supermarket,
                           ),
                         ],
                       ),
@@ -261,7 +261,9 @@ class _ShoppingListMasterProductsSearchScreenState
       ),
     );
 
-    if (!mounted || requestGeneration != _searchGeneration || query != _query.trim()) {
+    if (!mounted ||
+        requestGeneration != _searchGeneration ||
+        query != _query.trim()) {
       return;
     }
 
@@ -342,8 +344,7 @@ class _ShoppingListMasterProductsSearchScreenState
                         child: ListView.separated(
                           shrinkWrap: true,
                           itemCount: selected.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: 8),
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
                           itemBuilder: (_, index) {
                             final item = selected[index];
                             return Container(
@@ -360,7 +361,10 @@ class _ShoppingListMasterProductsSearchScreenState
                               ),
                               child: Row(
                                 children: [
-                                  _ProductImage(imageUrl: item.imageUrl, size: 46),
+                                  _ProductImage(
+                                    imageUrl: item.imageUrl,
+                                    size: 46,
+                                  ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: AppText.bodyMedium(

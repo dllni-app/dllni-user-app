@@ -8,6 +8,7 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/utils/app_date_time_locale.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/app_text_fields.dart';
@@ -33,7 +34,9 @@ const _daysAr = <String>[
   'السبت',
 ];
 
-final _timeSlots = List<int>.unmodifiable(List<int>.generate(48, (i) => i * 30));
+final _timeSlots = List<int>.unmodifiable(
+  List<int>.generate(48, (i) => i * 30),
+);
 
 enum FrequencyType { weekly, monthly }
 
@@ -61,10 +64,20 @@ class _SaveException implements Exception {
 
 String _periodTitle(int index) {
   const names = <String>[
-    'الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة',
-    'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة',
+    'الأولى',
+    'الثانية',
+    'الثالثة',
+    'الرابعة',
+    'الخامسة',
+    'السادسة',
+    'السابعة',
+    'الثامنة',
+    'التاسعة',
+    'العاشرة',
   ];
-  return index < names.length ? 'الفترة ${names[index]}' : 'الفترة ${index + 1}';
+  return index < names.length
+      ? 'الفترة ${names[index]}'
+      : 'الفترة ${index + 1}';
 }
 
 int _normalizeTime(int minutes) {
@@ -89,8 +102,9 @@ String _apiTime(int value) {
 
 String _displayTime(int value) {
   final minutes = _normalizeTime(value);
-  return AppDateTimeLocale.dateFormat('hh:mm a')
-      .format(DateTime(1970, 1, 1, minutes ~/ 60, minutes % 60));
+  return AppDateTimeLocale.dateFormat(
+    'hh:mm a',
+  ).format(DateTime(1970, 1, 1, minutes ~/ 60, minutes % 60));
 }
 
 int? _weeklyDayFromLabel(String? label) {
@@ -116,7 +130,8 @@ class AddEditShoppingListScreen extends StatefulWidget {
   const AddEditShoppingListScreen({super.key, required this.args});
 
   @override
-  State<AddEditShoppingListScreen> createState() => _AddEditShoppingListScreenState();
+  State<AddEditShoppingListScreen> createState() =>
+      _AddEditShoppingListScreenState();
 }
 
 class AddEditShoppingListScreenArgs {
@@ -166,7 +181,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       body: Column(
         children: [
           AppSimpleAppBar2(
-            title: widget.args.shoppingListId == null ? 'إضافة قائمة جديدة' : 'تعديل القائمة',
+            title: widget.args.shoppingListId == null
+                ? 'إضافة قائمة جديدة'
+                : 'تعديل القائمة',
             arrowBackType: ArrowBackType.cupertino,
           ),
           Expanded(
@@ -210,7 +227,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
                       child: AppText(
                         'اختر منتجاتك',
                         style: TextStyle(
-                          color: AppColors.primary,
+                          color: SharedPlatformColors.supermarket,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -234,7 +251,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: AppColors.accent,
+                          color: SharedPlatformColors.supermarket,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: AppText(
@@ -276,17 +293,21 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: selected
-                  ? AppColors.primary.withValues(alpha: .12)
+                  ? SharedPlatformColors.supermarket.withValues(alpha: .12)
                   : const Color(0xFFF9FAFB),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: selected ? AppColors.primary : const Color(0xFFE5E7EB),
+                color: selected
+                    ? SharedPlatformColors.supermarket
+                    : const Color(0xFFE5E7EB),
               ),
             ),
             child: FaIcon(
               option.icon,
               size: 20,
-              color: selected ? AppColors.primary : const Color(0xFF64748B),
+              color: selected
+                  ? SharedPlatformColors.supermarket
+                  : const Color(0xFF64748B),
             ),
           ),
         );
@@ -327,7 +348,8 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: _ProductTile(
                 name: product.name,
-                onRemove: () => setState(() => _selectedProducts.remove(product.id)),
+                onRemove: () =>
+                    setState(() => _selectedProducts.remove(product.id)),
               ),
             ),
           ),
@@ -341,7 +363,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: const Color(0xFFF7F8FA)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -411,7 +433,8 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
                   title: _daysAr[day],
                   periods: _periodsForWeekday(day),
                   onAdd: () => _addPeriod(_periodsForWeekday(day)),
-                  onRemove: (index) => _removePeriod(_periodsForWeekday(day), index),
+                  onRemove: (index) =>
+                      _removePeriod(_periodsForWeekday(day), index),
                   onChange: (index, period) {
                     setState(() => _periodsForWeekday(day)[index] = period);
                   },
@@ -458,11 +481,13 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: selected
-                      ? AppColors.primary.withValues(alpha: .12)
+                      ? SharedPlatformColors.supermarket.withValues(alpha: .12)
                       : const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: selected ? AppColors.primary : const Color(0xFFE5E7EB),
+                    color: selected
+                        ? SharedPlatformColors.supermarket
+                        : const Color(0xFFE5E7EB),
                   ),
                 ),
                 child: AppText('$day', textDirection: ui.TextDirection.ltr),
@@ -478,7 +503,8 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
               title: 'اليوم $day',
               periods: _periodsForMonthDay(day),
               onAdd: () => _addPeriod(_periodsForMonthDay(day)),
-              onRemove: (index) => _removePeriod(_periodsForMonthDay(day), index),
+              onRemove: (index) =>
+                  _removePeriod(_periodsForMonthDay(day), index),
               onChange: (index, period) {
                 setState(() => _periodsForMonthDay(day)[index] = period);
               },
@@ -492,14 +518,21 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
   List<_Period> _periodsForWeekday(int day) =>
       _weeklyPeriods.putIfAbsent(day, () => <_Period>[const _Period.initial()]);
 
-  List<_Period> _periodsForMonthDay(int day) =>
-      _monthlyPeriods.putIfAbsent(day, () => <_Period>[const _Period.initial()]);
+  List<_Period> _periodsForMonthDay(int day) => _monthlyPeriods.putIfAbsent(
+    day,
+    () => <_Period>[const _Period.initial()],
+  );
 
   void _addPeriod(List<_Period> periods) {
     setState(() {
       final start = periods.isEmpty ? 9 * 60 : periods.last.to;
       final safeStart = start >= 23 * 60 + 30 ? 22 * 60 + 30 : start;
-      periods.add(_Period(from: safeStart, to: (safeStart + 60).clamp(0, 23 * 60 + 30).toInt()));
+      periods.add(
+        _Period(
+          from: safeStart,
+          to: (safeStart + 60).clamp(0, 23 * 60 + 30).toInt(),
+        ),
+      );
     });
   }
 
@@ -512,16 +545,21 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     final initial = _selectedProducts.values
         .map((p) => ShoppingListMasterProductOption(id: p.id, name: p.name))
         .toList();
-    final picked = await Navigator.of(context).push<List<ShoppingListMasterProductOption>>(
-      MaterialPageRoute(
-        builder: (_) => ShoppingListMasterProductsSearchScreen(initialSelected: initial),
-      ),
-    );
+    final picked = await Navigator.of(context)
+        .push<List<ShoppingListMasterProductOption>>(
+          MaterialPageRoute(
+            builder: (_) => ShoppingListMasterProductsSearchScreen(
+              initialSelected: initial,
+            ),
+          ),
+        );
     if (!mounted || picked == null) return;
     setState(() {
       _selectedProducts
         ..clear()
-        ..addEntries(picked.map((p) => MapEntry(p.id, _SelectedProduct(p.id, p.name))));
+        ..addEntries(
+          picked.map((p) => MapEntry(p.id, _SelectedProduct(p.id, p.name))),
+        );
     });
   }
 
@@ -543,7 +581,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     }
 
     final untagged = <_Period>[];
-    for (final apiPeriod in detail.schedule?.periods ?? const <ShoppingListSchedulePeriodModel>[]) {
+    for (final apiPeriod
+        in detail.schedule?.periods ??
+            const <ShoppingListSchedulePeriodModel>[]) {
       final period = _Period(
         from: _parseTime(apiPeriod.fromTime) ?? 9 * 60,
         to: _parseTime(apiPeriod.toTime) ?? 11 * 60,
@@ -598,7 +638,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       }
       for (var day = 0; day < 7; day++) {
         if (!_weekSelected[day]) continue;
-        if (!_validatePeriods(_periodsForWeekday(day), _daysAr[day])) return false;
+        if (!_validatePeriods(_periodsForWeekday(day), _daysAr[day])) {
+          return false;
+        }
       }
     } else {
       if (!_monthSelected.any((e) => e)) {
@@ -607,7 +649,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       }
       for (var day = 1; day <= 31; day++) {
         if (!_monthSelected[day - 1]) continue;
-        if (!_validatePeriods(_periodsForMonthDay(day), 'اليوم $day')) return false;
+        if (!_validatePeriods(_periodsForMonthDay(day), 'اليوم $day')) {
+          return false;
+        }
       }
     }
     return true;
@@ -620,7 +664,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     }
     for (var i = 0; i < periods.length; i++) {
       if (periods[i].from >= periods[i].to) {
-        _error('وقت البداية يجب أن يكون قبل وقت النهاية ($dayName - ${_periodTitle(i)})');
+        _error(
+          'وقت البداية يجب أن يكون قبل وقت النهاية ($dayName - ${_periodTitle(i)})',
+        );
         return false;
       }
     }
@@ -634,11 +680,13 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
         if (!_weekSelected[day]) continue;
         final periods = _periodsForWeekday(day);
         for (var i = 0; i < periods.length; i++) {
-          result.add(ShoppingListPeriodParam(
-            label: 'weekday=$day;${_periodTitle(i)}',
-            fromTime: _apiTime(periods[i].from),
-            toTime: _apiTime(periods[i].to),
-          ));
+          result.add(
+            ShoppingListPeriodParam(
+              label: 'weekday=$day;${_periodTitle(i)}',
+              fromTime: _apiTime(periods[i].from),
+              toTime: _apiTime(periods[i].to),
+            ),
+          );
         }
       }
     } else {
@@ -646,11 +694,13 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
         if (!_monthSelected[day - 1]) continue;
         final periods = _periodsForMonthDay(day);
         for (var i = 0; i < periods.length; i++) {
-          result.add(ShoppingListPeriodParam(
-            label: 'monthday=$day;${_periodTitle(i)}',
-            fromTime: _apiTime(periods[i].from),
-            toTime: _apiTime(periods[i].to),
-          ));
+          result.add(
+            ShoppingListPeriodParam(
+              label: 'monthday=$day;${_periodTitle(i)}',
+              fromTime: _apiTime(periods[i].from),
+              toTime: _apiTime(periods[i].to),
+            ),
+          );
         }
       }
     }
@@ -683,33 +733,37 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       int listId;
       if (editId == null) {
         final created = await _unwrap(
-          _repo.createShoppingList(CreateShoppingListParams(
-            name: _nameController.text.trim(),
-            description: description,
-            isActive: true,
-            frequencyType: frequency,
-            weekDays: weekDays,
-            monthDays: monthDays,
-            periods: _apiPeriods(),
-            scheduleIsActive: true,
-          )),
+          _repo.createShoppingList(
+            CreateShoppingListParams(
+              name: _nameController.text.trim(),
+              description: description,
+              isActive: true,
+              frequencyType: frequency,
+              weekDays: weekDays,
+              monthDays: monthDays,
+              periods: _apiPeriods(),
+              scheduleIsActive: true,
+            ),
+          ),
         );
         listId = created.data?.id ?? 0;
         if (listId <= 0) throw const _SaveException('تعذر إنشاء القائمة');
       } else {
         listId = editId;
         await _unwrap(
-          _repo.updateShoppingList(UpdateShoppingListParams(
-            shoppingListId: listId,
-            name: _nameController.text.trim(),
-            description: description,
-            isActive: true,
-            scheduleFrequencyType: frequency,
-            scheduleWeekDays: weekDays,
-            scheduleMonthDays: monthDays,
-            schedulePeriods: _apiPeriods(),
-            scheduleIsActive: true,
-          )),
+          _repo.updateShoppingList(
+            UpdateShoppingListParams(
+              shoppingListId: listId,
+              name: _nameController.text.trim(),
+              description: description,
+              isActive: true,
+              scheduleFrequencyType: frequency,
+              scheduleWeekDays: weekDays,
+              scheduleMonthDays: monthDays,
+              schedulePeriods: _apiPeriods(),
+              scheduleIsActive: true,
+            ),
+          ),
         );
       }
 
@@ -717,7 +771,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       final desired = _selectedProducts.keys.toSet();
       final actual = saved.items.map((e) => e.masterProductId).toSet();
       if (desired.length != actual.length || !desired.every(actual.contains)) {
-        throw const _SaveException('لم يتم حفظ جميع المنتجات المختارة، حاول مرة أخرى');
+        throw const _SaveException(
+          'لم يتم حفظ جميع المنتجات المختارة، حاول مرة أخرى',
+        );
       }
 
       widget.args.profileBloc.add(
@@ -729,7 +785,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       if (!mounted) return;
       AppToast.showToast(
         context: context,
-        message: editId == null ? 'تم إضافة القائمة والمنتجات بنجاح' : 'تم تحديث القائمة والمنتجات بنجاح',
+        message: editId == null
+            ? 'تم إضافة القائمة والمنتجات بنجاح'
+            : 'تم تحديث القائمة والمنتجات بنجاح',
         type: ToastificationType.success,
       );
       Navigator.of(context).pop(true);
@@ -746,7 +804,9 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
 
   Future<ShoppingListDetailModel> _syncProducts(int listId) async {
     var response = await _unwrap(
-      _repo.fetchShoppingListDetail(FetchShoppingListDetailParams(shoppingListId: listId)),
+      _repo.fetchShoppingListDetail(
+        FetchShoppingListDetailParams(shoppingListId: listId),
+      ),
     );
     var detail = response.data;
     if (detail == null) throw const _SaveException('تعذر تحميل منتجات القائمة');
@@ -754,12 +814,18 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     final desired = _selectedProducts.keys.toSet();
     final kept = <int>{};
     for (final item in List<ShoppingListItemModel>.from(detail.items)) {
-      final remove = !desired.contains(item.masterProductId) || kept.contains(item.masterProductId);
+      final remove =
+          !desired.contains(item.masterProductId) ||
+          kept.contains(item.masterProductId);
       if (remove && item.id > 0) {
-        await _unwrap(_repo.deleteShoppingListItem(DeleteShoppingListItemParams(
-          shoppingListId: listId,
-          itemId: item.id,
-        )));
+        await _unwrap(
+          _repo.deleteShoppingListItem(
+            DeleteShoppingListItemParams(
+              shoppingListId: listId,
+              itemId: item.id,
+            ),
+          ),
+        );
       } else if (!remove) {
         kept.add(item.masterProductId);
       }
@@ -768,20 +834,28 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
     var sortOrder = kept.length;
     for (final masterId in desired) {
       if (kept.contains(masterId)) continue;
-      await _unwrap(_repo.addShoppingListItem(AddShoppingListItemParams(
-        shoppingListId: listId,
-        masterProductId: masterId,
-        quantity: 1,
-        sortOrder: sortOrder++,
-        isIncluded: true,
-      )));
+      await _unwrap(
+        _repo.addShoppingListItem(
+          AddShoppingListItemParams(
+            shoppingListId: listId,
+            masterProductId: masterId,
+            quantity: 1,
+            sortOrder: sortOrder++,
+            isIncluded: true,
+          ),
+        ),
+      );
     }
 
     response = await _unwrap(
-      _repo.fetchShoppingListDetail(FetchShoppingListDetailParams(shoppingListId: listId)),
+      _repo.fetchShoppingListDetail(
+        FetchShoppingListDetailParams(shoppingListId: listId),
+      ),
     );
     detail = response.data;
-    if (detail == null) throw const _SaveException('تعذر التحقق من منتجات القائمة');
+    if (detail == null) {
+      throw const _SaveException('تعذر التحقق من منتجات القائمة');
+    }
     return detail;
   }
 
@@ -906,13 +980,15 @@ class _DayPeriodsEditor extends StatelessWidget {
                         _TimeDropdown(
                           label: 'من',
                           value: period.from,
-                          onChanged: (value) => onChange(index, period.copyWith(from: value)),
+                          onChanged: (value) =>
+                              onChange(index, period.copyWith(from: value)),
                         ),
                         const SizedBox(height: 12),
                         _TimeDropdown(
                           label: 'إلى',
                           value: period.to,
-                          onChanged: (value) => onChange(index, period.copyWith(to: value)),
+                          onChanged: (value) =>
+                              onChange(index, period.copyWith(to: value)),
                         ),
                       ],
                     ),
@@ -927,19 +1003,27 @@ class _DayPeriodsEditor extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: .06),
+                color: SharedPlatformColors.supermarket.withValues(alpha: .06),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withValues(alpha: .21)),
+                border: Border.all(
+                  color: SharedPlatformColors.supermarket.withValues(
+                    alpha: .21,
+                  ),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FaIcon(FontAwesomeIcons.plus, size: 14, color: AppColors.primary),
+                  FaIcon(
+                    FontAwesomeIcons.plus,
+                    size: 14,
+                    color: SharedPlatformColors.supermarket,
+                  ),
                   const SizedBox(width: 8),
                   AppText(
                     'إضافة فترة',
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: SharedPlatformColors.supermarket,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -979,11 +1063,14 @@ class _TimeDropdown extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<int>(
-          value: _normalizeTime(value),
+          initialValue: _normalizeTime(value),
           isExpanded: true,
           menuMaxHeight: 360,
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 8,
+            ),
             prefixIcon: const Padding(
               padding: EdgeInsetsDirectional.only(start: 8, end: 4),
               child: FaIcon(

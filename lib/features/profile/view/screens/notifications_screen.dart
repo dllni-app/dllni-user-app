@@ -197,7 +197,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               ),
                               SizedBox(height: 5),
                               Text(
-                                'ستظهر هنا تحديثات الحجوزات والتنبيهات المهمة.',
+                                'ستظهر هنا تحديثات الطلبات والتنبيهات المهمة.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Color(0xFF667085),
@@ -367,7 +367,7 @@ class _NotificationsAppBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1E2A78),
         border: const Border(
-          bottom: BorderSide(color: Color(0xFF12B8C4), width: 2),
+          bottom: BorderSide(color: Color(0xFF6C63FF), width: 2),
         ),
         borderRadius: const BorderRadius.only(
           bottomRight: Radius.circular(20),

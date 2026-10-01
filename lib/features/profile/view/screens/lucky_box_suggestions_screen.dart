@@ -26,8 +26,7 @@ class LuckyBoxSuggestionsScreen extends StatefulWidget {
       _LuckyBoxSuggestionsScreenState();
 }
 
-class _LuckyBoxSuggestionsScreenState
-    extends State<LuckyBoxSuggestionsScreen> {
+class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
   late LuckBoxSuggestResponseModel _response;
   late final TextEditingController _budgetController;
   late final TextEditingController _constraintsController;
@@ -99,16 +98,15 @@ class _LuckyBoxSuggestionsScreenState
 
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(failure.message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(failure.message)));
         },
         (response) {
           setState(() {
             _response = response;
             final perPerson =
-                response.budget?.budgetPerPerson ??
-                widget.args.budgetPerPerson;
+                response.budget?.budgetPerPerson ?? widget.args.budgetPerPerson;
             _budgetController.text = '$perPerson';
           });
         },
@@ -166,9 +164,7 @@ class _LuckyBoxSuggestionsScreenState
     );
   }
 
-  Future<void> _openSuggestionProductsSheet(
-    LuckBoxBundleModel bundle,
-  ) async {
+  Future<void> _openSuggestionProductsSheet(LuckBoxBundleModel bundle) async {
     final items = bundle.lineItems;
 
     await showModalBottomSheet<void>(
@@ -188,12 +184,7 @@ class _LuckyBoxSuggestionsScreenState
               child: SizedBox(
                 height: MediaQuery.of(context).size.height * 0.78,
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    16,
-                    12,
-                    16,
-                    16,
-                  ),
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -240,8 +231,9 @@ class _LuckyBoxSuggestionsScreenState
                                       addingProductIds.contains(productId);
 
                                   return Container(
-                                    padding:
-                                        const EdgeInsetsDirectional.all(10),
+                                    padding: const EdgeInsetsDirectional.all(
+                                      10,
+                                    ),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(14),
                                       border: Border.all(
@@ -251,8 +243,9 @@ class _LuckyBoxSuggestionsScreenState
                                     child: Row(
                                       children: [
                                         ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                           child: _ProductImage(
                                             imageUrl: item.imageUrl,
                                           ),
@@ -311,7 +304,9 @@ class _LuckyBoxSuggestionsScreenState
                                                     }
                                                   },
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: context.primary,
+                                              backgroundColor: const Color(
+                                                0xFF6C63FF,
+                                              ),
                                               foregroundColor:
                                                   context.onPrimary,
                                               elevation: 0,
@@ -373,12 +368,7 @@ class _LuckyBoxSuggestionsScreenState
                 onRefresh: _refreshSuggestions,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    16,
-                    18,
-                    16,
-                    28,
-                  ),
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 18, 16, 28),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -400,8 +390,9 @@ class _LuckyBoxSuggestionsScreenState
                               controller: _budgetController,
                               readOnly: true,
                               suffixIcon: Padding(
-                                padding:
-                                    const EdgeInsetsDirectional.only(end: 10),
+                                padding: const EdgeInsetsDirectional.only(
+                                  end: 10,
+                                ),
                                 child: Center(
                                   widthFactor: 1,
                                   child: AppText.bodyMedium(
@@ -481,9 +472,7 @@ class _LuckyBoxSuggestionsScreenState
               padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 14),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: Color(0xffE5E7EB)),
-                ),
+                border: Border(top: BorderSide(color: Color(0xffE5E7EB))),
               ),
               child: ElevatedButton.icon(
                 onPressed: _isRefreshing ? null : _refreshSuggestions,
@@ -504,9 +493,11 @@ class _LuckyBoxSuggestionsScreenState
                 ),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
-                  backgroundColor: context.primary,
+                  backgroundColor: const Color(0xFF6C63FF),
                   foregroundColor: context.onPrimary,
-                  disabledBackgroundColor: context.primary.withAlpha(140),
+                  disabledBackgroundColor: const Color(
+                    0xFF6C63FF,
+                  ).withAlpha(140),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),

@@ -34,9 +34,7 @@ class _CouponsScreenState extends State<CouponsScreen> {
 
   Future<void> _refreshCoupons() => _cubit.loadCoupons();
 
-  List<PlatformCouponModel> _visibleCoupons(
-    List<PlatformCouponModel> coupons,
-  ) {
+  List<PlatformCouponModel> _visibleCoupons(List<PlatformCouponModel> coupons) {
     return coupons
         .where((coupon) => coupon.appliesToSection(_selectedSection))
         .toList(growable: false);
@@ -57,9 +55,9 @@ class _CouponsScreenState extends State<CouponsScreen> {
             current.couponsStatus == BlocStatus.failed,
         listener: (context, state) {
           if (state.errorMessage == null || state.errorMessage!.isEmpty) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage!)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         },
         child: Scaffold(
           backgroundColor: const Color(0xffF9FAFB),
@@ -105,9 +103,7 @@ class _CouponsScreenState extends State<CouponsScreen> {
                       if (state.couponsStatus == null ||
                           state.couponsStatus == BlocStatus.loading ||
                           state.couponsStatus == BlocStatus.init) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return const Center(child: CircularProgressIndicator());
                       }
 
                       final visibleCoupons = _visibleCoupons(state.coupons);
@@ -142,9 +138,7 @@ class _CouponsScreenState extends State<CouponsScreen> {
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) =>
-                              PlatformCouponCard(
-                            coupon: visibleCoupons[index],
-                          ),
+                              PlatformCouponCard(coupon: visibleCoupons[index]),
                         ),
                       );
                     },
@@ -172,6 +166,19 @@ class _CouponSectionFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = switch (label) {
+      'التنظيف' => const Color(0xFF12B8C4),
+      'المطاعم' => const Color(0xFFC65324),
+      'السوبر ماركت' => const Color(0xFF138A62),
+      _ => const Color(0xFF1E2A78),
+    };
+    final soft = switch (label) {
+      'التنظيف' => const Color(0xFFE9F9FA),
+      'المطاعم' => const Color(0xFFFFF0E8),
+      'السوبر ماركت' => const Color(0xFFEAF6F1),
+      _ => const Color(0xFFEEF0FA),
+    };
+
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 8),
       child: ChoiceChip(
@@ -179,16 +186,10 @@ class _CouponSectionFilter extends StatelessWidget {
         selected: selected,
         onSelected: (_) => onSelected(),
         showCheckmark: false,
-        selectedColor: const Color(0xffFFF7ED),
-        side: BorderSide(
-          color: selected
-              ? const Color(0xffF97316)
-              : const Color(0xffE5E7EB),
-        ),
+        selectedColor: soft,
+        side: BorderSide(color: selected ? accent : const Color(0xffE5E7EB)),
         labelStyle: TextStyle(
-          color: selected
-              ? const Color(0xffC2410C)
-              : const Color(0xff4B5563),
+          color: selected ? accent : const Color(0xff4B5563),
           fontWeight: FontWeight.w600,
         ),
       ),

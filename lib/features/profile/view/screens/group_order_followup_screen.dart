@@ -984,7 +984,7 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
                                 },
                                 icon: FaIcon(
                                   FontAwesomeIcons.shareNodes,
-                                  color: context.primary,
+                                  color: const Color(0xFFC65324),
                                   size: 20,
                                 ),
                               )

@@ -2,11 +2,11 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/group_order_api_models.dart';
 import '../../domain/usecases/create_group_order_use_case.dart';
 import '../../domain/usecases/fetch_active_group_orders_use_case.dart';
+import '../../domain/usecases/join_group_order_use_case.dart';
 import '../manager/bloc/profile_bloc.dart';
 import '../widgets/expandable_numbered_section.dart';
 import '../widgets/filled_text_field.dart';
@@ -26,7 +26,8 @@ class GroupOrderSetupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<ProfileBloc>(
-      create: (_) => getIt<ProfileBloc>()..add(FetchGroupOrderRestaurantsEvent()),
+      create: (_) =>
+          getIt<ProfileBloc>()..add(FetchGroupOrderRestaurantsEvent()),
       child: const _GroupOrderSetupBody(),
     );
   }
@@ -42,6 +43,7 @@ class _GroupOrderSetupBody extends StatefulWidget {
 class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
   final TextEditingController _restaurantController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _joinController = TextEditingController();
   GroupOrderMode _mode = GroupOrderMode.create;
   bool _isRestaurantExpanded = true;
   bool _isOptionsExpanded = true;
@@ -50,14 +52,40 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
   void dispose() {
     _restaurantController.dispose();
     _nameController.dispose();
+    _joinController.dispose();
     super.dispose();
   }
 
   Future<void> _pickRestaurant() async {
     final selected = await GroupOrderRestaurantPickerSheet.show(context);
     if (!mounted || selected == null) return;
-    context.read<ProfileBloc>().add(SelectGroupOrderRestaurantEvent(restaurant: selected));
+    context.read<ProfileBloc>().add(
+      SelectGroupOrderRestaurantEvent(restaurant: selected),
+    );
     _restaurantController.text = selected.name ?? '';
+  }
+
+  String _shareTokenFromInput(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return '';
+    final uri = Uri.tryParse(value);
+    if (uri != null && uri.hasScheme && uri.pathSegments.isNotEmpty) {
+      return Uri.decodeComponent(uri.pathSegments.last).trim();
+    }
+    return value;
+  }
+
+  void _joinGroup() {
+    final token = _shareTokenFromInput(_joinController.text);
+    if (token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('أدخل رابط أو رمز المجموعة أولاً')),
+      );
+      return;
+    }
+    context.read<ProfileBloc>().add(
+      JoinGroupOrderEvent(params: JoinGroupOrderParams(shareToken: token)),
+    );
   }
 
   void _onModeChanged(GroupOrderMode mode) {
@@ -66,34 +94,52 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
       _mode = mode;
     });
     if (mode == GroupOrderMode.existingGroups) {
-      context.read<ProfileBloc>().add(FetchActiveGroupOrdersEvent(params: FetchActiveGroupOrdersParams()));
+      context.read<ProfileBloc>().add(
+        FetchActiveGroupOrdersEvent(params: FetchActiveGroupOrdersParams()),
+      );
     }
   }
 
-  List<GroupOrderCreatedGroupItem> _mapActiveGroupsToItems(List<GroupOrderDetailsModel> groups) {
+  List<GroupOrderCreatedGroupItem> _mapActiveGroupsToItems(
+    List<GroupOrderDetailsModel> groups,
+  ) {
     return groups.where((e) => e.groupOrder?.id != null).map((entry) {
       final groupOrder = entry.groupOrder!;
       final id = groupOrder.id!;
       final title = (groupOrder.name ?? '').trim().isNotEmpty
           ? groupOrder.name!.trim()
-          : ((groupOrder.restaurantName ?? '').trim().isNotEmpty ? groupOrder.restaurantName!.trim() : 'جلسة #$id');
-      final participants = entry.counts?.participants ?? entry.participants.length;
-      final responded = entry.counts?.responded ?? entry.participants.where((e) => e.hasResponded).length;
-      final pending = entry.counts?.pending ?? (participants - responded).clamp(0, participants);
-      final itemsCount = entry.counts?.items ?? entry.participants.fold<int>(0, (acc, p) => acc + p.items.length);
+          : ((groupOrder.restaurantName ?? '').trim().isNotEmpty
+                ? groupOrder.restaurantName!.trim()
+                : 'جلسة #$id');
+      final participants =
+          entry.counts?.participants ?? entry.participants.length;
+      final responded =
+          entry.counts?.responded ??
+          entry.participants.where((e) => e.hasResponded).length;
+      final pending =
+          entry.counts?.pending ??
+          (participants - responded).clamp(0, participants);
+      final itemsCount =
+          entry.counts?.items ??
+          entry.participants.fold<int>(0, (acc, p) => acc + p.items.length);
       final total = entry.amounts?.total;
       final detailParts = <String>[
         '$responded/$participants مشارك',
         '$pending بانتظار الرد',
         '$itemsCount عنصر',
-        if (total != null && total > 0) '${total.toStringAsFixed(1)} ر.س',
+        if (total != null && total > 0) '${total.toStringAsFixed(1)} ل.س',
         _statusLabel(groupOrder.status),
       ];
       final remaining = _remainingLabel(groupOrder.secondsRemaining);
       if (remaining != null) {
         detailParts.add(remaining);
       }
-      return GroupOrderCreatedGroupItem(title: title, detail: detailParts.join(' • '), groupOrderId: id, initialData: entry);
+      return GroupOrderCreatedGroupItem(
+        title: title,
+        detail: detailParts.join(' • '),
+        groupOrderId: id,
+        initialData: entry,
+      );
     }).toList();
   }
 
@@ -126,15 +172,34 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
   Widget build(BuildContext context) {
     return BlocListener<ProfileBloc, ProfileState>(
       listenWhen: (previous, current) =>
-          previous.errorMessage != current.errorMessage || previous.createGroupOrderStatus != current.createGroupOrderStatus,
+          previous.errorMessage != current.errorMessage ||
+          previous.createGroupOrderStatus != current.createGroupOrderStatus ||
+          previous.joinGroupOrderStatus != current.joinGroupOrderStatus,
       listener: (context, state) {
         final message = state.errorMessage;
         if (message != null && message.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
+        }
+        if (state.joinGroupOrderStatus == BlocStatus.success) {
+          final result = state.joinGroupOrderResult;
+          final groupOrderId =
+              result?.groupOrderId ?? result?.details?.groupOrder?.id;
+          if (groupOrderId != null && groupOrderId > 0) {
+            _joinController.clear();
+            context.pushRoute(
+              '/group-order/followup',
+              arguments: GroupOrderFollowupScreenParams(
+                groupOrderId: groupOrderId,
+              ),
+            );
+          }
         }
         if (state.createGroupOrderStatus == BlocStatus.success) {
           final result = state.createGroupOrderResult;
-          final groupOrderId = result?.groupOrderId ?? result?.details?.groupOrder?.id;
+          final groupOrderId =
+              result?.groupOrderId ?? result?.details?.groupOrder?.id;
           if (groupOrderId != null) {
             showModalBottomSheet(
               context: context,
@@ -151,14 +216,18 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                     Navigator.of(context).pop();
                     context.pushRoute(
                       '/group-order/followup',
-                      arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
+                      arguments: GroupOrderFollowupScreenParams(
+                        groupOrderId: groupOrderId,
+                      ),
                     );
                   },
                   onShare: () async {
                     Navigator.of(context).pop();
                     context.pushRoute(
                       '/group-order/followup',
-                      arguments: GroupOrderFollowupScreenParams(groupOrderId: groupOrderId),
+                      arguments: GroupOrderFollowupScreenParams(
+                        groupOrderId: groupOrderId,
+                      ),
                     );
                   },
                 );
@@ -172,11 +241,14 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
         body: SafeArea(
           child: Column(
             children: [
-              const PersonalDetailsAppBar(title: 'التكامل الاجتماعي'),
+              const PersonalDetailsAppBar(title: 'طلب جماعي'),
               const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
-                child: GroupOrderModeSwitcher(mode: _mode, onModeChanged: _onModeChanged),
+                child: GroupOrderModeSwitcher(
+                  mode: _mode,
+                  onModeChanged: _onModeChanged,
+                ),
               ),
               const SizedBox(height: 14),
               Expanded(
@@ -191,7 +263,8 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                               isExpanded: _isRestaurantExpanded,
                               onHeaderTap: () {
                                 setState(() {
-                                  _isRestaurantExpanded = !_isRestaurantExpanded;
+                                  _isRestaurantExpanded =
+                                      !_isRestaurantExpanded;
                                 });
                               },
                               child: FilledTextField(
@@ -200,7 +273,9 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                                 controller: _restaurantController,
                                 readOnly: true,
                                 onTap: _pickRestaurant,
-                                suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                                suffixIcon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -213,99 +288,184 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                                   _isOptionsExpanded = !_isOptionsExpanded;
                                 });
                               },
-                              child: FilledTextField(label: 'اسم الجلسة (اختياري)', controller: _nameController),
+                              child: FilledTextField(
+                                label: 'اسم الجلسة (اختياري)',
+                                controller: _nameController,
+                              ),
                             ),
                           ],
                         )
-                      : BlocBuilder<ProfileBloc, ProfileState>(
-                          buildWhen: (previous, current) =>
-                              previous.activeGroupOrdersStatus != current.activeGroupOrdersStatus ||
-                              previous.activeGroupOrders != current.activeGroupOrders,
-                          builder: (context, state) {
-                            if (state.activeGroupOrdersStatus == BlocStatus.loading) {
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 40),
-                                child: Center(child: CircularProgressIndicator()),
-                              );
-                            }
-                            if (state.activeGroupOrdersStatus == BlocStatus.failed) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                child: Column(
-                                  children: [
-                                    AppText.bodyMedium(state.errorMessage ?? 'تعذر تحميل الجلسات القائمة', color: const Color(0xff6B7280)),
-                                    const SizedBox(height: 12),
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        context.read<ProfileBloc>().add(FetchActiveGroupOrdersEvent(params: FetchActiveGroupOrdersParams()));
-                                      },
-                                      child: const Text('إعادة المحاولة'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                            final items = _mapActiveGroupsToItems(state.activeGroupOrders);
-                            if (items.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                child: AppText.bodyMedium('لا توجد جلسات قائمة حالياً', color: const Color(0xff6B7280)),
-                              );
-                            }
-                            return GroupOrderCreatedGroupsList(
-                              items: items,
-                              onGroupTap: (item) {
-                                context.pushRoute(
-                                  '/group-order/followup',
-                                  arguments: GroupOrderFollowupScreenParams(groupOrderId: item.groupOrderId),
+                      : Column(
+                          children: [
+                            BlocBuilder<ProfileBloc, ProfileState>(
+                              buildWhen: (previous, current) =>
+                                  previous.joinGroupOrderStatus !=
+                                  current.joinGroupOrderStatus,
+                              builder: (context, state) {
+                                return _GroupJoinCard(
+                                  controller: _joinController,
+                                  loading:
+                                      state.joinGroupOrderStatus ==
+                                      BlocStatus.loading,
+                                  onJoin: _joinGroup,
                                 );
                               },
-                            );
-                          },
+                            ),
+                            const SizedBox(height: 14),
+                            BlocBuilder<ProfileBloc, ProfileState>(
+                              buildWhen: (previous, current) =>
+                                  previous.activeGroupOrdersStatus !=
+                                      current.activeGroupOrdersStatus ||
+                                  previous.activeGroupOrders !=
+                                      current.activeGroupOrders,
+                              builder: (context, state) {
+                                if (state.activeGroupOrdersStatus ==
+                                    BlocStatus.loading) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 40),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+                                if (state.activeGroupOrdersStatus ==
+                                    BlocStatus.failed) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        AppText.bodyMedium(
+                                          state.errorMessage ??
+                                              'تعذر تحميل الجلسات القائمة',
+                                          color: const Color(0xff6B7280),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        OutlinedButton(
+                                          onPressed: () {
+                                            context.read<ProfileBloc>().add(
+                                              FetchActiveGroupOrdersEvent(
+                                                params:
+                                                    FetchActiveGroupOrdersParams(),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('إعادة المحاولة'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                                final items = _mapActiveGroupsToItems(
+                                  state.activeGroupOrders,
+                                );
+                                if (items.isEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                    child: AppText.bodyMedium(
+                                      'لا توجد جلسات قائمة حالياً',
+                                      color: const Color(0xff6B7280),
+                                    ),
+                                  );
+                                }
+                                return GroupOrderCreatedGroupsList(
+                                  items: items,
+                                  onGroupTap: (item) {
+                                    context.pushRoute(
+                                      '/group-order/followup',
+                                      arguments: GroupOrderFollowupScreenParams(
+                                        groupOrderId: item.groupOrderId,
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
                         ),
                 ),
               ),
               if (_mode == GroupOrderMode.create)
                 Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 16,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
                         flex: 3,
                         child: BlocBuilder<ProfileBloc, ProfileState>(
                           buildWhen: (previous, current) =>
-                              previous.createGroupOrderStatus != current.createGroupOrderStatus ||
-                              previous.selectedGroupOrderRestaurant != current.selectedGroupOrderRestaurant,
+                              previous.createGroupOrderStatus !=
+                                  current.createGroupOrderStatus ||
+                              previous.selectedGroupOrderRestaurant !=
+                                  current.selectedGroupOrderRestaurant,
                           builder: (context, state) {
-                            final isLoading = state.createGroupOrderStatus == BlocStatus.loading;
+                            final isLoading =
+                                state.createGroupOrderStatus ==
+                                BlocStatus.loading;
                             return ElevatedButton(
                               onPressed: isLoading
                                   ? null
                                   : () {
-                                      final selectedRestaurantId = state.selectedGroupOrderRestaurant?.id;
-                                      if (selectedRestaurantId == null || selectedRestaurantId <= 0) {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار مطعم أولاً')));
+                                      final selectedRestaurantId = state
+                                          .selectedGroupOrderRestaurant
+                                          ?.id;
+                                      if (selectedRestaurantId == null ||
+                                          selectedRestaurantId <= 0) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'يرجى اختيار مطعم أولاً',
+                                            ),
+                                          ),
+                                        );
                                         return;
                                       }
                                       context.read<ProfileBloc>().add(
                                         CreateGroupOrderEvent(
                                           params: CreateGroupOrderParams(
                                             restaurantId: selectedRestaurantId,
-                                            name: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
+                                            name:
+                                                _nameController.text
+                                                    .trim()
+                                                    .isEmpty
+                                                ? null
+                                                : _nameController.text.trim(),
                                           ),
                                         ),
                                       );
                                     },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: context.primary,
+                                backgroundColor: const Color(0xFFC65324),
                                 foregroundColor: context.onPrimary,
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                               child: isLoading
-                                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : AppText.labelLarge('إنشاء التصويت', color: context.onPrimary, fontWeight: FontWeight.w700),
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : AppText.labelLarge(
+                                      'إنشاء المجموعة',
+                                      color: context.onPrimary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                             );
                           },
                         ),
@@ -315,11 +475,19 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                         child: OutlinedButton(
                           onPressed: () => Navigator.of(context).maybePop(),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: context.error.withAlpha(200)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: BorderSide(
+                              color: context.error.withAlpha(200),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: AppText.labelLarge('إلغاء', color: context.error, fontWeight: FontWeight.w600),
+                          child: AppText.labelLarge(
+                            'إلغاء',
+                            color: context.error,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -329,6 +497,97 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GroupJoinCard extends StatelessWidget {
+  const _GroupJoinCard({
+    required this.controller,
+    required this.loading,
+    required this.onJoin,
+  });
+
+  final TextEditingController controller;
+  final bool loading;
+  final VoidCallback onJoin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF0FA),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'لديك رابط أو رمز مجموعة؟',
+            style: TextStyle(
+              color: Color(0xFF1E2A78),
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'الصق رابط الدعوة أو أدخل الرمز للانضمام مباشرة.',
+            style: TextStyle(color: Color(0xFF66708C), fontSize: 11),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  enabled: !loading,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (!loading) onJoin();
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'الرابط أو الرمز',
+                    filled: true,
+                    fillColor: Colors.white,
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: loading ? null : onJoin,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E2A78),
+                  minimumSize: const Size(82, 46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'انضمام',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

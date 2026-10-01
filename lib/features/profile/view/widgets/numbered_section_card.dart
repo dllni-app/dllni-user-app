@@ -38,13 +38,13 @@ class NumberedSectionCard extends StatelessWidget {
                 height: 32,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9F9FA),
+                  color: const Color(0xFFEEF0FA),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   sectionNumber,
                   style: const TextStyle(
-                    color: Color(0xFF0F8E98),
+                    color: Color(0xFF1E2A78),
                     fontWeight: FontWeight.w900,
                   ),
                 ),

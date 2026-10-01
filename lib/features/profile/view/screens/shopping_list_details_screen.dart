@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/app_text_fields.dart';
 import '../../../../core/widgets/failure_widget.dart';
@@ -87,7 +88,7 @@ class ShoppingListDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     if (args.shoppingListId <= 0) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF3F4F6),
+        backgroundColor: const Color(0xFFF7F8FA),
         body: Column(
           children: [
             AppSimpleAppBar2(
@@ -367,7 +368,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
               ? state.shoppingListDetail!.name
               : widget.args.shoppingListName;
           return Scaffold(
-            backgroundColor: const Color(0xFFF3F4F6),
+            backgroundColor: const Color(0xFFF7F8FA),
             body: Column(
               children: [
                 AppSimpleAppBar2(
@@ -439,7 +440,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
               child: AppText(
                 "اختر منتجاتك",
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: SharedPlatformColors.supermarket,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -516,7 +517,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.white,
-                border: Border.all(color: const Color(0xFFF3F4F6)),
+                border: Border.all(color: const Color(0xFFF7F8FA)),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: const [
                   BoxShadow(
@@ -645,7 +646,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: SharedPlatformColors.supermarket,
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: const [
                       BoxShadow(
@@ -695,7 +696,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: AppColors.accent,
+                color: SharedPlatformColors.supermarket,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: AppText(

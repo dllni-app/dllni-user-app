@@ -2,7 +2,11 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class OrdersCartOrdersSegmentBar extends StatelessWidget {
-  const OrdersCartOrdersSegmentBar({super.key, required this.selectedIndex, required this.onChanged});
+  const OrdersCartOrdersSegmentBar({
+    super.key,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
 
   final int selectedIndex;
   final ValueChanged<int> onChanged;
@@ -10,7 +14,7 @@ class OrdersCartOrdersSegmentBar extends StatelessWidget {
   static const int cartIndex = 0;
   static const int ordersIndex = 1;
 
-  static const _labels = <String>['السلات', 'الطلبيات'];
+  static const _labels = <String>['السلات', 'الطلبات'];
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +24,14 @@ class OrdersCartOrdersSegmentBar extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [BoxShadow(color: Color(0x14000000), offset: Offset(0, 4), blurRadius: 12, spreadRadius: 0)],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            offset: Offset(0, 4),
+            blurRadius: 12,
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -50,7 +61,11 @@ class OrdersCartOrdersSegmentBar extends StatelessWidget {
 }
 
 class _Segment extends StatelessWidget {
-  const _Segment({required this.label, required this.isSelected, required this.onTap});
+  const _Segment({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   final String label;
   final bool isSelected;
@@ -74,7 +89,9 @@ class _Segment extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             gradient: isSelected ? _gradient : null,
             color: isSelected ? null : Colors.white,
-            border: Border.all(color: isSelected ? Colors.transparent : const Color(0xFFE5E7EB)),
+            border: Border.all(
+              color: isSelected ? Colors.transparent : const Color(0xFFE5E7EB),
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),

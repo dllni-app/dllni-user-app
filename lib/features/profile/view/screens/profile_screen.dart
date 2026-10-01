@@ -202,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 68,
                           height: 68,
                           decoration: const BoxDecoration(
-                            color: Color(0xFFE9F9FA),
+                            color: Color(0xFFEEF0FA),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -222,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'سجّل الدخول لإدارة حجوزات التنظيف وعناوين الخدمة والإشعارات من مكان واحد.',
+                          'سجّل الدخول لحفظ عناوينك، متابعة طلباتك والاستفادة من الكوبونات.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Color(0xFF667085),
@@ -265,7 +265,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 10),
                   _menuGroup([
                     SectionCard(
-                      containerColor: const Color(0xFFE9F9FA),
+                      containerColor: const Color(0xFFEEF0FA),
                       image: const Icon(
                         Icons.support_agent_rounded,
                         color: Color(0xFF0F8E98),
@@ -330,13 +330,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     _divider(),
                     SectionCard(
-                      containerColor: const Color(0xFFE9F9FA),
+                      containerColor: const Color(0xFFEEF0FA),
                       image: const Icon(
                         Icons.location_on_outlined,
                         color: Color(0xFF0F8E98),
                       ),
                       title: 'العناوين المحفوظة',
-                      subtitle: 'أدر عناوين خدمة التنظيف والعنوان الافتراضي',
+                      subtitle: 'أدر عناوين التوصيل والخدمة والعنوان الافتراضي',
                       onTap: () =>
                           context.pushRoute('/myaddresses', arguments: false),
                     ),
@@ -348,16 +348,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Color(0xFFB54708),
                       ),
                       title: 'الإشعارات',
-                      subtitle: 'تابع تحديثات الحجوزات والتنبيهات المهمة',
+                      subtitle: 'تابع تحديثات الطلبات والتنبيهات المهمة',
                       onTap: _openNotifications,
                     ),
                   ]),
+                  const SizedBox(height: 20),
+                  SectionTitle(title: 'أدواتي'),
+                  const SizedBox(height: 10),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: 2.35,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    children: [
+                      _ProfileToolTile(
+                        title: 'الكوبونات',
+                        icon: Icons.local_offer_outlined,
+                        accent: const Color(0xFFFF7A00),
+                        onTap: () => context.pushRoute('/coupons'),
+                      ),
+                      _ProfileToolTile(
+                        title: 'قوائم التسوق',
+                        icon: Icons.checklist_rounded,
+                        accent: const Color(0xFF138A62),
+                        onTap: () => context.pushRoute('/shopping_list'),
+                      ),
+                      _ProfileToolTile(
+                        title: 'طلبات جماعية',
+                        icon: Icons.groups_2_outlined,
+                        accent: const Color(0xFFC65324),
+                        onTap: () => context.pushRoute('/group-order/create'),
+                      ),
+                      _ProfileToolTile(
+                        title: 'التصويت',
+                        icon: Icons.how_to_vote_outlined,
+                        accent: const Color(0xFF6C63FF),
+                        onTap: () => context.pushRoute('/ordervoting'),
+                      ),
+                      _ProfileToolTile(
+                        title: 'صندوق الحظ',
+                        icon: Icons.casino_outlined,
+                        accent: const Color(0xFFFF7A00),
+                        onTap: () => context.pushRoute('/luckyboxsetup'),
+                      ),
+                      _ProfileToolTile(
+                        title: 'العروض',
+                        icon: Icons.percent_rounded,
+                        accent: const Color(0xFF1E2A78),
+                        onTap: () => context.pushRoute('/coupons'),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   SectionTitle(title: 'المساعدة والمعلومات'),
                   const SizedBox(height: 10),
                   _menuGroup([
                     SectionCard(
-                      containerColor: const Color(0xFFE9F9FA),
+                      containerColor: const Color(0xFFEEF0FA),
                       image: const Icon(
                         Icons.support_agent_rounded,
                         color: Color(0xFF0F8E98),
@@ -416,6 +465,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileToolTile extends StatelessWidget {
+  const _ProfileToolTile({
+    required this.title,
+    required this.icon,
+    required this.accent,
+    required this.onTap,
+  });
+  final String title;
+  final IconData icon;
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(13),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: const Color(0xFFE4E7EC)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F8),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: accent, size: 19),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF172033),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -40,6 +40,7 @@ class _OrdersListTabState extends State<OrdersListTab> {
 
   late int segmentIndex;
   int cleaningOrdersTabIndex = _currentCleaningOrdersIndex;
+  int merchantOrdersTabIndex = _currentCleaningOrdersIndex;
   Timer? _cleaningPollTimer;
   Timer? _foodDeliveryPollTimer;
 
@@ -171,6 +172,17 @@ class _OrdersListTabState extends State<OrdersListTab> {
             effectiveSegmentIndex == OrdersCartOrdersSegmentBar.ordersIndex)
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10),
+            child: _CleaningOrdersTabBar(
+              selectedIndex: merchantOrdersTabIndex,
+              onChanged: (index) {
+                setState(() => merchantOrdersTabIndex = index);
+              },
+            ),
+          ),
+        if (!isCleaningSection &&
+            effectiveSegmentIndex == OrdersCartOrdersSegmentBar.ordersIndex)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10),
             child: Align(
               alignment: AlignmentDirectional.centerStart,
               child: OutlinedButton.icon(
@@ -196,6 +208,8 @@ class _OrdersListTabState extends State<OrdersListTab> {
                   scrollController: widget.scrollController,
                   showCompletedCleaningOrders:
                       cleaningOrdersTabIndex == _previousCleaningOrdersIndex,
+                  showCompletedMerchantOrders:
+                      merchantOrdersTabIndex == _previousCleaningOrdersIndex,
                 ),
               ),
             ],

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/utils/app_images.dart';
 import '../../data/models/orders_api_models.dart';
 
@@ -146,7 +147,9 @@ class MerchantOrderSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categoryColor = const Color(0xFF159447);
+    final categoryColor = _isRestaurant
+        ? SharedPlatformColors.restaurant
+        : SharedPlatformColors.supermarket;
     final itemCount = order.items.fold<int>(
       0,
       (sum, item) => sum + (item.quantity > 0 ? item.quantity : 1),

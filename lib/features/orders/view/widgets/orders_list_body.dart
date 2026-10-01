@@ -6,6 +6,7 @@ import '../../../sm_orders/view/screens/sm_order_details_screen.dart';
 import '../../../sm_orders/view/widgets/order_card.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../../data/models/orders_api_models.dart';
 import '../helpers/cleaning_rebook_policy.dart';
 import '../manager/bloc/orders_bloc.dart';
 import '../screens/cleaning_order_details_screen.dart';
@@ -22,16 +23,31 @@ class OrdersListBody extends StatelessWidget {
     required this.state,
     required this.scrollController,
     this.showCompletedCleaningOrders = false,
+    this.showCompletedMerchantOrders = false,
   });
 
   final OrdersState state;
   final ScrollController scrollController;
   final bool showCompletedCleaningOrders;
+  final bool showCompletedMerchantOrders;
 
   bool _isPreviousCleaningOrder(String? status) {
     final normalizedStatus = (status ?? '').toLowerCase();
     return normalizedStatus == CleaningBookingStatus.completed ||
         normalizedStatus == CleaningBookingStatus.cancelled;
+  }
+
+  bool _isPreviousMerchantOrder(OrderResourceModel order) {
+    if (order.deliverySummary?.isTerminal == true) return true;
+    final status = (order.status ?? '').trim().toLowerCase();
+    return const <String>{
+      'completed',
+      'delivered',
+      'cancelled',
+      'canceled',
+      'rejected',
+      'failed',
+    }.contains(status);
   }
 
   @override
@@ -46,11 +62,18 @@ class OrdersListBody extends StatelessWidget {
               : !isPreviousOrder;
         })
         .toList(growable: false);
-    final orders = state.orders.list;
+    final merchantOrders = state.orders.list
+        .where((order) {
+          final isPreviousOrder = _isPreviousMerchantOrder(order);
+          return showCompletedMerchantOrders
+              ? isPreviousOrder
+              : !isPreviousOrder;
+        })
+        .toList(growable: false);
     final pagination = isCleaningSection ? state.cleaningOrders : state.orders;
     final listLength = isCleaningSection
         ? cleaningOrders.length
-        : orders.length;
+        : merchantOrders.length;
     if (pagination.status == BlocStatus.loading && listLength == 0) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -103,9 +126,35 @@ class OrdersListBody extends StatelessWidget {
         );
       }
       return ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 72),
         children: [
-          SizedBox(height: context.height * .2),
-          const Center(child: Text('لا توجد طلبات حالياً')),
+          Icon(
+            showCompletedMerchantOrders
+                ? Icons.history_rounded
+                : Icons.receipt_long_outlined,
+            size: 44,
+            color: const Color(0xFF98A2B3),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            showCompletedMerchantOrders
+                ? 'لا توجد طلبات سابقة'
+                : 'لا توجد طلبات حالية',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF172033),
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            showCompletedMerchantOrders
+                ? 'ستظهر الطلبات المكتملة أو الملغاة هنا.'
+                : 'ابدأ طلباً جديداً من الصفحة الرئيسية.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF667085), fontSize: 12),
+          ),
         ],
       );
     }
@@ -141,7 +190,7 @@ class OrdersListBody extends StatelessWidget {
                 orderId: orderId,
               );
             }
-            final order = orders[index];
+            final order = merchantOrders[index];
             if (isStoresSection) {
               return OrderCard(
                 order: order,

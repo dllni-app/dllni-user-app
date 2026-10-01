@@ -42,7 +42,7 @@ class AddressCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isDefault
-                  ? const Color(0xFF12B8C4)
+                  ? const Color(0xFF1E2A78)
                   : const Color(0xFFE4E7EC),
               width: isDefault ? 1.5 : 1,
             ),
@@ -65,12 +65,12 @@ class AddressCard extends StatelessWidget {
                     height: 44,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE9F9FA),
+                      color: const Color(0xFFEEF0FA),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
                       _addressTypeIcon,
-                      color: const Color(0xFF0F8E98),
+                      color: const Color(0xFF1E2A78),
                       size: 22,
                     ),
                   ),
@@ -98,13 +98,13 @@ class AddressCard extends StatelessWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE9F9FA),
+                                  color: const Color(0xFFEEF0FA),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: const Text(
                                   'افتراضي',
                                   style: TextStyle(
-                                    color: Color(0xFF0F8E98),
+                                    color: Color(0xFF1E2A78),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -164,7 +164,7 @@ class AddressCard extends StatelessWidget {
                       _AddressAction(
                         label: 'تعيين كافتراضي',
                         icon: Icons.star_outline_rounded,
-                        color: const Color(0xFF0F8E98),
+                        color: const Color(0xFF1E2A78),
                         onTap: onSetDefault,
                       ),
                     _AddressAction(

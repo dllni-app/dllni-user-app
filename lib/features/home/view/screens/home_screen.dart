@@ -5,16 +5,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/auth/auth_gate.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/session/user_session_store.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
 import '../../../orders/data/models/cleaning_booking_status.dart';
 import '../../../orders/data/models/cleaning_orders_api_models.dart';
+import '../../../orders/data/models/orders_api_models.dart';
 import '../../../orders/view/manager/bloc/orders_bloc.dart';
 import '../../../orders/view/screens/cleaning_order_details_screen.dart';
+import '../../../orders/view/screens/restaurant_order_tracking_screen.dart';
 import '../../../profile/domain/usecases/fetch_addresses_use_case.dart';
 import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 import '../../../profile/view/screens/notifications_screen.dart';
-import '../widgets/cleaning_home_widgets.dart';
+import '../../../rs_main/view/rs_main_screen.dart';
+import '../../../sm_main_page.dart';
+import '../../domain/usecases/fetch_user_offers_use_case.dart';
+import '../manager/bloc/home_bloc.dart';
+import '../widgets/home_cube.dart';
+import '../widgets/platform_home_widgets.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,17 +33,40 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final ProfileBloc profileBloc;
+  late final HomeBloc homeBloc;
+  late final OrdersBloc cleaningOrdersBloc;
+  late final OrdersBloc restaurantOrdersBloc;
+  late final OrdersBloc supermarketOrdersBloc;
 
   @override
   void initState() {
     super.initState();
     profileBloc = getIt<ProfileBloc>();
+    homeBloc = getIt<HomeBloc>();
+    cleaningOrdersBloc = getIt<OrdersBloc>();
+    restaurantOrdersBloc = getIt<OrdersBloc>();
+    supermarketOrdersBloc = getIt<OrdersBloc>();
+
+    homeBloc.add(
+      FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
+    );
+
     if (AuthGate.isAuthenticated) {
-      _refreshProfileContext();
+      _refreshAuthenticatedContext();
     }
   }
 
-  void _refreshProfileContext() {
+  @override
+  void dispose() {
+    homeBloc.close();
+    cleaningOrdersBloc.close();
+    restaurantOrdersBloc.close();
+    supermarketOrdersBloc.close();
+    profileBloc.close();
+    super.dispose();
+  }
+
+  void _refreshAuthenticatedContext() {
     profileBloc
       ..add(
         FetchNotificationsEvent(
@@ -44,6 +75,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       )
       ..add(FetchAddressesEvent(params: FetchAddressesParams()));
+
+    supermarketOrdersBloc.add(OrdersSectionChangedEvent(0));
+    restaurantOrdersBloc.add(OrdersSectionChangedEvent(1));
+    cleaningOrdersBloc.add(OrdersSectionChangedEvent(2));
+  }
+
+  Future<void> _refreshAll() async {
+    homeBloc.add(
+      FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
+    );
+    if (AuthGate.isAuthenticated) {
+      _refreshAuthenticatedContext();
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 300));
   }
 
   void _openCleaning() {
@@ -53,9 +98,30 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _openNotifications() async {
-    await AuthGate.requireAuth(
+  void _openRestaurants() {
+    context.pushRoute(
+      '/rsmain',
+      arguments: RsMainScreenParams(profileBloc: profileBloc),
+    );
+  }
+
+  void _openSupermarket() {
+    context.pushRoute('/smmain', arguments: SmMainScreenParams(initialPage: 0));
+  }
+
+  Future<void> _requireAuth({
+    required String message,
+    required VoidCallback onAuthenticated,
+  }) {
+    return AuthGate.requireAuth(
       context,
+      message: message,
+      onAuthenticated: onAuthenticated,
+    );
+  }
+
+  Future<void> _openNotifications() async {
+    await _requireAuth(
       message: 'سجّل الدخول لعرض الإشعارات',
       onAuthenticated: () async {
         await context.pushRoute(
@@ -75,11 +141,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openAddresses() async {
-    await AuthGate.requireAuth(
-      context,
+    await _requireAuth(
       message: 'سجّل الدخول لإدارة عناوينك',
       onAuthenticated: () async {
-        await context.pushRoute('/myaddresses');
+        await context.pushRoute('/myaddresses', arguments: false);
         if (mounted) {
           profileBloc.add(FetchAddressesEvent(params: FetchAddressesParams()));
         }
@@ -87,16 +152,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openCleaningOrder(CleaningOrderModel order) {
-    final id = order.id;
-    if (id == null) return;
-    context.pushRoute(
-      '/cleaning-order-details',
-      arguments: CleaningOrderDetailsArgs(orderId: id),
+  void _openCoupons() {
+    _requireAuth(
+      message: 'سجّل الدخول لعرض كوبوناتك',
+      onAuthenticated: () => context.pushRoute('/coupons'),
     );
   }
 
-  CleaningOrderModel? _activeOrder(List<CleaningOrderModel> orders) {
+  void _openShoppingLists() {
+    _requireAuth(
+      message: 'سجّل الدخول لإدارة قوائم التسوق',
+      onAuthenticated: () => context.pushRoute('/shopping_list'),
+    );
+  }
+
+  Future<void> _loginFromHome() async {
+    await AuthGate.requireAuth(
+      context,
+      message: '',
+      onAuthenticated: () {
+        if (!mounted) return;
+        setState(() {});
+        _refreshAuthenticatedContext();
+      },
+    );
+  }
+
+  CleaningOrderModel? _activeCleaningOrder(List<CleaningOrderModel> orders) {
     for (final order in orders) {
       final status = (order.status ?? '').trim().toLowerCase();
       if (status != CleaningBookingStatus.completed &&
@@ -107,104 +189,152 @@ class _HomeScreenState extends State<HomeScreen> {
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<ProfileBloc>.value(value: profileBloc),
-        BlocProvider<OrdersBloc>(
-          create: (_) {
-            final bloc = getIt<OrdersBloc>();
-            if (AuthGate.isAuthenticated) {
-              bloc.add(OrdersSectionChangedEvent(2));
-            }
-            return bloc;
-          },
-        ),
-      ],
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: ColoredBox(
-          color: const Color(0xFFF7F8FA),
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    if (AuthGate.isAuthenticated) {
-                      _refreshProfileContext();
-                      context.read<OrdersBloc>().add(
-                        FetchOrdersEvent(isReload: true),
-                      );
-                    }
-                    await Future<void>.delayed(
-                      const Duration(milliseconds: 250),
-                    );
-                  },
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-                    children: [
-                      _buildAddressCard(),
-                      const SizedBox(height: 18),
-                      _SectionTitle(
-                        title: 'طلبك الحالي',
-                        subtitle: 'تابع آخر طلب تنظيف يحتاج انتباهك',
-                      ),
-                      const SizedBox(height: 10),
-                      _buildActiveBooking(),
-                      const SizedBox(height: 20),
-                      CleaningHomePrimaryServiceCard(onTap: _openCleaning),
-                      const SizedBox(height: 22),
-                      const _SectionTitle(
-                        title: 'خدمات التنظيف',
-                        subtitle: 'تجربة مركزة للتنظيف والمناسبات فقط',
-                      ),
-                      const SizedBox(height: 10),
-                      _CleaningDiscoveryTile(
-                        icon: Icons.home_outlined,
-                        title: 'تنظيف المنزل',
-                        subtitle:
-                            'حدد الغرف والأحجام ونوع التنظيف ثم أكمل الموعد.',
-                        onTap: _openCleaning,
-                      ),
-                      const SizedBox(height: 10),
-                      _CleaningDiscoveryTile(
-                        icon: Icons.celebration_outlined,
-                        title: 'مساعدة المناسبات',
-                        subtitle:
-                            'اختر نوع المناسبة وعدد الضيوف والمدة والفريق.',
-                        onTap: _openCleaning,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+  bool _isMerchantOrderActive(OrderResourceModel order) {
+    if (order.deliverySummary?.isTerminal == true) return false;
+    final status = (order.status ?? '').trim().toLowerCase();
+    const terminal = <String>{
+      'completed',
+      'cancelled',
+      'canceled',
+      'delivered',
+      'rejected',
+      'failed',
+    };
+    return !terminal.contains(status);
+  }
+
+  OrderResourceModel? _activeMerchantOrder(List<OrderResourceModel> orders) {
+    for (final order in orders) {
+      if (_isMerchantOrderActive(order)) return order;
+    }
+    return null;
+  }
+
+  String _money(double value) {
+    final digits = value.round().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return '$buffer ل.س';
+  }
+
+  _ActiveHomeOrder? _merchantPresentation(
+    OrderResourceModel? order,
+    String section,
+  ) {
+    if (order == null) return null;
+    final isRestaurant = section == 'restaurant';
+    final sectionLabel = isRestaurant ? 'مطاعم' : 'سوبرماركت';
+    final title = order.merchant?.name?.trim().isNotEmpty == true
+        ? order.merchant!.name!.trim()
+        : (order.orderNumber?.trim().isNotEmpty == true
+              ? 'طلب ${order.orderNumber}'
+              : 'طلب $sectionLabel');
+    final status = order.statusLabel?.trim().isNotEmpty == true
+        ? order.statusLabel!.trim()
+        : 'قيد المعالجة';
+    final total = order.amounts?.total ?? 0;
+    final meta = <String>[
+      if (order.orderNumber?.trim().isNotEmpty == true) order.orderNumber!,
+      if (total > 0) _money(total),
+    ].join(' • ');
+
+    return _ActiveHomeOrder(
+      section: section,
+      sectionLabel: sectionLabel,
+      title: title,
+      status: status,
+      meta: meta.isEmpty ? 'اضغط لمتابعة تفاصيل الطلب' : meta,
+      onTap: () => context.pushRoute(
+        '/restaurant-order-tracking',
+        arguments: RestaurantOrderTrackingArgs(order: order, section: section),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return BlocBuilder<ProfileBloc, ProfileState>(
-      bloc: profileBloc,
-      buildWhen: (previous, current) =>
-          previous.unreadNotification != current.unreadNotification,
-      builder: (context, state) {
-        return ValueListenableBuilder(
-          valueListenable: UserSessionStore.userNotifier,
-          builder: (context, user, _) {
-            return CleaningHomeHeader(
-              displayName: AuthGate.isAuthenticated
-                  ? UserSessionStore.displayName(user)
-                  : 'زائر',
-              isAuthenticated: AuthGate.isAuthenticated,
-              unreadCount: AuthGate.isAuthenticated
-                  ? (state.unreadNotification ?? 0)
-                  : 0,
-              onNotificationsTap: _openNotifications,
+  _ActiveHomeOrder? _cleaningPresentation(CleaningOrderModel? order) {
+    if (order == null || order.id == null) return null;
+    final date = order.scheduledDate?.trim();
+    final time = order.scheduledTime?.trim();
+    final schedule = [
+      date,
+      time,
+    ].where((value) => value != null && value.isNotEmpty).join(' • ');
+
+    return _ActiveHomeOrder(
+      section: 'cleaning',
+      sectionLabel: 'تنظيف',
+      title: order.bookingNumber?.trim().isNotEmpty == true
+          ? 'حجز ${order.bookingNumber}'
+          : 'خدمة تنظيف',
+      status: cleaningOrderStatusLabelAr(
+        order.status,
+        startedTravelAt: order.startedTravelAt,
+        arrivedAt: order.arrivedAt,
+      ),
+      meta: schedule.isEmpty
+          ? (order.locationName ?? 'عرض تفاصيل الحجز')
+          : schedule,
+      onTap: () => context.pushRoute(
+        '/cleaning-order-details',
+        arguments: CleaningOrderDetailsArgs(orderId: order.id!),
+      ),
+    );
+  }
+
+  Widget _buildGlobalActiveOrder() {
+    if (!AuthGate.isAuthenticated) {
+      return PlatformGuestBenefitCard(
+        onLogin: _loginFromHome,
+        onRegister: () => context.pushRoute('/register'),
+      );
+    }
+
+    return BlocBuilder<OrdersBloc, OrdersState>(
+      bloc: restaurantOrdersBloc,
+      builder: (context, restaurantState) {
+        return BlocBuilder<OrdersBloc, OrdersState>(
+          bloc: supermarketOrdersBloc,
+          builder: (context, supermarketState) {
+            return BlocBuilder<OrdersBloc, OrdersState>(
+              bloc: cleaningOrdersBloc,
+              builder: (context, cleaningState) {
+                final restaurant = _merchantPresentation(
+                  _activeMerchantOrder(restaurantState.orders.list),
+                  'restaurant',
+                );
+                final supermarket = _merchantPresentation(
+                  _activeMerchantOrder(supermarketState.orders.list),
+                  'supermarket',
+                );
+                final cleaning = _cleaningPresentation(
+                  _activeCleaningOrder(cleaningState.cleaningOrders.list),
+                );
+                final active = restaurant ?? supermarket ?? cleaning;
+
+                if (active != null) {
+                  return PlatformActiveOrderCard(
+                    section: active.section,
+                    sectionLabel: active.sectionLabel,
+                    title: active.title,
+                    status: active.status,
+                    meta: active.meta,
+                    onTap: active.onTap,
+                  );
+                }
+
+                final loading =
+                    restaurantState.orders.status == BlocStatus.loading ||
+                    supermarketState.orders.status == BlocStatus.loading ||
+                    cleaningState.cleaningOrders.status == BlocStatus.loading;
+                if (loading) {
+                  return const _HomeLoadingCard();
+                }
+
+                return const _NoActiveOrderCard();
+              },
             );
           },
         );
@@ -212,225 +342,226 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAddressCard() {
+  Widget _buildOffers() {
+    return BlocBuilder<HomeBloc, HomeState>(
+      bloc: homeBloc,
+      builder: (context, state) {
+        if (state.userOffersStatus == BlocStatus.loading &&
+            state.userOffers.list.isEmpty) {
+          return const _HomeLoadingCard(height: 170);
+        }
+        return HomeCube(offers: state.userOffers.list);
+      },
+    );
+  }
+
+  Widget _buildHeader() {
     return BlocBuilder<ProfileBloc, ProfileState>(
       bloc: profileBloc,
-      buildWhen: (previous, current) =>
-          previous.defaultAddress != current.defaultAddress ||
-          previous.addressesStatus != current.addressesStatus,
       builder: (context, state) {
-        final address = state.defaultAddress;
-        return CleaningHomeAddressCard(
-          label: address?.label,
-          line1: address?.line1,
-          isLoading:
-              AuthGate.isAuthenticated &&
-              state.addressesStatus == BlocStatus.loading,
-          onTap: _openAddresses,
+        return ValueListenableBuilder(
+          valueListenable: UserSessionStore.userNotifier,
+          builder: (context, user, _) {
+            final displayName = AuthGate.isAuthenticated
+                ? UserSessionStore.displayName(user)
+                : 'زائر';
+            final address = state.defaultAddress;
+            final label = address?.label.trim() ?? '';
+            final line1 = address?.line1.trim() ?? '';
+            final location = AuthGate.isAuthenticated
+                ? (label.isNotEmpty
+                      ? label
+                      : line1.isNotEmpty
+                      ? line1
+                      : 'اختر عنوانك')
+                : 'تصفح الخدمات كزائر';
+
+            return PlatformHomeHeader(
+              displayName: displayName,
+              locationLabel: location,
+              isAuthenticated: AuthGate.isAuthenticated,
+              unreadCount: AuthGate.isAuthenticated
+                  ? (state.unreadNotification ?? 0)
+                  : 0,
+              onNotificationsTap: _openNotifications,
+              onLocationTap: _openAddresses,
+              onLoginTap: _loginFromHome,
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildActiveBooking() {
-    if (!AuthGate.isAuthenticated) {
-      return CleaningHomeEmptyBookingCard(
-        isAuthenticated: false,
-        onBookTap: _openCleaning,
-      );
-    }
-
-    return BlocBuilder<OrdersBloc, OrdersState>(
-      buildWhen: (previous, current) =>
-          previous.cleaningOrders != current.cleaningOrders ||
-          previous.errorMessage != current.errorMessage,
-      builder: (context, state) {
-        final pagination = state.cleaningOrders;
-        if (pagination.status == BlocStatus.loading ||
-            pagination.status == BlocStatus.init) {
-          return const _HomeLoadingCard();
-        }
-
-        if (pagination.status == BlocStatus.failed) {
-          return _HomeLoadErrorCard(
-            message: state.errorMessage ?? 'تعذر تحميل طلبات التنظيف',
-            onRetry: () => context.read<OrdersBloc>().add(
-              FetchOrdersEvent(isReload: true),
-            ),
-          );
-        }
-
-        final active = _activeOrder(pagination.list);
-        if (active == null) {
-          return CleaningHomeEmptyBookingCard(
-            isAuthenticated: true,
-            onBookTap: _openCleaning,
-          );
-        }
-
-        return CleaningHomeActiveBookingCard(
-          order: active,
-          onTap: () => _openCleaningOrder(active),
-        );
-      },
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          title,
-          textAlign: TextAlign.start,
-          style: const TextStyle(
-            color: Color(0xFF172033),
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          subtitle,
-          textAlign: TextAlign.start,
-          style: const TextStyle(color: Color(0xFF667085), fontSize: 12),
-        ),
-      ],
-    );
-  }
-}
-
-class _CleaningDiscoveryTile extends StatelessWidget {
-  const _CleaningDiscoveryTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE4E7EC)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE9F9FA),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: const Color(0xFF0F8E98)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: ColoredBox(
+        color: SharedPlatformColors.background,
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refreshAll,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
                   children: [
-                    Text(
-                      title,
-                      textAlign: TextAlign.start,
-                      style: const TextStyle(
-                        color: Color(0xFF172033),
-                        fontWeight: FontWeight.w800,
-                      ),
+                    const PlatformSectionTitle(title: 'شو بدك اليوم؟'),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        PlatformServiceCard(
+                          title: 'تنظيف',
+                          subtitle: 'منزل ومناسبات',
+                          icon: Icons.cleaning_services_rounded,
+                          accent: SharedPlatformColors.cleaning,
+                          soft: SharedPlatformColors.cleaningSoft,
+                          onTap: _openCleaning,
+                        ),
+                        const SizedBox(width: 8),
+                        PlatformServiceCard(
+                          title: 'مطاعم',
+                          subtitle: 'وجبات قريبة',
+                          icon: Icons.restaurant_rounded,
+                          accent: SharedPlatformColors.restaurant,
+                          soft: SharedPlatformColors.restaurantSoft,
+                          onTap: _openRestaurants,
+                        ),
+                        const SizedBox(width: 8),
+                        PlatformServiceCard(
+                          title: 'سوبرماركت',
+                          subtitle: 'مشترياتك',
+                          icon: Icons.shopping_basket_rounded,
+                          accent: SharedPlatformColors.supermarket,
+                          soft: SharedPlatformColors.supermarketSoft,
+                          onTap: _openSupermarket,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      textAlign: TextAlign.start,
-                      style: const TextStyle(
-                        color: Color(0xFF667085),
-                        fontSize: 12,
-                        height: 1.45,
-                      ),
+                    const SizedBox(height: 22),
+                    const PlatformSectionTitle(
+                      title: 'عروض مختارة لك',
+                      subtitle: 'اسحب المكعب لاكتشاف المزيد من العروض.',
+                    ),
+                    const SizedBox(height: 8),
+                    _buildOffers(),
+                    const SizedBox(height: 20),
+                    PlatformSectionTitle(
+                      title: 'طلبك الحالي',
+                      subtitle: AuthGate.isAuthenticated
+                          ? 'أهم طلب نشط لديك الآن'
+                          : 'سجّل الدخول لحفظ العناوين ومتابعة الطلبات',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildGlobalActiveOrder(),
+                    const SizedBox(height: 22),
+                    const PlatformSectionTitle(title: 'اختصارات مفيدة'),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        PlatformQuickAction(
+                          label: 'العناوين',
+                          icon: Icons.location_on_outlined,
+                          onTap: _openAddresses,
+                        ),
+                        const SizedBox(width: 8),
+                        PlatformQuickAction(
+                          label: 'الكوبونات',
+                          icon: Icons.local_offer_outlined,
+                          onTap: _openCoupons,
+                        ),
+                        const SizedBox(width: 8),
+                        PlatformQuickAction(
+                          label: 'قوائمي',
+                          icon: Icons.checklist_rounded,
+                          onTap: _openShoppingLists,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 16,
-                color: Color(0xFF98A2B3),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+class _ActiveHomeOrder {
+  const _ActiveHomeOrder({
+    required this.section,
+    required this.sectionLabel,
+    required this.title,
+    required this.status,
+    required this.meta,
+    required this.onTap,
+  });
+
+  final String section;
+  final String sectionLabel;
+  final String title;
+  final String status;
+  final String meta;
+  final VoidCallback onTap;
+}
+
 class _HomeLoadingCard extends StatelessWidget {
-  const _HomeLoadingCard();
+  const _HomeLoadingCard({this.height = 112});
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 128,
+      height: height,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE4E7EC)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SharedPlatformColors.border),
       ),
-      child: const CircularProgressIndicator(),
+      child: const CircularProgressIndicator(
+        color: SharedPlatformColors.primary,
+      ),
     );
   }
 }
 
-class _HomeLoadErrorCard extends StatelessWidget {
-  const _HomeLoadErrorCard({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
+class _NoActiveOrderCard extends StatelessWidget {
+  const _NoActiveOrderCard();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF2B8B5)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SharedPlatformColors.border),
       ),
-      child: Column(
+      child: const Row(
         children: [
-          const Icon(Icons.cloud_off_outlined, color: Color(0xFFB42318)),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF7A271A)),
+          Icon(
+            Icons.check_circle_outline_rounded,
+            color: SharedPlatformColors.success,
           ),
-          const SizedBox(height: 10),
-          TextButton(onPressed: onRetry, child: const Text('إعادة المحاولة')),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'لا يوجد طلب نشط الآن. اختر الخدمة التي تحتاجها من الأعلى.',
+              style: TextStyle(
+                color: SharedPlatformColors.muted,
+                fontSize: 12,
+                height: 1.45,
+              ),
+            ),
+          ),
         ],
       ),
     );

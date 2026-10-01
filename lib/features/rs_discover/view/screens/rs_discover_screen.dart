@@ -6,6 +6,8 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/search_with_type_dropdown.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 import '../../../sm_discover/view/widgets/smart_search_sheet.dart';
+import '../../../sm_discover/data/models/smart_search_model.dart';
+import '../../../sm_discover/view/screens/smart_search_results_screen.dart';
 import '../manager/bloc/rs_discover_bloc.dart';
 import 'rs_main_discover_view.dart';
 import 'rs_search_view_v2.dart';
@@ -52,8 +54,9 @@ class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<RsDiscoverBloc>()
-        ..add(FetchDiscoverRestaurantsEvent(isReload: true)),
+      create: (_) =>
+          getIt<RsDiscoverBloc>()
+            ..add(FetchDiscoverRestaurantsEvent(isReload: true)),
       child: Scaffold(
         backgroundColor: _selectedView == 0
             ? const Color(0xFFF9FAFB)
@@ -80,7 +83,7 @@ class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
                 expandSearch: widget.expandSearch,
                 onTypeSelected: (type) async {
                   if (type == SearchType.smartSearch) {
-                    final words = await showModalBottomSheet<List<String>>(
+                    final result = await showModalBottomSheet<SmartSearchModel>(
                       context: context,
                       isScrollControlled: true,
                       useSafeArea: true,
@@ -88,14 +91,14 @@ class _RsDiscoverScreenState extends State<RsDiscoverScreen> {
                       builder: (_) =>
                           const SmartSearchSheet(isSupermarket: false),
                     );
-                    if (!context.mounted || words == null || words.isEmpty) {
+                    if (!context.mounted || result == null) {
                       return;
                     }
-                    setState(() {
-                      _searchType = SearchType.product;
-                      _smartSearchInitialQuery = words.join(' , ');
-                      _selectedView = 1;
-                    });
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => SmartSearchResultsScreen(model: result),
+                      ),
+                    );
                     return;
                   }
 

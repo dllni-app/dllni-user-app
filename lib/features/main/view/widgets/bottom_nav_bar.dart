@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/auth/auth_gate.dart';
-import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key, required this.controller});
@@ -79,7 +79,7 @@ class BottomNavBar extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: selected
-                              ? const Color(0xFFE9F9FA)
+                              ? const Color(0xFFEEF0FA)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -90,7 +90,7 @@ class BottomNavBar extends StatelessWidget {
                               selected ? item.activeIcon : item.icon,
                               size: 23,
                               color: selected
-                                  ? AppColors.primary
+                                  ? SharedPlatformColors.primary
                                   : const Color(0xFF98A2B3),
                             ),
                             const SizedBox(height: 4),
@@ -98,7 +98,7 @@ class BottomNavBar extends StatelessWidget {
                               item.label,
                               style: TextStyle(
                                 color: selected
-                                    ? AppColors.primary
+                                    ? SharedPlatformColors.primary
                                     : const Color(0xFF667085),
                                 fontSize: 12,
                                 fontWeight: selected

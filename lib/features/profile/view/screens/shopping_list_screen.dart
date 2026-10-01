@@ -27,80 +27,155 @@ class _ShoppingListCard extends StatelessWidget {
 
   const _ShoppingListCard({required this.item, required this.onTap});
 
+  String _scheduleLabel() {
+    final schedule = item.schedule;
+    if (schedule == null || schedule.isActive != true) return 'بدون جدولة';
+
+    final period = schedule.periods?.isNotEmpty == true
+        ? schedule.periods!.first
+        : null;
+    final time = period?.fromTime?.trim();
+    final timeLabel = time == null || time.isEmpty ? '' : ' • $time';
+
+    switch (schedule.frequencyType) {
+      case 'weekly':
+        const days = <int, String>{
+          1: 'الاثنين',
+          2: 'الثلاثاء',
+          3: 'الأربعاء',
+          4: 'الخميس',
+          5: 'الجمعة',
+          6: 'السبت',
+          7: 'الأحد',
+        };
+        final selected =
+            schedule.weekDays
+                ?.map((day) => days[day])
+                .whereType<String>()
+                .join('، ') ??
+            '';
+        return selected.isEmpty
+            ? 'أسبوعياً$timeLabel'
+            : 'كل $selected$timeLabel';
+      case 'monthly':
+        final day = schedule.monthDays?.isNotEmpty == true
+            ? schedule.monthDays!.first.toString()
+            : null;
+        return day == null
+            ? 'شهرياً$timeLabel'
+            : 'يوم $day من كل شهر$timeLabel';
+      case 'once':
+        return 'مرة واحدة$timeLabel';
+      default:
+        return 'جدولة نشطة$timeLabel';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final icon = shoppingListIconOptionForKey(
       shoppingListIconKeyFromDescription(item.description),
     );
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.all(Radius.circular(14)),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: const [
-            BoxShadow(
-              offset: Offset(0, 1),
-              blurRadius: 2,
-              color: Color(0x0D000000),
-            ),
-          ],
-        ),
-        child: Row(
-          spacing: 12,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Color(0x2B22C55E),
-                borderRadius: BorderRadius.all(Radius.circular(12)),
+    final active = item.isActive == true || item.schedule?.isActive == true;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: const Color(0xFFE4E7EC)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF6F1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: FaIcon(
+                  icon.icon,
+                  size: 20,
+                  color: const Color(0xFF138A62),
+                ),
               ),
-              child: FaIcon(
-                icon.icon,
-                size: 20,
-                color: const Color(0xFF4CAF50),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    item.name ?? '',
-                    textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: Color(0xFF111827),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: 24 / 16,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name ?? 'قائمة تسوق',
+                            style: const TextStyle(
+                              color: Color(0xFF172033),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        if (active)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF6F1),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'نشطة',
+                              style: TextStyle(
+                                color: Color(0xFF138A62),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  AppText(
-                    '${item.itemsCount ?? 0} منتج',
-                    textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(height: 5),
+                    Text(
+                      '${item.itemsCount ?? 0} منتج',
+                      style: const TextStyle(
+                        color: Color(0xFF667085),
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      _scheduleLabel(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: active
+                            ? const Color(0xFF138A62)
+                            : const Color(0xFF98A2B3),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 4),
-              child: FaIcon(
-                FontAwesomeIcons.penToSquare,
-                size: 17,
-                color: Color(0xFF64748B),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 15,
+                color: Color(0xFF98A2B3),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -115,11 +190,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           getIt<ProfileBloc>()
             ..add(GetShoppingListEvent(params: GetShoppingListParams())),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF3F4F6),
+        backgroundColor: const Color(0xFFF7F8FA),
         body: Column(
           children: [
             AppSimpleAppBar2(
-              title: 'قائمة التسوق الذكي',
+              title: 'قوائم التسوق',
               arrowBackType: ArrowBackType.cupertino,
             ),
             Expanded(
@@ -195,7 +270,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             16,
             24 + MediaQuery.paddingOf(context).bottom,
           ),
-          color: const Color(0xFFF3F4F6),
+          color: const Color(0xFFF7F8FA),
           child: Builder(
             builder: (context) {
               return GestureDetector(
@@ -216,14 +291,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                 child: Container(
                   padding: const EdgeInsets.only(top: 14, bottom: 13),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFFF7A00),
+                    color: Color(0xFF138A62),
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
                   child: AppText(
                     'إضافة قائمة تسوق جديدة',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xFFFFEEFF),
+                      color: Color(0xFFFFFFFF),
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       height: 16 / 14,

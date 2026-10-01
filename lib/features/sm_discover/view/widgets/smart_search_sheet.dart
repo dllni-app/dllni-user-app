@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:common_package/common_package.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -11,8 +10,9 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../data/models/normalize_product_text_model.dart';
-import '../../domain/usecases/normalize_product_text_use_case.dart';
+import '../../data/models/smart_search_model.dart';
+import '../../domain/repository/sm_discover_repo.dart';
+import '../../domain/usecases/smart_search_use_case.dart';
 
 class SmartSearchSheet extends StatefulWidget {
   const SmartSearchSheet({super.key, required this.isSupermarket});
@@ -37,18 +37,17 @@ enum _SmartSearchPhase { input, review }
 class _SmartSearchSheetState extends State<SmartSearchSheet> {
   final TextEditingController _controller = TextEditingController();
   final SpeechToText _speech = SpeechToText();
-  final NormalizeProductTextUseCase _normalizeProductTextUseCase =
-  getIt<NormalizeProductTextUseCase>();
+  late final SmartSearchUseCase _smartSearchUseCase = SmartSearchUseCase(
+    smDiscover: getIt<SmDiscoverRepo>(),
+  );
 
   _SmartSearchPhase _phase = _SmartSearchPhase.input;
   List<String> _reviewWords = [];
+  SmartSearchModel? _smartSearchModel;
 
   bool _speechReady = false;
   bool _listening = false;
   bool _isSubmitting = false;
-
-  /// Locale used for the current / restarted listen sessions.
-  String? _activeListenLocaleId;
 
   /// Snapshot of [TextEditingController] text before each [SpeechToText.listen] call
   /// so auto-restarts do not wipe prior dictation (new session [recognizedWords] is incremental).
@@ -66,12 +65,8 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery
-        .paddingOf(context)
-        .bottom;
-    final maxH = MediaQuery
-        .sizeOf(context)
-        .height * 0.88;
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final maxH = MediaQuery.sizeOf(context).height * 0.88;
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
       child: DecoratedBox(
@@ -138,7 +133,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     setState(() {
       _phase = _SmartSearchPhase.input;
       _reviewWords = [];
-      _activeListenLocaleId = null;
+      _smartSearchModel = null;
       _voiceEnergy = 0;
       _listening = false;
     });
@@ -162,22 +157,20 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
                 height: 26 / 14,
               ),
               decoration: InputDecoration(
-                suffixIcon: _controller.text
-                    .trim()
-                    .isEmpty
+                suffixIcon: _controller.text.trim().isEmpty
                     ? null
                     : IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    size: 18,
-                    color: _SmartSearchColors.hint,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _controller.clear();
-                    });
-                  },
-                ),
+                        icon: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: _SmartSearchColors.hint,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _controller.clear();
+                          });
+                        },
+                      ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 11),
                 filled: true,
                 fillColor: _SmartSearchColors.fieldFill,
@@ -264,18 +257,18 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
           onPressed: _isSubmitting
               ? null
               : () async {
-            if (_listening) {
-              await _stopListen();
-            }
+                  if (_listening) {
+                    await _stopListen();
+                  }
 
-            await _fetchNormalizedWords();
-          },
+                  await _fetchNormalizedWords();
+                },
           icon: _isSubmitting
               ? const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Icon(Icons.search),
           label: const Text(
             "بحث",
@@ -295,7 +288,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
   List<Widget> _buildReviewPhase(BuildContext context) {
     return [
       Text(
-        'عدّل الكلمات ثم أكّد',
+        'راجع ما فهمناه من طلبك',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: _SmartSearchColors.blue.withValues(alpha: 0.85),
@@ -311,7 +304,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
         alignment: WrapAlignment.center,
         children: List.generate(_reviewWords.length, (index) {
           final word = _reviewWords[index];
-          return InputChip(
+          return Chip(
             label: Text(
               word,
               style: const TextStyle(
@@ -320,12 +313,6 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            onDeleted: () {
-              setState(() {
-                _reviewWords.removeAt(index);
-              });
-            },
-            deleteIconColor: _SmartSearchColors.blue,
             backgroundColor: _SmartSearchColors.fieldFill,
             side: const BorderSide(color: _SmartSearchColors.fieldBorder),
             shape: RoundedRectangleBorder(
@@ -383,13 +370,14 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
   }
 
   void _confirmReview() {
-    if (_reviewWords.isEmpty) {
+    final model = _smartSearchModel;
+    if (model == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('أضف كلمة واحدة على الأقل.')),
+        const SnackBar(content: Text('تعذّر تجهيز نتيجة البحث. حاول مجددًا.')),
       );
       return;
     }
-    Navigator.of(context).pop<List<String>>(List<String>.from(_reviewWords));
+    Navigator.of(context).pop<SmartSearchModel>(model);
   }
 
   Future<void> _ensureSpeech() async {
@@ -409,6 +397,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
       await _speech.stop();
     } catch (_) {}
 
+    if (!mounted) return;
     _setListeningVisuals(false);
 
     if (mounted) {
@@ -421,21 +410,11 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     final trimmed = _controller.text.trim();
 
     if (trimmed.isEmpty) {
-      if (!mounted) return;
-
-      if (alreadySubmitting) {
-        if (mounted) {
-          setState(() {
-            _isSubmitting = false;
-          });
-        }
+      if (alreadySubmitting && mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
-
-
-      // ScaffoldMessenger.of(
-      //
-      //   context,
-      // ).showSnackBar(const SnackBar(content: Text()));
 
       toastification.show(
         context: context,
@@ -455,10 +434,9 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     }
 
     final locale = context.locale.languageCode;
-
-    final result = await _normalizeProductTextUseCase(
-      NormalizeProductTextParams(
-        text: trimmed,
+    final result = await _smartSearchUseCase(
+      SmartSearchParams(
+        query: trimmed,
         locale: locale,
         isSupermarket: widget.isSupermarket,
       ),
@@ -471,7 +449,7 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     });
 
     result.fold(
-          (failure) {
+      (failure) {
         setState(() {
           _listening = false;
           _voiceEnergy = 0;
@@ -480,35 +458,21 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
         toastification.show(
           context: context,
           type: ToastificationType.error,
-          title:  Text(
+          title: Text(
             failure.message,
-            style: TextStyle(fontFamily: 'Cairo'),
+            style: const TextStyle(fontFamily: 'Cairo'),
           ),
         );
       },
-          (model) {
-        final words = _wordsFromModel(model, trimmed);
-
-        if (words.isEmpty) {
-          toastification.show(
-            context: context,
-            type: ToastificationType.warning,
-            title: const Text(
-              'لم يتم التعرف على كلمات من الطلب.',
-              style: TextStyle(fontFamily: 'Cairo'),
-            ),
-          );
-
-        return;
-        }
-
-        _activeListenLocaleId = null;
+      (model) {
+        final labels = _reviewLabelsFromModel(model);
 
         setState(() {
-        _listening = false;
-        _voiceEnergy = 0;
-        _reviewWords = words;
-        _phase = _SmartSearchPhase.review;
+          _listening = false;
+          _voiceEnergy = 0;
+          _smartSearchModel = model;
+          _reviewWords = labels.isEmpty ? <String>[trimmed] : labels;
+          _phase = _SmartSearchPhase.review;
         });
       },
     );
@@ -525,11 +489,9 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
   //     await _speech.stop();
   //   } catch (_) {}
   //
-  //   final localeId = _activeListenLocaleId ?? await _pickSpeechLocale();
   //
   //   if (!mounted || localeId == null) return;
   //
-  //   _activeListenLocaleId = localeId;
   //
   //   try {
   //     await _runListen(localeId);
@@ -606,20 +568,15 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
         setState(() {
           _controller.text = composed.trim();
           _controller.selection = TextSelection.collapsed(
-            offset: composed
-                .trim()
-                .length,
+            offset: composed.trim().length,
           );
         });
       },
       onSoundLevelChange: _onSoundLevel,
-      localeId: localeId,
-      // listenFor: null,
-      // pauseFor: const Duration(seconds: 5),
-      listenFor: const Duration(minutes: 10),
-      pauseFor: const Duration(seconds: 5),
-
       listenOptions: SpeechListenOptions(
+        localeId: localeId,
+        listenFor: const Duration(minutes: 10),
+        pauseFor: const Duration(seconds: 5),
         listenMode: ListenMode.dictation,
         partialResults: true,
         cancelOnError: false,
@@ -688,8 +645,6 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
 
     if (!mounted || localeId == null) return;
 
-    _activeListenLocaleId = localeId;
-
     _levelBoundsReady = false;
     _levelMin = 0;
     _levelMax = 1;
@@ -738,22 +693,60 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
     } catch (_) {}
   }
 
-  List<String> _wordsFromModel(NormalizeProductTextModel model,
-      String trimmedFallback,) {
-    if (model.items.isNotEmpty) {
-      return List<String>.from(model.items);
+  List<String> _reviewLabelsFromModel(SmartSearchModel model) {
+    final intent = model.data.interpretation;
+    final labels = <String>[];
+
+    void add(dynamic value) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty && text != 'null' && !labels.contains(text)) {
+        labels.add(text);
+      }
     }
-    final nt = model.normalizedText?.trim();
-    if (nt != null && nt.isNotEmpty) {
-      final parts = nt
-          .split(RegExp(r'\s*,\s*|،\s*'))
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-      if (parts.isNotEmpty) return parts;
+
+    if (model.data.section == 'restaurant') {
+      add(intent['itemType']);
+      for (final value in (intent['concepts'] as List? ?? const [])) {
+        add(value);
+      }
+      for (final value in (intent['attributes'] as List? ?? const [])) {
+        add(value);
+      }
+      add(intent['restaurantName']);
+      add(intent['cuisine']);
+      if (intent['fastPreparation'] == true) add('سريع التحضير');
+      if (intent['lowPrice'] == true) add('سعر منخفض');
+      if (intent['highRating'] == true) add('تقييم مرتفع');
+      if (intent['maxPreparationMinutes'] != null) {
+        add('أقل من ${intent['maxPreparationMinutes']} دقيقة');
+      }
+    } else {
+      add(intent['recipeName']);
+      add(intent['contextName']);
+      final store = intent['preferredStoreName'];
+      if (store != null && store.toString().trim().isNotEmpty) {
+        add('المتجر: $store');
+      }
+      final reviewItems = (intent['items'] as List? ?? const []);
+      final fallbackItems = reviewItems.isEmpty
+          ? (intent['inferredIngredients'] as List? ?? const [])
+          : reviewItems;
+      for (final raw in fallbackItems) {
+        if (raw is! Map) continue;
+        final query = raw['query']?.toString().trim() ?? '';
+        final quantity = raw['quantity'];
+        final unit = raw['unit']?.toString().trim() ?? '';
+        if (query.isEmpty) continue;
+        final suffix = quantity != null && quantity != 0
+            ? ' - $quantity${unit.isEmpty ? '' : ' $unit'}'
+            : '';
+        add('$query$suffix');
+      }
+      if (intent['sameStoreRequired'] == true) add('كل المنتجات من نفس المتجر');
+      if (intent['storeStrict'] == true) add('المتجر المحدد فقط');
     }
-    if (trimmedFallback.isNotEmpty) return [trimmedFallback];
-    return [];
+
+    return labels.take(12).toList();
   }
 }
 
@@ -812,23 +805,23 @@ class _VoiceLevelLine extends StatelessWidget {
                 ),
                 boxShadow: isActive && t > 0.02
                     ? [
-                  BoxShadow(
-                    color: _SmartSearchColors.orange.withValues(
-                      alpha: 0.42 * (0.35 + t * 0.65),
-                    ),
-                    blurRadius: glow * 0.6,
-                    spreadRadius: t * 1.5,
-                    offset: const Offset(-3, 0),
-                  ),
-                  BoxShadow(
-                    color: _SmartSearchColors.blue.withValues(
-                      alpha: 0.38 * (0.35 + t * 0.65),
-                    ),
-                    blurRadius: glow * 0.6,
-                    spreadRadius: t * 1.5,
-                    offset: const Offset(3, 0),
-                  ),
-                ]
+                        BoxShadow(
+                          color: _SmartSearchColors.orange.withValues(
+                            alpha: 0.42 * (0.35 + t * 0.65),
+                          ),
+                          blurRadius: glow * 0.6,
+                          spreadRadius: t * 1.5,
+                          offset: const Offset(-3, 0),
+                        ),
+                        BoxShadow(
+                          color: _SmartSearchColors.blue.withValues(
+                            alpha: 0.38 * (0.35 + t * 0.65),
+                          ),
+                          blurRadius: glow * 0.6,
+                          spreadRadius: t * 1.5,
+                          offset: const Offset(3, 0),
+                        ),
+                      ]
                     : null,
               ),
             ),
@@ -840,7 +833,7 @@ class _VoiceLevelLine extends StatelessWidget {
 }
 
 class _InfoBanner extends StatelessWidget {
-  const _InfoBanner({super.key});
+  const _InfoBanner();
 
   @override
   Widget build(BuildContext context) {

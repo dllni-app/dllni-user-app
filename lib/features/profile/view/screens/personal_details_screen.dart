@@ -265,7 +265,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final accent = context.primaryContainer;
+    const accent = Color(0xFF1E2A78);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),

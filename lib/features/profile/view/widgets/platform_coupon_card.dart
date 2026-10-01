@@ -2,6 +2,8 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../data/models/platform_coupon_models.dart';
 
 class PlatformCouponCard extends StatelessWidget {
@@ -24,12 +26,25 @@ class PlatformCouponCard extends StatelessWidget {
   }
 
   String get _sectionLabel => switch (coupon.section) {
-        'cleaning' => 'التنظيف',
-        'restaurant' => 'المطاعم',
-        'supermarket' => 'السوبر ماركت',
-        _ => 'جميع الأقسام',
-      };
+    'cleaning' => 'التنظيف',
+    'restaurant' => 'المطاعم',
+    'supermarket' => 'السوبر ماركت',
+    _ => 'جميع الأقسام',
+  };
 
+  Color get _sectionAccent => switch (coupon.section) {
+    'cleaning' => SharedPlatformColors.cleaning,
+    'restaurant' => SharedPlatformColors.restaurant,
+    'supermarket' => SharedPlatformColors.supermarket,
+    _ => SharedPlatformColors.primary,
+  };
+
+  Color get _sectionSoft => switch (coupon.section) {
+    'cleaning' => SharedPlatformColors.cleaningSoft,
+    'restaurant' => SharedPlatformColors.restaurantSoft,
+    'supermarket' => SharedPlatformColors.supermarketSoft,
+    _ => const Color(0xFFEEF0FA),
+  };
   String get _discountLabel {
     final value = coupon.discountValue;
     if (value == null) return '—';
@@ -100,7 +115,7 @@ class PlatformCouponCard extends StatelessWidget {
               const SizedBox(width: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xffFFF7ED),
+                  color: _sectionSoft,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 padding: const EdgeInsetsDirectional.symmetric(
@@ -109,7 +124,7 @@ class PlatformCouponCard extends StatelessWidget {
                 ),
                 child: AppText.labelSmall(
                   _sectionLabel,
-                  color: const Color(0xffC2410C),
+                  color: _sectionAccent,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -172,10 +187,7 @@ class PlatformCouponCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 8),
-          _CouponInfoRow(
-            title: 'ينتهي في',
-            value: _formatDate(coupon.endsAt),
-          ),
+          _CouponInfoRow(title: 'ينتهي في', value: _formatDate(coupon.endsAt)),
           if (restrictionLabel != null) ...[
             const SizedBox(height: 10),
             AppText.bodySmall(

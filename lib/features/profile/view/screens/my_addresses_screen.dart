@@ -234,7 +234,7 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
                                     ),
                                     SizedBox(height: 5),
                                     Text(
-                                      'أضف عنوان الخدمة لتسريع حجز التنظيف القادم.',
+                                      'أضف عنواناً لتسريع طلبات التوصيل والخدمات القادمة.',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Color(0xFF667085),

@@ -34,10 +34,12 @@ class _LuckyBoxSetupBody extends StatefulWidget {
 
 class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
   final TextEditingController _budgetController = TextEditingController();
-  final TextEditingController _constraintsController =
-      TextEditingController(text: 'لا قيود');
-  final TextEditingController _restaurantTypeController =
-      TextEditingController(text: 'الكل');
+  final TextEditingController _constraintsController = TextEditingController(
+    text: 'لا قيود',
+  );
+  final TextEditingController _restaurantTypeController = TextEditingController(
+    text: 'الكل',
+  );
 
   bool _isSectionExpanded = true;
   bool _isSubmitting = false;
@@ -83,8 +85,9 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
       }
     }
     final name = match?.name?.trim();
-    _restaurantTypeController.text =
-        name != null && name.isNotEmpty ? name : 'الكل';
+    _restaurantTypeController.text = name != null && name.isNotEmpty
+        ? name
+        : 'الكل';
   }
 
   Future<void> _pickRestrictions(LuckBoxOptionsModel options) async {
@@ -109,7 +112,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                     AppText.titleMedium(
                       'هل هناك قيود؟',
                       fontWeight: FontWeight.w700,
-                      color: context.primary,
+                      color: const Color(0xFF6C63FF),
                     ),
                     const SizedBox(height: 10),
                     ConstrainedBox(
@@ -126,7 +129,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                               contentPadding: EdgeInsets.zero,
                               title: AppText.bodyMedium(r.labelAr ?? v),
                               value: checked,
-                              activeColor: context.primaryContainer,
+                              activeColor: const Color(0xFFFF7A00),
                               onChanged: (on) {
                                 setModalState(() {
                                   if (on == true) {
@@ -149,7 +152,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             Navigator.of(modalContext).pop(working),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor: context.primary,
+                          backgroundColor: const Color(0xFF6C63FF),
                           foregroundColor: context.onPrimary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -201,7 +204,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                     AppText.titleMedium(
                       'نوع المطاعم',
                       fontWeight: FontWeight.w700,
-                      color: context.primary,
+                      color: const Color(0xFF6C63FF),
                     ),
                     const SizedBox(height: 10),
                     ListTile(
@@ -210,7 +213,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                       trailing: Radio<int?>(
                         value: null,
                         groupValue: current,
-                        activeColor: context.primaryContainer,
+                        activeColor: const Color(0xFFFF7A00),
                         onChanged: (value) {
                           setModalState(() {
                             current = value;
@@ -232,7 +235,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                         trailing: Radio<int?>(
                           value: id,
                           groupValue: current,
-                          activeColor: context.primaryContainer,
+                          activeColor: const Color(0xFFFF7A00),
                           onChanged: (value) {
                             setModalState(() {
                               current = value;
@@ -254,7 +257,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             Navigator.of(modalContext).pop(current),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor: context.primary,
+                          backgroundColor: const Color(0xFF6C63FF),
                           foregroundColor: context.onPrimary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -300,9 +303,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
     }
     if (budget == null || budget < 1 || budget > 999999) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى إدخال ميزانية صحيحة للشخص الواحد'),
-        ),
+        const SnackBar(content: Text('يرجى إدخال ميزانية صحيحة للشخص الواحد')),
       );
       return;
     }
@@ -333,8 +334,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
       if (!mounted) return;
 
       final st = cubit.state;
-      if (st.suggestStatus == BlocStatus.success &&
-          st.suggestResult != null) {
+      if (st.suggestStatus == BlocStatus.success && st.suggestResult != null) {
         final options = st.options;
         final constraintsSummary = _selectedRestrictionValues.isEmpty
             ? 'لا قيود'
@@ -363,9 +363,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
         context.pushRoute('/luckyboxsuggestions', arguments: args);
       } else if (st.suggestStatus == BlocStatus.failed) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(st.errorMessage ?? 'تعذر جلب الاقتراحات'),
-          ),
+          SnackBar(content: Text(st.errorMessage ?? 'تعذر جلب الاقتراحات')),
         );
       }
     } finally {
@@ -386,9 +384,9 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
           p.optionsStatus != BlocStatus.failed,
       listener: (context, state) {
         if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage!)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         }
       },
       builder: (context, state) {
@@ -437,9 +435,8 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: OutlinedButton(
-                                onPressed: () => context
-                                    .read<LuckyBoxCubit>()
-                                    .loadOptions(),
+                                onPressed: () =>
+                                    context.read<LuckyBoxCubit>().loadOptions(),
                                 child: const Text('إعادة تحميل الخيارات'),
                               ),
                             ),
@@ -453,7 +450,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             children: [
                               LuckyBoxCountActionButton(
                                 icon: Icons.add,
-                                backgroundColor: context.primaryContainer,
+                                backgroundColor: const Color(0xFFFF7A00),
                                 iconColor: context.onPrimary,
                                 onTap: () {
                                   if (_membersCount >= 50) return;
@@ -554,7 +551,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _onSearchPressed,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: context.primary,
+                            backgroundColor: const Color(0xFF6C63FF),
                             foregroundColor: context.onPrimary,
                             elevation: 0,
                             shape: RoundedRectangleBorder(

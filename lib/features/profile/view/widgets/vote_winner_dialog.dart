@@ -1,4 +1,3 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 class VoteWinnerDialog extends StatelessWidget {
@@ -15,55 +14,82 @@ class VoteWinnerDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 22),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(20, 28, 20, 20),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 92,
-              height: 92,
-              decoration: BoxDecoration(
+              width: 74,
+              height: 74,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF4E5),
                 shape: BoxShape.circle,
-                color: const Color(0xffFF7A00).withAlpha(20),
-                border: Border.all(color: const Color(0xffFF7A00), width: 2),
               ),
               child: const Icon(
-                Icons.emoji_events_outlined,
-                color: Color(0xffFF7A00),
-                size: 46,
+                Icons.emoji_events_rounded,
+                color: Color(0xFFFF7A00),
+                size: 38,
               ),
             ),
-            const SizedBox(height: 16),
-            AppText.titleMedium(
-              'الخيار الفائز:',
-              color: const Color(0xff374151),
-              fontWeight: FontWeight.w700,
+            const SizedBox(height: 14),
+            const Text(
+              'الاختيار الفائز',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF172033),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 4),
-            AppText.headlineMedium(
-              winnerName,
-              color: const Color(0xffD97706),
-              fontWeight: FontWeight.w800,
+            const Text(
+              'انتهى التصويت واختارت المجموعة:',
+              style: TextStyle(color: Color(0xFF667085), fontSize: 12),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
+            const SizedBox(height: 16),
+            Container(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onShowBestOfferTap,
-                style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  minimumSize: const Size.fromHeight(46),
-                  backgroundColor: context.primary,
-                  foregroundColor: context.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
-                  ),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F5FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF6C63FF)),
+              ),
+              child: Text(
+                winnerName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF172033),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
                 ),
-                child: AppText.labelLarge(
-                  'عرض أفضل مطعم يقدمه',
-                  color: context.onPrimary,
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: onShowBestOfferTap,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF6C63FF),
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(13),
+                ),
+              ),
+              child: const Text(
+                'عرض المطاعم المناسبة',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'إغلاق',
+                style: TextStyle(
+                  color: Color(0xFF667085),
                   fontWeight: FontWeight.w700,
                 ),
               ),

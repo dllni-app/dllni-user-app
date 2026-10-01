@@ -52,7 +52,7 @@ class ProfileSummaryCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFE9F9FA),
+                  color: Color(0xFFEEF0FA),
                   shape: BoxShape.circle,
                 ),
                 child: CircleAvatar(

@@ -12,7 +12,7 @@ class ProfileAppBar extends StatelessWidget {
         gradient: LinearGradient(
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
-          colors: [Color(0xFF1E2A78), Color(0xFF0CBBC7)],
+          colors: [Color(0xFF1E2A78), Color(0xFF172554)],
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(26),
@@ -49,8 +49,8 @@ class ProfileAppBar extends StatelessWidget {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  'إدارة بياناتك وعناوينك وإشعاراتك',
-                  style: TextStyle(color: Color(0xFFD8F5F6), fontSize: 12),
+                  'إدارة حسابك وأدواتك من مكان واحد',
+                  style: TextStyle(color: Color(0xFFE9EAFB), fontSize: 12),
                 ),
               ],
             ),
