@@ -46,8 +46,8 @@ class BrowseStoresParams with Params {
     if (sort != null) "sort": sort,
     if (latitude != null) "latitude": latitude,
     if (longitude != null) "longitude": longitude,
-    if (openNow != null) "filter[openNow]": openNow,
-    if (isFeatured != null) "filter[isFeatured]": isFeatured,
+    if (openNow != null) "filter[openNow]": openNow! ? 1 : 0,
+    if (isFeatured != null) "filter[isFeatured]": isFeatured! ? 1 : 0,
     if (averageRatingMin != null) "filter[averageRatingMin]": averageRatingMin,
   };
 }
