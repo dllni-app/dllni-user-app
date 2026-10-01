@@ -4,7 +4,6 @@ import 'package:dartz/dartz.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/cleaning_banners_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/cleaning_services_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
-import 'package:dllni_user_app/features/cl_main/data/models/estimate_price_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/female_worker_safety_policy_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/previous_workers_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/domain/repository/cl_main_repo.dart';
@@ -16,7 +15,7 @@ import 'package:dllni_user_app/features/cl_main/domain/usecases/get_previous_cle
 import 'package:dllni_user_app/features/cl_main/view/data/cl_main_route_args.dart';
 import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart';
-import 'package:dllni_user_app/features/cl_main/view/widgets/cl_service_bottom_actions_widget.dart';
+import 'package:dllni_user_app/features/cl_main/view/widgets/cl_redesign_components.dart';
 import 'package:dllni_user_app/features/cl_main/view/widgets/cl_service_previous_workers_section_widget.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
@@ -167,8 +166,8 @@ void main() {
 
     final submitButton = find
         .descendant(
-          of: find.byType(ClServiceBottomActionsWidget),
-          matching: find.byType(ElevatedButton),
+          of: find.byType(ClRedesignStickyActions),
+          matching: find.byType(FilledButton),
         )
         .first;
     await tester.tap(submitButton);

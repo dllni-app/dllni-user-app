@@ -26,13 +26,13 @@ import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
-import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_section_card_widget.dart';
+import '../widgets/cl_redesign_components.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_worker_profile_detail_screen.dart';
 
@@ -220,12 +220,21 @@ class _ClMainOccasionScheduleScreenState
         child: BlocBuilder<ClMainBloc, ClMainState>(
           builder: (context, state) {
             return Scaffold(
-              backgroundColor: const Color(0xFFF2F2F2),
+              backgroundColor: const Color(0xFFF7F8FA),
               body: SafeArea(
                 child: Column(
                   children: [
                     const HomeDetailsAppBar(),
-                    const SizedBox(height: 20),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 14, 16, 4),
+                      child: ClRedesignStepHeader(
+                        currentStep: 2,
+                        totalSteps: 3,
+                        title: 'موعد المناسبة والفريق',
+                        subtitle:
+                            'حدد أيام العمل والفريق، ثم راجع السعر والتفاصيل قبل التأكيد.',
+                      ),
+                    ),
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsetsDirectional.only(
@@ -386,16 +395,14 @@ class _ClMainOccasionScheduleScreenState
                         ),
                       ),
                     ),
-                    Container(
-                      color: const Color(0xFFF2F2F2),
-                      padding: const EdgeInsetsDirectional.symmetric(
-                        horizontal: 20,
-                        vertical: 20,
-                      ),
-                      child: ClServiceBottomActionsWidget(
-                        onBackPressed: () => context.pop(),
-                        onSubmitPressed: () => _onSubmitPressed(state),
-                      ),
+                    ClRedesignStickyActions(
+                      primaryLabel: 'تأكيد طلب المناسبة',
+                      onPrimary: () => _onSubmitPressed(state),
+                      primaryEnabled:
+                          state.createOrderStatus != BlocStatus.loading &&
+                          state.estimatePriceStatus != BlocStatus.loading,
+                      secondaryLabel: 'السابق',
+                      onSecondary: () => context.pop(),
                     ),
                   ],
                 ),
@@ -409,14 +416,21 @@ class _ClMainOccasionScheduleScreenState
 
   Widget _buildMultiDayScheduleCard() {
     final estimateSchedule = _activeEstimate?.schedule;
-    return ClServiceSectionCardWidget(
+    return ClRedesignCard(
       key: const Key('occasion_multi_day_schedule_card'),
-      step: 0,
-      showStepBadge: false,
-      title: 'أيام وأوقات المناسبة',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Text(
+            'أيام وأوقات المناسبة',
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              color: Color(0xFF172033),
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(

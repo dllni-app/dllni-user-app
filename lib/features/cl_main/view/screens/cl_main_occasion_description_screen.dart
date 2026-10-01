@@ -10,8 +10,7 @@ import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
 import '../manager/bloc/cl_main_bloc.dart';
-import '../widgets/cl_home_description_title_card_widget.dart';
-import '../widgets/cl_main_continue_button_widget.dart';
+import '../widgets/cl_redesign_components.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
@@ -50,6 +49,7 @@ class _ClMainOccasionDescriptionScreenState
   _MenuOption? _selectedHelpType;
   _MenuOption? _selectedSpecialRequirement;
   bool _didNavigateToSchedule = false;
+  int _descriptionStep = 0;
 
   String get _customServiceValue {
     final typed = _customServiceController.text.trim();
@@ -230,7 +230,7 @@ class _ClMainOccasionDescriptionScreenState
     final bloc = _bloc;
     if (bloc == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF2F2F2),
+        backgroundColor: Color(0xFFF7F8FA),
         body: SafeArea(child: Center(child: CircularProgressIndicator())),
       );
     }
@@ -294,266 +294,311 @@ class _ClMainOccasionDescriptionScreenState
           }
         },
         builder: (context, state) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF2F2F2),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  const HomeDetailsAppBar(),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        16,
-                        20,
-                        16,
-                        20,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsetsDirectional.fromSTEB(
-                              14,
-                              12,
-                              14,
-                              12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: const Color(0xFFE5E7EB),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.event_rounded,
-                                  color: Color(0xFF11B9C8),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: AppText.bodyMedium(
-                                    'توصيف المناسبة: $occasionTitle',
-                                    color: const Color(0xFF0F172A),
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          ClHomeDescriptionTitleCardWidget(
-                            step: 1,
-                            title: 'عدد الضيوف',
-                            subtitle: 'حدد العدد التقريبي للضيوف',
-                            child: _CounterField(
-                              value: _guestsCount,
-                              minValue: 1,
-                              onAdd: () => setState(() => _guestsCount += 1),
-                              onSubtract: () {
-                                if (_guestsCount <= 1) return;
-                                setState(() => _guestsCount -= 1);
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          ClHomeDescriptionTitleCardWidget(
-                            step: 2,
-                            title: 'ما هي طبيعة المساعدة المطلوبة؟',
-                            subtitle: 'اكتب أو اختر نوع المساعدة المطلوبة',
-                            child: Column(
-                              children: [
-                                ClSelectableMenuFieldWidget(
-                                  key: const Key('occasion_help_type_field'),
-                                  value: _selectedHelpType?.label,
-                                  hint: 'اختر اقتراحاً سريعاً...',
-                                  onTap: _selectHelpType,
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _customServiceController,
-                                  maxLength: 255,
-                                  minLines: 2,
-                                  maxLines: 3,
-                                  decoration: InputDecoration(
-                                    hintText: 'اكتب وصف المساعدة المطلوبة',
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFF9CA3AF),
-                                      fontSize: 12,
-                                    ),
-                                    filled: true,
-                                    fillColor: const Color(0xFFF9FAFB),
-                                    contentPadding:
-                                        const EdgeInsetsDirectional.symmetric(
-                                          horizontal: 12,
-                                          vertical: 10,
-                                        ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFFE5E7EB),
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF11B9C8),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          ClHomeDescriptionTitleCardWidget(
-                            step: 3,
-                            title: 'مدة الخدمة بالساعات',
-                            subtitle: 'حدد عدد الساعات المطلوبة (1 - 24)',
-                            child: _CounterField(
-                              value: _hoursCount,
-                              minValue: 1,
-                              maxValue: 24,
-                              onAdd: () {
-                                if (_hoursCount >= 24) return;
-                                _setHoursCount(_hoursCount + 1);
-                              },
-                              onSubtract: () {
-                                if (_hoursCount <= 1) return;
-                                _setHoursCount(_hoursCount - 1);
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          ClHomeDescriptionTitleCardWidget(
-                            step: 4,
-                            title: 'عدد العمال المطلوبين',
-                            subtitle: 'حدد عدد العمال الذي تحتاجه للمناسبة',
-                            child: _CounterField(
-                              value: _workersCount,
-                              minValue: 1,
-                              onAdd: () => setState(() => _workersCount += 1),
-                              onSubtract: () {
-                                if (_workersCount <=
-                                    _minimumWorkersForSelectedHours) {
-                                  return;
-                                }
-                                setState(() => _workersCount -= 1);
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          ClHomeDescriptionTitleCardWidget(
-                            step: 5,
-                            title: 'هل لديك أي متطلبات خاصة؟',
-                            subtitle: 'اختر المتطلبات الخاصة إن وجدت',
-                            child: ClSelectableMenuFieldWidget(
-                              key: const Key(
-                                'occasion_special_requirements_field',
-                              ),
-                              value: _selectedSpecialRequirement?.label,
-                              hint: 'اختر المتطلبات الخاصة',
-                              onTap: _selectSpecialRequirement,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _buildDynamicFieldsCard(),
-                          if (_routeArgs?.option.dynamicFields.isNotEmpty ==
-                              true)
-                            const SizedBox(height: 10),
-                          CleaningAddressSelectWidget(
-                            selectedAddress: _selectedAddress,
-                            onChangeTap: _selectAddress,
-                          ),
-                          const SizedBox(height: 10),
-                          ClHomeDescriptionTitleCardWidget(
-                            step: 6,
-                            title: 'ملاحظات الطلب',
-                            subtitle: 'يمكنك إضافة ملاحظات إضافية (اختياري)',
-                            child: Column(
-                              children: [
-                                CheckboxListTile(
-                                  value: _enableNotes,
-                                  contentPadding: EdgeInsets.zero,
-                                  controlAffinity:
-                                      ListTileControlAffinity.leading,
-                                  title: AppText.bodySmall(
-                                    'إضافة ملاحظات للطلب',
-                                    color: const Color(0xFF374151),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  activeColor: const Color(0xFF11B9C8),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _enableNotes = value ?? false;
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: 6),
-                                TextField(
-                                  controller: _notesController,
-                                  minLines: 2,
-                                  maxLines: 3,
-                                  enabled: _enableNotes,
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        'غسل اطباق أو مساعدة في اشياء معينة',
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFF9CA3AF),
-                                      fontSize: 12,
-                                    ),
-                                    filled: true,
-                                    fillColor: const Color(0xFFF9FAFB),
-                                    contentPadding:
-                                        const EdgeInsetsDirectional.symmetric(
-                                          horizontal: 12,
-                                          vertical: 10,
-                                        ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFFE5E7EB),
-                                      ),
-                                    ),
-                                    disabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFFE5E7EB),
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF11B9C8),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          if (state.estimatePriceStatus == BlocStatus.loading)
-                            const Center(child: CircularProgressIndicator())
-                          else
-                            ClMainContinueButtonWidget(
-                              key: const Key(
-                                'occasion_description_continue_button',
-                              ),
-                              onPressed: () => _onContinue(bloc),
-                            ),
-                        ],
+          final isEstimating = state.estimatePriceStatus == BlocStatus.loading;
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              backgroundColor: const Color(0xFFF7F8FA),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    const HomeDetailsAppBar(),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          child: _descriptionStep == 0
+                              ? _buildOccasionBasicsStep(occasionTitle)
+                              : _buildOccasionRequirementsStep(),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    ClRedesignStickyActions(
+                      primaryLabel: _descriptionStep == 0
+                          ? 'التالي'
+                          : 'متابعة إلى الموعد',
+                      onPrimary: () => _onDescriptionPrimaryPressed(bloc),
+                      primaryEnabled: !isEstimating,
+                      secondaryLabel: _descriptionStep > 0 ? 'السابق' : null,
+                      onSecondary: _descriptionStep > 0
+                          ? () => setState(() => _descriptionStep = 0)
+                          : null,
+                    ),
+                  ],
+                ),
               ),
             ),
           );
         },
       ),
     );
+  }
+
+  Widget _buildOccasionBasicsStep(String occasionTitle) {
+    return Column(
+      key: const ValueKey('occasion_basics_step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const ClRedesignStepHeader(
+          currentStep: 1,
+          totalSteps: 2,
+          title: 'تفاصيل المناسبة',
+          subtitle:
+              'أخبرنا بحجم المناسبة وطبيعة المساعدة حتى نقدر الوقت والفريق المناسبين.',
+        ),
+        const SizedBox(height: 18),
+        ClRedesignCard(
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.event_rounded,
+                  color: Color(0xFF0F8E98),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'نوع المناسبة',
+                      style: TextStyle(color: Color(0xFF667085), fontSize: 12),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      occasionTitle,
+                      style: const TextStyle(
+                        color: Color(0xFF172033),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        ClRedesignCounter(
+          label: 'عدد الضيوف',
+          icon: Icons.groups_2_outlined,
+          value: _guestsCount,
+          onIncrement: () => setState(() => _guestsCount += 1),
+          onDecrement: () {
+            if (_guestsCount <= 1) return;
+            setState(() => _guestsCount -= 1);
+          },
+        ),
+        const SizedBox(height: 12),
+        ClRedesignCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'طبيعة المساعدة المطلوبة',
+                textAlign: TextAlign.start,
+                style: TextStyle(
+                  color: Color(0xFF172033),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'اختر اقتراحاً أو اكتب وصفاً يناسب احتياج المناسبة.',
+                textAlign: TextAlign.start,
+                style: TextStyle(color: Color(0xFF667085), fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              ClSelectableMenuFieldWidget(
+                key: const Key('occasion_help_type_field'),
+                value: _selectedHelpType?.label,
+                hint: 'اختر اقتراحاً سريعاً',
+                onTap: _selectHelpType,
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _customServiceController,
+                maxLength: 255,
+                minLines: 2,
+                maxLines: 3,
+                textAlign: TextAlign.start,
+                decoration: _redesignInputDecoration(
+                  hintText: 'اكتب وصف المساعدة المطلوبة',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        ClRedesignCounter(
+          label: 'مدة الخدمة بالساعات',
+          icon: Icons.schedule_outlined,
+          value: _hoursCount,
+          onIncrement: () {
+            if (_hoursCount >= 24) return;
+            _setHoursCount(_hoursCount + 1);
+          },
+          onDecrement: () {
+            if (_hoursCount <= 1) return;
+            _setHoursCount(_hoursCount - 1);
+          },
+        ),
+        const SizedBox(height: 12),
+        ClRedesignCounter(
+          label: 'عدد العمال المطلوبين',
+          icon: Icons.engineering_outlined,
+          value: _workersCount,
+          onIncrement: () => setState(() => _workersCount += 1),
+          onDecrement: () {
+            if (_workersCount <= _minimumWorkersForSelectedHours) return;
+            setState(() => _workersCount -= 1);
+          },
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'الحد الأدنى المقترح لهذه المدة: $_minimumWorkersForSelectedHours عامل',
+          textAlign: TextAlign.start,
+          style: const TextStyle(
+            color: Color(0xFF667085),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOccasionRequirementsStep() {
+    return Column(
+      key: const ValueKey('occasion_requirements_step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const ClRedesignStepHeader(
+          currentStep: 2,
+          totalSteps: 2,
+          title: 'المتطلبات ومكان الخدمة',
+          subtitle:
+              'أكمل التفاصيل المدعومة للطلب. يمكنك إضافة الملاحظات فقط عند الحاجة.',
+        ),
+        const SizedBox(height: 18),
+        ClRedesignCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'متطلبات خاصة',
+                textAlign: TextAlign.start,
+                style: TextStyle(
+                  color: Color(0xFF172033),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ClSelectableMenuFieldWidget(
+                key: const Key('occasion_special_requirements_field'),
+                value: _selectedSpecialRequirement?.label,
+                hint: 'اختر المتطلبات الخاصة',
+                onTap: _selectSpecialRequirement,
+              ),
+            ],
+          ),
+        ),
+        if (_routeArgs?.option.dynamicFields.isNotEmpty == true) ...[
+          const SizedBox(height: 12),
+          _buildDynamicFieldsCard(),
+        ],
+        const SizedBox(height: 12),
+        CleaningAddressSelectWidget(
+          selectedAddress: _selectedAddress,
+          onChangeTap: _selectAddress,
+        ),
+        const SizedBox(height: 12),
+        ClRedesignCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                value: _enableNotes,
+                title: const Text(
+                  'إضافة ملاحظات للطلب',
+                  textAlign: TextAlign.start,
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: const Text(
+                  'اختياري — استخدمها فقط للتفاصيل التي يحتاجها العامل.',
+                  textAlign: TextAlign.start,
+                ),
+                onChanged: (value) => setState(() => _enableNotes = value),
+              ),
+              if (_enableNotes) ...[
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _notesController,
+                  minLines: 2,
+                  maxLines: 4,
+                  textAlign: TextAlign.start,
+                  decoration: _redesignInputDecoration(
+                    hintText: 'أضف ملاحظة مختصرة للعامل',
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _redesignInputDecoration({required String hintText}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Color(0xFF98A2B3), fontSize: 13),
+      filled: true,
+      fillColor: const Color(0xFFF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE4E7EC)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF12B8C4)),
+      ),
+    );
+  }
+
+  void _onDescriptionPrimaryPressed(ClMainBloc bloc) {
+    if (_descriptionStep == 0) {
+      final customService = _customServiceValue;
+      if (customService.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('يرجى إدخال طبيعة المساعدة المطلوبة')),
+        );
+        return;
+      }
+      if (customService.length > 255) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('وصف المساعدة يجب ألا يتجاوز 255 حرفاً'),
+          ),
+        );
+        return;
+      }
+      setState(() => _descriptionStep = 1);
+      return;
+    }
+    _onContinue(bloc);
   }
 
   @override
@@ -736,13 +781,25 @@ class _ClMainOccasionDescriptionScreenState
   Widget _buildDynamicFieldsCard() {
     final fields = _routeArgs?.option.dynamicFields ?? const [];
     if (fields.isEmpty) return const SizedBox.shrink();
-    return ClHomeDescriptionTitleCardWidget(
-      step: 6,
-      title: 'تفاصيل المناسبة',
-      subtitle: 'أدخل التفاصيل المطلوبة لهذا النوع من المناسبات.',
+    return ClRedesignCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Text(
+            'تفاصيل إضافية للمناسبة',
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              color: Color(0xFF172033),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'هذه الحقول تأتي من إعدادات نوع المناسبة الحالية.',
+            textAlign: TextAlign.start,
+            style: TextStyle(color: Color(0xFF667085), fontSize: 12),
+          ),
+          const SizedBox(height: 14),
           for (var index = 0; index < fields.length; index++) ...[
             _buildDynamicField(fields[index]),
             if (index < fields.length - 1) const SizedBox(height: 12),
@@ -927,11 +984,13 @@ class _ClMainOccasionDescriptionScreenState
                       color: const Color(0xFF111827),
                       fontWeight: FontWeight.w600,
                     ),
-                    trailing: Radio<String>(
-                      value: option.id,
-                      groupValue: currentValue?.id,
-                      onChanged: (_) => Navigator.of(ctx).pop(option),
-                      activeColor: const Color(0xFF11B9C8),
+                    trailing: Icon(
+                      currentValue?.id == option.id
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: currentValue?.id == option.id
+                          ? const Color(0xFF11B9C8)
+                          : const Color(0xFF98A2B3),
                     ),
                     onTap: () => Navigator.of(ctx).pop(option),
                   ),
@@ -941,94 +1000,6 @@ class _ClMainOccasionDescriptionScreenState
           ),
         );
       },
-    );
-  }
-}
-
-class _CounterActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color color;
-
-  const _CounterActionButton({
-    required this.icon,
-    required this.onTap,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: color,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 30,
-          height: 30,
-          child: Icon(icon, size: 16, color: Colors.white),
-        ),
-      ),
-    );
-  }
-}
-
-class _CounterField extends StatelessWidget {
-  final int value;
-  final int minValue;
-  final int? maxValue;
-  final VoidCallback onAdd;
-  final VoidCallback onSubtract;
-
-  const _CounterField({
-    required this.value,
-    required this.onAdd,
-    required this.onSubtract,
-    this.minValue = 1,
-    this.maxValue,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F7FA),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          _CounterActionButton(
-            icon: Icons.remove_rounded,
-            onTap: onSubtract,
-            color: const Color(0xFF6B7280),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Container(
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD1D5E1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: AppText.bodyMedium(
-                '$value',
-                color: const Color(0xFF1F2937),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          _CounterActionButton(
-            icon: Icons.add_rounded,
-            onTap: onAdd,
-            color: const Color(0xFF11B9C8),
-          ),
-        ],
-      ),
     );
   }
 }
