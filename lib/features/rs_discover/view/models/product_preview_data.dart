@@ -1,3 +1,4 @@
+import '../../../rs_home/data/models/fetch_restaurant_home_category_products_model.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_exclusive_offers_model.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_latest_ordered_products_model.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_suggested_products_model.dart';
@@ -44,6 +45,22 @@ class ProductPreviewData {
       hasActiveOffer &&
       ((offerName ?? '').trim().isNotEmpty ||
           (offerBadgeText ?? '').trim().isNotEmpty);
+
+  factory ProductPreviewData.fromCategoryProductItem(
+    RestaurantHomeCategoryProductsItem item,
+  ) {
+    return ProductPreviewData(
+      productId: item.productId ?? 0,
+      name: item.name ?? '',
+      restaurantName: item.restaurantName ?? '',
+      description: item.description ?? '',
+      displayPrice: item.displayPrice,
+      originalPrice: item.originalPrice,
+      currency: item.currency,
+      imageUrl: item.primaryImageUrl,
+      isFavorited: false,
+    );
+  }
 
   factory ProductPreviewData.fromSuggestedItem(
     RestaurantHomeSuggestedProductItem item,

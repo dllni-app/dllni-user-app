@@ -255,7 +255,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                 ? previous.placeStoreOrderStatus !=
                           current.placeStoreOrderStatus ||
                       previous.storeCouponStatus != current.storeCouponStatus
-                : previous.placeOrderStatus != current.placeOrderStatus,
+                : previous.placeOrderStatus != current.placeOrderStatus ||
+                      previous.couponStatus != current.couponStatus,
             listener: (context, state) {
               final status = args.section == 'supermarket'
                   ? state.placeStoreOrderStatus
@@ -264,13 +265,21 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   ? state.placeStoreOrderErrorMessage
                   : state.placeOrderErrorMessage;
 
-              if (args.section == 'supermarket' &&
-                  state.storeCouponStatus == BlocStatus.success &&
-                  state.placeStoreOrderStatus != BlocStatus.loading &&
-                  state.placeStoreOrderStatus != BlocStatus.success &&
+              final couponStatus = args.section == 'supermarket'
+                  ? state.storeCouponStatus
+                  : state.couponStatus;
+              final placeStatus = args.section == 'supermarket'
+                  ? state.placeStoreOrderStatus
+                  : state.placeOrderStatus;
+              if (couponStatus != BlocStatus.loading &&
+                  placeStatus != BlocStatus.loading &&
+                  placeStatus != BlocStatus.success &&
                   args.cartId != null) {
                 context.read<OrdersBloc>().add(
-                  PreviewStoreCheckoutEvent(cartId: args.cartId!),
+                  PreviewStoreCheckoutEvent(
+                    cartId: args.cartId!,
+                    section: args.section,
+                  ),
                 );
               }
 
@@ -301,7 +310,10 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               final couponData = isStoreFlow
                   ? state.storeCouponData
                   : state.couponData;
-              final preview = isStoreFlow ? state.storeCheckoutPreview : null;
+              final preview =
+                  state.storeCheckoutPreview?.cartId == args.cartId
+                  ? state.storeCheckoutPreview
+                  : null;
               final previewAmounts = preview?.amounts;
               final baseSubtotal = isStoreFlow
                   ? supermarketCart?.amounts?.subtotal?.toDouble()
@@ -321,14 +333,16 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               final deliveryFee = isDelivery
                   ? (previewAmounts?.deliveryFee ?? 0)
                   : 0.0;
+              final serviceFee = previewAmounts?.serviceFee ?? 0;
+              final tax = previewAmounts?.tax ?? 0;
               final total =
                   previewAmounts?.total ??
                   couponData?.amounts?.total ??
                   baseTotal ??
                   0;
-              final storePreviewReady =
-                  !isStoreFlow ||
-                  state.storeCheckoutPreviewStatus == BlocStatus.success;
+              final checkoutPreviewReady =
+                  state.storeCheckoutPreviewStatus == BlocStatus.success &&
+                  preview?.cartId == args.cartId;
               final merchantName =
                   cart?.merchant?.name ??
                   supermarketCart?.merchant?.name ??
@@ -340,13 +354,16 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                 supermarketCart: supermarketCart,
               );
 
-              if (isStoreFlow &&
-                  args.cartId != null &&
-                  state.storeCheckoutPreviewStatus == null) {
+              if (args.cartId != null &&
+                  (preview?.cartId != args.cartId ||
+                      state.storeCheckoutPreviewStatus == null)) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (!context.mounted) return;
                   context.read<OrdersBloc>().add(
-                    PreviewStoreCheckoutEvent(cartId: args.cartId!),
+                    PreviewStoreCheckoutEvent(
+                      cartId: args.cartId!,
+                      section: args.section,
+                    ),
                   );
                 });
               }
@@ -384,10 +401,11 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   fulfillmentType: 'delivery',
                                 ),
                               );
-                              if (isStoreFlow && args.cartId != null) {
+                              if (args.cartId != null) {
                                 bloc.add(
                                   PreviewStoreCheckoutEvent(
                                     cartId: args.cartId!,
+                                    section: args.section,
                                   ),
                                 );
                               }
@@ -408,10 +426,11 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   fulfillmentType: 'pickup',
                                 ),
                               );
-                              if (isStoreFlow && args.cartId != null) {
+                              if (args.cartId != null) {
                                 bloc.add(
                                   PreviewStoreCheckoutEvent(
                                     cartId: args.cartId!,
+                                    section: args.section,
                                   ),
                                 );
                               }
@@ -435,13 +454,14 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                       address: selected,
                                     ),
                                   );
-                                  if (isStoreFlow && args.cartId != null) {
+                                  if (args.cartId != null) {
                                     WidgetsBinding.instance
                                         .addPostFrameCallback((_) {
                                           if (!context.mounted) return;
                                           context.read<OrdersBloc>().add(
                                             PreviewStoreCheckoutEvent(
                                               cartId: args.cartId!,
+                                              section: args.section,
                                             ),
                                           );
                                         });
@@ -463,9 +483,9 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   ? merchantLocation
                                   : 'الموقع غير متوفر',
                             ),
-                          if (isStoreFlow && isDelivery) ...[
+                          if (!isStoreFlow || isDelivery) ...[
                             const SizedBox(height: 24),
-                            _StoreReceiveScheduleCard(
+                            _ReceiveScheduleCard(
                               receiveMode: state.storeReceiveMode,
                               scheduledAt: state.storeScheduledAt,
                               onModeChanged: (mode) {
@@ -483,6 +503,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                     context.read<OrdersBloc>().add(
                                       PreviewStoreCheckoutEvent(
                                         cartId: args.cartId!,
+                                        section: args.section,
                                       ),
                                     );
                                   });
@@ -535,6 +556,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                     context.read<OrdersBloc>().add(
                                       PreviewStoreCheckoutEvent(
                                         cartId: args.cartId!,
+                                        section: args.section,
                                       ),
                                     );
                                   });
@@ -542,9 +564,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                               },
                             ),
                           ],
-                          if (isStoreFlow &&
-                              state.storeCheckoutPreviewStatus ==
-                                  BlocStatus.failed) ...[
+                          if (state.storeCheckoutPreviewStatus ==
+                              BlocStatus.failed) ...[
                             const SizedBox(height: 16),
                             Container(
                               width: double.infinity,
@@ -603,6 +624,20 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                     value: _money(deliveryFee),
                                   ),
                                 ],
+                                if (serviceFee > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _SummaryRow(
+                                    title: 'رسوم الخدمة',
+                                    value: _money(serviceFee),
+                                  ),
+                                ],
+                                if (tax > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _SummaryRow(
+                                    title: 'الضريبة',
+                                    value: _money(tax),
+                                  ),
+                                ],
                                 if (discount > 0) ...[
                                   const SizedBox(height: 8),
                                   _SummaryRow(
@@ -650,7 +685,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: isPlacingOrder || !storePreviewReady
+                        onPressed: isPlacingOrder || !checkoutPreviewReady
                             ? null
                             : () {
                                 final cartId = args.cartId;
@@ -720,8 +755,8 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
   }
 }
 
-class _StoreReceiveScheduleCard extends StatelessWidget {
-  const _StoreReceiveScheduleCard({
+class _ReceiveScheduleCard extends StatelessWidget {
+  const _ReceiveScheduleCard({
     required this.receiveMode,
     required this.scheduledAt,
     required this.onModeChanged,

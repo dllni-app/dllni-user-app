@@ -35,7 +35,10 @@ import '../widgets/cl_open_time_sessions_section_widget.dart';
 import '../widgets/cl_recurring_schedule_section_widget.dart';
 import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
+import '../widgets/cl_service_assignment_mode_section_widget.dart';
 import '../widgets/cl_service_bottom_actions_widget.dart';
+import '../widgets/cl_service_worker_count_selector_widget.dart';
+import '../widgets/cl_service_worker_room_assignment_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_gradient_info_card_widget.dart';
@@ -99,6 +102,7 @@ class _ClMainServiceScheduleScreenState
       const <CleaningRecurringSessionInput>[];
   List<CleaningOpenTimeSessionRequest> _openTimeSessions =
       const <CleaningOpenTimeSessionRequest>[];
+  bool _manualRoomAssignmentEnabled = false;
 
   @override
   Widget build(BuildContext context) {
@@ -251,32 +255,6 @@ class _ClMainServiceScheduleScreenState
                             },
                           ),
                           const SizedBox(height: 10),
-                          if (!_isRecurring ||
-                              _recurringWorkerScope ==
-                                  CleaningRecurringWorkerScope.specific) ...[
-                            ClScheduledPreviousWorkersSectionWidget(
-                              bloc: bloc,
-                              propertyType: _routeArgs?.propertyType ?? '',
-                              scheduledDate:
-                                  CleaningScheduleDateTimeLogic.formatDateApi(
-                                    _selectedDate,
-                                  ),
-                              scheduledTime: _fromTimeHhMm,
-                              durationHours: _effectiveServiceHours(
-                                estimatedHours: _perVisitEstimatedHours(
-                                  estimate,
-                                ),
-                                numberOfWorkers: _requiredWorkersCount(state),
-                              ),
-                              onSelectedWorkersChanged: (workerIds) {
-                                _requestUpdatedEstimate(
-                                  state,
-                                  selectedWorkerIds: workerIds,
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 10),
-                          ],
                           CleaningAddressSelectWidget(
                             selectedAddress: selectedAddress,
                             onChangeTap: _selectAddress,
@@ -384,6 +362,12 @@ class _ClMainServiceScheduleScreenState
                             ),
                           ],
                           const SizedBox(height: 16),
+                          _buildWorkerSelectionSection(
+                            state: state,
+                            bloc: bloc,
+                            estimate: estimate,
+                          ),
+                          const SizedBox(height: 16),
                           ClServiceCouponSectionWidget(
                             couponController: _couponController,
                             status: _couponStatus,
@@ -444,6 +428,210 @@ class _ClMainServiceScheduleScreenState
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildWorkerSelectionSection({
+    required ClMainState state,
+    required ClMainBloc bloc,
+    required EstimatePriceResponseModel? estimate,
+  }) {
+    final args = _routeArgs;
+    if (args == null) return const SizedBox.shrink();
+
+    if (_serviceExtras.openTime != null) {
+      return _workerAutoSelectionInfo(
+        'سيختار دلّني العمال تلقائياً حسب عدد العمال المحدد للخدمة المفتوحة.',
+      );
+    }
+
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.any) {
+      return _workerAutoSelectionInfo(
+        'سيختار دلّني العمال المناسبين لكل زيارة دورية تلقائياً.',
+      );
+    }
+
+    if (_isRecurring &&
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific) {
+      return ClScheduledPreviousWorkersSectionWidget(
+        bloc: bloc,
+        propertyType: args.propertyType,
+        scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+          _selectedDate,
+        ),
+        scheduledTime: _fromTimeHhMm,
+        durationHours: _effectiveServiceHours(
+          estimatedHours: _perVisitEstimatedHours(estimate),
+          numberOfWorkers: _requiredWorkersCount(state),
+        ),
+        onSelectedWorkersChanged: (workerIds) {
+          _requestUpdatedEstimate(state, selectedWorkerIds: workerIds);
+        },
+      );
+    }
+
+    final roomUnits = enumerateRoomUnits(args.roomSizeBreakdown);
+    final maxWorkers = roomUnits.isEmpty ? 1 : roomUnits.length;
+
+    return Column(
+      children: [
+        ClServiceAssignmentModeSectionWidget(
+          selectedMode: state.assignmentMode,
+          onModeChanged: (mode) {
+            if (mode == state.assignmentMode) return;
+            if (mode == CleaningAssignmentMode.openCount) {
+              final safeCount = state.numberOfWorkers < 1
+                  ? 1
+                  : state.numberOfWorkers;
+              bloc.add(SetAssignmentModeEvent(mode: mode));
+              bloc.add(ClearWorkerRoomAssignmentsEvent());
+              setState(() => _manualRoomAssignmentEnabled = false);
+              _requestUpdatedEstimate(
+                state.copyWith(
+                  assignmentMode: mode,
+                  numberOfWorkers: safeCount,
+                  clearSelectedWorkers: true,
+                  clearWorkerRoomAssignments: true,
+                ),
+                selectedWorkerIds: const <int>[],
+              );
+              return;
+            }
+
+            bloc.add(SetAssignmentModeEvent(mode: mode));
+            bloc.add(ClearWorkerRoomAssignmentsEvent());
+            setState(() => _manualRoomAssignmentEnabled = false);
+            _requestUpdatedEstimate(
+              state.copyWith(
+                assignmentMode: mode,
+                numberOfWorkers: 1,
+                clearWorkerRoomAssignments: true,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        if (state.assignmentMode == CleaningAssignmentMode.preferredWorker)
+          ClScheduledPreviousWorkersSectionWidget(
+            bloc: bloc,
+            propertyType: args.propertyType,
+            scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
+              _selectedDate,
+            ),
+            scheduledTime: _fromTimeHhMm,
+            durationHours: _effectiveServiceHours(
+              estimatedHours: _perVisitEstimatedHours(estimate),
+              numberOfWorkers: 1,
+            ),
+            onSelectedWorkersChanged: (workerIds) {
+              _requestUpdatedEstimate(state, selectedWorkerIds: workerIds);
+            },
+          ),
+        if (state.assignmentMode == CleaningAssignmentMode.openCount) ...[
+          ClServiceWorkerCountSelectorWidget(
+            count: state.numberOfWorkers,
+            maxCount: maxWorkers,
+            onChanged: (count) {
+              bloc.add(SetNumberOfWorkersEvent(count: count));
+              if (!_manualRoomAssignmentEnabled) {
+                bloc.add(ClearWorkerRoomAssignmentsEvent());
+              }
+              _requestUpdatedEstimate(
+                state.copyWith(
+                  assignmentMode: CleaningAssignmentMode.openCount,
+                  numberOfWorkers: count,
+                  clearSelectedWorkers: true,
+                  clearWorkerRoomAssignments: !_manualRoomAssignmentEnabled,
+                ),
+                selectedWorkerIds: const <int>[],
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: SwitchListTile.adaptive(
+              value: _manualRoomAssignmentEnabled,
+              onChanged: (enabled) {
+                setState(() => _manualRoomAssignmentEnabled = enabled);
+                if (!enabled) {
+                  bloc.add(ClearWorkerRoomAssignmentsEvent());
+                  _requestUpdatedEstimate(
+                    state.copyWith(clearWorkerRoomAssignments: true),
+                  );
+                }
+              },
+              title: const Text(
+                'توزيع الغرف يدوياً',
+                textAlign: TextAlign.start,
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: const Text(
+                'اختياري — يمكنك ترك دلّني يوزّع الغرف تلقائياً.',
+                textAlign: TextAlign.start,
+              ),
+            ),
+          ),
+          if (_manualRoomAssignmentEnabled) ...[
+            const SizedBox(height: 12),
+            ClServiceWorkerRoomAssignmentWidget(
+              units: roomUnits,
+              numberOfWorkers: state.numberOfWorkers,
+              slotByRoomKey: state.workerRoomAssignments,
+              fieldErrors: state.assignmentFieldErrors,
+              submittedAssignments: buildWorkerRoomAssignmentsJson(
+                slotByRoomKey: state.workerRoomAssignments,
+                units: roomUnits,
+                preferredWorkerId: state.primarySelectedWorkerId,
+                assignmentMode: state.assignmentMode,
+              ),
+              onAssign: (roomKey, workerSlot) {
+                bloc.add(
+                  SetWorkerRoomSlotEvent(
+                    roomKey: roomKey,
+                    workerSlot: workerSlot,
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+
+  Widget _workerAutoSelectionInfo(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF9FA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFB6ECEF)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.auto_awesome, color: Color(0xFF0B7480)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              textAlign: TextAlign.start,
+              style: const TextStyle(
+                color: Color(0xFF344054),
+                height: 1.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

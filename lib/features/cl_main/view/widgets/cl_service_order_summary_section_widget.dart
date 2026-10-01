@@ -180,7 +180,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFF3D6A1)),
               ),
               child: AppText.bodySmall(
-                'الحد الأدنى لقيمة طلب التنظيف هو ${minimumOrderPrice!.formatMoney()}، لذلك تم اعتماد الحد الأدنى لهذا الطلب.',
+                'أقل قيمة لطلب التنظيف هي ${minimumOrderPrice!.formatMoney()}، وتم اعتمادها لأن قيمة الطلب أقل من الحد الأدنى.',
                 color: const Color(0xFF8A5A12),
                 fontWeight: FontWeight.w600,
                 textAlign: TextAlign.right,

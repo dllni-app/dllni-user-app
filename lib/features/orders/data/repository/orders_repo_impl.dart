@@ -218,6 +218,46 @@ class OrdersRepoImpl with HandlingException implements OrdersRepo {
       wrapHandlingException(tryCall: () => ordersRemoteDataSource.fetchStoreOrderTracking(params));
 
   @override
+  DataResponse<bool> cancelMerchantOrder({
+    required String section,
+    required int orderId,
+    String? reason,
+  }) =>
+      wrapHandlingException(
+        tryCall: () => ordersRemoteDataSource.cancelMerchantOrder(
+          section: section,
+          orderId: orderId,
+          reason: reason,
+        ),
+      );
+
+  @override
+  DataResponse<bool> reorderMerchantOrder({
+    required String section,
+    required int orderId,
+  }) =>
+      wrapHandlingException(
+        tryCall: () => ordersRemoteDataSource.reorderMerchantOrder(
+          section: section,
+          orderId: orderId,
+        ),
+      );
+
+  @override
+  DataResponse<bool> rescheduleMerchantOrder({
+    required String section,
+    required int orderId,
+    required String scheduledAt,
+  }) =>
+      wrapHandlingException(
+        tryCall: () => ordersRemoteDataSource.rescheduleMerchantOrder(
+          section: section,
+          orderId: orderId,
+          scheduledAt: scheduledAt,
+        ),
+      );
+
+  @override
   DataResponse<UserSosResponseModel> createUserSos(CreateUserSosParams params) =>
       wrapHandlingException(tryCall: () => ordersRemoteDataSource.createUserSos(params));
 

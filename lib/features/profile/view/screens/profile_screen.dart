@@ -4,9 +4,11 @@ import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
+import 'package:dllni_user_app/features/profile/domain/repository/profile_repo.dart';
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:toastification/toastification.dart';
 import '../../../../../generated/assets.dart';
 import '../../../../core/session/user_session_store.dart';
 import '../../../../core/widgets/support_whatsapp_launcher.dart';
@@ -42,19 +44,83 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late final ProfileBloc profileBloc = getIt<ProfileBloc>();
+  bool _isDeletingAccount = false;
 
   LoggedInUserModel get _personalDetailsParams =>
       _readLoggedInUser() ?? LoggedInUserModel();
 
   Future<void> _openSupport() => launchSupportWhatsApp(context);
 
-  Future<void> _logout() async {
+  Future<void> _clearLocalSession() async {
     await getIt<CleaningBookingPusherService>().disposeAllForSession();
     await SharedPreferencesHelper.clearData();
     await UserSessionStore.clear();
     AuthGate.clearPendingAction();
+  }
+
+  Future<void> _logout() async {
+    await _clearLocalSession();
     if (!context.mounted) return;
     context.pushRouteAndRemoveUntil('/main');
+  }
+
+  Future<void> _deleteAccount() async {
+    if (_isDeletingAccount) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('حذف الحساب نهائياً'),
+          content: const Text(
+            'سيتم حذف بيانات حسابك الشخصية وإلغاء جميع جلسات تسجيل الدخول. '
+            'قد يتم الاحتفاظ فقط بسجلات المعاملات التي يلزم الاحتفاظ بها '
+            'لأسباب قانونية أو محاسبية بعد إزالة بياناتك الشخصية منها. '
+            'لا يمكن التراجع عن هذا الإجراء.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('إلغاء'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('حذف الحساب نهائياً'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeletingAccount = true);
+
+    final result = await getIt<ProfileRepo>().deleteAccount();
+
+    if (!mounted) return;
+
+    await result.fold(
+      (failure) async {
+        if (!mounted) return;
+        setState(() => _isDeletingAccount = false);
+        AppToast.showToast(
+          context: context,
+          message: failure.message,
+          type: ToastificationType.error,
+        );
+      },
+      (_) async {
+        await _clearLocalSession();
+        if (!mounted) return;
+        AppToast.showToast(
+          context: context,
+          message: 'تم حذف الحساب بنجاح',
+          type: ToastificationType.success,
+        );
+        context.pushRouteAndRemoveUntil('/main');
+      },
+    );
   }
 
   Widget _supportSection(BuildContext context) {
@@ -375,7 +441,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(height: 12),
                   InkWell(
                     key: const Key('profile_delete_account_button'),
-                    onTap: _logout,
+                    onTap: _isDeletingAccount ? null : _deleteAccount,
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
                       decoration: BoxDecoration(
@@ -402,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           SizedBox(width: 12),
                           AppText.bodyMedium(
-                            'حذف الحساب',
+                            _isDeletingAccount ? 'جاري حذف الحساب...' : 'حذف الحساب',
                             color: Color(0xffEF4444),
                             fontWeight: FontWeight.bold,
                           ),

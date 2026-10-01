@@ -335,8 +335,9 @@ class _StoreCartCard extends StatelessWidget {
           ),
           RestaurantCartOrderSummarySection(
             itemsCount: cart.items.length,
-            subtotal: cart.amounts?.subtotal ?? 0,
-            discount: 0,
+            subtotal:
+                (cart.amounts?.total ?? 0) + (cart.amounts?.discount ?? 0),
+            discount: cart.amounts?.discount ?? 0,
             total: cart.amounts?.total ?? 0,
           ),
           const SizedBox(height: 12),

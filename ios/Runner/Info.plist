@@ -52,7 +52,7 @@
 		<string>remote-notification</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>نستخدم موقعك لاقتراح مطاعم قريبة في صندوق الحظ.</string>
+	<string>نستخدم موقعك لاقتراح خدمات ومتاجر ومطاعم قريبة، وتحديد عناوين التوصيل وتحسين دقة الطلبات.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>نحتاج إلى الميكروفون لتحويل كلامك إلى نص أثناء البحث الصوتي.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

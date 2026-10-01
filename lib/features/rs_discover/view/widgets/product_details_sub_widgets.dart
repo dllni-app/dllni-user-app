@@ -68,8 +68,13 @@ class ProductModifierGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxText = group.maxSelections > 0 ? '${group.maxSelections}' : 'غير محدد';
-    final minText = group.minSelections > 0 ? '${group.minSelections}' : '0';
+    final maxText = group.maxSelections > 0
+        ? '${group.maxSelections}'
+        : 'غير محدد';
+    final effectiveMinimum = group.isRequired
+        ? (group.minSelections > 0 ? group.minSelections : 1)
+        : group.minSelections;
+    final minText = '$effectiveMinimum';
 
     return Container(
       width: double.infinity,

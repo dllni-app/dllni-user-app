@@ -37,6 +37,7 @@ class RestaurantHomeNearestRestaurantItem {
   final int? popularOrdersCount;
   final bool? isFavorited;
   final num? deliveryFee;
+  final num? minimumOrderAmount;
   final bool? isFreeDelivery;
   final String? currency;
 
@@ -57,6 +58,7 @@ class RestaurantHomeNearestRestaurantItem {
     this.popularOrdersCount,
     this.isFavorited,
     this.deliveryFee,
+    this.minimumOrderAmount,
     this.isFreeDelivery,
     this.currency,
   });
@@ -79,6 +81,10 @@ class RestaurantHomeNearestRestaurantItem {
       popularOrdersCount: _firstInt(json, const ['popularOrdersCount', 'popular_orders_count', 'totalReviews']),
       isFavorited: _firstBool(json, const ['isFavorited', 'is_favorited']),
       deliveryFee: _firstNum(json, const ['deliveryFee', 'delivery_fee']),
+      minimumOrderAmount: _firstNum(
+        json,
+        const ['minimumOrderAmount', 'minimum_order_amount'],
+      ),
       isFreeDelivery: _firstBool(json, const ['isFreeDelivery', 'is_free_delivery']),
       currency: _firstString(json, const ['currency']),
     );

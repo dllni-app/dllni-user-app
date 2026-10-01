@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/domain/models/address_list_item.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
 
 import '../../../data/models/cleaning_orders_api_models.dart';
 import '../../../data/models/merchant_cart_models.dart';
@@ -366,6 +367,9 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       state.copyWith(
         replaceRestaurantCart: true,
         restaurantCart: _cartById(state.restaurantCarts, event.cartId),
+        storeReceiveMode: 'immediate',
+        storeScheduledAt: null,
+        replaceStoreScheduledAt: true,
       ),
     );
   }
@@ -719,6 +723,29 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
         ? state.couponData?.couponCode
         : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
+    final receiveMode = state.storeReceiveMode;
+    final scheduledAt = receiveMode == 'scheduled'
+        ? state.storeScheduledAt
+        : null;
+
+    if (isDelivery && parsedAddressId == null) {
+      emit(
+        state.copyWith(
+          placeOrderStatus: BlocStatus.failed,
+          placeOrderErrorMessage: 'يرجى اختيار عنوان توصيل صالح',
+        ),
+      );
+      return;
+    }
+    if (receiveMode == 'scheduled' && scheduledAt == null) {
+      emit(
+        state.copyWith(
+          placeOrderStatus: BlocStatus.failed,
+          placeOrderErrorMessage: 'يرجى تحديد موعد الاستلام.',
+        ),
+      );
+      return;
+    }
 
     emit(
       state.copyWith(
@@ -732,7 +759,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       PlaceRestaurantOrderParams(
         cartId: event.cartId,
         fulfillmentType: state.selectedFulfillmentType ?? 'delivery',
-        receiveMode: 'immediate',
+        receiveMode: receiveMode,
+        scheduledAt: scheduledAt,
         addressId: isDelivery ? parsedAddressId : null,
         couponCode: couponCode,
         note: note,
@@ -774,12 +802,16 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
     final isDelivery =
         (state.selectedFulfillmentType ?? 'delivery') == 'delivery';
     final parsedAddressId = int.tryParse(state.selectedAddress?.id ?? '');
-    final receiveMode = isDelivery ? state.storeReceiveMode : 'immediate';
-    final scheduledAt = (isDelivery && receiveMode == 'scheduled')
+    final isRestaurant = event.section == 'restaurant';
+    final receiveMode = (isRestaurant || isDelivery)
+        ? state.storeReceiveMode
+        : 'immediate';
+    final scheduledAt = receiveMode == 'scheduled'
         ? state.storeScheduledAt
         : null;
-    final couponCode = state.storeCouponData?.isAvailable == true
-        ? state.storeCouponData?.couponCode
+    final couponData = isRestaurant ? state.couponData : state.storeCouponData;
+    final couponCode = couponData?.isAvailable == true
+        ? couponData?.couponCode
         : null;
     final note = state.cartNote.trim().isEmpty ? null : state.cartNote.trim();
 
@@ -801,17 +833,18 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       ),
     );
 
-    final response = await previewStoreCheckoutUseCase(
-      CheckoutPreviewParams(
-        cartId: event.cartId,
-        fulfillmentType: isDelivery ? 'delivery' : 'pickup',
-        receiveMode: receiveMode,
-        scheduledAt: scheduledAt,
-        addressId: isDelivery ? parsedAddressId : null,
-        couponCode: couponCode,
-        note: note,
-      ),
+    final params = CheckoutPreviewParams(
+      cartId: event.cartId,
+      fulfillmentType: isDelivery ? 'delivery' : 'pickup',
+      receiveMode: receiveMode,
+      scheduledAt: scheduledAt,
+      addressId: isDelivery ? parsedAddressId : null,
+      couponCode: couponCode,
+      note: note,
     );
+    final response = isRestaurant
+        ? await getIt<PreviewRestaurantCheckoutUseCase>()(params)
+        : await previewStoreCheckoutUseCase(params);
 
     response.fold(
       (failure) => emit(

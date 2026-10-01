@@ -280,6 +280,16 @@ class ProfileRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<ActionResultModel> deleteAccount() {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.deleteData(
+        endPoint: '/api/v1/user/account',
+        data: const {'confirmed': true},
+      ),
+      jsonConvert: actionResultModelFromJson,
+    );
+  }
+
   Future<LuckBoxOptionsModel> fetchLuckBoxOptions() {
     return wrapHandlingApi(
       tryCall: () => dioNetwork.getData(
