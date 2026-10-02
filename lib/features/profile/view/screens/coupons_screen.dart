@@ -3,6 +3,8 @@ import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../data/models/platform_coupon_models.dart';
 import '../manager/coupons_cubit.dart';
 import '../widgets/personal_details_app_bar.dart';
@@ -64,7 +66,10 @@ class _CouponsScreenState extends State<CouponsScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                const PersonalDetailsAppBar(title: 'الكوبونات'),
+                PersonalDetailsAppBar(
+                  title: 'الكوبونات',
+                  section: _selectedSection == 'all' ? null : _selectedSection,
+                ),
                 const SizedBox(height: 12),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -167,10 +172,10 @@ class _CouponSectionFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = switch (label) {
-      'التنظيف' => const Color(0xFF12B8C4),
-      'المطاعم' => const Color(0xFFC65324),
-      'السوبر ماركت' => const Color(0xFF138A62),
-      _ => const Color(0xFF1E2A78),
+      'التنظيف' => SharedPlatformColors.cleaning,
+      'المطاعم' => SharedPlatformColors.restaurant,
+      'السوبر ماركت' => SharedPlatformColors.supermarket,
+      _ => SharedPlatformColors.primary,
     };
     final soft = switch (label) {
       'التنظيف' => const Color(0xFFE9F9FA),

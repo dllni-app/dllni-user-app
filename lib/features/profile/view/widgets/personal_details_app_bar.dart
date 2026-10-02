@@ -1,18 +1,22 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 class PersonalDetailsAppBar extends StatelessWidget {
   const PersonalDetailsAppBar({
     super.key,
     required this.title,
     this.backgroundColor,
     this.foregroundColor,
+    this.section,
     this.trailing,
   });
 
   final String title;
   final Color? backgroundColor;
   final Color? foregroundColor;
+  final String? section;
   final Widget? trailing;
 
   String? get _featureDescription {
@@ -31,7 +35,8 @@ class PersonalDetailsAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final description = _featureDescription;
-    final background = backgroundColor ?? const Color(0xFF1E2A78);
+    final background =
+        backgroundColor ?? SharedPlatformColors.sectionAccent(section);
     final foreground = foregroundColor ?? Colors.white;
 
     return Container(

@@ -412,7 +412,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     const PlatformSectionTitle(title: 'شو بدك اليوم؟'),
                     const SizedBox(height: 12),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         PlatformServiceCard(
                           title: 'تنظيف',

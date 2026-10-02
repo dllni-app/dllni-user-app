@@ -1,15 +1,19 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 class OrdersCartOrdersSegmentBar extends StatelessWidget {
   const OrdersCartOrdersSegmentBar({
     super.key,
     required this.selectedIndex,
     required this.onChanged,
+    this.accent = SharedPlatformColors.primary,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onChanged;
+  final Color accent;
 
   static const int cartIndex = 0;
   static const int ordersIndex = 1;
@@ -39,6 +43,7 @@ class OrdersCartOrdersSegmentBar extends StatelessWidget {
             child: _Segment(
               label: _labels[0],
               isSelected: selectedIndex == cartIndex,
+              accent: accent,
               onTap: () {
                 if (selectedIndex != cartIndex) onChanged(cartIndex);
               },
@@ -49,6 +54,7 @@ class OrdersCartOrdersSegmentBar extends StatelessWidget {
             child: _Segment(
               label: _labels[1],
               isSelected: selectedIndex == ordersIndex,
+              accent: accent,
               onTap: () {
                 if (selectedIndex != ordersIndex) onChanged(ordersIndex);
               },
@@ -65,16 +71,18 @@ class _Segment extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    required this.accent,
   });
 
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final Color accent;
 
-  static const _gradient = LinearGradient(
+  LinearGradient get _gradient => LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: <Color>[Color(0xFF1E2A78), Color(0xFF4A5FCF)],
+    colors: <Color>[accent, Color.lerp(accent, Colors.white, 0.24)!],
   );
 
   @override

@@ -4,6 +4,8 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../manager/bloc/orders_bloc.dart';
 import 'orders_app_bar.dart';
 import 'orders_cart_orders_segment_bar.dart';
@@ -145,6 +147,9 @@ class _OrdersListTabState extends State<OrdersListTab> {
             padding: const EdgeInsetsDirectional.fromSTEB(20, 26, 20, 14),
             child: OrdersCartOrdersSegmentBar(
               selectedIndex: segmentIndex,
+              accent: widget.state.selectedTabIndex == 0
+                  ? SharedPlatformColors.supermarket
+                  : SharedPlatformColors.restaurant,
               onChanged: (index) {
                 setState(() => segmentIndex = index);
                 if (index == OrdersCartOrdersSegmentBar.cartIndex) {
@@ -163,6 +168,7 @@ class _OrdersListTabState extends State<OrdersListTab> {
             ),
             child: _CleaningOrdersTabBar(
               selectedIndex: cleaningOrdersTabIndex,
+              accent: SharedPlatformColors.cleaning,
               onChanged: (index) {
                 setState(() => cleaningOrdersTabIndex = index);
               },
@@ -174,6 +180,9 @@ class _OrdersListTabState extends State<OrdersListTab> {
             padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10),
             child: _CleaningOrdersTabBar(
               selectedIndex: merchantOrdersTabIndex,
+              accent: widget.state.selectedTabIndex == 0
+                  ? SharedPlatformColors.supermarket
+                  : SharedPlatformColors.restaurant,
               onChanged: (index) {
                 setState(() => merchantOrdersTabIndex = index);
               },
@@ -224,10 +233,12 @@ class _CleaningOrdersTabBar extends StatelessWidget {
   const _CleaningOrdersTabBar({
     required this.selectedIndex,
     required this.onChanged,
+    required this.accent,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onChanged;
+  final Color accent;
 
   static const _titles = <String>['الطلبات الحالية', 'الطلبات السابقة'];
 
@@ -267,9 +278,7 @@ class _CleaningOrdersTabBar extends StatelessWidget {
                   _titles[index],
                   textAlign: TextAlign.center,
                   fontWeight: FontWeight.bold,
-                  color: isSelected
-                      ? const Color(0xff1E2A78)
-                      : const Color(0xff6B7280),
+                  color: isSelected ? accent : const Color(0xff6B7280),
                 ),
               ),
             ),

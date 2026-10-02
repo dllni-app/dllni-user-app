@@ -4,6 +4,8 @@ import 'package:dllni_user_app/core/widgets/success_action_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../data/models/profile_api_models.dart';
 import '../../domain/usecases/create_vote_use_case.dart';
 import '../../domain/usecases/fetch_active_votes_use_case.dart';
@@ -204,7 +206,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 final title = AppText.titleMedium(
                   'اختر خيارات التصويت',
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF6C63FF),
+                  color: SharedPlatformColors.restaurant,
                 );
 
                 final isLoading =
@@ -263,7 +265,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                             },
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: SharedPlatformColors.restaurant,
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -348,7 +350,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 ),
                                 trailing: Checkbox(
                                   value: isSelected,
-                                  activeColor: const Color(0xFF6C63FF),
+                                  activeColor: SharedPlatformColors.restaurant,
                                   onChanged: (value) {
                                     setModalState(() {
                                       if (value == true) {
@@ -384,7 +386,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                             },
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: SharedPlatformColors.restaurant,
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -429,7 +431,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 final title = AppText.titleMedium(
                   'حدد نوع المطعم',
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF6C63FF),
+                  color: SharedPlatformColors.restaurant,
                 );
 
                 final isLoading =
@@ -487,7 +489,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 _commitMealSearch(forceRetry: true),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: SharedPlatformColors.restaurant,
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -575,7 +577,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   groupValue: current.isEmpty
                                       ? null
                                       : current.first,
-                                  activeColor: const Color(0xFF6C63FF),
+                                  activeColor: SharedPlatformColors.restaurant,
                                   onChanged: (value) {
                                     setModalState(() {
                                       current
@@ -603,7 +605,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 Navigator.of(modalContext).pop(current),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: SharedPlatformColors.restaurant,
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -649,7 +651,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                 final title = AppText.titleMedium(
                   'حدد مدة التصويت',
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF6C63FF),
+                  color: SharedPlatformColors.restaurant,
                 );
 
                 final isLoading =
@@ -706,7 +708,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 _commitMealSearch(forceRetry: true),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: SharedPlatformColors.restaurant,
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -791,7 +793,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   groupValue: current.isEmpty
                                       ? null
                                       : current.first,
-                                  activeColor: const Color(0xFF6C63FF),
+                                  activeColor: SharedPlatformColors.restaurant,
                                   onChanged: (value) {
                                     setModalState(() {
                                       current
@@ -819,7 +821,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 Navigator.of(modalContext).pop(current),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: const Color(0xFF6C63FF),
+                              backgroundColor: SharedPlatformColors.restaurant,
                               foregroundColor: context.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -1037,7 +1039,10 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
         body: SafeArea(
           child: Column(
             children: [
-              const PersonalDetailsAppBar(title: 'التصويت على الطلب'),
+              const PersonalDetailsAppBar(
+                title: 'التصويت على الطلب',
+                section: 'restaurant',
+              ),
               const SizedBox(height: 14),
               Expanded(
                 child: SingleChildScrollView(
@@ -1118,7 +1123,7 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(14),
                                     borderSide: BorderSide(
-                                      color: const Color(0xFF6C63FF),
+                                      color: SharedPlatformColors.restaurant,
                                       width: 1.2,
                                     ),
                                   ),
@@ -1318,7 +1323,8 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   ? null
                                   : _createVoteAndContinue,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6C63FF),
+                                backgroundColor:
+                                    SharedPlatformColors.restaurant,
                                 foregroundColor: context.onPrimary,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(

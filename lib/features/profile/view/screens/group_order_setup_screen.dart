@@ -3,6 +3,8 @@ import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../data/models/group_order_api_models.dart';
 import '../../domain/usecases/create_group_order_use_case.dart';
 import '../../domain/usecases/fetch_active_group_orders_use_case.dart';
@@ -241,7 +243,10 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
         body: SafeArea(
           child: Column(
             children: [
-              const PersonalDetailsAppBar(title: 'طلب جماعي'),
+              const PersonalDetailsAppBar(
+                title: 'طلب جماعي',
+                section: 'restaurant',
+              ),
               const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
@@ -442,7 +447,8 @@ class _GroupOrderSetupBodyState extends State<_GroupOrderSetupBody> {
                                       );
                                     },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFC65324),
+                                backgroundColor:
+                                    SharedPlatformColors.restaurant,
                                 foregroundColor: context.onPrimary,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
