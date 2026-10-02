@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:common_package/common_package.dart';
@@ -32,7 +33,7 @@ class RsOffersProductsListWidget extends StatelessWidget {
         return false;
       },
       child: RefreshIndicator(
-        color: context.primary,
+        color: SharedPlatformColors.restaurant,
         backgroundColor: context.onPrimary,
         onRefresh: () async {
           context.read<RsOffersBloc>().add(FetchRsOffersProductsEvent(isReload: true));

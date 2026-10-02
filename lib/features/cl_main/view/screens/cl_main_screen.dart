@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
@@ -5,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../../core/di/injection.dart';
-import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../generated/assets.dart';
 import '../../../rs_home/view/widgets/home_app_bar.dart';
@@ -349,8 +349,10 @@ class _ClMainScreenState extends State<ClMainScreen> {
                   dotHeight: 4,
                   dotWidth: 18,
                   spacing: 4,
-                  dotColor: AppColors.primary.withValues(alpha: .34),
-                  activeDotColor: AppColors.primary,
+                  dotColor: SharedPlatformColors.cleaning.withValues(
+                    alpha: .34,
+                  ),
+                  activeDotColor: SharedPlatformColors.cleaning,
                 ),
               ),
             ),

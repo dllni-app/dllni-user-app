@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -17,10 +18,10 @@ class _RsBottomNavBarState extends State<RsBottomNavBar> {
   @override
   Widget build(BuildContext context) {
     List<Widget> images(int i) => [
-      Assets.images.rsHomeBottomNavBar.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
-      Assets.images.rsDiscoverBottomNavBar.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
-      Assets.images.rsOffersBottomNavBar.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
-      Assets.images.rsFavourite.svg(color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF), width: 20, height: 20),
+      Assets.images.rsHomeBottomNavBar.svg(color: widget.controller.index == i ? SharedPlatformColors.restaurant : Color(0xff9CA3AF), width: 20, height: 20),
+      Assets.images.rsDiscoverBottomNavBar.svg(color: widget.controller.index == i ? SharedPlatformColors.restaurant : Color(0xff9CA3AF), width: 20, height: 20),
+      Assets.images.rsOffersBottomNavBar.svg(color: widget.controller.index == i ? SharedPlatformColors.restaurant : Color(0xff9CA3AF), width: 20, height: 20),
+      Assets.images.rsFavourite.svg(color: widget.controller.index == i ? SharedPlatformColors.restaurant : Color(0xff9CA3AF), width: 20, height: 20),
     ];
 
     List<String> titles = ['المطاعم', 'اكتشف', 'العروض', 'المفضلة'];
@@ -54,7 +55,7 @@ class _RsBottomNavBarState extends State<RsBottomNavBar> {
                       if (widget.controller.index == i) ...{
                         SizedBox(height: 2),
                         Container(
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(99), color: context.primary),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(99), color: SharedPlatformColors.restaurant),
                           height: 4,
                           width: 40,
                         ).animate(delay: Duration(milliseconds: 200)).fade(),
@@ -66,7 +67,7 @@ class _RsBottomNavBarState extends State<RsBottomNavBar> {
                       AppText.labelMedium(
                         titles[i],
                         fontWeight: FontWeight.bold,
-                        color: widget.controller.index == i ? context.primary : Color(0xff9CA3AF),
+                        color: widget.controller.index == i ? SharedPlatformColors.restaurant : Color(0xff9CA3AF),
                       ),
                     ],
                   ),

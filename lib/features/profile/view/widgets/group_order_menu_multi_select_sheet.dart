@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -27,7 +28,7 @@ class GroupOrderMenuMultiSelectSheet {
                   children: [
                     AppText.titleMedium(
                       'خيارات التصويت',
-                      color: context.primary,
+                      color: SharedPlatformColors.restaurant,
                       fontWeight: FontWeight.w700,
                     ),
                     const SizedBox(height: 8),
@@ -83,7 +84,7 @@ class GroupOrderMenuMultiSelectSheet {
                           Navigator.of(context).pop(picked);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: context.primary,
+                          backgroundColor: SharedPlatformColors.restaurant,
                         ),
                         child: AppText.bodyMedium(
                           'التأكيد والإضافة إلى السلة',

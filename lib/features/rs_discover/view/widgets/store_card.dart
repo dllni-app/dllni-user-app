@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_favourite/domain/usecases/toggle_restaurant_favourite_use_case.dart';
@@ -91,7 +92,9 @@ class _StoreCardState extends State<StoreCard> {
           '/rs_store',
           arguments: StoreDetailsScreenParams(
             restaurantId: id,
-            preview: RestaurantPreviewData.fromDiscover(store).copyWith(isFavorited: _isFavorited),
+            preview: RestaurantPreviewData.fromDiscover(
+              store,
+            ).copyWith(isFavorited: _isFavorited),
           ),
         );
       },
@@ -158,9 +161,13 @@ class _StoreCardState extends State<StoreCard> {
                       radius: 18,
                       backgroundColor: context.onPrimaryContainer,
                       child: FaIcon(
-                        _isFavorited ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                        _isFavorited
+                            ? FontAwesomeIcons.solidHeart
+                            : FontAwesomeIcons.heart,
                         size: 16,
-                        color: _isFavorited ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
+                        color: _isFavorited
+                            ? const Color(0xFFEF4444)
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                   ),
@@ -172,7 +179,7 @@ class _StoreCardState extends State<StoreCard> {
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: context.primaryContainer,
+                        color: SharedPlatformColors.restaurant,
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
                       child: Row(
@@ -222,7 +229,7 @@ class _StoreCardState extends State<StoreCard> {
                         FaIcon(
                           FontAwesomeIcons.motorcycle,
                           size: 15,
-                          color: Color(0xFF6C63FF),
+                          color: SharedPlatformColors.restaurant,
                         ),
                       ],
                     ),

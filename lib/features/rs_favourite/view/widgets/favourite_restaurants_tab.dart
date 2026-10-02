@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/rs_favourite/data/models/fetch_rs_favourites_model.dart';
 import 'package:dllni_user_app/features/rs_favourite/domain/usecases/fetch_rs_favourites_use_case.dart';
@@ -49,7 +50,7 @@ class FavouriteRestaurantsTab extends StatelessWidget {
 
         if (pagination.isEmpty) {
           return RefreshIndicator(
-            color: context.primary,
+            color: SharedPlatformColors.restaurant,
             backgroundColor: context.onPrimary,
             onRefresh: () async {
               context.read<RsFavouriteBloc>().add(
@@ -93,7 +94,7 @@ class FavouriteRestaurantsTab extends StatelessWidget {
             return false;
           },
           child: RefreshIndicator(
-            color: context.primary,
+            color: SharedPlatformColors.restaurant,
             backgroundColor: context.onPrimary,
             onRefresh: () async {
               context.read<RsFavouriteBloc>().add(

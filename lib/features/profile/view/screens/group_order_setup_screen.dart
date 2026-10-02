@@ -534,7 +534,7 @@ class _GroupJoinCard extends StatelessWidget {
           const Text(
             'لديك رابط أو رمز مجموعة؟',
             style: TextStyle(
-              color: Color(0xFF1E2A78),
+              color: SharedPlatformColors.restaurant,
               fontSize: 13,
               fontWeight: FontWeight.w900,
             ),
@@ -571,7 +571,7 @@ class _GroupJoinCard extends StatelessWidget {
               FilledButton(
                 onPressed: loading ? null : onJoin,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E2A78),
+                  backgroundColor: SharedPlatformColors.restaurant,
                   minimumSize: const Size(82, 46),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -16,7 +17,7 @@ class ClServiceWorkerRoomAssignmentWidget extends StatelessWidget {
     super.key,
   });
 
-  static const Color _screenBlue = Color(0xFF1E2A78);
+  static const Color _screenBlue = SharedPlatformColors.cleaning;
   static const String _autoAssignLabel = 'تلقائي';
 
   final List<CleaningRoomUnit> units;
@@ -108,14 +109,27 @@ class _RoomAssignmentRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText.bodyMedium(unit.displayLabel, fontWeight: FontWeight.w700, textAlign: TextAlign.start),
+          AppText.bodyMedium(
+            unit.displayLabel,
+            fontWeight: FontWeight.w700,
+            textAlign: TextAlign.start,
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _SlotChip(label: ClServiceWorkerRoomAssignmentWidget._autoAssignLabel, isSelected: selectedSlot == null, onTap: () => onAssign(unit.roomKey, 0)),
-              for (var slot = 1; slot <= numberOfWorkers; slot++) _SlotChip(label: 'عامل $slot', isSelected: selectedSlot == slot, onTap: () => onAssign(unit.roomKey, slot)),
+              _SlotChip(
+                label: ClServiceWorkerRoomAssignmentWidget._autoAssignLabel,
+                isSelected: selectedSlot == null,
+                onTap: () => onAssign(unit.roomKey, 0),
+              ),
+              for (var slot = 1; slot <= numberOfWorkers; slot++)
+                _SlotChip(
+                  label: 'عامل $slot',
+                  isSelected: selectedSlot == slot,
+                  onTap: () => onAssign(unit.roomKey, slot),
+                ),
             ],
           ),
           if (roomErrors.isNotEmpty) ...[
@@ -129,7 +143,11 @@ class _RoomAssignmentRow extends StatelessWidget {
 }
 
 class _SlotChip extends StatelessWidget {
-  const _SlotChip({required this.label, required this.isSelected, required this.onTap});
+  const _SlotChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   final String label;
   final bool isSelected;
@@ -143,11 +161,21 @@ class _SlotChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? ClServiceWorkerRoomAssignmentWidget._screenBlue : const Color(0xFFF3F4F6),
+          color: isSelected
+              ? ClServiceWorkerRoomAssignmentWidget._screenBlue
+              : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? ClServiceWorkerRoomAssignmentWidget._screenBlue : const Color(0xFFD1D5DB)),
+          border: Border.all(
+            color: isSelected
+                ? ClServiceWorkerRoomAssignmentWidget._screenBlue
+                : const Color(0xFFD1D5DB),
+          ),
         ),
-        child: AppText.labelMedium(label, color: isSelected ? Colors.white : const Color(0xFF1F2937), fontWeight: FontWeight.w600),
+        child: AppText.labelMedium(
+          label,
+          color: isSelected ? Colors.white : const Color(0xFF1F2937),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

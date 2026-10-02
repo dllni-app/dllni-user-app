@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -39,7 +40,7 @@ class GroupOrderCreatorSubmitSheet extends StatelessWidget {
           children: [
             AppText.titleMedium(
               'الأطعمة المختارة',
-              color: context.primary,
+              color: SharedPlatformColors.restaurant,
               fontWeight: FontWeight.w700,
             ),
             const SizedBox(height: 10),
@@ -139,7 +140,7 @@ class GroupOrderCreatorSubmitSheet extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: isPlacing || !hasItems ? null : onSubmit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: context.primary,
+                  backgroundColor: SharedPlatformColors.restaurant,
                 ),
                 child: isPlacing
                     ? const SizedBox(

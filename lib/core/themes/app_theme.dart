@@ -14,6 +14,32 @@ class AppTheme {
         fontWeight: FontWeight.w400,
       ),
     ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+    ),
     colorScheme: ColorScheme(
       brightness: Brightness.light,
       primary: Color(0xff1E2A78),

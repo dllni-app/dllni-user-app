@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -155,7 +156,7 @@ class _SmStoreAllProductsScreenState extends State<SmStoreAllProductsScreen> {
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(color: isSelected ? context.primary : Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(20)),
+                        decoration: BoxDecoration(color: isSelected ? SharedPlatformColors.restaurant : Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(20)),
                         child: AppText(
                           filters[index],
                           style: TextStyle(color: isSelected ? context.onPrimary : Color(0xFF4B5563), fontSize: 12, fontWeight: FontWeight.w600),

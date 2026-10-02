@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -38,6 +39,7 @@ class _SmOffersScreenState extends State<SmOffersScreen> {
       body: Column(
         children: [
           AppSimpleAppBar2(
+            accentColor: SharedPlatformColors.supermarket,
             title: "العروض",
             arrowBackType: ArrowBackType.cupertino,
             canPop: context.canPop(),

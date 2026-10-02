@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
@@ -310,8 +311,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
               final couponData = isStoreFlow
                   ? state.storeCouponData
                   : state.couponData;
-              final preview =
-                  state.storeCheckoutPreview?.cartId == args.cartId
+              final preview = state.storeCheckoutPreview?.cartId == args.cartId
                   ? state.storeCheckoutPreview
                   : null;
               final previewAmounts = preview?.amounts;
@@ -370,7 +370,10 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
 
               return Column(
                 children: [
-                  PersonalDetailsAppBar(title: 'الطلبية الحالية'),
+                  PersonalDetailsAppBar(
+                    section: 'restaurant',
+                    title: 'الطلبية الحالية',
+                  ),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -664,7 +667,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                   valueStyle: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xff1E2A78),
+                                    color: SharedPlatformColors.restaurant,
                                   ),
                                 ),
                               ],
@@ -720,7 +723,7 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                                 );
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xff1E2A78),
+                          backgroundColor: SharedPlatformColors.restaurant,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -943,7 +946,7 @@ class _LocationCard extends StatelessWidget {
               Expanded(
                 child: AppText.bodyMedium(
                   title,
-                  color: const Color(0xff1E2A78),
+                  color: SharedPlatformColors.restaurant,
                   fontWeight: FontWeight.bold,
                   textAlign: TextAlign.start,
                 ),

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/extentions.dart';
@@ -179,7 +180,7 @@ class CleaningOrderCard extends StatelessWidget {
                     Text(
                       (order.totalPrice ?? 0).formatMoney(),
                       style: const TextStyle(
-                        color: Color(0xFF1E2A78),
+                        color: SharedPlatformColors.cleaning,
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
@@ -196,7 +197,7 @@ class CleaningOrderCard extends StatelessWidget {
                       onPressed: onTap,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(46),
-                        backgroundColor: const Color(0xFF1E2A78),
+                        backgroundColor: SharedPlatformColors.cleaning,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(13),
@@ -215,7 +216,7 @@ class CleaningOrderCard extends StatelessWidget {
                         onPressed: onRescheduleTap,
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(46),
-                          foregroundColor: const Color(0xFF1E2A78),
+                          foregroundColor: SharedPlatformColors.cleaning,
                           side: const BorderSide(color: Color(0xFFD0D5DD)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(13),

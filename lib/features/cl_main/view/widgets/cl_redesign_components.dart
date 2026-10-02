@@ -1,7 +1,6 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-
-import '../../../../core/themes/app_colors.dart';
 
 class ClRedesignStepHeader extends StatelessWidget {
   const ClRedesignStepHeader({
@@ -199,7 +198,7 @@ class _CounterButton extends StatelessWidget {
         style: IconButton.styleFrom(
           backgroundColor: onPressed == null
               ? const Color(0xFFF3F4F6)
-              : AppColors.primary,
+              : SharedPlatformColors.cleaning,
           foregroundColor: onPressed == null
               ? const Color(0xFF98A2B3)
               : Colors.white,
@@ -259,7 +258,7 @@ class ClRedesignStickyActions extends StatelessWidget {
                 onPressed: primaryEnabled ? onPrimary : null,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: SharedPlatformColors.cleaning,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),

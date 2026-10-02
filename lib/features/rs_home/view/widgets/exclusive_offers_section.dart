@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/product_preview_data.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_product_details_screen.dart';
@@ -62,7 +63,7 @@ class ExclusiveOffersSection extends StatelessWidget {
             const SizedBox(width: 8),
             FaIcon(
               FontAwesomeIcons.fire,
-              color: context.primaryContainer,
+              color: SharedPlatformColors.restaurant,
               size: 14,
             ),
           ],
@@ -80,10 +81,20 @@ class ExclusiveOffersSection extends StatelessWidget {
               );
             }
 
-            final offers = state.restaurantExclusiveOffers?.exclusiveOffers ?? const <RestaurantHomeExclusiveOfferItem>[];
-            final offeredProducts = <MapEntry<RestaurantHomeExclusiveOfferItem, RestaurantHomeExclusiveOfferProduct>>[];
+            final offers =
+                state.restaurantExclusiveOffers?.exclusiveOffers ??
+                const <RestaurantHomeExclusiveOfferItem>[];
+            final offeredProducts =
+                <
+                  MapEntry<
+                    RestaurantHomeExclusiveOfferItem,
+                    RestaurantHomeExclusiveOfferProduct
+                  >
+                >[];
             for (final offer in offers) {
-              for (final product in offer.products ?? const <RestaurantHomeExclusiveOfferProduct>[]) {
+              for (final product
+                  in offer.products ??
+                      const <RestaurantHomeExclusiveOfferProduct>[]) {
                 if ((product.id ?? 0) > 0) {
                   offeredProducts.add(MapEntry(offer, product));
                 }
@@ -100,12 +111,14 @@ class ExclusiveOffersSection extends StatelessWidget {
                   final offer = offeredProducts[index].key;
                   final product = offeredProducts[index].value;
                   final currentPrice = product.discountedPrice ?? product.price;
-                  final originalPrice = product.discountedPrice != null ? product.price : null;
+                  final originalPrice = product.discountedPrice != null
+                      ? product.price
+                      : null;
                   final priceText = currentPrice == null
                       ? (offer.restaurantName ?? '')
                       : originalPrice != null && originalPrice > currentPrice
-                          ? '${currentPrice.toStringAsFixed(0)} ل.س • بدلاً من ${originalPrice.toStringAsFixed(0)}'
-                          : '${currentPrice.toStringAsFixed(0)} ل.س';
+                      ? '${currentPrice.toStringAsFixed(0)} ل.س • بدلاً من ${originalPrice.toStringAsFixed(0)}'
+                      : '${currentPrice.toStringAsFixed(0)} ل.س';
 
                   return RsAppOfferCard(
                     offer: _badgeText(offer),
@@ -152,16 +165,28 @@ class _RestaurantHomeEngagementCards extends StatelessWidget {
                       begin: Alignment.topLeft,
                     ),
                   ),
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 16),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 14,
+                    vertical: 16,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: [AppImage.asset(Assets.images.giftImage.path, height: 88)],
+                        children: [
+                          AppImage.asset(
+                            Assets.images.giftImage.path,
+                            height: 88,
+                          ),
+                        ],
                       ),
-                      AppText.bodyLarge('صندوق الحظ', fontWeight: FontWeight.bold, color: context.onPrimary),
+                      AppText.bodyLarge(
+                        'صندوق الحظ',
+                        fontWeight: FontWeight.bold,
+                        color: context.onPrimary,
+                      ),
                     ],
                   ),
                 ),
@@ -175,21 +200,36 @@ class _RestaurantHomeEngagementCards extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     gradient: const LinearGradient(
-                      colors: [Color(0xff384EDE), Color(0xff1E2A78)],
+                      colors: [
+                        Color(0xff384EDE),
+                        SharedPlatformColors.restaurant,
+                      ],
                       begin: AlignmentGeometry.topLeft,
                       end: AlignmentGeometry.bottomRight,
                     ),
                   ),
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 16),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 14,
+                    vertical: 16,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        children: [AppImage.asset(Assets.images.threeStarsImage.path, height: 88)],
+                        children: [
+                          AppImage.asset(
+                            Assets.images.threeStarsImage.path,
+                            height: 88,
+                          ),
+                        ],
                       ),
-                      AppText.bodyLarge('التصويت', fontWeight: FontWeight.bold, color: context.onPrimary),
+                      AppText.bodyLarge(
+                        'التصويت',
+                        fontWeight: FontWeight.bold,
+                        color: context.onPrimary,
+                      ),
                     ],
                   ),
                 ),
@@ -211,16 +251,25 @@ class _RestaurantHomeEngagementCards extends StatelessWidget {
                 end: AlignmentGeometry.bottomRight,
               ),
             ),
-            padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 16),
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: 14,
+              vertical: 16,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [AppImage.asset(Assets.images.socialImage.path, height: 88)],
+                  children: [
+                    AppImage.asset(Assets.images.socialImage.path, height: 88),
+                  ],
                 ),
-                AppText.bodyLarge('التكامل الاجتماعي', fontWeight: FontWeight.bold, color: context.onPrimary),
+                AppText.bodyLarge(
+                  'التكامل الاجتماعي',
+                  fontWeight: FontWeight.bold,
+                  color: context.onPrimary,
+                ),
               ],
             ),
           ),

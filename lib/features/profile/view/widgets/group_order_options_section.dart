@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -189,7 +190,7 @@ class _GroupOrderOptionsSectionState extends State<GroupOrderOptionsSection> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: widget.onAddMultiTap,
-              style: ElevatedButton.styleFrom(backgroundColor: context.primary),
+              style: ElevatedButton.styleFrom(backgroundColor: SharedPlatformColors.restaurant),
               child: AppText.bodyMedium(
                 'إضافة خيارات متعددة',
                 color: context.onPrimary,

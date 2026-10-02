@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
@@ -63,7 +64,7 @@ class LatestOrderedProductsSection extends StatelessWidget {
                         },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: context.primary),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: SharedPlatformColors.restaurant),
                     padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 8),
                     child: isReorderLoading
                         ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: context.onPrimary))

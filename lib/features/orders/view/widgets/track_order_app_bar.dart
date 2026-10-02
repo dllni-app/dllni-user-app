@@ -13,13 +13,23 @@ class TrackOrderAppBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.onPrimary,
         border: const Border(
-          bottom: BorderSide(color: RestaurantOrderTrackingColors.orange, width: 2),
+          bottom: BorderSide(
+            color: RestaurantOrderTrackingColors.orange,
+            width: 2,
+          ),
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(13), offset: const Offset(0, 1), blurRadius: 4),
+          BoxShadow(
+            color: Colors.black.withAlpha(13),
+            offset: const Offset(0, 1),
+            blurRadius: 4,
+          ),
         ],
       ),
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
       child: Row(
         children: [
           InkWell(
@@ -33,7 +43,11 @@ class TrackOrderAppBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xffE5E7EB)),
               ),
-              child: Icon(Icons.arrow_back, color: context.primary, size: 22),
+              child: Icon(
+                Icons.arrow_back,
+                color: RestaurantOrderTrackingColors.primary,
+                size: 22,
+              ),
             ),
           ),
           Expanded(

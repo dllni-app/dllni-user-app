@@ -963,6 +963,7 @@ class _GroupOrderFollowupBodyState extends State<_GroupOrderFollowupBody> {
                       final go = state.groupOrderDetails?.groupOrder;
                       final id = go?.id ?? widget.params.groupOrderId;
                       return PersonalDetailsAppBar(
+                        section: 'restaurant',
                         title: 'متابعة الطلب الجماعي',
                         trailing: id > 0
                             ? IconButton(

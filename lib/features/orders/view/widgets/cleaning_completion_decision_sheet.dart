@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/num_extensions.dart';
 import 'package:flutter/material.dart';
@@ -287,7 +288,7 @@ class _CleaningCompletionDecisionSheetBodyState
                   AppText.bodySmall(
                     group.title,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xff1E2A78),
+                    color: SharedPlatformColors.cleaning,
                   ),
                   const SizedBox(height: 4),
                   ...group.items.map(
@@ -323,7 +324,7 @@ class _CleaningCompletionDecisionSheetBodyState
             AppText.bodySmall(
               'ملاحظة مقدم الخدمة',
               fontWeight: FontWeight.w700,
-              color: const Color(0xff1E2A78),
+              color: SharedPlatformColors.cleaning,
             ),
             const SizedBox(height: 4),
             AppText.bodySmall(
@@ -436,7 +437,7 @@ class _CleaningCompletionDecisionSheetBodyState
                           CleaningCompletionDecision.confirmed,
                         ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xff1E2A78),
+                    backgroundColor: SharedPlatformColors.cleaning,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -554,7 +555,7 @@ class _ExtensionTimePickerDialogState
                   AppText.bodySmall(
                     group.title,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xff1E2A78),
+                    color: SharedPlatformColors.cleaning,
                   ),
                   const SizedBox(height: 4),
                   ...group.items.map(

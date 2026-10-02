@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +73,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                         return Text(
                           UserSessionStore.displayName(user),
                           style: TextStyle(
-                            color: Color(0xFF1E2A78),
+                            color: SharedPlatformColors.supermarket,
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             height: 28 / 18,
@@ -254,7 +255,7 @@ class _AppBarNotificationWidget extends StatelessWidget {
                   child: Container(
                     padding: EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: context.primaryContainer,
+                      color: SharedPlatformColors.supermarket,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: context.onPrimaryContainer,

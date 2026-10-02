@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
@@ -48,7 +49,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
                     label: Text(preference.arabicLabel),
                     selected: selectedPreference == preference,
                     onSelected: (_) => onChanged(preference),
-                    selectedColor: const Color(0xFF1E2A78),
+                    selectedColor: SharedPlatformColors.cleaning,
                     backgroundColor: const Color(0xFFF3F4F6),
                     labelStyle: TextStyle(
                       color: selectedPreference == preference
@@ -58,7 +59,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
                     ),
                     side: BorderSide(
                       color: selectedPreference == preference
-                          ? const Color(0xFF1E2A78)
+                          ? SharedPlatformColors.cleaning
                           : const Color(0xFFD1D5DB),
                     ),
                   ),

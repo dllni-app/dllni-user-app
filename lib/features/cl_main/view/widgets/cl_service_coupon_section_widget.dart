@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/generated/assets.dart';
 import 'package:flutter/material.dart';
@@ -68,7 +69,7 @@ class ClServiceCouponSectionWidget extends StatelessWidget {
                       ? null
                       : () => onApply(couponController.text.trim()),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E2A78),
+                    backgroundColor: SharedPlatformColors.cleaning,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -122,7 +123,9 @@ class ClServiceCouponSectionWidget extends StatelessWidget {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF1E2A78)),
+                      borderSide: const BorderSide(
+                        color: SharedPlatformColors.cleaning,
+                      ),
                     ),
                   ),
                 ),

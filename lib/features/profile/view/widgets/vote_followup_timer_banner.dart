@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
@@ -28,7 +29,7 @@ class VoteFollowupTimerBanner extends StatelessWidget {
         formattedTime,
         textDirection: ui.TextDirection.ltr,
         textAlign: TextAlign.center,
-        color: context.primaryContainer,
+        color: SharedPlatformColors.restaurant,
         fontWeight: FontWeight.w700,
       ),
     );

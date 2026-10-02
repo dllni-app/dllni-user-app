@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_discover/domain/usecases/add_restaurant_cart_item_use_case.dart';
@@ -362,7 +363,10 @@ class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const PersonalDetailsAppBar(title: 'صندوق الحظ'),
+            const PersonalDetailsAppBar(
+              section: 'restaurant',
+              title: 'صندوق الحظ',
+            ),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refreshSuggestions,
@@ -493,7 +497,7 @@ class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
                 ),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
-                  backgroundColor: const Color(0xFF6C63FF),
+                  backgroundColor: SharedPlatformColors.restaurant,
                   foregroundColor: context.onPrimary,
                   disabledBackgroundColor: const Color(
                     0xFF6C63FF,

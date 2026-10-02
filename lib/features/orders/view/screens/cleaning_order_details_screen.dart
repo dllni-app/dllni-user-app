@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -157,7 +158,7 @@ class _CleaningOrderDetailsScreenState
         body: SafeArea(
           child: Column(
             children: [
-              PersonalDetailsAppBar(title: 'تفاصيل الطلب'),
+              PersonalDetailsAppBar(section: 'cleaning', title: 'تفاصيل الطلب'),
               const Expanded(
                 child: Center(child: Text('تعذر تحميل تفاصيل الطلب')),
               ),
@@ -246,7 +247,11 @@ class _CleaningOrderDetailsScreenState
       body: SafeArea(
         child: Column(
           children: [
-            PersonalDetailsAppBar(title: 'تفاصيل الطلب', trailing: sosTrailing),
+            PersonalDetailsAppBar(
+              section: 'cleaning',
+              title: 'تفاصيل الطلب',
+              trailing: sosTrailing,
+            ),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () =>
@@ -560,7 +565,10 @@ class _CleaningOrderDetailsScreenState
                       _card(
                         child: const Row(
                           children: [
-                            Icon(Icons.schedule, color: Color(0xff1E2A78)),
+                            Icon(
+                              Icons.schedule,
+                              color: SharedPlatformColors.cleaning,
+                            ),
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -607,7 +615,7 @@ class _CleaningOrderDetailsScreenState
                                   style: FilledButton.styleFrom(
                                     backgroundColor: editLocked
                                         ? const Color(0xFFD1D5DB)
-                                        : const Color(0xFF1E2A78),
+                                        : SharedPlatformColors.cleaning,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
@@ -695,7 +703,7 @@ class _CleaningOrderDetailsScreenState
                                   backgroundColor: const Color(0xffE5E7EB),
                                   foregroundColor: editLocked
                                       ? const Color(0xff9CA3AF)
-                                      : const Color(0xff1E2A78),
+                                      : SharedPlatformColors.cleaning,
                                   disabledForegroundColor: const Color(
                                     0xff9CA3AF,
                                   ),
@@ -971,7 +979,7 @@ class _CleaningOrderDetailsScreenState
                 onPressed: () => _handleLifecyclePrimaryAction(order, action),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
-                  backgroundColor: const Color(0xFF1E2A78),
+                  backgroundColor: SharedPlatformColors.cleaning,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(13),
@@ -2191,7 +2199,9 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isTotal ? const Color(0xff1E2A78) : const Color(0xff374151);
+    final color = isTotal
+        ? SharedPlatformColors.cleaning
+        : const Color(0xff374151);
     final weight = isTotal ? FontWeight.w900 : FontWeight.w600;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

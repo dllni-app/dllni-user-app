@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -361,6 +362,7 @@ class _SupermarketCartDetailsScreenState
         body: Column(
           children: [
             AppSimpleAppBar2(
+              accentColor: SharedPlatformColors.supermarket,
               title: 'سلة ${widget.args.cart?.store?.name ?? 'غير معروف'}',
             ),
             Expanded(

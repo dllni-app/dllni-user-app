@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -11,7 +12,7 @@ class ClServiceAssignmentModeSectionWidget extends StatelessWidget {
     super.key,
   });
 
-  static const Color _screenBlue = Color(0xFF1E2A78);
+  static const Color _screenBlue = SharedPlatformColors.cleaning;
 
   final CleaningAssignmentMode selectedMode;
   final ValueChanged<CleaningAssignmentMode> onModeChanged;

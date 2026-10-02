@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -51,7 +52,8 @@ class _FemaleWorkerSafetyConfirmationSheetState
 
     if (!selectedOption.allowed) {
       setState(() {
-        _errorMessage = selectedOption.blockedMessage ??
+        _errorMessage =
+            selectedOption.blockedMessage ??
             'لا يمكن متابعة الطلب بهذا الخيار، يمكنك اختيار عامل ذكر.';
       });
       return;
@@ -121,7 +123,7 @@ class _FemaleWorkerSafetyConfirmationSheetState
                     _errorMessage = option.allowed
                         ? null
                         : option.blockedMessage ??
-                            'لا يمكن متابعة الطلب بهذا الخيار، يمكنك اختيار عامل ذكر.';
+                              'لا يمكن متابعة الطلب بهذا الخيار، يمكنك اختيار عامل ذكر.';
                   });
                 },
                 title: Text(
@@ -129,7 +131,7 @@ class _FemaleWorkerSafetyConfirmationSheetState
                   textAlign: TextAlign.right,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                activeColor: const Color(0xFF1E2A78),
+                activeColor: SharedPlatformColors.cleaning,
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -172,7 +174,7 @@ class _FemaleWorkerSafetyConfirmationSheetState
                         textAlign: TextAlign.right,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      activeColor: const Color(0xFF1E2A78),
+                      activeColor: SharedPlatformColors.cleaning,
                     ),
                   ],
                 ),

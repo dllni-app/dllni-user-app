@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -368,12 +369,12 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: context.primaryContainer.withValues(
+                                color: SharedPlatformColors.restaurant.withValues(
                                   alpha: .08,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: context.primaryContainer.withValues(
+                                  color: SharedPlatformColors.restaurant.withValues(
                                     alpha: .2,
                                   ),
                                 ),
@@ -383,7 +384,7 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                   Icon(
                                     Icons.local_offer_outlined,
                                     size: 18,
-                                    color: context.primaryContainer,
+                                    color: SharedPlatformColors.restaurant,
                                   ),
                                   SizedBox(width: 8),
                                   Expanded(
@@ -408,7 +409,7 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: context.primaryContainer,
+                                        color: SharedPlatformColors.restaurant,
                                         borderRadius: BorderRadius.circular(999),
                                       ),
                                       child: AppText(
@@ -476,7 +477,7 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                     FaIcon(
                                       FontAwesomeIcons.fire,
                                       size: 13,
-                                      color: context.primaryContainer,
+                                      color: SharedPlatformColors.restaurant,
                                     ),
                                     SizedBox(width: 6),
                                     AppText(

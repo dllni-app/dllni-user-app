@@ -110,7 +110,7 @@ class RestaurantOrderTrackingView extends StatelessWidget {
 
     return Column(
       children: [
-        PersonalDetailsAppBar(title: 'تتبع الطلب'),
+        PersonalDetailsAppBar(section: 'restaurant', title: 'تتبع الطلب'),
         if (loadError != null)
           Material(
             color: const Color(0xffFEF2F2),
@@ -242,7 +242,6 @@ class RestaurantOrderTrackingView extends StatelessWidget {
     ).showSnackBar(const SnackBar(content: Text('قريباً')));
   }
 }
-
 
 class _RestaurantOrderActionsCard extends StatelessWidget {
   const _RestaurantOrderActionsCard({

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -56,7 +57,7 @@ class RsHomeOfferCard extends StatelessWidget {
       clipBehavior: Clip.antiAliasWithSaveLayer,
       margin: EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: SharedPlatformColors.restaurant,
         borderRadius: BorderRadius.all(Radius.circular(16)),
       ),
       child: Stack(
@@ -243,9 +244,9 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                                               dotHeight: 4,
                                               dotWidth: 18,
                                               spacing: 4,
-                                              dotColor: AppColors.primary
+                                              dotColor: SharedPlatformColors.restaurant
                                                   .withValues(alpha: .34),
-                                              activeDotColor: AppColors.primary,
+                                              activeDotColor: SharedPlatformColors.restaurant,
                                             ),
                                             onDotClicked: (index) {},
                                           ),

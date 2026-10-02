@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -44,7 +45,7 @@ class OfferCard extends StatelessWidget {
         clipBehavior: Clip.antiAliasWithSaveLayer,
         margin: EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: AppColors.primary,
+          color: SharedPlatformColors.supermarket,
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
         child: Stack(
@@ -150,7 +151,7 @@ class _LoadingPageViewState extends State<LoadingPageView> {
                 clipBehavior: Clip.antiAliasWithSaveLayer,
                 margin: EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: SharedPlatformColors.supermarket,
                   borderRadius: BorderRadius.all(Radius.circular(16)),
                 ),
               ),
@@ -169,8 +170,8 @@ class _LoadingPageViewState extends State<LoadingPageView> {
                 dotHeight: 4,
                 dotWidth: 18,
                 spacing: 4,
-                dotColor: AppColors.primary.withValues(alpha: .34),
-                activeDotColor: AppColors.primary,
+                dotColor: SharedPlatformColors.supermarket.withValues(alpha: .34),
+                activeDotColor: SharedPlatformColors.supermarket,
               ),
               onDotClicked: (index) {},
             ),
@@ -304,9 +305,9 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
                                             dotHeight: 4,
                                             dotWidth: 18,
                                             spacing: 4,
-                                            dotColor: AppColors.primary
+                                            dotColor: SharedPlatformColors.supermarket
                                                 .withValues(alpha: .34),
-                                            activeDotColor: AppColors.primary,
+                                            activeDotColor: SharedPlatformColors.supermarket,
                                           ),
                                           onDotClicked: (index) {},
                                         ),

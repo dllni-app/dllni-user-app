@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
@@ -50,7 +51,7 @@ class FavouriteProductsTab extends StatelessWidget {
 
         if (pagination.isEmpty) {
           return RefreshIndicator(
-            color: context.primary,
+            color: SharedPlatformColors.restaurant,
             backgroundColor: context.onPrimary,
             onRefresh: () async {
               context.read<RsFavouriteBloc>().add(FetchFavouriteProductsEvent(params: FetchFavouriteProductsParams(page: 1), isReload: true));
@@ -78,7 +79,7 @@ class FavouriteProductsTab extends StatelessWidget {
             return false;
           },
           child: RefreshIndicator(
-            color: context.primary,
+            color: SharedPlatformColors.restaurant,
             backgroundColor: context.onPrimary,
             onRefresh: () async {
               context.read<RsFavouriteBloc>().add(FetchFavouriteProductsEvent(params: FetchFavouriteProductsParams(page: 1), isReload: true));

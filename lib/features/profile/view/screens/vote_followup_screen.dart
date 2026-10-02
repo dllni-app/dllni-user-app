@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -550,6 +551,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
             child: Column(
               children: [
                 PersonalDetailsAppBar(
+                  section: 'restaurant',
                   title: 'متابعة التصويت',
                   trailing: IconButton(
                     padding: EdgeInsets.zero,
@@ -567,7 +569,7 @@ class _VoteFollowupScreenState extends State<VoteFollowupScreen> {
                     },
                     icon: FaIcon(
                       FontAwesomeIcons.shareNodes,
-                      color: const Color(0xFF6C63FF),
+                      color: SharedPlatformColors.restaurant,
                       size: 20,
                     ),
                   ),

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -68,6 +69,7 @@ class AppSimpleAppBar2 extends StatelessWidget {
   final bool centerTitle;
   final bool canPop;
   final ArrowBackType arrowBackType;
+  final Color? accentColor;
 
   const AppSimpleAppBar2({
     super.key,
@@ -75,10 +77,12 @@ class AppSimpleAppBar2 extends StatelessWidget {
     this.centerTitle = false,
     this.arrowBackType = ArrowBackType.material,
     this.canPop = true,
+    this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final accent = accentColor ?? AppColors.primary;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -93,9 +97,7 @@ class AppSimpleAppBar2 extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-            border: Border(
-              bottom: BorderSide(color: AppColors.primary, width: 2),
-            ),
+            border: Border(bottom: BorderSide(color: accent, width: 2)),
             boxShadow: [
               BoxShadow(
                 offset: Offset(0, 1),
@@ -115,9 +117,7 @@ class AppSimpleAppBar2 extends StatelessWidget {
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: .16),
-                      ),
+                      border: Border.all(color: accent.withValues(alpha: .16)),
                     ),
                     child: FaIcon(
                       FontAwesomeIcons.arrowRight,
@@ -146,7 +146,7 @@ class AppSimpleAppBar2 extends StatelessWidget {
                   textAlign: centerTitle ? TextAlign.center : TextAlign.start,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: accent,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     height: 32 / 24,
@@ -177,16 +177,19 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
   final String title;
   final bool isSearchExpand;
   final void Function(SearchType type) onTypeSelected;
+  final Color? accentColor;
 
   const AppSimpleAppBarWithSearch({
     super.key,
     required this.title,
     this.isSearchExpand = false,
     required this.onTypeSelected,
+    this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final accent = accentColor ?? AppColors.primary;
     return Container(
       width: context.width,
       padding: EdgeInsets.fromLTRB(
@@ -205,7 +208,7 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
             color: Color(0x0D000000),
           ),
         ],
-        border: Border(bottom: BorderSide(color: AppColors.primary, width: 2)),
+        border: Border(bottom: BorderSide(color: accent, width: 2)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -214,7 +217,7 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
           AppText(
             title,
             style: TextStyle(
-              color: AppColors.primary,
+              color: accent,
               fontSize: 24,
               fontWeight: FontWeight.w700,
               height: 32 / 24,
@@ -321,7 +324,7 @@ class _RsAppSimpleAppBarWithSearchState
                     child: Icon(
                       Icons.arrow_back,
                       size: 18,
-                      color: context.primary,
+                      color: SharedPlatformColors.restaurant,
                     ),
                   ),
                 ),
@@ -332,7 +335,7 @@ class _RsAppSimpleAppBarWithSearchState
                   widget.title,
                   textAlign: TextAlign.start,
                   style: TextStyle(
-                    color: context.primary,
+                    color: SharedPlatformColors.restaurant,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     height: 32 / 24,
@@ -358,7 +361,7 @@ class _RsAppSimpleAppBarWithSearchState
                     child: Icon(
                       Icons.shopping_cart_outlined,
                       size: 22,
-                      color: context.primary,
+                      color: SharedPlatformColors.restaurant,
                     ),
                   ),
                 ),
@@ -510,7 +513,9 @@ class _SearchModeChip extends StatelessWidget {
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? context.primary : const Color(0xFFDADCEA),
+          color: isSelected
+              ? SharedPlatformColors.restaurant
+              : const Color(0xFFDADCEA),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
@@ -520,7 +525,7 @@ class _SearchModeChip extends StatelessWidget {
               radius: 14,
               backgroundColor: isSelected
                   ? context.onPrimary.withValues(alpha: .24)
-                  : context.primary,
+                  : SharedPlatformColors.restaurant,
               child: FaIcon(
                 icon,
                 size: 12,
@@ -531,7 +536,9 @@ class _SearchModeChip extends StatelessWidget {
             AppText(
               label,
               style: TextStyle(
-                color: isSelected ? context.onPrimary : context.primary,
+                color: isSelected
+                    ? context.onPrimary
+                    : SharedPlatformColors.restaurant,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),

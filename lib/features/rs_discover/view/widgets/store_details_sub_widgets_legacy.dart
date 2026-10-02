@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
@@ -73,7 +74,7 @@ class StoreProductsPreviewSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(color: isSelected ? context.primary : Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(20)),
+                  decoration: BoxDecoration(color: isSelected ? SharedPlatformColors.restaurant : Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(20)),
                   child: AppText(
                     filters[index],
                     style: TextStyle(

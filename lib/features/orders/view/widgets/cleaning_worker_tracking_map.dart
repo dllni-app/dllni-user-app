@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 import 'dart:developer';
 
@@ -36,8 +37,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
   static const Duration _persistedRefreshInterval = Duration(seconds: 15);
 
   final MapController _mapController = MapController();
-  final Map<int, _TrackingWorkerState> _workers =
-      <int, _TrackingWorkerState>{};
+  final Map<int, _TrackingWorkerState> _workers = <int, _TrackingWorkerState>{};
   final Map<int, LatLng> _lastRoutedLocations = <int, LatLng>{};
   final Map<int, List<LatLng>> _roadRoutes = <int, List<LatLng>>{};
   final Map<int, int> _routeRequestVersions = <int, int>{};
@@ -58,10 +58,8 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
     _locationSubscription = CleaningRealtimeLocationBus.stream.listen(
       _applyRealtimeLocation,
     );
-    _activeBookingSubscription =
-        CleaningTrackingSessionBus.activeBookingStream.listen(
-      _onActiveBookingChanged,
-    );
+    _activeBookingSubscription = CleaningTrackingSessionBus.activeBookingStream
+        .listen(_onActiveBookingChanged);
     _refreshSubscription = CleaningTrackingSessionBus.refreshStream.listen(
       _onRefreshRequested,
     );
@@ -179,7 +177,9 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
     if (!mounted) return;
 
     final staleKeys = _workers.keys
-        .where((key) => key != _legacyWorkerKey && !nextWorkers.containsKey(key))
+        .where(
+          (key) => key != _legacyWorkerKey && !nextWorkers.containsKey(key),
+        )
         .toList(growable: false);
     final inactiveKeys = nextWorkers.entries
         .where((entry) => !entry.value.isTravelling)
@@ -251,15 +251,17 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
         _workers.remove(_legacyWorkerKey);
         _removeRouteState(_legacyWorkerKey);
       }
-      _workers[workerKey] = (existing ??
-              _TrackingWorkerState(
-                workerId: workerKey,
-                startedTravelAt: DateTime.now(),
-              ))
-          .copyWith(
-        location: nextLocation,
-        locationUpdatedAt: _tryDate(location.updatedAt) ?? DateTime.now(),
-      );
+      _workers[workerKey] =
+          (existing ??
+                  _TrackingWorkerState(
+                    workerId: workerKey,
+                    startedTravelAt: DateTime.now(),
+                  ))
+              .copyWith(
+                location: nextLocation,
+                locationUpdatedAt:
+                    _tryDate(location.updatedAt) ?? DateTime.now(),
+              );
     });
 
     unawaited(_loadRoadRouteForWorker(workerKey));
@@ -294,7 +296,10 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
 
     final previousRoutedLocation = _lastRoutedLocations[workerKey];
     if (!force && previousRoutedLocation != null) {
-      final movedMeters = const Distance()(previousRoutedLocation, workerLocation);
+      final movedMeters = const Distance()(
+        previousRoutedLocation,
+        workerLocation,
+      );
       if (movedMeters < _routeRefreshDistanceMeters) return;
     }
 
@@ -309,10 +314,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
     try {
       points = await resolveRoadRoutePoints(
         apiRoutePoints: const <LatLng>[],
-        fallbackWaypoints: <LatLng>[
-          workerLocation,
-          widget.customerLatLng,
-        ],
+        fallbackWaypoints: <LatLng>[workerLocation, widget.customerLatLng],
       );
     } catch (_) {
       points = <LatLng>[workerLocation, widget.customerLatLng];
@@ -354,12 +356,14 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
       return const SizedBox.shrink();
     }
 
-    final travellingWorkers = _workers.entries
-        .where(
-          (entry) => entry.value.isTravelling && entry.value.location != null,
-        )
-        .toList(growable: false)
-      ..sort((a, b) => a.key.compareTo(b.key));
+    final travellingWorkers =
+        _workers.entries
+            .where(
+              (entry) =>
+                  entry.value.isTravelling && entry.value.location != null,
+            )
+            .toList(growable: false)
+          ..sort((a, b) => a.key.compareTo(b.key));
     final showTravelStatus = widget.hasStartedTravel || _workers.isNotEmpty;
     final travelStatusText = _travelStatusText(travellingWorkers);
 
@@ -403,13 +407,12 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
             child: Stack(
               children: [
                 FlutterMap(
-                  key: ValueKey<String>(
-                    'cleaning-tracking-${_bookingId ?? 0}',
-                  ),
+                  key: ValueKey<String>('cleaning-tracking-${_bookingId ?? 0}'),
                   mapController: _mapController,
                   options: MapOptions(
                     interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.pinchZoom |
+                      flags:
+                          InteractiveFlag.pinchZoom |
                           InteractiveFlag.doubleTapZoom |
                           InteractiveFlag.drag,
                     ),
@@ -443,13 +446,15 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
                           height: 40,
                           child: const Icon(
                             Icons.home_rounded,
-                            color: Color(0xff1E2A78),
+                            color: SharedPlatformColors.cleaning,
                             size: 34,
                           ),
                         ),
-                        for (var index = 0;
-                            index < travellingWorkers.length;
-                            index++)
+                        for (
+                          var index = 0;
+                          index < travellingWorkers.length;
+                          index++
+                        )
                           Marker(
                             point: travellingWorkers[index].value.location!,
                             width: 44,
@@ -645,7 +650,7 @@ class _WorkerMarker extends StatelessWidget {
               height: 18,
               alignment: Alignment.center,
               decoration: const BoxDecoration(
-                color: Color(0xff1E2A78),
+                color: SharedPlatformColors.cleaning,
                 shape: BoxShape.circle,
               ),
               child: Text(

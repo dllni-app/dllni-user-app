@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +65,7 @@ class RestaurantCartOrderSummarySection extends StatelessWidget {
             valueStyle: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xff1E2A78),
+              color: SharedPlatformColors.restaurant,
             ),
           ),
         ],

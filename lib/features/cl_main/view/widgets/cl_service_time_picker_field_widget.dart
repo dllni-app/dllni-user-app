@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,11 @@ class ClServiceTimePickerFieldWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText.bodyMedium(title, color: const Color(0xFF656B78), fontWeight: FontWeight.w700),
+        AppText.bodyMedium(
+          title,
+          color: const Color(0xFF656B78),
+          fontWeight: FontWeight.w700,
+        ),
         const SizedBox(height: 8),
         AbsorbPointer(
           absorbing: onTap == null,
@@ -30,20 +35,35 @@ class ClServiceTimePickerFieldWidget extends StatelessWidget {
             enableInteractiveSelection: false,
             showCursor: false,
             textAlign: TextAlign.start,
-            style: const TextStyle(color: Color(0xFF1F2937), fontWeight: FontWeight.w600, fontSize: 16),
+            style: const TextStyle(
+              color: Color(0xFF1F2937),
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 14),
+              contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                14,
+                14,
+                14,
+                14,
+              ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFF1E2A78)),
+                borderSide: const BorderSide(
+                  color: SharedPlatformColors.cleaning,
+                ),
               ),
-              prefixIcon: const Icon(Icons.access_time_rounded, size: 16, color: Color(0xFF9CA3AF)),
+              prefixIcon: const Icon(
+                Icons.access_time_rounded,
+                size: 16,
+                color: Color(0xFF9CA3AF),
+              ),
             ),
           ),
         ),

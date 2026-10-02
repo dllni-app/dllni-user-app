@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
@@ -971,7 +972,7 @@ class _ClMainOccasionDescriptionScreenState
                 AppText.bodyLarge(
                   title,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E2A78),
+                  color: SharedPlatformColors.cleaning,
                 ),
                 const SizedBox(height: 12),
                 ...options.map(

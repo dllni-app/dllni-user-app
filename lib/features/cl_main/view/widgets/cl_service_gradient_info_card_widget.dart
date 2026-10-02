@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -22,10 +23,16 @@ class ClServiceGradientInfoCardWidget extends StatelessWidget {
         gradient: const LinearGradient(
           begin: AlignmentDirectional.centerStart,
           end: AlignmentDirectional.centerEnd,
-          colors: [Color(0xFF1E2A78), Color(0xFF0CBBC7)],
+          colors: [SharedPlatformColors.cleaning, Color(0xFF0CBBC7)],
         ),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: const [BoxShadow(color: Color(0x21000000), blurRadius: 10, offset: Offset(0, 4))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x21000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -49,7 +56,11 @@ class ClServiceGradientInfoCardWidget extends StatelessWidget {
 }
 
 class _InfoRowWidget extends StatelessWidget {
-  const _InfoRowWidget({required this.title, required this.value, required this.icon});
+  const _InfoRowWidget({
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
 
   final String title;
   final String value;
@@ -62,10 +73,19 @@ class _InfoRowWidget extends StatelessWidget {
         Icon(icon, color: Colors.white, size: 20),
         const SizedBox(width: 8),
         Expanded(
-          child: AppText.labelLarge(title, color: Colors.white, fontWeight: FontWeight.w400, textAlign: TextAlign.start),
+          child: AppText.labelLarge(
+            title,
+            color: Colors.white,
+            fontWeight: FontWeight.w400,
+            textAlign: TextAlign.start,
+          ),
         ),
         const SizedBox(height: 8),
-        AppText.bodySmall(value, color: Colors.white, fontWeight: FontWeight.w500),
+        AppText.bodySmall(
+          value,
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
       ],
     );
   }

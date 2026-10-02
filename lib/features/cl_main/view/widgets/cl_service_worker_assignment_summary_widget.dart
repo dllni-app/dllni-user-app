@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -14,7 +15,7 @@ class ClServiceWorkerAssignmentSummaryWidget extends StatelessWidget {
   final List<CleaningWorkerRoomAssignment> assignments;
   final Map<String, List<String>> fieldErrors;
 
-  static const Color _screenBlue = Color(0xFF1E2A78);
+  static const Color _screenBlue = SharedPlatformColors.cleaning;
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +61,7 @@ class ClServiceWorkerAssignmentSummaryWidget extends StatelessWidget {
 }
 
 class _SlotSummaryCard extends StatelessWidget {
-  const _SlotSummaryCard({
-    required this.assignment,
-    required this.fieldErrors,
-  });
+  const _SlotSummaryCard({required this.assignment, required this.fieldErrors});
 
   final CleaningWorkerRoomAssignment assignment;
   final Map<String, List<String>> fieldErrors;
@@ -127,7 +125,8 @@ class _SlotSummaryCard extends StatelessWidget {
                           .withAlpha(26),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: ClServiceWorkerAssignmentSummaryWidget._screenBlue
+                        color: ClServiceWorkerAssignmentSummaryWidget
+                            ._screenBlue
                             .withAlpha(77),
                       ),
                     ),
@@ -157,9 +156,9 @@ class _SlotSummaryCard extends StatelessWidget {
     return fieldErrors.entries
         .where((entry) {
           if (!entry.key.startsWith(prefix)) return false;
-          final slotMatch = RegExp(r'^workerRoomAssignments\.(\d+)').firstMatch(
-            entry.key,
-          );
+          final slotMatch = RegExp(
+            r'^workerRoomAssignments\.(\d+)',
+          ).firstMatch(entry.key);
           if (slotMatch == null) return false;
           final slotIndex = int.tryParse(slotMatch.group(1) ?? '');
           return slotIndex != null && slotIndex + 1 == workerSlot;

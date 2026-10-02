@@ -92,6 +92,7 @@ class ShoppingListDetailsScreen extends StatelessWidget {
         body: Column(
           children: [
             AppSimpleAppBar2(
+              accentColor: SharedPlatformColors.supermarket,
               title: args.shoppingListName.isNotEmpty
                   ? args.shoppingListName
                   : 'قائمة التسوق',
@@ -372,6 +373,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
             body: Column(
               children: [
                 AppSimpleAppBar2(
+                  accentColor: SharedPlatformColors.supermarket,
                   title: title,
                   arrowBackType: ArrowBackType.cupertino,
                 ),

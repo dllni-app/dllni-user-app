@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
@@ -112,7 +113,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                     AppText.titleMedium(
                       'هل هناك قيود؟',
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF6C63FF),
+                      color: SharedPlatformColors.restaurant,
                     ),
                     const SizedBox(height: 10),
                     ConstrainedBox(
@@ -152,7 +153,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             Navigator.of(modalContext).pop(working),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor: const Color(0xFF6C63FF),
+                          backgroundColor: SharedPlatformColors.restaurant,
                           foregroundColor: context.onPrimary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -204,7 +205,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                     AppText.titleMedium(
                       'نوع المطاعم',
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF6C63FF),
+                      color: SharedPlatformColors.restaurant,
                     ),
                     const SizedBox(height: 10),
                     ListTile(
@@ -257,7 +258,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             Navigator.of(modalContext).pop(current),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor: const Color(0xFF6C63FF),
+                          backgroundColor: SharedPlatformColors.restaurant,
                           foregroundColor: context.onPrimary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -404,7 +405,10 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
           body: SafeArea(
             child: Column(
               children: [
-                const PersonalDetailsAppBar(title: 'صندوق الحظ'),
+                const PersonalDetailsAppBar(
+                  section: 'restaurant',
+                  title: 'صندوق الحظ',
+                ),
                 const SizedBox(height: 14),
                 Expanded(
                   child: SingleChildScrollView(
@@ -551,7 +555,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _onSearchPressed,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6C63FF),
+                            backgroundColor: SharedPlatformColors.restaurant,
                             foregroundColor: context.onPrimary,
                             elevation: 0,
                             shape: RoundedRectangleBorder(

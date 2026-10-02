@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -89,7 +90,7 @@ class _CategoryChip extends StatelessWidget {
         color: isSelected ? null : context.onPrimary,
         gradient: isSelected
             ? LinearGradient(
-                colors: [context.secondary, context.primary],
+                colors: [context.secondary, SharedPlatformColors.restaurant],
                 stops: [.3, .9],
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,

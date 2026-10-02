@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -60,7 +61,7 @@ class OrderDetailsCard extends StatelessWidget {
                     "95 ل.س",
                     textAlign: TextAlign.start,
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: SharedPlatformColors.supermarket,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       height: 20 / 14,
@@ -87,7 +88,7 @@ class OrderDetailsCard extends StatelessWidget {
                     "10 ل.س",
                     textAlign: TextAlign.start,
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: SharedPlatformColors.supermarket,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       height: 20 / 14,
@@ -175,7 +176,7 @@ class _ProductRow extends StatelessWidget {
             "70 ل.س",
             textAlign: TextAlign.start,
             style: TextStyle(
-              color: Color(0xFF1E2A78),
+              color: SharedPlatformColors.supermarket,
               fontSize: 14,
               fontWeight: FontWeight.w700,
               height: 16 / 14,

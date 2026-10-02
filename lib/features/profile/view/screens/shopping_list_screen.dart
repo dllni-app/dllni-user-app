@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
@@ -194,6 +195,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         body: Column(
           children: [
             AppSimpleAppBar2(
+              accentColor: SharedPlatformColors.supermarket,
               title: 'قوائم التسوق',
               arrowBackType: ArrowBackType.cupertino,
             ),

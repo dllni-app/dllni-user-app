@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -128,7 +129,7 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onAddCustomService,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E2A78),
+                    backgroundColor: SharedPlatformColors.cleaning,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

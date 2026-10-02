@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +25,7 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1E2A78), Color(0xFF0CBBC7)],
+          colors: [SharedPlatformColors.cleaning, Color(0xFF0CBBC7)],
           begin: AlignmentDirectional.centerStart,
           end: AlignmentDirectional.centerEnd,
         ),

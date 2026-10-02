@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,7 @@ class RestaurantOrderEtaCard extends StatelessWidget {
           CircleAvatar(
             backgroundColor: Color(0xffEFF6FF),
             radius: 30,
-            child: Icon(Icons.access_time_filled_outlined, color: context.primary, size: 28),
+            child: Icon(Icons.access_time_filled_outlined, color: SharedPlatformColors.restaurant, size: 28),
           ),
           Expanded(
             child: Column(

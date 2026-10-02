@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/widgets/app_app_bars.dart';
 import 'package:flutter/material.dart';
@@ -18,8 +19,7 @@ class SmAllProductsScreen extends StatefulWidget {
   final int storeId;
 
   @override
-  State<SmAllProductsScreen> createState() =>
-      _SmAllProductsScreenState();
+  State<SmAllProductsScreen> createState() => _SmAllProductsScreenState();
 }
 
 class _SmAllProductsScreenState extends State<SmAllProductsScreen> {
@@ -36,7 +36,10 @@ class _SmAllProductsScreenState extends State<SmAllProductsScreen> {
         backgroundColor: context.onPrimary,
         body: Column(
           children: [
-            AppSimpleAppBar2(title: "كل المنتجات"),
+            AppSimpleAppBar2(
+              accentColor: SharedPlatformColors.supermarket,
+              title: "كل المنتجات",
+            ),
             Expanded(
               child: BlocBuilder<SmDiscoverBloc, SmDiscoverState>(
                 buildWhen: (previous, current) =>

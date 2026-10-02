@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import '../../data/models/fetch_restaurant_home_categories_model.dart';
@@ -94,7 +95,7 @@ class _CategoryItem extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(
                 color: isSelected
-                    ? context.primaryContainer
+                    ? SharedPlatformColors.restaurant
                     : Colors.transparent,
                 width: 2,
               ),

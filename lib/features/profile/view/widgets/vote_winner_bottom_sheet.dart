@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:flutter/material.dart';
 
 class VoteWinnerBottomSheet extends StatelessWidget {
@@ -83,13 +84,13 @@ class _VoteWinnerContent extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFF7F5FF),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF6C63FF)),
+              border: Border.all(color: SharedPlatformColors.restaurant),
             ),
             child: Column(
               children: [
                 const Icon(
                   Icons.check_circle_rounded,
-                  color: Color(0xFF6C63FF),
+                  color: SharedPlatformColors.restaurant,
                   size: 28,
                 ),
                 const SizedBox(height: 8),
@@ -119,7 +120,7 @@ class _VoteWinnerContent extends StatelessWidget {
                 Text(
                   'الخطوة التالية',
                   style: TextStyle(
-                    color: Color(0xFF1E2A78),
+                    color: SharedPlatformColors.restaurant,
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
@@ -140,7 +141,7 @@ class _VoteWinnerContent extends StatelessWidget {
           FilledButton(
             onPressed: onShowBestOfferTap,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: SharedPlatformColors.restaurant,
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

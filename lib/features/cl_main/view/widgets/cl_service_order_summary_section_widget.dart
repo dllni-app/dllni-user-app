@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
@@ -95,7 +96,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
         children: [
           AppText.bodyLarge(
             'ملخص الطلب',
-            color: const Color(0xFF1E2A78),
+            color: SharedPlatformColors.cleaning,
             fontWeight: FontWeight.w700,
             textAlign: TextAlign.right,
           ),
@@ -105,7 +106,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
               alignment: AlignmentDirectional.centerStart,
               child: AppText.bodyMedium(
                 'مواعيد الخدمة',
-                color: const Color(0xFF1E2A78),
+                color: SharedPlatformColors.cleaning,
                 fontWeight: FontWeight.w800,
                 textAlign: TextAlign.right,
               ),
@@ -241,7 +242,9 @@ class _SummaryRowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isTotal ? const Color(0xFF1E2A78) : const Color(0xFF4B5563);
+    final color = isTotal
+        ? SharedPlatformColors.cleaning
+        : const Color(0xFF4B5563);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

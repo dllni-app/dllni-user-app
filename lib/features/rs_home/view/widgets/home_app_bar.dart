@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
@@ -99,6 +100,9 @@ class _HomeAppBarState extends State<HomeAppBar> {
   @override
   Widget build(BuildContext context) {
     final shouldShowSearch = widget.showSearch && !widget.isCleaning;
+    final accent = widget.isCleaning
+        ? SharedPlatformColors.cleaning
+        : SharedPlatformColors.restaurant;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -138,8 +142,8 @@ class _HomeAppBarState extends State<HomeAppBar> {
                           AuthGate.isAuthenticated
                               ? UserSessionStore.displayName(user)
                               : 'زائر',
-                          style: const TextStyle(
-                            color: Color(0xFF1E2A78),
+                          style: TextStyle(
+                            color: accent,
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             height: 28 / 18,
@@ -154,6 +158,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 bloc: cartProductsCountCubit,
                 builder: (context, count) {
                   return _AppBarAction(
+                    accent: accent,
                     icon: FontAwesomeIcons.cartShopping,
                     badgeCount: AuthGate.isAuthenticated && !widget.isCleaning
                         ? count
@@ -164,6 +169,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
               ),
               const SizedBox(width: 12),
               _AppBarNotificationWidget(
+                accent: accent,
                 profileBloc: profileBloc,
                 icon: FontAwesomeIcons.bell,
                 onTap: _openNotifications,
@@ -188,11 +194,13 @@ class _HomeAppBarState extends State<HomeAppBar> {
 class _AppBarAction extends StatelessWidget {
   const _AppBarAction({
     this.badgeCount = 0,
+    required this.accent,
     required this.icon,
     required this.onTap,
   });
 
   final int badgeCount;
+  final Color accent;
   final FaIconData icon;
   final void Function() onTap;
 
@@ -213,11 +221,7 @@ class _AppBarAction extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: const Color(0xFFF3F4F6)),
             ),
-            child: FaIcon(
-              icon,
-              size: 20,
-              color: const Color(0xFF1A1A1A),
-            ),
+            child: FaIcon(icon, size: 20, color: const Color(0xFF1A1A1A)),
           ),
           if (badgeCount > 0)
             Positioned(
@@ -228,7 +232,7 @@ class _AppBarAction extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: context.primaryContainer,
+                  color: accent,
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
                     color: context.onPrimaryContainer,
@@ -254,11 +258,13 @@ class _AppBarAction extends StatelessWidget {
 
 class _AppBarNotificationWidget extends StatelessWidget {
   const _AppBarNotificationWidget({
+    required this.accent,
     required this.icon,
     required this.onTap,
     required this.profileBloc,
   });
 
+  final Color accent;
   final FaIconData icon;
   final ProfileBloc profileBloc;
   final void Function() onTap;
@@ -271,6 +277,7 @@ class _AppBarNotificationWidget extends StatelessWidget {
           previous.unreadNotification != current.unreadNotification,
       builder: (context, state) {
         return _AppBarAction(
+          accent: accent,
           icon: icon,
           badgeCount: AuthGate.isAuthenticated
               ? (state.unreadNotification ?? 0)

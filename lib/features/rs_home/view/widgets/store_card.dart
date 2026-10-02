@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/restaurant_preview_data.dart';
@@ -144,7 +145,7 @@ class _StoreCardState extends State<StoreCard> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: context.primaryContainer,
+                            color: SharedPlatformColors.restaurant,
                             borderRadius: BorderRadius.all(
                               Radius.circular(8),
                             ),

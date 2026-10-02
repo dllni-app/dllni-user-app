@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:flutter/material.dart';
 
 class VoteWinnerDialog extends StatelessWidget {
@@ -56,7 +57,7 @@ class VoteWinnerDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F5FF),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF6C63FF)),
+                border: Border.all(color: SharedPlatformColors.restaurant),
               ),
               child: Text(
                 winnerName,
@@ -72,7 +73,7 @@ class VoteWinnerDialog extends StatelessWidget {
             FilledButton(
               onPressed: onShowBestOfferTap,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF6C63FF),
+                backgroundColor: SharedPlatformColors.restaurant,
                 minimumSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(13),

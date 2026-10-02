@@ -181,6 +181,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       body: Column(
         children: [
           AppSimpleAppBar2(
+            accentColor: SharedPlatformColors.supermarket,
             title: widget.args.shoppingListId == null
                 ? 'إضافة قائمة جديدة'
                 : 'تعديل القائمة',

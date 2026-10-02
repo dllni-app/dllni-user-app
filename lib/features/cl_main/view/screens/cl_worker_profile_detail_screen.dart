@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -283,7 +284,7 @@ class _ClWorkerProfileDetailScreenState
                             },
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size.fromHeight(48),
-                              foregroundColor: const Color(0xFF1E2A78),
+                              foregroundColor: SharedPlatformColors.cleaning,
                               side: const BorderSide(color: Color(0xFFD0D5DD)),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
@@ -329,7 +330,7 @@ class _WorkerProfileHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
-          colors: [Color(0xFF1E2A78), Color(0xFF0CBBC7)],
+          colors: [SharedPlatformColors.cleaning, Color(0xFF0CBBC7)],
         ),
       ),
       child: SafeArea(
@@ -344,7 +345,7 @@ class _WorkerProfileHeader extends StatelessWidget {
                   onPressed: onBack,
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF1E2A78),
+                    foregroundColor: SharedPlatformColors.cleaning,
                     minimumSize: const Size(44, 44),
                   ),
                   icon: const Icon(Icons.arrow_forward),

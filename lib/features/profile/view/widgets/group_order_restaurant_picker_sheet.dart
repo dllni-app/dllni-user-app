@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,7 +29,7 @@ class GroupOrderRestaurantPickerSheet {
               children: [
                 AppText.titleMedium(
                   'حدد المطعم',
-                  color: context.primary,
+                  color: SharedPlatformColors.restaurant,
                   fontWeight: FontWeight.w700,
                 ),
                 const SizedBox(height: 12),
@@ -133,7 +134,7 @@ class GroupOrderRestaurantPickerSheet {
                                   ? Icons.check_circle
                                   : Icons.radio_button_unchecked,
                               color: isSelected
-                                  ? context.primary
+                                  ? SharedPlatformColors.restaurant
                                   : const Color(0xff9CA3AF),
                             ),
                           );

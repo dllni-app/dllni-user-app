@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/rs_discover/view/models/restaurant_preview_data.dart';
 import 'package:dllni_user_app/features/rs_discover/view/screens/rs_store_details_screen.dart';
@@ -78,12 +79,12 @@ class OfferCard extends StatelessWidget {
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: context.primaryContainer.withValues(alpha: .1),
+                                  color: SharedPlatformColors.restaurant.withValues(alpha: .1),
                                   borderRadius: BorderRadius.all(Radius.circular(50)),
                                 ),
                                 child: AppText(
                                   _badgeText,
-                                  style: TextStyle(color: context.primaryContainer, fontSize: 12, fontWeight: FontWeight.w700, height: 16 / 12),
+                                  style: TextStyle(color: SharedPlatformColors.restaurant, fontSize: 12, fontWeight: FontWeight.w700, height: 16 / 12),
                                 ),
                               ),
                             ],
@@ -111,7 +112,7 @@ class OfferCard extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: context.primaryContainer,
+                    color: SharedPlatformColors.restaurant,
                     borderRadius: BorderRadius.only(bottomRight: Radius.circular(16), topLeft: Radius.circular(24)),
                   ),
                   child: AppText(

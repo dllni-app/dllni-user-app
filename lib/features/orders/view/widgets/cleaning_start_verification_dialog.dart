@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
@@ -60,7 +61,7 @@ class _CleaningStartVerificationDialogContent extends StatefulWidget {
 class _CleaningStartVerificationDialogContentState
     extends State<_CleaningStartVerificationDialogContent> {
   static const Color _primary = Color(0xff1DBCC8);
-  static const Color _navy = Color(0xff1E2A78);
+  static const Color _navy = SharedPlatformColors.cleaning;
   static const Color _muted = Color(0xff6B7280);
   static const Color _surface = Color(0xffF9FAFB);
   static const Color _border = Color(0xffE5E7EB);
@@ -572,7 +573,7 @@ class _CancelOrderWaringWidgetState extends State<CancelOrderWaringWidget> {
                             : () => Navigator.pop(context),
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          backgroundColor: context.primary,
+                          backgroundColor: SharedPlatformColors.cleaning,
                           foregroundColor: Colors.white,
                         ),
                         child: AppText.bodySmall(

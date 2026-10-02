@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,7 +30,7 @@ class NearStoresSection extends StatelessWidget {
             SizedBox(width: 8),
             FaIcon(
               FontAwesomeIcons.locationDot,
-              color: Color(0xFF6C63FF),
+              color: SharedPlatformColors.restaurant,
               size: 15,
             ),
           ],

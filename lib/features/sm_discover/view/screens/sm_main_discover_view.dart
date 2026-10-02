@@ -1,10 +1,10 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/download_more.dart';
 import '../../../../core/widgets/failure_widget.dart';
@@ -77,6 +77,7 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
     return Column(
       children: [
         AppSimpleAppBarWithSearch(
+          accentColor: SharedPlatformColors.supermarket,
           title: 'تصفح',
           onTypeSelected: widget.onTypeSelected,
           isSearchExpand: widget.expandSearch,
@@ -124,7 +125,7 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                                   : 'الأقرب إلي',
                               style: TextStyle(
                                 color: _selectedSort == option
-                                    ? AppColors.primary
+                                    ? SharedPlatformColors.supermarket
                                     : const Color(0xFF6B7280),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -145,7 +146,7 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                                     ? 'الأعلى تقييماً'
                                     : 'الأقرب إلي'),
                             style: const TextStyle(
-                              color: AppColors.primary,
+                              color: SharedPlatformColors.supermarket,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               height: 20 / 14,
@@ -155,7 +156,7 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                           const FaIcon(
                             FontAwesomeIcons.angleDown,
                             size: 12,
-                            color: AppColors.primary,
+                            color: SharedPlatformColors.supermarket,
                           ),
                         ],
                       ),

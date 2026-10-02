@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -61,6 +62,7 @@ class _SmMainPageState extends State<SmMainPage>
         ],
       ),
       bottomNavigationBar: AppNavBar(
+        accentColor: SharedPlatformColors.supermarket,
         items: [
           AppNavBarItem(title: "المتاجر", icon: FontAwesomeIcons.solidHouse),
           AppNavBarItem(title: "تصفح", icon: FontAwesomeIcons.solidCompass),

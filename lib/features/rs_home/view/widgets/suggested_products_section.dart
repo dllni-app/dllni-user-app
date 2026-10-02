@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,7 @@ class SuggestedProductsSection extends StatelessWidget {
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF273C8F)),
                 ),
                 const SizedBox(width: 8),
-                FaIcon(FontAwesomeIcons.wandMagicSparkles, size: 16, color: context.primaryContainer),
+                FaIcon(FontAwesomeIcons.wandMagicSparkles, size: 16, color: SharedPlatformColors.restaurant),
               ],
             ),
             const SizedBox(height: 6),

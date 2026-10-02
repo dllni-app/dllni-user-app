@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ class CartEmptyView extends StatelessWidget {
           AppText.titleMedium(
             'قائمة المشتريات',
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E2A78),
+            color: SharedPlatformColors.restaurant,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -45,7 +46,7 @@ class CartEmptyView extends StatelessWidget {
           Center(
             child: FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF1E2A78),
+                backgroundColor: SharedPlatformColors.restaurant,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 14,

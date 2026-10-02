@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -257,7 +258,7 @@ class _WorkingHoursSectionState extends State<_WorkingHoursSection> {
                       turns: _expanded ? 0.5 : 0,
                       child: Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: context.primary,
+                        color: SharedPlatformColors.restaurant,
                         size: 24,
                       ),
                     ),
@@ -345,11 +346,11 @@ class _HourRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: isToday ? context.primary.withAlpha(14) : context.onPrimary,
+        color: isToday ? SharedPlatformColors.restaurant.withAlpha(14) : context.onPrimary,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isToday
-              ? context.primary.withAlpha(40)
+              ? SharedPlatformColors.restaurant.withAlpha(40)
               : const Color(0xFFF3F4F6),
         ),
       ),
@@ -360,7 +361,7 @@ class _HourRow extends StatelessWidget {
             child: AppText(
               item.day,
               style: TextStyle(
-                color: isToday ? context.primary : const Color(0xFF374151),
+                color: isToday ? SharedPlatformColors.restaurant : const Color(0xFF374151),
                 fontSize: 12,
                 fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
               ),

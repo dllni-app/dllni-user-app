@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -31,7 +32,7 @@ class RestaurantCartLoadFailedView extends StatelessWidget {
           child: FilledButton(
             onPressed: onRetry,
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1E2A78),
+              backgroundColor: SharedPlatformColors.restaurant,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

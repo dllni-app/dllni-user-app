@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -63,7 +64,7 @@ class _ServiceTabItem extends StatelessWidget {
   static const LinearGradient _selectedGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: <Color>[Color(0xFF1E2A78), Color(0xFF4A5FCF)],
+    colors: <Color>[SharedPlatformColors.cleaning, Color(0xFF4A5FCF)],
   );
 
   @override
@@ -75,7 +76,7 @@ class _ServiceTabItem extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           gradient: isSelected ? _selectedGradient : null,
-          color: isSelected ? context.primary : Colors.white,
+          color: isSelected ? SharedPlatformColors.cleaning : Colors.white,
           border: Border.all(
             color: isSelected ? Colors.transparent : const Color(0xFFE5E7EB),
           ),

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -52,7 +53,7 @@ class VoteFollowupOptionCard extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: context.primaryContainer,
+                          color: SharedPlatformColors.restaurant,
                         ),
                       )
                     : Icon(
@@ -119,7 +120,7 @@ class VoteFollowupOptionCard extends StatelessWidget {
                               minHeight: 8,
                               backgroundColor: const Color(0xffFDEDD8),
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                context.primaryContainer,
+                                SharedPlatformColors.restaurant,
                               ),
                             ),
                           ),
@@ -127,7 +128,7 @@ class VoteFollowupOptionCard extends StatelessWidget {
                         const SizedBox(width: 10),
                         AppText.labelLarge(
                           '${(option.progress * 100).toInt()}%',
-                          color: context.primaryContainer,
+                          color: SharedPlatformColors.restaurant,
                           fontWeight: FontWeight.w700,
                         ),
                       ],

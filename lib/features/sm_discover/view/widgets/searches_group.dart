@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -99,13 +100,13 @@ class _SearchChip extends StatelessWidget {
             const FaIcon(
               FontAwesomeIcons.magnifyingGlass,
               size: 12,
-              color: AppColors.primary,
+              color: SharedPlatformColors.supermarket,
             ),
             const SizedBox(width: 4),
             AppText(
               label,
               style: const TextStyle(
-                color: AppColors.primary,
+                color: SharedPlatformColors.supermarket,
                 fontSize: 10,
                 fontWeight: FontWeight.w300,
                 height: 19 / 10,

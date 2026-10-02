@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -175,6 +176,7 @@ class _SmOrderDetailsScreenState extends State<SmOrderDetailsScreen> {
         body: Column(
           children: [
             AppSimpleAppBar2(
+              accentColor: SharedPlatformColors.supermarket,
               title: 'تفاصيل الطلب',
               arrowBackType: ArrowBackType.cupertino,
             ),

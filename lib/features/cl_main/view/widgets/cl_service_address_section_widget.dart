@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,13 +54,13 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
                       children: [
                         const Icon(
                           Icons.location_on_rounded,
-                          color: Color(0xFF1E2A78),
+                          color: SharedPlatformColors.cleaning,
                           size: 18,
                         ),
                         const SizedBox(width: 6),
                         AppText.bodyLarge(
                           'عنوان الخدمة',
-                          color: const Color(0xFF1E2A78),
+                          color: SharedPlatformColors.cleaning,
                           fontWeight: FontWeight.w700,
                           textAlign: TextAlign.right,
                         ),
@@ -82,7 +83,7 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
                               child: AppText.labelLarge(
                                 'عرض',
                                 color: actionEnabled
-                                    ? const Color(0xFF1E2A78)
+                                    ? SharedPlatformColors.cleaning
                                     : const Color(0xFF9CA3AF),
                                 fontWeight: FontWeight.w700,
                               ),
@@ -175,8 +176,6 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
   }
 }
 
-
-
 class CleaningAddressSelectWidget extends StatelessWidget {
   const CleaningAddressSelectWidget({
     super.key,
@@ -184,7 +183,6 @@ class CleaningAddressSelectWidget extends StatelessWidget {
     this.showChangeAction = true,
     this.onChangeTap,
     this.afterBringDefault,
-
   });
 
   final ValueNotifier<AddressListItem?> selectedAddress;
@@ -193,16 +191,13 @@ class CleaningAddressSelectWidget extends StatelessWidget {
   final VoidCallback? onChangeTap;
   final VoidCallback? afterBringDefault;
 
-
   @override
   Widget build(BuildContext context) {
-    return
-
-      BlocProvider<ProfileBloc>(
+    return BlocProvider<ProfileBloc>(
       lazy: false,
       create: (_) =>
-      getIt<ProfileBloc>()
-        ..add(FetchAddressesEvent(params: FetchAddressesParams())),
+          getIt<ProfileBloc>()
+            ..add(FetchAddressesEvent(params: FetchAddressesParams())),
       child: BlocConsumer<ProfileBloc, ProfileState>(
         listener: (context, state) {
           if (state.addressesStatus != BlocStatus.success) return;
@@ -241,13 +236,13 @@ class CleaningAddressSelectWidget extends StatelessWidget {
                           children: [
                             const Icon(
                               Icons.location_on_rounded,
-                              color: Color(0xFF1E2A78),
+                              color: SharedPlatformColors.cleaning,
                               size: 18,
                             ),
                             const SizedBox(width: 6),
                             AppText.bodyLarge(
                               'عنوان الخدمة',
-                              color: const Color(0xFF1E2A78),
+                              color: SharedPlatformColors.cleaning,
                               fontWeight: FontWeight.w700,
                               textAlign: TextAlign.right,
                             ),
@@ -267,7 +262,7 @@ class CleaningAddressSelectWidget extends StatelessWidget {
                                 ),
                                 child: AppText.labelLarge(
                                   'عرض',
-                                  color: const Color(0xFF1E2A78),
+                                  color: SharedPlatformColors.cleaning,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -331,14 +326,14 @@ class CleaningAddressSelectWidget extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         ShimmerWidget(
-                          width: context.width*.3,
+                          width: context.width * .3,
                           height: 35,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         const Spacer(),
                         // if (showChangeAction)
                         ShimmerWidget(
-                          width: context.width*.15,
+                          width: context.width * .15,
                           height: 35,
                           borderRadius: BorderRadius.circular(10),
                         ),

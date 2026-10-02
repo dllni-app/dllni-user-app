@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
@@ -67,9 +68,7 @@ class SmAutocompleteDemoScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            SmSpecialAutocompleteField(
-              optionsForQuery: _optionsForQuery,
-            ),
+            SmSpecialAutocompleteField(optionsForQuery: _optionsForQuery),
             const SizedBox(height: 24),
             AppText(
               'هذه شاشة تجريبية فقط — القائمة ثابتة في الكود.',
@@ -88,10 +87,7 @@ class SmAutocompleteDemoScreen extends StatelessWidget {
 }
 
 class SmSpecialAutocompleteField extends StatefulWidget {
-  const SmSpecialAutocompleteField({
-    super.key,
-    required this.optionsForQuery,
-  });
+  const SmSpecialAutocompleteField({super.key, required this.optionsForQuery});
 
   final Iterable<String> Function(String raw) optionsForQuery;
 
@@ -100,7 +96,8 @@ class SmSpecialAutocompleteField extends StatefulWidget {
       _SmSpecialAutocompleteFieldState();
 }
 
-class _SmSpecialAutocompleteFieldState extends State<SmSpecialAutocompleteField> {
+class _SmSpecialAutocompleteFieldState
+    extends State<SmSpecialAutocompleteField> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   String? _hintOption;
@@ -233,7 +230,11 @@ class _SmSpecialAutocompleteFieldState extends State<SmSpecialAutocompleteField>
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.search, size: 20, color: Color(0xFF1E2A78)),
+                        const Icon(
+                          Icons.search,
+                          size: 20,
+                          color: SharedPlatformColors.supermarket,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Stack(
@@ -241,7 +242,9 @@ class _SmSpecialAutocompleteFieldState extends State<SmSpecialAutocompleteField>
                             children: [
                               Positioned.fill(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 11,
+                                  ),
                                   child: IgnorePointer(
                                     child: Align(
                                       alignment: Alignment.centerRight,
@@ -257,7 +260,8 @@ class _SmSpecialAutocompleteFieldState extends State<SmSpecialAutocompleteField>
                                             children: [
                                               if (typed.isEmpty && !hasHint)
                                                 const TextSpan(
-                                                  text: 'ابحث (Tab/الأيقونة للقبول, Esc للإلغاء)...',
+                                                  text:
+                                                      'ابحث (Tab/الأيقونة للقبول, Esc للإلغاء)...',
                                                   style: TextStyle(
                                                     color: Color(0xFF9CA3AF),
                                                     fontSize: 14,
@@ -280,14 +284,19 @@ class _SmSpecialAutocompleteFieldState extends State<SmSpecialAutocompleteField>
                               ),
                               Positioned.fill(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 11,
+                                  ),
                                   child: EditableText(
                                     controller: _controller,
                                     focusNode: _focusNode,
                                     style: fieldTextStyle,
                                     strutStyle: strutStyle,
-                                    cursorColor: const Color(0xFF1E2A78),
-                                    backgroundCursorColor: const Color(0xFF9CA3AF),
+                                    cursorColor:
+                                        SharedPlatformColors.supermarket,
+                                    backgroundCursorColor: const Color(
+                                      0xFF9CA3AF,
+                                    ),
                                     cursorWidth: 2.2,
                                     cursorRadius: const Radius.circular(2),
                                     selectionColor: const Color(0x331E2A78),

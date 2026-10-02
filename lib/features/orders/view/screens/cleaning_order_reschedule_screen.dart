@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -342,7 +343,10 @@ class _CleaningOrderRescheduleScreenState
               body: SafeArea(
                 child: Column(
                   children: [
-                    const PersonalDetailsAppBar(title: 'تعديل معلومات الحجز'),
+                    const PersonalDetailsAppBar(
+                      section: 'cleaning',
+                      title: 'تعديل معلومات الحجز',
+                    ),
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsetsDirectional.fromSTEB(
@@ -554,10 +558,10 @@ class _SummaryItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final labelColor = isTotal
-        ? const Color(0xFF1E2A78)
+        ? SharedPlatformColors.cleaning
         : const Color(0xFF6B7280);
     final valueColor = isTotal
-        ? const Color(0xFF1E2A78)
+        ? SharedPlatformColors.cleaning
         : const Color(0xFF374151);
     final fontWeight = isTotal ? FontWeight.w900 : FontWeight.w600;
 

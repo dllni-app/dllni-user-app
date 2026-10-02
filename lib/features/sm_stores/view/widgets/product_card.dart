@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:developer';
 
 import 'package:common_package/common_package.dart';
@@ -31,7 +32,7 @@ class _ProductButton extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: SharedPlatformColors.supermarket,
         borderRadius: BorderRadius.all(Radius.circular(8)),
       ),
       child: Row(

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -204,7 +205,7 @@ class _ProductCard2State extends State<ProductCard2> {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 11, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: SharedPlatformColors.supermarket,
                     borderRadius: BorderRadius.only(
                       topRight: Radius.circular(24),
                       bottomLeft: Radius.circular(24),

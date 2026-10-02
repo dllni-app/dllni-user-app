@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -7,7 +8,7 @@ class OrderVotingModeButton extends StatelessWidget {
     required this.title,
     required this.isActive,
     required this.onTap,
-    this.activeColor = const Color(0xFF6C63FF),
+    this.activeColor = SharedPlatformColors.restaurant,
   });
 
   final String title;

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -42,12 +43,12 @@ class OrderVotingCreatedPollsList extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: context.primaryContainer.withAlpha(40),
+                          color: SharedPlatformColors.restaurant.withAlpha(40),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
                           Icons.how_to_vote_outlined,
-                          color: context.primaryContainer,
+                          color: SharedPlatformColors.restaurant,
                           size: 22,
                         ),
                       ),
@@ -70,7 +71,7 @@ class OrderVotingCreatedPollsList extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right, color: context.primary),
+                      Icon(Icons.chevron_right, color: SharedPlatformColors.restaurant),
                     ],
                   ),
                 ),

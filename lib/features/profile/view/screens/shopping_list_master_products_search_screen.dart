@@ -65,6 +65,7 @@ class _ShoppingListMasterProductsSearchScreenState
       body: Column(
         children: [
           AppSimpleAppBar2(
+            accentColor: SharedPlatformColors.supermarket,
             title: 'اختر منتجاتك',
             arrowBackType: ArrowBackType.cupertino,
           ),

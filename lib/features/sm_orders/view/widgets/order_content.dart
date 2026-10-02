@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -96,7 +97,7 @@ class _OrderContentRow extends StatelessWidget {
           AppText(
             "$price ل.س",
             style: TextStyle(
-              color: AppColors.primary,
+              color: SharedPlatformColors.supermarket,
               fontSize: 12,
               height: 16 / 12,
             ),

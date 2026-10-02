@@ -22,8 +22,7 @@ class CleaningOrderSosScreen extends StatefulWidget {
   final CleaningOrderSosArgs args;
 
   @override
-  State<CleaningOrderSosScreen> createState() =>
-      _CleaningOrderSosScreenState();
+  State<CleaningOrderSosScreen> createState() => _CleaningOrderSosScreenState();
 }
 
 class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
@@ -72,9 +71,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   String? _validateMessage() {
     final message = _messageController.text.trim();
     if (message.isEmpty) {
-      return _isEmergency
-          ? 'يرجى وصف حالة الطوارئ'
-          : 'يرجى وصف المشكلة';
+      return _isEmergency ? 'يرجى وصف حالة الطوارئ' : 'يرجى وصف المشكلة';
     }
     if (message.length < 3) return 'يرجى كتابة 3 أحرف على الأقل';
     if (message.length > 1000) return 'يجب ألا تتجاوز الرسالة 1000 حرف';
@@ -106,10 +103,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   Future<({double? latitude, double? longitude})> _tryResolveLocation() async {
     try {
       final location = await getIt<UserLocationService>().getCurrentPosition();
-      return (
-        latitude: location.latitude,
-        longitude: location.longitude,
-      );
+      return (latitude: location.latitude, longitude: location.longitude);
     } catch (_) {
       return (latitude: null, longitude: null);
     }
@@ -157,17 +151,16 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
       return;
     }
 
-    final result = await CreateCleaningComplaintUseCase(
-      ordersRepo: getIt<OrdersRepo>(),
-    )(
-      CreateCleaningComplaintParams(
-        orderId: widget.args.orderId,
-        category: _selectedCategory!,
-        description: _messageController.text,
-        attachmentPaths: _attachments.map((file) => file.path).toList(),
-        clientRequestId: requestId,
-      ),
-    );
+    final result =
+        await CreateCleaningComplaintUseCase(ordersRepo: getIt<OrdersRepo>())(
+          CreateCleaningComplaintParams(
+            orderId: widget.args.orderId,
+            category: _selectedCategory!,
+            description: _messageController.text,
+            attachmentPaths: _attachments.map((file) => file.path).toList(),
+            clientRequestId: requestId,
+          ),
+        );
 
     if (!mounted) return;
     result.fold(_handleFailure, _handleSuccess);
@@ -175,9 +168,9 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
 
   void _handleFailure(Failure failure) {
     setState(() => _submitting = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(failure.message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(failure.message)));
   }
 
   void _handleSuccess(CleaningSosAlertModel supportCase) {
@@ -213,7 +206,10 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const PersonalDetailsAppBar(title: 'الدعم والبلاغات'),
+            const PersonalDetailsAppBar(
+              section: 'cleaning',
+              title: 'الدعم والبلاغات',
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsetsDirectional.all(20),
@@ -249,9 +245,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                             _isEmergency
                                 ? 'إرسال بلاغ الطوارئ'
                                 : 'إرسال الشكوى',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                   ),
                 ),
@@ -312,9 +306,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _isEmergency
-                          ? 'ما حالة الطوارئ؟'
-                          : 'ما نوع المشكلة؟',
+                      _isEmergency ? 'ما حالة الطوارئ؟' : 'ما نوع المشكلة؟',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -328,10 +320,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                 _isEmergency
                     ? 'استخدم هذا الخيار للحالات العاجلة. سنحاول إرفاق موقعك، ولن يتوقف الإرسال إذا تعذر تحديده.'
                     : 'سيتم فتح حالة متابعة رسمية مرتبطة بالحجز وتظهر لفريق الدعم.',
-                style: const TextStyle(
-                  color: Color(0xff6B7280),
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Color(0xff6B7280), fontSize: 13),
               ),
               const SizedBox(height: 16),
               ...options.map(
@@ -342,9 +331,8 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                     selected: _selectedCategory == option.value,
                     onTap: _submitting
                         ? null
-                        : () => setState(
-                              () => _selectedCategory = option.value,
-                            ),
+                        : () =>
+                              setState(() => _selectedCategory = option.value),
                   ),
                 ),
               ),
@@ -423,8 +411,8 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                         onDeleted: _submitting
                             ? null
                             : () => setState(
-                                  () => _attachments.removeAt(entry.key),
-                                ),
+                                () => _attachments.removeAt(entry.key),
+                              ),
                       ),
                     ),
                     if (_attachments.length < 4)
@@ -456,10 +444,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
           Text(
             _statusLabel(supportCase.status),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
@@ -495,7 +480,9 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
     required IconData icon,
   }) {
     final selected = _kind == value;
-    final color = value == 'emergency' ? context.error : const Color(0xff20BFC8);
+    final color = value == 'emergency'
+        ? context.error
+        : const Color(0xff20BFC8);
 
     return InkWell(
       onTap: () => _selectKind(value),
@@ -506,9 +493,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
         decoration: BoxDecoration(
           color: selected ? color.withValues(alpha: 0.10) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected ? color : Colors.transparent,
-          ),
+          border: Border.all(color: selected ? color : Colors.transparent),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

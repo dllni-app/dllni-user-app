@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/smart_search_model.dart';
@@ -11,12 +12,18 @@ class SmartSearchResultsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = model.data;
     final supermarket = data.section == 'supermarket';
+    final accent = supermarket
+        ? SharedPlatformColors.supermarket
+        : SharedPlatformColors.restaurant;
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: accent,
+        foregroundColor: Colors.white,
+        surfaceTintColor: accent,
         title: Text(
           supermarket ? 'نتائج البحث الذكي' : 'اقتراحات المطاعم',
-          style: const TextStyle(fontFamily: 'Cairo'),
+          style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
         ),
       ),
       backgroundColor: const Color(0xFFF7F8FA),
@@ -176,7 +183,10 @@ class _UnderstandingCard extends StatelessWidget {
                       (label) => Chip(
                         label: Text(
                           label,
-                          style: const TextStyle(fontFamily: 'Cairo'),
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     )
@@ -301,13 +311,16 @@ class _ProductLine extends StatelessWidget {
       child: ListTile(
         title: Text(
           product['name']?.toString() ?? '-',
-          style: const TextStyle(fontFamily: 'Cairo'),
+          style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
         ),
         subtitle: parts.isEmpty
             ? null
             : Text(
                 parts.join(' • '),
-                style: const TextStyle(fontFamily: 'Cairo'),
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  color: Colors.white,
+                ),
               ),
       ),
     );
@@ -339,7 +352,10 @@ class _RecipeCard extends StatelessWidget {
             ? null
             : Text(
                 'الكميات محسوبة لـ $servings أشخاص',
-                style: const TextStyle(fontFamily: 'Cairo'),
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  color: Colors.white,
+                ),
               ),
       ),
     );
@@ -367,7 +383,7 @@ class _ItemsCard extends StatelessWidget {
             leading: const Icon(Icons.check_circle_outline),
             title: Text(
               item['query']?.toString() ?? '-',
-              style: const TextStyle(fontFamily: 'Cairo'),
+              style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
             ),
             trailing: trailing == null
                 ? null
@@ -404,7 +420,7 @@ class _StoreCard extends StatelessWidget {
         ),
         subtitle: Text(
           'يغطي ${(coverage * 100).round()}% من الطلب',
-          style: const TextStyle(fontFamily: 'Cairo'),
+          style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
         ),
         children: rows.map((raw) {
           final row = _map(raw);
@@ -419,11 +435,11 @@ class _StoreCard extends StatelessWidget {
             ),
             title: Text(
               item['query']?.toString() ?? '-',
-              style: const TextStyle(fontFamily: 'Cairo'),
+              style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
             ),
             subtitle: Text(
               product == null ? 'غير متوفر' : product['name']?.toString() ?? '',
-              style: const TextStyle(fontFamily: 'Cairo'),
+              style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
             ),
           );
         }).toList(),
@@ -461,7 +477,10 @@ class _StoreOnlyCard extends StatelessWidget {
             ? null
             : Text(
                 parts.join(' • '),
-                style: const TextStyle(fontFamily: 'Cairo'),
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  color: Colors.white,
+                ),
               ),
       ),
     );
@@ -492,7 +511,10 @@ class _UnresolvedCard extends StatelessWidget {
             ...items.map(
               (raw) => Text(
                 '• ${_map(raw)['query']?.toString() ?? '-'}',
-                style: const TextStyle(fontFamily: 'Cairo'),
+                style: const TextStyle(
+                  fontFamily: 'Cairo',
+                  color: Colors.white,
+                ),
               ),
             ),
           ],

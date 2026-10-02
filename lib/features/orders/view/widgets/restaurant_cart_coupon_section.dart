@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/generated/assets.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,8 @@ class RestaurantCartCouponSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final couponStatus = couponStatusSelector?.call(state) ?? state.couponStatus;
+    final couponStatus =
+        couponStatusSelector?.call(state) ?? state.couponStatus;
     final couponData = couponDataSelector?.call(state) ?? state.couponData;
     final couponErrorMessage =
         couponErrorSelector?.call(state) ?? state.couponErrorMessage;
@@ -51,7 +53,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
             children: [
               AppImage.asset(
                 Assets.images.rsProfileCoupon.path,
-                color: context.primaryContainer,
+                color: SharedPlatformColors.restaurant,
               ),
               const SizedBox(width: 6),
               AppText.bodyLarge(
@@ -100,7 +102,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
                         context.read<OrdersBloc>().add(eventBuilder(code));
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff1E2A78),
+                  backgroundColor: SharedPlatformColors.restaurant,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsetsDirectional.symmetric(
                     vertical: 12,
@@ -200,8 +202,7 @@ class RestaurantCartCouponSection extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: AppText.labelLarge(
-                      couponErrorMessage ??
-                          'تعذر التحقق من الكوبون حالياً.',
+                      couponErrorMessage ?? 'تعذر التحقق من الكوبون حالياً.',
                       color: const Color(0xffB91C1C),
                       fontWeight: FontWeight.w600,
                     ),

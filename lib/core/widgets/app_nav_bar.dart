@@ -9,10 +9,12 @@ class AppNavBar extends StatelessWidget {
     required this.items,
     required this.onChanged,
     required this.selectedIndex,
+    this.accentColor = AppColors.primary,
   });
   final List<AppNavBarItem> items;
   final void Function(int index) onChanged;
   final int selectedIndex;
+  final Color accentColor;
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
@@ -45,7 +47,7 @@ class AppNavBar extends StatelessWidget {
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
+                            color: accentColor,
                             borderRadius: BorderRadius.all(
                               Radius.circular(100),
                             ),
@@ -56,13 +58,13 @@ class AppNavBar extends StatelessWidget {
                   FaIcon(
                     items[index].icon,
                     size: 18,
-                    color: isSelected ? AppColors.primary : Color(0xFFA5AAC9),
+                    color: isSelected ? accentColor : Color(0xFFA5AAC9),
                   ),
                   SizedBox(height: 4),
                   Text(
                     items[index].title,
                     style: TextStyle(
-                      color: isSelected ? AppColors.primary : Color(0xFFA5AAC9),
+                      color: isSelected ? accentColor : Color(0xFFA5AAC9),
                       fontSize: 10,
                       fontWeight: isSelected
                           ? FontWeight.w700

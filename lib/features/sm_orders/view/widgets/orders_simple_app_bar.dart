@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -48,7 +49,7 @@ class _SimpleAppBarWithTabBarState extends State<SimpleAppBarWithTabBar> {
               AppText(
                 widget.title,
                 style: TextStyle(
-                  color: AppColors.primary,
+                  color: SharedPlatformColors.supermarket,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   height: 32 / 20,
@@ -71,7 +72,7 @@ class _SimpleAppBarWithTabBarState extends State<SimpleAppBarWithTabBar> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: selectedTab == index
-                              ? AppColors.primary
+                              ? SharedPlatformColors.supermarket
                               : Color(0xFF64748B),
                           fontSize: 14,
                           fontWeight: selectedTab == index
@@ -92,7 +93,7 @@ class _SimpleAppBarWithTabBarState extends State<SimpleAppBarWithTabBar> {
             widget.items.length,
             (index) => Expanded(
               child: selectedTab == index
-                  ? Divider(height: 1, thickness: 1, color: AppColors.primary)
+                  ? Divider(height: 1, thickness: 1, color: SharedPlatformColors.supermarket)
                   : SizedBox.shrink(),
             ),
           ),

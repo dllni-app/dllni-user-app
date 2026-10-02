@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +16,7 @@ class ClServicePreviousWorkersSectionWidget extends StatefulWidget {
     super.key,
   });
 
-  static const Color _screenBlue = Color(0xFF1E2A78);
+  static const Color _screenBlue = SharedPlatformColors.cleaning;
   static const Color _neutralBorder = Color(0xFFE5E7EB);
 
   final List<PreviousWorkerModel> workers;
@@ -189,8 +190,7 @@ class _ClServicePreviousWorkersSectionWidgetState
                       isSelected: selectedIds.contains(worker.id),
                       subtitle: _workerSubtitle(worker),
                       onToggle: () => _toggleWorker(worker),
-                      onOpenDetails: () =>
-                          widget.onOpenWorkerProfile(worker),
+                      onOpenDetails: () => widget.onOpenWorkerProfile(worker),
                     );
                   },
                 ),

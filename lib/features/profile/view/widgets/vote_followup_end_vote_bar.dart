@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -40,7 +41,7 @@ class VoteFollowupEndVoteBar extends StatelessWidget {
                   elevation: 4,
                   shadowColor: Colors.black.withAlpha(30),
                   minimumSize: const Size.fromHeight(42),
-                  backgroundColor: context.primary,
+                  backgroundColor: SharedPlatformColors.restaurant,
                   foregroundColor: context.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),

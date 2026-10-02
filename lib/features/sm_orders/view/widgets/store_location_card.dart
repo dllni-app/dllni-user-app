@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -53,7 +54,7 @@ class StoreLocationCard extends StatelessWidget {
                       AppText(
                         "متجر النور",
                         style: TextStyle(
-                          color: AppColors.primary,
+                          color: SharedPlatformColors.supermarket,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           height: 20 / 14,
@@ -73,13 +74,13 @@ class StoreLocationCard extends StatelessWidget {
                               children: [
                                 TextSpan(
                                   text: "4.8",
-                                  style: TextStyle(color: AppColors.primary),
+                                  style: TextStyle(color: SharedPlatformColors.supermarket),
                                 ),
                                 TextSpan(text: " • غذائية منظفات"),
                               ],
                             ),
                             style: TextStyle(
-                              color: AppColors.primary,
+                              color: SharedPlatformColors.supermarket,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               height: 16 / 12,

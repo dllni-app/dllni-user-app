@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:developer';
 
 import 'package:common_package/common_package.dart';
@@ -173,7 +174,7 @@ class _ProductCardState extends State<ProductCard> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 11, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: SharedPlatformColors.supermarket,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(24),
                         bottomRight: Radius.circular(24),
