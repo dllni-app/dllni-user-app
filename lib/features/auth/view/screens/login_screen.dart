@@ -16,8 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:toastification/toastification.dart';
 
-import '../../../../core/widgets/phone_number_widget/my_phone_number_field_widget.dart';
-
 /// Reference auth layout shared with [RegisterScreen]. Route: `/login`.
 @AutoRoutePage(path: '/login')
 class LoginScreen extends StatefulWidget {
@@ -62,22 +60,20 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color _iconGray = Color(0xff6B7280);
 
   late final ValueNotifier<String> phoneValue;
-
-  late final FocusNode phoneFocusNode;
   late final FocusNode passwordFocus;
 
   @override
   void initState() {
-    phoneValue = ValueNotifier('');
-    phoneFocusNode = FocusNode();
-    passwordFocus = FocusNode();
-    // TODO: implement initState
     super.initState();
+    phoneValue = ValueNotifier('');
+    passwordFocus = FocusNode();
   }
 
   @override
   void dispose() {
     _passwordController.dispose();
+    phoneValue.dispose();
+    passwordFocus.dispose();
     super.dispose();
   }
 
@@ -193,7 +189,9 @@ class _LoginScreenState extends State<LoginScreen> {
             if (token != null && token.isNotEmpty) {
               await persistLoginSessionData(state.loginResult!);
               if (context.mounted) {
-                final resumed = await AuthGate.resumePendingActionIfAny(context);
+                final resumed = await AuthGate.resumePendingActionIfAny(
+                  context,
+                );
                 if (!resumed && context.mounted) {
                   final nav = context.pushRouteAndRemoveUntil('/main');
                   if (nav != null) await nav;
@@ -219,36 +217,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // AppPhoneNumberField(
-                    //   key: _phoneFieldKey,
-                    //   label: 'رقم الجوال',
-                    //   isRequired: true,
-                    //   enabled: !loading,
-                    //   variant: AppPhoneFieldVariant.auth,
-                    //   onChanged: (number) => _phone = number,
-                    // ),
-                    Row(
-                      children: [
-                        AppText.bodyMedium(
-                          'رقم الجوال',
-                          fontWeight: FontWeight.w500,
-                        ),
-                        AppText.bodyMedium(
-                          '*',
-                          color: context.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    MyPhoneNumberField(
-                      internationalPhoneValue: phoneValue,
-                      hintText: 'رقم الجوال',
-                      isMargin: false,
-                      textInputAction: TextInputAction.next,
-                      focusNode: phoneFocusNode,
-                      onSubmitted: (_) {
-                        FocusScope.of(context).requestFocus(passwordFocus);
+                    AppPhoneNumberField(
+                      key: _phoneFieldKey,
+                      label: 'رقم الجوال',
+                      isRequired: true,
+                      hintText: '9XXXXXXXX',
+                      enabled: !loading,
+                      variant: AppPhoneFieldVariant.auth,
+                      onChanged: (number) {
+                        phoneValue.value = number.phoneNumber ?? '';
                       },
                     ),
                     const SizedBox(height: 18),

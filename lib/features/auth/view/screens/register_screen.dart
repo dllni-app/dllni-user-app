@@ -166,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 8),
                     MyPhoneNumberField(
                       internationalPhoneValue: _phoneValue,
-                      hintText: 'رقم الجوال',
+                      hintText: '9XXXXXXXX',
                       isMargin: false,
                       enabled: !loading,
                       textInputAction: TextInputAction.next,

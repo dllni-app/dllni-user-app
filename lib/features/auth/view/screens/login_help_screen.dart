@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/widgets/support_whatsapp_launcher.dart';
+import 'package:dllni_user_app/generated/assets.dart';
 import 'package:flutter/material.dart';
 
 class LoginHelpScreen extends StatelessWidget {
@@ -164,14 +165,36 @@ class _LoginHelpHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
+          SizedBox(
+            width: 48,
+            height: 38,
+            child: AppImage.asset(
+              Assets.images.appLogo.path,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 8),
           const Expanded(
-            child: Text(
-              'مساعدة تسجيل الدخول',
-              style: TextStyle(
-                color: _LoginHelpScreenColors.ink,
-                fontSize: 19,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ع الندهة',
+                  style: TextStyle(
+                    color: _LoginHelpScreenColors.navy,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'مساعدة تسجيل الدخول',
+                  style: TextStyle(
+                    color: _LoginHelpScreenColors.ink,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

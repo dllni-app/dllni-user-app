@@ -153,7 +153,8 @@ class MyPhoneNumberField extends StatelessWidget {
               ),
             ),
           ),
-          showDropdownIcon: true,
+          // Syria is the only supported auth calling code; keep +963 visible and fixed.
+          showDropdownIcon: false,
           focusNode: focusNode,
           controller: controller,
           onChanged: (phone) {

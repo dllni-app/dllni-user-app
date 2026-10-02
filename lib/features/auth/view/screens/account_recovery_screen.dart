@@ -147,6 +147,7 @@ class _AccountRecoveryScreenState extends State<AccountRecoveryScreen> {
               key: _phoneFieldKey,
               label: 'رقم الجوال',
               isRequired: true,
+              hintText: '9XXXXXXXX',
               enabled: !_loading && !_codeSent,
               variant: AppPhoneFieldVariant.auth,
               onChanged: (number) => _phone = number,

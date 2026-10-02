@@ -42,39 +42,33 @@ class AuthScreenChrome extends StatelessWidget {
               24,
               24,
             ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: AlignmentDirectional.topStart,
-                end: AlignmentDirectional.bottomEnd,
-                colors: [
-                  Color(0xFF172554),
-                  Color(0xFF1E2A78),
-                  Color(0xFF6C63FF),
-                ],
-              ),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFFF7F8FA)),
             child: Column(
               children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(28),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withAlpha(34)),
-                  ),
+                SizedBox(
+                  width: 112,
+                  height: 86,
                   child: AppImage.asset(
                     Assets.images.appLogo.path,
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 6),
+                const Text(
+                  'ع الندهة',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF1E2A78),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 18),
                 Text(
                   title,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF172033),
                     fontSize: 21,
                     fontWeight: FontWeight.w900,
                   ),
@@ -84,7 +78,7 @@ class AuthScreenChrome extends StatelessWidget {
                   subtitle,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: Color(0xFFE7E9FF),
+                    color: Color(0xFF667085),
                     fontSize: 12,
                     height: 1.45,
                   ),
