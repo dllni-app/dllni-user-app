@@ -442,14 +442,14 @@ class _ClMainServiceScheduleScreenState
 
     if (_serviceExtras.openTime != null) {
       return _workerAutoSelectionInfo(
-        'سيختار دلّني العمال تلقائياً حسب عدد العمال المحدد للخدمة المفتوحة.',
+        'سيختار دللني العمال تلقائياً حسب عدد العمال المحدد للخدمة المفتوحة.',
       );
     }
 
     if (_isRecurring &&
         _recurringWorkerScope == CleaningRecurringWorkerScope.any) {
       return _workerAutoSelectionInfo(
-        'سيختار دلّني العمال المناسبين لكل زيارة دورية تلقائياً.',
+        'سيختار دللني العمال المناسبين لكل زيارة دورية تلقائياً.',
       );
     }
 
@@ -573,7 +573,7 @@ class _ClMainServiceScheduleScreenState
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: const Text(
-                'اختياري — يمكنك ترك دلّني يوزّع الغرف تلقائياً.',
+                'اختياري — يمكنك ترك دللني يوزّع الغرف تلقائياً.',
                 textAlign: TextAlign.start,
               ),
             ),

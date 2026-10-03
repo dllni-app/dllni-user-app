@@ -73,23 +73,15 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClServiceTimePickerFieldWidget(
-                        title: 'من',
-                        controller: fromTimeController,
-                        onTap: onPickFromTime,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ClServiceTimePickerFieldWidget(
-                        title: 'إلى',
-                        controller: toTimeController,
-                      ),
-                    ),
-                  ],
+                ClServiceTimePickerFieldWidget(
+                  title: 'من',
+                  controller: fromTimeController,
+                  onTap: onPickFromTime,
+                ),
+                const SizedBox(height: 12),
+                ClServiceTimePickerFieldWidget(
+                  title: 'إلى',
+                  controller: toTimeController,
                 ),
               ],
             ),

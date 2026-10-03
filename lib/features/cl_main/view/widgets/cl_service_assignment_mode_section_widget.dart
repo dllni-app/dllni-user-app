@@ -27,13 +27,13 @@ class ClServiceAssignmentModeSectionWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.bodySmall(
-            'يمكنك ترك دلّني يختار العمال المناسبين، أو اختيار عامل تعاملت معه سابقاً.',
+            'يمكنك ترك دللني يختار العمال المناسبين، أو اختيار عامل تعاملت معه سابقاً.',
             color: const Color(0xFF6B7280),
             textAlign: TextAlign.right,
           ),
           const SizedBox(height: 12),
           _ModeOption(
-            label: 'دع دلّني يختار العمال',
+            label: 'دع دللني يختار العمال',
             description:
                 'الخيار الموصى به — نبحث عن الفريق المتاح والمناسب لطلبك.',
             isRecommended: true,
