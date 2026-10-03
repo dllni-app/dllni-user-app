@@ -474,6 +474,12 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     ResetCreateOrderStatusEvent event,
     Emitter<ClMainState> emit,
   ) {
-    emit(state.copyWith(createOrderStatus: BlocStatus.init));
+    emit(
+      state.copyWith(
+        createOrderStatus: BlocStatus.init,
+        clearCreateOrderResult: true,
+        clearErrorMessage: true,
+      ),
+    );
   }
 }
