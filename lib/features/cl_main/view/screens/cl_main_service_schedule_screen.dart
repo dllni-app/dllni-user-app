@@ -645,6 +645,9 @@ class _ClMainServiceScheduleScreenState
     if (args is ClMainScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
+      // Defensive reset for direct/reused navigation into this screen. The
+      // create-order result belongs only to the current explicit submission.
+      _bloc?.add(ResetCreateOrderStatusEvent());
       _currentEstimate = args.estimate;
       selectedAddress = ValueNotifier(
         args.defaultAddress ?? widget.item?.defaultAddress,
