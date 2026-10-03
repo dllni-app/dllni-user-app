@@ -75,7 +75,7 @@ class _SplashContent extends StatelessWidget {
                   child: Image.asset(
                     'assets/images/app_logo.png',
                     fit: BoxFit.contain,
-                    semanticLabel: 'دلني',
+                    semanticLabel: 'دللني',
                   ),
                 ),
               ),
