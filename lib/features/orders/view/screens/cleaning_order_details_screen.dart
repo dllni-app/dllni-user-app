@@ -590,44 +590,36 @@ class _CleaningOrderDetailsScreenState
                                   fontWeight: FontWeight.w700,
                                 ),
                                 const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: ClServiceTimePickerFieldWidget(
-                                        title: 'من',
-                                        controller: _fromTimeController,
-                                        onTap: hideEditActions
-                                            ? null
-                                            : () {
-                                                if (editLocked) {
-                                                  _showLeadTimeLockedMessage(
-                                                    leadTimeCheck,
-                                                  );
-                                                  return;
-                                                }
-                                                _goToReschedule(order);
-                                              },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: ClServiceTimePickerFieldWidget(
-                                        title: 'إلى',
-                                        controller: _toTimeController,
-                                        onTap: hideEditActions
-                                            ? null
-                                            : () {
-                                                if (editLocked) {
-                                                  _showLeadTimeLockedMessage(
-                                                    leadTimeCheck,
-                                                  );
-                                                  return;
-                                                }
-                                                _goToReschedule(order);
-                                              },
-                                      ),
-                                    ),
-                                  ],
+                                ClServiceTimePickerFieldWidget(
+                                  title: 'من',
+                                  controller: _fromTimeController,
+                                  onTap: hideEditActions
+                                      ? null
+                                      : () {
+                                          if (editLocked) {
+                                            _showLeadTimeLockedMessage(
+                                              leadTimeCheck,
+                                            );
+                                            return;
+                                          }
+                                          _goToReschedule(order);
+                                        },
+                                ),
+                                const SizedBox(height: 12),
+                                ClServiceTimePickerFieldWidget(
+                                  title: 'إلى',
+                                  controller: _toTimeController,
+                                  onTap: hideEditActions
+                                      ? null
+                                      : () {
+                                          if (editLocked) {
+                                            _showLeadTimeLockedMessage(
+                                              leadTimeCheck,
+                                            );
+                                            return;
+                                          }
+                                          _goToReschedule(order);
+                                        },
                                 ),
                               ],
                             ),
