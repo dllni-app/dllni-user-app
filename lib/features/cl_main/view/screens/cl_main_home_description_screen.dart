@@ -312,6 +312,10 @@ class _ClMainHomeDescriptionScreenState
     );
 
     _isEstimatingForContinue = true;
+    // A shared ClMainBloc can still contain the success/result of the
+    // previous booking. Clear it before starting a new estimate so opening
+    // the schedule cannot replay the previous order success.
+    bloc.add(ResetCreateOrderStatusEvent());
     bloc.add(
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams(
