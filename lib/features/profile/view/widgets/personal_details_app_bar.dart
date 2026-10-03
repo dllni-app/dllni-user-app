@@ -73,7 +73,7 @@ class PersonalDetailsAppBar extends StatelessWidget {
               foregroundColor: foreground,
               minimumSize: const Size(44, 44),
             ),
-            icon: const Icon(Icons.arrow_forward_rounded),
+            icon: const Icon(Icons.arrow_back_rounded),
           ),
           const SizedBox(width: 10),
           Expanded(
