@@ -55,6 +55,7 @@ class ClMainState {
     Map<String, List<String>>? assignmentFieldErrors,
     bool clearAssignmentFieldErrors = false,
     CreateCleaningOrderResponseModel? createOrderResult,
+    bool clearCreateOrderResult = false,
     BlocStatus? createOrderStatus,
     String? errorMessage,
     bool clearErrorMessage = false,
@@ -81,7 +82,9 @@ class ClMainState {
       assignmentFieldErrors: clearAssignmentFieldErrors
           ? const <String, List<String>>{}
           : (assignmentFieldErrors ?? this.assignmentFieldErrors),
-      createOrderResult: createOrderResult ?? this.createOrderResult,
+      createOrderResult: clearCreateOrderResult
+          ? null
+          : (createOrderResult ?? this.createOrderResult),
       createOrderStatus: createOrderStatus ?? this.createOrderStatus,
       errorMessage: clearErrorMessage
           ? null
