@@ -37,6 +37,22 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<CleaningMultiDayOrderEnvelope> rejectCompletion({
+    required int orderId,
+    required int sessionId,
+    String? reason,
+  }) {
+    final data = <String, dynamic>{};
+    final trimmedReason = reason?.trim();
+    if (trimmedReason != null && trimmedReason.isNotEmpty) {
+      data['reason'] = trimmedReason;
+    }
+    return _post(
+      '/api/v1/cleaning-bookings/$orderId/sessions/$sessionId/completion/reject',
+      data: data,
+    );
+  }
+
   Future<CleaningMultiDayOrderEnvelope> _post(
     String endpoint, {
     Map<String, dynamic>? data,
