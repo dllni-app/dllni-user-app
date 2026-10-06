@@ -5,6 +5,22 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CleaningOrderDetailModel parsing', () {
+    test('ignores a non-open-time backend payload', () {
+      final detail = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 55,
+          'openTime': <String, dynamic>{
+            'isOpenTime': false,
+            'workerCount': 1,
+            'expectedMaxMinutes': 60,
+          },
+        },
+      }).data;
+
+      expect(detail, isNotNull);
+      expect(detail!.openTime, isNull);
+    });
+
     test('parses a recurring schedule change approval state', () {
       final model = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
         'data': <String, dynamic>{
