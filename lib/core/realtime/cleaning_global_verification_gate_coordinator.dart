@@ -805,6 +805,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
           orderId: orderId,
           completionRequest: completionRequest,
           reason: reason,
+          sessionId: completionTarget.sessionId,
         ),
         onExtend: (minutes) => _submitExtendCompletionTime(
           orderId: orderId,
@@ -1009,6 +1010,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         } else {
           _gateSession.clearStartDismissed(orderId);
         }
+        CleaningTrackingSessionBus.requestRefresh(orderId);
         return null;
       } catch (error) {
         return _mapSessionVerificationError(error);
@@ -1213,7 +1215,46 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     required int orderId,
     required CleaningCompletionRequestModel completionRequest,
     String? reason,
+    int? sessionId,
   }) async {
+    if (sessionId != null) {
+      try {
+        await getIt<CleaningSessionRemoteDataSource>().rejectCompletion(
+          orderId: orderId,
+          sessionId: sessionId,
+          reason: reason,
+        );
+
+        final details = await _fetchOrderDetails(orderId);
+        if (details != null) {
+          _syncGateSessionWithDetails(details);
+        } else {
+          _gateSession.clearCompletionAwaitingCycle(orderId);
+        }
+        CleaningTrackingSessionBus.requestRefresh(orderId);
+        return null;
+      } catch (error) {
+        final message = error.toString().toLowerCase();
+        if (message.contains('422') ||
+            message.contains('invalid') ||
+            message.contains('not waiting') ||
+            message.contains('awaiting')) {
+          return 'لا يمكن رفض إكمال هذه الجلسة في حالتها الحالية. حدّث الطلب وحاول مرة أخرى.';
+        }
+        if (message.contains('403') ||
+            message.contains('forbidden') ||
+            message.contains('not allowed')) {
+          return 'غير مسموح برفض إكمال هذه الجلسة.';
+        }
+        if (message.contains('socket') ||
+            message.contains('connection') ||
+            message.contains('nointernet')) {
+          return 'لا يوجد اتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.';
+        }
+        return 'تعذر رفض إكمال هذه الجلسة. حدّث الطلب وحاول مرة أخرى.';
+      }
+    }
+
     final response = await getIt<RejectCleaningCompletionUseCase>()(
       RejectCleaningCompletionParams(
         orderId: orderId,
