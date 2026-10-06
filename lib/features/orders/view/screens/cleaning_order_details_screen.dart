@@ -1828,8 +1828,12 @@ class _CleaningOrderDetailsScreenState
         completionRequest,
         sessionId: ratingTarget.sessionId,
       ),
-      onReject: (reason) =>
-          _submitCompletionReject(order, completionRequest, reason),
+      onReject: (reason) => _submitCompletionReject(
+        order,
+        completionRequest,
+        reason,
+        sessionId: ratingTarget.sessionId,
+      ),
       onExtend: (minutes) =>
           _submitExtendTime(order, completionRequest, minutes),
       fetchExtensionTimeRanges: () => _fetchExtensionTimeRanges(orderId),
@@ -2159,14 +2163,43 @@ class _CleaningOrderDetailsScreenState
   Future<String?> _submitCompletionReject(
     CleaningOrderDetailModel order,
     CleaningCompletionRequestModel completionRequest,
-    String? reason,
-  ) async {
+    String? reason, {
+    int? sessionId,
+  }) async {
     final orderId = order.id;
     if (orderId == null) return 'تعذر تحديد الطلب';
     setState(() {
       _gateSubmitting = true;
       _gateError = null;
     });
+
+    if (sessionId != null) {
+      try {
+        await getIt<CleaningSessionRemoteDataSource>().rejectCompletion(
+          orderId: orderId,
+          sessionId: sessionId,
+          reason: reason,
+        );
+        await _fetchDetails(showLoading: false);
+        if (!mounted) return 'تعذر تحديث الحالة';
+        setState(() {
+          _gateSubmitting = false;
+          _gateError = null;
+        });
+        CleaningTrackingSessionBus.requestRefresh(orderId);
+        return null;
+      } catch (error) {
+        if (!mounted) return 'تعذر تحديث الحالة';
+        const errorMessage =
+            'تعذر رفض إكمال هذه الجلسة. حدّث الطلب وتحقق من حالتها ثم حاول مرة أخرى.';
+        setState(() {
+          _gateSubmitting = false;
+          _gateError = errorMessage;
+        });
+        return errorMessage;
+      }
+    }
+
     final response = await getIt<RejectCleaningCompletionUseCase>()(
       RejectCleaningCompletionParams(
         orderId: orderId,
