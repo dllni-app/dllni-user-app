@@ -1427,10 +1427,19 @@ class _CleaningOrderDetailsScreenState
   Future<void> _navigateToRating(
     CleaningOrderDetailModel order, {
     required int? workerId,
+    int? sessionId,
   }) async {
     if (!mounted || order.id == null) return;
+    final ratingTarget = await _resolveSessionRatingTarget(
+      order.id!,
+      preferredWorkerId: workerId ?? order.workerId,
+    );
+    if (!mounted) return;
+    final resolvedWorkerId =
+        workerId ?? ratingTarget.workerId ?? order.workerId;
+    final resolvedSessionId = sessionId ?? ratingTarget.sessionId;
     final workerProfile = await resolveCleaningWorkerProfileForRating(
-      workerId: workerId,
+      workerId: resolvedWorkerId,
       fetchWorkerProfile: (params) =>
           getIt<FetchCleaningWorkerProfileUseCase>()(params),
       onError: (message) {
@@ -1443,6 +1452,7 @@ class _CleaningOrderDetailsScreenState
     if (!mounted || workerProfile == null) return;
     final ratingArgs = CleaningWorkerRatingArgs(
       orderId: order.id!,
+      sessionId: resolvedSessionId,
       workerProfile: workerProfile,
     );
     context.pushRoute('/cleaning-worker-rating', arguments: ratingArgs);
@@ -1620,13 +1630,22 @@ class _CleaningOrderDetailsScreenState
     }
     final completionRequest = order.pendingCompletionRequest;
     if (completionRequest == null) return;
+    final ratingTarget = await _resolveSessionRatingTarget(
+      orderId,
+      preferredWorkerId: completionRequest.workerId ?? order.workerId,
+    );
+    if (!mounted) return;
     _completionSheetOpen = true;
     final decision = await CleaningCompletionDecisionSheet.show(
       context,
       useRootNavigator: true,
       completionRequest: completionRequest,
       cleaningOrder: order,
-      onConfirm: () => _submitCompletionConfirm(order, completionRequest),
+      onConfirm: () => _submitCompletionConfirm(
+        order,
+        completionRequest,
+        sessionId: ratingTarget.sessionId,
+      ),
       onReject: (reason) =>
           _submitCompletionReject(order, completionRequest, reason),
       onExtend: (minutes) =>
@@ -1651,7 +1670,11 @@ class _CleaningOrderDetailsScreenState
       if (updatedOrder != null) {
         await _navigateToRating(
           updatedOrder,
-          workerId: completionRequest.workerId,
+          workerId:
+              completionRequest.workerId ??
+              ratingTarget.workerId ??
+              updatedOrder.workerId,
+          sessionId: ratingTarget.sessionId,
         );
       }
     }
@@ -1794,30 +1817,92 @@ class _CleaningOrderDetailsScreenState
     });
   }
 
-  Future<int?> _resolveSessionCompletionSessionId(int orderId) async {
+  Future<({int? sessionId, int? workerId})> _resolveSessionRatingTarget(
+    int orderId, {
+    int? preferredWorkerId,
+  }) async {
     try {
       final envelope = await getIt<CleaningSessionRemoteDataSource>()
           .fetchBookingSchedule(orderId);
       final sessions = envelope.schedule?.sessions;
-      if (sessions == null) return null;
+      if (sessions == null || sessions.isEmpty) {
+        return (sessionId: null, workerId: preferredWorkerId);
+      }
 
+      CleaningBookingSessionModel? target;
       for (final session in sessions) {
-        final sessionId = session.id;
-        if (sessionId == null) continue;
         if (session.canConfirmCompletion || session.isAwaitingCustomerCompletion) {
-          return sessionId;
+          target = session;
+          break;
         }
       }
+      if (target == null) {
+        for (final session in sessions.reversed) {
+          if (session.isCompleted &&
+              (session.canReview ||
+                  session.reviewableWorkerIds.isNotEmpty ||
+                  !session.hasReview)) {
+            target = session;
+            break;
+          }
+        }
+      }
+      target ??= sessions.last;
+
+      final preferred = preferredWorkerId;
+      if (preferred != null &&
+          preferred > 0 &&
+          (target.workerAssignments.any((item) => item.workerId == preferred) ||
+              target.workerAssignmentState?.workerId == preferred)) {
+        return (sessionId: target.id, workerId: preferred);
+      }
+      if (target.reviewableWorkerIds.isNotEmpty) {
+        return (
+          sessionId: target.id,
+          workerId: target.reviewableWorkerIds.first,
+        );
+      }
+      final stateWorkerId = target.workerAssignmentState?.workerId;
+      if (stateWorkerId != null && stateWorkerId > 0) {
+        return (sessionId: target.id, workerId: stateWorkerId);
+      }
+      const priority = <String>[
+        'awaiting_customer_completion',
+        'time_extension_requested',
+        'completed',
+        'in_progress',
+        'start_approved',
+        'awaiting_start_verification',
+        'accepted_waiting_for_order_start',
+        'accepted',
+      ];
+      for (final status in priority) {
+        for (final assignment in target.workerAssignments) {
+          if ((assignment.status ?? '').toLowerCase() != status) continue;
+          final workerId = assignment.workerId;
+          if (workerId != null && workerId > 0) {
+            return (sessionId: target.id, workerId: workerId);
+          }
+        }
+      }
+      for (final assignment in target.workerAssignments) {
+        final workerId = assignment.workerId;
+        if (workerId != null && workerId > 0) {
+          return (sessionId: target.id, workerId: workerId);
+        }
+      }
+
+      return (sessionId: target.id, workerId: preferredWorkerId);
     } catch (_) {
-      // The legacy booking-level endpoint remains a backend compatibility fallback.
+      return (sessionId: null, workerId: preferredWorkerId);
     }
-    return null;
   }
 
   Future<String?> _submitCompletionConfirm(
     CleaningOrderDetailModel order,
-    CleaningCompletionRequestModel completionRequest,
-  ) async {
+    CleaningCompletionRequestModel completionRequest, {
+    int? sessionId,
+  }) async {
     final orderId = order.id;
     if (orderId == null) return 'تعذر تحديد الطلب';
     setState(() {
@@ -1825,14 +1910,19 @@ class _CleaningOrderDetailsScreenState
       _gateError = null;
     });
 
-    final sessionId = await _resolveSessionCompletionSessionId(orderId);
+    final resolvedSessionId =
+        sessionId ??
+        (await _resolveSessionRatingTarget(
+          orderId,
+          preferredWorkerId: completionRequest.workerId ?? order.workerId,
+        )).sessionId;
     if (!mounted) return 'تعذر تحديث الحالة';
 
-    if (sessionId != null) {
+    if (resolvedSessionId != null) {
       try {
         await getIt<CleaningSessionRemoteDataSource>().confirmCompletion(
           orderId: orderId,
-          sessionId: sessionId,
+          sessionId: resolvedSessionId,
         );
         await _fetchDetails(showLoading: false);
         if (!mounted) return 'تعذر تحديث الحالة';
