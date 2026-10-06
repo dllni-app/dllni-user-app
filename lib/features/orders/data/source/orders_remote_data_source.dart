@@ -228,9 +228,14 @@ class OrdersRemoteDataSource with HandlingApiManager {
   Future<SubmitCleaningReviewModel> submitCleaningReview(
     SubmitCleaningReviewParams params,
   ) {
+    final sessionId = params.sessionId;
+    final endpoint = sessionId == null
+        ? '/api/v1/user/cleaning/orders/${params.orderId}/review'
+        : '/api/v1/cleaning-bookings/${params.orderId}/sessions/$sessionId/review';
+
     return wrapHandlingApi(
       tryCall: () => dioNetwork.postData(
-        endPoint: '/api/v1/user/cleaning/orders/${params.orderId}/review',
+        endPoint: endpoint,
         data: params.getBody(),
       ),
       jsonConvert: submitCleaningReviewModelFromJson,
