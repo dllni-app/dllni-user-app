@@ -5,8 +5,10 @@ import 'package:dartz/dartz.dart' hide State;
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 
+import '../../features/orders/data/models/cleaning_booking_schedule_model.dart';
 import '../../features/orders/data/models/cleaning_booking_status.dart';
 import '../../features/orders/data/models/cleaning_orders_api_models.dart';
+import '../../features/orders/data/source/cleaning_session_remote_data_source.dart';
 import '../../features/orders/data/source/orders_remote_data_source.dart';
 import '../../features/orders/domain/usecases/confirm_cleaning_completion_use_case.dart';
 import '../../features/orders/domain/usecases/confirm_cleaning_start_verification_use_case.dart';
@@ -699,24 +701,32 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
       return;
     }
 
+    final sessionTarget = await _resolveSessionStartVerificationTarget(orderId);
+    if (!_started || _gatePromptOpen) return;
+
     final navContext = _navigatorKey.currentContext;
     if (navContext == null || !navContext.mounted) return;
 
     _gatePromptOpen = true;
     var confirmed = false;
     try {
-      final scheduledAt = resolveCleaningBookingStartDateTime(
-        scheduledDate: details.scheduledDate,
-        scheduledTime: details.scheduledTime,
-      );
+      final scheduledAt =
+          sessionTarget?.scheduledAt ??
+          resolveCleaningBookingStartDateTime(
+            scheduledDate: details.scheduledDate,
+            scheduledTime: details.scheduledTime,
+          );
       confirmed = await CleaningStartVerificationDialog.show(
         navContext,
         bookingId: details.id ?? orderId,
         bookingNumber: details.bookingNumber,
         dateTime: scheduledAt?.toIso8601String(),
         workerAvatarUrl: details.workerAvatarUrlForDisplay,
-        onSubmit: (code) =>
-            _confirmStartVerificationCode(orderId: orderId, code: code),
+        onSubmit: (code) => _confirmStartVerificationCode(
+          orderId: orderId,
+          code: code,
+          sessionId: sessionTarget?.sessionId,
+        ),
       );
     } finally {
       _gatePromptOpen = false;
@@ -922,10 +932,69 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     ];
   }
 
+  Future<_SessionStartVerificationTarget?> _resolveSessionStartVerificationTarget(
+    int orderId,
+  ) async {
+    try {
+      final envelope = await getIt<CleaningSessionRemoteDataSource>()
+          .fetchBookingSchedule(orderId);
+      final sessions =
+          envelope.schedule?.sessions ?? const <CleaningBookingSessionModel>[];
+
+      for (final session in sessions) {
+        final sessionId = session.id;
+        if (sessionId == null || !session.canConfirmStartVerification) continue;
+        return _SessionStartVerificationTarget(
+          sessionId: sessionId,
+          scheduledAt: _sessionStartDateTime(session),
+        );
+      }
+    } catch (_) {
+      // Keep the legacy booking-level flow as a compatibility fallback.
+    }
+    return null;
+  }
+
+  DateTime? _sessionStartDateTime(CleaningBookingSessionModel session) {
+    final date = session.date;
+    final rawTime = session.time?.trim();
+    if (date == null || rawTime == null || rawTime.isEmpty) return date;
+
+    final parts = rawTime.split(':');
+    if (parts.length < 2) return date;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    final second = parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0;
+    if (hour == null || minute == null) return date;
+
+    return DateTime(date.year, date.month, date.day, hour, minute, second);
+  }
+
   Future<String?> _confirmStartVerificationCode({
     required int orderId,
     required String code,
+    int? sessionId,
   }) async {
+    if (sessionId != null) {
+      try {
+        await getIt<CleaningSessionRemoteDataSource>().confirmStartVerification(
+          orderId: orderId,
+          sessionId: sessionId,
+          code: code,
+        );
+
+        final details = await _fetchOrderDetails(orderId);
+        if (details != null) {
+          _syncGateSessionWithDetails(details);
+        } else {
+          _gateSession.clearStartDismissed(orderId);
+        }
+        return null;
+      } catch (error) {
+        return _mapSessionVerificationError(error);
+      }
+    }
+
     final Either<Failure, FetchCleaningOrderDetailsModel> response =
         await getIt<ConfirmCleaningStartVerificationUseCase>()(
           ConfirmCleaningStartVerificationParams(orderId: orderId, code: code),
@@ -943,6 +1012,34 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         return null;
       },
     );
+  }
+
+  String _mapSessionVerificationError(Object error) {
+    final message = error.toString().toLowerCase();
+    if (message.contains('429') || message.contains('too many')) {
+      return 'محاولات كثيرة، انتظر دقيقة ثم حاول مجدداً.';
+    }
+    if (message.contains('expired') || message.contains('انته')) {
+      return 'انتهت صلاحية رمز الوصول. اطلب رمزاً جديداً من العامل.';
+    }
+    if (message.contains('invalid') ||
+        message.contains('wrong') ||
+        message.contains('incorrect') ||
+        message.contains('422') ||
+        message.contains('غير صحيح')) {
+      return 'رمز الوصول غير صحيح. تحقق من رمز هذه الجلسة وحاول مرة أخرى.';
+    }
+    if (message.contains('403') ||
+        message.contains('forbidden') ||
+        message.contains('not allowed')) {
+      return 'غير مسموح بتنفيذ التحقق لهذه الجلسة حالياً.';
+    }
+    if (message.contains('socket') ||
+        message.contains('connection') ||
+        message.contains('nointernet')) {
+      return 'لا يوجد اتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.';
+    }
+    return 'تعذر تأكيد رمز بدء هذه الجلسة. حدّث الطلب وحاول مرة أخرى.';
   }
 
   Future<String?> _submitCompletionConfirm({
@@ -1133,6 +1230,16 @@ enum CompletionGateHandlingDecision {
   completionOnly,
   completionThenStartDialog,
   noCompletionSheet,
+}
+
+class _SessionStartVerificationTarget {
+  const _SessionStartVerificationTarget({
+    required this.sessionId,
+    this.scheduledAt,
+  });
+
+  final int sessionId;
+  final DateTime? scheduledAt;
 }
 
 enum CleaningPolledPromptPriority { completion, startVerification }
