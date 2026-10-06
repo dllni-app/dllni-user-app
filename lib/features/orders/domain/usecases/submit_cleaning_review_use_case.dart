@@ -43,6 +43,7 @@ class CleaningWorkerReviewInput {
 class SubmitCleaningReviewParams with Params {
   SubmitCleaningReviewParams({
     required this.orderId,
+    this.sessionId,
     this.workerId,
     this.rating,
     this.comment,
@@ -51,6 +52,7 @@ class SubmitCleaningReviewParams with Params {
   });
 
   final int orderId;
+  final int? sessionId;
   final int? workerId;
   final int? rating;
   final String? comment;
