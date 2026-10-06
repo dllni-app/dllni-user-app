@@ -670,39 +670,38 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     if (_gateSession.isStartVerificationSuppressed(orderId, force: force)) {
       return;
     }
-    if (previewOrder != null &&
-        _isStartVerificationExpired(
-          scheduledDate: previewOrder.scheduledDate,
-        )) {
-      _gateSession.suppressStartVerification(
-        orderId,
-        CleaningGateSuppressionReason.bookingTimeExpired,
-      );
-      return;
-    }
-
     final details = await _fetchOrderDetails(orderId);
     if (!_started || _gatePromptOpen) return;
 
     if (details == null) return;
-    _syncGateSessionWithDetails(details);
     final status = (details.status ?? '').toLowerCase();
     if (status != CleaningBookingStatus.awaitingStartVerification) {
-      return;
-    }
-    if (_isStartVerificationExpired(scheduledDate: details.scheduledDate)) {
-      _gateSession.suppressStartVerification(
-        orderId,
-        CleaningGateSuppressionReason.bookingTimeExpired,
-      );
-      return;
-    }
-    if (_gateSession.isStartVerificationSuppressed(orderId, force: force)) {
+      _syncGateSessionWithDetails(details);
       return;
     }
 
     final sessionTarget = await _resolveSessionStartVerificationTarget(orderId);
     if (!_started || _gatePromptOpen) return;
+
+    // Multi-session bookings carry the parent scheduled date of the series.
+    // A later session can legitimately be awaiting verification after that
+    // parent date has passed, so the child-session state is authoritative.
+    if (sessionTarget == null &&
+        _isStartVerificationExpired(scheduledDate: details.scheduledDate)) {
+      _gateSession.suppressStartVerification(
+        orderId,
+        CleaningGateSuppressionReason.bookingTimeExpired,
+      );
+      return;
+    }
+
+    _syncGateSessionWithDetails(
+      details,
+      enforceStartDateExpiry: sessionTarget == null,
+    );
+    if (_gateSession.isStartVerificationSuppressed(orderId, force: force)) {
+      return;
+    }
 
     final navContext = _navigatorKey.currentContext;
     if (navContext == null || !navContext.mounted) return;
@@ -878,14 +877,18 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     );
   }
 
-  void _syncGateSessionWithDetails(CleaningOrderDetailModel details) {
+  void _syncGateSessionWithDetails(
+    CleaningOrderDetailModel details, {
+    bool enforceStartDateExpiry = true,
+  }) {
     final orderId = details.id;
     if (orderId == null) return;
     _gateSession.syncWithStatus(
       bookingId: orderId,
       normalizedStatus: (details.status ?? '').toLowerCase(),
     );
-    if (_isStartVerificationExpired(scheduledDate: details.scheduledDate)) {
+    if (enforceStartDateExpiry &&
+        _isStartVerificationExpired(scheduledDate: details.scheduledDate)) {
       _gateSession.suppressStartVerification(
         orderId,
         CleaningGateSuppressionReason.bookingTimeExpired,
