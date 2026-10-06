@@ -25,6 +25,7 @@ import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../../data/source/cleaning_session_remote_data_source.dart';
 import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
 import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
@@ -1793,6 +1794,26 @@ class _CleaningOrderDetailsScreenState
     });
   }
 
+  Future<int?> _resolveSessionCompletionSessionId(int orderId) async {
+    try {
+      final envelope = await getIt<CleaningSessionRemoteDataSource>()
+          .fetchBookingSchedule(orderId);
+      final sessions = envelope.schedule?.sessions;
+      if (sessions == null) return null;
+
+      for (final session in sessions) {
+        final sessionId = session.id;
+        if (sessionId == null) continue;
+        if (session.canConfirmCompletion || session.isAwaitingCustomerCompletion) {
+          return sessionId;
+        }
+      }
+    } catch (_) {
+      // The legacy booking-level endpoint remains a backend compatibility fallback.
+    }
+    return null;
+  }
+
   Future<String?> _submitCompletionConfirm(
     CleaningOrderDetailModel order,
     CleaningCompletionRequestModel completionRequest,
@@ -1803,6 +1824,35 @@ class _CleaningOrderDetailsScreenState
       _gateSubmitting = true;
       _gateError = null;
     });
+
+    final sessionId = await _resolveSessionCompletionSessionId(orderId);
+    if (!mounted) return 'تعذر تحديث الحالة';
+
+    if (sessionId != null) {
+      try {
+        await getIt<CleaningSessionRemoteDataSource>().confirmCompletion(
+          orderId: orderId,
+          sessionId: sessionId,
+        );
+        await _fetchDetails(showLoading: false);
+        if (!mounted) return 'تعذر تحديث الحالة';
+        setState(() {
+          _gateSubmitting = false;
+          _gateError = null;
+        });
+        return null;
+      } catch (error) {
+        if (!mounted) return 'تعذر تحديث الحالة';
+        const errorMessage =
+            'تعذر تأكيد إكمال هذه الجلسة. حدّث الطلب وتحقق من حالتها ثم حاول مرة أخرى.';
+        setState(() {
+          _gateSubmitting = false;
+          _gateError = errorMessage;
+        });
+        return errorMessage;
+      }
+    }
+
     final response = await getIt<ConfirmCleaningCompletionUseCase>()(
       ConfirmCleaningCompletionParams(
         orderId: orderId,
