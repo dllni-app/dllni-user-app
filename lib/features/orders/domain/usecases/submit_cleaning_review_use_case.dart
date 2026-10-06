@@ -22,6 +22,7 @@ class SubmitCleaningReviewUseCase
 class SubmitCleaningReviewParams with Params {
   SubmitCleaningReviewParams({
     required this.orderId,
+    this.sessionId,
     required this.workerId,
     required this.rating,
     this.comment,
@@ -29,6 +30,7 @@ class SubmitCleaningReviewParams with Params {
   });
 
   final int orderId;
+  final int? sessionId;
   final int workerId;
   final int rating;
   final String? comment;
