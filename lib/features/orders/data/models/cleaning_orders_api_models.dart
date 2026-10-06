@@ -21,7 +21,13 @@ List<Map<String, dynamic>> _toMapList(dynamic value) {
 }
 
 CleaningOpenTimeModel? _cleaningOpenTimeFromJson(dynamic value) {
-  return value is Map ? CleaningOpenTimeModel.fromJson(_toMap(value)) : null;
+  if (value is! Map) return null;
+  final map = _toMap(value);
+  final isOpenTime = _toBool(
+    map['isOpenTime'] ?? map['is_open_time'],
+  );
+  if (isOpenTime == false) return null;
+  return CleaningOpenTimeModel.fromJson(map);
 }
 
 List<dynamic>? _toDynamicList(dynamic value) {
