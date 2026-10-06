@@ -771,6 +771,9 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     final completionRequest = details.pendingCompletionRequest;
     if (completionRequest == null) return;
 
+    final completionSessionId = await _resolveSessionCompletionSessionId(orderId);
+    if (!_started || _gatePromptOpen) return;
+
     final navContext = _navigatorKey.currentContext;
     if (navContext == null || !navContext.mounted) return;
     if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
@@ -787,6 +790,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         onConfirm: () => _submitCompletionConfirm(
           orderId: orderId,
           completionRequest: completionRequest,
+          sessionId: completionSessionId,
         ),
         onReject: (reason) => _submitCompletionReject(
           orderId: orderId,
@@ -1045,10 +1049,68 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     return 'تعذر تأكيد رمز بدء هذه الجلسة. حدّث الطلب وحاول مرة أخرى.';
   }
 
+  Future<int?> _resolveSessionCompletionSessionId(int orderId) async {
+    try {
+      final envelope = await getIt<CleaningSessionRemoteDataSource>()
+          .fetchBookingSchedule(orderId);
+      final sessions =
+          envelope.schedule?.sessions ?? const <CleaningBookingSessionModel>[];
+
+      for (final session in sessions) {
+        final sessionId = session.id;
+        if (sessionId == null) continue;
+        if (session.canConfirmCompletion || session.isAwaitingCustomerCompletion) {
+          return sessionId;
+        }
+      }
+    } catch (_) {
+      // Legacy booking-level completion remains available as a compatibility fallback.
+    }
+    return null;
+  }
+
   Future<String?> _submitCompletionConfirm({
     required int orderId,
     required CleaningCompletionRequestModel completionRequest,
+    int? sessionId,
   }) async {
+    if (sessionId != null) {
+      try {
+        await getIt<CleaningSessionRemoteDataSource>().confirmCompletion(
+          orderId: orderId,
+          sessionId: sessionId,
+        );
+
+        final details = await _fetchOrderDetails(orderId);
+        if (details != null) {
+          _syncGateSessionWithDetails(details);
+        } else {
+          _gateSession.clearCompletionAwaitingCycle(orderId);
+        }
+        CleaningTrackingSessionBus.requestRefresh(orderId);
+        return null;
+      } catch (error) {
+        final message = error.toString().toLowerCase();
+        if (message.contains('422') ||
+            message.contains('invalid') ||
+            message.contains('not waiting') ||
+            message.contains('awaiting')) {
+          return 'لا يمكن تأكيد إكمال هذه الجلسة في حالتها الحالية. حدّث الطلب وحاول مرة أخرى.';
+        }
+        if (message.contains('403') ||
+            message.contains('forbidden') ||
+            message.contains('not allowed')) {
+          return 'غير مسموح بتأكيد إكمال هذه الجلسة.';
+        }
+        if (message.contains('socket') ||
+            message.contains('connection') ||
+            message.contains('nointernet')) {
+          return 'لا يوجد اتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.';
+        }
+        return 'تعذر تأكيد إكمال هذه الجلسة. حدّث الطلب وحاول مرة أخرى.';
+      }
+    }
+
     final response = await getIt<ConfirmCleaningCompletionUseCase>()(
       ConfirmCleaningCompletionParams(
         orderId: orderId,
