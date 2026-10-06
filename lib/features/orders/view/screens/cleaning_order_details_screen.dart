@@ -206,17 +206,10 @@ class _CleaningOrderDetailsScreenState
         (order.isMultiWorkerTeam
             ? order.acceptedWorkerAssignments.length
             : ((order.workerId != null || order.worker != null) ? 1 : 0));
-    final allWorkersAccepted =
-        liveAcceptance?.isFulfilled ??
-        (requiredWorkers != null &&
-            requiredWorkers > 0 &&
-            acceptedWorkers >= requiredWorkers);
     final travelFee = order.travelFee ?? 0;
-    final displayedTotalPrice = allWorkersAccepted
-        ? (order.totalPrice ?? 0)
-        : ((order.totalPrice ?? 0) - travelFee)
-              .clamp(0, double.infinity)
-              .toDouble();
+    final displayedTotalPrice =
+        order.totalPrice ??
+        ((order.basePrice ?? 0) + (order.addonsTotal ?? 0) + travelFee);
     final primaryAction = cleaningLifecyclePrimaryAction(order.status);
 
     Widget? sosTrailing;
@@ -849,9 +842,7 @@ class _CleaningOrderDetailsScreenState
                           const SizedBox(height: 6),
                           _SummaryRow(
                             title: 'رسوم التنقل',
-                            value: allWorkersAccepted
-                                ? travelFee.formatMoney()
-                                : 'لم يتم حسابه بعد',
+                            value: travelFee.formatMoney(),
                           ),
                           if ((order.addonsTotal ?? 0) > 0) ...[
                             const SizedBox(height: 6),
@@ -868,6 +859,16 @@ class _CleaningOrderDetailsScreenState
                             value: displayedTotalPrice.formatMoney(),
                             isTotal: true,
                           ),
+                          if (order.isPricingFinal == false) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'القيم المعروضة هي القيم الحالية من النظام وقد يتم تحديث السعر النهائي عند اكتمال تعيين العمال.',
+                              style: TextStyle(
+                                color: Color(0xff6B7280),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
