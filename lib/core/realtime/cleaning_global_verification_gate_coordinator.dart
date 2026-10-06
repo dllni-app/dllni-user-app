@@ -365,6 +365,11 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         workerId =
             details?.workerId ?? details?.pendingCompletionRequest?.workerId;
       }
+      final ratingTarget = await _resolveSessionRatingTarget(
+        orderId,
+        preferredWorkerId: workerId,
+      );
+      workerId ??= ratingTarget.workerId;
       if (workerId == null || workerId <= 0) return;
 
       final workerProfile = await resolveCleaningWorkerProfileForRating(
@@ -389,6 +394,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         '/cleaning-worker-rating',
         arguments: CleaningWorkerRatingArgs(
           orderId: orderId,
+          sessionId: ratingTarget.sessionId,
           workerProfile: workerProfile,
         ),
       );
@@ -771,7 +777,10 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     final completionRequest = details.pendingCompletionRequest;
     if (completionRequest == null) return;
 
-    final completionSessionId = await _resolveSessionCompletionSessionId(orderId);
+    final completionTarget = await _resolveSessionRatingTarget(
+      orderId,
+      preferredWorkerId: completionRequest.workerId ?? details.workerId,
+    );
     if (!_started || _gatePromptOpen) return;
 
     final navContext = _navigatorKey.currentContext;
@@ -790,7 +799,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         onConfirm: () => _submitCompletionConfirm(
           orderId: orderId,
           completionRequest: completionRequest,
-          sessionId: completionSessionId,
+          sessionId: completionTarget.sessionId,
         ),
         onReject: (reason) => _submitCompletionReject(
           orderId: orderId,
@@ -843,7 +852,10 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         navContext.mounted &&
         details.id != null) {
       final workerProfile = await resolveCleaningWorkerProfileForRating(
-        workerId: completionRequest.workerId,
+        workerId:
+            completionRequest.workerId ??
+            completionTarget.workerId ??
+            details.workerId,
         fetchWorkerProfile: (params) =>
             getIt<FetchCleaningWorkerProfileUseCase>()(params),
         onError: (message) {
@@ -856,6 +868,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
       if (workerProfile != null && navContext.mounted) {
         final ratingArgs = CleaningWorkerRatingArgs(
           orderId: details.id!,
+          sessionId: completionTarget.sessionId,
           workerProfile: workerProfile,
         );
         Navigator.of(
@@ -1049,24 +1062,85 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     return 'تعذر تأكيد رمز بدء هذه الجلسة. حدّث الطلب وحاول مرة أخرى.';
   }
 
-  Future<int?> _resolveSessionCompletionSessionId(int orderId) async {
+  Future<({int? sessionId, int? workerId})> _resolveSessionRatingTarget(
+    int orderId, {
+    int? preferredWorkerId,
+  }) async {
     try {
       final envelope = await getIt<CleaningSessionRemoteDataSource>()
           .fetchBookingSchedule(orderId);
       final sessions =
           envelope.schedule?.sessions ?? const <CleaningBookingSessionModel>[];
 
+      CleaningBookingSessionModel? target;
       for (final session in sessions) {
-        final sessionId = session.id;
-        if (sessionId == null) continue;
         if (session.canConfirmCompletion || session.isAwaitingCustomerCompletion) {
-          return sessionId;
+          target = session;
+          break;
         }
       }
+      if (target == null) {
+        for (final session in sessions.reversed) {
+          if (session.isCompleted &&
+              (session.canReview ||
+                  session.reviewableWorkerIds.isNotEmpty ||
+                  !session.hasReview)) {
+            target = session;
+            break;
+          }
+        }
+      }
+      target ??= sessions.isEmpty ? null : sessions.last;
+
+      if (target != null) {
+        final preferred = preferredWorkerId;
+        if (preferred != null &&
+            preferred > 0 &&
+            (target.workerAssignments.any((item) => item.workerId == preferred) ||
+                target.workerAssignmentState?.workerId == preferred)) {
+          return (sessionId: target.id, workerId: preferred);
+        }
+        if (target.reviewableWorkerIds.isNotEmpty) {
+          return (
+            sessionId: target.id,
+            workerId: target.reviewableWorkerIds.first,
+          );
+        }
+        final stateWorkerId = target.workerAssignmentState?.workerId;
+        if (stateWorkerId != null && stateWorkerId > 0) {
+          return (sessionId: target.id, workerId: stateWorkerId);
+        }
+        const priority = <String>[
+          'awaiting_customer_completion',
+          'time_extension_requested',
+          'completed',
+          'in_progress',
+          'start_approved',
+          'awaiting_start_verification',
+          'accepted_waiting_for_order_start',
+          'accepted',
+        ];
+        for (final status in priority) {
+          for (final assignment in target.workerAssignments) {
+            if ((assignment.status ?? '').toLowerCase() != status) continue;
+            final workerId = assignment.workerId;
+            if (workerId != null && workerId > 0) {
+              return (sessionId: target.id, workerId: workerId);
+            }
+          }
+        }
+        for (final assignment in target.workerAssignments) {
+          final workerId = assignment.workerId;
+          if (workerId != null && workerId > 0) {
+            return (sessionId: target.id, workerId: workerId);
+          }
+        }
+        return (sessionId: target.id, workerId: preferredWorkerId);
+      }
     } catch (_) {
-      // Legacy booking-level completion remains available as a compatibility fallback.
+      // Booking-level rating remains the compatibility fallback.
     }
-    return null;
+    return (sessionId: null, workerId: preferredWorkerId);
   }
 
   Future<String?> _submitCompletionConfirm({
