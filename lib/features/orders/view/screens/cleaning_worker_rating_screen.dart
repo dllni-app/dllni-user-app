@@ -10,10 +10,12 @@ import '../../domain/usecases/submit_cleaning_review_use_case.dart';
 class CleaningWorkerRatingArgs {
   const CleaningWorkerRatingArgs({
     required this.orderId,
+    this.sessionId,
     required this.workerProfile,
   });
 
   final int orderId;
+  final int? sessionId;
   final CleaningWorkerProfileModel workerProfile;
 }
 
@@ -54,6 +56,7 @@ class _CleaningWorkerRatingScreenState
         await getIt<SubmitCleaningReviewUseCase>()(
           SubmitCleaningReviewParams(
             orderId: widget.args.orderId,
+            sessionId: widget.args.sessionId,
             workerId: widget.args.workerProfile.id!,
             rating: _rating,
             comment: _commentController.text.trim().isEmpty
