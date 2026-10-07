@@ -1658,8 +1658,12 @@ class _CleaningOrderDetailsScreenState
         reason,
         sessionId: ratingTarget.sessionId,
       ),
-      onExtend: (minutes) =>
-          _submitExtendTime(order, completionRequest, minutes),
+      onExtend: (minutes) => _submitExtendTime(
+        order,
+        completionRequest,
+        minutes,
+        sessionId: ratingTarget.sessionId,
+      ),
       fetchExtensionTimeRanges: () => _fetchExtensionTimeRanges(orderId),
     );
     if (!mounted) return;
@@ -2059,8 +2063,9 @@ class _CleaningOrderDetailsScreenState
   Future<String?> _submitExtendTime(
     CleaningOrderDetailModel order,
     CleaningCompletionRequestModel completionRequest,
-    int? additionalMinutes,
-  ) async {
+    int? additionalMinutes, {
+    int? sessionId,
+  }) async {
     final orderId = order.id;
     if (orderId == null) return 'تعذر تحديد الطلب';
     setState(() {
@@ -2073,6 +2078,7 @@ class _CleaningOrderDetailsScreenState
         additionalMinutes: additionalMinutes,
         workerId: completionRequest.workerId,
         assignmentId: completionRequest.assignmentId,
+        sessionId: sessionId,
       ),
     );
     if (!mounted) return 'تعذر تحديث الحالة';
