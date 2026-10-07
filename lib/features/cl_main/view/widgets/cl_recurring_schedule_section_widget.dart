@@ -43,6 +43,47 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
   final ValueChanged<int> onEditVisit;
   final ValueChanged<int> onRemoveVisit;
 
+  static const List<String> _visitOrdinals = <String>[
+    'الأولى',
+    'الثانية',
+    'الثالثة',
+    'الرابعة',
+    'الخامسة',
+    'السادسة',
+    'السابعة',
+    'الثامنة',
+    'التاسعة',
+    'العاشرة',
+    'الحادية عشرة',
+    'الثانية عشرة',
+    'الثالثة عشرة',
+    'الرابعة عشرة',
+    'الخامسة عشرة',
+    'السادسة عشرة',
+    'السابعة عشرة',
+    'الثامنة عشرة',
+    'التاسعة عشرة',
+    'العشرون',
+    'الحادية والعشرون',
+    'الثانية والعشرون',
+    'الثالثة والعشرون',
+    'الرابعة والعشرون',
+    'الخامسة والعشرون',
+    'السادسة والعشرون',
+    'السابعة والعشرون',
+    'الثامنة والعشرون',
+    'التاسعة والعشرون',
+    'الثلاثون',
+    'الحادية والثلاثون',
+  ];
+
+  String _visitLabel(int index) {
+    if (index >= 0 && index < _visitOrdinals.length) {
+      return 'الزيارة ${_visitOrdinals[index]}';
+    }
+    return 'الزيارة ${index + 1}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -292,9 +333,7 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                index == 0
-                                    ? 'الزيارة الأولى'
-                                    : 'الزيارة ${index + 1}',
+                                _visitLabel(index),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                 ),
