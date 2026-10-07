@@ -13,6 +13,7 @@ class ClMainServiceTabsWidget extends StatelessWidget {
 
   static const int cleaningIndex = 0;
   static const int occasionsIndex = 1;
+  static const int hourlyIndex = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +41,15 @@ class ClMainServiceTabsWidget extends StatelessWidget {
               label: 'المناسبات',
               isSelected: selectedIndex == occasionsIndex,
               onTap: () => onChanged(occasionsIndex),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _ServiceTabItem(
+              key: const Key('cl_main_hourly_tab'),
+              label: 'عامل بالساعة',
+              isSelected: selectedIndex == hourlyIndex,
+              onTap: () => onChanged(hourlyIndex),
             ),
           ),
         ],
