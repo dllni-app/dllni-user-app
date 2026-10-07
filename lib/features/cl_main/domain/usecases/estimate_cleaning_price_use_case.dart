@@ -27,6 +27,8 @@ class EstimateCleaningPriceUseCase
 
 class EstimateCleaningPriceParams with Params {
   final String propertyType;
+  final int? openTimeWorkerCount;
+  final int? openTimeExpectedMaxMinutes;
   final int? bedrooms;
   final int? rooms;
   final int? bathrooms;
@@ -52,7 +54,9 @@ class EstimateCleaningPriceParams with Params {
 
   EstimateCleaningPriceParams({
     required this.propertyType,
-    required this.bedrooms,
+    this.openTimeWorkerCount,
+    this.openTimeExpectedMaxMinutes,
+    required this.bedrooms;
     required this.rooms,
     required this.bathrooms,
     this.balconies,
@@ -98,7 +102,38 @@ class EstimateCleaningPriceParams with Params {
        balconies = null,
        livingRoomSize = null,
        roomSizeBreakdown = null,
-       cleaningType = null;
+       cleaningType = null,
+       openTimeWorkerCount = null,
+       openTimeExpectedMaxMinutes = null;
+
+  EstimateCleaningPriceParams.hourlyWorker({
+    required this.addressId,
+    required int workerCount,
+    required int expectedMaxMinutes,
+  }) : propertyType = 'apartment',
+       openTimeWorkerCount = workerCount,
+       openTimeExpectedMaxMinutes = expectedMaxMinutes,
+       bedrooms = 0,
+       rooms = 0,
+       bathrooms = 0,
+       balconies = 0,
+       livingRoomSize = CleaningRoomSize.small.apiValue,
+       roomSizeBreakdown = const CleaningRoomSizeBreakdown(),
+       cleaningType = CleaningType.regularCleaning,
+       addressLatitude = null,
+       addressLongitude = null,
+       preferredWorkerId = null,
+       preferredWorkerIds = const <int>[],
+       eventType = null,
+       guestCount = null,
+       venueType = null,
+       customService = null,
+       hours = null,
+       specialRequirement = null,
+       notes = null,
+       numberOfWorkers = workerCount,
+       assignmentMode = CleaningAssignmentMode.openCount,
+       workerRoomAssignments = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -195,6 +230,11 @@ class EstimateCleaningPriceParams with Params {
         workerIds,
         effectiveAssignmentMode,
       ),
+      if (openTimeWorkerCount != null)
+        'openTime': <String, dynamic>{
+          'workerCount': openTimeWorkerCount,
+          'expectedMaxMinutes': openTimeExpectedMaxMinutes ?? 480,
+        },
     };
 
     final assignments = workerRoomAssignments == null
