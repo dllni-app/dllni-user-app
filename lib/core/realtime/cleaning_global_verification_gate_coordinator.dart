@@ -811,6 +811,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
           orderId: orderId,
           completionRequest: completionRequest,
           additionalMinutes: minutes,
+          sessionId: completionTarget.sessionId,
         ),
         fetchExtensionTimeRanges: () => _fetchExtensionTimeRanges(orderId),
       );
@@ -1284,6 +1285,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     required int orderId,
     required CleaningCompletionRequestModel completionRequest,
     required int additionalMinutes,
+    int? sessionId,
   }) async {
     final response = await getIt<ExtendCleaningCompletionTimeUseCase>()(
       ExtendCleaningCompletionTimeParams(
@@ -1291,6 +1293,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         additionalMinutes: additionalMinutes,
         workerId: completionRequest.workerId,
         assignmentId: completionRequest.assignmentId,
+        sessionId: sessionId,
       ),
     );
     return response.fold(
