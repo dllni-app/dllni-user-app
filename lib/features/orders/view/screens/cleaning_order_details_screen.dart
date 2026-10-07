@@ -1139,7 +1139,10 @@ class _CleaningOrderDetailsScreenState
     final s = _normStatus(order.status);
     return s == CleaningBookingStatus.awaitingStartVerification ||
         s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
-        s == CleaningBookingStatus.awaitingCustomerCompletion;
+        s == CleaningBookingStatus.awaitingCustomerCompletion ||
+        s == CleaningBookingStatus.inProgress ||
+        s == CleaningBookingStatus.timeExtensionRequested ||
+        s == CleaningBookingStatus.underDispute;
   }
 
   bool _blocksReschedule(CleaningOrderDetailModel order) {
@@ -1235,7 +1238,7 @@ class _CleaningOrderDetailsScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('أكمل خطوة التحقق أو تأكيد الإكمال قبل الإلغاء'),
+          content: Text('لا يمكن إلغاء الطلب في هذه المرحلة من التنفيذ.'),
         ),
       );
       return;
