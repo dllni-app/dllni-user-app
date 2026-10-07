@@ -56,6 +56,9 @@ class CleaningOrderCard extends StatelessWidget {
 
 
   String get _serviceTitle {
+    if ((order.bookingKind ?? '').toLowerCase() == 'open_time') {
+      return 'عامل بالساعة';
+    }
     return CleaningEventAssistanceHelper.serviceTitle(
       propertyType: order.propertyType,
       customService: order.propertyDetails?.customService,
