@@ -12,6 +12,7 @@ import '../../../rs_home/view/widgets/home_app_bar.dart';
 import '../../data/models/cleaning_banners_response_model.dart';
 import '../../domain/usecases/get_cleaning_banners_use_case.dart';
 import '../data/cl_main_route_args.dart';
+import 'cl_hourly_worker_screen.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_main_service_tabs_widget.dart';
 import '../widgets/cl_occasion_type_card_widget.dart';
@@ -368,7 +369,9 @@ class _ClMainScreenState extends State<ClMainScreen> {
                         );
                       },
                     )
-                  : ListView.separated(
+                  : _selectedTabIndex ==
+                        ClMainServiceTabsWidget.occasionsIndex
+                  ? ListView.separated(
                       key: const Key('cl_main_occasions_list'),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 26,
@@ -402,6 +405,79 @@ class _ClMainScreenState extends State<ClMainScreen> {
                           },
                         );
                       },
+                    )
+                  : ListView(
+                      key: const Key('cl_main_hourly_list'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 26,
+                        vertical: 20,
+                      ),
+                      children: [
+                        InkWell(
+                          key: const Key('cl_main_hourly_worker_card'),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const ClHourlyWorkerScreen(),
+                            ),
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  size: 18,
+                                  color: Color(0xFF6B7280),
+                                ),
+                                Spacer(),
+                                Expanded(
+                                  flex: 6,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'عامل بالساعة',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF1E3A8A),
+                                        ),
+                                      ),
+                                      SizedBox(height: 6),
+                                      Text(
+                                        'اختر عدد العمال والموعد والمدة المتوقعة، وتكون الفوترة حسب وقت العمل الفعلي.',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 14),
+                                CircleAvatar(
+                                  radius: 25,
+                                  backgroundColor: Color(0xFFE9ECFF),
+                                  child: Icon(
+                                    Icons.timer_outlined,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
             ),
           ],
