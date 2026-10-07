@@ -25,6 +25,9 @@ class CreateCleaningOrderUseCase
 
 class CreateCleaningOrderParams with Params {
   final String propertyType;
+  final String? bookingKind;
+  final int? openTimeWorkerCount;
+  final int? openTimeExpectedMaxMinutes;
   final int? bedrooms;
   final int? rooms;
   final int? bathrooms;
@@ -60,7 +63,10 @@ class CreateCleaningOrderParams with Params {
   CreateCleaningOrderParams({
     required this.addressId,
     required this.propertyType,
-    required this.bedrooms,
+    this.bookingKind,
+    this.openTimeWorkerCount,
+    this.openTimeExpectedMaxMinutes,
+    required this.bedrooms;
     required this.rooms,
     required this.bathrooms,
     this.balconies,
@@ -123,7 +129,49 @@ class CreateCleaningOrderParams with Params {
        livingRoomSize = null,
        roomSizeBreakdown = null,
        cleaningType = null,
-       cleaningServices = null;
+       cleaningServices = null,
+       bookingKind = null,
+       openTimeWorkerCount = null,
+       openTimeExpectedMaxMinutes = null;
+
+  CreateCleaningOrderParams.hourlyWorker({
+    required this.addressId,
+    required this.scheduledDate,
+    required this.scheduledTime,
+    required int workerCount,
+    required int expectedMaxMinutes,
+    this.address,
+    this.locationName,
+    this.notes,
+    this.couponCode,
+  }) : propertyType = 'apartment',
+       bookingKind = 'open_time',
+       openTimeWorkerCount = workerCount,
+       openTimeExpectedMaxMinutes = expectedMaxMinutes,
+       bedrooms = 0,
+       rooms = 0,
+       bathrooms = 0,
+       balconies = 0,
+       livingRoomSize = CleaningRoomSize.small.apiValue,
+       roomSizeBreakdown = const CleaningRoomSizeBreakdown(),
+       cleaningType = CleaningType.regularCleaning,
+       addressLatitude = null,
+       addressLongitude = null,
+       genderPreference = CleaningGenderPreference.any,
+       workEnvironmentConfirmation = null,
+       preferredWorkerId = null,
+       preferredWorkerIds = const <int>[],
+       cleaningServices = null,
+       eventType = null,
+       guestCount = null,
+       venueType = null,
+       customService = null,
+       hours = null,
+       specialRequirement = null,
+       numberOfWorkers = workerCount,
+       assignmentMode = CleaningAssignmentMode.openCount,
+       termsAccepted = true,
+       workerRoomAssignments = null;
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -204,6 +252,7 @@ class CreateCleaningOrderParams with Params {
       'living_room_size': _resolvedLivingRoomSize,
       if (roomSizeBreakdown != null) 'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
       if (cleaningType != null) 'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
     };
   }
 
@@ -214,6 +263,7 @@ class CreateCleaningOrderParams with Params {
     final normalizedCouponCode = couponCode?.trim();
     final body = <String, dynamic>{
       'propertyType': propertyType,
+      if (bookingKind != null) 'bookingKind': bookingKind,
       'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
       'scheduledDate': scheduledDate,
@@ -231,6 +281,11 @@ class CreateCleaningOrderParams with Params {
         workerIds,
         effectiveAssignmentMode,
       ),
+      if (openTimeWorkerCount != null)
+        'openTime': <String, dynamic>{
+          'workerCount': openTimeWorkerCount,
+          'expectedMaxMinutes': openTimeExpectedMaxMinutes ?? 480,
+        },
     };
     if (!_isEventAssistance) {
       final cleanServices = _sanitizeCleaningServices();
