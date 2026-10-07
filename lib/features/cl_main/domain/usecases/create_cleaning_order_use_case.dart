@@ -31,6 +31,7 @@ class CreateCleaningOrderUseCase
 
 class CreateCleaningOrderParams with Params {
   final String propertyType;
+  final String? bookingKind;
   final int? bedrooms;
   final int? rooms;
   final int? bathrooms;
@@ -74,6 +75,7 @@ class CreateCleaningOrderParams with Params {
   CreateCleaningOrderParams({
     required this.addressId,
     required this.propertyType,
+    this.bookingKind,
     required this.bedrooms,
     required this.rooms,
     required this.bathrooms,
@@ -153,7 +155,58 @@ class CreateCleaningOrderParams with Params {
        recurringSessions = const <CleaningRecurringSessionInput>[],
        recurringCalculationMode = CleaningRecurringCalculationMode.task,
        recurringHoursPerVisit = null,
-       recurringWorkerScope = CleaningRecurringWorkerScope.any;
+       recurringWorkerScope = CleaningRecurringWorkerScope.any,
+       bookingKind = null;
+
+  CreateCleaningOrderParams.hourlyWorker({
+    required this.addressId,
+    required this.scheduledDate,
+    required this.scheduledTime,
+    required int workerCount,
+    required int expectedMaxMinutes,
+    this.address,
+    this.locationName,
+    this.notes,
+    this.couponCode,
+  }) : propertyType = 'apartment',
+       bookingKind = 'open_time',
+       bedrooms = 0,
+       rooms = 0,
+       bathrooms = 0,
+       balconies = 0,
+       livingRoomSize = CleaningRoomSize.small.apiValue,
+       roomSizeBreakdown = const CleaningRoomSizeBreakdown(),
+       cleaningType = CleaningType.regularCleaning,
+       addressLatitude = null,
+       addressLongitude = null,
+       genderPreference = CleaningGenderPreference.any,
+       workEnvironmentConfirmation = null,
+       preferredWorkerId = null,
+       preferredWorkerIds = const <int>[],
+       cleaningServices = null,
+       eventType = null,
+       eventTypeId = null,
+       eventDynamicAnswers = const <String, dynamic>{},
+       guestCount = null,
+       venueType = null,
+       customService = null,
+       hours = null,
+       eventSessions = const <CleaningEventSessionInput>[],
+       recurringSessions = const <CleaningRecurringSessionInput>[],
+       recurringCalculationMode = CleaningRecurringCalculationMode.task,
+       recurringHoursPerVisit = null,
+       recurringWorkerScope = CleaningRecurringWorkerScope.any,
+       specialRequirement = null,
+       numberOfWorkers = workerCount,
+       assignmentMode = CleaningAssignmentMode.openCount,
+       termsAccepted = true,
+       workerRoomAssignments = null,
+       serviceExtras = CleaningServiceExtrasRequest(
+         openTime: CleaningOpenTimeRequest(
+           workerCount: workerCount,
+           expectedMaxMinutes: expectedMaxMinutes,
+         ),
+       );
 
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
@@ -251,6 +304,7 @@ class CreateCleaningOrderParams with Params {
         'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
       if (cleaningType != null)
         'cleaning_mode': cleaningType!.cleaningModeValue,
+      if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
     };
   }
 
@@ -276,6 +330,7 @@ class CreateCleaningOrderParams with Params {
           );
     final body = <String, dynamic>{
       'propertyType': propertyType,
+      if (bookingKind != null) 'bookingKind': bookingKind,
       'addressId': addressId,
       'propertyDetails': _buildPropertyDetails(),
       if (_isEventAssistance && eventTypeId != null)
