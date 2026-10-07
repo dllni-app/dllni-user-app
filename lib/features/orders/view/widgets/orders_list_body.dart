@@ -235,7 +235,10 @@ bool _blocksCleaningListCancel(String? status) {
   final normalized = (status ?? '').toLowerCase();
   return normalized == CleaningBookingStatus.awaitingStartVerification ||
       normalized == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
-      normalized == CleaningBookingStatus.awaitingCustomerCompletion;
+      normalized == CleaningBookingStatus.awaitingCustomerCompletion ||
+      normalized == CleaningBookingStatus.inProgress ||
+      normalized == CleaningBookingStatus.timeExtensionRequested ||
+      normalized == CleaningBookingStatus.underDispute;
 }
 
 bool _blocksCleaningListReschedule(String? status) {
@@ -341,7 +344,7 @@ class _CleaningOrderListItem extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                    'أكمل خطوة التحقق أو تأكيد الإكمال قبل الإلغاء',
+                    'لا يمكن إلغاء الطلب في هذه المرحلة من التنفيذ.',
                   ),
                 ),
               );
