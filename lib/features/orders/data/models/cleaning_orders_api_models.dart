@@ -277,6 +277,7 @@ class CleaningOrderModel {
   final int? customerId;
   final int? workerId;
   final String? bookingNumber;
+  final String? bookingKind;
   final String? status;
   final String? propertyType;
   final CleaningPropertyDetailsModel? propertyDetails;
@@ -326,6 +327,7 @@ class CleaningOrderModel {
     this.customerId,
     this.workerId,
     this.bookingNumber,
+    this.bookingKind,
     this.status,
     this.propertyType,
     this.propertyDetails,
@@ -379,6 +381,9 @@ class CleaningOrderModel {
       workerId: _toInt(_pick(m, const <String>['workerId', 'worker_id'])),
       bookingNumber: _toStringValue(
         _pick(m, const <String>['bookingNumber', 'booking_number']),
+      ),
+      bookingKind: _toStringValue(
+        _pick(m, const <String>['bookingKind', 'booking_kind']),
       ),
       status: _toStringValue(_pick(m, const <String>['status'])),
       propertyType: _toStringValue(
@@ -575,6 +580,7 @@ class CleaningOrderDetailModel {
   final int? customerId;
   final int? workerId;
   final String? bookingNumber;
+  final String? bookingKind;
   final String? status;
   final String? propertyType;
   final CleaningPropertyDetailsModel? propertyDetails;
@@ -631,6 +637,7 @@ class CleaningOrderDetailModel {
     this.customerId,
     this.workerId,
     this.bookingNumber,
+    this.bookingKind,
     this.status,
     this.propertyType,
     this.propertyDetails,
@@ -691,6 +698,9 @@ class CleaningOrderDetailModel {
       workerId: _toInt(_pick(m, const <String>['workerId', 'worker_id'])),
       bookingNumber: _toStringValue(
         _pick(m, const <String>['bookingNumber', 'booking_number']),
+      ),
+      bookingKind: _toStringValue(
+        _pick(m, const <String>['bookingKind', 'booking_kind']),
       ),
       status: _toStringValue(_pick(m, const <String>['status'])),
       propertyType: _toStringValue(
