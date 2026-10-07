@@ -28,12 +28,14 @@ class ExtendCleaningCompletionTimeParams with Params {
   final int? additionalMinutes;
   final int? workerId;
   final int? assignmentId;
+  final int? sessionId;
 
   ExtendCleaningCompletionTimeParams({
     required this.orderId,
     this.additionalMinutes,
     this.workerId,
     this.assignmentId,
+    this.sessionId,
   });
 
   @override
@@ -42,6 +44,7 @@ class ExtendCleaningCompletionTimeParams with Params {
       if (additionalMinutes != null) 'additionalMinutes': additionalMinutes,
       if (workerId != null) 'workerId': workerId,
       if (assignmentId != null) 'assignmentId': assignmentId,
+      if (sessionId != null) 'sessionId': sessionId,
     };
   }
 }
