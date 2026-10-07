@@ -101,6 +101,7 @@ void main() {
 
     expect(find.byKey(const Key('cl_main_cleaning_tab')), findsOneWidget);
     expect(find.byKey(const Key('cl_main_occasions_tab')), findsOneWidget);
+    expect(find.byKey(const Key('cl_main_hourly_tab')), findsOneWidget);
     expect(find.byKey(const Key('cl_main_cleaning_list')), findsOneWidget);
     expect(find.byType(ClPropertyTypeCardWidget), findsWidgets);
 
