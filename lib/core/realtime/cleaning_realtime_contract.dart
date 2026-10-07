@@ -211,7 +211,7 @@ class CleaningRealtimeContract {
       case 'extension_rejected':
       case 'extension_declined':
       case 'worker_rejected_extension':
-        return CleaningBookingStatus.completed;
+        return CleaningBookingStatus.awaitingCustomerCompletion;
       default:
         return null;
     }
