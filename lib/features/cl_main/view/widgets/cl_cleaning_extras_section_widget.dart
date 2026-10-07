@@ -29,6 +29,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
     this.specialServicesError,
     this.estimateError,
     this.openTimeDurationOptions = const <int>[60, 120, 180, 240, 480],
+    this.showOpenTime = true,
     this.selectableSessionIds = const <int>[],
     this.sessionLabels = const <int, String>{},
     super.key,
@@ -56,6 +57,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
   final String? specialServicesError;
   final String? estimateError;
   final List<int> openTimeDurationOptions;
+  final bool showOpenTime;
   final List<int> selectableSessionIds;
   final Map<int, String> sessionLabels;
 
@@ -186,8 +188,9 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 10),
-        ClServiceSectionCardWidget(
+        if (showOpenTime) ...[
+          const SizedBox(height: 10),
+          ClServiceSectionCardWidget(
           step: 0,
           showStepBadge: false,
           title: 'cleaningExtras.openTimeTitle'.tr(),
@@ -263,6 +266,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
             ],
           ),
         ),
+        ],
       ],
     );
   }
