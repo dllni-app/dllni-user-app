@@ -1811,6 +1811,9 @@ class _CleaningOrderDetailsScreenState
   }
 
   String _serviceLabel(CleaningOrderDetailModel order) {
+    if ((order.bookingKind ?? '').toLowerCase() == 'open_time') {
+      return 'عامل بالساعة';
+    }
     return CleaningEventAssistanceHelper.serviceTitle(
       propertyType: order.propertyType,
       customService: order.propertyDetails?.customService,
