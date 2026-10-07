@@ -395,10 +395,7 @@ class _NotificationsAppBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white.withAlpha(40)),
               ),
-              child: const Icon(
-                Icons.arrow_forward_rounded,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
             ),
           ),
           const SizedBox(width: 12),
