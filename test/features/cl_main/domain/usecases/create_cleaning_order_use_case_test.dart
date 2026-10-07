@@ -54,4 +54,29 @@ void main() {
     expect(body['numberOfWorkers'], 3);
     expect(body.containsKey('preferredWorkerIds'), isFalse);
   });
+
+  test('hourly worker create payload is a standalone open-time order', () {
+    final params = CreateCleaningOrderParams.hourlyWorker(
+      addressId: 12,
+      scheduledDate: '2026-10-09',
+      scheduledTime: '11:00',
+      workerCount: 3,
+      expectedMaxMinutes: 240,
+      address: 'حلب - العزيزية',
+      locationName: 'المنزل',
+      notes: 'مساعدة في ترتيب المنزل',
+    );
+
+    final body = params.getBody();
+    final openTime = body['openTime'] as Map<String, dynamic>;
+
+    expect(body['bookingKind'], 'open_time');
+    expect(body['propertyType'], 'apartment');
+    expect(body['assignmentMode'], 'open_count');
+    expect(body['numberOfWorkers'], 3);
+    expect(openTime['workerCount'], 3);
+    expect(openTime['expectedMaxMinutes'], 240);
+    expect(body.containsKey('cleaning_services'), isFalse);
+  });
+
 }
