@@ -405,7 +405,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('cleaning_gender_pref_female')));
+    final femalePreference = find.byKey(
+      const Key('cleaning_gender_pref_female'),
+    );
+    await tester.ensureVisible(femalePreference);
+    await tester.pumpAndSettle();
+
+    await tester.tap(femalePreference);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(ElevatedButton).first);
