@@ -558,7 +558,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   CreatedAddressSelectionHint _buildCreatedAddressHint() {
     return CreatedAddressSelectionHint(
-      label: '',
+      label: _selectedType,
       mobile: _phoneController.text.trim(),
       city: _cityController.text.trim(),
       neighborhood: _selectedNeighborhood ?? '',
