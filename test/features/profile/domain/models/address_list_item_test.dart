@@ -27,15 +27,15 @@ void main() {
     }
 
     test(
-      'requires id, label, address line, city, neighborhood, directions, and coordinates',
+      'requires id, label, address line and coordinates but not legacy neighborhood',
       () {
         expect(item().hasCompleteServiceLocation, isTrue);
         expect(item(id: '0').hasCompleteServiceLocation, isFalse);
         expect(item(label: '').hasCompleteServiceLocation, isFalse);
         expect(item(line1: '').hasCompleteServiceLocation, isFalse);
-        expect(item(city: '').hasCompleteServiceLocation, isFalse);
-        expect(item(neighborhood: '').hasCompleteServiceLocation, isFalse);
-        expect(item(directions: '').hasCompleteServiceLocation, isFalse);
+        expect(item(city: '').hasCompleteServiceLocation, isTrue);
+        expect(item(neighborhood: '').hasCompleteServiceLocation, isTrue);
+        expect(item(directions: '').hasCompleteServiceLocation, isTrue);
         expect(item(latitude: null).hasCompleteServiceLocation, isFalse);
         expect(item(longitude: null).hasCompleteServiceLocation, isFalse);
       },
