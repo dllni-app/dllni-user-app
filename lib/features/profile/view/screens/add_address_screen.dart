@@ -624,8 +624,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       );
       if (!mounted) return;
       setState(() {
-        _addressController.text =
+        final resolved =
             response.data?['display_name']?.toString().trim() ?? '';
+        _addressController.text =
+            resolved.length > 255 ? resolved.substring(0, 255) : resolved;
       });
     } catch (error) {
       if (!mounted) return;
