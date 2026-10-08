@@ -220,4 +220,24 @@ void main() {
     expect(body['numberOfWorkers'], 2);
     expect(body['preferredWorkerIds'], [7, 9]);
   });
+
+  test('hourly worker estimate uses open-time pricing contract', () {
+    final params = EstimateCleaningPriceParams.hourlyWorker(
+      addressId: 12,
+      workerCount: 2,
+      expectedMaxMinutes: 180,
+    );
+
+    final body = params.getBody();
+    final openTime = body['openTime'] as Map<String, dynamic>;
+
+    expect(body['propertyType'], 'apartment');
+    expect(body['addressId'], 12);
+    expect(body['assignmentMode'], 'open_count');
+    expect(body['numberOfWorkers'], 2);
+    expect(openTime['workerCount'], 2);
+    expect(openTime['expectedMaxMinutes'], 180);
+    expect(body.containsKey('serviceIds'), isFalse);
+  });
+
 }

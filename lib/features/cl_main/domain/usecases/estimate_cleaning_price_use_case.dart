@@ -128,6 +128,46 @@ class EstimateCleaningPriceParams with Params {
        recurringHoursPerVisit = null,
        recurringWorkerScope = CleaningRecurringWorkerScope.any;
 
+  EstimateCleaningPriceParams.hourlyWorker({
+    required this.addressId,
+    required int workerCount,
+    required int expectedMaxMinutes,
+  }) : propertyType = 'apartment',
+       bedrooms = 0,
+       rooms = 0,
+       bathrooms = 0,
+       balconies = 0,
+       livingRoomSize = CleaningRoomSize.small.apiValue,
+       roomSizeBreakdown = const CleaningRoomSizeBreakdown(),
+       cleaningType = CleaningType.regularCleaning,
+       addressLatitude = null,
+       addressLongitude = null,
+       preferredWorkerId = null,
+       preferredWorkerIds = const <int>[],
+       eventType = null,
+       eventTypeId = null,
+       eventDynamicAnswers = const <String, dynamic>{},
+       guestCount = null,
+       venueType = null,
+       customService = null,
+       hours = null,
+       eventSessions = const <CleaningEventSessionInput>[],
+       recurringSessions = const <CleaningRecurringSessionInput>[],
+       recurringCalculationMode = CleaningRecurringCalculationMode.task,
+       recurringHoursPerVisit = null,
+       recurringWorkerScope = CleaningRecurringWorkerScope.any,
+       specialRequirement = null,
+       notes = null,
+       numberOfWorkers = workerCount,
+       assignmentMode = CleaningAssignmentMode.openCount,
+       workerRoomAssignments = null,
+       serviceExtras = CleaningServiceExtrasRequest(
+         openTime: CleaningOpenTimeRequest(
+           workerCount: workerCount,
+           expectedMaxMinutes: expectedMaxMinutes,
+         ),
+       );
+
   bool get _isEventAssistance => propertyType == 'event_assistance';
 
   List<CleaningEventSessionInput> get _normalizedEventSessions =>

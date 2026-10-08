@@ -47,6 +47,7 @@ class CleaningOrderCard extends StatelessWidget {
   }
 
   String get _serviceTitle {
+    if (order.openTime != null) return 'عامل بالساعة';
     return CleaningEventAssistanceHelper.serviceTitle(
       propertyType: order.propertyType,
       customService: order.propertyDetails?.customService,

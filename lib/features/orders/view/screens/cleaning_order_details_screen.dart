@@ -1991,6 +1991,7 @@ class _CleaningOrderDetailsScreenState
   }
 
   String _serviceLabel(CleaningOrderDetailModel order) {
+    if (order.openTime != null) return 'عامل بالساعة';
     return CleaningEventAssistanceHelper.serviceTitle(
       propertyType: order.propertyType,
       customService: order.propertyDetails?.customService,

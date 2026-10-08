@@ -281,6 +281,7 @@ class _ClMainServiceScheduleScreenState
                           ),
                           const SizedBox(height: 12),
                           ClCleaningExtrasSectionWidget(
+                            showOpenTime: false,
                             requestMaterials: _serviceExtras.requestMaterials,
                             specialServices: _serviceExtras.specialServices,
                             openTime: _serviceExtras.openTime,
