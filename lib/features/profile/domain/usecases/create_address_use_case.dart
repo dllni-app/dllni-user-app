@@ -49,7 +49,6 @@ class CreateAddressParams with Params {
         'label': label,
         'mobile': mobile,
         'city': city,
-        'neighborhood': neighborhood,
         'street': street,
         if (building != null && building!.trim().isNotEmpty) 'building': building,
         'floor': floor,
