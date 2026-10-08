@@ -713,7 +713,7 @@ class _ClMainOccasionDescriptionScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على المدينة والحي والتفاصيل الأخرى والموقع على الخريطة',
+            'يرجى اختيار عنوان يحتوي على موقع محدد على الخريطة وعنوان واضح',
           ),
         ),
       );
