@@ -129,7 +129,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     }
     if (!address.hasCompleteServiceLocation) {
       _showMessage(
-        'يرجى اختيار أو تعديل عنوان مكتمل يحتوي على المدينة والحي والتفاصيل والموقع على الخريطة.',
+        'يرجى اختيار عنوان يحتوي على موقع محدد على الخريطة وعنوان واضح.',
       );
       return;
     }
