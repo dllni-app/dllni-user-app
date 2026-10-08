@@ -37,11 +37,14 @@ class AddressListItem {
 
   bool get hasCompleteServiceLocation {
     final parsedId = int.tryParse(id);
+    final normalizedLine = line1.trim();
+    final hasAddressText =
+        (normalizedLine.isNotEmpty && normalizedLine != '-') ||
+        (street?.trim().isNotEmpty ?? false);
+
     return parsedId != null &&
         parsedId > 0 &&
-        label.trim().isNotEmpty &&
-        line1.trim().isNotEmpty &&
-        (street?.trim().isNotEmpty ?? false || line1.trim().isNotEmpty) &&
+        hasAddressText &&
         latitude != null &&
         longitude != null;
   }
