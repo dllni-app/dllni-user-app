@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:common_package/common_package.dart';
+import 'package:dio/dio.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/helpers/phone_number_helper.dart';
 import 'package:flutter/material.dart';
@@ -194,7 +195,8 @@ class AddAddressBottomActions extends StatelessWidget {
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _cityController = TextEditingController(text: 'حلب');
+  final _cityController = TextEditingController(text: '');
+  final _addressController = TextEditingController();
   final _neighborhoodSearchController = TextEditingController();
   String? _selectedNeighborhood;
   final _directionsController = TextEditingController();
@@ -340,206 +342,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             ),
                           ],
                           const SizedBox(height: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  AppText.bodyMedium(
-                                    'المدينة',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  AppText.bodyMedium(
-                                    '*',
-                                    color: context.error,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                key: const Key('address_city_dropdown'),
-                                initialValue: _cityController.text,
-                                decoration: InputDecoration(
-                                  hintText: 'اختر المدينة',
-                                  hintStyle: const TextStyle(
-                                    color: AppColors.hintText,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  filled: true,
-                                  fillColor: const Color(0xffF9FAFB),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xffE5E7EB),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xffE5E7EB),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide(
-                                      color: context.primary,
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                ),
-                                items: const [
-                                  DropdownMenuItem<String>(
-                                    value: 'حلب',
-                                    child: Text('حلب'),
-                                  ),
-                                ],
-                                validator: _requiredCityValidator,
-                                onChanged: (value) {
-                                  if (value == null) return;
-                                  _cityController.text = value;
-                                  unawaited(_loadNeighborhoods(city: value));
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  AppText.bodyMedium(
-                                    'الحي',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  AppText.bodyMedium(
-                                    '*',
-                                    color: context.error,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                key: const Key('address_neighborhood_search'),
-                                controller: _neighborhoodSearchController,
-                                textInputAction: TextInputAction.search,
-                                decoration: InputDecoration(
-                                  hintText: 'اكتب اسم الحي للبحث',
-                                  prefixIcon: const Icon(Icons.search),
-                                  suffixIcon: _neighborhoodSearchQuery.isEmpty
-                                      ? null
-                                      : IconButton(
-                                          tooltip: 'مسح البحث',
-                                          onPressed: () {
-                                            _neighborhoodSearchController
-                                                .clear();
-                                            setState(() {
-                                              _neighborhoodSearchQuery = '';
-                                            });
-                                          },
-                                          icon: const Icon(Icons.close),
-                                        ),
-                                  filled: true,
-                                  fillColor: const Color(0xffF9FAFB),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xffE5E7EB),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xffE5E7EB),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide(
-                                      color: context.primary,
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                ),
-                                onChanged: (value) => setState(() {
-                                  _neighborhoodSearchQuery = value;
-                                }),
-                              ),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                key: ValueKey<String>(
-                                  'address_neighborhood_${_selectedNeighborhood ?? ''}_${_neighborhoodSearchQuery.trim()}',
-                                ),
-                                initialValue:
-                                    _selectedNeighborhood?.isEmpty ?? true
-                                    ? null
-                                    : _selectedNeighborhood,
-                                decoration: InputDecoration(
-                                  hintText: _filteredNeighborhoods.isEmpty
-                                      ? 'لا توجد نتائج مطابقة'
-                                      : 'اختر الحي',
-                                  hintStyle: const TextStyle(
-                                    color: AppColors.hintText,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  filled: true,
-                                  fillColor: const Color(0xffF9FAFB),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xffE5E7EB),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xffE5E7EB),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide(
-                                      color: context.primary,
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                ),
-                                items: _filteredNeighborhoods
-                                    .map(
-                                      (item) => DropdownMenuItem<String>(
-                                        value: item,
-                                        child: Text(item),
-                                      ),
-                                    )
-                                    .toList(),
-                                validator: _requiredNeighborhoodValidator,
-                                onChanged: (value) => setState(
-                                  () => _selectedNeighborhood = value ?? '',
-                                ),
-                              ),
-                            ],
+                          FilledTextField(
+                            label: 'العنوان',
+                            isRequired: true,
+                            hintText: 'يُستخرج تلقائياً من الخريطة',
+                            controller: _addressController,
+                            validator: (value) => value == null || value.trim().isEmpty
+                                ? 'يرجى تحديد الموقع واستخراج العنوان'
+                                : null,
                           ),
                           const SizedBox(height: 12),
                           FilledTextField(
@@ -605,6 +415,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   @override
   void dispose() {
     _cityController.dispose();
+    _addressController.dispose();
     _neighborhoodSearchController.dispose();
     _directionsController.dispose();
     _phoneController.dispose();
@@ -654,7 +465,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
             mobile: mobile,
             city: _cityController.text.trim(),
             neighborhood: _selectedNeighborhood ?? '',
-            street: '',
+            street: _addressController.text.trim(),
             building: '',
             floor: '',
             directions: _directionsController.text.trim(),
@@ -674,7 +485,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           mobile: mobile,
           city: _cityController.text.trim(),
           neighborhood: _selectedNeighborhood ?? '',
-          street: '',
+          street: _addressController.text.trim(),
           building: null,
           floor: '',
           directions: _directionsController.text.trim(),
@@ -690,7 +501,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void initState() {
     super.initState();
     final item = widget.params.addressItem;
-    unawaited(_loadNeighborhoods(city: 'حلب'));
     if (item == null) {
       String? phone;
       final rawUser = SharedPreferencesHelper.getData(
@@ -718,6 +528,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     } else {
       _phoneController.text = item.mobile ?? '';
       _selectedNeighborhood = item.neighborhood ?? '';
+      _addressController.text = item.street ?? item.line1;
       _directionsController.text = item.directions ?? item.landmark ?? '';
       _isDefault = item.isDefault;
       _latitude = item.latitude;
@@ -761,7 +572,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       mobile: _phoneController.text.trim(),
       city: _cityController.text.trim(),
       neighborhood: _selectedNeighborhood ?? '',
-      street: '',
+      street: _addressController.text.trim(),
       floor: '',
       latitude: _latitude!,
       longitude: _longitude!,
@@ -808,7 +619,32 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     setState(() {
       _latitude = selected.latitude;
       _longitude = selected.longitude;
+      _addressController.clear();
     });
+    try {
+      final response = await Dio().get<Map<String, dynamic>>(
+        'https://nominatim.openstreetmap.org/reverse',
+        queryParameters: {
+          'lat': selected.latitude,
+          'lon': selected.longitude,
+          'format': 'json',
+          'accept-language': 'ar',
+        },
+        options: Options(headers: {'User-Agent': 'DllniCustomerApp/1.0 (address picker)'}),
+      );
+      if (!mounted) return;
+      setState(() {
+        _addressController.text =
+            response.data?['display_name']?.toString().trim() ?? '';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.showToast(
+        context: context,
+        message: 'تعذر استخراج العنوان تلقائياً؛ حاول مجدداً أو أدخله يدوياً.',
+        type: ToastificationType.warning,
+      );
+    }
   }
 
   bool _validateLocationBeforeSubmit() {
