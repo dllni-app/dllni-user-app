@@ -51,7 +51,6 @@ class UpdateAddressParams with Params {
     'label': label,
     'mobile': mobile,
     'city': city,
-    'neighborhood': neighborhood,
     'street': street,
     'building': building,
     'floor': floor,
