@@ -2,14 +2,17 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../orders/view/screens/cleaning_order_details_screen.dart';
 import '../../../profile/domain/models/address_list_item.dart';
-import '../../data/models/estimate_price_response_model.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
+import '../helpers/cl_hourly_worker_validation.dart';
 import '../widgets/app_pickers.dart';
+import '../widgets/cl_hourly_worker_widgets.dart';
+import '../widgets/cl_redesign_components.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 
@@ -21,17 +24,14 @@ class ClHourlyWorkerScreen extends StatefulWidget {
 }
 
 class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
-  static const List<int> _durationOptions = <int>[
-    60,
-    120,
-    180,
-    240,
-    360,
-    480,
-  ];
+  static const List<int> _durationOptions = <int>[60, 120, 180, 240, 360, 480];
 
   final ValueNotifier<AddressListItem?> _selectedAddress = ValueNotifier(null);
   final TextEditingController _notesController = TextEditingController();
+  final FocusNode _notesFocusNode = FocusNode();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormFieldState<String>> _notesFieldKey =
+      GlobalKey<FormFieldState<String>>();
 
   late DateTime _selectedDate;
   String _selectedTime = '09:00';
@@ -52,6 +52,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
   void dispose() {
     _selectedAddress.dispose();
     _notesController.dispose();
+    _notesFocusNode.dispose();
     super.dispose();
   }
 
@@ -120,6 +121,21 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
 
   Future<void> _submit() async {
     if (_submitting) return;
+
+    final form = _formKey.currentState;
+    if (form != null && !form.validate()) {
+      _notesFocusNode.requestFocus();
+      final fieldContext = _notesFieldKey.currentContext;
+      if (fieldContext != null) {
+        await Scrollable.ensureVisible(
+          fieldContext,
+          alignment: 0.35,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+        );
+      }
+      return;
+    }
 
     final address = _selectedAddress.value;
     final addressId = int.tryParse(address?.id ?? '');
@@ -192,42 +208,103 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     return '$minutes دقيقة';
   }
 
+  String? _validateDescription(String? value) {
+    return ClHourlyWorkerValidation.description(value);
+  }
+
+  InputDecoration _fieldDecoration({
+    required String hintText,
+    String? helperText,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      helperText: helperText,
+      alignLabelWithHint: true,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFD0D5DD)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(
+          color: SharedPlatformColors.cleaning,
+          width: 1.5,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: SharedPlatformColors.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(
+          color: SharedPlatformColors.danger,
+          width: 1.5,
+        ),
+      ),
+    );
+  }
+
   Widget _sectionCard({
     required String title,
     required Widget child,
     String? subtitle,
+    IconData icon = Icons.tune_rounded,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
+    return ClRedesignCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1F2937),
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 5),
-            Text(
-              subtitle,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: SharedPlatformColors.cleaningSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: SharedPlatformColors.cleaning),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      textAlign: TextAlign.start,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: SharedPlatformColors.ink,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        textAlign: TextAlign.start,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.45,
+                          color: SharedPlatformColors.muted,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 14),
           child,
         ],
@@ -238,14 +315,13 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
   Widget _buildCountSelector() {
     return Row(
       children: [
-        IconButton.filledTonal(
-          onPressed: _workerCount >= 20
-              ? null
-              : () {
-                  setState(() => _workerCount++);
-                  _refreshEstimate();
-                },
-          icon: const Icon(Icons.add),
+        _counterButton(
+          icon: Icons.remove,
+          enabled: _workerCount > 1,
+          onPressed: () {
+            setState(() => _workerCount--);
+            _refreshEstimate();
+          },
         ),
         Expanded(
           child: Column(
@@ -253,61 +329,107 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
               Text(
                 '$_workerCount',
                 style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  color: SharedPlatformColors.ink,
                 ),
               ),
               Text(
                 _workerCount == 1 ? 'عامل' : 'عمال',
-                style: const TextStyle(color: Color(0xFF6B7280)),
+                style: const TextStyle(color: SharedPlatformColors.muted),
               ),
             ],
           ),
         ),
-        IconButton.filledTonal(
-          onPressed: _workerCount <= 1
-              ? null
-              : () {
-                  setState(() => _workerCount--);
-                  _refreshEstimate();
-                },
-          icon: const Icon(Icons.remove),
+        _counterButton(
+          icon: Icons.add,
+          enabled: _workerCount < 20,
+          onPressed: () {
+            setState(() => _workerCount++);
+            _refreshEstimate();
+          },
         ),
       ],
+    );
+  }
+
+  Widget _counterButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: IconButton(
+        onPressed: enabled ? onPressed : null,
+        icon: Icon(icon, size: 20),
+        tooltip: icon == Icons.add ? 'زيادة عدد العمال' : 'تقليل عدد العمال',
+        style: IconButton.styleFrom(
+          backgroundColor: enabled
+              ? SharedPlatformColors.cleaning
+              : const Color(0xFFF2F4F7),
+          foregroundColor: enabled ? Colors.white : SharedPlatformColors.subtle,
+        ),
+      ),
     );
   }
 
   Widget _buildEstimateCard() {
     if (_estimating) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 18),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.symmetric(vertical: 22),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: SharedPlatformColors.cleaning,
+          ),
+        ),
       );
     }
 
     if (_estimateError != null) {
-      return Column(
-        children: [
-          Text(
-            _estimateError!,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: _refreshEstimate,
-            child: const Text('إعادة المحاولة'),
-          ),
-        ],
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF1F2),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFECdd3)),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, color: SharedPlatformColors.danger),
+            const SizedBox(height: 6),
+            Text(
+              _estimateError!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SharedPlatformColors.danger),
+            ),
+            const SizedBox(height: 4),
+            TextButton.icon(
+              onPressed: _refreshEstimate,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('إعادة المحاولة'),
+            ),
+          ],
+        ),
       );
     }
 
     final openTime = _estimate?.openTime;
     if (openTime == null) {
-      return const Text(
-        'اختر العنوان لعرض السعر الساعي التقديري.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Color(0xFF6B7280)),
+      return const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, color: SharedPlatformColors.cleaning),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'اختر عنوان الخدمة لعرض السعر الساعي التقديري.',
+              textAlign: TextAlign.start,
+              style: TextStyle(color: SharedPlatformColors.muted, height: 1.45),
+            ),
+          ),
+        ],
       );
     }
 
@@ -315,32 +437,49 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     final rate = openTime.hourlyRate ?? 0;
     final total = openTime.totalPrice ?? _estimate?.pricing?.totalPrice ?? 0;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _priceRow('سعر الساعة للعامل', rate, currency),
-        const Divider(height: 24),
-        _priceRow('القيمة التقديرية حتى الحد المختار', total, currency),
-        const SizedBox(height: 10),
-        const Text(
-          'الفوترة النهائية تعتمد على مدة العمل الفعلية المسجلة في النظام، ولا يتوقف العداد عند مغادرة شاشة الطلب.',
-          textAlign: TextAlign.right,
-          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+        ClHourlyWorkerPriceRow(
+          label: 'سعر الساعة للعامل',
+          amount: rate,
+          currency: currency,
         ),
-      ],
-    );
-  }
-
-  Widget _priceRow(String label, double amount, String currency) {
-    return Row(
-      children: [
-        Text(
-          '${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)} $currency',
-          style: const TextStyle(fontWeight: FontWeight.w800),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: SharedPlatformColors.cleaningSoft,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: ClHourlyWorkerPriceRow(
+            label: 'القيمة التقديرية حتى الحد المختار',
+            amount: total,
+            currency: currency,
+            emphasize: true,
+          ),
         ),
-        const Spacer(),
-        Text(
-          label,
-          textAlign: TextAlign.right,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+        const SizedBox(height: 12),
+        const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 18,
+              color: SharedPlatformColors.muted,
+            ),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'الفوترة النهائية تعتمد على مدة العمل الفعلية المسجلة في النظام، ولا يتوقف العداد عند مغادرة شاشة الطلب.',
+                textAlign: TextAlign.start,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.45,
+                  color: SharedPlatformColors.muted,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -348,139 +487,202 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = CleaningDateTimeUiFormat.date(_selectedDate);
+    final dateLabel = CleaningDateTimeUiFormat.scheduleLabel(_selectedDate);
     final timeLabel = CleaningDateTimeUiFormat.time(_selectedTime);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const HomeDetailsAppBar(),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 18, 20, 24),
-                children: [
-                  const Text(
-                    'عامل بالساعة',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF1E3A8A),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: SharedPlatformColors.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const HomeDetailsAppBar(),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      16,
+                      16,
+                      28,
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'اطلب عاملًا أو أكثر للعمل بالساعة. يتم احتساب الوقت الفعلي من الباك اند منذ بدء العمل وحتى إنهائه.',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(color: Color(0xFF6B7280)),
-                  ),
-                  const SizedBox(height: 18),
-                  _sectionCard(
-                    title: 'عدد العمال',
-                    subtitle: 'يمكنك طلب أكثر من عامل في نفس الحجز.',
-                    child: _buildCountSelector(),
-                  ),
-                  const SizedBox(height: 12),
-                  _sectionCard(
-                    title: 'الموعد',
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _pickTime,
-                            icon: const Icon(Icons.schedule),
-                            label: Text(timeLabel),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _pickDate,
-                            icon: const Icon(Icons.calendar_month),
-                            label: Text(dateLabel),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _sectionCard(
-                    title: 'المدة القصوى المتوقعة',
-                    subtitle:
-                        'هي حد الحجز المتوقع، بينما الحساب النهائي حسب الوقت الفعلي.',
-                    child: DropdownButtonFormField<int>(
-                      initialValue: _expectedMaxMinutes,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                      ),
-                      items: _durationOptions
-                          .map(
-                            (minutes) => DropdownMenuItem<int>(
-                              value: minutes,
-                              child: Text(_durationLabel(minutes)),
+                    children: [
+                      ClRedesignCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: SharedPlatformColors.cleaningSoft,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.timer_outlined,
+                                size: 26,
+                                color: SharedPlatformColors.cleaning,
+                              ),
                             ),
-                          )
-                          .toList(growable: false),
-                      onChanged: (minutes) {
-                        if (minutes == null) return;
-                        setState(() => _expectedMaxMinutes = minutes);
-                        _refreshEstimate();
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  CleaningAddressSelectWidget(
-                    selectedAddress: _selectedAddress,
-                    onChangeTap: _selectAddress,
-                    afterBringDefault: _refreshEstimate,
-                  ),
-                  const SizedBox(height: 12),
-                  _sectionCard(
-                    title: 'وصف العمل',
-                    subtitle: 'اختياري — اكتب ما تريد من العامل تنفيذه.',
-                    child: TextField(
-                      controller: _notesController,
-                      minLines: 3,
-                      maxLines: 5,
-                      maxLength: 2000,
-                      textAlign: TextAlign.right,
-                      decoration: const InputDecoration(
-                        hintText: 'مثال: مساعدة في ترتيب المنزل أو نقل أغراض خفيفة...',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _sectionCard(
-                    title: 'التكلفة التقديرية',
-                    child: _buildEstimateCard(),
-                  ),
-                  const SizedBox(height: 18),
-                  FilledButton(
-                    onPressed: _submitting ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'عامل بالساعة',
+                                    textAlign: TextAlign.start,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      color: SharedPlatformColors.ink,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'اطلب عاملاً أو أكثر للعمل بالساعة، وتُحتسب الفاتورة حسب مدة العمل الفعلية.',
+                                    textAlign: TextAlign.start,
+                                    style: TextStyle(
+                                      color: SharedPlatformColors.muted,
+                                      fontSize: 12,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          )
-                        : const Text(
-                            'تأكيد طلب عامل بالساعة',
-                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _sectionCard(
+                        title: 'عدد العمال',
+                        subtitle: 'يمكنك طلب أكثر من عامل في نفس الحجز.',
+                        icon: Icons.groups_2_outlined,
+                        child: _buildCountSelector(),
+                      ),
+                      const SizedBox(height: 12),
+                      _sectionCard(
+                        title: 'الموعد',
+                        subtitle: 'اختر اليوم والوقت المناسبين لبدء الخدمة.',
+                        icon: Icons.event_available_outlined,
+                        child: Column(
+                          children: [
+                            ClHourlyWorkerAppointmentTile(
+                              label: 'التاريخ',
+                              value: dateLabel,
+                              icon: Icons.calendar_month_outlined,
+                              onTap: _pickDate,
+                            ),
+                            const SizedBox(height: 10),
+                            ClHourlyWorkerAppointmentTile(
+                              label: 'الوقت',
+                              value: timeLabel,
+                              icon: Icons.schedule_outlined,
+                              onTap: _pickTime,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _sectionCard(
+                        title: 'المدة القصوى المتوقعة',
+                        subtitle:
+                            'هي حد الحجز المتوقع، بينما الحساب النهائي حسب الوقت الفعلي.',
+                        icon: Icons.timelapse_outlined,
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _expectedMaxMinutes,
+                          isExpanded: true,
+                          decoration: _fieldDecoration(
+                            hintText: 'اختر المدة القصوى',
                           ),
+                          items: _durationOptions
+                              .map(
+                                (minutes) => DropdownMenuItem<int>(
+                                  value: minutes,
+                                  child: Text(
+                                    _durationLabel(minutes),
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ),
+                              )
+                              .toList(growable: false),
+                          onChanged: (minutes) {
+                            if (minutes == null) return;
+                            setState(() => _expectedMaxMinutes = minutes);
+                            _refreshEstimate();
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      CleaningAddressSelectWidget(
+                        selectedAddress: _selectedAddress,
+                        onChangeTap: _selectAddress,
+                        afterBringDefault: _refreshEstimate,
+                      ),
+                      const SizedBox(height: 12),
+                      _sectionCard(
+                        title: 'وصف العمل *',
+                        subtitle:
+                            'مطلوب — اشرح للعامل المهمة بوضوح في 20 حرفاً على الأقل.',
+                        icon: Icons.description_outlined,
+                        child: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _notesController,
+                          builder: (context, value, _) {
+                            final length = value.text.trim().length;
+                            final helper =
+                                length >=
+                                    ClHourlyWorkerValidation
+                                        .minimumDescriptionLength
+                                ? 'يمكنك كتابة حتى ${ClHourlyWorkerValidation.maximumDescriptionLength} حرف.'
+                                : 'اكتب 20 حرفاً على الأقل — $length/${ClHourlyWorkerValidation.minimumDescriptionLength}';
+                            return TextFormField(
+                              key: _notesFieldKey,
+                              controller: _notesController,
+                              focusNode: _notesFocusNode,
+                              minLines: 4,
+                              maxLines: 6,
+                              maxLength: ClHourlyWorkerValidation
+                                  .maximumDescriptionLength,
+                              autovalidateMode:
+                                  AutovalidateMode.onUserInteraction,
+                              textAlign: TextAlign.start,
+                              validator: _validateDescription,
+                              decoration: _fieldDecoration(
+                                hintText:
+                                    'مثال: مساعدة في ترتيب المنزل أو نقل أغراض خفيفة...',
+                                helperText: helper,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _sectionCard(
+                        title: 'التكلفة التقديرية',
+                        subtitle: 'السعر الظاهر تقديري حتى المدة التي اخترتها.',
+                        icon: Icons.payments_outlined,
+                        child: _buildEstimateCard(),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+              ClRedesignStickyActions(
+                primaryLabel: _submitting
+                    ? 'جارٍ إرسال الطلب…'
+                    : 'تأكيد طلب عامل بالساعة',
+                onPrimary: _submit,
+                primaryEnabled: !_submitting,
+              ),
+            ],
+          ),
         ),
       ),
     );
