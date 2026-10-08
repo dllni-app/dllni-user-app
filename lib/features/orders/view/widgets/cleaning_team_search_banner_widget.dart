@@ -71,6 +71,12 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.92),
             textAlign: TextAlign.right,
           ),
+          const SizedBox(height: 8),
+          AppText.bodySmall(
+            'يبدأ البحث ضمن 10 كم ويتوسع تلقائياً كل 20 دقيقة، حتى 50 كم، إذا لم يكتمل عدد العمال.',
+            color: Colors.white.withValues(alpha: 0.9),
+            textAlign: TextAlign.right,
+          ),
           if (required > 0) ...[
             const SizedBox(height: 12),
             ClipRRect(
