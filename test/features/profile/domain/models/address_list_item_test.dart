@@ -9,6 +9,7 @@ void main() {
       String line1 = 'Aleppo - Al Furqan',
       String? city = 'حلب',
       String? neighborhood = 'الفرقان',
+      String? street,
       String? directions = 'قرب الحديقة',
       double? latitude = 36.2021,
       double? longitude = 37.1343,
@@ -20,6 +21,7 @@ void main() {
         type: AddressType.home,
         city: city,
         neighborhood: neighborhood,
+        street: street,
         directions: directions,
         latitude: latitude,
         longitude: longitude,
@@ -27,13 +29,19 @@ void main() {
     }
 
     test(
-      'requires id, label, address line and coordinates but not legacy neighborhood',
+      'requires a saved id, map address text and coordinates only',
       () {
         expect(item().hasCompleteServiceLocation, isTrue);
         expect(item(id: '0').hasCompleteServiceLocation, isFalse);
-        expect(item(label: '').hasCompleteServiceLocation, isFalse);
+        expect(item(label: '').hasCompleteServiceLocation, isTrue);
         expect(item(line1: '').hasCompleteServiceLocation, isFalse);
+        expect(
+          item(line1: '', street: 'صافيتا النيرب، حلب')
+              .hasCompleteServiceLocation,
+          isTrue,
+        );
         expect(item(city: '').hasCompleteServiceLocation, isTrue);
+        expect(item(neighborhood: null).hasCompleteServiceLocation, isTrue);
         expect(item(neighborhood: '').hasCompleteServiceLocation, isTrue);
         expect(item(directions: '').hasCompleteServiceLocation, isTrue);
         expect(item(latitude: null).hasCompleteServiceLocation, isFalse);
