@@ -53,6 +53,8 @@ class _ClMainServiceScheduleScreenState
     extends State<ClMainServiceScheduleScreen> {
   ClMainBloc? _bloc;
   CleaningGenderPreference? _explicitGenderPreference;
+  bool _dateChosen = false;
+  bool _timeChosen = false;
   late DateTime _selectedDate;
   late String _fromTimeHhMm;
   late String _toTimeHhMm;
@@ -77,8 +79,8 @@ class _ClMainServiceScheduleScreenState
 
   @override
   Widget build(BuildContext context) {
-    final dayAr = CleaningDateTimeUiFormat.weekday(_selectedDate);
-    final dayDate = CleaningDateTimeUiFormat.date(_selectedDate);
+    final dayAr = _dateChosen ? CleaningDateTimeUiFormat.weekday(_selectedDate) : 'اختر التاريخ';
+    final dayDate = _dateChosen ? CleaningDateTimeUiFormat.date(_selectedDate) : '';
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final bloc = _bloc;
 
@@ -352,7 +354,7 @@ class _ClMainServiceScheduleScreenState
     _fromTimeHhMm = '09:00';
     _toTimeHhMm = '09:00';
     _fromTimeController = TextEditingController(
-      text: CleaningDateTimeUiFormat.time(_fromTimeHhMm),
+      text: '',
     );
     _toTimeController = TextEditingController(
       text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
@@ -362,7 +364,7 @@ class _ClMainServiceScheduleScreenState
   }
 
   void _updateTimeDisplay() {
-    _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
+    _fromTimeController.text = _timeChosen ? CleaningDateTimeUiFormat.time(_fromTimeHhMm) : '';
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
   }
 
@@ -561,6 +563,7 @@ class _ClMainServiceScheduleScreenState
     if (value.isEmpty) return;
     setState(() {
       _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
+      _dateChosen = true;
     });
   }
 
@@ -577,6 +580,7 @@ class _ClMainServiceScheduleScreenState
     if (value.isEmpty) return;
     setState(() {
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
+      _timeChosen = true;
       _syncToTime();
     });
   }
@@ -640,6 +644,15 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _onSubmitPressed(ClMainState state) async {
+    if (!_dateChosen) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار تاريخ الخدمة')));
+      return;
+    }
+    if (!_timeChosen) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار وقت بدء الخدمة')));
+      return;
+    }
+
     if (_explicitGenderPreference == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار جنس العامل: ذكر أو أنثى')),
