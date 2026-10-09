@@ -62,6 +62,7 @@ class ClMainServiceScheduleScreen extends StatefulWidget {
 class _ClMainServiceScheduleScreenState
     extends State<ClMainServiceScheduleScreen> {
   ClMainBloc? _bloc;
+  CleaningGenderPreference? _explicitGenderPreference;
   late DateTime _selectedDate;
   late String _fromTimeHhMm;
   late String _toTimeHhMm;
@@ -249,7 +250,7 @@ class _ClMainServiceScheduleScreenState
                           ),
                           const SizedBox(height: 10),
                           ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
+                            selectedPreference: _explicitGenderPreference,
                             onChanged: (preference) {
                               _handleGenderPreferenceChanged(bloc, preference);
                             },
@@ -718,6 +719,7 @@ class _ClMainServiceScheduleScreenState
     ClMainBloc bloc,
     CleaningGenderPreference preference,
   ) async {
+    setState(() => _explicitGenderPreference = preference);
     if (preference != CleaningGenderPreference.female) {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
       return;
@@ -1752,6 +1754,13 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _onSubmitPressed(ClMainState state) async {
+    if (_explicitGenderPreference == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار جنس العامل: ذكر أو أنثى')),
+      );
+      return;
+    }
+
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
