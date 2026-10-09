@@ -18,7 +18,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
     CleaningGenderPreference.female,
   ];
 
-  final CleaningGenderPreference selectedPreference;
+  final CleaningGenderPreference? selectedPreference;
   final ValueChanged<CleaningGenderPreference> onChanged;
   final int step;
   final bool showStepBadge;
