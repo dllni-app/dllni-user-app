@@ -253,12 +253,25 @@ class _ClMainHomeDescriptionScreenState
   }
 
   bool get _canContinueCurrentStep {
-    if (_currentStep == 0) return _roomState.hasAnyRoom;
-    if (_currentStep == 1) return _roomState.units.isNotEmpty;
+    if (_currentStep == 0) return true;
+    if (_currentStep == 1) return true;
     return !_isEstimatingForContinue;
   }
 
   void _onPrimaryPressed(ClMainBloc bloc, ClMainState state) {
+    if (_currentStep == 0 && !_roomState.hasAnyRoom) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تحديد غرفة واحدة على الأقل للتنظيف')),
+      );
+      return;
+    }
+    if (_currentStep == 1 &&
+        _roomState.units.any((unit) => unit.size == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تحديد حجم كل غرفة قبل المتابعة')),
+      );
+      return;
+    }
     if (_currentStep < 2) {
       setState(() => _currentStep++);
       return;
