@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -35,7 +34,7 @@ class _ClMainHomeDescriptionScreenState
     extends State<ClMainHomeDescriptionScreen> {
   CleaningRoomSizeBreakdown _roomSizeBreakdown =
       const CleaningRoomSizeBreakdown();
-  CleaningType _selectedCleaningType = CleaningType.regularCleaning;
+  CleaningType? _selectedCleaningType;
 
   String _propertyType = 'apartment';
   AddressListItem? _defaultAddress;
@@ -402,7 +401,7 @@ class _ClMainHomeDescriptionScreenState
           balconies: _roomSizeBreakdown.legacyBalconiesCount,
           livingRoomSize: _roomSizeBreakdown.legacyLivingRoomSize,
           roomSizeBreakdown: _roomSizeBreakdown,
-          cleaningType: _selectedCleaningType,
+          cleaningType: _selectedCleaningType!,
           addressId: int.tryParse(address?.id ?? ''),
           addressLatitude: address?.latitude,
           addressLongitude: address?.longitude,
