@@ -741,6 +741,7 @@ class _ClMainOccasionScheduleScreenState
       if (!mounted || result == null) return;
       setState(() {
         _sessions[index].hours = result;
+        _sessions[index].hoursChosen = true;
       });
       _onScheduleChanged();
     } finally {
@@ -763,6 +764,8 @@ class _ClMainOccasionScheduleScreenState
       for (var index = 1; index < _sessions.length; index++) {
         final session = _sessions[index];
         session.hours = source.hours;
+        session.hoursChosen = source.hoursChosen;
+        session.timeChosen = source.timeChosen;
         session.time = _nextAvailableTimeForDate(
           session.date,
           source.time,
@@ -1009,6 +1012,7 @@ class _ClMainOccasionScheduleScreenState
       final session = _sessions[index];
       if (!session.dateChosen) return 'يرجى اختيار تاريخ يوم العمل ${index + 1}';
       if (!session.timeChosen) return 'يرجى اختيار وقت بدء يوم العمل ${index + 1}';
+      if (!session.hoursChosen) return 'يرجى تحديد مدة يوم العمل ${index + 1}';
       if (session.date.isBefore(_minimumDate)) {
         return 'تاريخ يوم العمل ${index + 1} يجب أن يكون غداً أو بعده';
       }
@@ -1196,6 +1200,7 @@ class _EventSessionDraft {
   double hours;
   bool dateChosen;
   bool timeChosen;
+  bool hoursChosen;
 
   _EventSessionDraft({
     required this.date,
@@ -1203,6 +1208,7 @@ class _EventSessionDraft {
     required this.hours,
     this.dateChosen = false,
     this.timeChosen = false,
+    this.hoursChosen = false,
   });
 
   String get endTime =>
@@ -1294,7 +1300,7 @@ class _EventSessionCard extends StatelessWidget {
           const SizedBox(height: 6),
           _OccasionInfoRow(
             label: 'المدة',
-            value: '${_hours(session.hours)} ساعة',
+            value: session.hoursChosen ? '${_hours(session.hours)} ساعة' : 'اختر المدة',
           ),
           if (estimatedPrice != null) ...[
             const SizedBox(height: 6),
