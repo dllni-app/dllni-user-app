@@ -339,11 +339,7 @@ class _ClMainHomeDescriptionScreenState
       _propertyType = args.propertyType;
       _defaultAddress = args.defaultAddress;
       _bloc = args.bloc;
-      _bloc?.add(
-        SetGenderPreferenceEvent(
-          preference: CleaningGenderPreference.male,
-        ),
-      );
+
     }
   }
 
