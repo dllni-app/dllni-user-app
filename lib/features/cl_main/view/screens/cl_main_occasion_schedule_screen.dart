@@ -128,7 +128,9 @@ class _ClMainOccasionScheduleScreenState
         .map(
           (session) => ClServiceScheduleEntry(
             dayDate:
-                '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}',
+                session.dateChosen
+                ? '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}'
+                : 'لم يتم اختيار التاريخ',
             time: CleaningDateTimeUiFormat.timeRange(
               session.time,
               session.endTime,
@@ -609,6 +611,7 @@ class _ClMainOccasionScheduleScreenState
           date: date,
           time: resolvedTime,
           hours: template?.hours ?? _defaultSessionHours,
+          dateChosen: true,
         ),
       );
       _sortSessions();
@@ -649,6 +652,7 @@ class _ClMainOccasionScheduleScreenState
 
     setState(() {
       _sessions[index].date = selectedDate;
+      _sessions[index].dateChosen = true;
       _sortSessions();
     });
     _onScheduleChanged();
@@ -674,6 +678,7 @@ class _ClMainOccasionScheduleScreenState
     }
     setState(() {
       _sessions[index].time = normalized;
+      _sessions[index].timeChosen = true;
       _sortSessions();
     });
     _onScheduleChanged();
@@ -1002,6 +1007,8 @@ class _ClMainOccasionScheduleScreenState
     final seenSlots = <String>{};
     for (var index = 0; index < _sessions.length; index++) {
       final session = _sessions[index];
+      if (!session.dateChosen) return 'يرجى اختيار تاريخ يوم العمل ${index + 1}';
+      if (!session.timeChosen) return 'يرجى اختيار وقت بدء يوم العمل ${index + 1}';
       if (session.date.isBefore(_minimumDate)) {
         return 'تاريخ يوم العمل ${index + 1} يجب أن يكون غداً أو بعده';
       }
@@ -1187,11 +1194,15 @@ class _EventSessionDraft {
   DateTime date;
   String time;
   double hours;
+  bool dateChosen;
+  bool timeChosen;
 
   _EventSessionDraft({
     required this.date,
     required this.time,
     required this.hours,
+    this.dateChosen = false,
+    this.timeChosen = false,
   });
 
   String get endTime =>
@@ -1273,12 +1284,12 @@ class _EventSessionCard extends StatelessWidget {
           const SizedBox(height: 10),
           _OccasionInfoRow(
             label: 'من',
-            value: CleaningDateTimeUiFormat.time(session.time),
+            value: session.timeChosen ? CleaningDateTimeUiFormat.time(session.time) : 'اختر الوقت',
           ),
           const SizedBox(height: 6),
           _OccasionInfoRow(
             label: 'إلى',
-            value: CleaningDateTimeUiFormat.time(session.endTime),
+            value: session.timeChosen ? CleaningDateTimeUiFormat.time(session.endTime) : '—',
           ),
           const SizedBox(height: 6),
           _OccasionInfoRow(
