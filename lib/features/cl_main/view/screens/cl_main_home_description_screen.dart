@@ -378,6 +378,13 @@ class _ClMainHomeDescriptionScreenState
       return;
     }
 
+    if (_selectedCleaningType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار نوع التنظيف قبل المتابعة')),
+      );
+      return;
+    }
+
     final address = _defaultAddress;
     final roomUnits = enumerateRoomUnits(_roomSizeBreakdown);
     final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
