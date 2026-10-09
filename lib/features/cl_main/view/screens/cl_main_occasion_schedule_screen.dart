@@ -56,6 +56,7 @@ class _ClMainOccasionScheduleScreenState
   late TextEditingController _couponController;
   ClMainOccasionScheduleArgs? _routeArgs;
   ClMainBloc? _bloc;
+  CleaningGenderPreference? _explicitGenderPreference;
   bool _didReadArgs = false;
   EstimatePriceResponseModel? _currentEstimate;
   late final ValueNotifier<AddressListItem?> _selectedAddress;
@@ -248,7 +249,7 @@ class _ClMainOccasionScheduleScreenState
                           ),
                           const SizedBox(height: 10),
                           ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: state.genderPreference,
+                            selectedPreference: _explicitGenderPreference,
                             onChanged: (preference) {
                               _handleGenderPreferenceChanged(
                                 bloc,
@@ -432,6 +433,7 @@ class _ClMainOccasionScheduleScreenState
       preference,
     );
 
+    setState(() => _explicitGenderPreference = preference);
     if (preference != CleaningGenderPreference.female) {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
       _requestUpdatedEstimate(
@@ -612,6 +614,13 @@ class _ClMainOccasionScheduleScreenState
   }
 
   void _onSubmitPressed(ClMainState state) {
+    if (_explicitGenderPreference == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار جنس العامل: ذكر أو أنثى')),
+      );
+      return;
+    }
+
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
