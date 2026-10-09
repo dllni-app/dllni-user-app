@@ -33,20 +33,14 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
   final ValueNotifier<AddressListItem?> _selectedAddress = ValueNotifier(null);
   final TextEditingController _notesController = TextEditingController();
 
-  late DateTime _selectedDate;
-  String _selectedTime = '09:00';
+  DateTime? _selectedDate;
+  String? _selectedTime;
   int _workerCount = 1;
   int _expectedMaxMinutes = 120;
   EstimatePriceResponseModel? _estimate;
   bool _estimating = false;
   bool _submitting = false;
   String? _estimateError;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDate = CleaningScheduleDateTimeLogic.tomorrowDate();
-  }
 
   @override
   void dispose() {
@@ -66,7 +60,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     final value = await AppPickers.showAppDatePicker(
       context: context,
       startDate: CleaningScheduleDateTimeLogic.tomorrowDate(),
-      initialDate: _selectedDate,
+      initialDate: _selectedDate ?? CleaningScheduleDateTimeLogic.tomorrowDate(),
     );
     if (!mounted || value.isEmpty) return;
     final parsed = CleaningScheduleDateTimeLogic.parseDateApi(value);
@@ -121,6 +115,15 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
   Future<void> _submit() async {
     if (_submitting) return;
 
+    if (_selectedDate == null) {
+      _showMessage('يرجى اختيار تاريخ الخدمة.');
+      return;
+    }
+    if (_selectedTime == null) {
+      _showMessage('يرجى اختيار وقت بدء الخدمة.');
+      return;
+    }
+
     final address = _selectedAddress.value;
     final addressId = int.tryParse(address?.id ?? '');
     if (address == null || addressId == null || addressId <= 0) {
@@ -139,9 +142,9 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
       CreateCleaningOrderParams.hourlyWorker(
         addressId: addressId,
         scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
-          _selectedDate,
+          _selectedDate!,
         ),
-        scheduledTime: _selectedTime,
+        scheduledTime: _selectedTime!,
         workerCount: _workerCount,
         expectedMaxMinutes: _expectedMaxMinutes,
         address: address.line1,
@@ -345,8 +348,12 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = CleaningDateTimeUiFormat.date(_selectedDate);
-    final timeLabel = CleaningDateTimeUiFormat.time(_selectedTime);
+    final dateLabel = _selectedDate == null
+        ? 'اختر التاريخ'
+        : CleaningDateTimeUiFormat.date(_selectedDate!);
+    final timeLabel = _selectedTime == null
+        ? 'اختر الوقت'
+        : CleaningDateTimeUiFormat.time(_selectedTime!);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F2),
