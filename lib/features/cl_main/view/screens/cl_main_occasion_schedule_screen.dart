@@ -50,6 +50,7 @@ class ClMainOccasionScheduleScreen extends StatefulWidget {
 class _ClMainOccasionScheduleScreenState
     extends State<ClMainOccasionScheduleScreen> {
   final List<_EventSessionDraft> _sessions = <_EventSessionDraft>[];
+  CleaningGenderPreference? _explicitGenderPreference;
   late TextEditingController _couponController;
   ClMainOccasionScheduleArgs? _routeArgs;
   ClMainBloc? _bloc;
@@ -127,7 +128,9 @@ class _ClMainOccasionScheduleScreenState
         .map(
           (session) => ClServiceScheduleEntry(
             dayDate:
-                '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}',
+                session.dateChosen
+                ? '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}'
+                : 'لم يتم اختيار التاريخ',
             time: CleaningDateTimeUiFormat.timeRange(
               session.time,
               session.endTime,
@@ -312,7 +315,7 @@ class _ClMainOccasionScheduleScreenState
                             _buildMultiDayScheduleCard(),
                             const SizedBox(height: 10),
                             ClServiceGenderPreferenceSectionWidget(
-                              selectedPreference: state.genderPreference,
+                              selectedPreference: _explicitGenderPreference,
                               onChanged: (preference) {
                                 _handleGenderPreferenceChanged(
                                   bloc,
@@ -608,6 +611,7 @@ class _ClMainOccasionScheduleScreenState
           date: date,
           time: resolvedTime,
           hours: template?.hours ?? _defaultSessionHours,
+          dateChosen: true,
         ),
       );
       _sortSessions();
@@ -648,6 +652,7 @@ class _ClMainOccasionScheduleScreenState
 
     setState(() {
       _sessions[index].date = selectedDate;
+      _sessions[index].dateChosen = true;
       _sortSessions();
     });
     _onScheduleChanged();
@@ -673,6 +678,7 @@ class _ClMainOccasionScheduleScreenState
     }
     setState(() {
       _sessions[index].time = normalized;
+      _sessions[index].timeChosen = true;
       _sortSessions();
     });
     _onScheduleChanged();
@@ -735,6 +741,7 @@ class _ClMainOccasionScheduleScreenState
       if (!mounted || result == null) return;
       setState(() {
         _sessions[index].hours = result;
+        _sessions[index].hoursChosen = true;
       });
       _onScheduleChanged();
     } finally {
@@ -757,6 +764,8 @@ class _ClMainOccasionScheduleScreenState
       for (var index = 1; index < _sessions.length; index++) {
         final session = _sessions[index];
         session.hours = source.hours;
+        session.hoursChosen = source.hoursChosen;
+        session.timeChosen = source.timeChosen;
         session.time = _nextAvailableTimeForDate(
           session.date,
           source.time,
@@ -813,6 +822,7 @@ class _ClMainOccasionScheduleScreenState
       preference,
     );
 
+    setState(() => _explicitGenderPreference = preference);
     if (preference != CleaningGenderPreference.female) {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
       _requestUpdatedEstimate(bloc.state, selectedWorkerIds: selectedWorkerIds);
@@ -1000,6 +1010,9 @@ class _ClMainOccasionScheduleScreenState
     final seenSlots = <String>{};
     for (var index = 0; index < _sessions.length; index++) {
       final session = _sessions[index];
+      if (!session.dateChosen) return 'يرجى اختيار تاريخ يوم العمل ${index + 1}';
+      if (!session.timeChosen) return 'يرجى اختيار وقت بدء يوم العمل ${index + 1}';
+      if (!session.hoursChosen) return 'يرجى تحديد مدة يوم العمل ${index + 1}';
       if (session.date.isBefore(_minimumDate)) {
         return 'تاريخ يوم العمل ${index + 1} يجب أن يكون غداً أو بعده';
       }
@@ -1018,6 +1031,13 @@ class _ClMainOccasionScheduleScreenState
   }
 
   void _onSubmitPressed(ClMainState state) {
+    if (_explicitGenderPreference == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار جنس العامل: ذكر أو أنثى')),
+      );
+      return;
+    }
+
     final args = _routeArgs;
     final bloc = _bloc;
     if (args == null || bloc == null) {
@@ -1178,11 +1198,17 @@ class _EventSessionDraft {
   DateTime date;
   String time;
   double hours;
+  bool dateChosen;
+  bool timeChosen;
+  bool hoursChosen;
 
   _EventSessionDraft({
     required this.date,
     required this.time,
     required this.hours,
+    this.dateChosen = false,
+    this.timeChosen = false,
+    this.hoursChosen = false,
   });
 
   String get endTime =>
@@ -1264,17 +1290,17 @@ class _EventSessionCard extends StatelessWidget {
           const SizedBox(height: 10),
           _OccasionInfoRow(
             label: 'من',
-            value: CleaningDateTimeUiFormat.time(session.time),
+            value: session.timeChosen ? CleaningDateTimeUiFormat.time(session.time) : 'اختر الوقت',
           ),
           const SizedBox(height: 6),
           _OccasionInfoRow(
             label: 'إلى',
-            value: CleaningDateTimeUiFormat.time(session.endTime),
+            value: session.timeChosen ? CleaningDateTimeUiFormat.time(session.endTime) : '—',
           ),
           const SizedBox(height: 6),
           _OccasionInfoRow(
             label: 'المدة',
-            value: '${_hours(session.hours)} ساعة',
+            value: session.hoursChosen ? '${_hours(session.hours)} ساعة' : 'اختر المدة',
           ),
           if (estimatedPrice != null) ...[
             const SizedBox(height: 6),
