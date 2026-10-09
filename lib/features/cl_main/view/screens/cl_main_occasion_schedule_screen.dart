@@ -57,6 +57,8 @@ class _ClMainOccasionScheduleScreenState
   ClMainOccasionScheduleArgs? _routeArgs;
   ClMainBloc? _bloc;
   CleaningGenderPreference? _explicitGenderPreference;
+  bool _dateChosen = false;
+  bool _timeChosen = false;
   bool _didReadArgs = false;
   EstimatePriceResponseModel? _currentEstimate;
   late final ValueNotifier<AddressListItem?> _selectedAddress;
@@ -102,8 +104,8 @@ class _ClMainOccasionScheduleScreenState
       );
     }
 
-    final dayAr = CleaningDateTimeUiFormat.weekday(_selectedDate);
-    final dayDate = CleaningDateTimeUiFormat.date(_selectedDate);
+    final dayAr = _dateChosen ? CleaningDateTimeUiFormat.weekday(_selectedDate) : 'اختر التاريخ';
+    final dayDate = _dateChosen ? CleaningDateTimeUiFormat.date(_selectedDate) : '';
     final estimate = _activeEstimate;
     final numberOfWorkers = _resolvedNumberOfWorkers;
 
@@ -389,7 +391,7 @@ class _ClMainOccasionScheduleScreenState
     _fromTimeHhMm = '09:00';
     _toTimeHhMm = '09:00';
     _fromTimeController = TextEditingController(
-      text: CleaningDateTimeUiFormat.time(_fromTimeHhMm),
+      text: '',
     );
     _toTimeController = TextEditingController(
       text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
@@ -399,7 +401,7 @@ class _ClMainOccasionScheduleScreenState
   }
 
   void _updateTimeDisplay() {
-    _fromTimeController.text = CleaningDateTimeUiFormat.time(_fromTimeHhMm);
+    _fromTimeController.text = _timeChosen ? CleaningDateTimeUiFormat.time(_fromTimeHhMm) : '';
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
   }
 
@@ -614,6 +616,15 @@ class _ClMainOccasionScheduleScreenState
   }
 
   void _onSubmitPressed(ClMainState state) {
+    if (!_dateChosen) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار تاريخ المناسبة')));
+      return;
+    }
+    if (!_timeChosen) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار وقت بدء المناسبة')));
+      return;
+    }
+
     if (_explicitGenderPreference == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار جنس العامل: ذكر أو أنثى')),
@@ -700,6 +711,7 @@ class _ClMainOccasionScheduleScreenState
     if (value.isEmpty) return;
     setState(() {
       _selectedDate = CleaningScheduleDateTimeLogic.parseDateApi(value)!;
+      _dateChosen = true;
     });
     _requestPreviousWorkers();
   }
@@ -709,6 +721,7 @@ class _ClMainOccasionScheduleScreenState
     if (value.isEmpty) return;
     setState(() {
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
+      _timeChosen = true;
       _syncToTime();
     });
     _requestPreviousWorkers();
