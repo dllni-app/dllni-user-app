@@ -1,5 +1,4 @@
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -44,7 +43,7 @@ class _ClMainHomeDescriptionScreenState
 
   CleaningProgressiveRoomState _roomState =
       const CleaningProgressiveRoomState();
-  CleaningType _selectedCleaningType = CleaningType.regularCleaning;
+  CleaningType? _selectedCleaningType;
   int _currentStep = 0;
   bool _showExtraSpaces = false;
 
@@ -264,6 +263,12 @@ class _ClMainHomeDescriptionScreenState
       setState(() => _currentStep++);
       return;
     }
+    if (_selectedCleaningType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار نوع التنظيف قبل المتابعة')),
+      );
+      return;
+    }
     _estimateAndContinue(bloc, state);
   }
 
@@ -326,7 +331,7 @@ class _ClMainHomeDescriptionScreenState
           balconies: breakdown.legacyBalconiesCount,
           livingRoomSize: breakdown.legacyLivingRoomSize,
           roomSizeBreakdown: breakdown,
-          cleaningType: _selectedCleaningType,
+          cleaningType: _selectedCleaningType!,
           addressId: int.tryParse(address?.id ?? ''),
           addressLatitude: address?.latitude,
           addressLongitude: address?.longitude,
@@ -356,9 +361,6 @@ class _ClMainHomeDescriptionScreenState
       _propertyType = args.propertyType;
       _defaultAddress = args.defaultAddress;
       _bloc = args.bloc;
-      _bloc?.add(
-        SetGenderPreferenceEvent(preference: CleaningGenderPreference.male),
-      );
       _bloc?.add(
         SetAssignmentModeEvent(mode: CleaningAssignmentMode.openCount),
       );
