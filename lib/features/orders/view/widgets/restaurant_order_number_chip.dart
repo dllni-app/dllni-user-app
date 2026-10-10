@@ -20,7 +20,7 @@ class RestaurantOrderNumberChip extends StatelessWidget {
       ),
       child: AppText.titleSmall(
         'طلب #$orderNumber',
-        color: RestaurantOrderTrackingColors.orange,
+        color: RestaurantOrderTrackingColors.accent,
         fontWeight: FontWeight.bold,
       ),
     );

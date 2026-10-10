@@ -113,70 +113,85 @@ class _FemaleWorkerSafetyConfirmationSheetState
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ...widget.policy.options.map(
-              (option) => RadioListTile<String>(
-                value: option.value,
-                groupValue: _selectedPresence,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedPresence = value;
-                    _errorMessage = option.allowed
-                        ? null
-                        : option.blockedMessage ??
-                              'لا يمكن متابعة الطلب بهذا الخيار، يمكنك اختيار عامل ذكر.';
-                  });
-                },
-                title: Text(
-                  option.label,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                activeColor: SharedPlatformColors.cleaning,
-                contentPadding: EdgeInsets.zero,
+            RadioGroup<String>(
+              groupValue: _selectedPresence,
+              onChanged: (value) {
+                final selected = value == null
+                    ? null
+                    : widget.policy.optionByValue(value);
+                setState(() {
+                  _selectedPresence = value;
+                  _errorMessage = selected == null || selected.allowed
+                      ? null
+                      : selected.blockedMessage ??
+                            'لا يمكن متابعة الطلب بهذا الخيار، يمكنك اختيار عامل ذكر.';
+                });
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: widget.policy.options
+                    .map(
+                      (option) => RadioListTile<String>(
+                        value: option.value,
+                        title: Text(
+                          option.label,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        activeColor: SharedPlatformColors.primary,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             if (allowedOption) ...[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
+              Material(
+                color: const Color(0xFFFFFBEB),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
+                  side: const BorderSide(color: Color(0xFFFDE68A)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppText.labelLarge(
-                      widget.policy.pledge.title,
-                      fontWeight: FontWeight.w800,
-                      textAlign: TextAlign.right,
-                    ),
-                    const SizedBox(height: 8),
-                    AppText.bodySmall(
-                      widget.policy.pledge.body,
-                      color: const Color(0xFF92400E),
-                      textAlign: TextAlign.right,
-                    ),
-                    const SizedBox(height: 10),
-                    CheckboxListTile(
-                      value: _pledgeAccepted,
-                      onChanged: (value) {
-                        setState(() {
-                          _pledgeAccepted = value ?? false;
-                          if (_pledgeAccepted) _errorMessage = null;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        widget.policy.pledge.acceptanceLabel,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppText.labelLarge(
+                        widget.policy.pledge.title,
+                        fontWeight: FontWeight.w800,
                         textAlign: TextAlign.right,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      activeColor: SharedPlatformColors.cleaning,
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      AppText.bodySmall(
+                        widget.policy.pledge.body,
+                        color: const Color(0xFF92400E),
+                        textAlign: TextAlign.right,
+                      ),
+                      const SizedBox(height: 10),
+                      Material(
+                        color: Colors.transparent,
+                        child: CheckboxListTile(
+                          value: _pledgeAccepted,
+                          onChanged: (value) {
+                            setState(() {
+                              _pledgeAccepted = value ?? false;
+                              if (_pledgeAccepted) _errorMessage = null;
+                            });
+                          },
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            widget.policy.pledge.acceptanceLabel,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          activeColor: SharedPlatformColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

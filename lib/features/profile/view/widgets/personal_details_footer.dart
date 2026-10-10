@@ -22,7 +22,7 @@ class PersonalDetailsFooter extends StatelessWidget {
             onPressed: isSaving ? null : onSave,
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
-              backgroundColor: const Color(0xFF1E2A78),
+              backgroundColor: const Color(0xFF172554),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),

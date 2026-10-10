@@ -1,7 +1,7 @@
-import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import 'cl_service_section_card_widget.dart';
 
@@ -11,8 +11,6 @@ class ClServiceAssignmentModeSectionWidget extends StatelessWidget {
     required this.onModeChanged,
     super.key,
   });
-
-  static const Color _screenBlue = SharedPlatformColors.cleaning;
 
   final CleaningAssignmentMode selectedMode;
   final ValueChanged<CleaningAssignmentMode> onModeChanged;
@@ -27,13 +25,13 @@ class ClServiceAssignmentModeSectionWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.bodySmall(
-            'يمكنك ترك دللني يختار العمال المناسبين، أو اختيار عامل تعاملت معه سابقاً.',
-            color: const Color(0xFF6B7280),
-            textAlign: TextAlign.right,
+            'يمكنك ترك ع الندهة يختار العمال المناسبين، أو اختيار عامل تعاملت معه سابقاً.',
+            color: SharedPlatformColors.muted,
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 12),
           _ModeOption(
-            label: 'دع دللني يختار العمال',
+            label: 'اختيار العمال تلقائياً',
             description:
                 'الخيار الموصى به — نبحث عن الفريق المتاح والمناسب لطلبك.',
             isRecommended: true,
@@ -42,7 +40,7 @@ class ClServiceAssignmentModeSectionWidget extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _ModeOption(
-            label: 'اختيار عامل تعاملت معه سابقاً',
+            label: 'عامل تعاملت معه سابقاً',
             description: 'اختر من العمال السابقين المتاحين في موعدك.',
             isSelected: selectedMode == CleaningAssignmentMode.preferredWorker,
             onTap: () => onModeChanged(CleaningAssignmentMode.preferredWorker),
@@ -70,77 +68,86 @@ class _ModeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFEFF3FF) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: Material(
+        color: isSelected
+            ? const Color(0xFFF0F3FC)
+            : SharedPlatformColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
             color: isSelected
-                ? ClServiceAssignmentModeSectionWidget._screenBlue
-                : const Color(0xFFD1D5DB),
+                ? SharedPlatformColors.primary
+                : SharedPlatformColors.border,
             width: isSelected ? 1.5 : 1,
           ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: isSelected
-                  ? ClServiceAssignmentModeSectionWidget._screenBlue
-                  : const Color(0xFF98A2B3),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: isSelected
+                      ? SharedPlatformColors.primary
+                      : SharedPlatformColors.muted,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: AppText.bodyMedium(
-                          label,
-                          color: const Color(0xFF1F2937),
-                          fontWeight: FontWeight.w800,
-                          textAlign: TextAlign.start,
-                        ),
-                      ),
-                      if (isRecommended)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE7F9FA),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Text(
-                            'موصى به',
-                            style: TextStyle(
-                              color: Color(0xFF0B7480),
-                              fontSize: 11,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppText.bodyMedium(
+                              label,
+                              color: SharedPlatformColors.ink,
                               fontWeight: FontWeight.w800,
+                              textAlign: TextAlign.start,
                             ),
                           ),
-                        ),
+                          if (isRecommended)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: SharedPlatformColors.cleaningSoft,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                'موصى به',
+                                style: TextStyle(
+                                  color: SharedPlatformColors.cleaningInk,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      AppText.bodySmall(
+                        description,
+                        color: SharedPlatformColors.muted,
+                        textAlign: TextAlign.start,
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  AppText.bodySmall(
-                    description,
-                    color: const Color(0xFF667085),
-                    textAlign: TextAlign.start,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

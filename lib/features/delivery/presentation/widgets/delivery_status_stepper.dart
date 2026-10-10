@@ -25,7 +25,7 @@ class DeliveryStatusStepper extends StatelessWidget {
   Color _nodeColor(int index) {
     final stage = stages[index];
     if (stage.completed) return const Color(0xff10B981);
-    if (stage.active) return const Color(0xff1E2A78);
+    if (stage.active) return const Color(0xFF172554);
     if (_isSkipped(index)) return const Color(0xff6366F1);
     return const Color(0xffD1D5DB);
   }

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
@@ -124,7 +125,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                           fontWeight: FontWeight.bold,
                           color: originalTotal != null
                               ? const Color(0xff059669)
-                              : const Color(0xff1A237E),
+                              : SharedPlatformColors.primary,
                         ),
                         if (originalTotal != null)
                           AppText.labelMedium(
@@ -157,13 +158,13 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                                 : () => _updateQuantity(widget.item.quantity + 1),
                             icon: const Icon(
                               Icons.add,
-                              color: Color(0xff1A237E),
+                              color: SharedPlatformColors.primary,
                               size: 15,
                             ),
                           ),
                           AppText.labelMedium(
                             '${widget.item.quantity}',
-                            color: const Color(0xff1A237E),
+                            color: SharedPlatformColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                           IconButton(
@@ -178,7 +179,7 @@ class _RestaurantCartProductCardState extends State<RestaurantCartProductCard> {
                                 : () => _updateQuantity(widget.item.quantity - 1),
                             icon: const Icon(
                               Icons.remove,
-                              color: Color(0xff1A237E),
+                              color: SharedPlatformColors.primary,
                               size: 15,
                             ),
                           ),

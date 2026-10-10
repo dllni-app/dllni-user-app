@@ -23,9 +23,7 @@ List<Map<String, dynamic>> _toMapList(dynamic value) {
 CleaningOpenTimeModel? _cleaningOpenTimeFromJson(dynamic value) {
   if (value is! Map) return null;
   final map = _toMap(value);
-  final isOpenTime = _toBool(
-    map['isOpenTime'] ?? map['is_open_time'],
-  );
+  final isOpenTime = _toBool(map['isOpenTime'] ?? map['is_open_time']);
   if (isOpenTime == false) return null;
   return CleaningOpenTimeModel.fromJson(map);
 }
@@ -464,6 +462,9 @@ class CleaningOrderModel {
   final int? preferredWorkerRejectionWorkerId;
   final String? preferredWorkerRejectionDecidedAt;
   final int? numberOfWorkers;
+
+  /// Authoritative same-day/urgent classification from the cleaning API.
+  final bool isHotOrder;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
 
   CleaningOrderModel({
@@ -517,6 +518,7 @@ class CleaningOrderModel {
     this.preferredWorkerRejectionWorkerId,
     this.preferredWorkerRejectionDecidedAt,
     this.numberOfWorkers,
+    this.isHotOrder = false,
     this.workerAcceptance,
   });
 
@@ -700,6 +702,9 @@ class CleaningOrderModel {
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
+      isHotOrder:
+          _toBool(_pick(m, const <String>['isHotOrder', 'is_hot_order'])) ??
+          false,
       workerAcceptance:
           m['workerAcceptance'] == null && m['worker_acceptance'] == null
           ? null
@@ -785,6 +790,10 @@ class CleaningOrderDetailModel {
   final int? preferredWorkerRejectionWorkerId;
   final String? preferredWorkerRejectionDecidedAt;
   final int? numberOfWorkers;
+
+  /// Authoritative same-day/urgent classification from the cleaning API.
+  final bool isHotOrder;
+  final Map<String, dynamic>? lastHourTeamDecision;
   final CleaningWorkerAcceptanceModel? workerAcceptance;
   final CleaningOrderWorkerModel? preferredWorker;
   final List<CleaningWorkerAssignmentModel>? workerAssignments;
@@ -845,6 +854,8 @@ class CleaningOrderDetailModel {
     this.preferredWorkerRejectionWorkerId,
     this.preferredWorkerRejectionDecidedAt,
     this.numberOfWorkers,
+    this.isHotOrder = false,
+    this.lastHourTeamDecision,
     this.workerAcceptance,
     this.preferredWorker,
     this.workerAssignments,
@@ -1039,6 +1050,12 @@ class CleaningOrderDetailModel {
       numberOfWorkers: _toInt(
         _pick(m, const <String>['numberOfWorkers', 'number_of_workers']),
       ),
+      isHotOrder:
+          _toBool(_pick(m, const <String>['isHotOrder', 'is_hot_order'])) ??
+          false,
+      lastHourTeamDecision: m['lastHourTeamDecision'] is Map
+          ? Map<String, dynamic>.from(m['lastHourTeamDecision'] as Map)
+          : null,
       workerAcceptance:
           m['workerAcceptance'] == null && m['worker_acceptance'] == null
           ? null
@@ -1178,6 +1195,7 @@ class CleaningOrderDetailModel {
       preferredWorkerRejectionWorkerId: preferredWorkerRejectionWorkerId,
       preferredWorkerRejectionDecidedAt: preferredWorkerRejectionDecidedAt,
       numberOfWorkers: numberOfWorkers,
+      isHotOrder: isHotOrder,
       workerAcceptance: workerAcceptance,
     );
   }

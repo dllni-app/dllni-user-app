@@ -156,7 +156,7 @@ class _DeliveryTrackingMapState extends State<DeliveryTrackingMap> {
                           polylines: [
                             Polyline(
                               points: routePoints,
-                              color: const Color(0xff1E2A78),
+                              color: const Color(0xFF172554),
                               strokeWidth: 4,
                             ),
                           ],
@@ -224,7 +224,7 @@ class _DeliveryTrackingMapState extends State<DeliveryTrackingMap> {
               runSpacing: 8,
               children: const [
                 _MapLegendItem(color: Color(0xffF59E0B), label: 'المتجر / المطعم'),
-                _MapLegendItem(color: Color(0xff1E2A78), label: 'عنوانك'),
+                _MapLegendItem(color: Color(0xFF172554), label: 'عنوانك'),
                 _MapLegendItem(color: Color(0xff0CBBC7), label: 'المندوب'),
               ],
             ),
@@ -280,7 +280,7 @@ class _DeliveryTrackingMapState extends State<DeliveryTrackingMap> {
   static Color _markerColor(String? kind) {
     return switch (kind) {
       'pickup' => const Color(0xffF59E0B),
-      'dropoff' => const Color(0xff1E2A78),
+      'dropoff' => const Color(0xFF172554),
       'driver' => const Color(0xff0CBBC7),
       _ => const Color(0xff6B7280),
     };

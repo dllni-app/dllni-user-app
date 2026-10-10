@@ -149,7 +149,7 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
       onPressed: () => _openAddAddress(bloc),
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(50),
-        backgroundColor: const Color(0xFF1E2A78),
+        backgroundColor: const Color(0xFF172554),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       icon: const Icon(Icons.add_location_alt_outlined, size: 20),
@@ -168,7 +168,7 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
           getIt<ProfileBloc>()
             ..add(FetchAddressesEvent(params: FetchAddressesParams())),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: const Color(0xFFF6F7F9),
         body: SafeArea(
           child: Column(
             children: [

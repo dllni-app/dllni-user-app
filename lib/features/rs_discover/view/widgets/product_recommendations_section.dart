@@ -158,7 +158,7 @@ class _ProductRecommendationCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Color(0xFFFF7A00),
+                              color: Color(0xFFA63C66),
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               height: 16 / 11,

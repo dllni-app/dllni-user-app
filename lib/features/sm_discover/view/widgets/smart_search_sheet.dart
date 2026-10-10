@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
@@ -24,7 +25,7 @@ class SmartSearchSheet extends StatefulWidget {
 }
 
 abstract final class _SmartSearchColors {
-  static const Color blue = Color(0xFF1A237E);
+  static const Color blue = SharedPlatformColors.primary;
   static const Color orange = Color(0xFFF57C00);
   static const Color micBackground = Color(0xFFF0F0F5);
   static const Color fieldBorder = Color(0xFFE0E0E8);

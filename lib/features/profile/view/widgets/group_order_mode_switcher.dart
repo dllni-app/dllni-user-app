@@ -29,7 +29,7 @@ class GroupOrderModeSwitcher extends StatelessWidget {
             child: OrderVotingModeButton(
               title: 'مجموعاتي',
               isActive: mode == GroupOrderMode.existingGroups,
-              activeColor: const Color(0xFFC65324),
+              activeColor: const Color(0xFFA63C66),
               onTap: () => onModeChanged(GroupOrderMode.existingGroups),
             ),
           ),
@@ -38,7 +38,7 @@ class GroupOrderModeSwitcher extends StatelessWidget {
             child: OrderVotingModeButton(
               title: 'إنشاء مجموعة',
               isActive: mode == GroupOrderMode.create,
-              activeColor: const Color(0xFFC65324),
+              activeColor: const Color(0xFFA63C66),
               onTap: () => onModeChanged(GroupOrderMode.create),
             ),
           ),

@@ -210,7 +210,7 @@ class _DeliveryOrderListTile extends StatelessWidget {
                       order.displayStatusLabel,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xff1E2A78),
+                        color: Color(0xFF172554),
                         fontWeight: FontWeight.w600,
                       ),
                     ),

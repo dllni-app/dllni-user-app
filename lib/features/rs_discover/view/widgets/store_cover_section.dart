@@ -220,7 +220,7 @@ class _CartActionButton extends StatelessWidget {
             end: -2,
             child: CircleAvatar(
               radius: 8,
-              backgroundColor: const Color(0xFFFF7A00),
+              backgroundColor: const Color(0xFFA63C66),
               child: AppText(
                 '$cartCount',
                 style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),

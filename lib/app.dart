@@ -9,7 +9,7 @@ import 'core/di/injection.dart';
 import 'core/realtime/cleaning_booking_pusher_service.dart';
 import 'core/realtime/cleaning_global_verification_gate_coordinator.dart';
 import 'core/routes/app_router.dart';
-import 'core/themes/app_colors.dart';
+import 'core/themes/app_theme.dart';
 import 'features/splash/view/screens/splash_screen.dart';
 
 class App extends StatefulWidget {
@@ -63,29 +63,7 @@ class _AppState extends State<App> {
             child: child ?? const SizedBox.shrink(),
           );
         },
-        theme: ThemeData(
-          fontFamily: 'cairo',
-          inputDecorationTheme: const InputDecorationTheme(
-            hintStyle: TextStyle(
-              color: AppColors.hintText,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          colorScheme: const ColorScheme(
-            brightness: Brightness.light,
-            primary: Color(0xff1E2A78),
-            onPrimary: Color(0xffFFFFFF),
-            secondary: Color(0xff6C63FF),
-            onSecondary: Color(0xffFFFFFF),
-            error: Color(0xffBF393D),
-            onError: Color(0xffFFFFFF),
-            surface: Color(0xffF0F0F0),
-            onSurface: Colors.black,
-            primaryContainer: Color(0xffFF7A00),
-            onPrimaryContainer: Color(0xffFFFFFF),
-          ),
-        ),
+        theme: AppTheme.light,
       ),
     );
   }

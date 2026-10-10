@@ -364,7 +364,7 @@ class _AddEditShoppingListScreenState extends State<AddEditShoppingListScreen> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF7F8FA)),
+        border: Border.all(color: const Color(0xFFF6F7F9)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

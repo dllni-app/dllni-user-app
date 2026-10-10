@@ -32,7 +32,7 @@ class DeliveryDriverCard extends StatelessWidget {
               driver.vehicleType == 'motorbike'
                   ? Icons.two_wheeler_rounded
                   : Icons.local_shipping_outlined,
-              color: const Color(0xff1E2A78),
+              color: const Color(0xFF172554),
             ),
           ),
           const SizedBox(width: 12),
@@ -75,7 +75,7 @@ class DeliveryDriverCard extends StatelessWidget {
               onPressed: () => launchUrlString('tel:${driver.phone}'),
               icon: const Icon(Icons.phone_rounded),
               style: IconButton.styleFrom(
-                backgroundColor: const Color(0xff1E2A78),
+                backgroundColor: const Color(0xFF172554),
                 foregroundColor: Colors.white,
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -233,7 +234,7 @@ class _CleaningOrderProblemReportScreenState
                                           : const Color(0xffF9FAFB),
                                       border: Border.all(
                                         color: selected
-                                            ? const Color(0xff20BFC8)
+                                            ? SharedPlatformColors.cleaningInk
                                             : const Color(0xffE5E7EB),
                                       ),
                                     ),
@@ -265,7 +266,7 @@ class _CleaningOrderProblemReportScreenState
                                         ),
                                         Checkbox(
                                           value: selected,
-                                          activeColor: const Color(0xff20BFC8),
+                                          activeColor: SharedPlatformColors.primary,
                                           onChanged: _submitting
                                               ? null
                                               : (_) => setState(
@@ -418,7 +419,7 @@ class _CleaningOrderProblemReportScreenState
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
-                      backgroundColor: const Color(0xff20BFC8),
+                      backgroundColor: SharedPlatformColors.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -482,7 +483,7 @@ class _StepTitle extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 11,
-          backgroundColor: const Color(0xff20BFC8),
+          backgroundColor: SharedPlatformColors.primary,
           child: Text(
             number,
             style: const TextStyle(

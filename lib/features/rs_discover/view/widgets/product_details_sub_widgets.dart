@@ -111,13 +111,13 @@ class ProductModifierGroupCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected ? Color(0xFFFFF7ED) : Color(0xFFF9FAFB),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: isSelected ? Color(0xFFFF7A00) : Color(0xFFE5E7EB)),
+                    border: Border.all(color: isSelected ? Color(0xFFA63C66) : Color(0xFFE5E7EB)),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         isSelected ? Icons.check_circle : (group.maxSelections <= 1 ? Icons.radio_button_unchecked : Icons.check_box_outline_blank),
-                        color: isSelected ? Color(0xFFFF7A00) : Color(0xFF9CA3AF),
+                        color: isSelected ? Color(0xFFA63C66) : Color(0xFF9CA3AF),
                         size: 18,
                       ),
                       SizedBox(width: 10),
@@ -218,7 +218,7 @@ class ProductBottomBar extends StatelessWidget {
                 quantity.toString(),
                 style: TextStyle(color: Color(0xFF111827), fontSize: 36 / 2, fontWeight: FontWeight.w700, height: 28 / 18),
               ),
-              ProductCircleCounterButton(icon: FontAwesomeIcons.plus, color: Color(0xFFFF7A00), iconColor: Colors.white, onTap: onIncrease),
+              ProductCircleCounterButton(icon: FontAwesomeIcons.plus, color: Color(0xFFA63C66), iconColor: Colors.white, onTap: onIncrease),
             ],
           ),
           SizedBox(height: 12),
@@ -228,7 +228,7 @@ class ProductBottomBar extends StatelessWidget {
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(color: Color(0xFFFF7A00), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: Color(0xFFA63C66), borderRadius: BorderRadius.circular(12)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

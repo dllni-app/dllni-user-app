@@ -64,7 +64,7 @@ class CleaningHomeHeader extends StatelessWidget {
                   height: 46,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7F8FA),
+                    color: const Color(0xFFF6F7F9),
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE4E7EC)),
                   ),
@@ -85,7 +85,7 @@ class CleaningHomeHeader extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF12B8C4),
+                        color: const Color(0xFF0CBBC7),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(color: Colors.white, width: 2),
                       ),
@@ -425,7 +425,7 @@ class CleaningHomePrimaryServiceCard extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back_rounded, size: 18),
                   label: const Text('ابدأ طلب تنظيف'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF12B8C4),
+                    backgroundColor: const Color(0xFF0CBBC7),
                     foregroundColor: Colors.white,
                     minimumSize: const Size(0, 46),
                     shape: RoundedRectangleBorder(
@@ -497,7 +497,7 @@ class _HomeStatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF12B8C4).withValues(alpha: 0.18),
+        color: const Color(0xFF0CBBC7).withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(99),
         border: Border.all(color: const Color(0xFF55D6DE)),
       ),

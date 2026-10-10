@@ -133,7 +133,7 @@ class AddAddressBottomActions extends StatelessWidget {
         onPressed: isSubmitting ? null : onSubmitPressed,
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: const Color(0xFF1E2A78),
+          backgroundColor: const Color(0xFF172554),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -271,7 +271,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: const Color(0xFFF6F7F9),
         body: SafeArea(
           child: Column(
             children: [
@@ -314,7 +314,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           OutlinedButton.icon(
                             onPressed: _pickAddressFromMap,
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF1E2A78),
+                              foregroundColor: const Color(0xFF172554),
                               side: const BorderSide(color: Color(0xFFBFC5E5)),
                               minimumSize: const Size.fromHeight(48),
                               shape: RoundedRectangleBorder(

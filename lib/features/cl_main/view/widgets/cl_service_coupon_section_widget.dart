@@ -46,7 +46,7 @@ class ClServiceCouponSectionWidget extends StatelessWidget {
             children: [
               AppImage.asset(
                 Assets.images.rsProfileCoupon.path,
-                color: const Color(0xFF11B9C8),
+                color: SharedPlatformColors.cleaningInk,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -69,7 +69,7 @@ class ClServiceCouponSectionWidget extends StatelessWidget {
                       ? null
                       : () => onApply(couponController.text.trim()),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: SharedPlatformColors.cleaning,
+                    backgroundColor: SharedPlatformColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

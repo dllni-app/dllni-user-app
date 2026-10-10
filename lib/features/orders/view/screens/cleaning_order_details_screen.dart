@@ -29,6 +29,7 @@ import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../../data/models/cleaning_booking_schedule_model.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import '../../data/source/orders_remote_data_source.dart';
 import '../../data/source/cleaning_session_remote_data_source.dart';
 import '../../domain/usecases/cancel_cleaning_order_use_case.dart';
 import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
@@ -54,6 +55,7 @@ import '../widgets/cleaning_recurring_schedule_launcher_widget.dart';
 import '../widgets/cleaning_room_assignments_section_widget.dart';
 import '../widgets/cleaning_schedule_change_resolution_card.dart';
 import '../widgets/cleaning_team_search_banner_widget.dart';
+import '../widgets/cleaning_last_hour_team_decision_card.dart';
 import '../widgets/cleaning_lifecycle_timeline_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
 import 'cleaning_order_problem_report_screen.dart';
@@ -107,6 +109,7 @@ class _CleaningOrderDetailsScreenState
   bool _reopenCompletionAfterRefresh = false;
   bool _isRebooking = false;
   bool _isPatchingRoomAssignments = false;
+  bool _isLastHourDecisionSubmitting = false;
   Timer? _detailsFallbackRefreshDebounce;
   Timer? _detailsPollTimer;
   bool _isDetailsFetchInFlight = false;
@@ -275,6 +278,7 @@ class _CleaningOrderDetailsScreenState
                       const SizedBox(height: 12),
                     ],
                     CleaningLifecycleTimelineWidget(
+                      compact: true,
                       status: order.status,
                       startedTravelAt: order.startedTravelAt,
                       arrivedAt: order.arrivedAt,
@@ -430,6 +434,7 @@ class _CleaningOrderDetailsScreenState
                       CleaningTeamSearchBannerWidget(
                         acceptance: liveAcceptance,
                         numberOfWorkers: order.numberOfWorkers,
+                        isHotOrder: order.isHotOrder,
                       ),
                     ],
                     if (searchingForWorkers &&
@@ -440,6 +445,14 @@ class _CleaningOrderDetailsScreenState
                       CleaningPreferredWorkerCardWidget(
                         worker: order.preferredWorker!,
                         onCallWorker: _callWorker,
+                      ),
+                    ],
+                    if (order.lastHourTeamDecision?['required'] == true) ...[
+                      const SizedBox(height: 12),
+                      CleaningLastHourTeamDecisionCard(
+                        decision: order.lastHourTeamDecision!,
+                        isSubmitting: _isLastHourDecisionSubmitting,
+                        onChoose: _submitLastHourDecision,
                       ),
                     ],
                     if (order.isMultiWorkerTeam &&
@@ -1376,6 +1389,31 @@ class _CleaningOrderDetailsScreenState
     return 'تم إرسال طلب تمديد الوقت إلى العامل. الرسوم المحسوبة: ${price.formatWithComma()} $currency';
   }
 
+  Future<void> _submitLastHourDecision(String choice, int? workerId) async {
+    if (_isLastHourDecisionSubmitting) return;
+    setState(() => _isLastHourDecisionSubmitting = true);
+    try {
+      await getIt<OrdersRemoteDataSource>().submitLastHourTeamDecision(
+        orderId: _activeOrderId,
+        choice: choice,
+        workerId: workerId,
+      );
+      if (!mounted) return;
+      await _fetchDetails(showLoading: false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم تحديث مهام فريق التنظيف بنجاح')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر حفظ القرار، حاول مجدداً.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLastHourDecisionSubmitting = false);
+    }
+  }
+
   Future<void> _fetchDetails({
     bool showLoading = true,
     bool triggerGatePrompts = false,
@@ -2026,7 +2064,8 @@ class _CleaningOrderDetailsScreenState
 
       CleaningBookingSessionModel? target;
       for (final session in sessions) {
-        if (session.canConfirmCompletion || session.isAwaitingCustomerCompletion) {
+        if (session.canConfirmCompletion ||
+            session.isAwaitingCustomerCompletion) {
           target = session;
           break;
         }

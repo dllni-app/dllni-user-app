@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../../../core/models/cleaning_service_extras.dart';
 
 class ClOpenTimeSessionsSectionWidget extends StatelessWidget {
@@ -88,13 +90,13 @@ class ClOpenTimeSessionsSectionWidget extends StatelessWidget {
                               height: 32,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE0F7F8),
+                                color: SharedPlatformColors.cleaningSoft,
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 '${index + 1}',
                                 style: const TextStyle(
-                                  color: Color(0xFF0B7480),
+                                  color: SharedPlatformColors.cleaningInk,
                                   fontWeight: FontWeight.w800,
                                   fontFeatures: <FontFeature>[
                                     FontFeature.tabularFigures(),

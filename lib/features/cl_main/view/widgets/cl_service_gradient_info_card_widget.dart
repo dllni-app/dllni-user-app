@@ -1,7 +1,9 @@
-import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
+/// Estimates are display-only; numbers are always provided by the existing flow.
 class ClServiceGradientInfoCardWidget extends StatelessWidget {
   const ClServiceGradientInfoCardWidget({
     required this.estimatedSqm,
@@ -17,22 +19,14 @@ class ClServiceGradientInfoCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: context.width,
-      padding: const EdgeInsetsDirectional.fromSTEB(18, 18, 18, 18),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: AlignmentDirectional.centerStart,
-          end: AlignmentDirectional.centerEnd,
-          colors: [SharedPlatformColors.cleaning, Color(0xFF0CBBC7)],
+        color: SharedPlatformColors.cleaningSoft,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: SharedPlatformColors.cleaning.withValues(alpha: .22),
         ),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x21000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -40,14 +34,14 @@ class ClServiceGradientInfoCardWidget extends StatelessWidget {
             _InfoRowWidget(
               title: 'المساحة التقريبية لمنزلك',
               value: '$estimatedSqm م2',
-              icon: Icons.location_on_outlined,
+              icon: Icons.home_outlined,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
           ],
           _InfoRowWidget(
             title: 'عدد ساعات العمل المتوقعة',
             value: '${estimatedHours.toStringAsFixed(1)} ساعات عمل',
-            icon: Icons.access_time,
+            icon: Icons.access_time_rounded,
           ),
         ],
       ),
@@ -70,21 +64,24 @@ class _InfoRowWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Colors.white, size: 20),
-        const SizedBox(width: 8),
+        Icon(icon, color: SharedPlatformColors.cleaningInk, size: 22),
+        const SizedBox(width: 10),
         Expanded(
-          child: AppText.labelLarge(
+          child: AppText.bodySmall(
             title,
-            color: Colors.white,
-            fontWeight: FontWeight.w400,
+            color: SharedPlatformColors.ink,
+            fontWeight: FontWeight.w600,
             textAlign: TextAlign.start,
           ),
         ),
-        const SizedBox(height: 8),
-        AppText.bodySmall(
-          value,
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
+        const SizedBox(width: 8),
+        Flexible(
+          child: AppText.bodySmall(
+            value,
+            color: SharedPlatformColors.primary,
+            fontWeight: FontWeight.w800,
+            textAlign: TextAlign.end,
+          ),
         ),
       ],
     );

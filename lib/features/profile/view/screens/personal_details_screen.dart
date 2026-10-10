@@ -265,10 +265,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFF1E2A78);
+    const accent = Color(0xFF172554);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: const Color(0xFFF6F7F9),
       body: SafeArea(
         child: Column(
           children: [

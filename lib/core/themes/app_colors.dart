@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import 'shared_platform_colors.dart';
+
+/// Backward-compatible aliases. New UI uses SharedPlatformColors tokens.
 class AppColors {
   const AppColors._();
 
-  static const Color primary = Color(0xFF1E2A78);
-  static const Color secondary = Color(0xFF6C63FF);
-  static const Color accent = Color(0xFFFF7A00);
-
-  static const Color white = Color(0xFFFFFFFF);
-  static const Color scaffoldBackgroundColor = Color(0xFFF3F4F6);
-  static const Color filledInputBackgroundColor = Color(0x33FFFFFF);
-  static const Color hintText = Color(0xFF9CA3AF);
+  static const Color primary = SharedPlatformColors.primary;
+  static const Color secondary = SharedPlatformColors.neutral;
+  static const Color accent = SharedPlatformColors.cleaning;
+  static const Color white = SharedPlatformColors.surface;
+  static const Color scaffoldBackgroundColor = SharedPlatformColors.background;
+  static const Color filledInputBackgroundColor = Color(0xFFFFFFFF);
+  static const Color hintText = SharedPlatformColors.muted;
 }

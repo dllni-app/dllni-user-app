@@ -1,6 +1,7 @@
-import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+
+import '../../../../core/themes/shared_platform_colors.dart';
 
 class ClMainServiceTabsWidget extends StatelessWidget {
   const ClMainServiceTabsWidget({
@@ -19,11 +20,11 @@ class ClMainServiceTabsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: SharedPlatformColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SharedPlatformColors.border),
       ),
       child: Row(
         children: [
@@ -35,7 +36,7 @@ class ClMainServiceTabsWidget extends StatelessWidget {
               onTap: () => onChanged(cleaningIndex),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           Expanded(
             child: _ServiceTabItem(
               key: const Key('cl_main_occasions_tab'),
@@ -44,7 +45,7 @@ class ClMainServiceTabsWidget extends StatelessWidget {
               onTap: () => onChanged(occasionsIndex),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           Expanded(
             child: _ServiceTabItem(
               key: const Key('cl_main_hourly_tab'),
@@ -71,32 +72,29 @@ class _ServiceTabItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  static const LinearGradient _selectedGradient = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: <Color>[SharedPlatformColors.cleaning, Color(0xFF4A5FCF)],
-  );
-
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          gradient: isSelected ? _selectedGradient : null,
-          color: isSelected ? SharedPlatformColors.cleaning : Colors.white,
-          border: Border.all(
-            color: isSelected ? Colors.transparent : const Color(0xFFE5E7EB),
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Center(
-          child: AppText.labelLarge(
-            label,
-            color: isSelected ? context.onPrimary : const Color(0xFF6B7280),
-            fontWeight: FontWeight.w700,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: Material(
+        color: isSelected
+            ? SharedPlatformColors.primary
+            : SharedPlatformColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: AppText.labelLarge(
+              label,
+              color: isSelected ? Colors.white : SharedPlatformColors.muted,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 /// Shared palette for the order tracking flow (matches checkout primary).
 abstract final class RestaurantOrderTrackingColors {
-  static const Color primary = SharedPlatformColors.restaurant;
-  static const Color orange = Color(0xffF97316);
-  static const Color grey = Color(0xff6B7280);
-  static const Color lineMuted = Color(0xffE5E7EB);
+  static const Color primary = SharedPlatformColors.primary;
+  static const Color accent = SharedPlatformColors.restaurant;
+  static const Color grey = SharedPlatformColors.neutral;
+  static const Color lineMuted = SharedPlatformColors.border;
 }

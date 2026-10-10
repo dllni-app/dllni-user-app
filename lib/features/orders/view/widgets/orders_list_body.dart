@@ -15,6 +15,7 @@ import '../screens/cleaning_order_problem_report_screen.dart';
 import '../screens/restaurant_order_tracking_screen.dart';
 import 'cleaning_cancel_reason_dialog.dart';
 import 'cleaning_order_card.dart';
+import 'cleaning_orders_feedback_state.dart';
 import 'restaurant_order_card.dart';
 
 class OrdersListBody extends StatelessWidget {
@@ -78,6 +79,21 @@ class OrdersListBody extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (pagination.status == BlocStatus.failed && listLength == 0) {
+      if (isCleaningSection) {
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
+          children: [
+            CleaningOrdersFeedbackState(
+              kind: CleaningOrdersFeedbackKind.loadError,
+              message: state.errorMessage,
+              onRetry: () => context.read<OrdersBloc>().add(
+                FetchOrdersEvent(isReload: true),
+              ),
+            ),
+          ],
+        );
+      }
       return ListView(
         children: [
           SizedBox(height: context.height * .2),
@@ -93,34 +109,13 @@ class OrdersListBody extends StatelessWidget {
         (pagination.isEndPage || pagination.status == BlocStatus.success)) {
       if (isCleaningSection) {
         return ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 72),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
           children: [
-            Icon(
-              showCompletedCleaningOrders
-                  ? Icons.history_rounded
-                  : Icons.cleaning_services_outlined,
-              size: 44,
-              color: const Color(0xFF98A2B3),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              showCompletedCleaningOrders
-                  ? 'لا توجد طلبات سابقة'
-                  : 'لا توجد طلبات تنظيف حالية',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF172033),
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              showCompletedCleaningOrders
-                  ? 'ستظهر الطلبات المكتملة أو الملغاة هنا.'
-                  : 'ابدأ طلب تنظيف جديد من الصفحة الرئيسية.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF667085), fontSize: 12),
+            CleaningOrdersFeedbackState(
+              kind: showCompletedCleaningOrders
+                  ? CleaningOrdersFeedbackKind.historyEmpty
+                  : CleaningOrdersFeedbackKind.activeEmpty,
             ),
           ],
         );

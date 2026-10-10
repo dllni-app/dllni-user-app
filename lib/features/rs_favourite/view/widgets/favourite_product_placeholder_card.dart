@@ -251,7 +251,7 @@ class _FavouriteProductPlaceholderCardState
                     vertical: 5,
                   ),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFFF7A00),
+                    color: Color(0xFFA63C66),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(24),
                       bottomRight: Radius.circular(16),

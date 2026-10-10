@@ -13,7 +13,7 @@ class SectionTitle extends StatelessWidget {
           width: 4,
           height: 20,
           decoration: BoxDecoration(
-            color: const Color(0xFF1E2A78),
+            color: const Color(0xFF172554),
             borderRadius: BorderRadius.circular(999),
           ),
         ),

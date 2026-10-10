@@ -74,7 +74,7 @@ class _CartAppBarAction extends StatelessWidget {
             end: -2,
             child: CircleAvatar(
               radius: 9,
-              backgroundColor: const Color(0xFFFF7A00),
+              backgroundColor: const Color(0xFFA63C66),
               child: AppText(
                 '$cartCount',
                 style: const TextStyle(

@@ -41,7 +41,7 @@ class OrderDeliverySummaryCard extends StatelessWidget {
             ),
             child: const Icon(
               Icons.delivery_dining,
-              color: Color(0xff1E2A78),
+              color: Color(0xFF172554),
             ),
           ),
           const SizedBox(width: 10),
@@ -53,7 +53,7 @@ class OrderDeliverySummaryCard extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: Color(0xff1E2A78),
+                    color: Color(0xFF172554),
                     fontSize: 13,
                   ),
                 ),

@@ -44,7 +44,7 @@ class NumberedSectionCard extends StatelessWidget {
                 child: Text(
                   sectionNumber,
                   style: const TextStyle(
-                    color: Color(0xFF1E2A78),
+                    color: Color(0xFF172554),
                     fontWeight: FontWeight.w900,
                   ),
                 ),

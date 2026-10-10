@@ -114,6 +114,21 @@ class OrdersRemoteDataSource with HandlingApiManager {
     );
   }
 
+  Future<FetchCleaningOrderDetailsModel> submitLastHourTeamDecision({
+    required int orderId,
+    required String choice,
+    int? workerId,
+  }) {
+    return wrapHandlingApi(
+      tryCall: () => dioNetwork.postData(
+        endPoint:
+            '/api/v1/user/cleaning/orders/$orderId/last-hour-team-decision',
+        data: <String, dynamic>{'choice': choice, 'workerId': workerId},
+      ),
+      jsonConvert: fetchCleaningOrderDetailsModelFromJson,
+    );
+  }
+
   Future<FetchCleaningOrderDetailsModel> fetchCleaningOrderDetails(
     FetchCleaningOrderDetailsParams params,
   ) {
@@ -234,10 +249,8 @@ class OrdersRemoteDataSource with HandlingApiManager {
         : '/api/v1/cleaning-bookings/${params.orderId}/sessions/$sessionId/review';
 
     return wrapHandlingApi(
-      tryCall: () => dioNetwork.postData(
-        endPoint: endpoint,
-        data: params.getBody(),
-      ),
+      tryCall: () =>
+          dioNetwork.postData(endPoint: endpoint, data: params.getBody()),
       jsonConvert: submitCleaningReviewModelFromJson,
     );
   }

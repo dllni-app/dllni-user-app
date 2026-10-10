@@ -57,7 +57,7 @@ class _VoteWinnerContent extends StatelessWidget {
             ),
             child: const Icon(
               Icons.emoji_events_rounded,
-              color: Color(0xFFFF7A00),
+              color: Color(0xFF172554),
               size: 38,
             ),
           ),

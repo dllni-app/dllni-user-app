@@ -56,9 +56,9 @@ class OrderStatusStepRow extends StatelessWidget {
     if (isCurrent) {
       return OrderTrackingNodePresentation(
         fg: Colors.white,
-        bg: RestaurantOrderTrackingColors.orange,
+        bg: RestaurantOrderTrackingColors.accent,
         icon: step.icon,
-        ring: RestaurantOrderTrackingColors.orange,
+        ring: RestaurantOrderTrackingColors.accent,
       );
     }
     const muted = Color(0xff9CA3AF);
@@ -77,8 +77,8 @@ class OrderStatusStepRow extends StatelessWidget {
     const mutedText = Color(0xff9CA3AF);
     const skippedText = Color(0xff6366F1);
     if (isCurrent) {
-      titleColor = RestaurantOrderTrackingColors.orange;
-      subtitleColor = RestaurantOrderTrackingColors.orange;
+      titleColor = RestaurantOrderTrackingColors.accent;
+      subtitleColor = RestaurantOrderTrackingColors.accent;
     } else if (isSkipped) {
       titleColor = skippedText;
       subtitleColor = skippedText;

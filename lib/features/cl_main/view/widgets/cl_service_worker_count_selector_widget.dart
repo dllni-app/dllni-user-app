@@ -1,10 +1,13 @@
-import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
 import 'cl_service_section_card_widget.dart';
 
 class ClServiceWorkerCountSelectorWidget extends StatelessWidget {
+  // Backend contract: numberOfWorkers has a maximum of 20.
+  static const int maxSupportedWorkers = 20;
+
   const ClServiceWorkerCountSelectorWidget({
     required this.count,
     required this.maxCount,
@@ -12,15 +15,13 @@ class ClServiceWorkerCountSelectorWidget extends StatelessWidget {
     super.key,
   });
 
-  static const Color _screenBlue = SharedPlatformColors.cleaning;
-
   final int count;
   final int maxCount;
   final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final safeMax = maxCount < 1 ? 1 : maxCount;
+    final safeMax = maxCount.clamp(1, maxSupportedWorkers);
     final safeCount = count.clamp(1, safeMax);
 
     return ClServiceSectionCardWidget(
@@ -32,10 +33,10 @@ class ClServiceWorkerCountSelectorWidget extends StatelessWidget {
         children: [
           AppText.bodySmall(
             'الحد الأقصى $safeMax عامل (حسب عدد الغرف والمساحات)',
-            color: const Color(0xFF6B7280),
+            color: SharedPlatformColors.muted,
             textAlign: TextAlign.right,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -44,23 +45,23 @@ class ClServiceWorkerCountSelectorWidget extends StatelessWidget {
                 enabled: safeCount > 1,
                 onTap: () => onChanged(safeCount - 1),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 20),
               Container(
                 width: 72,
-                height: 72,
+                height: 64,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: SharedPlatformColors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _screenBlue, width: 2),
+                  border: Border.all(color: SharedPlatformColors.border),
                 ),
                 alignment: Alignment.center,
                 child: AppText.headlineSmall(
                   '$safeCount',
-                  color: _screenBlue,
+                  color: SharedPlatformColors.primary,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 20),
               _StepButton(
                 icon: Icons.add,
                 enabled: safeCount < safeMax,
@@ -89,8 +90,8 @@ class _StepButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: enabled
-          ? ClServiceWorkerCountSelectorWidget._screenBlue
-          : const Color(0xFFE5E7EB),
+          ? SharedPlatformColors.cleaningSoft
+          : SharedPlatformColors.neutralSoft,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: enabled ? onTap : null,
@@ -100,7 +101,9 @@ class _StepButton extends StatelessWidget {
           height: 48,
           child: Icon(
             icon,
-            color: enabled ? Colors.white : const Color(0xFF9CA3AF),
+            color: enabled
+                ? SharedPlatformColors.cleaningInk
+                : SharedPlatformColors.subtle,
           ),
         ),
       ),

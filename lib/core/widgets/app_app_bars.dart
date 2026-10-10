@@ -14,48 +14,61 @@ import 'search_with_type_dropdown.dart';
 class AppSimpleAppBar extends StatelessWidget {
   final String title;
   final bool canPop;
+  final String? section;
 
-  const AppSimpleAppBar({super.key, required this.title, this.canPop = true});
+  const AppSimpleAppBar({
+    super.key,
+    required this.title,
+    this.canPop = true,
+    this.section,
+  });
 
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
     );
     final width = MediaQuery.sizeOf(context).width;
+    final accent = section == null
+        ? Theme.of(context).colorScheme.secondary
+        : SharedPlatformColors.sectionAccent(section);
+    final isPlatform = accent == SharedPlatformColors.neutral;
     return Container(
       width: width,
       padding: EdgeInsets.fromLTRB(
         16,
         16 + MediaQuery.paddingOf(context).top,
         16,
-        32,
+        20,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            offset: Offset(0, 4),
-            blurRadius: 7.3,
-            color: Color(0x40000000),
+      decoration: BoxDecoration(
+        color: SharedPlatformColors.surface,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+        border: Border(
+          bottom: BorderSide(
+            color: isPlatform ? SharedPlatformColors.border : accent,
+            width: isPlatform ? 1 : 2,
           ),
-        ],
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 4,
         children: [
-          if (canPop) const ArrowBackButton(),
-          AppText(
-            title,
-            style: TextStyle(
-              color: AppColors.white,
-              fontWeight: FontWeight.w500,
-              fontSize: 20,
+          if (canPop)
+            const ArrowBackButton(color: SharedPlatformColors.primary),
+          Expanded(
+            child: AppText(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: SharedPlatformColors.primary,
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+              ),
             ),
           ),
         ],
@@ -235,7 +248,9 @@ class AppSimpleAppBarWithSearch extends StatelessWidget {
 }
 
 class ArrowBackButton extends StatelessWidget {
-  const ArrowBackButton({super.key});
+  const ArrowBackButton({super.key, this.color = AppColors.white});
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +260,7 @@ class ArrowBackButton extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         padding: EdgeInsets.all(12),
-        child: Icon(Icons.arrow_back_ios, size: 16, color: AppColors.white),
+        child: Icon(Icons.arrow_back_ios, size: 16, color: color),
       ),
     );
   }

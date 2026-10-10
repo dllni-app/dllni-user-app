@@ -38,7 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
         systemNavigationBarColor: Color(0xFF172554),
         systemNavigationBarIconBrightness: Brightness.light,
       ),
-      child: Material(color: Color(0xFF1E2A78), child: _SplashContent()),
+      child: Material(color: Color(0xFF172554), child: _SplashContent()),
     );
   }
 }

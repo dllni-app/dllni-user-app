@@ -81,7 +81,7 @@ class WarningAlert extends StatelessWidget {
               child: AppText(
                 labelButton,
                 style: TextStyle(
-                  color: Color(0xFF6C63FF),
+                  color: Color(0xFF172554),
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   height: 1.333,

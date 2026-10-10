@@ -10,7 +10,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: const Color(0xFFF6F7F9),
       body: SafeArea(
         child: Column(
           children: [
@@ -55,7 +55,7 @@ class _LegalHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: const BoxDecoration(
-        color: Color(0xFF1E2A78),
+        color: Color(0xFF172554),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -103,7 +103,7 @@ class _LegalIntroCard extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(Icons.gavel_rounded, size: 38, color: Color(0xFF1E2A78)),
+          Icon(Icons.gavel_rounded, size: 38, color: Color(0xFF172554)),
           SizedBox(height: 12),
           Text(
             'المستندات القانونية الرسمية',
@@ -167,7 +167,7 @@ class _LegalLinkCard extends StatelessWidget {
                   color: const Color(0xFFEEF0FA),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: const Color(0xFF1E2A78)),
+                child: Icon(icon, color: const Color(0xFF172554)),
               ),
               const SizedBox(width: 12),
               Expanded(

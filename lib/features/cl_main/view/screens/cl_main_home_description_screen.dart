@@ -41,6 +41,7 @@ class _ClMainHomeDescriptionScreenState
     CleaningRoomType.shed,
   ];
 
+  final ScrollController _bookingScrollController = ScrollController();
   CleaningProgressiveRoomState _roomState =
       const CleaningProgressiveRoomState();
   CleaningType? _selectedCleaningType;
@@ -69,13 +70,14 @@ class _ClMainHomeDescriptionScreenState
           return Directionality(
             textDirection: TextDirection.rtl,
             child: Scaffold(
-              backgroundColor: const Color(0xFFF7F8FA),
+              backgroundColor: const Color(0xFFF6F7F9),
               body: SafeArea(
                 child: Column(
                   children: [
                     const HomeDetailsAppBar(),
                     Expanded(
                       child: SingleChildScrollView(
+                        controller: _bookingScrollController,
                         padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 180),
@@ -91,7 +93,7 @@ class _ClMainHomeDescriptionScreenState
                       primaryEnabled: _canContinueCurrentStep,
                       secondaryLabel: _currentStep > 0 ? 'السابق' : null,
                       onSecondary: _currentStep > 0
-                          ? () => setState(() => _currentStep--)
+                          ? () => _goToStep(_currentStep - 1)
                           : null,
                     ),
                   ],
@@ -124,17 +126,24 @@ class _ClMainHomeDescriptionScreenState
         const ClRedesignStepHeader(
           currentStep: 1,
           totalSteps: 3,
-          title: 'كم مساحة تريد تنظيفها؟',
+          title: 'كم غرفة تريد تنظيفها؟',
           subtitle:
               'حدد عدد الغرف أولاً، وسنطلب حجم كل غرفة في الخطوة التالية.',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
+        Text(
+          'الغرف الأساسية: ${_roomState.totalBaseRooms} من ${CleaningProgressiveRoomState.maxBaseRooms}',
+          textAlign: TextAlign.start,
+          style: const TextStyle(color: Color(0xFF667085), fontSize: 12),
+        ),
+        const SizedBox(height: 16),
         for (final type in visibleTypes) ...[
           ClRedesignCounter(
             key: Key('room_count_${type.apiKey}'),
             label: _roomTypeLabel(type),
             icon: _roomTypeIcon(type),
             value: _roomState.countFor(type),
+            maxValue: _roomState.maxCountFor(type),
             onIncrement: () => _changeRoomCount(type, 1),
             onDecrement: () => _changeRoomCount(type, -1),
           ),
@@ -253,9 +262,21 @@ class _ClMainHomeDescriptionScreenState
   }
 
   bool get _canContinueCurrentStep {
-    if (_currentStep == 0) return true;
-    if (_currentStep == 1) return true;
-    return !_isEstimatingForContinue;
+    if (_isEstimatingForContinue) return false;
+    if (_currentStep == 0 || _currentStep == 1) {
+      return _roomState.hasAnyRoom;
+    }
+    return _selectedCleaningType != null;
+  }
+
+  void _goToStep(int step) {
+    setState(() => _currentStep = step);
+    // Each step starts at its heading, even if the previous screen was scrolled.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _bookingScrollController.hasClients) {
+        _bookingScrollController.jumpTo(0);
+      }
+    });
   }
 
   void _onPrimaryPressed(ClMainBloc bloc, ClMainState state) {
@@ -268,7 +289,7 @@ class _ClMainHomeDescriptionScreenState
       return;
     }
     if (_currentStep < 2) {
-      setState(() => _currentStep++);
+      _goToStep(_currentStep + 1);
       return;
     }
     if (_selectedCleaningType == null) {
@@ -380,6 +401,7 @@ class _ClMainHomeDescriptionScreenState
   @override
   void dispose() {
     _closeLoadingOverlay();
+    _bookingScrollController.dispose();
     super.dispose();
   }
 

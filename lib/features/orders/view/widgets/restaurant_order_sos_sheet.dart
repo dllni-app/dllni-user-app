@@ -29,10 +29,8 @@ class RestaurantOrderSosSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => RestaurantOrderSosSheet(
-        orderId: orderId,
-        bookingType: bookingType,
-      ),
+      builder: (_) =>
+          RestaurantOrderSosSheet(orderId: orderId, bookingType: bookingType),
     );
   }
 
@@ -80,10 +78,7 @@ class _RestaurantOrderSosSheetState extends State<RestaurantOrderSosSheet> {
   Future<({double? latitude, double? longitude})> _tryResolveLocation() async {
     try {
       final location = await getIt<UserLocationService>().getCurrentPosition();
-      return (
-        latitude: location.latitude,
-        longitude: location.longitude,
-      );
+      return (latitude: location.latitude, longitude: location.longitude);
     } catch (_) {
       return (latitude: null, longitude: null);
     }
@@ -122,9 +117,9 @@ class _RestaurantOrderSosSheetState extends State<RestaurantOrderSosSheet> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -187,23 +182,29 @@ class _RestaurantOrderSosSheetState extends State<RestaurantOrderSosSheet> {
           color: const Color(0xff6B7280),
         ),
         const SizedBox(height: 16),
-        ..._options.map((option) {
-          return RadioListTile<String>(
-            contentPadding: EdgeInsets.zero,
-            value: option.type,
-            groupValue: _selectedEmergencyType,
-            onChanged: _submitting
-                ? null
-                : (value) {
-                    if (value == null) return;
-                    setState(() => _selectedEmergencyType = value);
-                  },
-            title: AppText.bodyMedium(
-              option.label,
-              textAlign: TextAlign.start,
-            ),
-          );
-        }),
+        RadioGroup<String>(
+          groupValue: _selectedEmergencyType,
+          onChanged: (value) {
+            if (_submitting || value == null) return;
+            setState(() => _selectedEmergencyType = value);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _options
+                .map(
+                  (option) => RadioListTile<String>(
+                    contentPadding: EdgeInsets.zero,
+                    value: option.type,
+                    enabled: !_submitting,
+                    title: AppText.bodyMedium(
+                      option.label,
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _messageController,
@@ -255,10 +256,7 @@ class _RestaurantOrderSosSheetState extends State<RestaurantOrderSosSheet> {
         Text(
           _statusLabel(supportCase.status),
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         const Text(

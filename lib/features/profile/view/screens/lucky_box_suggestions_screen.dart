@@ -306,7 +306,7 @@ class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
                                                   },
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: const Color(
-                                                0xFF6C63FF,
+                                                0xFF172554,
                                               ),
                                               foregroundColor:
                                                   context.onPrimary,
@@ -500,7 +500,7 @@ class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
                   backgroundColor: SharedPlatformColors.restaurant,
                   foregroundColor: context.onPrimary,
                   disabledBackgroundColor: const Color(
-                    0xFF6C63FF,
+                    0xFF172554,
                   ).withAlpha(140),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -539,7 +539,7 @@ class _SuggestionsIntro extends StatelessWidget {
             height: 44,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
-              color: Color(0xffFF7A00),
+              color: Color(0xFF172554),
               shape: BoxShape.circle,
             ),
             child: const Icon(

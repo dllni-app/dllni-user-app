@@ -136,7 +136,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: const Color(0xFFF6F7F9),
         body: SafeArea(
           child: Column(
             children: [
@@ -365,9 +365,9 @@ class _NotificationsAppBar extends StatelessWidget {
       height: 70,
       width: context.width,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E2A78),
+        color: const Color(0xFF172554),
         border: const Border(
-          bottom: BorderSide(color: Color(0xFF6C63FF), width: 2),
+          bottom: BorderSide(color: Color(0xFF172554), width: 2),
         ),
         borderRadius: const BorderRadius.only(
           bottomRight: Radius.circular(20),

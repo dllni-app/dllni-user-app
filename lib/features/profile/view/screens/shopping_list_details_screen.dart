@@ -88,7 +88,7 @@ class ShoppingListDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     if (args.shoppingListId <= 0) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: const Color(0xFFF6F7F9),
         body: Column(
           children: [
             AppSimpleAppBar2(
@@ -369,7 +369,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
               ? state.shoppingListDetail!.name
               : widget.args.shoppingListName;
           return Scaffold(
-            backgroundColor: const Color(0xFFF7F8FA),
+            backgroundColor: const Color(0xFFF6F7F9),
             body: Column(
               children: [
                 AppSimpleAppBar2(
@@ -519,7 +519,7 @@ class _ShoppingListDetailsBodyState extends State<_ShoppingListDetailsBody> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.white,
-                border: Border.all(color: const Color(0xFFF7F8FA)),
+                border: Border.all(color: const Color(0xFFF6F7F9)),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: const [
                   BoxShadow(

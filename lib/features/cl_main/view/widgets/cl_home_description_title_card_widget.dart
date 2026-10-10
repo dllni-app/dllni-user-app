@@ -1,8 +1,16 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import 'cl_service_section_card_widget.dart';
+
+/// Compatibility wrapper for the existing multi-step home description flow.
 class ClHomeDescriptionTitleCardWidget extends StatelessWidget {
-  const ClHomeDescriptionTitleCardWidget({required this.title, required this.subtitle, required this.step, super.key, required this.child});
+  const ClHomeDescriptionTitleCardWidget({
+    required this.title,
+    required this.subtitle,
+    required this.step,
+    required this.child,
+    super.key,
+  });
 
   final String title;
   final String subtitle;
@@ -11,37 +19,11 @@ class ClHomeDescriptionTitleCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          Row(
-            spacing: 14,
-            children: [
-              CircleAvatar(
-                radius: 17,
-                backgroundColor: const Color(0xFF11B9C8),
-                child: AppText.labelLarge('$step', color: Colors.white, fontWeight: FontWeight.w700),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText.bodyMedium(title, textAlign: TextAlign.start, fontWeight: FontWeight.w700, color: const Color(0xFF242424)),
-                    const SizedBox(height: 3),
-                    AppText.labelLarge(subtitle, textAlign: TextAlign.start, color: const Color(0xFF8A8A8A)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Divider(color: Color(0xffF3F4F6), thickness: 1),
-          const SizedBox(height: 10),
-          child,
-        ],
-      ),
+    return ClServiceSectionCardWidget(
+      title: title,
+      subtitle: subtitle,
+      step: step,
+      child: child,
     );
   }
 }

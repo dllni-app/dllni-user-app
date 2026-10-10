@@ -1,5 +1,7 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:flutter/material.dart';
 
+/// Reusable success sheet. Both actions keep their existing callbacks.
 class SuccessActionBottomSheet extends StatelessWidget {
   final String title;
   final String followUpLabel;
@@ -20,48 +22,59 @@ class SuccessActionBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          icon ?? Icon(Icons.verified, size: 80, color: Colors.orange),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              OutlinedButton(
-                onPressed: onFollowUp,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.orange,
-                  side: const BorderSide(color: Colors.orange),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              icon ??
+                  const Icon(Icons.verified_rounded, size: 72, color: SharedPlatformColors.success),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: SharedPlatformColors.ink,
+                  fontWeight: FontWeight.w700,
                 ),
-                child: Text(followUpLabel),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(width: 16),
-              ElevatedButton(
-                onPressed: onShare,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[900],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  elevation: 4,
-                  shadowColor: Colors.black26,
-                ),
-                child: Text(shareLabel),
+              const SizedBox(height: 24),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  OutlinedButton(
+                    onPressed: onFollowUp,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: SharedPlatformColors.primary,
+                      side: const BorderSide(color: SharedPlatformColors.border),
+                      minimumSize: const Size(136, 52),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text(followUpLabel),
+                  ),
+                  FilledButton(
+                    onPressed: onShare,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: SharedPlatformColors.primary,
+                      foregroundColor: SharedPlatformColors.surface,
+                      minimumSize: const Size(136, 52),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text(shareLabel),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
-

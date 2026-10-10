@@ -1,6 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../../../core/auth/auth_gate.dart';
 import '../data/cl_main_route_args.dart';
 
@@ -51,7 +53,7 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: () async {
         await AuthGate.requireAuth(
           context,
@@ -62,7 +64,7 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
         );
       },
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: SizedBox(
           width: context.width,
           height: 200,
@@ -72,16 +74,17 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
               _buildImage(context),
               Padding(
                 padding: const EdgeInsetsDirectional.symmetric(
-                  vertical: 12,
-                  horizontal: 24,
+                  vertical: 14,
+                  horizontal: 16,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+                        color: SharedPlatformColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: SharedPlatformColors.border),
                       ),
                       padding: const EdgeInsetsDirectional.symmetric(
                         vertical: 10,
@@ -93,6 +96,7 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
                             title,
                             fontWeight: FontWeight.w700,
                             textAlign: TextAlign.center,
+                            color: SharedPlatformColors.primary,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

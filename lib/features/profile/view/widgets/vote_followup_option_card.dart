@@ -20,7 +20,7 @@ class VoteFollowupOptionCard extends StatelessWidget {
   final bool isDisabled;
   final bool isSelected;
 
-  static const Color _selectedBorderColor = Color(0xffF97316);
+  static const Color _selectedBorderColor = SharedPlatformColors.primary;
   static const Color _selectedBgColor = Color(0xffFFF7ED);
   static const Color _unselectedBorderColor = Color(0xffE5E7EB);
 

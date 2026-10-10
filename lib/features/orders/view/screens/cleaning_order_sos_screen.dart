@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/themes/app_colors.dart';
@@ -228,7 +229,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                     style: FilledButton.styleFrom(
                       backgroundColor: _isEmergency
                           ? context.error
-                          : const Color(0xff20BFC8),
+                          : SharedPlatformColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -301,7 +302,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                         : Icons.report_problem_outlined,
                     color: _isEmergency
                         ? context.error
-                        : const Color(0xff20BFC8),
+                        : SharedPlatformColors.cleaningInk,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -437,7 +438,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
         children: [
           Icon(
             Icons.check_circle_outline,
-            color: _isEmergency ? context.error : const Color(0xff20BFC8),
+            color: _isEmergency ? context.error : SharedPlatformColors.cleaningInk,
             size: 56,
           ),
           const SizedBox(height: 16),
@@ -482,7 +483,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
     final selected = _kind == value;
     final color = value == 'emergency'
         ? context.error
-        : const Color(0xff20BFC8);
+        : SharedPlatformColors.cleaningInk;
 
     return InkWell(
       onTap: () => _selectKind(value),
@@ -520,7 +521,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
     required bool selected,
     required VoidCallback? onTap,
   }) {
-    final color = _isEmergency ? context.error : const Color(0xff20BFC8);
+    final color = _isEmergency ? context.error : SharedPlatformColors.cleaningInk;
 
     return InkWell(
       onTap: onTap,

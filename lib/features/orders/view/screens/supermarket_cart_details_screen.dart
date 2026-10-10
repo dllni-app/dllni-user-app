@@ -217,7 +217,7 @@ class _ProductCardState extends State<ProductCard> {
                                 child: FaIcon(
                                   FontAwesomeIcons.minus,
                                   size: 12,
-                                  color: Color(0xFF1A237E),
+                                  color: SharedPlatformColors.primary,
                                 ),
                               ),
                             ),
@@ -247,7 +247,7 @@ class _ProductCardState extends State<ProductCard> {
                                 child: FaIcon(
                                   FontAwesomeIcons.plus,
                                   size: 12,
-                                  color: Color(0xFF1A237E),
+                                  color: SharedPlatformColors.primary,
                                 ),
                               ),
                             ),
@@ -274,7 +274,7 @@ class _ProductCardState extends State<ProductCard> {
                         Text(
                           "${widget.finalPrice.toStringAsFixed(2)} ل.س",
                           style: TextStyle(
-                            color: Color(0xFF1A237E),
+                            color: SharedPlatformColors.primary,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             height: 24 / 16,
@@ -681,7 +681,7 @@ class _TextButtonWithIcon extends StatelessWidget {
     required this.label,
     required this.icon,
     this.onTap,
-    this.color = const Color(0xFF1A237E),
+    this.color = SharedPlatformColors.primary,
   });
   @override
   Widget build(BuildContext context) {

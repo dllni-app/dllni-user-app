@@ -31,6 +31,11 @@ void main() {
       },
     );
 
+    test('does not exceed API limit for large team recommendations', () {
+      final fields = resolveEventAssignmentFields(suggestedTeamSize: 100);
+      expect(fields.numberOfWorkers, maxEventWorkerCount);
+    });
+
     test('falls back to workerAcceptance.required for team size', () {
       final fields = resolveEventAssignmentFields(
         selectedWorkerId: null,
@@ -64,6 +69,17 @@ void main() {
 
     test('keeps user-selected worker count when above minimum', () {
       expect(resolveEventWorkerCountForHours(hours: 9, requestedWorkers: 4), 4);
+    });
+
+    test('caps event workers to the backend maximum', () {
+      expect(maxEventGuestCount, 5000);
+      expect(maxEventHours, 24);
+      expect(maxEventWorkerCount, 20);
+      expect(
+        resolveEventWorkerCountForHours(hours: 24, requestedWorkers: 99),
+        maxEventWorkerCount,
+      );
+      expect(resolveEventWorkerCountForHours(hours: 9, requestedWorkers: 0), 2);
     });
 
     test('raises worker count when below hourly minimum', () {

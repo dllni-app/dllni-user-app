@@ -17,7 +17,7 @@ class ClServiceWorkerRoomAssignmentWidget extends StatelessWidget {
     super.key,
   });
 
-  static const Color _screenBlue = SharedPlatformColors.cleaning;
+  static const Color _screenBlue = SharedPlatformColors.primary;
   static const String _autoAssignLabel = 'تلقائي';
 
   final List<CleaningRoomUnit> units;
@@ -98,12 +98,12 @@ class _RoomAssignmentRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: SharedPlatformColors.background,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: roomErrors.isNotEmpty
-              ? const Color(0xFFFCA5A5)
-              : const Color(0xFFE5E7EB),
+              ? SharedPlatformColors.danger
+              : SharedPlatformColors.border,
         ),
       ),
       child: Column(
@@ -159,16 +159,18 @@ class _SlotChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected
               ? ClServiceWorkerRoomAssignmentWidget._screenBlue
-              : const Color(0xFFF3F4F6),
+              : SharedPlatformColors.neutralSoft,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? ClServiceWorkerRoomAssignmentWidget._screenBlue
-                : const Color(0xFFD1D5DB),
+                : SharedPlatformColors.border,
           ),
         ),
         child: AppText.labelMedium(

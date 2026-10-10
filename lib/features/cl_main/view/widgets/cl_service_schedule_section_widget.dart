@@ -28,47 +28,67 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClServiceSectionCardWidget(
       step: 1,
-      title: 'وقت و تاريخ الخدمة',
+      title: 'موعد الخدمة',
+      subtitle:
+          'حدد اليوم ووقت البدء، وسنوضح وقت الانتهاء المتوقع حسب مدة الخدمة.',
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: ClServiceDayPreviewCardWidget(
-                  dayAr: dayAr,
-                  dayDate: dayDate,
-                ),
-              ),
-              const SizedBox(width: 10),
-              FilledButton(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final preview = ClServiceDayPreviewCardWidget(
+                dayAr: dayAr,
+                dayDate: dayDate,
+              );
+              final changeDate = FilledButton(
                 onPressed: onPickDate,
                 style: FilledButton.styleFrom(
-                  backgroundColor: SharedPlatformColors.cleaning,
-                  foregroundColor: Colors.white,
+                  backgroundColor: SharedPlatformColors.cleaningSoft,
+                  foregroundColor: SharedPlatformColors.cleaningInk,
+                  minimumSize: const Size(0, 48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 child: AppText.bodyMedium(
                   'تغيير اليوم',
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                  color: SharedPlatformColors.cleaningInk,
+                  fontWeight: FontWeight.w800,
                 ),
-              ),
-            ],
+              );
+              if (constraints.maxWidth < 300) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    preview,
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: changeDate,
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: preview),
+                  const SizedBox(width: 10),
+                  changeDate,
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsetsDirectional.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F7F9),
-              borderRadius: BorderRadius.circular(12),
+              color: SharedPlatformColors.background,
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.bodyMedium(
-                  'مدة الخدمة',
+                  'وقت البداية والانتهاء',
                   color: const Color(0xFF656B78),
                   fontWeight: FontWeight.w700,
                 ),
@@ -85,7 +105,9 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
                       controller: toTimeController,
                     );
 
-                    if (constraints.maxWidth >= 480) {
+                    // Preserve a compact, readable two-column layout on
+                    // typical phones; narrow devices still stack the fields.
+                    if (constraints.maxWidth >= 280) {
                       return Row(
                         children: [
                           Expanded(child: fromField),

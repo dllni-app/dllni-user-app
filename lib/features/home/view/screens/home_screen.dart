@@ -23,6 +23,7 @@ import '../../domain/usecases/fetch_user_offers_use_case.dart';
 import '../manager/bloc/home_bloc.dart';
 import '../widgets/home_cube.dart';
 import '../widgets/platform_home_widgets.dart';
+import '../widgets/platform_home_experience_v5.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -409,37 +410,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
                   children: [
-                    const PlatformSectionTitle(title: 'شو بدك اليوم؟'),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        PlatformServiceCard(
-                          title: 'تنظيف',
-                          subtitle: 'منزل ومناسبات',
-                          icon: Icons.cleaning_services_rounded,
-                          accent: SharedPlatformColors.cleaning,
-                          soft: SharedPlatformColors.cleaningSoft,
-                          onTap: _openCleaning,
-                        ),
-                        const SizedBox(width: 8),
-                        PlatformServiceCard(
-                          title: 'مطاعم',
-                          subtitle: 'وجبات قريبة',
-                          icon: Icons.restaurant_rounded,
-                          accent: SharedPlatformColors.restaurant,
-                          soft: SharedPlatformColors.restaurantSoft,
-                          onTap: _openRestaurants,
-                        ),
-                        const SizedBox(width: 8),
-                        PlatformServiceCard(
-                          title: 'سوبرماركت',
-                          subtitle: 'مشترياتك',
-                          icon: Icons.shopping_basket_rounded,
-                          accent: SharedPlatformColors.supermarket,
-                          soft: SharedPlatformColors.supermarketSoft,
-                          onTap: _openSupermarket,
-                        ),
-                      ],
+                    PlatformHomeExperienceV5(
+                      onCleaning: _openCleaning,
+                      onRestaurants: _openRestaurants,
+                      onSupermarket: _openSupermarket,
                     ),
                     const SizedBox(height: 22),
                     const PlatformSectionTitle(

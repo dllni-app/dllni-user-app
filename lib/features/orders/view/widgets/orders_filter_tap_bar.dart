@@ -52,7 +52,7 @@ class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProvider
       physics: const BouncingScrollPhysics(),
       dividerHeight: .2,
       // tabAlignment: TabAlignment.start,
-      indicatorColor: Color(0xff1E2A78),
+      indicatorColor: Color(0xFF172554),
       controller: _tabController1,
       labelPadding: EdgeInsetsDirectional.symmetric(vertical: 3, horizontal: 15),
       tabs: List.generate(
@@ -66,12 +66,12 @@ class _CategoriesTabBarState extends State<CategoriesTabBar> with TickerProvider
             softWrap: true,
             overflow: TextOverflow.fade,
             textAlign: TextAlign.center,
-            color: i == widget.selectedIndex ? Color(0xff1E2A78) : null,
+            color: i == widget.selectedIndex ? Color(0xFF172554) : null,
           ),
         ),
       ),
       labelColor: Colors.black,
-      indicator: MaterialIndicator(height: 3, topLeftRadius: 8, topRightRadius: 8, tabPosition: TabPosition.bottom, color: Color(0xff1E2A78)),
+      indicator: MaterialIndicator(height: 3, topLeftRadius: 8, topRightRadius: 8, tabPosition: TabPosition.bottom, color: Color(0xFF172554)),
     );
   }
 }

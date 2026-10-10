@@ -15,7 +15,7 @@ class ClServiceWorkerAssignmentSummaryWidget extends StatelessWidget {
   final List<CleaningWorkerRoomAssignment> assignments;
   final Map<String, List<String>> fieldErrors;
 
-  static const Color _screenBlue = SharedPlatformColors.cleaning;
+  static const Color _screenBlue = SharedPlatformColors.cleaningInk;
 
   @override
   Widget build(BuildContext context) {
@@ -205,12 +205,12 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
+        color: SharedPlatformColors.cleaningSoft,
         borderRadius: BorderRadius.circular(16),
       ),
       child: AppText.labelMedium(
         label,
-        color: const Color(0xFF1D4ED8),
+        color: SharedPlatformColors.cleaningInk,
         fontWeight: FontWeight.w600,
       ),
     );

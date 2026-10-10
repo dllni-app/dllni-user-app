@@ -104,7 +104,7 @@ class _ShoppingListCard extends StatelessWidget {
                 child: FaIcon(
                   icon.icon,
                   size: 20,
-                  color: const Color(0xFF138A62),
+                  color: const Color(0xFF168A67),
                 ),
               ),
               const SizedBox(width: 12),
@@ -137,7 +137,7 @@ class _ShoppingListCard extends StatelessWidget {
                             child: const Text(
                               'نشطة',
                               style: TextStyle(
-                                color: Color(0xFF138A62),
+                                color: Color(0xFF168A67),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -160,7 +160,7 @@ class _ShoppingListCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: active
-                            ? const Color(0xFF138A62)
+                            ? const Color(0xFF168A67)
                             : const Color(0xFF98A2B3),
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -191,7 +191,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           getIt<ProfileBloc>()
             ..add(GetShoppingListEvent(params: GetShoppingListParams())),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: const Color(0xFFF6F7F9),
         body: Column(
           children: [
             AppSimpleAppBar2(
@@ -272,7 +272,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             16,
             24 + MediaQuery.paddingOf(context).bottom,
           ),
-          color: const Color(0xFFF7F8FA),
+          color: const Color(0xFFF6F7F9),
           child: Builder(
             builder: (context) {
               return GestureDetector(
@@ -293,7 +293,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                 child: Container(
                   padding: const EdgeInsets.only(top: 14, bottom: 13),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF138A62),
+                    color: Color(0xFF168A67),
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
                   child: AppText(

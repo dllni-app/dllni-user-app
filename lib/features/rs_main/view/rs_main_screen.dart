@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/themes/app_theme.dart';
 import 'package:dllni_user_app/features/rs_main/view/widgets/rs_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -64,9 +65,7 @@ class _RsMainScreenState extends State<RsMainScreen>
   }
 
   List<Widget> get pages => [
-    RsHomeScreen(
-      args: RsHomeScreenParams(profileBloc: profileBloc),
-    ),
+    RsHomeScreen(args: RsHomeScreenParams(profileBloc: profileBloc)),
     RsDiscoverScreen(
       expandSearch: widget.args.expandSearch,
       initialSearch: widget.args.initialSearch,
@@ -77,13 +76,16 @@ class _RsMainScreenState extends State<RsMainScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: TabBarView(
-        controller: controller,
-        physics: const NeverScrollableScrollPhysics(),
-        children: pages,
+    return Theme(
+      data: AppTheme.forSection('restaurant'),
+      child: Scaffold(
+        body: TabBarView(
+          controller: controller,
+          physics: const NeverScrollableScrollPhysics(),
+          children: pages,
+        ),
+        bottomNavigationBar: RsBottomNavBar(controller: controller),
       ),
-      bottomNavigationBar: RsBottomNavBar(controller: controller),
     );
   }
 

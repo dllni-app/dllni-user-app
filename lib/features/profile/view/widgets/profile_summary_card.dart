@@ -97,7 +97,7 @@ class ProfileSummaryCard extends StatelessWidget {
                       icon: const Icon(Icons.edit_outlined, size: 17),
                       label: const Text('تعديل البيانات'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1E2A78),
+                        foregroundColor: const Color(0xFF172554),
                         side: const BorderSide(color: Color(0xFFBFC5E5)),
                         visualDensity: VisualDensity.compact,
                         shape: RoundedRectangleBorder(

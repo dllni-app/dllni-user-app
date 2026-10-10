@@ -60,11 +60,11 @@ class _CleaningStartVerificationDialogContent extends StatefulWidget {
 
 class _CleaningStartVerificationDialogContentState
     extends State<_CleaningStartVerificationDialogContent> {
-  static const Color _primary = Color(0xff1DBCC8);
-  static const Color _navy = SharedPlatformColors.cleaning;
-  static const Color _muted = Color(0xff6B7280);
-  static const Color _surface = Color(0xffF9FAFB);
-  static const Color _border = Color(0xffE5E7EB);
+  static const Color _primary = SharedPlatformColors.cleaningInk;
+  static const Color _navy = SharedPlatformColors.primary;
+  static const Color _muted = SharedPlatformColors.muted;
+  static const Color _surface = SharedPlatformColors.background;
+  static const Color _border = SharedPlatformColors.border;
 
   late final List<TextEditingController> _controllers;
   late final List<FocusNode> _focusNodes;
@@ -247,19 +247,29 @@ class _CleaningStartVerificationDialogContentState
                 ),
               ],
               TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
                 child: AppText.labelMedium(
-                  'إلغاء الطلب',
+                  'ليس الآن',
                   textAlign: TextAlign.center,
-                  color: const Color(0xffE51C28),
-                  fontWeight: FontWeight.w600,
+                  color: _navy,
+                  fontWeight: FontWeight.w700,
                 ),
-                onPressed: () async {
-                  await showCancelOrderWarningDialog(
-                    context,
-                    orderId: widget.bookingId!,
-                  );
-                },
               ),
+              if (widget.bookingId != null)
+                TextButton(
+                  child: AppText.labelMedium(
+                    'إلغاء الطلب',
+                    textAlign: TextAlign.center,
+                    color: const Color(0xffE51C28),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  onPressed: () async {
+                    await showCancelOrderWarningDialog(
+                      context,
+                      orderId: widget.bookingId!,
+                    );
+                  },
+                ),
 
               if (_submitting) ...[
                 const SizedBox(height: 16),

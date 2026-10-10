@@ -230,7 +230,7 @@ class _CountryPickerDialogState extends State<CountryPickerDialog> {
                 ),
 
                 floatingLabelStyle: const TextStyle(
-                  color: Color(0xff1E2A78),
+                  color: Color(0xFF172554),
                   fontSize: 12,
                 ),
 
@@ -252,7 +252,7 @@ class _CountryPickerDialogState extends State<CountryPickerDialog> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                    color: Color(0xff1E2A78),
+                    color: Color(0xFF172554),
                     width: 1.2,
                   ),
                 ),

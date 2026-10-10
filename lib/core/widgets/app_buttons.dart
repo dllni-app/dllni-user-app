@@ -8,7 +8,7 @@ class AppButton extends StatelessWidget {
     super.key,
     this.onTap,
     required this.title,
-    this.withShadow = true,
+    this.withShadow = false,
     this.color = AppColors.primary,
     this.icon,
   });
@@ -22,11 +22,11 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.all(Radius.circular(8)),
+      borderRadius: BorderRadius.all(Radius.circular(16)),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           color: onTap != null ? color : const Color(0x662F2B3D),
           boxShadow: onTap == null || (onTap != null && !withShadow)
               ? null
@@ -34,7 +34,7 @@ class AppButton extends StatelessWidget {
                   BoxShadow(
                     offset: Offset(0, 4),
                     blurRadius: 16,
-                    color: const Color(0x661E2A78),
+                    color: const Color(0x16172554),
                   ),
                 ],
         ),
@@ -45,14 +45,15 @@ class AppButton extends StatelessWidget {
             AppText(
               title,
               style: TextStyle(
-                color: const Color(0xFFFFEEFF),
-                fontSize: 14,
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
                 height: 1.42,
               ),
             ),
             if (icon != null) ...[
               SizedBox(width: 6),
-              Icon(icon, size: 10, color: const Color(0xFFFFEEFF)),
+              Icon(icon, size: 16, color: Colors.white),
             ],
           ],
         ),
@@ -82,11 +83,11 @@ class AppOutlinedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.all(Radius.circular(8)),
+      borderRadius: BorderRadius.all(Radius.circular(16)),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 7),
+        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           color: withBackground ? color.withValues(alpha: .08) : null,
           border: Border.all(color: color),
           boxShadow: onTap == null || (onTap != null && !withShadow)
@@ -95,7 +96,7 @@ class AppOutlinedButton extends StatelessWidget {
                   BoxShadow(
                     offset: Offset(0, 4),
                     blurRadius: 16,
-                    color: const Color(0x661E2A78),
+                    color: const Color(0x16172554),
                   ),
                 ],
         ),
@@ -105,11 +106,16 @@ class AppOutlinedButton extends StatelessWidget {
           children: [
             AppText(
               title,
-              style: TextStyle(color: color, fontSize: 14, height: 1.42),
+              style: TextStyle(
+                color: color,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                height: 1.42,
+              ),
             ),
             if (icon != null) ...[
               SizedBox(width: 6),
-              Icon(icon, size: 12, color: color),
+              Icon(icon, size: 16, color: color),
             ],
           ],
         ),

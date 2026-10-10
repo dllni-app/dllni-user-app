@@ -1,6 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 class ClServiceTimePickerFieldWidget extends StatelessWidget {
   const ClServiceTimePickerFieldWidget({
     required this.title,
@@ -56,7 +58,7 @@ class ClServiceTimePickerFieldWidget extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD1D5DB)),
+                      border: Border.all(color: SharedPlatformColors.border),
                     ),
                     child: Directionality(
                       textDirection: TextDirection.rtl,
@@ -76,22 +78,25 @@ class ClServiceTimePickerFieldWidget extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 6),
                           const Icon(
                             Icons.access_time_rounded,
-                            size: 16,
+                            size: 14,
                             color: Color(0xFF9CA3AF),
                           ),
                           if (period.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              period,
-                              maxLines: 1,
-                              textDirection: TextDirection.rtl,
-                              style: const TextStyle(
-                                color: Color(0xFF1F2937),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                period,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textDirection: TextDirection.rtl,
+                                style: const TextStyle(
+                                  color: Color(0xFF1F2937),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],

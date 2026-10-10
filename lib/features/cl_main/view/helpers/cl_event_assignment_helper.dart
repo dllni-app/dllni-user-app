@@ -17,6 +17,10 @@ class EventAssignmentFields {
 }
 
 const int eventWorkerDailyHourLimit = 8;
+// Mirrors UserCleaningOrderEstimatePriceRequest limits on the server.
+const int maxEventGuestCount = 5000;
+const int maxEventWorkerCount = 20;
+const int maxEventHours = 24;
 
 int resolveMinimumEventWorkersForHours(double? hours) {
   if (hours == null || hours <= 0) return 1;
@@ -28,11 +32,12 @@ int resolveEventWorkerCountForHours({
   required double? hours,
   required int requestedWorkers,
 }) {
-  final safeRequestedWorkers = requestedWorkers < 1 ? 1 : requestedWorkers;
+  final safeRequestedWorkers = requestedWorkers.clamp(1, maxEventWorkerCount);
   final minimumWorkers = resolveMinimumEventWorkersForHours(hours);
-  return safeRequestedWorkers < minimumWorkers
-      ? minimumWorkers
-      : safeRequestedWorkers;
+  return (safeRequestedWorkers < minimumWorkers
+          ? minimumWorkers
+          : safeRequestedWorkers)
+      .clamp(1, maxEventWorkerCount);
 }
 
 EventAssignmentFields resolveEventAssignmentFields({
@@ -46,7 +51,10 @@ EventAssignmentFields resolveEventAssignmentFields({
         (selectedWorkerId == null ? const <int>[] : <int>[selectedWorkerId]),
   );
   final suggestedWorkers =
-      (suggestedTeamSize ?? workerAcceptance?.required ?? 1).clamp(1, 999);
+      (suggestedTeamSize ?? workerAcceptance?.required ?? 1).clamp(
+        1,
+        maxEventWorkerCount,
+      );
   final workers = suggestedWorkers < workerIds.length
       ? workerIds.length
       : suggestedWorkers;
@@ -62,7 +70,9 @@ EventAssignmentFields resolveEventAssignmentFields({
 
 int resolveSuggestedTeamSize(EstimatePriceResponseModel estimate) {
   final size = estimate.suggestedTeamSize;
-  if (size != null && size > 0) return size;
+  if (size != null && size > 0) {
+    return size.clamp(1, maxEventWorkerCount);
+  }
   return 1;
 }
 

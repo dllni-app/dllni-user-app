@@ -1,4 +1,6 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
+import 'package:dllni_user_app/core/auth/auth_gate.dart';
+import 'package:dllni_user_app/core/themes/app_theme.dart';
 import 'dart:async';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
@@ -17,6 +19,7 @@ import '../data/cl_main_route_args.dart';
 import 'cl_hourly_worker_screen.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_main_service_tabs_widget.dart';
+import '../widgets/cl_cleaning_landing_hero.dart';
 import '../widgets/cl_occasion_type_card_widget.dart';
 import '../widgets/cl_property_type_card_widget.dart';
 
@@ -291,6 +294,23 @@ class _ClMainScreenState extends State<ClMainScreen> {
     );
   }
 
+  Future<void> _openQuickApartmentBooking() async {
+    final bloc = context.read<ClMainBloc>();
+    await AuthGate.requireAuth(
+      context,
+      onAuthenticated: () {
+        if (!mounted) return;
+        context.pushRoute(
+          '/clmainhomedescription',
+          arguments: ClMainHomeDescriptionArgs(
+            propertyType: 'apartment',
+            bloc: bloc,
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCleaningBannersSection() {
     if (_cleaningBannersStatus == BlocStatus.loading) {
       return const Padding(
@@ -317,7 +337,15 @@ class _ClMainScreenState extends State<ClMainScreen> {
     }
 
     if (_cleaningBanners.isEmpty) {
-      return const SizedBox.shrink();
+      if (_selectedTabIndex != ClMainServiceTabsWidget.cleaningIndex) {
+        return const SizedBox.shrink();
+      }
+      return Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
+        child: ClCleaningLandingHero(
+          onBookApartment: _openQuickApartmentBooking,
+        ),
+      );
     }
 
     return Padding(
@@ -367,7 +395,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
     final bloc = context.read<ClMainBloc>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: SharedPlatformColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -415,8 +443,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
                         );
                       },
                     )
-                  : _selectedTabIndex ==
-                        ClMainServiceTabsWidget.occasionsIndex
+                  : _selectedTabIndex == ClMainServiceTabsWidget.occasionsIndex
                   ? ListView.separated(
                       key: const Key('cl_main_occasions_list'),
                       padding: const EdgeInsets.symmetric(
@@ -490,8 +517,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
                                 Expanded(
                                   flex: 6,
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
                                         'عامل بالساعة',
@@ -581,7 +607,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
         }
       },
       canPop: false,
-      child: screenBody,
+      child: Theme(data: AppTheme.forSection('cleaning'), child: screenBody),
     );
   }
 }

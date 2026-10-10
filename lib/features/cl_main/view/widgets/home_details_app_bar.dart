@@ -16,7 +16,7 @@ class HomeDetailsAppBar extends StatelessWidget {
         20,
       ),
       decoration: BoxDecoration(
-        color: context.onPrimary,
+        color: SharedPlatformColors.surface,
         border: Border(
           bottom: BorderSide(color: SharedPlatformColors.cleaning, width: 2),
         ),
@@ -33,9 +33,9 @@ class HomeDetailsAppBar extends StatelessWidget {
         'تفاصيل الطلب',
         textAlign: TextAlign.start,
         style: TextStyle(
-          color: SharedPlatformColors.cleaning,
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
+          color: SharedPlatformColors.primary,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
           height: 32 / 24,
         ),
       ),

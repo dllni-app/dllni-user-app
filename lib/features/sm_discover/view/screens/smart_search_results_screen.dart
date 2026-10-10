@@ -26,7 +26,7 @@ class SmartSearchResultsScreen extends StatelessWidget {
           style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
         ),
       ),
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: const Color(0xFFF6F7F9),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -14,7 +14,7 @@ class TrackOrderAppBar extends StatelessWidget {
         color: context.onPrimary,
         border: const Border(
           bottom: BorderSide(
-            color: RestaurantOrderTrackingColors.orange,
+            color: RestaurantOrderTrackingColors.accent,
             width: 2,
           ),
         ),

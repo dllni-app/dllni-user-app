@@ -374,7 +374,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFE2F5F4),
+              color: SharedPlatformColors.cleaningSoft,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -389,7 +389,7 @@ class _CleaningWorkerTrackingMapState extends State<CleaningWorkerTrackingMap> {
                   child: Text(
                     travelStatusText,
                     style: const TextStyle(
-                      color: Color(0xff0F766E),
+                      color: SharedPlatformColors.cleaningInk,
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
                     ),

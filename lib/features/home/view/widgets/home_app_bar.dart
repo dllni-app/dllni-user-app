@@ -15,7 +15,7 @@
 //         crossAxisAlignment: CrossAxisAlignment.start,
 //         mainAxisAlignment: MainAxisAlignment.center,
 //         children: [
-//           AppText.titleMedium('مرحباً بك احمد 👋', color: Color(0xff1E2A78), textAlign: TextAlign.start, fontWeight: FontWeight.bold,),
+//           AppText.titleMedium('مرحباً بك احمد 👋', color: Color(0xFF172554), textAlign: TextAlign.start, fontWeight: FontWeight.bold,),
 //           AppText.bodyMedium('ماذا تريد اليوم؟', color: Color(0xff6B7280), textAlign: TextAlign.start, fontWeight: FontWeight.w500),
 //         ],
 //       ),

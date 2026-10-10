@@ -130,7 +130,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                               contentPadding: EdgeInsets.zero,
                               title: AppText.bodyMedium(r.labelAr ?? v),
                               value: checked,
-                              activeColor: const Color(0xFFFF7A00),
+                              activeColor: const Color(0xFF172554),
                               onChanged: (on) {
                                 setModalState(() {
                                   if (on == true) {
@@ -214,7 +214,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                       trailing: Radio<int?>(
                         value: null,
                         groupValue: current,
-                        activeColor: const Color(0xFFFF7A00),
+                        activeColor: const Color(0xFF172554),
                         onChanged: (value) {
                           setModalState(() {
                             current = value;
@@ -236,7 +236,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                         trailing: Radio<int?>(
                           value: id,
                           groupValue: current,
-                          activeColor: const Color(0xFFFF7A00),
+                          activeColor: const Color(0xFF172554),
                           onChanged: (value) {
                             setModalState(() {
                               current = value;
@@ -454,7 +454,7 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
                             children: [
                               LuckyBoxCountActionButton(
                                 icon: Icons.add,
-                                backgroundColor: const Color(0xFFFF7A00),
+                                backgroundColor: const Color(0xFF172554),
                                 iconColor: context.onPrimary,
                                 onTap: () {
                                   if (_membersCount >= 50) return;

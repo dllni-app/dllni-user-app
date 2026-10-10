@@ -288,7 +288,7 @@ class _StatusHeader extends StatelessWidget {
                 ),
                 child: Icon(
                   _statusIcon(status),
-                  color: const Color(0xff1E2A78),
+                  color: const Color(0xFF172554),
                 ),
               ),
               const SizedBox(width: 12),
@@ -309,7 +309,7 @@ class _StatusHeader extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xff1E2A78),
+                        color: Color(0xFF172554),
                       ),
                     ),
                   ],
@@ -474,7 +474,7 @@ class _AddressCard extends StatelessWidget {
           if (dropoff != null) ...[
             const Row(
               children: [
-                Icon(Icons.home_rounded, size: 18, color: Color(0xff1E2A78)),
+                Icon(Icons.home_rounded, size: 18, color: Color(0xFF172554)),
                 SizedBox(width: 8),
                 Text('نقطة التسليم', style: TextStyle(fontWeight: FontWeight.w600)),
               ],

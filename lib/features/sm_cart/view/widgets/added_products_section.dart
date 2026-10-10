@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
@@ -137,7 +138,7 @@ class ProductCard extends StatelessWidget {
                       child: InkWell(
                         onTap: () {},
                         borderRadius: BorderRadius.all(Radius.circular(8)),
-                        child: Center(child: FaIcon(FontAwesomeIcons.minus, size: 12, color: Color(0xFF1A237E))),
+                        child: Center(child: FaIcon(FontAwesomeIcons.minus, size: 12, color: SharedPlatformColors.primary)),
                       ),
                     ),
                     SizedBox(
@@ -153,7 +154,7 @@ class ProductCard extends StatelessWidget {
                       child: InkWell(
                         onTap: () {},
                         borderRadius: BorderRadius.all(Radius.circular(8)),
-                        child: Center(child: FaIcon(FontAwesomeIcons.plus, size: 12, color: Color(0xFF1A237E))),
+                        child: Center(child: FaIcon(FontAwesomeIcons.plus, size: 12, color: SharedPlatformColors.primary)),
                       ),
                     ),
                   ],
@@ -161,7 +162,7 @@ class ProductCard extends StatelessWidget {
               ),
               AppText(
                 "450 ل.س",
-                style: TextStyle(color: Color(0xFF1A237E), fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
+                style: TextStyle(color: SharedPlatformColors.primary, fontSize: 16, fontWeight: FontWeight.w700, height: 24 / 16),
               ),
             ],
           ),
@@ -180,7 +181,7 @@ class ProductCard extends StatelessWidget {
 }
 
 class _TextButtonWithIcon extends StatelessWidget {
-  const _TextButtonWithIcon({super.key, required this.label, required this.icon, this.onTap, this.color = const Color(0xFF1A237E)});
+  const _TextButtonWithIcon({super.key, required this.label, required this.icon, this.onTap, this.color = SharedPlatformColors.primary});
 
   final String label;
   final FaIconData icon;

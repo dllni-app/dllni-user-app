@@ -71,7 +71,7 @@ class OrdersAppBar extends StatelessWidget {
                     end: index == _items.length - 1 ? 0 : 7,
                   ),
                   child: Material(
-                    color: selected ? item.soft : const Color(0xFFF7F8FA),
+                    color: selected ? item.soft : const Color(0xFFF6F7F9),
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
                       onTap: () {

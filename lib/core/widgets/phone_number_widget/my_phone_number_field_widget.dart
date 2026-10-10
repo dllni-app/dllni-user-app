@@ -144,7 +144,7 @@ class MyPhoneNumberField extends StatelessWidget {
               fillColor: const Color(0xffF9FAFB),
               labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
               floatingLabelStyle: const TextStyle(
-                color: Color(0xff1E2A78),
+                color: Color(0xFF172554),
                 fontSize: 14,
               ),
               border: OutlineInputBorder(
@@ -198,7 +198,7 @@ class MyPhoneNumberField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(
-                color: Color(0xff1E2A78),
+                color: Color(0xFF172554),
                 width: 1.2,
               ),
             ),
@@ -358,7 +358,7 @@ class MyPhoneNumberInitField extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xff1E2A78), width: 1.2),
+            borderSide: const BorderSide(color: Color(0xFF172554), width: 1.2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),

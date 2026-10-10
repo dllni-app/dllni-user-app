@@ -179,7 +179,7 @@ class _RsAppProductCardState extends State<RsAppProductCard> {
                         widget.price,
                         fontWeight: FontWeight.bold,
                         maxLines: 1,
-                        color: const Color(0xff1E2A78),
+                        color: const Color(0xFF172554),
                       ),
                     ],
                   ),

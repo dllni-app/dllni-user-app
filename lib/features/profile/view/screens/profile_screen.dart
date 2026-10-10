@@ -42,8 +42,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const _navy = Color(0xFF1E2A78);
-  static const _danger = Color(0xFFD92D20);
+  static const _navy = Color(0xFF172554);
+  static const _danger = Color(0xFFC53D47);
 
   late final ProfileBloc profileBloc = getIt<ProfileBloc>();
   bool _isDeletingAccount = false;
@@ -180,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _guestProfile(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xFFF7F8FA),
+      color: const Color(0xFFF6F7F9),
       child: SafeArea(
         child: Column(
           children: [
@@ -301,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final personalDetails = _personalDetailsParams;
     return ColoredBox(
-      color: const Color(0xFFF7F8FA),
+      color: const Color(0xFFF6F7F9),
       child: SafeArea(
         child: Column(
           children: [
@@ -366,37 +366,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _ProfileToolTile(
                         title: 'الكوبونات',
                         icon: Icons.local_offer_outlined,
-                        accent: const Color(0xFFFF7A00),
+                        accent: const Color(0xFF172554),
                         onTap: () => context.pushRoute('/coupons'),
                       ),
                       _ProfileToolTile(
                         title: 'قوائم التسوق',
                         icon: Icons.checklist_rounded,
-                        accent: const Color(0xFF138A62),
+                        accent: const Color(0xFF168A67),
                         onTap: () => context.pushRoute('/shopping_list'),
                       ),
                       _ProfileToolTile(
                         title: 'طلبات جماعية',
                         icon: Icons.groups_2_outlined,
-                        accent: const Color(0xFFC65324),
+                        accent: const Color(0xFFA63C66),
                         onTap: () => context.pushRoute('/group-order/create'),
                       ),
                       _ProfileToolTile(
                         title: 'التصويت',
                         icon: Icons.how_to_vote_outlined,
-                        accent: const Color(0xFF6C63FF),
+                        accent: const Color(0xFF172554),
                         onTap: () => context.pushRoute('/ordervoting'),
                       ),
                       _ProfileToolTile(
                         title: 'صندوق الحظ',
                         icon: Icons.casino_outlined,
-                        accent: const Color(0xFFFF7A00),
+                        accent: const Color(0xFF172554),
                         onTap: () => context.pushRoute('/luckyboxsetup'),
                       ),
                       _ProfileToolTile(
                         title: 'العروض',
                         icon: Icons.percent_rounded,
-                        accent: const Color(0xFF1E2A78),
+                        accent: const Color(0xFF172554),
                         onTap: () => context.pushRoute('/coupons'),
                       ),
                     ],

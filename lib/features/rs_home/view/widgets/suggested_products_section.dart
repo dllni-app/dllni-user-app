@@ -35,7 +35,7 @@ class SuggestedProductsSection extends StatelessWidget {
               children: [
                 AppText(
                   "مقترح لك",
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF273C8F)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: SharedPlatformColors.primary),
                 ),
                 const SizedBox(width: 8),
                 FaIcon(FontAwesomeIcons.wandMagicSparkles, size: 16, color: SharedPlatformColors.restaurant),

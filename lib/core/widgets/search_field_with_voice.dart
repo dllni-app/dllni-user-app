@@ -61,7 +61,7 @@ class SearchFieldWithVoice extends StatelessWidget {
               child: FaIcon(
                 FontAwesomeIcons.magnifyingGlass,
                 size: 18,
-                color: Color(0xFF1E2A78),
+                color: Color(0xFF172554),
               ),
             ),
           ),

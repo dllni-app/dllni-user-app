@@ -1,6 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 class ClSelectableMenuFieldWidget extends StatelessWidget {
   const ClSelectableMenuFieldWidget({
     required this.value,
@@ -18,13 +20,13 @@ class ClSelectableMenuFieldWidget extends StatelessWidget {
     final hasValue = value != null && value!.trim().isNotEmpty;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F7FA),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: SharedPlatformColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: SharedPlatformColors.border),
         ),
         padding: const EdgeInsetsDirectional.symmetric(
           horizontal: 12,

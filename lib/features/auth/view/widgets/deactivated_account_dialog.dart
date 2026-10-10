@@ -68,7 +68,7 @@ class DeactivatedAccountDialog extends StatelessWidget {
               }
             },
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1E2A78),
+              backgroundColor: const Color(0xFF172554),
               minimumSize: const Size.fromHeight(48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

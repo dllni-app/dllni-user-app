@@ -61,7 +61,7 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
     }
     return List<OrderTrackingSegmentStyle>.generate(n - 1, (k) {
       if (k < current) return OrderTrackingSegmentStyle.solid(RestaurantOrderTrackingColors.primary);
-      if (k == current) return OrderTrackingSegmentStyle.solid(RestaurantOrderTrackingColors.orange);
+      if (k == current) return OrderTrackingSegmentStyle.solid(RestaurantOrderTrackingColors.accent);
       return OrderTrackingSegmentStyle.dashed(RestaurantOrderTrackingColors.lineMuted);
     });
   }

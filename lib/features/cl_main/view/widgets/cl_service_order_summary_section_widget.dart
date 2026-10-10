@@ -88,7 +88,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: SharedPlatformColors.border),
       ),
       padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
       child: Column(
@@ -96,7 +96,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
         children: [
           AppText.bodyLarge(
             'ملخص الطلب',
-            color: SharedPlatformColors.cleaning,
+            color: SharedPlatformColors.primary,
             fontWeight: FontWeight.w700,
             textAlign: TextAlign.right,
           ),
@@ -106,7 +106,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
               alignment: AlignmentDirectional.centerStart,
               child: AppText.bodyMedium(
                 'مواعيد الخدمة',
-                color: SharedPlatformColors.cleaning,
+                color: SharedPlatformColors.primary,
                 fontWeight: FontWeight.w800,
                 textAlign: TextAlign.right,
               ),
@@ -243,8 +243,8 @@ class _SummaryRowWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isTotal
-        ? SharedPlatformColors.cleaning
-        : const Color(0xFF4B5563);
+        ? SharedPlatformColors.primary
+        : SharedPlatformColors.ink;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

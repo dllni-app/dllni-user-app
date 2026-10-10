@@ -160,7 +160,7 @@ class _LatestOrderedProductCard extends StatelessWidget {
                         AppText(
                           _priceText(item.displayPrice, item.currency),
                           textAlign: TextAlign.start,
-                          style: const TextStyle(color: Color(0xFF273C8F), fontSize: 14, fontWeight: FontWeight.w700, height: 34 / 34),
+                          style: const TextStyle(color: SharedPlatformColors.primary, fontSize: 14, fontWeight: FontWeight.w700, height: 34 / 34),
                         ),
                       ],
                     ),

@@ -160,7 +160,7 @@ class _RestaurantHomeEngagementCards extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     gradient: const LinearGradient(
-                      colors: [Color(0xffFF7A00), Color(0xff994900)],
+                      colors: [Color(0xFFA63C66), SharedPlatformColors.restaurantInk],
                       end: Alignment.bottomRight,
                       begin: Alignment.topLeft,
                     ),

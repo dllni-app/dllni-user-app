@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../domain/models/cleaning_recurring_session.dart';
 
 class ClRecurringScheduleSectionWidget extends StatelessWidget {
@@ -316,13 +318,13 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                           height: 30,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE0F7F8),
+                            color: SharedPlatformColors.cleaningSoft,
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             '${index + 1}',
                             style: const TextStyle(
-                              color: Color(0xFF0B7480),
+                              color: SharedPlatformColors.cleaningInk,
                               fontWeight: FontWeight.w800,
                             ),
                           ),

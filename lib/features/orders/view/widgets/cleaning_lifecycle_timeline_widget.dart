@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
 import '../../data/models/cleaning_booking_status.dart';
 
 enum CleaningLifecycleActionKind {
@@ -105,6 +107,7 @@ class CleaningLifecycleTimelineWidget extends StatelessWidget {
     this.forceTravelling = false,
     this.acceptedWorkers,
     this.requiredWorkers,
+    this.compact = false,
   });
 
   final String? status;
@@ -113,6 +116,9 @@ class CleaningLifecycleTimelineWidget extends StatelessWidget {
   final bool forceTravelling;
   final int? acceptedWorkers;
   final int? requiredWorkers;
+
+  /// Show only the current stage until the customer chooses to expand it.
+  final bool compact;
 
   static const _labels = <String>[
     'البحث عن العمال',
@@ -136,7 +142,7 @@ class CleaningLifecycleTimelineWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E7EC)),
+        border: Border.all(color: SharedPlatformColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -145,7 +151,7 @@ class CleaningLifecycleTimelineWidget extends StatelessWidget {
             'مسار الطلب',
             textAlign: TextAlign.start,
             style: TextStyle(
-              color: Color(0xFF172033),
+              color: SharedPlatformColors.primary,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -155,19 +161,67 @@ class CleaningLifecycleTimelineWidget extends StatelessWidget {
             _currentDescription(normalized),
             textAlign: TextAlign.start,
             style: const TextStyle(
-              color: Color(0xFF667085),
+              color: SharedPlatformColors.muted,
               fontSize: 12,
               height: 1.45,
             ),
           ),
-          const SizedBox(height: 16),
-          for (var index = 0; index < _labels.length; index++)
-            _TimelineStep(
-              label: _labels[index],
-              isCompleted: index < activeIndex,
-              isCurrent: index == activeIndex,
-              isLast: index == _labels.length - 1,
-            ),
+          const SizedBox(height: 12),
+          if (compact)
+            ExpansionTile(
+              key: ValueKey('cleaning_timeline_expand_$normalized'),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              initiallyExpanded: false,
+              shape: const Border(),
+              collapsedShape: const Border(),
+              leading: Container(
+                width: 30,
+                height: 30,
+                decoration: const BoxDecoration(
+                  color: SharedPlatformColors.cleaningSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.checklist_rounded,
+                  color: SharedPlatformColors.cleaningInk,
+                  size: 17,
+                ),
+              ),
+              title: Text(
+                _labels[activeIndex],
+                style: const TextStyle(
+                  color: SharedPlatformColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+              subtitle: Text(
+                'المرحلة ${activeIndex + 1} من ${_labels.length} • عرض جميع المراحل',
+                style: const TextStyle(
+                  color: SharedPlatformColors.muted,
+                  fontSize: 11,
+                ),
+              ),
+              children: [
+                const SizedBox(height: 8),
+                for (var index = 0; index < _labels.length; index++)
+                  _TimelineStep(
+                    label: _labels[index],
+                    isCompleted: index < activeIndex,
+                    isCurrent: index == activeIndex,
+                    isLast: index == _labels.length - 1,
+                  ),
+              ],
+            )
+          else
+            for (var index = 0; index < _labels.length; index++)
+              _TimelineStep(
+                label: _labels[index],
+                isCompleted: index < activeIndex,
+                isCurrent: index == activeIndex,
+                isLast: index == _labels.length - 1,
+              ),
         ],
       ),
     );
@@ -243,13 +297,13 @@ class _TimelineStep extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: active
-                        ? const Color(0xFF12B8C4)
-                        : const Color(0xFFF2F4F7),
+                        ? SharedPlatformColors.primary
+                        : SharedPlatformColors.neutralSoft,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: active
-                          ? const Color(0xFF12B8C4)
-                          : const Color(0xFFD0D5DD),
+                          ? SharedPlatformColors.primary
+                          : SharedPlatformColors.border,
                     ),
                   ),
                   child: isCompleted
@@ -264,8 +318,8 @@ class _TimelineStep extends StatelessWidget {
                       width: 2,
                       margin: const EdgeInsets.symmetric(vertical: 3),
                       color: isCompleted
-                          ? const Color(0xFF8DDFE4)
-                          : const Color(0xFFE4E7EC),
+                          ? SharedPlatformColors.cleaning
+                          : SharedPlatformColors.border,
                     ),
                   ),
               ],
@@ -280,10 +334,10 @@ class _TimelineStep extends StatelessWidget {
                 textAlign: TextAlign.start,
                 style: TextStyle(
                   color: isCurrent
-                      ? const Color(0xFF172033)
+                      ? SharedPlatformColors.primary
                       : active
-                      ? const Color(0xFF475467)
-                      : const Color(0xFF98A2B3),
+                      ? SharedPlatformColors.ink
+                      : SharedPlatformColors.muted,
                   fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -302,13 +356,13 @@ class _CancelledTimelineCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF5F5),
+        color: SharedPlatformColors.dangerSoft,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFFECACA)),
       ),
       child: const Row(
         children: [
-          Icon(Icons.cancel_outlined, color: Color(0xFFB42318)),
+          Icon(Icons.cancel_outlined, color: SharedPlatformColors.danger),
           SizedBox(width: 10),
           Expanded(
             child: Text(

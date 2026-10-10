@@ -23,14 +23,13 @@ class CleaningOrderCard extends StatelessWidget {
   final VoidCallback? onCancelTap;
 
   String get _statusLabel {
+    if (order.isSearchingForWorkers && order.isHotOrder) {
+      return 'جارٍ إبلاغ العمال المتاحين بطلبك المستعجل';
+    }
     if (order.isSearchingForWorkers) {
-      final accepted = order.workerAcceptance?.accepted ?? 0;
-      final required =
-          order.workerAcceptance?.required ?? order.numberOfWorkers ?? 0;
-      if (required > 0) {
-        return 'جاري البحث عن عمال ($accepted/$required)';
-      }
-      return 'جاري البحث عن عمال';
+      return (order.workerAcceptance?.accepted ?? 0) > 0
+          ? 'انضم عامل إلى الطلب'
+          : 'جارٍ البحث عن عامل مناسب';
     }
     return cleaningOrderStatusLabelAr(
       order.status,
@@ -163,7 +162,7 @@ class CleaningOrderCard extends StatelessWidget {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF7F8FA),
+                  color: const Color(0xFFF6F7F9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -198,7 +197,7 @@ class CleaningOrderCard extends StatelessWidget {
                       onPressed: onTap,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(46),
-                        backgroundColor: SharedPlatformColors.cleaning,
+                        backgroundColor: SharedPlatformColors.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(13),

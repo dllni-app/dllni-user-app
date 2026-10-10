@@ -1,4 +1,3 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -69,8 +68,7 @@ class _MerchantCheckoutCouponSectionState
       'expired' => 'انتهت صلاحية هذا الكوبون.',
       'wrong_section' => 'هذا الكوبون غير مخصص لهذا القسم.',
       'not_assigned_to_user' => 'هذا الكوبون غير مخصص لحسابك.',
-      'global_usage_limit_reached' ||
-      'usage_limit_reached' =>
+      'global_usage_limit_reached' || 'usage_limit_reached' =>
         'تم الوصول إلى الحد الأقصى لاستخدام هذا الكوبون.',
       'user_usage_limit_reached' => 'لقد استخدمت هذا الكوبون مسبقاً.',
       'min_order_not_met' => 'قيمة الطلب أقل من الحد الأدنى للكوبون.',
@@ -100,9 +98,7 @@ class _MerchantCheckoutCouponSectionState
             previous.couponErrorMessage != current.couponErrorMessage;
       },
       builder: (context, state) {
-        final couponData = _isStore
-            ? state.storeCouponData
-            : state.couponData;
+        final couponData = _isStore ? state.storeCouponData : state.couponData;
 
         return RestaurantCartCouponSection(
           couponController: _couponController,

@@ -31,7 +31,7 @@ class AuthScreenChrome extends StatelessWidget {
         : 'استعد الوصول إلى حسابك بخطوات آمنة.';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: const Color(0xFFF6F7F9),
       body: Column(
         children: [
           Container(
@@ -42,7 +42,7 @@ class AuthScreenChrome extends StatelessWidget {
               24,
               24,
             ),
-            decoration: const BoxDecoration(color: Color(0xFFF7F8FA)),
+            decoration: const BoxDecoration(color: Color(0xFFF6F7F9)),
             child: Column(
               children: [
                 SizedBox(
@@ -58,7 +58,7 @@ class AuthScreenChrome extends StatelessWidget {
                   'ع الندهة',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0xFF1E2A78),
+                    color: Color(0xFF172554),
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                   ),
@@ -237,7 +237,7 @@ class AuthGradientButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         child: Ink(
-          decoration: const BoxDecoration(color: Color(0xFF1E2A78)),
+          decoration: const BoxDecoration(color: Color(0xFF172554)),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(

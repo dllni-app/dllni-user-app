@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../themes/app_colors.dart';
+import '../themes/shared_platform_colors.dart';
 
 class AppNavBar extends StatelessWidget {
   const AppNavBar({
@@ -19,12 +20,18 @@ class AppNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final activeTextColor =
+        ThemeData.estimateBrightnessForColor(accentColor) == Brightness.light
+        ? SharedPlatformColors.cleaningInk
+        : accentColor;
     return Container(
       width: width,
       padding: EdgeInsets.fromLTRB(8, 2, 8, 14 + bottomPadding),
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
+        border: const Border(
+          top: BorderSide(color: SharedPlatformColors.border),
+        ),
         boxShadow: [
           BoxShadow(
             offset: Offset(0, -4),
@@ -58,13 +65,17 @@ class AppNavBar extends StatelessWidget {
                   FaIcon(
                     items[index].icon,
                     size: 18,
-                    color: isSelected ? accentColor : Color(0xFFA5AAC9),
+                    color: isSelected
+                        ? activeTextColor
+                        : SharedPlatformColors.muted,
                   ),
                   SizedBox(height: 4),
                   Text(
                     items[index].title,
                     style: TextStyle(
-                      color: isSelected ? accentColor : Color(0xFFA5AAC9),
+                      color: isSelected
+                          ? activeTextColor
+                          : SharedPlatformColors.muted,
                       fontSize: 10,
                       fontWeight: isSelected
                           ? FontWeight.w700

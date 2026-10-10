@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -22,7 +23,7 @@ class GroupOrderFoodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = isSelected
-        ? const Color(0xffF97316)
+        ? SharedPlatformColors.primary
         : const Color(0xffE5E7EB);
     final card = Stack(
       children: [

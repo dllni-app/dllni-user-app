@@ -142,7 +142,7 @@ class _ClWorkerProfileDetailScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: const Color(0xFFF6F7F9),
         body: Column(
           children: [
             _WorkerProfileHeader(
@@ -154,7 +154,7 @@ class _ClWorkerProfileDetailScreenState
             if (_isLoading)
               const LinearProgressIndicator(
                 minHeight: 3,
-                color: Color(0xFF12B8C4),
+                color: Color(0xFF0CBBC7),
                 backgroundColor: Color(0xFFE8ECF2),
               ),
             Expanded(

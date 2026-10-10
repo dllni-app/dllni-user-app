@@ -26,7 +26,7 @@ class ClWorkerReviewsAllScreen extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: const Color(0xFFF6F7F9),
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,

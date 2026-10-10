@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
 
 import '../../../home/view/screens/home_screen.dart';
 import '../../../orders/view/screens/orders_screen.dart';
@@ -42,7 +43,7 @@ class _MainScreenState extends State<MainScreen>
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: SharedPlatformColors.background,
         body: SafeArea(
           child: TabBarView(
             controller: controller,

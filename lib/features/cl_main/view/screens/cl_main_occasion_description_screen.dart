@@ -35,6 +35,7 @@ class _ClMainOccasionDescriptionScreenState
   late final List<_MenuOption> _helpTypeOptions;
   late final List<_MenuOption> _specialRequirementOptions;
 
+  final ScrollController _detailsScrollController = ScrollController();
   final TextEditingController _customServiceController =
       TextEditingController();
   final TextEditingController _notesController = TextEditingController();
@@ -231,7 +232,7 @@ class _ClMainOccasionDescriptionScreenState
     final bloc = _bloc;
     if (bloc == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF7F8FA),
+        backgroundColor: Color(0xFFF6F7F9),
         body: SafeArea(child: Center(child: CircularProgressIndicator())),
       );
     }
@@ -299,13 +300,14 @@ class _ClMainOccasionDescriptionScreenState
           return Directionality(
             textDirection: TextDirection.rtl,
             child: Scaffold(
-              backgroundColor: const Color(0xFFF7F8FA),
+              backgroundColor: const Color(0xFFF6F7F9),
               body: SafeArea(
                 child: Column(
                   children: [
                     const HomeDetailsAppBar(),
                     Expanded(
                       child: SingleChildScrollView(
+                        controller: _detailsScrollController,
                         padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 180),
@@ -323,7 +325,7 @@ class _ClMainOccasionDescriptionScreenState
                       primaryEnabled: !isEstimating,
                       secondaryLabel: _descriptionStep > 0 ? 'السابق' : null,
                       onSecondary: _descriptionStep > 0
-                          ? () => setState(() => _descriptionStep = 0)
+                          ? () => _goToDescriptionStep(0)
                           : null,
                     ),
                   ],
@@ -394,7 +396,11 @@ class _ClMainOccasionDescriptionScreenState
           label: 'عدد الضيوف',
           icon: Icons.groups_2_outlined,
           value: _guestsCount,
-          onIncrement: () => setState(() => _guestsCount += 1),
+          maxValue: maxEventGuestCount,
+          onIncrement: () {
+            if (_guestsCount >= maxEventGuestCount) return;
+            setState(() => _guestsCount += 1);
+          },
           onDecrement: () {
             if (_guestsCount <= 1) return;
             setState(() => _guestsCount -= 1);
@@ -445,8 +451,9 @@ class _ClMainOccasionDescriptionScreenState
           label: 'مدة الخدمة بالساعات',
           icon: Icons.schedule_outlined,
           value: _hoursCount,
+          maxValue: maxEventHours,
           onIncrement: () {
-            if (_hoursCount >= 24) return;
+            if (_hoursCount >= maxEventHours) return;
             _setHoursCount(_hoursCount + 1);
           },
           onDecrement: () {
@@ -459,7 +466,11 @@ class _ClMainOccasionDescriptionScreenState
           label: 'عدد العمال المطلوبين',
           icon: Icons.engineering_outlined,
           value: _workersCount,
-          onIncrement: () => setState(() => _workersCount += 1),
+          maxValue: maxEventWorkerCount,
+          onIncrement: () {
+            if (_workersCount >= maxEventWorkerCount) return;
+            setState(() => _workersCount += 1);
+          },
           onDecrement: () {
             if (_workersCount <= _minimumWorkersForSelectedHours) return;
             setState(() => _workersCount -= 1);
@@ -574,9 +585,18 @@ class _ClMainOccasionDescriptionScreenState
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF12B8C4)),
+        borderSide: const BorderSide(color: Color(0xFF0CBBC7)),
       ),
     );
+  }
+
+  void _goToDescriptionStep(int step) {
+    setState(() => _descriptionStep = step);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _detailsScrollController.hasClients) {
+        _detailsScrollController.jumpTo(0);
+      }
+    });
   }
 
   void _onDescriptionPrimaryPressed(ClMainBloc bloc) {
@@ -596,7 +616,7 @@ class _ClMainOccasionDescriptionScreenState
         );
         return;
       }
-      setState(() => _descriptionStep = 1);
+      _goToDescriptionStep(1);
       return;
     }
     _onContinue(bloc);
@@ -630,6 +650,7 @@ class _ClMainOccasionDescriptionScreenState
 
   @override
   void dispose() {
+    _detailsScrollController.dispose();
     _customServiceController.dispose();
     _notesController.dispose();
     for (final controller in _dynamicControllers.values) {
@@ -640,7 +661,7 @@ class _ClMainOccasionDescriptionScreenState
   }
 
   void _setHoursCount(int value) {
-    final safeHours = value.clamp(1, 24).toInt();
+    final safeHours = value.clamp(1, maxEventHours).toInt();
     setState(() {
       _hoursCount = safeHours;
       final minimumWorkers = _minimumWorkersForSelectedHours;

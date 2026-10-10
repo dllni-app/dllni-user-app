@@ -481,7 +481,10 @@ class _ClMainServiceScheduleScreenState
     }
 
     final roomUnits = enumerateRoomUnits(args.roomSizeBreakdown);
-    final maxWorkers = roomUnits.isEmpty ? 1 : roomUnits.length;
+    final maxWorkers = (roomUnits.isEmpty ? 1 : roomUnits.length).clamp(
+      1,
+      ClServiceWorkerCountSelectorWidget.maxSupportedWorkers,
+    );
 
     return Column(
       children: [
@@ -490,9 +493,7 @@ class _ClMainServiceScheduleScreenState
           onModeChanged: (mode) {
             if (mode == state.assignmentMode) return;
             if (mode == CleaningAssignmentMode.openCount) {
-              final safeCount = state.numberOfWorkers < 1
-                  ? 1
-                  : state.numberOfWorkers;
+              final safeCount = state.numberOfWorkers.clamp(1, maxWorkers);
               bloc.add(SetAssignmentModeEvent(mode: mode));
               bloc.add(ClearWorkerRoomAssignmentsEvent());
               setState(() => _manualRoomAssignmentEnabled = false);
@@ -685,9 +686,7 @@ class _ClMainServiceScheduleScreenState
     _selectedDate = CleaningScheduleDateTimeLogic.tomorrowDate();
     _fromTimeHhMm = '09:00';
     _toTimeHhMm = '09:00';
-    _fromTimeController = TextEditingController(
-      text: '',
-    );
+    _fromTimeController = TextEditingController(text: '');
     _toTimeController = TextEditingController(
       text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
     );
@@ -1765,9 +1764,9 @@ class _ClMainServiceScheduleScreenState
 
   Future<void> _onSubmitPressed(ClMainState state) async {
     if (!_dateChosen) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار تاريخ الخدمة')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('يرجى اختيار تاريخ الخدمة')));
       return;
     }
     if (!_timeChosen) {

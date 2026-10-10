@@ -61,7 +61,9 @@ class ClRedesignStepHeader extends StatelessWidget {
             value: progress,
             minHeight: 6,
             backgroundColor: const Color(0xFFE8ECF2),
-            valueColor: const AlwaysStoppedAnimation(Color(0xFF12B8C4)),
+            valueColor: const AlwaysStoppedAnimation(
+              SharedPlatformColors.cleaning,
+            ),
           ),
         ),
       ],
@@ -92,7 +94,9 @@ class ClRedesignCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: selected ? const Color(0xFF12B8C4) : const Color(0xFFE7EAF0),
+          color: selected
+              ? SharedPlatformColors.cleaning
+              : SharedPlatformColors.border,
           width: selected ? 1.5 : 1,
         ),
         boxShadow: const [
@@ -121,6 +125,7 @@ class ClRedesignCounter extends StatelessWidget {
     required this.value,
     required this.onIncrement,
     required this.onDecrement,
+    this.maxValue,
     this.icon,
   });
 
@@ -128,6 +133,7 @@ class ClRedesignCounter extends StatelessWidget {
   final int value;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
+  final int? maxValue;
   final IconData? icon;
 
   @override
@@ -174,7 +180,12 @@ class ClRedesignCounter extends StatelessWidget {
               ),
             ),
           ),
-          _CounterButton(icon: Icons.add, onPressed: onIncrement),
+          _CounterButton(
+            icon: Icons.add,
+            onPressed: maxValue == null || value < maxValue!
+                ? onIncrement
+                : null,
+          ),
         ],
       ),
     );
@@ -194,14 +205,15 @@ class _CounterButton extends StatelessWidget {
       height: 44,
       child: IconButton(
         onPressed: onPressed,
+        tooltip: icon == Icons.add ? 'زيادة العدد' : 'تقليل العدد',
         icon: Icon(icon, size: 20),
         style: IconButton.styleFrom(
           backgroundColor: onPressed == null
-              ? const Color(0xFFF3F4F6)
-              : SharedPlatformColors.cleaning,
+              ? SharedPlatformColors.neutralSoft
+              : SharedPlatformColors.cleaningSoft,
           foregroundColor: onPressed == null
-              ? const Color(0xFF98A2B3)
-              : Colors.white,
+              ? SharedPlatformColors.muted
+              : SharedPlatformColors.cleaningInk,
         ),
       ),
     );
@@ -258,7 +270,7 @@ class ClRedesignStickyActions extends StatelessWidget {
                 onPressed: primaryEnabled ? onPrimary : null,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
-                  backgroundColor: SharedPlatformColors.cleaning,
+                  backgroundColor: SharedPlatformColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -306,13 +318,13 @@ class ClRedesignSegmentedChoice<T> extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: selected == values[index]
-                      ? const Color(0xFFE9F9FA)
+                      ? SharedPlatformColors.primary
                       : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: selected == values[index]
-                        ? const Color(0xFF12B8C4)
-                        : const Color(0xFFD0D5DD),
+                        ? SharedPlatformColors.primary
+                        : SharedPlatformColors.border,
                   ),
                 ),
                 child: Text(
@@ -320,8 +332,8 @@ class ClRedesignSegmentedChoice<T> extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: selected == values[index]
-                        ? const Color(0xFF0B7480)
-                        : const Color(0xFF344054),
+                        ? Colors.white
+                        : SharedPlatformColors.ink,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

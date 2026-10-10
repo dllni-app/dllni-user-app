@@ -42,7 +42,7 @@ class AddressCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isDefault
-                  ? const Color(0xFF1E2A78)
+                  ? const Color(0xFF172554)
                   : const Color(0xFFE4E7EC),
               width: isDefault ? 1.5 : 1,
             ),
@@ -70,7 +70,7 @@ class AddressCard extends StatelessWidget {
                     ),
                     child: Icon(
                       _addressTypeIcon,
-                      color: const Color(0xFF1E2A78),
+                      color: const Color(0xFF172554),
                       size: 22,
                     ),
                   ),
@@ -104,7 +104,7 @@ class AddressCard extends StatelessWidget {
                                 child: const Text(
                                   'افتراضي',
                                   style: TextStyle(
-                                    color: Color(0xFF1E2A78),
+                                    color: Color(0xFF172554),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -164,7 +164,7 @@ class AddressCard extends StatelessWidget {
                       _AddressAction(
                         label: 'تعيين كافتراضي',
                         icon: Icons.star_outline_rounded,
-                        color: const Color(0xFF1E2A78),
+                        color: const Color(0xFF172554),
                         onTap: onSetDefault,
                       ),
                     _AddressAction(
@@ -176,7 +176,7 @@ class AddressCard extends StatelessWidget {
                     _AddressAction(
                       label: 'حذف',
                       icon: Icons.delete_outline_rounded,
-                      color: const Color(0xFFD92D20),
+                      color: const Color(0xFFC53D47),
                       onTap: onDelete,
                     ),
                   ],
@@ -189,7 +189,7 @@ class AddressCard extends StatelessWidget {
                     Text(
                       'اختيار هذا العنوان',
                       style: TextStyle(
-                        color: Color(0xFF1E2A78),
+                        color: Color(0xFF172554),
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -197,7 +197,7 @@ class AddressCard extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_rounded,
                       size: 17,
-                      color: Color(0xFF1E2A78),
+                      color: Color(0xFF172554),
                     ),
                   ],
                 ),

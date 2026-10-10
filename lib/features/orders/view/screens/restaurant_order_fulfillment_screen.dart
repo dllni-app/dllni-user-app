@@ -851,7 +851,7 @@ class _FulfillmentCard extends StatelessWidget {
           color: selected ? const Color(0xffFFF7ED) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected ? const Color(0xffF97316) : const Color(0xffE5E7EB),
+            color: selected ? SharedPlatformColors.restaurant : const Color(0xffE5E7EB),
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -898,7 +898,7 @@ class _FulfillmentCard extends StatelessWidget {
             Icon(
               selected ? Icons.check_circle : Icons.radio_button_off,
               color: selected
-                  ? const Color(0xffF97316)
+                  ? SharedPlatformColors.restaurant
                   : const Color(0xffD1D5DB),
             ),
           ],

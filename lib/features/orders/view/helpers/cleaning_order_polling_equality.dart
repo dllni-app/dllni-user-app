@@ -96,7 +96,15 @@ bool cleaningOrderDetailDisplayEquals(
   CleaningOrderDetailModel a,
   CleaningOrderDetailModel b,
 ) {
-  return _nullableEquals(a.id, b.id) &&
+  return _nullableEquals(
+        a.lastHourTeamDecision?['required'],
+        b.lastHourTeamDecision?['required'],
+      ) &&
+      _nullableEquals(
+        a.lastHourTeamDecision?['decision'],
+        b.lastHourTeamDecision?['decision'],
+      ) &&
+      _nullableEquals(a.id, b.id) &&
       _nullableEquals(a.bookingNumber, b.bookingNumber) &&
       _nullableEquals(a.status, b.status) &&
       _nullableEquals(a.propertyType, b.propertyType) &&

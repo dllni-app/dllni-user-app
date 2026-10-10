@@ -1,6 +1,9 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/shared_platform_colors.dart';
+
+/// Primary action across the cleaning booking flow. Callback remains caller-owned.
 class ClMainContinueButtonWidget extends StatelessWidget {
   const ClMainContinueButtonWidget({
     required this.onPressed,
@@ -18,15 +21,17 @@ class ClMainContinueButtonWidget extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF11B9C8),
+          minimumSize: const Size.fromHeight(52),
+          backgroundColor: SharedPlatformColors.primary,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
           elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: AppText.bodyMedium(
           label,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           color: Colors.white,
         ),
       ),

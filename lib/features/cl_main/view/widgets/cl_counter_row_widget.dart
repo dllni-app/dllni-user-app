@@ -1,13 +1,9 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-class ClCounterRowWidget extends StatelessWidget {
-  final String label;
+import '../../../../core/themes/shared_platform_colors.dart';
 
-  final int value;
-  final VoidCallback onIncrement;
-  final VoidCallback onDecrement;
-  final IconData icon;
+class ClCounterRowWidget extends StatelessWidget {
   const ClCounterRowWidget({
     required this.label,
     required this.value,
@@ -17,73 +13,88 @@ class ClCounterRowWidget extends StatelessWidget {
     super.key,
   });
 
+  final String label;
+  final int value;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
+  final IconData icon;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(6),
+          width: 42,
+          height: 42,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Color(0xff0CBBC7).withAlpha(31),
-            shape: BoxShape.circle,
+            color: SharedPlatformColors.cleaningSoft,
+            borderRadius: BorderRadius.circular(12),
           ),
-
-          child: Icon(icon, size: 18, color: const Color(0xff0CBBC7)),
+          child: Icon(icon, size: 21, color: SharedPlatformColors.cleaningInk),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: AppText.titleSmall(
+          child: AppText.bodyMedium(
             label,
             textAlign: TextAlign.start,
-            fontWeight: FontWeight.w600,
-            style: TextStyle(fontSize: 16),
+            color: SharedPlatformColors.ink,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(width: 6),
-        _ActionCircleButton(
+        _StepControl(
           icon: Icons.remove,
+          enabled: value > 0,
           onPressed: onDecrement,
-          color: Color(0xffB2B9C1).withAlpha(80),
-          iconColor: Colors.black,
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: AppText.titleSmall('$value', fontWeight: FontWeight.w600),
+        SizedBox(
+          width: 40,
+          child: Center(
+            child: AppText.bodyLarge(
+              '$value',
+              color: SharedPlatformColors.primary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
-        _ActionCircleButton(
-          icon: Icons.add,
-
-          onPressed: onIncrement,
-          color: Color(0xff0CBBC7),
-          iconColor: Colors.white,
-        ),
+        _StepControl(icon: Icons.add, onPressed: onIncrement),
       ],
     );
   }
 }
 
-class _ActionCircleButton extends StatelessWidget {
-  final IconData icon;
-
-  final Color color;
-  final Color iconColor;
-  final VoidCallback onPressed;
-  const _ActionCircleButton({
+class _StepControl extends StatelessWidget {
+  const _StepControl({
     required this.icon,
     required this.onPressed,
-    required this.color,
-    required this.iconColor,
+    this.enabled = true,
   });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Material(
+      color: enabled
+          ? SharedPlatformColors.cleaningSoft
+          : SharedPlatformColors.neutralSoft,
       borderRadius: BorderRadius.circular(12),
-      onTap: onPressed,
-      child: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: Icon(icon, size: 16, color: iconColor),
+      child: InkWell(
+        onTap: enabled ? onPressed : null,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(
+            icon,
+            size: 21,
+            color: enabled
+                ? SharedPlatformColors.cleaningInk
+                : SharedPlatformColors.subtle,
+          ),
+        ),
       ),
     );
   }

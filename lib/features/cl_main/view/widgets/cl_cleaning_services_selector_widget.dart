@@ -71,16 +71,23 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
                     return FilterChip(
                       label: Text(
                         name,
-                        style: TextStyle(color: Color(0xFF0CBBC7)),
+                        style: TextStyle(
+                          color: selected
+                              ? SharedPlatformColors.primary
+                              : SharedPlatformColors.ink,
+                          fontWeight: selected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                        ),
                       ),
                       selected: selected,
                       onSelected: (_) => onToggleService(name),
-                      selectedColor: const Color(0xFFE2F5F4),
-                      checkmarkColor: const Color(0xFF0CBBC7),
+                      selectedColor: SharedPlatformColors.cleaningSoft,
+                      checkmarkColor: SharedPlatformColors.cleaningInk,
                       side: BorderSide(
                         color: selected
-                            ? const Color(0xFF0CBBC7)
-                            : const Color(0xFFE5E7EB),
+                            ? SharedPlatformColors.cleaning
+                            : SharedPlatformColors.border,
                       ),
                     );
                   })
@@ -118,7 +125,9 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF0CBBC7)),
+                      borderSide: const BorderSide(
+                        color: SharedPlatformColors.cleaning,
+                      ),
                     ),
                   ),
                 ),
@@ -129,7 +138,7 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onAddCustomService,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: SharedPlatformColors.cleaning,
+                    backgroundColor: SharedPlatformColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

@@ -1,3 +1,4 @@
+import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
@@ -103,7 +104,7 @@ class SummaryRequest extends StatelessWidget {
                   AppText(
                     "1250 ل.س",
                     style: TextStyle(
-                      color: Color(0xFF1A237E),
+                      color: SharedPlatformColors.primary,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       height: 28 / 20,

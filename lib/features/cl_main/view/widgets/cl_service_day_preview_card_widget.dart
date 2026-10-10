@@ -20,12 +20,12 @@ class ClServiceDayPreviewCardWidget extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFFDCE0EA),
+            color: SharedPlatformColors.cleaningSoft,
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Icon(
             Icons.calendar_month_rounded,
-            color: SharedPlatformColors.cleaning,
+            color: SharedPlatformColors.cleaningInk,
           ),
         ),
         const SizedBox(width: 12),
@@ -35,13 +35,13 @@ class ClServiceDayPreviewCardWidget extends StatelessWidget {
             children: [
               AppText.titleMedium(
                 dayAr,
-                color: const Color(0xFF151E43),
+                color: SharedPlatformColors.primary,
                 fontWeight: FontWeight.w700,
               ),
               const SizedBox(height: 2),
               AppText.bodySmall(
                 dayDate,
-                color: const Color(0xFF6B7280),
+                color: SharedPlatformColors.muted,
                 fontWeight: FontWeight.w500,
               ),
             ],

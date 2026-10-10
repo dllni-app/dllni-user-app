@@ -35,10 +35,36 @@ class CleaningProgressiveRoomState {
 
   int get totalUnits => counts.values.fold<int>(0, (sum, count) => sum + count);
 
-  bool get hasAnyRoom => allCleaningRoomTypes.any((type) => countFor(type) > 0);
+  /// The quote request's `propertyDetails.rooms` is capped at 30 by Laravel.
+  /// Balconies are extra spaces, not a replacement for a room to clean.
+  static const int maxBaseRooms = 30;
+
+  int get totalBaseRooms => allCleaningRoomTypes
+      .where((type) => type != CleaningRoomType.balcony)
+      .fold<int>(0, (sum, type) => sum + countFor(type));
+
+  bool get hasAnyRoom => totalBaseRooms > 0;
+
+  int maxCountFor(CleaningRoomType roomType) {
+    // Keep individual counters within the backend's legacy room limits too.
+    final perTypeLimit = switch (roomType) {
+      CleaningRoomType.bedroom ||
+      CleaningRoomType.bathroom ||
+      CleaningRoomType.kitchen ||
+      CleaningRoomType.balcony ||
+      CleaningRoomType.shed => 20,
+      CleaningRoomType.livingRoom || CleaningRoomType.corridor => maxBaseRooms,
+    };
+    if (roomType == CleaningRoomType.balcony) return perTypeLimit;
+    final available = maxBaseRooms - (totalBaseRooms - countFor(roomType));
+    return available < 0
+        ? 0
+        : (available < perTypeLimit ? available : perTypeLimit);
+  }
 
   CleaningProgressiveRoomState setCount(CleaningRoomType roomType, int value) {
-    final safeValue = value < 0 ? 0 : value;
+    final max = maxCountFor(roomType);
+    final safeValue = value < 0 ? 0 : (value > max ? max : value);
     final nextCounts = <CleaningRoomType, int>{...counts, roomType: safeValue};
     final previousByKey = <String, CleaningProgressiveRoomUnit>{
       for (final unit in units) unit.key: unit,
