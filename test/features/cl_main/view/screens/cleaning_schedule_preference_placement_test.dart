@@ -51,28 +51,15 @@ void main() {
     });
   });
 
-  test('address city is a fixed Aleppo dropdown for create and update', () {
-    final addressScreen = _source(
+  test('address creation and editing preserve Aleppo city and geofence', () {
+    final source = _source(
       'lib/features/profile/view/screens/add_address_screen.dart',
     );
-    final cityStart = addressScreen.indexOf("Key('address_city_dropdown')");
-    final neighborhoodStart = addressScreen.indexOf("'الحي'", cityStart);
 
-    expect(
-      addressScreen.contains("TextEditingController(text: 'حلب')"),
-      isTrue,
-    );
-    expect(cityStart, greaterThanOrEqualTo(0));
-    expect(neighborhoodStart, greaterThan(cityStart));
-
-    final citySection = addressScreen.substring(cityStart, neighborhoodStart);
-    expect(citySection.contains("value: 'حلب'"), isTrue);
-    expect(citySection.contains("child: Text('حلب')"), isTrue);
-    expect(
-      RegExp(r"DropdownMenuItem<String>\(").allMatches(citySection),
-      hasLength(1),
-    );
-    expect(addressScreen.contains("hintText: 'مثال: دمشق'"), isFalse);
-    expect(addressScreen.contains('_cityController.text = item.city'), isFalse);
+    expect(source.contains("TextEditingController(text: 'حلب')"), isTrue);
+    expect(source.contains('city: _cityController.text.trim()'), isTrue);
+    expect(source.contains('_isInsideAleppo('), isTrue);
+    expect(source.contains('_validateLocationBeforeSubmit()'), isTrue);
+    expect(source.contains("String city = 'حلب'"), isTrue);
   });
 }

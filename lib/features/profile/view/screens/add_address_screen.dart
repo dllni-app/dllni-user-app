@@ -195,7 +195,7 @@ class AddAddressBottomActions extends StatelessWidget {
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _cityController = TextEditingController(text: '');
+  final _cityController = TextEditingController(text: 'حلب');
   final _addressController = TextEditingController();
   final _neighborhoodSearchController = TextEditingController();
   String? _selectedNeighborhood;
@@ -347,7 +347,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             isRequired: true,
                             hintText: 'يُستخرج تلقائياً من الخريطة',
                             controller: _addressController,
-                            validator: (value) => value == null || value.trim().isEmpty
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
                                 ? 'يرجى تحديد الموقع واستخراج العنوان'
                                 : null,
                           ),
@@ -630,14 +631,17 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           'format': 'json',
           'accept-language': 'ar',
         },
-        options: Options(headers: {'User-Agent': 'DllniCustomerApp/1.0 (address picker)'}),
+        options: Options(
+          headers: {'User-Agent': 'DllniCustomerApp/1.0 (address picker)'},
+        ),
       );
       if (!mounted) return;
       setState(() {
         final resolved =
             response.data?['display_name']?.toString().trim() ?? '';
-        _addressController.text =
-            resolved.length > 255 ? resolved.substring(0, 255) : resolved;
+        _addressController.text = resolved.length > 255
+            ? resolved.substring(0, 255)
+            : resolved;
       });
     } catch (error) {
       if (!mounted) return;
