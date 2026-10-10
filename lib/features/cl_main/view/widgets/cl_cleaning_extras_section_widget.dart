@@ -191,81 +191,84 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
         if (showOpenTime) ...[
           const SizedBox(height: 10),
           ClServiceSectionCardWidget(
-          step: 0,
-          showStepBadge: false,
-          title: 'cleaningExtras.openTimeTitle'.tr(),
-          subtitle: 'cleaningExtras.openTimeDescription'.tr(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Semantics(
-                label: 'cleaningExtras.requestOpenTime'.tr(),
-                toggled: openTime != null,
-                child: SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('cleaningExtras.requestOpenTime'.tr()),
-                  value: openTime != null,
-                  onChanged: onOpenTimeChanged,
-                ),
-              ),
-              if (openTime != null) ...[
-                const SizedBox(height: 8),
-                DropdownButtonFormField<int>(
-                  initialValue: openTime!.workerCount,
-                  decoration: InputDecoration(
-                    labelText: 'cleaningExtras.workerCount'.tr(),
-                    border: const OutlineInputBorder(),
-                  ),
-                  items: List<DropdownMenuItem<int>>.generate(20, (index) {
-                    final count = index + 1;
-                    return DropdownMenuItem<int>(
-                      value: count,
-                      child: Text('$count'),
-                    );
-                  }),
-                  onChanged: (count) {
-                    if (count != null) onOpenTimeWorkerCountChanged(count);
-                  },
-                ),
-                const SizedBox(height: 12),
+            step: 0,
+            showStepBadge: false,
+            title: 'cleaningExtras.openTimeTitle'.tr(),
+            subtitle: 'cleaningExtras.openTimeDescription'.tr(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Semantics(
-                  label: 'الحد المتوقع لمدة الطلب المفتوح',
-                  child: DropdownButtonFormField<int>(
-                    initialValue:
-                        openTimeDurationOptions.contains(
-                          openTime!.expectedMaxMinutes,
-                        )
-                        ? openTime!.expectedMaxMinutes
-                        : null,
-                    decoration: const InputDecoration(
-                      labelText: 'المدة القصوى المتوقعة',
-                      helperText:
-                          'يُحجز وقت العامل حتى هذا الحد، والفوترة حسب الوقت الفعلي.',
-                      border: OutlineInputBorder(),
+                  label: 'cleaningExtras.requestOpenTime'.tr(),
+                  toggled: openTime != null,
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('cleaningExtras.requestOpenTime'.tr()),
+                    value: openTime != null,
+                    onChanged: onOpenTimeChanged,
+                  ),
+                ),
+                if (openTime != null) ...[
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    initialValue: openTime!.workerCount,
+                    decoration: InputDecoration(
+                      labelText: 'cleaningExtras.workerCount'.tr(),
+                      border: const OutlineInputBorder(),
                     ),
-                    items: openTimeDurationOptions
-                        .map(
-                          (minutes) => DropdownMenuItem<int>(
-                            value: minutes,
-                            child: Text(_durationLabel(minutes)),
-                          ),
-                        )
-                        .toList(growable: false),
-                    onChanged: (minutes) {
-                      if (minutes != null) {
-                        onOpenTimeExpectedMaxMinutesChanged(minutes);
-                      }
+                    items: List<DropdownMenuItem<int>>.generate(20, (index) {
+                      final count = index + 1;
+                      return DropdownMenuItem<int>(
+                        value: count,
+                        child: Text('$count'),
+                      );
+                    }),
+                    onChanged: (count) {
+                      if (count != null) onOpenTimeWorkerCountChanged(count);
                     },
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Semantics(
+                    label: 'الحد المتوقع لمدة الطلب المفتوح',
+                    child: DropdownButtonFormField<int>(
+                      initialValue:
+                          openTimeDurationOptions.contains(
+                            openTime!.expectedMaxMinutes,
+                          )
+                          ? openTime!.expectedMaxMinutes
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'المدة القصوى المتوقعة',
+                        helperText:
+                            'يُحجز وقت العامل حتى هذا الحد، والفوترة حسب الوقت الفعلي.',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: openTimeDurationOptions
+                          .map(
+                            (minutes) => DropdownMenuItem<int>(
+                              value: minutes,
+                              child: Text(_durationLabel(minutes)),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (minutes) {
+                        if (minutes != null) {
+                          onOpenTimeExpectedMaxMinutesChanged(minutes);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+                if (estimatedOpenTime != null) ...[
+                  const SizedBox(height: 12),
+                  _OpenTimeCard(
+                    openTime: estimatedOpenTime!,
+                    currency: currency,
+                  ),
+                ],
               ],
-              if (estimatedOpenTime != null) ...[
-                const SizedBox(height: 12),
-                _OpenTimeCard(openTime: estimatedOpenTime!, currency: currency),
-              ],
-            ],
+            ),
           ),
-        ),
         ],
       ],
     );
@@ -1011,11 +1014,99 @@ class _SpecialServiceLine extends StatelessWidget {
         line.executionStatus!.trim(),
     ];
 
-    return _DetailLine(
-      title: line.name ?? '-',
-      subtitle: details.join(' · '),
-      amount: _money(line.totalPrice, currency),
-      imageUrl: line.imageUrl,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _DetailLine(
+          title: line.name ?? '-',
+          subtitle: details.join(' · '),
+          amount: _money(line.totalPrice, currency),
+          imageUrl: line.imageUrl,
+        ),
+        for (var index = 0; index < line.items.length; index++)
+          _SpecialServiceItemDetail(
+            item: line.items[index],
+            index: index,
+            currency: currency,
+          ),
+      ],
+    );
+  }
+}
+
+class _SpecialServiceItemDetail extends StatelessWidget {
+  const _SpecialServiceItemDetail({
+    required this.item,
+    required this.index,
+    required this.currency,
+  });
+
+  final CleaningSpecialServiceItemLineModel item;
+  final int index;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = <String>[
+      if (item.quantity != null) 'الكمية: ${_number(item.quantity)}',
+      if (item.dirtinessLevel?.trim().isNotEmpty == true)
+        'الاتساخ: ${_dirtinessDisplayLabel(item.dirtinessLevel!.trim())}',
+      if (item.beforeImages.isNotEmpty) 'صور قبل: ${item.beforeImages.length}',
+      if (item.afterImages.isNotEmpty) 'صور بعد: ${item.afterImages.length}',
+    ];
+    final note = item.notes?.trim();
+    final evidence = <String>[...item.beforeImageUrls, ...item.afterImageUrls]
+        .where(
+          (url) =>
+              Uri.tryParse(url)?.hasScheme == true &&
+              (url.startsWith('https://') || url.startsWith('http://')),
+        )
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 12, top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _DetailLine(
+            title: 'العنصر ${index + 1}',
+            subtitle: description.join(' · '),
+            amount: _money(item.totalPrice, currency),
+          ),
+          if (note != null && note.isNotEmpty)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 4, bottom: 6),
+              child: Text(
+                'ملاحظات: $note',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          if (evidence.isNotEmpty)
+            SizedBox(
+              height: 58,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: evidence.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, imageIndex) => ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    evidence[imageIndex],
+                    width: 58,
+                    height: 58,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox(
+                          width: 58,
+                          height: 58,
+                          child: Icon(Icons.broken_image_outlined),
+                        ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

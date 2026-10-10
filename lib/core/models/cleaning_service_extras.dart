@@ -298,6 +298,8 @@ class CleaningSpecialServiceItemLineModel {
     this.notes,
     this.beforeImages = const <String>[],
     this.afterImages = const <String>[],
+    this.beforeImageUrls = const <String>[],
+    this.afterImageUrls = const <String>[],
   });
 
   final int? id;
@@ -308,6 +310,8 @@ class CleaningSpecialServiceItemLineModel {
   final String? notes;
   final List<String> beforeImages;
   final List<String> afterImages;
+  final List<String> beforeImageUrls;
+  final List<String> afterImageUrls;
 
   factory CleaningSpecialServiceItemLineModel.fromJson(
     Map<String, dynamic> json,
@@ -330,6 +334,12 @@ class CleaningSpecialServiceItemLineModel {
       ),
       afterImages: _cleaningExtrasStringList(
         json['afterImages'] ?? json['after_images'],
+      ),
+      beforeImageUrls: _cleaningExtrasStringList(
+        json['beforeImageUrls'] ?? json['before_image_urls'],
+      ),
+      afterImageUrls: _cleaningExtrasStringList(
+        json['afterImageUrls'] ?? json['after_image_urls'],
       ),
     );
   }

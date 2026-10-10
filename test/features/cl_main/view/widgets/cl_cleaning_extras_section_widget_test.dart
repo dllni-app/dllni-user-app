@@ -6,6 +6,64 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets(
+    'shows item-by-item special-service details and before/after photo counts',
+    (tester) async {
+      tester.view.physicalSize = const Size(420, 1300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: CleaningOrderExtrasDetailsSection(
+                  materials: <CleaningMaterialLineModel>[],
+                  openTime: null,
+                  currency: 'SYP',
+                  specialServices: <CleaningSpecialServiceLineModel>[
+                    CleaningSpecialServiceLineModel(
+                      specialServiceId: 9,
+                      name: 'تنظيف الكنب',
+                      quantity: 3,
+                      totalPrice: 400,
+                      items: <CleaningSpecialServiceItemLineModel>[
+                        CleaningSpecialServiceItemLineModel(
+                          quantity: 1,
+                          dirtinessLevel: 'light',
+                          totalPrice: 100,
+                          notes: 'وسادة صغيرة',
+                          beforeImages: <String>['cleaning/before/one.jpg'],
+                        ),
+                        CleaningSpecialServiceItemLineModel(
+                          quantity: 2,
+                          dirtinessLevel: 'heavy',
+                          totalPrice: 300,
+                          beforeImages: <String>['cleaning/before/two.jpg'],
+                          afterImages: <String>['cleaning/after/two.jpg'],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('العنصر 1'), findsOneWidget);
+      expect(find.text('العنصر 2'), findsOneWidget);
+      expect(find.text('ملاحظات: وسادة صغيرة'), findsOneWidget);
+      expect(find.textContaining('صور قبل: 1'), findsNWidgets(2));
+      expect(find.textContaining('صور بعد: 1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'edits decimal item details per special service in RTL dark large-text layout',
     (tester) async {
       tester.view.devicePixelRatio = 1;
