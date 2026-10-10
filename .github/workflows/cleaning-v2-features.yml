@@ -3,7 +3,7 @@ name: Cleaning v2 User App Gates
 on:
   workflow_dispatch:
   push:
-    branches: [v2]
+    branches: [dev, v2]
     paths:
       - 'lib/core/models/cleaning_service_extras.dart'
       - 'lib/features/cl_main/**'
@@ -14,7 +14,7 @@ on:
       - 'pubspec.lock'
       - '.github/workflows/cleaning-v2-features.yml'
   pull_request:
-    branches: [v2]
+    branches: [dev, v2]
     paths:
       - 'lib/core/models/cleaning_service_extras.dart'
       - 'lib/features/cl_main/**'
