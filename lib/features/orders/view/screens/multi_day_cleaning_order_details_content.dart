@@ -322,10 +322,58 @@ class _MultiDayCleaningOrderDetailsScreenState
     );
     if (reason == null) return;
 
+    final today = DateUtils.dateOnly(DateTime.now());
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: today,
+      lastDate: schedule.lastDate != null && schedule.lastDate!.isAfter(today)
+          ? schedule.lastDate!
+          : today.add(const Duration(days: 30)),
+      helpText: 'حدد فترة الزيارات المطلوب إيقافها',
+      saveText: 'عرض الزيارات',
+    );
+    if (!mounted || range == null) return;
+
+    final affected = schedule.sessions.where((session) {
+      final date = session.date;
+      if (date == null ||
+          date.isBefore(DateUtils.dateOnly(range.start)) ||
+          date.isAfter(DateUtils.dateOnly(range.end))) {
+        return false;
+      }
+      if (session.status != 'scheduled' &&
+          session.status != 'worker_assigned') {
+        return false;
+      }
+      final time = session.time?.split(':') ?? const <String>[];
+      final hour = time.isNotEmpty ? int.tryParse(time.first) ?? 0 : 0;
+      final minute = time.length > 1 ? int.tryParse(time[1]) ?? 0 : 0;
+      return DateTime(
+        date.year,
+        date.month,
+        date.day,
+        hour,
+        minute,
+      ).isAfter(DateTime.now().add(const Duration(hours: 24)));
+    }).toList();
+    if (affected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا توجد زيارات مؤهلة للإيقاف ضمن الفترة المختارة'),
+        ),
+      );
+      return;
+    }
+    final affectedDates = affected
+        .map(
+          (session) =>
+              MaterialLocalizations.of(context).formatMediumDate(session.date!),
+        )
+        .join('، ');
     final approved = await _confirmDialog(
-      title: 'تأكيد إيقاف الحجز الدوري',
+      title: 'تأكيد إيقاف الزيارات المحددة',
       message:
-          'سيتم إيقاف الزيارات المستقبلية المؤهلة مؤقتاً وتحرير العمال المرتبطين بها دون اعتبارها ملغاة أو متخطاة. يمكنك استئناف نفس الحجز لاحقاً.',
+          'ستُوقف ${affected.length} زيارة فقط: $affectedDates. سيتم تحرير العامل من هذه الزيارات دون التأثير على بقية أيام الحجز أو سجلاتها المالية. يمكنك استئنافها لاحقاً.',
       confirmLabel: 'إيقاف مؤقت',
     );
     if (!approved) return;
@@ -334,6 +382,8 @@ class _MultiDayCleaningOrderDetailsScreenState
       () => _sessions.pauseRecurringSeries(
         orderId: widget.orderId,
         reason: reason,
+        fromDate: range.start,
+        toDate: range.end,
       ),
     );
   }

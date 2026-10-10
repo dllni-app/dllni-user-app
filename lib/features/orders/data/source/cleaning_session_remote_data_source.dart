@@ -81,10 +81,17 @@ class CleaningSessionRemoteDataSource with HandlingApiManager {
   Future<CleaningMultiDayOrderEnvelope> pauseRecurringSeries({
     required int orderId,
     required String reason,
+    DateTime? fromDate,
+    DateTime? toDate,
   }) {
     return _post(
       '/api/v1/cleaning-bookings/$orderId/recurring/pause',
-      data: <String, dynamic>{'reason': reason.trim()},
+      data: <String, dynamic>{
+        'reason': reason.trim(),
+        if (fromDate != null)
+          'fromDate': fromDate.toIso8601String().substring(0, 10),
+        if (toDate != null) 'toDate': toDate.toIso8601String().substring(0, 10),
+      },
     );
   }
 
