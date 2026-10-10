@@ -261,14 +261,9 @@ class _ClMainHomeDescriptionScreenState
   void _onPrimaryPressed(ClMainBloc bloc, ClMainState state) {
     if (_currentStep == 0 && !_roomState.hasAnyRoom) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تحديد غرفة واحدة على الأقل للتنظيف')),
-      );
-      return;
-    }
-    if (_currentStep == 1 &&
-        _roomState.units.any((unit) => unit.size == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تحديد حجم كل غرفة قبل المتابعة')),
+        const SnackBar(
+          content: Text('يرجى تحديد غرفة واحدة على الأقل للتنظيف'),
+        ),
       );
       return;
     }
@@ -300,9 +295,11 @@ class _ClMainHomeDescriptionScreenState
     }
     if (state.estimatePriceStatus == BlocStatus.success &&
         state.estimatePrice != null) {
+      final cleaningType = _selectedCleaningType;
       _isEstimatingForContinue = false;
       _closeLoadingOverlay();
-      _openScheduleScreen(bloc, state.estimatePrice!);
+      if (cleaningType == null) return;
+      _openScheduleScreen(bloc, state.estimatePrice!, cleaningType);
       return;
     }
     if (state.estimatePriceStatus == BlocStatus.failed) {
@@ -389,6 +386,7 @@ class _ClMainHomeDescriptionScreenState
   void _openScheduleScreen(
     ClMainBloc bloc,
     EstimatePriceResponseModel estimate,
+    CleaningType cleaningType,
   ) {
     final breakdown = _roomSizeBreakdown;
     Navigator.of(context).push(
@@ -404,7 +402,7 @@ class _ClMainHomeDescriptionScreenState
             addressLatitude: _defaultAddress?.latitude ?? 0,
             addressLongitude: _defaultAddress?.longitude ?? 0,
             estimate: estimate,
-            cleaningType: _selectedCleaningType,
+            cleaningType: cleaningType,
             bloc: bloc,
             defaultAddress: _defaultAddress,
           ),

@@ -68,7 +68,7 @@ class ClHourlyWorkerAppointmentTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 const Icon(
-                  Icons.chevron_left_rounded,
+                  Icons.chevron_right_rounded,
                   color: SharedPlatformColors.subtle,
                 ),
               ],
