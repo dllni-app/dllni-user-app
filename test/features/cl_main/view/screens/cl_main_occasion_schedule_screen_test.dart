@@ -150,7 +150,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('submit without address does not create order', (
+  testWidgets('submit without required worker selection does not create order', (
     WidgetTester tester,
   ) async {
     var createCalled = false;
@@ -175,7 +175,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(createCalled, isFalse);
-    expect(find.text('يرجى اختيار عنوان الخدمة أولاً'), findsOneWidget);
+    expect(find.text('يرجى اختيار جنس العامل: ذكر أو أنثى'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
