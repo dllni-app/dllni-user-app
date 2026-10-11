@@ -128,12 +128,16 @@ class _DeliveryOrderTrackingScreenState
                 }
 
                 final tracking = order.tracking;
-                final stages = tracking?.stages.isNotEmpty == true
+                final status = tracking?.currentStatus ?? order.status;
+                final rawStages = tracking?.stages.isNotEmpty == true
                     ? tracking!.stages
                     : tracking?.timeline ?? order.timeline;
+                final stages = visibleDeliveryTrackingStages(
+                  rawStages,
+                  currentStatus: status,
+                );
                 final driver = tracking?.driver ?? order.driver;
                 final map = tracking?.map;
-                final status = tracking?.currentStatus ?? order.status;
 
                 return Column(
                   children: [
@@ -166,6 +170,7 @@ class _DeliveryOrderTrackingScreenState
                               statusLabel: order.displayStatusLabel,
                               etaLabel: order.etaLabel,
                               status: status,
+                              stopReason: order.stopReason,
                               fee: order.deliveryFee,
                               currency: order.currency ?? 'SYP',
                               distanceKm: order.distanceKm,
@@ -175,7 +180,10 @@ class _DeliveryOrderTrackingScreenState
                                 ? const _TrackingMapUnavailableCard()
                                 : DeliveryTrackingMap(map: map),
                             const SizedBox(height: 14),
-                            DeliveryStatusStepper(stages: stages),
+                            DeliveryStatusStepper(
+                              stages: stages,
+                              stopReason: order.stopReason,
+                            ),
                             if (driver != null) ...[
                               const SizedBox(height: 14),
                               DeliveryDriverCard(driver: driver),
@@ -223,6 +231,7 @@ class _StatusHeader extends StatelessWidget {
     required this.statusLabel,
     required this.etaLabel,
     required this.status,
+    this.stopReason,
     this.fee,
     this.currency,
     this.distanceKm,
@@ -232,6 +241,7 @@ class _StatusHeader extends StatelessWidget {
   final String statusLabel;
   final String etaLabel;
   final String? status;
+  final String? stopReason;
   final double? fee;
   final String? currency;
   final double? distanceKm;
@@ -242,7 +252,8 @@ class _StatusHeader extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xffF3F4F6)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -335,6 +346,8 @@ class _StatusHeader extends StatelessWidget {
       'accepted' => Icons.two_wheeler_rounded,
       'in_progress' => Icons.near_me_rounded,
       'picked_up' => Icons.inventory_2_rounded,
+      'returning_to_merchant' => Icons.assignment_return_rounded,
+      'returned_to_merchant' => Icons.keyboard_return_rounded,
       'delivered' => Icons.home_rounded,
       'completed' => Icons.check_circle_rounded,
       'cancelled' => Icons.cancel_rounded,
@@ -352,11 +365,15 @@ class _StatusHeader extends StatelessWidget {
       'accepted' => 'المندوب في الطريق إلى نقطة الاستلام',
       'in_progress' => 'المندوب يقترب من نقطة الاستلام',
       'picked_up' => 'المندوب استلم الطلب وهو في الطريق إليك',
+      'returning_to_merchant' => 'تعذر التسليم ويجري إرجاع الطلب إلى المتجر',
+      'returned_to_merchant' => 'تمت إعادة الطلب إلى المتجر بعد تعذر التسليم',
       'delivered' => 'تم تسليم الطلب',
       'completed' => 'اكتمل طلب التوصيل',
       'cancelled' => 'تم إلغاء طلب التوصيل',
       'rejected' => 'تعذر قبول طلب التوصيل',
-      'stopped' => 'توقف طلب التوصيل',
+      'stopped' => deliveryTrackingStatusLabelAr(
+        status, stopReason: stopReason,
+      ),
       _ => 'جاري تحديث حالة التوصيل',
     };
   }
@@ -498,12 +515,14 @@ class _EventsCard extends StatelessWidget {
     return switch ((to ?? '').toLowerCase()) {
       'accepted' => 'تم قبول الطلب من المندوب',
       'in_progress' => 'المندوب في الطريق لنقطة الاستلام',
-      'picked_up' => 'تم استلام الطلب',
+      'picked_up' => 'استلم المندوب الطلب من المتجر',
+      'returning_to_merchant' => 'تعذر التسليم وبدأ إرجاع الطلب إلى المتجر',
+      'returned_to_merchant' => 'تمت إعادة الطلب إلى المتجر',
       'delivered' => 'تم تسليم الطلب',
       'completed' => 'اكتمل التوصيل',
       'cancelled' => 'تم إلغاء التوصيل',
       'stopped' => 'توقف التوصيل',
-      'rejected' => 'تعذر قبول طلب التوصيل',
+      'rejected' => 'تم رفض طلب التوصيل',
       _ => _localizedEventNote(event.note),
     };
   }
