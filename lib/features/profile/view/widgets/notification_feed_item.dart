@@ -1,186 +1,163 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
+import '../../../../core/themes/shared_platform_colors.dart';
 import '../../data/models/fetch_notifications_model.dart';
 
+/// One V7 notification row; all event identity and links are backend-owned.
 class NotificationFeedItem extends StatelessWidget {
   const NotificationFeedItem({super.key, required this.notification});
-
   final FetchNotificationsModelDataItem notification;
 
-  static String _normalizedCategory(FetchNotificationsModelDataItem n) {
-    final c = (n.category ?? '').trim().toLowerCase();
-    if (c.isNotEmpty) return c;
-    final t = (n.type).trim().toLowerCase();
-    if (t.contains('offer')) return 'offers';
-    if (t.contains('order')) return 'orders';
+  static String _category(FetchNotificationsModelDataItem n) {
+    final category = (n.category ?? '').trim().toLowerCase();
+    if (category.isNotEmpty) return category;
+    final type = n.type.trim().toLowerCase();
+    if (type.contains('offer')) return 'offers';
+    if (type.contains('order') || type.contains('booking')) return 'orders';
     return 'system';
   }
 
-  Color notificationStatusColor() {
-    switch (_normalizedCategory(notification)) {
-      case 'orders':
-        return const Color(0xff10B981);
-      case 'offers':
-        return const Color(0xffD97706);
-      case 'system':
-        return const Color(0xff6B7280);
-      default:
-        return const Color(0xff6366F1);
-    }
-  }
-
-  IconData notificationStatusIcon() {
-    switch (_normalizedCategory(notification)) {
-      case 'orders':
-        return Icons.receipt_long_outlined;
-      case 'offers':
-        return Icons.local_offer_outlined;
-      case 'system':
-        return Icons.info_outline;
-      default:
-        return Icons.notifications_none_outlined;
-    }
-  }
-
-  String _displayBody() {
-    final canonicalType = (notification.canonicalType ?? '').trim().toLowerCase();
+  Color notificationStatusColor() => switch (_category(notification)) {
+    'orders' => const Color(0xFF087D88),
+    'offers' => const Color(0xFF97601B),
+    'system' => const Color(0xFF475467),
+    _ => const Color(0xFF5164B5),
+  };
+  IconData notificationStatusIcon() => switch (_category(notification)) {
+    'orders' => Icons.receipt_long_outlined,
+    'offers' => Icons.local_offer_outlined,
+    'system' => Icons.info_outline,
+    _ => Icons.notifications_none_outlined,
+  };
+  String _body() {
+    final canonical = (notification.canonicalType ?? '').trim().toLowerCase();
     final type = notification.type.trim().toLowerCase();
-    final isExtensionRejected =
-        canonicalType == 'cleaning.booking.time_extension_rejected' ||
-        type == 'time_extension_rejected';
-
-    if (isExtensionRejected) {
-      final data = notification.data;
-      for (final key in const <String>[
+    if (canonical == 'cleaning.booking.time_extension_rejected' ||
+        type == 'time_extension_rejected') {
+      for (final key in const [
         'workerRejectMessage',
         'worker_reject_message',
         'message',
       ]) {
-        final value = data?[key]?.toString().trim();
-        if (value != null && value.isNotEmpty) {
-          return 'رد العامل: $value';
-        }
+        final value = notification.data?[key]?.toString().trim();
+        if (value != null && value.isNotEmpty) return 'رد العامل: ' + value;
       }
     }
-
     return notification.body ?? '';
   }
 
-  String _relativeTime(String? createdAt) {
-    if (createdAt == null || createdAt.isEmpty) {
-      return '';
-    }
-
-    final parsed = DateTime.tryParse(createdAt);
-    if (parsed == null) {
-      return '';
-    }
-
-    final now = DateTime.now();
-    final diff = now.difference(parsed.toLocal());
-
-    if (diff.inMinutes < 1) {
-      return 'الآن';
-    }
-    if (diff.inMinutes < 60) {
-      return 'منذ ${diff.inMinutes} دقيقة';
-    }
-    if (diff.inHours < 24) {
-      return 'منذ ${diff.inHours} ساعة';
-    }
-    if (diff.inDays < 7) {
-      return 'منذ ${diff.inDays} يوم';
-    }
+  String _time(String? at) {
+    if (at == null || at.isEmpty) return '';
+    final date = DateTime.tryParse(at);
+    if (date == null) return '';
+    final diff = DateTime.now().difference(date.toLocal());
+    if (diff.isNegative || diff.inMinutes < 1) return 'الآن';
+    if (diff.inMinutes < 60)
+      return 'منذ ' + diff.inMinutes.toString() + ' دقيقة';
+    if (diff.inHours < 24) return 'منذ ' + diff.inHours.toString() + ' ساعة';
+    if (diff.inDays < 7) return 'منذ ' + diff.inDays.toString() + ' يوم';
     return 'منذ أسبوع';
   }
 
-  Widget _leadingIcon(BuildContext context) {
-    final statusColor = notificationStatusColor();
+  Widget _icon() {
     final url = (notification.icon ?? '').trim();
-    if (url.isEmpty) {
-      return Icon(notificationStatusIcon(), color: statusColor, size: 18);
-    }
-    final lower = url.toLowerCase();
-    Widget child;
-    if (lower.endsWith('.svg')) {
-      child = SvgPicture.network(
+    final fallback = Icon(
+      notificationStatusIcon(),
+      color: notificationStatusColor(),
+      size: 24,
+    );
+    if (url.isEmpty) return fallback;
+    if (url.toLowerCase().endsWith('.svg')) {
+      return SvgPicture.network(
         url,
-        width: 30,
-        height: 30,
+        width: 24,
+        height: 24,
         fit: BoxFit.contain,
-        placeholderBuilder: (_) => Icon(notificationStatusIcon(), color: statusColor, size: 18),
-      );
-    } else {
-      child = Image.network(
-        url,
-        width: 30,
-        height: 30,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Icon(notificationStatusIcon(), color: statusColor, size: 18),
+        placeholderBuilder: (_) => fallback,
       );
     }
-    return child;
+    return Image.network(
+      url,
+      width: 25,
+      height: 25,
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) => fallback,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = notificationStatusColor();
-    final isUnread = notification.isRead != true;
-
+    final unread = notification.isRead != true;
     return Container(
-      color: context.onPrimary,
-      child: Stack(
+      margin: const EdgeInsetsDirectional.only(bottom: 9),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: unread ? const Color(0xFFE9F9FA) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: unread ? const Color(0xFF9DDCDF) : const Color(0xFFE6EAF0),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (notification.showTrailingAccent)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Container(width: 3, color: context.primaryContainer),
+          Container(
+            width: 43,
+            height: 43,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
             ),
-          Padding(
-            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
+            child: _icon(),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _leadingIcon(context),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (isUnread) ...[
-                            Container(
-                              width: 6,
-                              height: 6,
-                              margin: const EdgeInsetsDirectional.only(top: 7),
-                              decoration: BoxDecoration(color: context.primaryContainer, shape: BoxShape.circle),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          Expanded(
-                            child: AppText.bodyMedium(
-                              notification.title ?? '',
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF111827),
-                              textAlign: TextAlign.start,
-                            ),
-                          ),
-                        ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        notification.title ?? 'إشعار',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: SharedPlatformColors.ink,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                      const SizedBox(height: 2),
-                      AppText.bodyMedium(_displayBody(), color: const Color(0xFF4B5563), textAlign: TextAlign.start),
-                      const SizedBox(height: 4),
-                      AppText.labelLarge(
-                        _relativeTime(notification.createdAt),
-                        color: const Color(0xFF9CA3AF),
-                        fontWeight: FontWeight.w500,
-                        textAlign: TextAlign.start,
+                    ),
+                    if (unread)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF09A9B6),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ],
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  _body(),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SharedPlatformColors.muted,
+                    fontSize: 12,
+                    height: 1.55,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _time(notification.createdAt),
+                  style: const TextStyle(
+                    color: SharedPlatformColors.muted,
+                    fontSize: 11,
                   ),
                 ),
               ],

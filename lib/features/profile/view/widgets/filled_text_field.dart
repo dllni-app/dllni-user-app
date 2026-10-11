@@ -220,19 +220,28 @@ class FilledTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final errorBorder = errorText != null || hasError;
+    final invalid = errorText != null || hasError;
+    final outline = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: BorderSide(
+        color: invalid ? const Color(0xFFC5414D) : const Color(0xFFE3E7ED),
+      ),
+    );
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            AppText.bodyMedium(label, fontWeight: FontWeight.w500),
-            if (isRequired)
-              AppText.bodyMedium(
-                '*',
-                color: context.error,
-                fontWeight: FontWeight.w500,
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF172554),
               ),
+            ),
+            if (isRequired)
+              const Text('*', style: TextStyle(color: Color(0xFFC5414D))),
           ],
         ),
         const SizedBox(height: 8),
@@ -244,54 +253,39 @@ class FilledTextField extends StatelessWidget {
           onTap: onTap,
           onChanged: onChanged,
           validator: validator,
-          style: const TextStyle(
-            color: Color(0xff2F2B3D),
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF182232)),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: const TextStyle(
-              color: AppColors.hintText,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
+            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8B95A5)),
             filled: true,
-            fillColor: const Color(0xffF9FAFB),
+            fillColor: const Color(0xFFF8FAFC),
+            errorText: errorText,
+            suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
-              vertical: 12,
+              vertical: 15,
             ),
-            suffixIcon: suffixIcon,
-            errorText: errorText,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: errorBorder ? context.error : const Color(0xffE5E7EB),
-                width: 1,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                color: errorBorder ? context.error : const Color(0xffE5E7EB),
-                width: 1,
-              ),
-            ),
+            border: outline,
+            enabledBorder: outline,
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(13),
               borderSide: BorderSide(
-                color: errorBorder ? context.error : context.primary,
-                width: 1.2,
+                color: invalid
+                    ? const Color(0xFFC5414D)
+                    : const Color(0xFF0CBBC7),
+                width: 1.6,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: context.error, width: 1),
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(color: Color(0xFFC5414D)),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: context.error, width: 1.2),
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(
+                color: Color(0xFFC5414D),
+                width: 1.6,
+              ),
             ),
           ),
         ),

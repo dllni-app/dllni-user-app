@@ -1,199 +1,186 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../../../../core/themes/shared_platform_colors.dart';
-
+import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/platform_coupon_models.dart';
 
+/// Pen V7 coupon ticket backed only by actual coupon resource fields.
 class PlatformCouponCard extends StatelessWidget {
   const PlatformCouponCard({super.key, required this.coupon});
-
   final PlatformCouponModel coupon;
 
-  String _formatAmount(double? value) {
-    if (value == null) return '—';
-    final digits = value % 1 == 0
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(2);
-    return '$digits ل.س';
+  String _amount(double? value) {
+    if (value == null) return 'غير محدد';
+    return (value % 1 == 0
+            ? value.toStringAsFixed(0)
+            : value.toStringAsFixed(2)) +
+        ' ل.س';
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'بدون تاريخ انتهاء';
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/${date.year}';
+  String _date(DateTime? value) {
+    if (value == null) return 'دون تاريخ انتهاء';
+    return value.day.toString().padLeft(2, '0') +
+        '/' +
+        value.month.toString().padLeft(2, '0') +
+        '/' +
+        value.year.toString();
   }
 
-  String get _sectionLabel => switch (coupon.section) {
-    'cleaning' => 'التنظيف',
+  Color get _soft => switch (coupon.section) {
+    'cleaning' => const Color(0xFFE9F9FA),
+    'restaurant' => const Color(0xFFFFF1F1),
+    'supermarket' => const Color(0xFFEAF7F1),
+    _ => const Color(0xFFF1F2FA),
+  };
+  String get _section => switch (coupon.section) {
+    'cleaning' => 'التنظيفات',
     'restaurant' => 'المطاعم',
-    'supermarket' => 'السوبر ماركت',
-    _ => 'جميع الأقسام',
+    'supermarket' => 'السوبرماركت',
+    _ => 'جميع الخدمات',
   };
-
-  Color get _sectionAccent => switch (coupon.section) {
-    'cleaning' => SharedPlatformColors.cleaning,
-    'restaurant' => SharedPlatformColors.restaurant,
-    'supermarket' => SharedPlatformColors.supermarket,
-    _ => SharedPlatformColors.primary,
-  };
-
-  Color get _sectionSoft => switch (coupon.section) {
-    'cleaning' => SharedPlatformColors.cleaningSoft,
-    'restaurant' => SharedPlatformColors.restaurantSoft,
-    'supermarket' => SharedPlatformColors.supermarketSoft,
-    _ => const Color(0xFFEEF0FA),
-  };
-  String get _discountLabel {
+  String get _discount {
     final value = coupon.discountValue;
-    if (value == null) return '—';
+    if (value == null) return 'قيمة الخصم غير محددة';
     if (coupon.discountType == 'percentage') {
-      final percent = value % 1 == 0
-          ? value.toStringAsFixed(0)
-          : value.toStringAsFixed(1);
-      return '$percent%';
+      return (value % 1 == 0
+              ? value.toStringAsFixed(0)
+              : value.toStringAsFixed(1)) +
+          '%';
     }
-    return _formatAmount(value);
-  }
-
-  String? get _restrictionLabel {
-    final appliesTo = coupon.appliesTo;
-    final labels = <String>[];
-    if (appliesTo.propertyTypes.isNotEmpty) labels.add('عقارات محددة');
-    if (appliesTo.cleaningModes.isNotEmpty) {
-      labels.add('أنواع تنظيف محددة');
-    }
-    if (appliesTo.eventTypes.isNotEmpty) labels.add('مناسبات محددة');
-    return labels.isEmpty ? null : labels.join(' • ');
+    return _amount(value);
   }
 
   @override
   Widget build(BuildContext context) {
-    final code = coupon.code ?? '';
-    final restrictionLabel = _restrictionLabel;
-
+    final code = (coupon.code ?? '').trim();
+    final restrictions = <String>[
+      if (coupon.appliesTo.propertyTypes.isNotEmpty) 'عقارات محددة',
+      if (coupon.appliesTo.cleaningModes.isNotEmpty) 'أنواع تنظيف محددة',
+      if (coupon.appliesTo.eventTypes.isNotEmpty) 'مناسبات محددة',
+    ];
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.onPrimary,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xffE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            offset: const Offset(0, 2),
-            blurRadius: 6,
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE7EBF0)),
       ),
-      padding: const EdgeInsetsDirectional.all(14),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
+              V7ArtTile(
+                asset: V7Artwork.coupon,
+                size: 56,
+                background: _soft,
+                radius: 13,
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppText.titleMedium(
-                      coupon.title.isEmpty ? 'كوبون خصم' : coupon.title,
-                      color: const Color(0xff111827),
-                      fontWeight: FontWeight.w700,
-                    ),
-                    if (coupon.description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      AppText.bodySmall(
-                        coupon.description,
-                        color: const Color(0xff6B7280),
-                        textAlign: TextAlign.start,
+                    Text(
+                      coupon.title.isNotEmpty ? coupon.title : 'قسيمة خصم',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: SharedPlatformColors.primary,
+                        fontWeight: FontWeight.w900,
                       ),
-                    ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _section,
+                      style: const TextStyle(
+                        color: SharedPlatformColors.muted,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: _sectionSoft,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                padding: const EdgeInsetsDirectional.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                child: AppText.labelSmall(
-                  _sectionLabel,
-                  color: _sectionAccent,
-                  fontWeight: FontWeight.w700,
+              Text(
+                _discount,
+                style: const TextStyle(
+                  color: Color(0xFF087D88),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xffF3F4F6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AppText.titleSmall(
-                    code.isEmpty ? '—' : code,
-                    color: const Color(0xff065F46),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                InkWell(
-                  onTap: code.isEmpty
-                      ? null
-                      : () async {
-                          await Clipboard.setData(ClipboardData(text: code));
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('تم نسخ الكوبون: $code')),
-                          );
-                        },
-                  borderRadius: BorderRadius.circular(8),
-                  child: const Padding(
-                    padding: EdgeInsetsDirectional.all(4),
-                    child: Icon(
-                      Icons.copy_rounded,
-                      size: 18,
-                      color: Color(0xff4B5563),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          _CouponInfoRow(title: 'قيمة الخصم', value: _discountLabel),
-          const SizedBox(height: 8),
-          _CouponInfoRow(
-            title: 'الحد الأدنى للطلب',
-            value: _formatAmount(coupon.minimumOrderAmount),
-          ),
-          if (coupon.maximumDiscountAmount != null) ...[
-            const SizedBox(height: 8),
-            _CouponInfoRow(
-              title: 'الحد الأقصى للخصم',
-              value: _formatAmount(coupon.maximumDiscountAmount),
+          if (coupon.description.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              coupon.description,
+              style: const TextStyle(
+                color: SharedPlatformColors.muted,
+                fontSize: 12,
+                height: 1.5,
+              ),
             ),
           ],
-          const SizedBox(height: 8),
-          _CouponInfoRow(title: 'ينتهي في', value: _formatDate(coupon.endsAt)),
-          if (restrictionLabel != null) ...[
-            const SizedBox(height: 10),
-            AppText.bodySmall(
-              restrictionLabel,
-              color: const Color(0xff9A3412),
-              fontWeight: FontWeight.w600,
+          if (code.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6F8FB),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SelectableText(
+                      code,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: SharedPlatformColors.primary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: code));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('تم نسخ رمز الكوبون')),
+                      );
+                    },
+                    tooltip: 'نسخ الرمز',
+                    icon: const Icon(
+                      Icons.copy_outlined,
+                      color: SharedPlatformColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          const Divider(height: 14, color: Color(0xFFE9EDF1)),
+          _CouponDetail(
+            label: 'الحد الأدنى للطلب',
+            value: _amount(coupon.minimumOrderAmount),
+          ),
+          if (coupon.maximumDiscountAmount != null)
+            _CouponDetail(
+              label: 'الحد الأقصى للخصم',
+              value: _amount(coupon.maximumDiscountAmount),
+            ),
+          _CouponDetail(label: 'الصلاحية', value: _date(coupon.endsAt)),
+          if (restrictions.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              restrictions.join(' • '),
+              style: const TextStyle(
+                color: Color(0xFF986421),
+                fontSize: 11,
+                height: 1.5,
+              ),
             ),
           ],
         ],
@@ -202,32 +189,36 @@ class PlatformCouponCard extends StatelessWidget {
   }
 }
 
-class _CouponInfoRow extends StatelessWidget {
-  const _CouponInfoRow({required this.title, required this.value});
-
-  final String title;
-  final String value;
-
+class _CouponDetail extends StatelessWidget {
+  const _CouponDetail({required this.label, required this.value});
+  final String label, value;
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(
       children: [
-        AppText.bodyMedium(
-          title,
-          color: const Color(0xff6B7280),
-          fontWeight: FontWeight.w500,
-          textAlign: TextAlign.start,
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: SharedPlatformColors.muted,
+              fontSize: 12,
+            ),
+          ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Flexible(
-          child: AppText.bodyMedium(
+          child: Text(
             value,
-            color: const Color(0xff065F46),
-            fontWeight: FontWeight.w700,
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              color: SharedPlatformColors.ink,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
 }

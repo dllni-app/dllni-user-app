@@ -3,16 +3,14 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../../../core/widgets/app_app_bars.dart';
+import '../widgets/personal_details_app_bar.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../core/themes/v7_artwork.dart';
 import '../../../../core/widgets/v7_spot_state.dart';
 import '../../data/models/get_shopping_list_model.dart';
 import '../../domain/usecases/get_shopping_list_use_case.dart';
 import '../manager/bloc/profile_bloc.dart';
-import '../widgets/shopping_list_icon.dart';
 import 'add_edit_shopping_list_screen.dart';
 import 'shopping_list_details_screen.dart';
 
@@ -25,89 +23,69 @@ class ShoppingListScreen extends StatefulWidget {
 }
 
 class _ShoppingListCard extends StatelessWidget {
+  const _ShoppingListCard({required this.item, required this.onTap});
   final GetShoppingListModelDataItem item;
   final VoidCallback onTap;
 
-  const _ShoppingListCard({required this.item, required this.onTap});
-
-  String _scheduleLabel() {
+  String get _schedule {
     final schedule = item.schedule;
-    if (schedule == null || schedule.isActive != true) return 'بدون جدولة';
-
-    final period = schedule.periods?.isNotEmpty == true
+    if (schedule == null || schedule.isActive != true) return 'بدون جدول';
+    final first = schedule.periods?.isNotEmpty == true
         ? schedule.periods!.first
         : null;
-    final time = period?.fromTime?.trim();
-    final timeLabel = time == null || time.isEmpty ? '' : ' • $time';
-
-    switch (schedule.frequencyType) {
-      case 'weekly':
-        const days = <int, String>{
-          1: 'الاثنين',
-          2: 'الثلاثاء',
-          3: 'الأربعاء',
-          4: 'الخميس',
-          5: 'الجمعة',
-          6: 'السبت',
-          7: 'الأحد',
-        };
-        final selected =
-            schedule.weekDays
-                ?.map((day) => days[day])
-                .whereType<String>()
-                .join('، ') ??
-            '';
-        return selected.isEmpty
-            ? 'أسبوعياً$timeLabel'
-            : 'كل $selected$timeLabel';
-      case 'monthly':
-        final day = schedule.monthDays?.isNotEmpty == true
-            ? schedule.monthDays!.first.toString()
-            : null;
-        return day == null
-            ? 'شهرياً$timeLabel'
-            : 'يوم $day من كل شهر$timeLabel';
-      case 'once':
-        return 'مرة واحدة$timeLabel';
-      default:
-        return 'جدولة نشطة$timeLabel';
+    final time = (first?.fromTime ?? '').trim();
+    final suffix = time.isEmpty ? '' : ' • ' + time;
+    if (schedule.frequencyType == 'once') return 'لمرة واحدة' + suffix;
+    if (schedule.frequencyType == 'monthly') {
+      final days = schedule.monthDays;
+      return days != null && days.isNotEmpty
+          ? 'شهرياً • اليوم ' + days.first.toString() + suffix
+          : 'شهرياً' + suffix;
     }
+    if (schedule.frequencyType == 'weekly') {
+      const names = <int, String>{
+        1: 'الاثنين',
+        2: 'الثلاثاء',
+        3: 'الأربعاء',
+        4: 'الخميس',
+        5: 'الجمعة',
+        6: 'السبت',
+        7: 'الأحد',
+      };
+      final days =
+          schedule.weekDays
+              ?.map((v) => names[v])
+              .whereType<String>()
+              .join('، ') ??
+          '';
+      return days.isEmpty ? 'أسبوعياً' + suffix : days + suffix;
+    }
+    return 'مجدولة' + suffix;
   }
 
   @override
   Widget build(BuildContext context) {
-    final icon = shoppingListIconOptionForKey(
-      shoppingListIconKeyFromDescription(item.description),
-    );
     final active = item.isActive == true || item.schedule?.isActive == true;
-
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 94),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: const Color(0xFFE4E7EC)),
+            border: Border.all(color: const Color(0xFFE6EAF0)),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF6F1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: FaIcon(
-                  icon.icon,
-                  size: 20,
-                  color: const Color(0xFF168A67),
-                ),
+              const V7ArtTile(
+                asset: V7Artwork.categorySupermarket,
+                size: 56,
+                background: Color(0xFFEAF6F0),
+                radius: 14,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -118,64 +96,63 @@ class _ShoppingListCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            item.name ?? 'قائمة تسوق',
+                            item.name ?? 'قائمة التسوق',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Color(0xFF172033),
-                              fontSize: 15,
                               fontWeight: FontWeight.w900,
+                              color: SharedPlatformColors.primary,
+                              fontSize: 14,
                             ),
                           ),
                         ),
                         if (active)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
+                              horizontal: 7,
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEAF6F1),
-                              borderRadius: BorderRadius.circular(999),
+                              color: const Color(0xFFE8F7F0),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Text(
                               'نشطة',
                               style: TextStyle(
-                                color: Color(0xFF168A67),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
+                                color: Color(0xFF168A67),
                               ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
                     Text(
-                      '${item.itemsCount ?? 0} منتج',
+                      (item.itemsCount ?? 0).toString() + ' منتجات',
                       style: const TextStyle(
-                        color: Color(0xFF667085),
+                        color: SharedPlatformColors.muted,
                         fontSize: 12,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
-                      _scheduleLabel(),
-                      maxLines: 1,
+                      _schedule,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: active
-                            ? const Color(0xFF168A67)
-                            : const Color(0xFF98A2B3),
+                      style: const TextStyle(
+                        color: SharedPlatformColors.muted,
                         fontSize: 11,
-                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 15,
-                color: Color(0xFF98A2B3),
+                Icons.chevron_left_rounded,
+                color: SharedPlatformColors.primary,
+                size: 21,
               ),
             ],
           ),
@@ -196,10 +173,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         backgroundColor: const Color(0xFFF6F7F9),
         body: Column(
           children: [
-            AppSimpleAppBar2(
-              accentColor: SharedPlatformColors.supermarket,
+            const PersonalDetailsAppBar(
               title: 'قوائم التسوق',
-              arrowBackType: ArrowBackType.cupertino,
+              section: 'supermarket',
             ),
             Expanded(
               child: BlocConsumer<ProfileBloc, ProfileState>(
@@ -300,19 +276,18 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.only(top: 14, bottom: 13),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF168A67),
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  alignment: Alignment.center,
+                  constraints: const BoxConstraints(minHeight: 50),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF168A67),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: AppText(
-                    'إضافة قائمة تسوق جديدة',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFFFFFFFF),
+                  child: const Text(
+                    'إضافة قائمة تسوق',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      height: 16 / 14,
                     ),
                   ),
                 ),

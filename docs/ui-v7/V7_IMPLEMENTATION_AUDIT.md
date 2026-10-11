@@ -123,3 +123,13 @@ Directly rebuilt:
 Tests used: 51 widget and business-state checks across order widgets and cleaning booking; 10 specific sensitive-action/room tests (overlap possible). Static analyzer of changed Dart screens reported no compile errors, though warning/info lint items remain.
 Backend: no API changes or Laravel modifications were needed for this component-level refactor.
 Known limits: no individual golden comparison of all 96 design states; not every linked account/booking/detail subpage has been independently rebuilt. This file deliberately does not mark them as fully accepted.
+
+## Account subpages follow-up (2026-10-11)
+- Rebuilt `AddressCard` with 48dp actions, selected/default label and choose mode; original address callbacks preserved.
+- Rebuilt `NotificationFeedItem` retaining notification category, unread state and rejected time-extension worker response.
+- Rebuilt `PlatformCouponCard` (real code, discounts, expiration/eligibility, copy action).
+- Rebuilt shopping list cards, compact account page header, and navigation to list details/new list.
+- Rebuilt `NumberedSectionCard` and `FilledTextField` visual presentation across address/personal details forms; removed technical raw latitude/longitude display in add address in favor of verified map-selection confirmation.
+- Account widget regression: **12 passed** (both existing and new checks).
+- No authentication, coupon application, orders or profile persistence API logic was modified.
+- Pending strict V7 acceptance: individual golden comparison for 15 account Pen boards and functional fixtures for the add-address map, notification preferences, help center and destructive account actions. The currently connected phone yielded a black screen screenshot (sleep/locked), so no pixel-perfect QA is claimed.

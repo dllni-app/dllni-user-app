@@ -333,12 +333,25 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           ),
                           if (_hasSelectedLocation) ...[
                             const SizedBox(height: 8),
-                            Text(
-                              'Lat: ${_latitude!.toStringAsFixed(6)}  •  Lng: ${_longitude!.toStringAsFixed(6)}',
-                              style: const TextStyle(
-                                color: Color(0xff6B7280),
-                                fontSize: 12,
-                              ),
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  color: Color(0xFF088590),
+                                  size: 19,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'تم تحديد الموقع على الخريطة',
+                                    style: TextStyle(
+                                      color: Color(0xFF087D88),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                           const SizedBox(height: 12),
