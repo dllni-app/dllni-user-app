@@ -87,8 +87,8 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
         ClServiceSectionCardWidget(
           step: 0,
           showStepBadge: false,
-          title: 'cleaningExtras.materialsTitle'.tr(),
-          subtitle: 'cleaningExtras.materialsDescription'.tr(),
+          title: 'مواد التنظيف',
+          subtitle: 'هل ترغب أن نحضر المواد اللازمة معنا؟',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -97,20 +97,28 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                 toggled: requestMaterials,
                 child: SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('cleaningExtras.requestMaterials'.tr()),
+                  title: const Text('إحضار مواد التنظيف'),
                   value: requestMaterials,
                   onChanged: onRequestMaterialsChanged,
                 ),
               ),
               if (requestMaterials && materials.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                _CalculatedLinesCard(
-                  title: 'cleaningExtras.materialsEstimate'.tr(),
-                  children: materials
-                      .map(
-                        (line) => _MaterialLine(line: line, currency: currency),
-                      )
-                      .toList(growable: false),
+                ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: const Text('عرض تفاصيل المواد'),
+                  subtitle: const Text('يمكن مراجعة الكميات والتكلفة هنا'),
+                  children: [
+                    _CalculatedLinesCard(
+                      title: 'المواد المطلوبة',
+                      children: materials
+                          .map(
+                            (line) =>
+                                _MaterialLine(line: line, currency: currency),
+                          )
+                          .toList(growable: false),
+                    ),
+                  ],
                 ),
               ],
             ],
@@ -960,13 +968,20 @@ class _CalculatedLinesCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(10),
+        color: const Color(0xFFF1F7F9),
+        border: Border.all(color: const Color(0xFFD4E9EC)),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF172554),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 6),
           ...children,
         ],
@@ -1205,7 +1220,10 @@ class _DetailLine extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Color(0xFF182232),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 if (subtitle.trim().isNotEmpty)
                   Text(
@@ -1219,7 +1237,13 @@ class _DetailLine extends StatelessWidget {
             ),
           ),
           if (amount != null)
-            Text(amount!, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+              amount!,
+              style: const TextStyle(
+                color: Color(0xFF172554),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
         ],
       ),
     );

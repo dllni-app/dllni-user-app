@@ -36,16 +36,15 @@ import '../widgets/cl_recurring_schedule_section_widget.dart';
 import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_assignment_mode_section_widget.dart';
-import '../widgets/cl_service_bottom_actions_widget.dart';
 import '../widgets/cl_service_worker_count_selector_widget.dart';
 import '../widgets/cl_service_worker_room_assignment_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
-import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
-import '../widgets/cl_service_worker_assignment_summary_widget.dart';
 import '../widgets/home_details_app_bar.dart';
+import '../widgets/cl_redesign_components.dart';
+import '../widgets/cl_booking_review_overview.dart';
 
 @AutoRoutePage()
 class ClMainServiceScheduleScreen extends StatefulWidget {
@@ -106,6 +105,8 @@ class _ClMainServiceScheduleScreenState
   List<CleaningOpenTimeSessionRequest> _openTimeSessions =
       const <CleaningOpenTimeSessionRequest>[];
   bool _manualRoomAssignmentEnabled = false;
+  int _scheduleStep = 0;
+  final ScrollController _scheduleScrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -188,248 +189,305 @@ class _ClMainServiceScheduleScreenState
         },
         builder: (context, state) {
           return Scaffold(
-            backgroundColor: const Color(0xFFF2F2F2),
+            backgroundColor: const Color(0xFFF6F7F9),
             body: SafeArea(
               child: Column(
                 children: [
                   const HomeDetailsAppBar(),
-                  const SizedBox(height: 20),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsetsDirectional.only(
-                        start: 20,
-                        end: 20,
+                      controller: _scheduleScrollController,
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        16,
+                        18,
+                        16,
+                        24,
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          ClServiceGradientInfoCardWidget(
-                            estimatedSqm: estimate?.size?.estimatedSqm ?? 0,
-                            estimatedHours: _effectiveServiceHours(
-                              estimatedHours: _perVisitEstimatedHours(estimate),
-                              numberOfWorkers: _requiredWorkersCount(state),
-                            ),
+                          ClRedesignStepHeader(
+                            currentStep: _scheduleStep + 4,
+                            totalSteps: 6,
+                            title: switch (_scheduleStep) {
+                              0 => 'الموعد والعنوان',
+                              1 => 'تفاصيل الخدمة',
+                              _ => 'مراجعة الطلب',
+                            },
+                            subtitle: switch (_scheduleStep) {
+                              0 => 'اختر الوقت والمكان المناسبين لك.',
+                              1 => 'خصص الخدمة بما يناسب احتياجاتك.',
+                              _ => 'راجع التفاصيل والتكلفة قبل إرسال طلبك.',
+                            },
                           ),
-                          if (estimate?.workerRoomAssignments.isNotEmpty ??
-                              false) ...[
+                          const SizedBox(height: 18),
+                          if (_scheduleStep == 0) ...[
+                            ClServiceScheduleSectionWidget(
+                              dayAr: dayAr,
+                              dayDate: dayDate,
+                              fromTimeController: _fromTimeController,
+                              toTimeController: _toTimeController,
+                              onPickDate: _pickDate,
+                              onPickFromTime: _pickFromTime,
+                            ),
                             const SizedBox(height: 10),
-                            ClServiceWorkerAssignmentSummaryWidget(
-                              assignments: estimate!.workerRoomAssignments,
-                              fieldErrors: state.assignmentFieldErrors,
+                            ClRecurringScheduleSectionWidget(
+                              enabled: _isRecurring,
+                              pattern: _recurringPattern,
+                              workerScope: _recurringWorkerScope,
+                              calculationMode: _recurringCalculationMode,
+                              hoursPerVisit: _recurringHoursPerVisit,
+                              occurrences: _recurringOccurrences,
+                              maxOccurrences: _recurringMaxOccurrences,
+                              sessions: _recurringSessions,
+                              onEnabledChanged: (enabled) =>
+                                  _setRecurringEnabled(enabled, state),
+                              onPatternChanged: (pattern) =>
+                                  _setRecurringPattern(pattern, state),
+                              onWorkerScopeChanged: (scope) =>
+                                  _setRecurringWorkerScope(scope, state),
+                              onCalculationModeChanged: (mode) =>
+                                  _setRecurringCalculationMode(mode, state),
+                              onHoursPerVisitChanged: (hours) =>
+                                  _setRecurringHoursPerVisit(hours, state),
+                              onOccurrencesChanged: (occurrences) =>
+                                  _setRecurringOccurrences(occurrences, state),
+                              onAddVisit: () => _addRecurringVisit(state),
+                              onEditVisit: (index) =>
+                                  _editRecurringVisit(index, state),
+                              onRemoveVisit: (index) =>
+                                  _removeRecurringVisit(index, state),
+                            ),
+                            const SizedBox(height: 10),
+                            CleaningAddressSelectWidget(
+                              selectedAddress: selectedAddress,
+                              onChangeTap: _selectAddress,
+                              afterBringDefault: () =>
+                                  _requestUpdatedEstimate(state),
                             ),
                           ],
-                          const SizedBox(height: 10),
-                          ClServiceScheduleSectionWidget(
-                            dayAr: dayAr,
-                            dayDate: dayDate,
-                            fromTimeController: _fromTimeController,
-                            toTimeController: _toTimeController,
-                            onPickDate: _pickDate,
-                            onPickFromTime: _pickFromTime,
-                          ),
-                          const SizedBox(height: 10),
-                          ClRecurringScheduleSectionWidget(
-                            enabled: _isRecurring,
-                            pattern: _recurringPattern,
-                            workerScope: _recurringWorkerScope,
-                            calculationMode: _recurringCalculationMode,
-                            hoursPerVisit: _recurringHoursPerVisit,
-                            occurrences: _recurringOccurrences,
-                            maxOccurrences: _recurringMaxOccurrences,
-                            sessions: _recurringSessions,
-                            onEnabledChanged: (enabled) =>
-                                _setRecurringEnabled(enabled, state),
-                            onPatternChanged: (pattern) =>
-                                _setRecurringPattern(pattern, state),
-                            onWorkerScopeChanged: (scope) =>
-                                _setRecurringWorkerScope(scope, state),
-                            onCalculationModeChanged: (mode) =>
-                                _setRecurringCalculationMode(mode, state),
-                            onHoursPerVisitChanged: (hours) =>
-                                _setRecurringHoursPerVisit(hours, state),
-                            onOccurrencesChanged: (occurrences) =>
-                                _setRecurringOccurrences(occurrences, state),
-                            onAddVisit: () => _addRecurringVisit(state),
-                            onEditVisit: (index) =>
-                                _editRecurringVisit(index, state),
-                            onRemoveVisit: (index) =>
-                                _removeRecurringVisit(index, state),
-                          ),
-                          const SizedBox(height: 10),
-                          ClServiceGenderPreferenceSectionWidget(
-                            selectedPreference: _explicitGenderPreference,
-                            onChanged: (preference) {
-                              _handleGenderPreferenceChanged(bloc, preference);
-                            },
-                          ),
-                          const SizedBox(height: 10),
-                          CleaningAddressSelectWidget(
-                            selectedAddress: selectedAddress,
-                            onChangeTap: _selectAddress,
-                            afterBringDefault: () {
-                              _requestUpdatedEstimate(state);
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          ClCleaningServicesSelectorWidget(
-                            availableServices: _availableCleaningServices,
-                            selectedServiceNames: _selectedCleaningServiceNames,
-                            customServiceController: _customServiceController,
-                            isLoading:
-                                _cleaningServicesStatus == BlocStatus.loading,
-                            errorMessage:
-                                _cleaningServicesStatus == BlocStatus.failed
-                                ? _cleaningServicesErrorMessage ??
-                                      'تعذر تحميل الخدمات'
-                                : null,
-                            onToggleService: _toggleCleaningService,
-                            onAddCustomService: _addCustomCleaningService,
-                            onRemoveService: _removeCleaningService,
-                            onRetry: _loadCleaningServices,
-                          ),
-                          const SizedBox(height: 12),
-                          ClCleaningExtrasSectionWidget(
-                            showOpenTime: false,
-                            requestMaterials: _serviceExtras.requestMaterials,
-                            specialServices: _serviceExtras.specialServices,
-                            openTime: _serviceExtras.openTime,
-                            availableSpecialServices: _availableSpecialServices,
-                            materials:
-                                estimate?.materials ??
-                                const <CleaningMaterialLineModel>[],
-                            estimatedSpecialServices:
-                                estimate?.specialServices ??
-                                const <CleaningSpecialServiceLineModel>[],
-                            estimatedOpenTime: estimate?.openTime,
-                            isSpecialServicesLoading:
-                                _specialServicesStatus == BlocStatus.loading,
-                            isEstimateLoading:
-                                state.estimatePriceStatus == BlocStatus.loading,
-                            specialServicesError:
-                                _specialServicesStatus == BlocStatus.failed
-                                ? _specialServicesErrorMessage
-                                : null,
-                            estimateError:
-                                state.estimatePriceStatus == BlocStatus.failed
-                                ? state.errorMessage
-                                : null,
-                            onRequestMaterialsChanged: (value) =>
-                                _setMaterialsRequested(value, state),
-                            onAddSpecialService: () =>
-                                _addSpecialService(state),
-                            onSpecialServiceChanged: (index, service) =>
-                                _replaceSpecialService(index, service, state),
-                            onRemoveSpecialService: (index) =>
-                                _removeSpecialService(index, state),
-                            onOpenTimeChanged: (enabled) =>
-                                _setOpenTimeEnabled(enabled, state),
-                            onOpenTimeWorkerCountChanged: (count) =>
-                                _setOpenTimeWorkerCount(count, state),
-                            onOpenTimeExpectedMaxMinutesChanged: (minutes) =>
-                                _setOpenTimeExpectedMaxMinutes(minutes, state),
-                            openTimeDurationOptions:
-                                _suiteConfig.openTime.durationOptions,
-                            selectableSessionIds: _isRecurring
-                                ? List<int>.generate(
-                                    _recurringSessions.length,
-                                    (index) => index + 1,
-                                  )
-                                : const <int>[],
-                            sessionLabels: _isRecurring
-                                ? <int, String>{
-                                    for (
-                                      var index = 0;
-                                      index < _recurringSessions.length;
-                                      index++
-                                    )
-                                      index + 1: 'الجلسة ${index + 1}',
-                                  }
-                                : const <int, String>{},
-                            onRetryEstimate: () =>
-                                _requestUpdatedEstimate(state),
-                            onRetrySpecialServices: _loadSpecialServices,
-                          ),
-                          if (_serviceExtras.openTime != null) ...[
+                          if (_scheduleStep == 1) ...[
+                            ClServiceGenderPreferenceSectionWidget(
+                              selectedPreference: _explicitGenderPreference,
+                              onChanged: (preference) {
+                                _handleGenderPreferenceChanged(
+                                  bloc,
+                                  preference,
+                                );
+                              },
+                            ),
                             const SizedBox(height: 12),
-                            ClOpenTimeSessionsSectionWidget(
-                              sessions: _openTimeSessions,
-                              durationOptions:
-                                  _suiteConfig.openTime.durationOptions,
-                              defaultExpectedMaxMinutes:
-                                  _serviceExtras.openTime!.expectedMaxMinutes,
-                              onAddSession: () => _addOpenTimeSession(state),
-                              onEditSession: (index) =>
-                                  _editOpenTimeSession(index, state),
-                              onRemoveSession: (index) =>
-                                  _removeOpenTimeSession(index, state),
-                              onDurationChanged: (index, minutes) =>
-                                  _setOpenTimeSessionDuration(
-                                    index,
+                            ClCleaningServicesSelectorWidget(
+                              availableServices: _availableCleaningServices,
+                              selectedServiceNames:
+                                  _selectedCleaningServiceNames,
+                              customServiceController: _customServiceController,
+                              isLoading:
+                                  _cleaningServicesStatus == BlocStatus.loading,
+                              errorMessage:
+                                  _cleaningServicesStatus == BlocStatus.failed
+                                  ? _cleaningServicesErrorMessage ??
+                                        'تعذر تحميل الخدمات'
+                                  : null,
+                              onToggleService: _toggleCleaningService,
+                              onAddCustomService: _addCustomCleaningService,
+                              onRemoveService: _removeCleaningService,
+                              onRetry: _loadCleaningServices,
+                            ),
+                            const SizedBox(height: 12),
+                            ClCleaningExtrasSectionWidget(
+                              showOpenTime: false,
+                              requestMaterials: _serviceExtras.requestMaterials,
+                              specialServices: _serviceExtras.specialServices,
+                              openTime: _serviceExtras.openTime,
+                              availableSpecialServices:
+                                  _availableSpecialServices,
+                              materials:
+                                  estimate?.materials ??
+                                  const <CleaningMaterialLineModel>[],
+                              estimatedSpecialServices:
+                                  estimate?.specialServices ??
+                                  const <CleaningSpecialServiceLineModel>[],
+                              estimatedOpenTime: estimate?.openTime,
+                              isSpecialServicesLoading:
+                                  _specialServicesStatus == BlocStatus.loading,
+                              isEstimateLoading:
+                                  state.estimatePriceStatus ==
+                                  BlocStatus.loading,
+                              specialServicesError:
+                                  _specialServicesStatus == BlocStatus.failed
+                                  ? _specialServicesErrorMessage
+                                  : null,
+                              estimateError:
+                                  state.estimatePriceStatus == BlocStatus.failed
+                                  ? state.errorMessage
+                                  : null,
+                              onRequestMaterialsChanged: (value) =>
+                                  _setMaterialsRequested(value, state),
+                              onAddSpecialService: () =>
+                                  _addSpecialService(state),
+                              onSpecialServiceChanged: (index, service) =>
+                                  _replaceSpecialService(index, service, state),
+                              onRemoveSpecialService: (index) =>
+                                  _removeSpecialService(index, state),
+                              onOpenTimeChanged: (enabled) =>
+                                  _setOpenTimeEnabled(enabled, state),
+                              onOpenTimeWorkerCountChanged: (count) =>
+                                  _setOpenTimeWorkerCount(count, state),
+                              onOpenTimeExpectedMaxMinutesChanged: (minutes) =>
+                                  _setOpenTimeExpectedMaxMinutes(
                                     minutes,
                                     state,
                                   ),
+                              openTimeDurationOptions:
+                                  _suiteConfig.openTime.durationOptions,
+                              selectableSessionIds: _isRecurring
+                                  ? List<int>.generate(
+                                      _recurringSessions.length,
+                                      (index) => index + 1,
+                                    )
+                                  : const <int>[],
+                              sessionLabels: _isRecurring
+                                  ? <int, String>{
+                                      for (
+                                        var index = 0;
+                                        index < _recurringSessions.length;
+                                        index++
+                                      )
+                                        index + 1: 'الجلسة ${index + 1}',
+                                    }
+                                  : const <int, String>{},
+                              onRetryEstimate: () =>
+                                  _requestUpdatedEstimate(state),
+                              onRetrySpecialServices: _loadSpecialServices,
+                            ),
+                            if (_serviceExtras.openTime != null) ...[
+                              const SizedBox(height: 12),
+                              ClOpenTimeSessionsSectionWidget(
+                                sessions: _openTimeSessions,
+                                durationOptions:
+                                    _suiteConfig.openTime.durationOptions,
+                                defaultExpectedMaxMinutes:
+                                    _serviceExtras.openTime!.expectedMaxMinutes,
+                                onAddSession: () => _addOpenTimeSession(state),
+                                onEditSession: (index) =>
+                                    _editOpenTimeSession(index, state),
+                                onRemoveSession: (index) =>
+                                    _removeOpenTimeSession(index, state),
+                                onDurationChanged: (index, minutes) =>
+                                    _setOpenTimeSessionDuration(
+                                      index,
+                                      minutes,
+                                      state,
+                                    ),
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            _buildWorkerSelectionSection(
+                              state: state,
+                              bloc: bloc,
+                              estimate: estimate,
                             ),
                           ],
-                          const SizedBox(height: 16),
-                          _buildWorkerSelectionSection(
-                            state: state,
-                            bloc: bloc,
-                            estimate: estimate,
-                          ),
-                          const SizedBox(height: 16),
-                          ClServiceCouponSectionWidget(
-                            couponController: _couponController,
-                            status: _couponStatus,
-                            message: _couponMessage,
-                            onApply: _applyCoupon,
-                          ),
-                          if (_appliedCouponCode != null) ...[
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: AppText.bodySmall(
-                                'الكوبون المطبق: $_appliedCouponCode',
-                                color: const Color(0xFF047857),
-                                fontWeight: FontWeight.w600,
+                          if (_scheduleStep == 2) ...[
+                            ClBookingReviewOverview(
+                              service:
+                                  _routeArgs?.cleaningType.title ?? 'تنظيف',
+                              address:
+                                  [
+                                        selectedAddress.value?.label,
+                                        selectedAddress.value?.line1,
+                                      ]
+                                      .whereType<String>()
+                                      .where((item) => item.trim().isNotEmpty)
+                                      .join('، '),
+                              workerLabel:
+                                  (_serviceExtras.openTime?.workerCount ??
+                                          _requiredWorkersCount(state))
+                                      .toString(),
+                              materialsRequested:
+                                  _serviceExtras.requestMaterials,
+                              services: _selectedCleaningServiceNames.toList()
+                                ..sort(),
+                              recurring: _isRecurring,
+                            ),
+                            const SizedBox(height: 12),
+                            ClServiceCouponSectionWidget(
+                              couponController: _couponController,
+                              status: _couponStatus,
+                              message: _couponMessage,
+                              onApply: _applyCoupon,
+                            ),
+                            if (_appliedCouponCode != null) ...[
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: AppText.bodySmall(
+                                  'الكوبون المطبق: $_appliedCouponCode',
+                                  color: const Color(0xFF047857),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            ClServiceOrderSummarySectionWidget(
+                              basePrice: estimate?.pricing?.basePrice ?? 0,
+                              travelFee: estimate?.pricing?.travelFee ?? 0,
+                              addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
+                              totalPrice: estimate?.pricing?.totalPrice ?? 0,
+                              discountAmount: _appliedCouponDiscount,
+                              totalAfterDiscount: _appliedCouponTotal,
+                              adminMargin: estimate?.pricing?.adminMargin,
+                              isPricingFinal: estimate?.pricing?.isPricingFinal,
+                              minimumOrderPrice:
+                                  estimate?.pricing?.minimumOrderPrice,
+                              minimumOrderApplied:
+                                  estimate?.pricing?.minimumOrderApplied ??
+                                  false,
+                              currency: estimate?.pricing?.currency ?? 'SYP',
+                              scheduleDayLabel: dayAr,
+                              scheduleDateLabel: dayDate,
+                              scheduleTimeRange:
+                                  CleaningDateTimeUiFormat.timeRange(
+                                    _fromTimeHhMm,
+                                    _toTimeHhMm,
+                                  ),
+                            ),
+                            const SizedBox(height: 12),
+                            const ClRedesignCard(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.payments_outlined,
+                                    color: Color(0xFF0B7480),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'الدفع نقداً عند إتمام الخدمة.',
+                                      style: TextStyle(
+                                        color: Color(0xFF172554),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
-                          const SizedBox(height: 12),
-                          ClServiceOrderSummarySectionWidget(
-                            basePrice: estimate?.pricing?.basePrice ?? 0,
-                            travelFee: estimate?.pricing?.travelFee ?? 0,
-                            addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
-                            totalPrice: estimate?.pricing?.totalPrice ?? 0,
-                            discountAmount: _appliedCouponDiscount,
-                            totalAfterDiscount: _appliedCouponTotal,
-                            adminMargin: estimate?.pricing?.adminMargin,
-                            isPricingFinal: estimate?.pricing?.isPricingFinal,
-                            minimumOrderPrice:
-                                estimate?.pricing?.minimumOrderPrice,
-                            minimumOrderApplied:
-                                estimate?.pricing?.minimumOrderApplied ?? false,
-                            currency: estimate?.pricing?.currency ?? 'SYP',
-                            scheduleDayLabel: dayAr,
-                            scheduleDateLabel: dayDate,
-                            scheduleTimeRange:
-                                CleaningDateTimeUiFormat.timeRange(
-                                  _fromTimeHhMm,
-                                  _toTimeHhMm,
-                                ),
-                          ),
                         ],
                       ),
                     ),
                   ),
-                  Container(
-                    color: const Color(0xFFF2F2F2),
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 20,
-                      vertical: 20,
-                    ),
-                    child: ClServiceBottomActionsWidget(
-                      onBackPressed: () => context.pop(),
-                      onSubmitPressed: () => _onSubmitPressed(state),
-                    ),
+                  ClRedesignStickyActions(
+                    primaryLabel: _scheduleStep == 2
+                        ? 'تأكيد وإرسال الطلب'
+                        : 'متابعة',
+                    onPrimary: () => _advanceSchedule(state),
+                    primaryEnabled:
+                        state.createOrderStatus != BlocStatus.loading,
+                    secondaryLabel: 'السابق',
+                    onSecondary: _previousScheduleStep,
                   ),
                 ],
               ),
@@ -438,6 +496,80 @@ class _ClMainServiceScheduleScreenState
         },
       ),
     );
+  }
+
+  void _setScheduleStep(int nextStep) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _scheduleStep = nextStep.clamp(0, 2));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scheduleScrollController.hasClients) {
+        _scheduleScrollController.jumpTo(0);
+      }
+    });
+  }
+
+  void _previousScheduleStep() {
+    if (_scheduleStep > 0) {
+      _setScheduleStep(_scheduleStep - 1);
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _bookingFeedback(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _advanceSchedule(ClMainState state) {
+    if (_scheduleStep == 0) {
+      if (!_dateChosen) {
+        _bookingFeedback('اختر تاريخ الخدمة للمتابعة.');
+        return;
+      }
+      if (!_timeChosen) {
+        _bookingFeedback('اختر وقت بدء الخدمة للمتابعة.');
+        return;
+      }
+      final address = selectedAddress.value;
+      if (address == null || (int.tryParse(address.id) ?? 0) <= 0) {
+        _bookingFeedback('اختر عنوان الخدمة للمتابعة.');
+        return;
+      }
+      if (!address.hasCompleteServiceLocation) {
+        _bookingFeedback('اختر عنواناً واضحاً مع موقعه على الخريطة.');
+        return;
+      }
+      _setScheduleStep(1);
+      return;
+    }
+    if (_scheduleStep == 1) {
+      if (_explicitGenderPreference == null) {
+        _bookingFeedback('اختر عامل أو عاملة للمتابعة.');
+        return;
+      }
+      if (state.genderPreference.apiValue == 'female' &&
+          state.safetyConfirmation == null) {
+        _bookingFeedback('أكد بيئة العمل قبل طلب عاملة.');
+        return;
+      }
+      if (state.estimatePriceStatus == BlocStatus.loading) {
+        _bookingFeedback('انتظر قليلاً حتى يتم تحديث التكلفة.');
+        return;
+      }
+      if (state.estimatePriceStatus == BlocStatus.failed) {
+        _bookingFeedback('تعذر تحديث التكلفة. أعد المحاولة.');
+        return;
+      }
+      if ((_currentEstimate ?? _routeArgs?.estimate)?.pricing == null) {
+        _bookingFeedback('تعذر عرض تكلفة الطلب حالياً. حاول مجدداً.');
+        return;
+      }
+      _setScheduleStep(2);
+      return;
+    }
+    _onSubmitPressed(state);
   }
 
   Widget _buildWorkerSelectionSection({
@@ -449,16 +581,12 @@ class _ClMainServiceScheduleScreenState
     if (args == null) return const SizedBox.shrink();
 
     if (_serviceExtras.openTime != null) {
-      return _workerAutoSelectionInfo(
-        'سيختار دللني العمال تلقائياً حسب عدد العمال المحدد للخدمة المفتوحة.',
-      );
+      return const SizedBox.shrink();
     }
 
     if (_isRecurring &&
         _recurringWorkerScope == CleaningRecurringWorkerScope.any) {
-      return _workerAutoSelectionInfo(
-        'سيختار دللني العمال المناسبين لكل زيارة دورية تلقائياً.',
-      );
+      return const SizedBox.shrink();
     }
 
     if (_isRecurring &&
@@ -577,12 +705,12 @@ class _ClMainServiceScheduleScreenState
                 }
               },
               title: const Text(
-                'توزيع الغرف يدوياً',
+                'تحديد الغرف لكل عامل',
                 textAlign: TextAlign.start,
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: const Text(
-                'اختياري — يمكنك ترك دللني يوزّع الغرف تلقائياً.',
+                'اترك هذا الخيار مغلقاً إذا لم تكن لديك تفضيلات.',
                 textAlign: TextAlign.start,
               ),
             ),
@@ -615,36 +743,6 @@ class _ClMainServiceScheduleScreenState
     );
   }
 
-  Widget _workerAutoSelectionInfo(String message) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF9FA),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFB6ECEF)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.auto_awesome, color: Color(0xFF0B7480)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: Color(0xFF344054),
-                height: 1.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -672,6 +770,7 @@ class _ClMainServiceScheduleScreenState
 
   @override
   void dispose() {
+    _scheduleScrollController.dispose();
     _fromTimeController.dispose();
     _toTimeController.dispose();
     _couponController.dispose();
@@ -1763,6 +1862,12 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _onSubmitPressed(ClMainState state) async {
+    if (state.estimatePriceStatus == BlocStatus.loading ||
+        state.estimatePriceStatus == BlocStatus.failed ||
+        (_currentEstimate ?? _routeArgs?.estimate)?.pricing == null) {
+      _bookingFeedback('يرجى تحديث تكلفة الخدمة قبل إرسال الطلب.');
+      return;
+    }
     if (!_dateChosen) {
       ScaffoldMessenger.of(
         context,
@@ -1842,7 +1947,7 @@ class _ClMainServiceScheduleScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'مدة العمل تتجاوز 8 ساعات لكل عامل. يجب طلب $requiredWorkers عمال على الأقل لإتمام هذا الطلب.',
+            'هذا الطلب يحتاج إلى $requiredWorkers عمال على الأقل. غيّر العدد ثم تابع.',
           ),
         ),
       );

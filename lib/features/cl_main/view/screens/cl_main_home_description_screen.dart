@@ -87,7 +87,7 @@ class _ClMainHomeDescriptionScreenState
                     ),
                     ClRedesignStickyActions(
                       primaryLabel: _currentStep == 2
-                          ? 'اختيار الموعد والعنوان'
+                          ? 'متابعة الحجز'
                           : 'التالي',
                       onPrimary: () => _onPrimaryPressed(bloc, state),
                       primaryEnabled: _canContinueCurrentStep,
@@ -125,7 +125,7 @@ class _ClMainHomeDescriptionScreenState
       children: [
         const ClRedesignStepHeader(
           currentStep: 1,
-          totalSteps: 3,
+          totalSteps: 6,
           title: 'كم غرفة تريد تنظيفها؟',
           subtitle:
               'حدد عدد الغرف أولاً، وسنطلب حجم كل غرفة في الخطوة التالية.',
@@ -167,7 +167,7 @@ class _ClMainHomeDescriptionScreenState
       children: [
         const ClRedesignStepHeader(
           currentStep: 2,
-          totalSteps: 3,
+          totalSteps: 6,
           title: 'ما حجم كل غرفة؟',
           subtitle:
               'اختر الحجم الأقرب لكل مساحة. يمكنك الرجوع وتعديل الأعداد دون فقدان الاختيارات.',
@@ -218,10 +218,9 @@ class _ClMainHomeDescriptionScreenState
       children: [
         const ClRedesignStepHeader(
           currentStep: 3,
-          totalSteps: 3,
+          totalSteps: 6,
           title: 'اختر نوع التنظيف',
-          subtitle:
-              'يمكنك إضافة الخدمات الإضافية والمواد لاحقاً قبل تأكيد الطلب.',
+          subtitle: 'اختر نوع الخدمة المناسب لمنزلك.',
         ),
         const SizedBox(height: 20),
         ClCleaningTypeOptionCardWidget(
@@ -249,7 +248,7 @@ class _ClMainHomeDescriptionScreenState
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'اختيار العمال، توزيع الغرف، الموعد، العنوان والإضافات سيتم لاحقاً حتى يبقى الحجز بسيطاً وواضحاً.',
+                  'يمكنك تخصيص التفاصيل قبل إرسال الطلب.',
                   textAlign: TextAlign.start,
                   style: TextStyle(color: Color(0xFF475467), height: 1.5),
                 ),

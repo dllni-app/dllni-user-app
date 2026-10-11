@@ -2,7 +2,6 @@ import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/cleaning_services_response_model.dart';
 import 'cl_service_section_card_widget.dart';
 
@@ -36,7 +35,7 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
       step: 0,
       showStepBadge: false,
       title: 'الخدمات المطلوبة',
-      subtitle: 'اختر الخدمات من القائمة أو أضف خدمة أخرى يدوياً',
+      subtitle: 'اختر ما تحتاجه، ويمكنك إضافة طلب خاص.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -70,12 +69,6 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
                     if (name.isEmpty) return const SizedBox.shrink();
                     final selected = selectedServiceNames.contains(name);
                     return FilterChip(
-                      avatar: Image.asset(
-                        V7Artwork.task(name),
-                        width: 28,
-                        height: 28,
-                        fit: BoxFit.contain,
-                      ),
                       label: Text(
                         name,
                         style: TextStyle(
@@ -107,60 +100,78 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
               style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
             ),
           ],
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 8),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(bottom: 10),
+            title: const Text(
+              'أحتاج خدمة أخرى',
+              style: TextStyle(
+                color: SharedPlatformColors.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
             children: [
-              Expanded(
-                child: TextField(
-                  controller: customServiceController,
-                  maxLength: 255,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => onAddCustomService(),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    hintText: 'اكتب خدمة أخرى',
-                    filled: true,
-                    fillColor: const Color(0xFFF9FAFB),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: SharedPlatformColors.cleaning,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: customServiceController,
+                      maxLength: 255,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => onAddCustomService(),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        hintText: 'اكتب خدمة أخرى',
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: SharedPlatformColors.cleaning,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: onAddCustomService,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: SharedPlatformColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                    padding: const EdgeInsetsDirectional.symmetric(
-                      horizontal: 20,
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: onAddCustomService,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: SharedPlatformColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                        padding: const EdgeInsetsDirectional.symmetric(
+                          horizontal: 20,
+                        ),
+                      ),
+                      child: AppText.labelLarge(
+                        'إضافة',
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  child: AppText.labelLarge(
-                    'إضافة',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                ],
               ),
             ],
           ),
