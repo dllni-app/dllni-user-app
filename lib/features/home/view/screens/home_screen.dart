@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (AuthGate.isAuthenticated) SizedBox(height: 32),
+                  if (AuthGate.isAuthenticated) SizedBox(height: 44),
                   if (AuthGate.isAuthenticated)
                     BlocBuilder<HomeBloc, HomeState>(
                       buildWhen: (prev, next) =>
