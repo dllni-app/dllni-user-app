@@ -420,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: 'عروض مختارة لك',
                       subtitle: 'اسحب المكعب لاكتشاف المزيد من العروض.',
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 20),
                     _buildOffers(),
                     const SizedBox(height: 20),
                     PlatformSectionTitle(
