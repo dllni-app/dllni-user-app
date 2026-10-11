@@ -9,6 +9,7 @@ on:
       - 'lib/core/deeplink/**'
       - 'lib/features/orders/**'
       - 'lib/features/delivery/**'
+      - 'test/features/delivery/**'
       - 'lib/features/rs_discover/**'
       - 'lib/features/rs_home/**'
       - 'lib/features/profile/view/screens/lucky_box_suggestions_screen.dart'
@@ -40,6 +41,8 @@ jobs:
           lib/features/orders/view/screens/orders_screen.dart
           lib/features/orders/view/screens/restaurant_order_tracking_screen.dart
           lib/features/orders/view/widgets/restaurant_order_status_stepper.dart
+          lib/features/delivery/data/models/delivery_order_models.dart
+          lib/features/delivery/presentation/screens/delivery_order_tracking_screen.dart
           lib/features/delivery/presentation/widgets/delivery_status_stepper.dart
           lib/features/orders/view/widgets/restaurant_cart_add_more_products_button.dart
           lib/features/orders/view/widgets/restaurant_cart_checkout_body.dart
@@ -47,3 +50,6 @@ jobs:
           lib/features/rs_discover/view/screens/rs_discover_screen.dart
           lib/features/rs_home/view/widgets/exclusive_offers_section.dart
           lib/features/profile/view/screens/lucky_box_suggestions_screen.dart
+
+      - name: Test delivery tracking status and timeline rules
+        run: flutter test test/features/delivery/delivery_order_models_test.dart
