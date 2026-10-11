@@ -142,6 +142,7 @@ String deliveryTrackingStatusLabelAr(String? status, {String? stopReason}) {
     'stopped' => _deliveryStoppedDueToNoDriver(stopReason)
         ? 'تعذر العثور على مندوب'
         : 'توقف طلب التوصيل',
+    'delivery_failed' => 'تعذر تسليم الطلب',
     'not_received' => 'لم يتم استلام الطلب',
     'no_driver_found' => 'تعذر العثور على مندوب',
     _ => 'تم تحديث حالة الطلب',
