@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 class ClCleaningTypeOptionCardWidget extends StatelessWidget {
   const ClCleaningTypeOptionCardWidget({
@@ -47,6 +48,14 @@ class ClCleaningTypeOptionCardWidget extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                V7ArtTile(
+                  asset: V7Artwork.cleaningMode(title),
+                  size: 56,
+                  background: isSelected
+                      ? SharedPlatformColors.cleaningSoft
+                      : SharedPlatformColors.background,
+                ),
+                const SizedBox(width: 10),
                 Icon(
                   isSelected
                       ? Icons.radio_button_checked

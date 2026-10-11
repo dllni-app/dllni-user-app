@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 enum CleaningOrdersFeedbackKind { activeEmpty, historyEmpty, loadError }
 
@@ -41,27 +42,13 @@ class CleaningOrdersFeedbackState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 68,
-                height: 68,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isError
-                      ? SharedPlatformColors.dangerSoft
-                      : SharedPlatformColors.cleaningSoft,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Icon(
-                  isError
-                      ? Icons.wifi_off_rounded
-                      : isHistory
-                      ? Icons.history_rounded
-                      : Icons.cleaning_services_outlined,
-                  color: isError
-                      ? SharedPlatformColors.danger
-                      : SharedPlatformColors.cleaningInk,
-                  size: 32,
-                ),
+              V7ArtTile(
+                asset: isError ? V7Artwork.offline : V7Artwork.empty,
+                size: 96,
+                radius: 22,
+                background: isError
+                    ? SharedPlatformColors.dangerSoft
+                    : SharedPlatformColors.cleaningSoft,
               ),
               const SizedBox(height: 16),
               Text(

@@ -99,6 +99,7 @@ flutter:
     - assets/translations/
     - assets/images/
     - assets/images/svgs/
+    - assets/images/v7/
 
   fonts:
     - family: Cairo

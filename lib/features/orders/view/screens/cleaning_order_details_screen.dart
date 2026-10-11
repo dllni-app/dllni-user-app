@@ -1,4 +1,5 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
+import 'package:dllni_user_app/core/themes/v7_artwork.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -291,6 +292,12 @@ class _CleaningOrderDetailsScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          V7ArtTile(
+                            asset: V7Artwork.cleaningMode(_serviceLabel(order)),
+                            size: 62,
+                            background: SharedPlatformColors.cleaningSoft,
+                          ),
+                          const SizedBox(height: 10),
                           const Text(
                             'معلومات الخدمة',
                             style: TextStyle(

@@ -1,6 +1,7 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 import '../../data/models/previous_workers_response_model.dart';
 
@@ -178,7 +179,7 @@ class _ClServicePreviousWorkersSectionWidgetState
               )
             else
               SizedBox(
-                height: 170,
+                height: 214,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: filteredWorkers.length,
@@ -261,6 +262,24 @@ class _WorkerSelectionCard extends StatelessWidget {
                       }),
                       onChanged: (_) => onToggle(),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Center(
+                  child: ClipOval(
+                    child: (worker.profileImage ?? '').trim().isNotEmpty
+                        ? Image.network(
+                            worker.profileImage!,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Image.asset(
+                              V7Artwork.worker,
+                              width: 48,
+                              height: 48,
+                            ),
+                          )
+                        : Image.asset(V7Artwork.worker, width: 48, height: 48),
                   ),
                 ),
                 const SizedBox(height: 6),

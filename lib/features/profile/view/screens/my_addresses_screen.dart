@@ -4,6 +4,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 import '../../domain/models/address_list_item.dart';
 import '../../domain/usecases/fetch_addresses_use_case.dart';
@@ -219,10 +220,10 @@ class _MyAddressesScreenState extends State<MyAddressesScreen> {
                                 ),
                                 child: const Column(
                                   children: [
-                                    Icon(
-                                      Icons.location_off_outlined,
-                                      size: 42,
-                                      color: Color(0xFF98A2B3),
+                                    V7ArtTile(
+                                      asset: V7Artwork.address,
+                                      size: 94,
+                                      radius: 22,
                                     ),
                                     SizedBox(height: 10),
                                     Text(

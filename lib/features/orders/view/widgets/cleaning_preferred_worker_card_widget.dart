@@ -1,5 +1,6 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 import '../../data/models/cleaning_orders_api_models.dart';
 
@@ -50,14 +51,20 @@ class CleaningPreferredWorkerCardWidget extends StatelessWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: worker.avatarUrl == null
-                      ? null
-                      : NetworkImage(worker.avatarUrl!),
-                  child: worker.avatarUrl == null
-                      ? const Icon(Icons.person, size: 20)
-                      : null,
+                ClipOval(
+                  child: (worker.avatarUrl ?? '').trim().isNotEmpty
+                      ? Image.network(
+                          worker.avatarUrl!,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Image.asset(
+                            V7Artwork.worker,
+                            width: 44,
+                            height: 44,
+                          ),
+                        )
+                      : Image.asset(V7Artwork.worker, width: 44, height: 44),
                 ),
                 const SizedBox(width: 10),
                 Expanded(

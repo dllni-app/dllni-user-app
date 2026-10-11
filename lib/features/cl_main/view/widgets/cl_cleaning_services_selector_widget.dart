@@ -2,6 +2,7 @@ import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/cleaning_services_response_model.dart';
 import 'cl_service_section_card_widget.dart';
 
@@ -69,6 +70,12 @@ class ClCleaningServicesSelectorWidget extends StatelessWidget {
                     if (name.isEmpty) return const SizedBox.shrink();
                     final selected = selectedServiceNames.contains(name);
                     return FilterChip(
+                      avatar: Image.asset(
+                        V7Artwork.task(name),
+                        width: 28,
+                        height: 28,
+                        fit: BoxFit.contain,
+                      ),
                       label: Text(
                         name,
                         style: TextStyle(

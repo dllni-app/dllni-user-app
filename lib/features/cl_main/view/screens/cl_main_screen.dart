@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/themes/v7_artwork.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../generated/assets.dart';
 import '../../../rs_home/view/widgets/home_app_bar.dart';
@@ -355,7 +356,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 130,
+            height: 172,
             child: PageView.builder(
               key: const Key('cl_main_featured_banner_page_view'),
               controller: _cleaningBannersPageController,
@@ -541,13 +542,9 @@ class _ClMainScreenState extends State<ClMainScreen> {
                                   ),
                                 ),
                                 SizedBox(width: 14),
-                                CircleAvatar(
-                                  radius: 25,
-                                  backgroundColor: Color(0xFFE9ECFF),
-                                  child: Icon(
-                                    Icons.timer_outlined,
-                                    color: Color(0xFF1E3A8A),
-                                  ),
+                                V7ArtTile(
+                                  asset: 'assets/images/v7/service-regular.png',
+                                  size: 56,
                                 ),
                               ],
                             ),
@@ -631,12 +628,23 @@ class _ClMainBannerCard extends StatelessWidget {
         onTap: _hasImage ? () => onTap(banner) : null,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: AppImage.network(
-            banner.imageUrl ?? '',
-            width: double.infinity,
-            height: 130,
-            fit: BoxFit.cover,
-          ),
+          child: _hasImage
+              ? AppImage.network(
+                  banner.imageUrl!,
+                  width: double.infinity,
+                  height: 172,
+                  fit: BoxFit.cover,
+                  errorWidget: Image.asset(
+                    V7Artwork.cleaningPhoto,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              : Image.asset(
+                  V7Artwork.cleaningPhoto,
+                  height: 172,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
         ),
       ),
     );

@@ -12,6 +12,7 @@ import 'package:dllni_user_app/features/profile/domain/repository/profile_repo.d
 import 'package:dllni_user_app/features/profile/view/manager/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 import '../widgets/profile_app_bar.dart';
 import '../widgets/profile_summary_card.dart';
@@ -506,7 +507,14 @@ class _ProfileToolTile extends StatelessWidget {
                   color: const Color(0xFFF3F4F8),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: accent, size: 19),
+                child: title == 'الكوبونات'
+                    ? Image.asset(V7Artwork.coupon, fit: BoxFit.contain)
+                    : title == 'قوائم التسوق'
+                    ? Image.asset(
+                        V7Artwork.categorySupermarket,
+                        fit: BoxFit.contain,
+                      )
+                    : Icon(icon, color: accent, size: 19),
               ),
               const SizedBox(width: 9),
               Expanded(

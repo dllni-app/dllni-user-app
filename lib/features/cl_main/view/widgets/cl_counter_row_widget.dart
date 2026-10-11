@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 class ClCounterRowWidget extends StatelessWidget {
   const ClCounterRowWidget({
@@ -23,15 +24,11 @@ class ClCounterRowWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 42,
-          height: 42,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: SharedPlatformColors.cleaningSoft,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, size: 21, color: SharedPlatformColors.cleaningInk),
+        V7ArtTile(
+          asset: V7Artwork.task(label),
+          size: 46,
+          background: SharedPlatformColors.cleaningSoft,
+          radius: 12,
         ),
         const SizedBox(width: 10),
         Expanded(

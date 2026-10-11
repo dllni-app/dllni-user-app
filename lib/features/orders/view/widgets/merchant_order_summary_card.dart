@@ -5,7 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/shared_platform_colors.dart';
-import '../../../../core/utils/app_images.dart';
+import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/orders_api_models.dart';
 
 enum MerchantOrderKind { restaurant, supermarket }
@@ -479,13 +479,14 @@ class _MerchantAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fallback = isRestaurant
-        ? const Icon(
-            Icons.restaurant_rounded,
-            size: 24,
-            color: AppColors.primary,
-          )
-        : AppImage.asset(AppImages.defaultStore, fit: BoxFit.cover, size: 48);
+    final fallback = Image.asset(
+      isRestaurant
+          ? V7Artwork.categoryRestaurant
+          : V7Artwork.categorySupermarket,
+      width: 46,
+      height: 46,
+      fit: BoxFit.contain,
+    );
     final url = imageUrl?.trim();
 
     return Container(

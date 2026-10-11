@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 class SectionCard extends StatelessWidget {
   const SectionCard({
@@ -35,7 +36,11 @@ class SectionCard extends StatelessWidget {
                   color: containerColor,
                   borderRadius: BorderRadius.circular(13),
                 ),
-                child: image,
+                child: title == 'العناوين المحفوظة'
+                    ? Image.asset(V7Artwork.address, fit: BoxFit.contain)
+                    : title == 'الدعم والمساعدة'
+                    ? Image.asset(V7Artwork.support, fit: BoxFit.contain)
+                    : image,
               ),
               const SizedBox(width: 12),
               Expanded(

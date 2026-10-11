@@ -1,6 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
 import '../../data/models/fetch_notifications_model.dart';
 import '../../domain/usecases/fetch_notifications_use_case.dart';
@@ -182,10 +183,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: const Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.notifications_none_rounded,
-                                size: 44,
-                                color: Color(0xFF98A2B3),
+                              V7ArtTile(
+                                asset: V7Artwork.empty,
+                                size: 88,
+                                radius: 20,
                               ),
                               SizedBox(height: 10),
                               Text(

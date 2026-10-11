@@ -21,7 +21,7 @@ import '../../../rs_main/view/rs_main_screen.dart';
 import '../../../sm_main_page.dart';
 import '../../domain/usecases/fetch_user_offers_use_case.dart';
 import '../manager/bloc/home_bloc.dart';
-import '../widgets/home_cube.dart';
+import '../widgets/v7_campaign_presenter.dart';
 import '../widgets/platform_home_widgets.dart';
 import '../widgets/platform_home_experience_v5.dart';
 
@@ -351,7 +351,18 @@ class _HomeScreenState extends State<HomeScreen> {
             state.userOffers.list.isEmpty) {
           return const _HomeLoadingCard(height: 170);
         }
-        return HomeCube(offers: state.userOffers.list);
+        if (state.userOffers.list.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const PlatformSectionTitle(
+              title: 'عروض مختارة لك',
+              subtitle: 'تصفح العروض المتاحة',
+            ),
+            const SizedBox(height: 10),
+            V7CampaignPresenter(offers: state.userOffers.list),
+          ],
+        );
       },
     );
   }
@@ -410,18 +421,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
                   children: [
+                    _buildOffers(),
+                    const SizedBox(height: 20),
                     PlatformHomeExperienceV5(
                       onCleaning: _openCleaning,
                       onRestaurants: _openRestaurants,
                       onSupermarket: _openSupermarket,
+                      onDelivery: () => _requireAuth(
+                        message: 'سجّل الدخول لعرض طلبات التوصيل',
+                        onAuthenticated: () =>
+                            context.pushRoute('/delivery/orders'),
+                      ),
                     ),
-                    const SizedBox(height: 22),
-                    const PlatformSectionTitle(
-                      title: 'عروض مختارة لك',
-                      subtitle: 'اسحب المكعب لاكتشاف المزيد من العروض.',
-                    ),
-                    const SizedBox(height: 8),
-                    _buildOffers(),
                     const SizedBox(height: 20),
                     PlatformSectionTitle(
                       title: 'طلبك الحالي',

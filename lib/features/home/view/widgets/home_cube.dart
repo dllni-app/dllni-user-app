@@ -1,21 +1,25 @@
-import 'package:common_package/common_package.dart';
+import 'dart:math' as math;
+
 import 'package:dllni_user_app/features/home/data/models/fetch_user_offers_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cube_transition/flutter_cube_transition.dart';
 
-import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
+/// Kept as the alternative V7 presentation, not the default customer UI.
+/// Enable via --dart-define=ALNADHA_AD_STYLE=cube.
+/// The same real backend offers are used by this and the editorial carousel.
 class HomeCube extends StatefulWidget {
-  final List<UserOfferItem> offers;
-
   const HomeCube({super.key, required this.offers});
+  final List<UserOfferItem> offers;
 
   @override
   State<HomeCube> createState() => _HomeCubeState();
 }
 
 class _HomeCubeState extends State<HomeCube> {
-  static const List<CubeFace> _faceOrder = [
+  static const _faces = [
     CubeFace.front,
     CubeFace.back,
     CubeFace.right,
@@ -24,108 +28,130 @@ class _HomeCubeState extends State<HomeCube> {
 
   @override
   Widget build(BuildContext context) {
-    final offers = widget.offers;
-    if (offers.isEmpty) {
-      return Padding(
-        padding: EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 10),
-        child: SizedBox(
-          width: context.width * .8,
-          height: context.width * .42,
-          child: Center(
-            child: AppText.bodyMedium(
-              'لا توجد عروض حالياً',
-              color: Color(0xff6B7280),
-            ),
-          ),
-        ),
-      );
-    }
-
+    if (widget.offers.isEmpty) return const SizedBox.shrink();
     final padded = List<UserOfferItem>.generate(
-      _faceOrder.length,
-      (i) => offers[i % offers.length],
+      4,
+      (index) => widget.offers[index % widget.offers.length],
     );
-
-    return Padding(
-      padding: EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 10),
-      child: FlutterCubeTransition(
-        width: context.width * 0.65,
-        height: context.height * 0.25,
-        secondsToSwipe: Duration(seconds: 3),
-
-        // size:  context.width * 0.5,
-        animationDuration: Duration(milliseconds: 300),
-        animationCurve: Curves.easeOut,
-        enableHapticFeedback: true,
-        perspectiveStrength: 0.002,
-        showControls: false,
-        borderVisible: false,
-        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        textAlign: Alignment.topLeft,
-        borderRadius: BorderRadius.circular(16),
-        dragSensitivity: 0.006,
-        dragThreshold: 0.6,
-        faceTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(color: Colors.black87, offset: Offset(2, 2), blurRadius: 6),
-          ],
+    final width = math.min(MediaQuery.sizeOf(context).width - 40, 380.0);
+    return Semantics(
+      label: 'العروض الإعلانية، اسحب لاستعراض الأوجه الأربعة',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: FlutterCubeTransition(
+          width: width * .74,
+          height: 192,
+          secondsToSwipe: const Duration(seconds: 4),
+          animationDuration: const Duration(milliseconds: 250),
+          animationCurve: Curves.easeOutCubic,
+          enableHapticFeedback: true,
+          perspectiveStrength: .0015,
+          showControls: false,
+          borderVisible: false,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          textAlign: Alignment.topLeft,
+          borderRadius: BorderRadius.circular(20),
+          dragSensitivity: .006,
+          dragThreshold: .6,
+          faceTextStyle: const TextStyle(
+            fontSize: 1,
+            color: Colors.transparent,
+          ),
+          faces: {
+            for (var i = 0; i < _faces.length; i++)
+              _faces[i]: _faceForOffer(padded[i]),
+          },
         ),
-        faces: {
-          for (var i = 0; i < _faceOrder.length; i++)
-            _faceOrder[i]: _faceForOffer(padded[i]),
-        },
       ),
     );
   }
 
   CubeFaceData _faceForOffer(UserOfferItem offer) {
+    final image = (offer.imageUrl ?? '').trim();
+    final title = (offer.title ?? '').trim();
+    final label = (offer.discountLabel ?? '').trim();
+    final desc = (offer.description ?? '').trim();
     return CubeFaceData(
-      color: Colors.grey.shade200,
-      text: offer.discountLabel ?? offer.title ?? '',
-      borderRadius: BorderRadius.circular(16),
-      child: offer.imageUrl != null && offer.imageUrl.toString().isNotEmpty
-          ? SizedBox.expand(
-              child: AppImage.network(
-                offer.imageUrl.toString(),
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                errorWidget: ColoredBox(
-                  color: AppColors.primary,
-                  child: Center(
-                    child: Icon(
-                      Icons.local_offer_outlined,
-                      color: Colors.white.withValues(alpha: 0.9),
-                      size: 48,
-                    ),
-                  ),
-                ),
-                loadingBuilder: (context) {
-                  return ColoredBox(
-                    color: Colors.grey.shade200,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      color: SharedPlatformColors.primary,
+      text: '',
+      borderRadius: BorderRadius.circular(20),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (image.isNotEmpty)
+            Image.network(
+              image,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) =>
+                  Image.asset(V7Artwork.cleaningPhoto, fit: BoxFit.cover),
             )
-          : SizedBox.expand(
-              child: ColoredBox(
-                color: AppColors.primary,
-                child: Center(
-                  child: Icon(
-                    Icons.local_offer_outlined,
-                    color: Colors.white.withValues(alpha: 0.9),
-                    size: 48,
-                  ),
-                ),
+          else
+            Image.asset(V7Artwork.cleaningPhoto, fit: BoxFit.cover),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xE6172554),
+                  Color(0x96172554),
+                  Color(0x18172554),
+                ],
+                begin: AlignmentDirectional.centerStart,
+                end: AlignmentDirectional.centerEnd,
               ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (label.isNotEmpty) ...[
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF8DE4E8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+                  if (title.isNotEmpty)
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        height: 1.35,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  if (desc.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      desc,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

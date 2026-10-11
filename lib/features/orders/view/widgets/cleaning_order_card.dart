@@ -2,6 +2,7 @@ import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/extentions.dart';
+import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../helpers/cleaning_event_assistance_helper.dart';
@@ -111,6 +112,12 @@ class CleaningOrderCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  V7ArtTile(
+                    asset: V7Artwork.cleaningMode(_serviceTitle),
+                    size: 55,
+                    background: SharedPlatformColors.cleaningSoft,
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +185,9 @@ class CleaningOrderCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      (order.totalPrice ?? 0).formatMoney(),
+                      order.totalPrice == null
+                          ? 'التكلفة قيد التحديد'
+                          : order.totalPrice!.formatMoney(),
                       style: const TextStyle(
                         color: SharedPlatformColors.cleaning,
                         fontSize: 15,

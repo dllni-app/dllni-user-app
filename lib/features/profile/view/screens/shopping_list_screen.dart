@@ -7,6 +7,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/widgets/app_app_bars.dart';
 import '../../../../core/widgets/failure_widget.dart';
+import '../../../../core/themes/v7_artwork.dart';
+import '../../../../core/widgets/v7_spot_state.dart';
 import '../../data/models/get_shopping_list_model.dart';
 import '../../domain/usecases/get_shopping_list_use_case.dart';
 import '../manager/bloc/profile_bloc.dart';
@@ -231,7 +233,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                         );
                       },
                       child: state.shoppingList?.data?.isEmpty ?? true
-                          ? const Center(child: Text('لا توجد قوائم تسوق'))
+                          ? const Center(
+                              child: V7SpotState(
+                                asset: V7Artwork.empty,
+                                title: 'لا توجد قوائم تسوق',
+                                description:
+                                    'أنشئ قائمة لتسهيل مشترياتك القادمة.',
+                              ),
+                            )
                           : ListView.separated(
                               physics: const AlwaysScrollableScrollPhysics(),
                               itemCount: state.shoppingList!.data!.length,

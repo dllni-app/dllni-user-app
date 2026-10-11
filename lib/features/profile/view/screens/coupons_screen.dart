@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
+import '../../../../core/widgets/v7_spot_state.dart';
 
 import '../../data/models/platform_coupon_models.dart';
 import '../manager/coupons_cubit.dart';
@@ -118,10 +120,13 @@ class _CouponsScreenState extends State<CouponsScreen> {
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: const [
-                              SizedBox(height: 180),
+                              SizedBox(height: 100),
                               Center(
-                                child: Text(
-                                  'لا توجد كوبونات متاحة لهذا القسم حالياً',
+                                child: V7SpotState(
+                                  asset: V7Artwork.coupon,
+                                  title: 'لا توجد كوبونات متاحة',
+                                  description:
+                                      'ستظهر العروض المتاحة لهذا القسم هنا.',
                                 ),
                               ),
                             ],

@@ -2,7 +2,11 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/auth/auth_gate.dart';
+import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
 
+/// Authentic configured events stay intact; only their visual entry cards
+/// change to match V7. Unverified server images fall back to local illustration.
 class ClOccasionTypeCardWidget extends StatelessWidget {
   const ClOccasionTypeCardWidget({
     required this.title,
@@ -20,90 +24,88 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
     return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
   }
 
-  Widget _buildImage(BuildContext context) {
+  Widget _image() {
     if (_isNetworkImage) {
-      return AppImage.network(
-        imagePath,
-        width: context.width,
-        height: 182,
-        fit: BoxFit.cover,
-        errorWidget: Container(
-          color: const Color(0xFFF3F4F6),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.image_outlined,
-            color: Color(0xFF9CA3AF),
-            size: 36,
-          ),
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.network(
+          imagePath,
+          width: 80,
+          height: 80,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              V7ArtTile(asset: V7Artwork.cleaningMode('event'), size: 80),
         ),
       );
     }
-
-    return AppImage.asset(
-      imagePath,
-      width: context.width,
-      height: 182,
-      fit: BoxFit.cover,
-    );
+    return V7ArtTile(asset: V7Artwork.cleaningMode('event'), size: 80);
   }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () async {
-        await AuthGate.requireAuth(
-          context,
-          onAuthenticated: () {
-            if (!context.mounted) return;
-            onTap();
+    return Semantics(
+      button: true,
+      label: 'خدمة مناسبة: $title',
+      child: Material(
+        color: SharedPlatformColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: () async {
+            await AuthGate.requireAuth(
+              context,
+              onAuthenticated: () {
+                if (!context.mounted) return;
+                onTap();
+              },
+            );
           },
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          height: 182,
-          width: context.width,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _buildImage(context),
-              Padding(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  vertical: 12,
-                  horizontal: 24,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 112),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: SharedPlatformColors.border),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                _image(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppText.bodyLarge(
+                        title,
+                        textAlign: TextAlign.start,
+                        fontWeight: FontWeight.w800,
+                        color: SharedPlatformColors.ink,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'اختَر الخدمة والمدة المناسبة',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: SharedPlatformColors.muted,
+                          fontSize: 12,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsetsDirectional.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: AppText.bodyMedium(
-                              title,
-                              fontWeight: FontWeight.w700,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 7),
+                const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: SharedPlatformColors.cleaningInk,
+                  size: 16,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

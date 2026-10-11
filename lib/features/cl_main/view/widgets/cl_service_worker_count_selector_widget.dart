@@ -2,6 +2,7 @@ import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
 import 'cl_service_section_card_widget.dart';
 
 class ClServiceWorkerCountSelectorWidget extends StatelessWidget {
@@ -31,6 +32,8 @@ class ClServiceWorkerCountSelectorWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const V7ArtTile(asset: V7Artwork.worker, size: 58),
+          const SizedBox(height: 10),
           AppText.bodySmall(
             'الحد الأقصى $safeMax عامل (حسب عدد الغرف والمساحات)',
             color: SharedPlatformColors.muted,
