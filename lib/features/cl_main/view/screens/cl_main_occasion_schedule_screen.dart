@@ -28,7 +28,6 @@ import '../widgets/app_pickers.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
-import '../widgets/cl_service_gradient_info_card_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_section_card_widget.dart';
@@ -55,6 +54,7 @@ class _ClMainOccasionScheduleScreenState
   ClMainOccasionScheduleArgs? _routeArgs;
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
+  int _v7Stage = 0;
   EstimatePriceResponseModel? _currentEstimate;
   late final ValueNotifier<AddressListItem?> _selectedAddress;
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
@@ -88,8 +88,6 @@ class _ClMainOccasionScheduleScreenState
         ),
       )
       .toList(growable: false);
-
-  int get _estimatedSqm => _activeEstimate?.size?.estimatedSqm ?? 0;
 
   int get _routeNumberOfWorkers {
     final requested = _routeArgs?.numberOfWorkers ?? 1;
@@ -127,8 +125,7 @@ class _ClMainOccasionScheduleScreenState
     final scheduleEntries = _sessions
         .map(
           (session) => ClServiceScheduleEntry(
-            dayDate:
-                session.dateChosen
+            dayDate: session.dateChosen
                 ? '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}'
                 : 'لم يتم اختيار التاريخ',
             time: CleaningDateTimeUiFormat.timeRange(
@@ -228,14 +225,21 @@ class _ClMainOccasionScheduleScreenState
                 child: Column(
                   children: [
                     const HomeDetailsAppBar(),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 14, 16, 4),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
                       child: ClRedesignStepHeader(
-                        currentStep: 2,
+                        currentStep: _v7Stage + 1,
                         totalSteps: 3,
-                        title: 'موعد المناسبة والفريق',
-                        subtitle:
-                            'حدد أيام العمل والفريق، ثم راجع السعر والتفاصيل قبل التأكيد.',
+                        title: switch (_v7Stage) {
+                          0 => 'أيام المناسبة',
+                          1 => 'فريق الخدمة',
+                          _ => 'مراجعة المناسبة',
+                        },
+                        subtitle: switch (_v7Stage) {
+                          0 => 'حدد أيام وأوقات الخدمة.',
+                          1 => 'اختر مقدم الخدمة المناسب.',
+                          _ => 'تأكد من التفاصيل والتكلفة قبل إرسال الطلب.',
+                        },
                       ),
                     ),
                     Expanded(
@@ -246,166 +250,185 @@ class _ClMainOccasionScheduleScreenState
                         ),
                         child: Column(
                           children: [
-                            ClServiceGradientInfoCardWidget(
-                              estimatedSqm: _estimatedSqm,
-                              estimatedHours: _scheduleTotalHours,
-                              showEstimatedSqm: false,
-                            ),
-                            const SizedBox(height: 10),
-                            ClServiceSectionCardWidget(
-                              key: const Key('occasion_schedule_details_card'),
-                              step: 0,
-                              showStepBadge: false,
-                              title: 'تفاصيل المناسبة',
-                              child: Column(
-                                children: [
-                                  _OccasionInfoRow(
-                                    label: 'نوع المناسبة',
-                                    value: args.option.title,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _OccasionInfoRow(
-                                    label: 'عدد الضيوف',
-                                    value: '${args.guestsCount}',
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _OccasionInfoRow(
-                                    label: 'طبيعة المساعدة',
-                                    value: args.helpTypeLabel,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _OccasionInfoRow(
-                                    label: 'عدد الأيام',
-                                    value: '${_sessions.length}',
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _OccasionInfoRow(
-                                    label: 'إجمالي الساعات لكل عامل',
-                                    value:
-                                        '${_formatHours(_scheduleTotalHours)} ساعة',
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _OccasionInfoRow(
-                                    label: 'عدد العمال',
-                                    value: '$numberOfWorkers',
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _OccasionInfoRow(
-                                    label: 'إجمالي ساعات العمل',
-                                    value:
-                                        '${_formatHours(_scheduleTotalHours * numberOfWorkers)} ساعة',
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _OccasionInfoRow(
-                                    label: 'متطلبات خاصة',
-                                    value: args.specialRequirementLabel,
-                                  ),
-                                  if (args.notes != null &&
-                                      args.notes!.isNotEmpty) ...[
+                            if (_v7Stage == 0) ...[
+                              ClServiceSectionCardWidget(
+                                key: const Key(
+                                  'occasion_schedule_details_card',
+                                ),
+                                step: 0,
+                                showStepBadge: false,
+                                title: 'تفاصيل المناسبة',
+                                child: Column(
+                                  children: [
+                                    _OccasionInfoRow(
+                                      label: 'نوع المناسبة',
+                                      value: args.option.title,
+                                    ),
                                     const SizedBox(height: 8),
                                     _OccasionInfoRow(
-                                      label: 'ملاحظات',
-                                      value: args.notes!,
+                                      label: 'عدد الضيوف',
+                                      value: '${args.guestsCount}',
                                     ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            _buildMultiDayScheduleCard(),
-                            const SizedBox(height: 10),
-                            ClServiceGenderPreferenceSectionWidget(
-                              selectedPreference: _explicitGenderPreference,
-                              onChanged: (preference) {
-                                _handleGenderPreferenceChanged(
-                                  bloc,
-                                  preference,
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 10),
-                            ClServicePreviousWorkersSectionWidget(
-                              workers: filterPreviousWorkersByGender(
-                                state.previousWorkers.list,
-                                state.genderPreference,
-                              ),
-                              selectedWorkerIds: state.selectedWorkerIds,
-                              isLoading:
-                                  state.previousWorkersStatus ==
-                                  BlocStatus.loading,
-                              errorMessage:
-                                  state.previousWorkersStatus ==
-                                      BlocStatus.failed
-                                  ? state.errorMessage
-                                  : null,
-                              onSelectWorker: (workerId) {
-                                final updatedWorkerIds = List<int>.from(
-                                  state.selectedWorkerIds,
-                                );
-                                if (updatedWorkerIds.contains(workerId)) {
-                                  updatedWorkerIds.remove(workerId);
-                                } else {
-                                  updatedWorkerIds.add(workerId);
-                                }
-                                bloc.add(
-                                  SetPreferredWorkerEvent(workerId: workerId),
-                                );
-                                _requestUpdatedEstimate(
-                                  state,
-                                  selectedWorkerIds: updatedWorkerIds,
-                                );
-                              },
-                              onOpenWorkerProfile: (worker) {
-                                context.pushRoute(
-                                  '/clworkerprofiledetail',
-                                  arguments:
-                                      WorkerProfileRouteArgs.fromPreviousWorker(
-                                        worker,
+                                    const SizedBox(height: 8),
+                                    _OccasionInfoRow(
+                                      label: 'طبيعة المساعدة',
+                                      value: args.helpTypeLabel,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _OccasionInfoRow(
+                                      label: 'عدد الأيام',
+                                      value: '${_sessions.length}',
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _OccasionInfoRow(
+                                      label: 'إجمالي الساعات لكل عامل',
+                                      value:
+                                          '${_formatHours(_scheduleTotalHours)} ساعة',
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _OccasionInfoRow(
+                                      label: 'عدد العمال',
+                                      value: '$numberOfWorkers',
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _OccasionInfoRow(
+                                      label: 'إجمالي ساعات العمل',
+                                      value:
+                                          '${_formatHours(_scheduleTotalHours * numberOfWorkers)} ساعة',
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _OccasionInfoRow(
+                                      label: 'متطلبات خاصة',
+                                      value: args.specialRequirementLabel,
+                                    ),
+                                    if (args.notes != null &&
+                                        args.notes!.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      _OccasionInfoRow(
+                                        label: 'ملاحظات',
+                                        value: args.notes!,
                                       ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            ClServiceCouponSectionWidget(
-                              couponController: _couponController,
-                              status: _couponStatus,
-                              message: _couponMessage,
-                              onApply: _onApplyCoupon,
-                            ),
-                            if (_appliedCouponCode != null) ...[
-                              const SizedBox(height: 8),
-                              Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: AppText.bodySmall(
-                                  'الكوبون المطبق: $_appliedCouponCode',
-                                  color: const Color(0xFF047857),
-                                  fontWeight: FontWeight.w600,
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _buildMultiDayScheduleCard(),
+                            ],
+                            if (_v7Stage == 1) ...[
+                              ClServiceGenderPreferenceSectionWidget(
+                                selectedPreference: _explicitGenderPreference,
+                                onChanged: (preference) {
+                                  _handleGenderPreferenceChanged(
+                                    bloc,
+                                    preference,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 10),
+                              ClServicePreviousWorkersSectionWidget(
+                                workers: filterPreviousWorkersByGender(
+                                  state.previousWorkers.list,
+                                  state.genderPreference,
+                                ),
+                                selectedWorkerIds: state.selectedWorkerIds,
+                                isLoading:
+                                    state.previousWorkersStatus ==
+                                    BlocStatus.loading,
+                                errorMessage:
+                                    state.previousWorkersStatus ==
+                                        BlocStatus.failed
+                                    ? state.errorMessage
+                                    : null,
+                                onSelectWorker: (workerId) {
+                                  final updatedWorkerIds = List<int>.from(
+                                    state.selectedWorkerIds,
+                                  );
+                                  if (updatedWorkerIds.contains(workerId)) {
+                                    updatedWorkerIds.remove(workerId);
+                                  } else {
+                                    updatedWorkerIds.add(workerId);
+                                  }
+                                  bloc.add(
+                                    SetPreferredWorkerEvent(workerId: workerId),
+                                  );
+                                  _requestUpdatedEstimate(
+                                    state,
+                                    selectedWorkerIds: updatedWorkerIds,
+                                  );
+                                },
+                                onOpenWorkerProfile: (worker) {
+                                  context.pushRoute(
+                                    '/clworkerprofiledetail',
+                                    arguments:
+                                        WorkerProfileRouteArgs.fromPreviousWorker(
+                                          worker,
+                                        ),
+                                  );
+                                },
+                              ),
+                            ],
+                            if (_v7Stage == 2) ...[
+                              ClServiceCouponSectionWidget(
+                                couponController: _couponController,
+                                status: _couponStatus,
+                                message: _couponMessage,
+                                onApply: _onApplyCoupon,
+                              ),
+                              if (_appliedCouponCode != null) ...[
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: AppText.bodySmall(
+                                    'الكوبون المطبق: $_appliedCouponCode',
+                                    color: const Color(0xFF047857),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 12),
+                              ClServiceOrderSummarySectionWidget(
+                                basePrice: estimate?.pricing?.basePrice ?? 0,
+                                travelFee: estimate?.pricing?.travelFee ?? 0,
+                                addonsTotal:
+                                    estimate?.pricing?.addonsTotal ?? 0,
+                                totalPrice: estimate?.pricing?.totalPrice ?? 0,
+                                adminMargin: estimate?.pricing?.adminMargin,
+                                isPricingFinal:
+                                    estimate?.pricing?.isPricingFinal,
+                                currency: estimate?.pricing?.currency ?? 'SYP',
+                                scheduleEntries: scheduleEntries,
+                              ),
+                              const SizedBox(height: 12),
+                              const ClRedesignCard(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.payments_outlined,
+                                      color: Color(0xFF0B7480),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text('الدفع نقداً عند إتمام الخدمة.'),
+                                  ],
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 12),
-                            ClServiceOrderSummarySectionWidget(
-                              basePrice: estimate?.pricing?.basePrice ?? 0,
-                              travelFee: estimate?.pricing?.travelFee ?? 0,
-                              addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
-                              totalPrice: estimate?.pricing?.totalPrice ?? 0,
-                              adminMargin: estimate?.pricing?.adminMargin,
-                              isPricingFinal: estimate?.pricing?.isPricingFinal,
-                              currency: estimate?.pricing?.currency ?? 'SYP',
-                              scheduleEntries: scheduleEntries,
-                            ),
                           ],
                         ),
                       ),
                     ),
                     ClRedesignStickyActions(
-                      primaryLabel: 'تأكيد طلب المناسبة',
-                      onPrimary: () => _onSubmitPressed(state),
+                      primaryLabel: _v7Stage == 2
+                          ? 'تأكيد طلب المناسبة'
+                          : 'متابعة',
+                      onPrimary: () => _advanceV7Occasion(state),
                       primaryEnabled:
                           state.createOrderStatus != BlocStatus.loading &&
                           state.estimatePriceStatus != BlocStatus.loading,
                       secondaryLabel: 'السابق',
-                      onSecondary: () => context.pop(),
+                      onSecondary: () => _v7Stage > 0
+                          ? setState(() => _v7Stage--)
+                          : context.pop(),
                     ),
                   ],
                 ),
@@ -415,6 +438,30 @@ class _ClMainOccasionScheduleScreenState
         ),
       ),
     );
+  }
+
+  void _advanceV7Occasion(ClMainState state) {
+    if (_v7Stage == 0) {
+      if (_sessions.any((session) => !session.dateChosen)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('اختر موعد كل يوم قبل المتابعة.')),
+        );
+        return;
+      }
+      setState(() => _v7Stage = 1);
+      return;
+    }
+    if (_v7Stage == 1) {
+      if (_explicitGenderPreference == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('اختر عامل أو عاملة للمتابعة.')),
+        );
+        return;
+      }
+      setState(() => _v7Stage = 2);
+      return;
+    }
+    _onSubmitPressed(state);
   }
 
   Widget _buildMultiDayScheduleCard() {
@@ -1010,8 +1057,10 @@ class _ClMainOccasionScheduleScreenState
     final seenSlots = <String>{};
     for (var index = 0; index < _sessions.length; index++) {
       final session = _sessions[index];
-      if (!session.dateChosen) return 'يرجى اختيار تاريخ يوم العمل ${index + 1}';
-      if (!session.timeChosen) return 'يرجى اختيار وقت بدء يوم العمل ${index + 1}';
+      if (!session.dateChosen)
+        return 'يرجى اختيار تاريخ يوم العمل ${index + 1}';
+      if (!session.timeChosen)
+        return 'يرجى اختيار وقت بدء يوم العمل ${index + 1}';
       if (!session.hoursChosen) return 'يرجى تحديد مدة يوم العمل ${index + 1}';
       if (session.date.isBefore(_minimumDate)) {
         return 'تاريخ يوم العمل ${index + 1} يجب أن يكون غداً أو بعده';
@@ -1290,17 +1339,23 @@ class _EventSessionCard extends StatelessWidget {
           const SizedBox(height: 10),
           _OccasionInfoRow(
             label: 'من',
-            value: session.timeChosen ? CleaningDateTimeUiFormat.time(session.time) : 'اختر الوقت',
+            value: session.timeChosen
+                ? CleaningDateTimeUiFormat.time(session.time)
+                : 'اختر الوقت',
           ),
           const SizedBox(height: 6),
           _OccasionInfoRow(
             label: 'إلى',
-            value: session.timeChosen ? CleaningDateTimeUiFormat.time(session.endTime) : '—',
+            value: session.timeChosen
+                ? CleaningDateTimeUiFormat.time(session.endTime)
+                : '—',
           ),
           const SizedBox(height: 6),
           _OccasionInfoRow(
             label: 'المدة',
-            value: session.hoursChosen ? '${_hours(session.hours)} ساعة' : 'اختر المدة',
+            value: session.hoursChosen
+                ? '${_hours(session.hours)} ساعة'
+                : 'اختر المدة',
           ),
           if (estimatedPrice != null) ...[
             const SizedBox(height: 6),

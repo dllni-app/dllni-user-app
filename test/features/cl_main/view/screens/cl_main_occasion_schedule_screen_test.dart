@@ -128,7 +128,9 @@ void main() {
     await initializeDateFormatting('ar');
   });
 
-  testWidgets('shows previous workers section', (WidgetTester tester) async {
+  testWidgets('first step shows session scheduling before worker choices', (
+    WidgetTester tester,
+  ) async {
     final repo = _FakeClMainRepo(
       previousWorkers: const <PreviousWorkerModel>[
         PreviousWorkerModel(
@@ -144,13 +146,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byType(ClServicePreviousWorkersSectionWidget), findsOneWidget);
-    expect(find.text('Worker 77'), findsOneWidget);
+    expect(find.text('أيام المناسبة'), findsOneWidget);
+    expect(find.byType(ClServicePreviousWorkersSectionWidget), findsNothing);
+    expect(find.text('Worker 77'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('submit without required worker selection does not create order', (
+  testWidgets('cannot create event order without selecting its date', (
     WidgetTester tester,
   ) async {
     var createCalled = false;
@@ -175,7 +178,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(createCalled, isFalse);
-    expect(find.text('يرجى اختيار جنس العامل: ذكر أو أنثى'), findsOneWidget);
+    expect(find.text('اختر موعد كل يوم قبل المتابعة.'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

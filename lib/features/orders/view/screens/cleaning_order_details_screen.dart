@@ -1,5 +1,7 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:dllni_user_app/core/themes/v7_artwork.dart';
+import 'package:dllni_user_app/core/widgets/v7_spot_state.dart';
+import '../widgets/v7_order_detail_components.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -19,14 +21,10 @@ import 'package:toastification/toastification.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
+import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
-import '../../../cl_main/view/widgets/cl_service_address_section_widget.dart';
 import '../../../cl_main/view/widgets/cl_cleaning_extras_section_widget.dart';
-import '../../../cl_main/view/widgets/cl_service_day_preview_card_widget.dart';
-import '../../../cl_main/view/widgets/cl_service_section_card_widget.dart';
-import '../../../cl_main/view/widgets/cl_service_time_picker_field_widget.dart';
 import '../../../profile/domain/models/address_list_item.dart';
-import '../../../profile/view/widgets/personal_details_app_bar.dart';
 import '../../data/models/cleaning_booking_schedule_model.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
@@ -120,835 +118,368 @@ class _CleaningOrderDetailsScreenState
   @override
   Widget build(BuildContext context) {
     final order = _order;
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: const Color(0xffF3F4F6),
-        appBar: AppBar(
-          title: const Text('تفاصيل الطلب'),
-          centerTitle: true,
-          backgroundColor: const Color(0xffF3F4F6),
-          elevation: 0,
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    if (_isLoading) return const V7OrderLoadingView();
     if (_loadError != null) {
       return Scaffold(
-        backgroundColor: const Color(0xffF3F4F6),
+        backgroundColor: const Color(0xFFF6F7F9),
         appBar: AppBar(
           title: const Text('تفاصيل الطلب'),
-          centerTitle: true,
-          backgroundColor: const Color(0xffF3F4F6),
-          elevation: 0,
+          backgroundColor: Colors.white,
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_loadError!, textAlign: TextAlign.center),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => _fetchDetails(showLoading: true),
-                  child: const Text('إعادة المحاولة'),
-                ),
-              ],
-            ),
-          ),
+        body: V7SpotState(
+          asset: V7Artwork.offline,
+          title: 'تعذر تحميل الطلب',
+          description: _loadError!,
+          actionLabel: 'إعادة المحاولة',
+          onAction: () => _fetchDetails(showLoading: true),
         ),
       );
     }
-    if (order == null) {
-      return Scaffold(
-        backgroundColor: const Color(0xffF3F4F6),
-        body: SafeArea(
-          child: Column(
-            children: [
-              PersonalDetailsAppBar(section: 'cleaning', title: 'تفاصيل الطلب'),
-              const Expanded(
-                child: Center(child: Text('تعذر تحميل تفاصيل الطلب')),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    final startDateTime = _resolveStartDateTime(order);
-    final endDateTime = startDateTime?.add(
-      Duration(minutes: (_resolveHours(order) * 60).round()),
-    );
-    _fromTimeController.text = CleaningDateTimeUiFormat.timeFromDateTime(
-      startDateTime,
-    );
-    _toTimeController.text = CleaningDateTimeUiFormat.timeFromDateTime(
-      endDateTime,
-    );
-    final statusNorm = _normStatus(order.status);
-    final isTerminalStatus =
-        statusNorm == CleaningBookingStatus.completed ||
-        statusNorm == CleaningBookingStatus.cancelled;
-    final leadTimeCheck = CleaningRebookPolicy.evaluateLeadTime(
-      scheduledDate: order.scheduledDate,
-      scheduledTime: order.scheduledTime,
-    );
-    final statusBlocksEdit = _blocksReschedule(order) || _isRebooking;
-    // Past scheduled time (or unparseable): hide change controls.
-    final hideEditActions =
-        statusBlocksEdit || leadTimeCheck.isPastScheduledTime;
-    // Within 24h but still before service: show controls disabled.
-    final editLocked = statusBlocksEdit || !leadTimeCheck.allowed;
+    if (order == null)
+      return const V7OrderLoadingView(message: 'لا تتوفر تفاصيل هذا الطلب');
+
+    final status = _normStatus(order.status);
+    final terminal =
+        status == CleaningBookingStatus.completed ||
+        status == CleaningBookingStatus.cancelled;
     final liveAcceptance = _effectiveWorkerAcceptance(order);
-    final searchingForWorkers = _isSearchingForWorkers(order, liveAcceptance);
-    final showPreferredWorkerFallbackBanner =
-        _showPreferredWorkerFallbackBanner(order, liveAcceptance);
-    final requiredWorkers =
+    final searching = _isSearchingForWorkers(order, liveAcceptance);
+    final workerCount =
         liveAcceptance?.required ??
         order.numberOfWorkers ??
         (order.isMultiWorkerTeam ? null : 1);
-    final acceptedWorkers =
+    final acceptedCount =
         liveAcceptance?.accepted ??
         (order.isMultiWorkerTeam
             ? order.acceptedWorkerAssignments.length
             : ((order.workerId != null || order.worker != null) ? 1 : 0));
-    final travelFee = order.travelFee ?? 0;
-    final displayedTotalPrice =
-        order.totalPrice ??
-        ((order.basePrice ?? 0) + (order.addonsTotal ?? 0) + travelFee);
-    final primaryAction = cleaningLifecyclePrimaryAction(order.status);
+    final leadTime = CleaningRebookPolicy.evaluateLeadTime(
+      scheduledDate: order.scheduledDate,
+      scheduledTime: order.scheduledTime,
+    );
+    final hiddenEdit =
+        _blocksReschedule(order) ||
+        _isRebooking ||
+        leadTime.isPastScheduledTime;
+    final editLocked =
+        _blocksReschedule(order) || _isRebooking || !leadTime.allowed;
+    final primary = cleaningLifecyclePrimaryAction(order.status);
+    final statusLabel = cleaningOrderStatusLabelAr(
+      order.status,
+      startedTravelAt: order.startedTravelAt,
+      arrivedAt: order.arrivedAt,
+      forceTravelling: _liveWorkerTravelling,
+    );
+    final tone = switch (status) {
+      CleaningBookingStatus.completed => V7OrderTone.success,
+      CleaningBookingStatus.cancelled => V7OrderTone.danger,
+      CleaningBookingStatus.timeExtensionRequested => V7OrderTone.warning,
+      CleaningBookingStatus.underDispute => V7OrderTone.warning,
+      _ => V7OrderTone.info,
+    };
+    final message = switch (status) {
+      CleaningBookingStatus.pending =>
+        'تم استلام طلبك، وسنخبرك عندما يقبل أحد مقدمي الخدمة.',
+      CleaningBookingStatus.workerAssigned =>
+        'تم قبول الطلب. يمكنك متابعة التفاصيل والتواصل مع مقدم الخدمة.',
+      CleaningBookingStatus.awaitingStartVerification =>
+        'العامل جاهز للبدء. اتبع خطوة تأكيد رمز الأمان عند ظهوره.',
+      CleaningBookingStatus.awaitingWorkerStartConfirmation =>
+        'تم تأكيد رمز الأمان. بانتظار بدء الخدمة.',
+      CleaningBookingStatus.inProgress =>
+        'الخدمة قيد التنفيذ. يمكنك متابعة الطلب وطلب المساعدة عند الحاجة.',
+      CleaningBookingStatus.awaitingCustomerCompletion =>
+        'أبلغ مقدم الخدمة بانتهاء العمل. راجع الخدمة لتأكيد الإكمال.',
+      CleaningBookingStatus.timeExtensionRequested =>
+        'تم طلب وقت إضافي. سنخبرك عندما تتوفر نتيجة الطلب.',
+      CleaningBookingStatus.underDispute =>
+        'تتم مراجعة المشكلة التي أبلغت عنها. تابع تحديثات الطلب.',
+      CleaningBookingStatus.completed =>
+        'اكتملت الخدمة، شكراً لاستخدام ع الندهة.',
+      CleaningBookingStatus.cancelled => 'تم إلغاء هذا الطلب.',
+      _ => 'تابع حالة طلبك وتفاصيل الخدمة هنا.',
+    };
 
-    Widget? sosTrailing;
-    if (!isTerminalStatus) {
-      sosTrailing = OutlinedButton.icon(
-        onPressed: () => context.pushRoute(
-          '/cleaning-order-sos',
-          arguments: CleaningOrderSosArgs(orderId: _activeOrderId),
+    final sections = <Widget>[
+      if (_isRebooking)
+        const V7OrderStatusHero(
+          title: 'جارٍ تحديث الطلب',
+          statusLabel: 'قيد التحديث',
+          message: 'انتظر قليلاً حتى تظهر التفاصيل الجديدة.',
+          icon: Icons.sync,
         ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFFB42318),
-          side: const BorderSide(color: Color(0xFFFECACA)),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+      V7OrderStatusHero(
+        title: _serviceLabel(order),
+        statusLabel: statusLabel,
+        reference: _bookingLabel(order),
+        message: message,
+        tone: tone,
+        icon: status == CleaningBookingStatus.completed
+            ? Icons.task_alt_rounded
+            : status == CleaningBookingStatus.cancelled
+            ? Icons.event_busy_outlined
+            : Icons.cleaning_services_outlined,
+      ),
+      if (searching)
+        V7OrderPanel(
+          title: 'جارٍ إيجاد مقدم خدمة',
+          subtitle: 'سنرسل لك إشعاراً عند قبول الطلب.',
+          child: (acceptedCount > 0 && workerCount != null)
+              ? V7OrderInfoRow(
+                  label: 'العمال الذين قبلوا',
+                  value: '$acceptedCount من $workerCount',
+                )
+              : const Text(
+                  'طلبك قيد المتابعة.',
+                  style: TextStyle(color: SharedPlatformColors.muted),
+                ),
+        ),
+      if (searching &&
+          _showPreferredWorkerFallbackBanner(order, liveAcceptance))
+        const CleaningPreferredWorkerFallbackBannerWidget(),
+      if (searching &&
+          (order.assignmentMode ?? '').toLowerCase() == 'preferred_worker' &&
+          order.preferredWorker != null)
+        CleaningPreferredWorkerCardWidget(
+          worker: order.preferredWorker!,
+          onCallWorker: _callWorker,
+        ),
+      if (order.lastHourTeamDecision?['required'] == true)
+        CleaningLastHourTeamDecisionCard(
+          decision: order.lastHourTeamDecision!,
+          isSubmitting: _isLastHourDecisionSubmitting,
+          onChoose: _submitLastHourDecision,
+        ),
+      if (order.scheduleChangeRequest != null)
+        CleaningScheduleChangeResolutionCard(
+          change: order.scheduleChangeRequest!,
+          requiredWorkers: order.numberOfWorkers ?? 1,
+          onResolved: () => _fetchDetails(showLoading: false),
+        ),
+      if (_gateError != null)
+        V7OrderPanel(
+          title: 'تنبيه بخصوص الطلب',
+          child: Text(
+            _gateError!,
+            style: const TextStyle(color: Color(0xFFB42318)),
           ),
         ),
-        icon: const Icon(Icons.sos_outlined, size: 17),
-        label: const Text(
-          'مساعدة',
-          style: TextStyle(fontWeight: FontWeight.w700),
+      if (status == CleaningBookingStatus.awaitingCustomerCompletion)
+        V7OrderPanel(
+          title: 'مراجعة إكمال الخدمة',
+          subtitle: 'راجع نتيجة العمل قبل تأكيد إنهائه.',
+          child: FilledButton(
+            onPressed: _gateSubmitting
+                ? null
+                : () => unawaited(_openCompletionSheet(force: true)),
+            child: const Text('مراجعة الخدمة'),
+          ),
         ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: const Color(0xffF3F4F6),
-      body: SafeArea(
+      if (status == CleaningBookingStatus.awaitingWorkerStartConfirmation)
+        const V7OrderPanel(
+          title: 'التحقق من بدء العمل',
+          child: Text(
+            'تم تأكيد رمز الأمان. بانتظار بدء مقدم الخدمة.',
+            style: TextStyle(color: SharedPlatformColors.muted),
+          ),
+        ),
+      V7OrderPanel(
+        title: 'موعد الخدمة وموقعها',
+        leading: const Icon(
+          Icons.event_available_outlined,
+          color: SharedPlatformColors.cleaning,
+          size: 26,
+        ),
+        trailing: hiddenEdit
+            ? null
+            : TextButton(
+                onPressed: editLocked
+                    ? () => _showLeadTimeLockedMessage(leadTime)
+                    : () => _goToReschedule(order),
+                child: Text(editLocked ? 'التعديل غير متاح' : 'تعديل'),
+              ),
         child: Column(
           children: [
-            PersonalDetailsAppBar(
-              section: 'cleaning',
-              title: 'تفاصيل الطلب',
-              trailing: sosTrailing,
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () =>
-                    _fetchDetails(showLoading: false, triggerGatePrompts: true),
-                child: ListView(
-                  padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 24),
-                  children: [
-                    if (_isRebooking) ...[
-                      _card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: const [
-                            Text(
-                              'يتم تحديث الطلب بالخلفية...',
-                              style: TextStyle(
-                                color: Color(0xff1F2937),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            LinearProgressIndicator(minHeight: 2),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    CleaningLifecycleTimelineWidget(
-                      compact: true,
-                      status: order.status,
-                      startedTravelAt: order.startedTravelAt,
-                      arrivedAt: order.arrivedAt,
-                      forceTravelling: _liveWorkerTravelling,
-                      acceptedWorkers: acceptedWorkers,
-                      requiredWorkers: requiredWorkers,
-                    ),
-                    const SizedBox(height: 12),
-                    _card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          V7ArtTile(
-                            asset: V7Artwork.cleaningMode(_serviceLabel(order)),
-                            size: 62,
-                            background: SharedPlatformColors.cleaningSoft,
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'معلومات الخدمة',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xff1F2937),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _bookingLabel(order),
-                                  style: const TextStyle(
-                                    color: Color(0xff9CA3AF),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsetsDirectional.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE2F5F4),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  cleaningOrderStatusLabelAr(
-                                    order.status,
-                                    startedTravelAt: order.startedTravelAt,
-                                    arrivedAt: order.arrivedAt,
-                                    forceTravelling: _liveWorkerTravelling,
-                                  ),
-                                  style: const TextStyle(
-                                    color: Color(0xff0CBBC7),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _serviceLabel(order),
-                            style: const TextStyle(
-                              color: Color(0xff111827),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (CleaningEventAssistanceHelper.isEventAssistance(
-                      order.propertyType,
-                    )) ...[
-                      const SizedBox(height: 12),
-                      _card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'تفاصيل المناسبة',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xff1F2937),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            _SummaryRow(
-                              title: 'نوع المناسبة',
-                              value:
-                                  CleaningEventAssistanceHelper.eventTypeLabelAr(
-                                    order.propertyDetails?.eventType,
-                                  ),
-                            ),
-                            const SizedBox(height: 6),
-                            _SummaryRow(
-                              title: 'عدد الضيوف',
-                              value:
-                                  '${order.propertyDetails?.guestCount ?? '-'}',
-                            ),
-                            const SizedBox(height: 6),
-                            _SummaryRow(
-                              title: 'نوع المكان',
-                              value:
-                                  CleaningEventAssistanceHelper.venueTypeLabelAr(
-                                    order.propertyDetails?.venueType,
-                                  ),
-                            ),
-                            const SizedBox(height: 6),
-                            _SummaryRow(
-                              title: 'مدة الحجز',
-                              value: CleaningEventAssistanceHelper.formatHours(
-                                CleaningEventAssistanceHelper.resolveBookedHours(
-                                  propertyHours: order.propertyDetails?.hours,
-                                  totalHours: order.totalHours,
-                                  estimatedHours: double.tryParse(
-                                    order.estimatedHours ?? '',
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            OutlinedButton.icon(
-                              onPressed: () async {
-                                await Navigator.of(context).push<void>(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        MultiDayCleaningOrderDetailsScreen(
-                                          orderId: _activeOrderId,
-                                        ),
-                                  ),
-                                );
-                                if (mounted) {
-                                  await _fetchDetails(showLoading: false);
-                                }
-                              },
-                              icon: const Icon(Icons.event_note_outlined),
-                              label: const Text('عرض أيام وجلسات المناسبة'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (!CleaningEventAssistanceHelper.isEventAssistance(
-                      order.propertyType,
-                    ))
-                      CleaningRecurringScheduleLauncherWidget(
-                        orderId: _activeOrderId,
-                        onReturn: () => _fetchDetails(showLoading: false),
-                      ),
-                    if (searchingForWorkers) ...[
-                      const SizedBox(height: 12),
-                      if (showPreferredWorkerFallbackBanner) ...[
-                        const CleaningPreferredWorkerFallbackBannerWidget(),
-                        const SizedBox(height: 12),
-                      ],
-                      CleaningTeamSearchBannerWidget(
-                        acceptance: liveAcceptance,
-                        numberOfWorkers: order.numberOfWorkers,
-                        isHotOrder: order.isHotOrder,
-                      ),
-                    ],
-                    if (searchingForWorkers &&
-                        (order.assignmentMode ?? '').toLowerCase() ==
-                            'preferred_worker' &&
-                        order.preferredWorker != null) ...[
-                      const SizedBox(height: 12),
-                      CleaningPreferredWorkerCardWidget(
-                        worker: order.preferredWorker!,
-                        onCallWorker: _callWorker,
-                      ),
-                    ],
-                    if (order.lastHourTeamDecision?['required'] == true) ...[
-                      const SizedBox(height: 12),
-                      CleaningLastHourTeamDecisionCard(
-                        decision: order.lastHourTeamDecision!,
-                        isSubmitting: _isLastHourDecisionSubmitting,
-                        onChoose: _submitLastHourDecision,
-                      ),
-                    ],
-                    if (order.isMultiWorkerTeam &&
-                        order.acceptedWorkerAssignments.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      CleaningAcceptedWorkersSectionWidget(
-                        assignments: order.acceptedWorkerAssignments,
-                        onCallWorker: _callWorker,
-                      ),
-                    ],
-                    if ((order.roomAssignments ?? const []).isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      CleaningRoomAssignmentsSectionWidget(
-                        roomAssignments: order.roomAssignments!,
-                        acceptedWorkers: order.acceptedWorkerAssignments,
-                        isEditable: _canEditRoomAssignments(order),
-                        isSaving: _isPatchingRoomAssignments,
-                        onAssignRoom: _assignRoom,
-                      ),
-                    ],
-                    if (statusNorm ==
-                        CleaningBookingStatus
-                            .awaitingWorkerStartConfirmation) ...[
-                      const SizedBox(height: 12),
-                      _card(
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'تم تأكيد رمز الأمان',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xff1F2937),
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'تم تأكيد رمز الوصول. بانتظار بدء العمل من العامل.',
-                              style: TextStyle(
-                                color: Color(0xff6B7280),
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (statusNorm ==
-                        CleaningBookingStatus.awaitingCustomerCompletion) ...[
-                      const SizedBox(height: 12),
-                      _card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'تأكيد إكمال العمل',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xff1F2937),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'أبلغ مقدم الخدمة عن انتهاء العمل. يمكنك تأكيد الإكمال أو الإبلاغ بأن العمل لم يكتمل، أو طلب وقت إضافي.',
-                              style: TextStyle(
-                                color: Color(0xff6B7280),
-                                fontSize: 13,
-                              ),
-                            ),
-                            if (_completionSheetDismissed) ...[
-                              const SizedBox(height: 8),
-                              const Text(
-                                'تم إغلاق نافذة القرار. اضغط لإعادة فتحها.',
-                                style: TextStyle(
-                                  color: Color(0xff6B7280),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                            if (_gateError != null) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                _gateError!,
-                                style: const TextStyle(
-                                  color: Color(0xffDC2626),
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 12),
-                            FilledButton.icon(
-                              onPressed: _gateSubmitting
-                                  ? null
-                                  : () {
-                                      unawaited(
-                                        _openCompletionSheet(force: true),
-                                      );
-                                    },
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF0CBBC7),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                              ),
-                              icon: const Icon(Icons.check_circle_outline),
-                              label: const Text(
-                                'فتح نافذة اتخاذ القرار',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (statusNorm ==
-                        CleaningBookingStatus.timeExtensionRequested) ...[
-                      const SizedBox(height: 12),
-                      _card(
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.schedule,
-                              color: SharedPlatformColors.cleaning,
-                            ),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'تم إرسال طلب تمديد الوقت. سيتم إشعارك عند تحديث الحالة.',
-                                style: TextStyle(
-                                  color: Color(0xff374151),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    ClServiceSectionCardWidget(
-                      step: 1,
-                      showStepBadge: false,
-                      title: 'وقت و تاريخ الخدمة',
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ClServiceDayPreviewCardWidget(
-                                  dayAr:
-                                      CleaningDateTimeUiFormat.weekdayFromApiDate(
-                                        order.scheduledDate,
-                                      ),
-                                  dayDate:
-                                      CleaningDateTimeUiFormat.dateFromApiDate(
-                                        order.scheduledDate,
-                                      ),
-                                ),
-                              ),
-                              if (!hideEditActions) ...[
-                                const SizedBox(width: 10),
-                                FilledButton(
-                                  onPressed: editLocked
-                                      ? () => _showLeadTimeLockedMessage(
-                                          leadTimeCheck,
-                                        )
-                                      : () => _goToReschedule(order),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: editLocked
-                                        ? const Color(0xFFD1D5DB)
-                                        : SharedPlatformColors.cleaning,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: AppText.bodyMedium(
-                                    'تغيير اليوم',
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsetsDirectional.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF7F7F9),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AppText.bodyMedium(
-                                  'مدة الخدمة',
-                                  color: const Color(0xFF656B78),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                const SizedBox(height: 8),
-                                ClServiceTimePickerFieldWidget(
-                                  title: 'من',
-                                  controller: _fromTimeController,
-                                  onTap: hideEditActions
-                                      ? null
-                                      : () {
-                                          if (editLocked) {
-                                            _showLeadTimeLockedMessage(
-                                              leadTimeCheck,
-                                            );
-                                            return;
-                                          }
-                                          _goToReschedule(order);
-                                        },
-                                ),
-                                const SizedBox(height: 12),
-                                ClServiceTimePickerFieldWidget(
-                                  title: 'إلى',
-                                  controller: _toTimeController,
-                                  onTap: hideEditActions
-                                      ? null
-                                      : () {
-                                          if (editLocked) {
-                                            _showLeadTimeLockedMessage(
-                                              leadTimeCheck,
-                                            );
-                                            return;
-                                          }
-                                          _goToReschedule(order);
-                                        },
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (!hideEditActions) ...[
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: editLocked
-                                    ? () => _showLeadTimeLockedMessage(
-                                        leadTimeCheck,
-                                      )
-                                    : () => _goToReschedule(order),
-                                style: ElevatedButton.styleFrom(
-                                  elevation: 0,
-                                  backgroundColor: const Color(0xffE5E7EB),
-                                  foregroundColor: editLocked
-                                      ? const Color(0xff9CA3AF)
-                                      : SharedPlatformColors.cleaning,
-                                  disabledForegroundColor: const Color(
-                                    0xff9CA3AF,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  editLocked
-                                      ? 'تغيير الموعد غير متاح حالياً'
-                                      : 'تغيير موعد الخدمة',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ClServiceAddressSectionWidget(
-                      locationName: order.locationName ?? 'المنزل',
-                      address: order.propertyDetails?.address ?? '-',
-                      showChangeAction: !hideEditActions,
-                      onChangeTap: hideEditActions
-                          ? null
-                          : editLocked
-                          ? () => _showLeadTimeLockedMessage(leadTimeCheck)
-                          : () => _changeAddress(order),
-                      changeActionEnabled: !editLocked,
-                    ),
-                    const SizedBox(height: 12),
-                    if (order.addressLatitude != null &&
-                        order.addressLongitude != null) ...[
-                      CleaningWorkerTrackingMap(
-                        customerLatLng: LatLng(
-                          order.addressLatitude!,
-                          order.addressLongitude!,
-                        ),
-                        workerLatLng:
-                            (_workerLiveLatitude != null &&
-                                _workerLiveLongitude != null)
-                            ? LatLng(
-                                _workerLiveLatitude!,
-                                _workerLiveLongitude!,
-                              )
-                            : null,
-                        bookingStatus: statusNorm,
-                        hasStartedTravel:
-                            order.startedTravelAt != null &&
-                            order.arrivedAt == null,
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    if (!order.isMultiWorkerTeam) ...[
-                      _card(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundImage:
-                                      order.worker?.avatarUrl == null
-                                      ? null
-                                      : NetworkImage(order.worker!.avatarUrl!),
-                                  child: order.worker?.avatarUrl == null
-                                      ? const Icon(Icons.person, size: 20)
-                                      : null,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        order.worker?.name ?? 'مقدم الخدمة',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xff1F2937),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '⭐ ${order.worker?.averageRating?.toStringAsFixed(1) ?? '-'} • مقدم الخدمة',
-                                        style: const TextStyle(
-                                          color: Color(0xff6B7280),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () => _callWorker(order.worker?.phone),
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    width: 38,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xffF3F4F6),
-                                      borderRadius: BorderRadius.circular(19),
-                                    ),
-                                    child: const Icon(
-                                      Icons.call,
-                                      color: Color(0xff111827),
-                                      size: 19,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (_workerLiveLatitude != null &&
-                                _workerLiveLongitude != null) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                'تم تحديث الموقع المباشر لمقدم الخدمة',
-                                style: const TextStyle(
-                                  color: Color(0xff6B7280),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    _card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'ملخص الطلب',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xff1F2937),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _SummaryRow(
-                            title: 'قيمة الخدمة',
-                            value: (order.basePrice ?? 0).formatMoney(),
-                          ),
-                          const SizedBox(height: 6),
-                          _SummaryRow(
-                            title: 'رسوم التنقل',
-                            value: travelFee.formatMoney(),
-                          ),
-                          if ((order.addonsTotal ?? 0) > 0) ...[
-                            const SizedBox(height: 6),
-                            _SummaryRow(
-                              title: 'إضافات',
-                              value: order.addonsTotal.formatMoney(),
-                            ),
-                          ],
-                          const SizedBox(height: 10),
-                          const Divider(color: Color(0xffE5E7EB)),
-                          const SizedBox(height: 10),
-                          _SummaryRow(
-                            title: 'الإجمالي',
-                            value: displayedTotalPrice.formatMoney(),
-                            isTotal: true,
-                          ),
-                          if (order.isPricingFinal == false) ...[
-                            const SizedBox(height: 8),
-                            const Text(
-                              'القيم المعروضة هي القيم الحالية من النظام وقد يتم تحديث السعر النهائي عند اكتمال تعيين العمال.',
-                              style: TextStyle(
-                                color: Color(0xff6B7280),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    if (order.scheduleChangeRequest != null) ...[
-                      const SizedBox(height: 12),
-                      CleaningScheduleChangeResolutionCard(
-                        change: order.scheduleChangeRequest!,
-                        requiredWorkers: order.numberOfWorkers ?? 1,
-                        onResolved: () => _fetchDetails(showLoading: false),
-                      ),
-                    ],
-                    if (order.materials.isNotEmpty ||
-                        order.specialServices.isNotEmpty ||
-                        order.openTime != null) ...[
-                      const SizedBox(height: 12),
-                      CleaningOrderExtrasDetailsSection(
-                        materials: order.materials,
-                        specialServices: order.specialServices,
-                        openTime: order.openTime,
-                        currency: order.openTime?.currency ?? 'SYP',
-                      ),
-                      if (order.openTime != null) ...[
-                        const SizedBox(height: 12),
-                        CleaningOpenTimeLiveCard(
-                          orderId: order.id ?? _activeOrderId,
-                          initialValue: order.openTime!,
-                        ),
-                      ],
-                    ],
-                    if (!isTerminalStatus) ...[
-                      const SizedBox(height: 12),
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () => _cancelOrder(order),
-                          icon: const Icon(Icons.cancel_outlined, size: 18),
-                          label: const Text('إلغاء الطلب'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFFB42318),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+            V7OrderInfoRow(
+              label: 'التاريخ',
+              value: CleaningDateTimeUiFormat.dateFromApiDate(
+                order.scheduledDate,
               ),
             ),
-            if (primaryAction.kind != CleaningLifecycleActionKind.none)
-              _buildLifecycleActionBar(
-                order: order,
-                action: primaryAction,
-                isTerminalStatus: isTerminalStatus,
+            V7OrderInfoRow(
+              label: 'الوقت',
+              value: CleaningDateTimeUiFormat.timeRange(
+                order.scheduledTime ?? '',
+                _orderEndTime(order) ?? '',
+              ),
+            ),
+            V7OrderInfoRow(
+              label: 'المكان',
+              value: order.locationName ?? 'عنوان الخدمة',
+            ),
+            V7OrderInfoRow(
+              label: 'العنوان',
+              value: order.propertyDetails?.address ?? 'غير محدد',
+            ),
+            if (!hiddenEdit)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: editLocked
+                      ? () => _showLeadTimeLockedMessage(leadTime)
+                      : () => _changeAddress(order),
+                  icon: const Icon(Icons.location_on_outlined),
+                  label: const Text('تعديل العنوان'),
+                ),
               ),
           ],
         ),
       ),
+      if (order.worker != null && !order.isMultiWorkerTeam)
+        V7OrderWorkerPanel(
+          name: order.worker?.name ?? 'مقدم الخدمة',
+          avatarUrl: order.worker?.avatarUrl,
+          rating: order.worker?.averageRating,
+          onCall: (order.worker?.phone?.trim().isNotEmpty ?? false)
+              ? () => _callWorker(order.worker?.phone)
+              : null,
+        ),
+      if (order.isMultiWorkerTeam && order.acceptedWorkerAssignments.isNotEmpty)
+        CleaningAcceptedWorkersSectionWidget(
+          assignments: order.acceptedWorkerAssignments,
+          onCallWorker: _callWorker,
+        ),
+      if ((order.roomAssignments ?? const []).isNotEmpty)
+        CleaningRoomAssignmentsSectionWidget(
+          roomAssignments: order.roomAssignments!,
+          acceptedWorkers: order.acceptedWorkerAssignments,
+          isEditable: _canEditRoomAssignments(order),
+          isSaving: _isPatchingRoomAssignments,
+          onAssignRoom: _assignRoom,
+        ),
+      if (CleaningEventAssistanceHelper.isEventAssistance(order.propertyType))
+        V7OrderPanel(
+          title: 'المناسبة',
+          child: Column(
+            children: [
+              V7OrderInfoRow(
+                label: 'النوع',
+                value: CleaningEventAssistanceHelper.eventTypeLabelAr(
+                  order.propertyDetails?.eventType,
+                ),
+              ),
+              V7OrderInfoRow(
+                label: 'عدد الضيوف',
+                value: (order.propertyDetails?.guestCount ?? '-').toString(),
+              ),
+              OutlinedButton(
+                onPressed: () async {
+                  await Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => MultiDayCleaningOrderDetailsScreen(
+                        orderId: _activeOrderId,
+                      ),
+                    ),
+                  );
+                  if (mounted) await _fetchDetails(showLoading: false);
+                },
+                child: const Text('عرض جلسات المناسبة'),
+              ),
+            ],
+          ),
+        )
+      else
+        CleaningRecurringScheduleLauncherWidget(
+          orderId: _activeOrderId,
+          onReturn: () => _fetchDetails(showLoading: false),
+        ),
+      if (order.addressLatitude != null && order.addressLongitude != null)
+        V7OrderPanel(
+          title: 'موقع الخدمة',
+          child: CleaningWorkerTrackingMap(
+            customerLatLng: LatLng(
+              order.addressLatitude!,
+              order.addressLongitude!,
+            ),
+            workerLatLng:
+                _workerLiveLatitude != null && _workerLiveLongitude != null
+                ? LatLng(_workerLiveLatitude!, _workerLiveLongitude!)
+                : null,
+            bookingStatus: status,
+            hasStartedTravel:
+                order.startedTravelAt != null && order.arrivedAt == null,
+          ),
+        ),
+      V7OrderPricePanel(
+        basePrice: order.basePrice?.formatMoney(),
+        travelFee: order.travelFee?.formatMoney(),
+        addonsTotal: (order.addonsTotal ?? 0) > 0
+            ? order.addonsTotal?.formatMoney()
+            : null,
+        total: order.totalPrice?.formatMoney(),
+        finalPrice: order.isPricingFinal != false,
+      ),
+      if (order.materials.isNotEmpty ||
+          order.specialServices.isNotEmpty ||
+          order.openTime != null)
+        V7OrderPanel(
+          title: 'الخدمات والمواد الإضافية',
+          child: CleaningOrderExtrasDetailsSection(
+            materials: order.materials,
+            specialServices: order.specialServices,
+            openTime: order.openTime,
+            currency: order.openTime?.currency ?? 'SYP',
+          ),
+        ),
+      if (order.openTime != null)
+        CleaningOpenTimeLiveCard(
+          orderId: order.id ?? _activeOrderId,
+          initialValue: order.openTime!,
+        ),
+      if (!terminal && !_blocksCancel(order))
+        Align(
+          alignment: Alignment.center,
+          child: TextButton.icon(
+            onPressed: () => _cancelOrder(order),
+            icon: const Icon(Icons.cancel_outlined),
+            label: const Text('إلغاء الطلب'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFB42318),
+            ),
+          ),
+        ),
+    ];
+
+    return V7OrderDetailScaffold(
+      heading: 'تفاصيل الطلب',
+      sections: sections,
+      onRefresh: () =>
+          _fetchDetails(showLoading: false, triggerGatePrompts: true),
+      helpAction: terminal
+          ? null
+          : IconButton(
+              tooltip: 'المساعدة',
+              icon: const Icon(Icons.support_agent_outlined),
+              onPressed: () => context.pushRoute(
+                '/cleaning-order-sos',
+                arguments: CleaningOrderSosArgs(orderId: _activeOrderId),
+              ),
+            ),
+      primaryAction: primary.kind == CleaningLifecycleActionKind.none
+          ? null
+          : _buildLifecycleActionBar(
+              order: order,
+              action: primary,
+              isTerminalStatus: terminal,
+            ),
+    );
+  }
+
+  String? _orderEndTime(CleaningOrderDetailModel order) {
+    final start = _resolveStartDateTime(order);
+    if (start == null) return null;
+    return CleaningScheduleDateTimeLogic.formatTimeApi(
+      start.add(Duration(minutes: (_resolveHours(order) * 60).round())),
     );
   }
 
@@ -957,60 +488,51 @@ class _CleaningOrderDetailsScreenState
     required CleaningLifecycleActionSpec action,
     required bool isTerminalStatus,
   }) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE7EAF0))),
-        ),
-        child: Row(
-          children: [
-            if (!isTerminalStatus) ...[
-              OutlinedButton(
-                onPressed: () {
-                  context.pushRoute(
-                    '/cleaning-order-problem',
-                    arguments: CleaningOrderProblemReportArgs(
-                      order: order.toCleaningOrderModel(),
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(48, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  foregroundColor: const Color(0xFF475467),
-                  side: const BorderSide(color: Color(0xFFD0D5DD)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                  ),
+    return Row(
+      children: [
+        if (!isTerminalStatus) ...[
+          SizedBox(
+            width: 50,
+            height: 50,
+            child: OutlinedButton(
+              onPressed: () => context.pushRoute(
+                '/cleaning-order-problem',
+                arguments: CleaningOrderProblemReportArgs(
+                  order: order.toCleaningOrderModel(),
                 ),
-                child: const Icon(Icons.report_problem_outlined, size: 20),
               ),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () => _handleLifecyclePrimaryAction(order, action),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  backgroundColor: SharedPlatformColors.cleaning,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                  ),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                foregroundColor: SharedPlatformColors.primary,
+                side: const BorderSide(color: Color(0xFFE0E5EC)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                icon: Icon(action.icon, size: 19),
-                label: Text(
-                  action.label,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
+              ),
+              child: const Icon(Icons.support_agent_outlined, size: 22),
+            ),
+          ),
+          const SizedBox(width: 10),
+        ],
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: () => _handleLifecyclePrimaryAction(order, action),
+            icon: Icon(action.icon, size: 19),
+            label: Text(
+              action.label,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              foregroundColor: Colors.white,
+              backgroundColor: SharedPlatformColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1285,26 +807,6 @@ class _CleaningOrderDetailsScreenState
     final s = _normStatus(order.status);
     return s == CleaningBookingStatus.pending ||
         s == CleaningBookingStatus.workerAssigned;
-  }
-
-  Widget _card({required Widget child, EdgeInsetsGeometry? padding}) {
-    return Container(
-      width: double.infinity,
-      padding: padding ?? const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xffE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: child,
-    );
   }
 
   Future<void> _changeAddress(CleaningOrderDetailModel order) async {
@@ -2407,38 +1909,5 @@ class _CleaningOrderDetailsScreenState
     _completionSheetDismissed =
         normalizedStatus == CleaningBookingStatus.awaitingCustomerCompletion &&
         _gateSession.isCompletionSuppressed(orderId);
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  final String title;
-
-  final String value;
-  final bool isTotal;
-  const _SummaryRow({
-    required this.title,
-    required this.value,
-    this.isTotal = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isTotal
-        ? SharedPlatformColors.cleaning
-        : const Color(0xff374151);
-    final weight = isTotal ? FontWeight.w900 : FontWeight.w600;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: TextStyle(color: color, fontWeight: weight),
-        ),
-        Text(
-          value,
-          style: TextStyle(color: color, fontWeight: weight),
-        ),
-      ],
-    );
   }
 }

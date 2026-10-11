@@ -2,6 +2,9 @@ import 'package:common_package/common_package.dart';
 import 'package:dartz/dartz.dart' hide State;
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/utils/cleaning_date_time_ui_format.dart';
+import '../../../../core/themes/v7_artwork.dart';
+import '../../../../core/widgets/v7_spot_state.dart';
+import '../widgets/v7_order_detail_components.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/cleaning_booking_schedule_model.dart';
@@ -820,8 +823,10 @@ class _MultiDayCleaningOrderDetailsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: const Color(0xFFF6F7F9),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         title: Text(
           widget.recurring ? 'تفاصيل الحجز الدوري' : 'تفاصيل المناسبة',
         ),
@@ -843,128 +848,107 @@ class _MultiDayCleaningOrderDetailsScreenState
 
   Widget _buildBody() {
     if (_loading) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 220),
-          Center(child: CircularProgressIndicator.adaptive()),
-        ],
-      );
+      return const V7OrderLoadingView();
     }
-
     if (_error != null) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
-          const SizedBox(height: 120),
-          const Icon(Icons.cloud_off_outlined, size: 42),
-          const SizedBox(height: 12),
-          AppText.bodyMedium(
-            _error!,
-            textAlign: TextAlign.center,
-            fontWeight: FontWeight.w700,
-          ),
-          const SizedBox(height: 14),
-          Center(
-            child: OutlinedButton.icon(
-              onPressed: _load,
-              icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
-            ),
+          V7SpotState(
+            asset: V7Artwork.offline,
+            title: 'تعذر تحميل الجلسات',
+            description: _error!,
+            actionLabel: 'إعادة المحاولة',
+            onAction: _load,
           ),
         ],
       );
     }
-
     final schedule = _schedule;
     if (schedule == null || schedule.sessions.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
-        children: [
-          _card(
-            children: [
-              AppText.bodyMedium(
-                'لا توجد جلسات مسجلة لهذا الطلب بعد.',
-                textAlign: TextAlign.center,
-                fontWeight: FontWeight.w700,
-              ),
-            ],
+        children: const [
+          V7SpotState(
+            asset: V7Artwork.empty,
+            title: 'لا توجد جلسات',
+            description: 'ستظهر جلسات طلبك هنا عند توفرها.',
           ),
         ],
       );
     }
-
-    final nextSession = schedule.nextSession;
-    final bookingNumber = _envelope?.bookingNumber?.trim();
-    final progressText = schedule.skippedDaysCount > 0
-        ? '${schedule.completedDaysCount} من ${schedule.daysCount} جلسات مكتملة • ${schedule.skippedDaysCount} متخطاة'
-        : '${schedule.completedDaysCount} من ${schedule.daysCount} جلسات مكتملة';
-
+    final next = schedule.nextSession;
+    final booking = _envelope?.bookingNumber?.trim();
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 30),
       children: [
+        V7OrderStatusHero(
+          title: schedule.isOpenTime
+              ? 'جلسات الخدمة بالساعة'
+              : widget.recurring
+              ? 'الحجز المتكرر'
+              : 'جلسات المناسبة',
+          statusLabel: _statusDisplay(_envelope?.status ?? 'pending'),
+          message: 'يمكنك متابعة الجلسات القادمة من هنا.',
+          reference: booking == null || booking.isEmpty
+              ? null
+              : 'طلب رقم #$booking',
+          tone: schedule.completedDaysCount == schedule.daysCount
+              ? V7OrderTone.success
+              : V7OrderTone.info,
+          icon: Icons.event_note_outlined,
+        ),
+        const SizedBox(height: 12),
+        V7OrderPanel(
+          title: 'ملخص الجلسات',
+          child: Column(
+            children: [
+              V7OrderInfoRow(
+                label: 'الجلسات المكتملة',
+                value:
+                    schedule.completedDaysCount.toString() +
+                    ' من ' +
+                    schedule.daysCount.toString(),
+              ),
+              if (schedule.skippedDaysCount > 0)
+                V7OrderInfoRow(
+                  label: 'الجلسات المتخطاة',
+                  value: schedule.skippedDaysCount.toString(),
+                ),
+              V7OrderInfoRow(
+                label: 'إجمالي الساعات',
+                value: _hours(schedule.totalHours) + ' ساعة',
+              ),
+              if (next != null)
+                V7OrderInfoRow(
+                  label: 'الجلسة القادمة',
+                  value: _sessionDateTime(next),
+                ),
+              if (_envelope?.totalPrice != null)
+                V7OrderInfoRow(
+                  label: 'التكلفة الإجمالية',
+                  value:
+                      _money(_envelope!.totalPrice!) +
+                      ' ' +
+                      (_envelope?.currency ?? ''),
+                  emphasized: true,
+                ),
+            ],
+          ),
+        ),
         if (_actionError != null) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFECACA)),
-            ),
-            child: AppText.bodySmall(
+          const SizedBox(height: 12),
+          V7OrderPanel(
+            title: 'تعذر تنفيذ الطلب',
+            child: Text(
               _actionError!,
-              color: const Color(0xFF991B1B),
-              fontWeight: FontWeight.w700,
-              textAlign: TextAlign.start,
+              style: const TextStyle(color: Color(0xFFC43E47)),
             ),
           ),
-          const SizedBox(height: 12),
         ],
-        _card(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: AppText.titleMedium(
-                    bookingNumber == null || bookingNumber.isEmpty
-                        ? (schedule.isOpenTime
-                              ? 'طلب وقت مفتوح - ${schedule.daysCount} جلسات'
-                              : widget.recurring
-                              ? 'حجز تنظيف دوري - ${schedule.daysCount} زيارات'
-                              : 'مساعدة مناسبة - ${schedule.daysCount} أيام')
-                        : (schedule.isOpenTime
-                              ? 'طلب وقت مفتوح #$bookingNumber'
-                              : widget.recurring
-                              ? 'حجز تنظيف دوري #$bookingNumber'
-                              : 'مساعدة مناسبة #$bookingNumber'),
-                    fontWeight: FontWeight.w800,
-                    textAlign: TextAlign.start,
-                  ),
-                ),
-                _statusBadge(_envelope?.status ?? 'pending'),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _infoRow('التقدم', progressText),
-            const SizedBox(height: 8),
-            _infoRow('إجمالي الساعات', '${_hours(schedule.totalHours)} ساعة'),
-            if (nextSession != null) ...[
-              const SizedBox(height: 8),
-              _infoRow('الموعد القادم', _sessionDateTime(nextSession)),
-            ],
-            if (_envelope?.totalPrice != null) ...[
-              const SizedBox(height: 8),
-              _infoRow(
-                'إجمالي الطلب',
-                '${_money(_envelope!.totalPrice!)} ${_envelope?.currency ?? ''}'
-                    .trim(),
-              ),
-            ],
-          ],
-        ),
         if (widget.recurring && schedule.hasRecurringSeriesState) ...[
           const SizedBox(height: 12),
           _recurringSeriesCard(schedule),
@@ -974,44 +958,41 @@ class _MultiDayCleaningOrderDetailsScreenState
           const SizedBox(height: 12),
           _eventReviewCard(),
         ],
-        const SizedBox(height: 16),
-        AppText.titleSmall(
+        const SizedBox(height: 18),
+        Text(
           schedule.isOpenTime
-              ? 'جلسات الوقت المفتوح'
+              ? 'جلسات الخدمة'
               : widget.recurring
               ? 'الزيارات'
-              : 'أيام التنفيذ',
-          fontWeight: FontWeight.w800,
-          textAlign: TextAlign.start,
-        ),
-        const SizedBox(height: 10),
-        ...schedule.sessions.map(
-          (session) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _sessionCard(session, schedule.daysCount),
+              : 'أيام المناسبة',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF172554),
           ),
         ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFBFDBFE)),
-          ),
-          child: AppText.bodySmall(
-            schedule.isOpenTime
-                ? 'لكل جلسة عداد وفاتورة وطلب تمديد أو إنهاء مستقل. انتهاء جلسة لا يغلق الجلسات الأخرى.'
-                : widget.recurring
-                ? 'كل زيارة مستقلة داخل نفس رقم الحجز. غياب عامل أو استبداله في زيارة لا يلغي الزيارات الأخرى.'
-                : 'كل يوم هو جلسة تنفيذ مستقلة داخل نفس رقم الحجز. إكمال يوم لا يغلق المناسبة قبل انتهاء آخر جلسة مطلوبة.',
-            color: const Color(0xFF1E3A8A),
-            fontWeight: FontWeight.w700,
-            textAlign: TextAlign.start,
-          ),
-        ),
+        const SizedBox(height: 12),
+        for (final session in schedule.sessions) ...[
+          _sessionCard(session, schedule.daysCount),
+          const SizedBox(height: 12),
+        ],
       ],
     );
+  }
+
+  String _statusDisplay(String status) {
+    switch (status.trim().toLowerCase()) {
+      case 'completed':
+        return 'مكتمل';
+      case 'cancelled':
+        return 'ملغى';
+      case 'in_progress':
+        return 'قيد التنفيذ';
+      case 'worker_assigned':
+        return 'تم قبول الطلب';
+      default:
+        return 'قيد المتابعة';
+    }
   }
 
   Widget _recurringSeriesCard(CleaningBookingScheduleModel schedule) {
@@ -1137,77 +1118,77 @@ class _MultiDayCleaningOrderDetailsScreenState
   }
 
   Widget _sessionCard(CleaningBookingSessionModel session, int totalDays) {
-    final assignmentNames = session.workerAssignments
+    final names = session.workerAssignments
         .map((assignment) => assignment.workerName?.trim())
         .whereType<String>()
         .where((name) => name.isNotEmpty)
         .toSet()
         .toList(growable: false);
     final cancellationFee = session.pricing?.cancellationFee ?? 0;
-    final highlighted =
+    final selected =
         session.id != null && session.id == widget.initialSessionId;
     final busy = _busySessionId == session.id;
+    final title = session.isOpenTime
+        ? 'الجلسة ' + session.sequence.toString()
+        : widget.recurring
+        ? 'الزيارة ' + session.sequence.toString()
+        : 'اليوم ' + session.sequence.toString();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: highlighted
-              ? Theme.of(context).colorScheme.primary
-              : const Color(0xFFE5E7EB),
-          width: highlighted ? 1.5 : 1,
+    return V7OrderPanel(
+      title: title,
+      subtitle: _sessionDateTime(session),
+      leading: Container(
+        width: 38,
+        height: 38,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEAF9FA),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          session.isCompleted
+              ? Icons.task_alt_outlined
+              : Icons.event_note_outlined,
+          color: const Color(0xFF097F8A),
+          size: 20,
         ),
       ),
+      trailing: _statusBadge(session.status, label: session.statusLabel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppText.bodyLarge(
-                  session.isOpenTime
-                      ? 'الجلسة ${session.sequence} من $totalDays'
-                      : widget.recurring
-                      ? 'الزيارة ${session.sequence} من $totalDays'
-                      : 'اليوم ${session.sequence} من $totalDays',
-                  fontWeight: FontWeight.w800,
-                  textAlign: TextAlign.start,
-                ),
+          if (selected) ...[
+            const Text(
+              'الجلسة التي اخترتها',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF087D88),
               ),
-              if (busy) ...[
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                const SizedBox(width: 8),
-              ],
-              _statusBadge(session.status, label: session.statusLabel),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _infoRow('الموعد', _sessionDateTime(session)),
-          const SizedBox(height: 7),
-          _infoRow('المدة', '${_hours(session.hours)} ساعة'),
-          if (assignmentNames.isNotEmpty) ...[
-            const SizedBox(height: 7),
-            _infoRow('العامل', assignmentNames.join('، ')),
-          ],
-          if (session.pricing?.totalPrice != null) ...[
-            const SizedBox(height: 7),
-            _infoRow(
-              'سعر الجلسة',
-              '${_money(session.pricing!.totalPrice!)} ${session.pricing?.currency ?? _envelope?.currency ?? ''}'
-                  .trim(),
             ),
+            const SizedBox(height: 7),
           ],
+          V7OrderInfoRow(
+            label: 'المدة',
+            value: _hours(session.hours) + ' ساعة',
+          ),
+          if (names.isNotEmpty)
+            V7OrderInfoRow(label: 'مقدم الخدمة', value: names.join('، ')),
+          if (session.pricing?.totalPrice != null)
+            V7OrderInfoRow(
+              label: 'تكلفة الجلسة',
+              value:
+                  _money(session.pricing!.totalPrice!) +
+                  ' ' +
+                  (session.pricing?.currency ?? _envelope?.currency ?? ''),
+              emphasized: true,
+            ),
           if (session.openTime != null && session.id != null) ...[
             const SizedBox(height: 12),
             CleaningOpenTimeLiveCard(
-              key: ValueKey<String>('open-time-session-${session.id}'),
+              key: ValueKey<String>(
+                'open-time-session-' + session.id.toString(),
+              ),
               orderId: widget.orderId,
               sessionId: session.id,
               initialValue: session.openTime!,
@@ -1216,46 +1197,50 @@ class _MultiDayCleaningOrderDetailsScreenState
           if (widget.recurring &&
               (session.isCompleted ||
                   session.paymentStatus == 'ready' ||
-                  session.paymentStatus == 'settled')) ...[
-            const SizedBox(height: 7),
-            _infoRow(
-              'التسوية المالية',
-              _paymentStatusLabel(session.paymentStatus),
+                  session.paymentStatus == 'settled'))
+            V7OrderInfoRow(
+              label: 'الدفع',
+              value: _paymentStatusLabel(session.paymentStatus),
             ),
-          ],
           if (widget.recurring &&
               session.attendance != null &&
               session.attendance!.incidents.isNotEmpty) ...[
             const SizedBox(height: 10),
             _attendanceIncidentPanel(session),
           ],
-          if (widget.recurring && session.hasOpenDispute) ...[
-            const SizedBox(height: 7),
-            _infoRow('حالة النزاع', _disputeStatusLabel(session.disputeStatus)),
-          ],
-          if (session.isCancelled && cancellationFee > 0) ...[
-            const SizedBox(height: 7),
-            _infoRow(
-              'رسوم إلغاء هذا اليوم',
-              '${_money(cancellationFee)} ${session.pricing?.currency ?? _envelope?.currency ?? ''}'
-                  .trim(),
+          if (widget.recurring && session.hasOpenDispute)
+            V7OrderInfoRow(
+              label: 'حالة المتابعة',
+              value: _disputeStatusLabel(session.disputeStatus),
             ),
-          ],
+          if (session.isCancelled && cancellationFee > 0)
+            V7OrderInfoRow(
+              label: 'رسوم إلغاء الجلسة',
+              value:
+                  _money(cancellationFee) +
+                  ' ' +
+                  (session.pricing?.currency ?? _envelope?.currency ?? ''),
+            ),
           if (session.isCancelled &&
-              session.cancellationReason != null &&
-              session.cancellationReason!.trim().isNotEmpty) ...[
-            const SizedBox(height: 7),
-            _infoRow('سبب الإلغاء', session.cancellationReason!.trim()),
-          ],
+              session.cancellationReason?.trim().isNotEmpty == true)
+            V7OrderInfoRow(
+              label: 'سبب الإلغاء',
+              value: session.cancellationReason!.trim(),
+            ),
           if (session.isSkipped &&
-              session.skipReason != null &&
-              session.skipReason!.trim().isNotEmpty) ...[
-            const SizedBox(height: 7),
-            _infoRow('سبب التخطي', session.skipReason!.trim()),
-          ],
+              session.skipReason?.trim().isNotEmpty == true)
+            V7OrderInfoRow(
+              label: 'سبب التخطي',
+              value: session.skipReason!.trim(),
+            ),
           if (_hasActions(session)) ...[
             const SizedBox(height: 14),
+            const Divider(height: 12, color: Color(0xFFE7EBF0)),
             _sessionActions(session, busy),
+          ],
+          if (busy) ...[
+            const SizedBox(height: 10),
+            const LinearProgressIndicator(minHeight: 2),
           ],
         ],
       ),

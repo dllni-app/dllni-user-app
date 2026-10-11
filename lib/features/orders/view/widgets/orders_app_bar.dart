@@ -56,7 +56,7 @@ class OrdersAppBar extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           const Text(
-            'تابع طلباتك وسلاتك في كل أقسام دلني.',
+            'تابع طلباتك وسلاتك في جميع خدمات ع الندهة.',
             textAlign: TextAlign.start,
             style: TextStyle(color: SharedPlatformColors.muted, fontSize: 12),
           ),

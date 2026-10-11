@@ -6,7 +6,7 @@ import 'package:dllni_user_app/features/orders/data/models/sos_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/repository/orders_repo.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/sos_use_cases.dart';
 import 'package:dllni_user_app/features/profile/domain/services/user_location_service.dart';
-import 'package:dllni_user_app/features/profile/view/widgets/personal_details_app_bar.dart';
+import '../widgets/v7_order_detail_components.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -49,6 +49,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   String? _selectedCategory;
   String? _messageError;
   bool _submitting = false;
+  int _formStage = 0;
   CleaningSosAlertModel? _submittedCase;
 
   bool get _isEmergency => _kind == 'emergency';
@@ -66,6 +67,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
       _selectedCategory = null;
       _messageError = null;
       _attachments.clear();
+      _formStage = 0;
     });
   }
 
@@ -198,40 +200,96 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
     }
   }
 
+  void _advanceForm() {
+    if (_formStage == 0) {
+      if (_selectedCategory == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('اختر نوع الحالة أولاً')));
+        return;
+      }
+      setState(() => _formStage = 1);
+      return;
+    }
+    _submit();
+  }
+
   @override
   Widget build(BuildContext context) {
     final submitted = _submittedCase;
-
     return Scaffold(
-      backgroundColor: const Color(0xffF3F4F6),
+      backgroundColor: const Color(0xFFF6F7F9),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        title: const Text(
+          'المساعدة والبلاغات',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: SharedPlatformColors.primary,
+          ),
+        ),
+        leading: IconButton(
+          onPressed: _formStage > 0 && submitted == null
+              ? () => setState(() => _formStage = 0)
+              : () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          tooltip: 'السابق',
+        ),
+      ),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            const PersonalDetailsAppBar(
-              section: 'cleaning',
-              title: 'الدعم والبلاغات',
-            ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsetsDirectional.all(20),
+                padding: const EdgeInsets.all(16),
                 child: submitted == null
-                    ? _buildForm(context)
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          V7OrderStatusHero(
+                            title: _isEmergency
+                                ? 'تقديم بلاغ طارئ'
+                                : 'طلب مساعدة',
+                            statusLabel: _formStage == 0 ? '1 من 2' : '2 من 2',
+                            message: _formStage == 0
+                                ? 'اختر نوع الحالة لنوجّه طلبك إلى الفريق المناسب.'
+                                : 'اكتب ما حدث بوضوح، وأضف صورة عند الحاجة.',
+                            icon: _isEmergency
+                                ? Icons.emergency_outlined
+                                : Icons.support_agent_outlined,
+                            tone: _isEmergency
+                                ? V7OrderTone.warning
+                                : V7OrderTone.info,
+                          ),
+                          const SizedBox(height: 14),
+                          _buildForm(context),
+                        ],
+                      )
                     : _buildSubmittedState(submitted),
               ),
             ),
             if (submitted == null)
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 20),
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: Color(0xFFE6E9EE))),
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: _submitting ? null : _submit,
+                    onPressed: _submitting ? null : _advanceForm,
                     style: FilledButton.styleFrom(
-                      backgroundColor: _isEmergency
-                          ? context.error
+                      backgroundColor: _isEmergency && _formStage == 1
+                          ? const Color(0xFFC43E47)
                           : SharedPlatformColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: _submitting
                         ? const SizedBox(
@@ -243,10 +301,12 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                             ),
                           )
                         : Text(
-                            _isEmergency
-                                ? 'إرسال بلاغ الطوارئ'
-                                : 'إرسال الشكوى',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+                            _formStage == 0
+                                ? 'التالي'
+                                : (_isEmergency
+                                      ? 'إرسال بلاغ الطوارئ'
+                                      : 'إرسال الشكوى'),
+                            style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                   ),
                 ),
@@ -263,124 +323,131 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _kindButton(
-                  value: 'emergency',
-                  label: 'حالة طوارئ',
-                  icon: Icons.warning_amber_rounded,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _kindButton(
-                  value: 'complaint',
-                  label: 'شكوى أو نزاع',
-                  icon: Icons.support_agent_rounded,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        _card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    _isEmergency
-                        ? Icons.warning_rounded
-                        : Icons.report_problem_outlined,
-                    color: _isEmergency
-                        ? context.error
-                        : SharedPlatformColors.cleaningInk,
+        if (_formStage == 0)
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _kindButton(
+                    value: 'emergency',
+                    label: 'حالة طوارئ',
+                    icon: Icons.warning_amber_rounded,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _isEmergency ? 'ما حالة الطوارئ؟' : 'ما نوع المشكلة؟',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _kindButton(
+                    value: 'complaint',
+                    label: 'شكوى أو نزاع',
+                    icon: Icons.support_agent_rounded,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 14),
+        if (_formStage == 0)
+          _card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      _isEmergency
+                          ? Icons.warning_rounded
+                          : Icons.report_problem_outlined,
+                      color: _isEmergency
+                          ? context.error
+                          : SharedPlatformColors.cleaningInk,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _isEmergency ? 'ما حالة الطوارئ؟' : 'ما نوع المشكلة؟',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _isEmergency
-                    ? 'استخدم هذا الخيار للحالات العاجلة. سنحاول إرفاق موقعك، ولن يتوقف الإرسال إذا تعذر تحديده.'
-                    : 'سيتم فتح حالة متابعة رسمية مرتبطة بالحجز وتظهر لفريق الدعم.',
-                style: const TextStyle(color: Color(0xff6B7280), fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              ...options.map(
-                (option) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _optionTile(
-                    label: option.label,
-                    selected: _selectedCategory == option.value,
-                    onTap: _submitting
-                        ? null
-                        : () =>
-                              setState(() => _selectedCategory = option.value),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _isEmergency
+                      ? 'هذا الخيار للحالات العاجلة التي تحتاج مساعدة.'
+                      : 'أخبرنا بالمشكلة لنساعدك في متابعتها.',
+                  style: const TextStyle(
+                    color: Color(0xff6B7280),
+                    fontSize: 13,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                ...options.map(
+                  (option) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _optionTile(
+                      label: option.label,
+                      selected: _selectedCategory == option.value,
+                      onTap: _submitting
+                          ? null
+                          : () => setState(
+                              () => _selectedCategory = option.value,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         const SizedBox(height: 14),
-        _card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _isEmergency ? 'وصف الحالة' : 'تفاصيل المشكلة',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _messageController,
-                enabled: !_submitting,
-                maxLength: 1000,
-                maxLines: 4,
-                onChanged: (_) {
-                  if (_messageError != null) {
-                    setState(() => _messageError = _validateMessage());
-                  }
-                },
-                decoration: InputDecoration(
-                  hintText: _isEmergency
-                      ? 'صف الموقف باختصار'
-                      : 'اكتب كل التفاصيل التي تساعد في مراجعة الشكوى',
-                  hintStyle: const TextStyle(
-                    color: AppColors.hintText,
-                    fontSize: 14,
-                  ),
-                  errorText: _messageError,
-                  filled: true,
-                  fillColor: const Color(0xffF3F4F6),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+        if (_formStage == 1)
+          _card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isEmergency ? 'وصف الحالة' : 'تفاصيل المشكلة',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _messageController,
+                  enabled: !_submitting,
+                  maxLength: 1000,
+                  maxLines: 4,
+                  onChanged: (_) {
+                    if (_messageError != null) {
+                      setState(() => _messageError = _validateMessage());
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: _isEmergency
+                        ? 'صف الموقف باختصار'
+                        : 'اكتب كل التفاصيل التي تساعد في مراجعة الشكوى',
+                    hintStyle: const TextStyle(
+                      color: AppColors.hintText,
+                      fontSize: 14,
+                    ),
+                    errorText: _messageError,
+                    filled: true,
+                    fillColor: const Color(0xffF3F4F6),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        if (!_isEmergency) ...[
+        if (!_isEmergency && _formStage == 1) ...[
           const SizedBox(height: 14),
           _card(
             child: Column(
@@ -433,45 +500,36 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   }
 
   Widget _buildSubmittedState(CleaningSosAlertModel supportCase) {
-    return _card(
-      child: Column(
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            color: _isEmergency ? context.error : SharedPlatformColors.cleaningInk,
-            size: 56,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _statusLabel(supportCase.status),
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _isEmergency
-                ? 'سيتم التعامل مع البلاغ بشكل عاجل، وسيتواصل معك فريق الدعم عند الحاجة.'
-                : 'تم تسجيل الشكوى وربطها بالحجز. يمكنك متابعة حالتها مع فريق الدعم.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xff6B7280)),
-          ),
-          if (supportCase.id != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              'رقم البلاغ: ${supportCase.id}',
-              style: const TextStyle(color: Color(0xff6B7280)),
-            ),
-          ],
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => context.pop(),
-              child: const Text('العودة إلى تفاصيل الحجز'),
+    final resolved = (supportCase.status ?? '').toLowerCase();
+    final closed = resolved == 'resolved' || resolved == 'closed';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        V7OrderStatusHero(
+          title: _isEmergency ? 'تم تسجيل البلاغ' : 'تم تسجيل طلب المساعدة',
+          statusLabel: _statusLabel(supportCase.status),
+          message: closed
+              ? 'اكتملت متابعة هذه الحالة.'
+              : 'تم استلام التفاصيل. ستظهر التحديثات عند توفرها.',
+          reference: supportCase.id == null
+              ? null
+              : 'رقم البلاغ #' + supportCase.id.toString(),
+          tone: closed ? V7OrderTone.success : V7OrderTone.info,
+          icon: closed ? Icons.task_alt_outlined : Icons.support_agent_outlined,
+        ),
+        const SizedBox(height: 18),
+        FilledButton(
+          onPressed: () => context.pop(),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            backgroundColor: SharedPlatformColors.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
           ),
-        ],
-      ),
+          child: const Text('العودة إلى تفاصيل الطلب'),
+        ),
+      ],
     );
   }
 
@@ -521,7 +579,9 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
     required bool selected,
     required VoidCallback? onTap,
   }) {
-    final color = _isEmergency ? context.error : SharedPlatformColors.cleaningInk;
+    final color = _isEmergency
+        ? context.error
+        : SharedPlatformColors.cleaningInk;
 
     return InkWell(
       onTap: onTap,

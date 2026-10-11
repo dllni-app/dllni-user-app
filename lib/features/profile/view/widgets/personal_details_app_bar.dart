@@ -1,8 +1,8 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-
 import '../../../../core/themes/shared_platform_colors.dart';
 
+/// Shared V7 screen header for customer routes; adapts accent to section.
 class PersonalDetailsAppBar extends StatelessWidget {
   const PersonalDetailsAppBar({
     super.key,
@@ -12,21 +12,18 @@ class PersonalDetailsAppBar extends StatelessWidget {
     this.section,
     this.trailing,
   });
-
   final String title;
-  final Color? backgroundColor;
-  final Color? foregroundColor;
+  final Color? backgroundColor, foregroundColor;
   final String? section;
   final Widget? trailing;
-
-  String? get _featureDescription {
+  String? get _description {
     switch (title) {
       case 'التكامل الاجتماعي':
-        return 'أنشئ طلبًا جماعيًا من مطعم واحد وشارك الجلسة مع أصدقائك ليضيف كل شخص اختياراته.';
+        return 'شارك طلبك مع أصدقائك.';
       case 'صندوق الحظ':
-        return 'حدّد عدد الأشخاص والميزانية والتفضيلات، وسنقترح لك خيارات مطاعم ووجبات مناسبة تلقائيًا.';
+        return 'دعنا نساعدك في اختيار وجبتك.';
       case 'التصويت على الطلب':
-        return 'اختر عدة وجبات، أنشئ تصويتًا وشاركه مع أصدقائك لتختاروا الوجبة المناسبة معًا.';
+        return 'اختاروا معاً ما يناسبكم.';
       default:
         return null;
     }
@@ -34,78 +31,57 @@ class PersonalDetailsAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final description = _featureDescription;
-    final background =
-        backgroundColor ?? SharedPlatformColors.sectionAccent(section);
-    final foreground = foregroundColor ?? Colors.white;
-
+    final accent = SharedPlatformColors.sectionAccent(section);
+    final ink = foregroundColor ?? accent;
+    final description = _description;
     return Container(
       width: double.infinity,
-      padding: EdgeInsetsDirectional.fromSTEB(
-        14,
-        12,
-        14,
-        description == null ? 14 : 12,
-      ),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 7, 16, 9),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
+        color: backgroundColor ?? Colors.white,
+        border: Border(
+          bottom: BorderSide(color: accent.withValues(alpha: 0.42), width: 1.3),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(18),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
-        crossAxisAlignment: description == null
-            ? CrossAxisAlignment.center
-            : CrossAxisAlignment.start,
         children: [
           IconButton(
+            tooltip: 'الرجوع',
             onPressed: () => context.pop(),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withAlpha(28),
-              foregroundColor: foreground,
               minimumSize: const Size(44, 44),
+              foregroundColor: ink,
             ),
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 6),
           Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(top: description == null ? 8 : 2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: ink,
+                  ),
+                ),
+                if (description != null) ...[
+                  const SizedBox(height: 3),
                   Text(
-                    title,
-                    style: TextStyle(
-                      color: foreground,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
+                    description,
+                    maxLines: 2,
+                    style: const TextStyle(
+                      color: SharedPlatformColors.muted,
+                      fontSize: 11,
+                      height: 1.4,
                     ),
                   ),
-                  if (description != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                        color: foreground.withAlpha(205),
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
           ),
           if (trailing != null) ...[const SizedBox(width: 8), trailing!],

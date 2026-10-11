@@ -1,50 +1,29 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
-
+import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
+import 'v7_order_detail_components.dart';
 
 class CleaningAcceptedWorkersSectionWidget extends StatelessWidget {
   const CleaningAcceptedWorkersSectionWidget({
+    super.key,
     required this.assignments,
     this.onCallWorker,
-    super.key,
   });
-
   final List<CleaningWorkerAssignmentModel> assignments;
   final ValueChanged<String?>? onCallWorker;
 
   @override
   Widget build(BuildContext context) {
-    if (assignments.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
+    if (assignments.isEmpty) return const SizedBox.shrink();
+    return V7OrderPanel(
+      title: 'فريق الخدمة',
+      subtitle: 'العمال الذين قبلوا طلبك.',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText.bodyMedium(
-            'فريق العمل',
-            color: const Color(0xFF1F2937),
-            fontWeight: FontWeight.w800,
-          ),
-          const SizedBox(height: 4),
-          AppText.bodySmall(
-            'العمال الذين قبلوا الطلب',
-            color: const Color(0xFF6B7280),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 12),
           for (var i = 0; i < assignments.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
-            _WorkerTile(
+            if (i > 0) const Divider(height: 20, color: Color(0xFFE7EBF0)),
+            _AcceptedWorkerRow(
               assignment: assignments[i],
               onCallWorker: onCallWorker,
             ),
@@ -55,79 +34,75 @@ class CleaningAcceptedWorkersSectionWidget extends StatelessWidget {
   }
 }
 
-class _WorkerTile extends StatelessWidget {
-  const _WorkerTile({
-    required this.assignment,
-    this.onCallWorker,
-  });
-
+class _AcceptedWorkerRow extends StatelessWidget {
+  const _AcceptedWorkerRow({required this.assignment, this.onCallWorker});
   final CleaningWorkerAssignmentModel assignment;
   final ValueChanged<String?>? onCallWorker;
-
   @override
   Widget build(BuildContext context) {
     final worker = assignment.worker;
-    final name = worker?.name ?? 'عامل';
+    final name = (worker?.name ?? '').trim();
+    final image = (worker?.avatarUrl ?? '').trim();
+    final phone = (worker?.phone ?? '').trim();
     final rating = worker?.averageRating;
-    final roomCount = assignment.roomCount ?? 0;
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundImage: worker?.avatarUrl == null
-                ? null
-                : NetworkImage(worker!.avatarUrl!),
-            child: worker?.avatarUrl == null
-                ? const Icon(Icons.person, size: 20)
-                : null,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.bodyMedium(
-                  name,
-                  color: const Color(0xFF1F2937),
-                  fontWeight: FontWeight.w700,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    final count = assignment.roomCount ?? 0;
+    return Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: image.isNotEmpty
+              ? Image.network(
+                  image,
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) =>
+                      Image.asset(V7Artwork.worker, width: 48, height: 48),
+                )
+              : Image.asset(V7Artwork.worker, width: 48, height: 48),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name.isEmpty ? 'مقدم الخدمة' : name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: SharedPlatformColors.ink,
+                  fontWeight: FontWeight.w800,
                 ),
-                const SizedBox(height: 2),
-                AppText.bodySmall(
+              ),
+              if (rating != null || count > 0) ...[
+                const SizedBox(height: 4),
+                Text(
                   [
-                    if (rating != null) '⭐ ${rating.toStringAsFixed(1)}',
-                    if (roomCount > 0) '$roomCount غرف',
+                    if (rating != null) 'التقييم ' + rating.toStringAsFixed(1),
+                    if (count > 0) count.toString() + ' غرف',
                   ].join(' • '),
-                  color: const Color(0xFF6B7280),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: SharedPlatformColors.muted,
+                  ),
                 ),
               ],
-            ),
+            ],
           ),
-          if (onCallWorker != null && worker?.phone != null)
-            InkWell(
-              onTap: () => onCallWorker!(worker!.phone),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(Icons.call, size: 18, color: Color(0xFF111827)),
-              ),
+        ),
+        if (phone.isNotEmpty && onCallWorker != null)
+          IconButton(
+            onPressed: () => onCallWorker!(phone),
+            icon: const Icon(
+              Icons.call_outlined,
+              size: 21,
+              color: SharedPlatformColors.primary,
             ),
-        ],
-      ),
+            tooltip: 'الاتصال بمقدم الخدمة',
+          ),
+      ],
     );
   }
 }
