@@ -6,9 +6,11 @@ class DeliveryStatusStepper extends StatelessWidget {
   const DeliveryStatusStepper({
     super.key,
     required this.stages,
+    this.stopReason,
   });
 
   final List<DeliveryTimelineStageModel> stages;
+  final String? stopReason;
 
   bool _hasCompletedLater(int index) {
     for (var i = index + 1; i < stages.length; i++) {
@@ -25,7 +27,7 @@ class DeliveryStatusStepper extends StatelessWidget {
   Color _nodeColor(int index) {
     final stage = stages[index];
     if (stage.completed) return const Color(0xff10B981);
-    if (stage.active) return const Color(0xFF172554);
+    if (stage.active) return const Color(0xff1E2A78);
     if (_isSkipped(index)) return const Color(0xff6366F1);
     return const Color(0xffD1D5DB);
   }
@@ -49,7 +51,8 @@ class DeliveryStatusStepper extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xffF3F4F6)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -61,13 +64,19 @@ class DeliveryStatusStepper extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'حالة التوصيل',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Color(0xff1F2937),
-            ),
+          const Row(
+            children: [
+              Icon(Icons.route_rounded, color: Color(0xff1E2A78), size: 22),
+              SizedBox(width: 8),
+              Text(
+                'حالة التوصيل',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xff1E2A78),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           ...List.generate(stages.length, (index) {
@@ -134,7 +143,9 @@ class DeliveryStatusStepper extends StatelessWidget {
                               color: Color(0xff6366F1),
                             ),
                           ),
-                        if (stage.timestamp != null && stage.timestamp!.isNotEmpty)
+                        if ((stage.completed || stage.active) &&
+                            stage.timestamp != null &&
+                            stage.timestamp!.isNotEmpty)
                           Text(
                             _formatTimestamp(stage.timestamp!),
                             style: const TextStyle(
@@ -154,36 +165,15 @@ class DeliveryStatusStepper extends StatelessWidget {
     );
   }
 
-  String _stageLabel(DeliveryTimelineStageModel stage) {
-    final key = (stage.key ?? '').toLowerCase();
-    return switch (key) {
-      'waiting_merchant_ready' => 'بانتظار تجهيز الطلب من المتجر',
-      'searching_for_driver' => 'جاري البحث عن مندوب',
-      'searching_driver' => 'جاري البحث عن مندوب',
-      'dispatching' => 'جاري البحث عن مندوب',
-      'offered' => 'تم إرسال الطلب إلى المندوب',
-      'accepted' => 'تم تعيين مندوب للتوصيل',
-      'in_progress' => 'المندوب في الطريق إلى المطعم',
-      'driver_en_route' => 'المندوب في الطريق إلى المطعم',
-      'arrived' => 'وصل المندوب',
-      'arrived_pickup' => 'وصل المندوب إلى المطعم',
-      'handover_complete' => 'تم التسليم لمندوب التوصيل',
-      'picked_up' => 'تم التسليم لمندوب التوصيل',
-      'delivered' => 'تم الاستلام',
-      'completed' => 'مكتمل',
-      'cancelled' => 'تم الإلغاء',
-      'not_received' => 'لم يتم الاستلام',
-      'stopped' => 'تعذر العثور على مندوب',
-      _ => stage.label,
-    };
-  }
+  String _stageLabel(DeliveryTimelineStageModel stage) =>
+      deliveryTrackingStatusLabelAr(stage.key, stopReason: stopReason);
 
   String _formatTimestamp(String raw) {
     try {
       final dt = DateTime.parse(raw).toLocal();
       return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return raw;
+      return '';
     }
   }
 }
