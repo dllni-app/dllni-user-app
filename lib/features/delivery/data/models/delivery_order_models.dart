@@ -117,6 +117,96 @@ class DeliveryOrdersLinksModel {
   }
 }
 
+/// Arabic presentation for canonical delivery status codes coming from the API.
+/// Do not expose raw backend status identifiers to customers.
+String deliveryTrackingStatusLabelAr(String? status, {String? stopReason}) {
+  final key = (status ?? '').trim().toLowerCase();
+  return switch (key) {
+    'new' || 'created' => 'تم إنشاء الطلب',
+    'waiting_merchant_ready' => 'بانتظار تجهيز الطلب من المتجر',
+    'searching_for_driver' || 'searching_driver' || 'dispatching' =>
+      'جاري البحث عن مندوب',
+    'offered' => 'تم إرسال طلب التوصيل إلى المندوب',
+    'accepted' => 'تم تعيين مندوب للتوصيل',
+    'in_progress' || 'driver_en_route' =>
+      'المندوب في الطريق إلى نقطة الاستلام',
+    'arrived' || 'arrived_pickup' => 'وصل المندوب إلى نقطة الاستلام',
+    'handover_complete' || 'picked_up' =>
+      'استلم المندوب الطلب من المتجر',
+    'returning_to_merchant' => 'جاري إعادة الطلب إلى المتجر',
+    'returned_to_merchant' => 'تمت إعادة الطلب إلى المتجر',
+    'delivered' => 'تم تسليم الطلب',
+    'completed' => 'اكتمل التوصيل',
+    'cancelled' => 'تم إلغاء الطلب',
+    'rejected' => 'تم رفض الطلب',
+    'stopped' => _deliveryStoppedDueToNoDriver(stopReason)
+        ? 'تعذر العثور على مندوب'
+        : 'توقف طلب التوصيل',
+    'not_received' => 'لم يتم استلام الطلب',
+    'no_driver_found' => 'تعذر العثور على مندوب',
+    _ => 'تم تحديث حالة الطلب',
+  };
+}
+
+bool _deliveryStoppedDueToNoDriver(String? reason) {
+  final normalized = (reason ?? '').trim().toLowerCase();
+  return normalized.contains('no_driver') ||
+      normalized.contains('driver_not_found') ||
+      normalized.contains('no_available_driver') ||
+      normalized.contains('search_exhausted') ||
+      normalized.contains('تعذر العثور على مندوب');
+}
+
+/// Exceptional milestones are not future steps of a successful delivery.
+/// Render them only after an actual event, timestamp, or matching status.
+List<DeliveryTimelineStageModel> visibleDeliveryTrackingStages(
+  List<DeliveryTimelineStageModel> stages, {
+  String? currentStatus,
+}) {
+  final status = (currentStatus ?? '').trim().toLowerCase();
+  const exceptional = <String>{
+    'returning_to_merchant',
+    'returned_to_merchant',
+    'delivery_failed',
+    'cancelled',
+    'rejected',
+    'stopped',
+    'not_received',
+    'no_driver_found',
+  };
+  const unsuccessfulOutcomes = <String>{
+    'returning_to_merchant',
+    'returned_to_merchant',
+    'delivery_failed',
+    'cancelled',
+    'rejected',
+    'stopped',
+    'no_driver_found',
+  };
+
+  return stages.where((stage) {
+    final key = (stage.key ?? '').trim().toLowerCase();
+    final happened = stage.completed ||
+        stage.active ||
+        (stage.timestamp?.trim().isNotEmpty ?? false);
+    if (exceptional.contains(key)) {
+      return happened ||
+          key == status ||
+          (key == 'cancelled' && status == 'rejected') ||
+          (key == 'returning_to_merchant' &&
+              status == 'returned_to_merchant');
+    }
+    // A returned, cancelled or stopped delivery must not suggest that
+    // normal delivery/completion milestones are still going to happen.
+    if (unsuccessfulOutcomes.contains(status) &&
+        !happened &&
+        (key == 'delivered' || key == 'completed')) {
+      return false;
+    }
+    return true;
+  }).toList(growable: false);
+}
+
 class DeliveryOrderModel {
   int? id;
   String? orderNumber;
@@ -241,13 +331,31 @@ class DeliveryOrderModel {
   }
 
   bool get isTerminal {
-    const terminal = {'completed', 'stopped', 'cancelled'};
-    final s = (status ?? tracking?.currentStatus ?? '').toLowerCase();
-    return terminal.contains(s);
+    const terminal = {
+      'completed',
+      'delivered',
+      'returned_to_merchant',
+      'stopped',
+      'cancelled',
+      'rejected',
+    };
+    final value = (tracking?.currentStatus ?? status ?? '').toLowerCase();
+    return terminal.contains(value);
   }
 
-  String get displayStatusLabel =>
-      tracking?.currentStatusLabelAr ?? statusLabelAr ?? status ?? '—';
+  String get displayStatusLabel {
+    final current = tracking?.currentStatus ?? status;
+    if (current?.toLowerCase() == 'stopped' &&
+        _deliveryStoppedDueToNoDriver(stopReason)) {
+      return 'تعذر العثور على مندوب';
+    }
+    final fromApi = tracking?.currentStatusLabelAr ?? statusLabelAr;
+    if (fromApi != null &&
+        RegExp(r'[\u0600-\u06FF]').hasMatch(fromApi)) {
+      return fromApi;
+    }
+    return deliveryTrackingStatusLabelAr(current, stopReason: stopReason);
+  }
 
   String get etaLabel {
     final eta = tracking?.eta;
@@ -588,7 +696,7 @@ class DeliveryTimelineStageModel {
     'cancelled': 'ملغى',
   };
 
-  String get label => stageLabels[key ?? ''] ?? key ?? '—';
+  String get label => deliveryTrackingStatusLabelAr(key);
 }
 
 class DeliveryEventModel {
