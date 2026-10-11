@@ -4,7 +4,9 @@ import '../../../../core/themes/shared_platform_colors.dart';
 /// Compact booking header. The hosting screens already use SafeArea, so the
 /// status bar inset must not be added a second time.
 class HomeDetailsAppBar extends StatelessWidget {
-  const HomeDetailsAppBar({super.key});
+  const HomeDetailsAppBar({super.key, this.onBack});
+
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +34,7 @@ class HomeDetailsAppBar extends StatelessWidget {
           ),
           IconButton(
             tooltip: 'الرجوع',
-            onPressed: () => Navigator.of(context).maybePop(),
+            onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
             color: SharedPlatformColors.primary,
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),

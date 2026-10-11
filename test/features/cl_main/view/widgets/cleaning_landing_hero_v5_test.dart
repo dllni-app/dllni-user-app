@@ -30,7 +30,7 @@ void main() {
       );
 
       expect(find.text('بيتك أنظف، ووقتك إلك'), findsOneWidget);
-      expect(find.text('احجز تنظيف شقة'), findsOneWidget);
+      expect(find.text('ابدأ طلب تنظيف'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.tap(
         find.byKey(const Key('cl_cleaning_hero_apartment_booking')),

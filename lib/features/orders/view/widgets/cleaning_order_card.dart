@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/extentions.dart';
+import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/cleaning_booking_status.dart';
@@ -60,9 +61,11 @@ class CleaningOrderCard extends StatelessWidget {
     if ((d == null || d.isEmpty) && (t == null || t.isEmpty)) {
       return 'الموعد غير محدد';
     }
+    final parsedDate = d == null ? null : DateTime.tryParse(d);
     return [
-      if (d != null && d.isNotEmpty) d,
-      if (t != null && t.isNotEmpty) t,
+      if (d != null && d.isNotEmpty)
+        parsedDate == null ? d : CleaningDateTimeUiFormat.date(parsedDate),
+      if (t != null && t.isNotEmpty) CleaningDateTimeUiFormat.time(t),
     ].join(' • ');
   }
 
@@ -109,6 +112,8 @@ class CleaningOrderCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           _reference,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: SharedPlatformColors.muted,
                             fontSize: 11,

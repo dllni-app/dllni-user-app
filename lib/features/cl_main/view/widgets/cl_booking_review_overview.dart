@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../domain/models/cleaning_room_size_breakdown.dart';
 import 'cl_service_section_card_widget.dart';
 
 /// A customer-readable snapshot of the draft. This widget does not calculate
@@ -14,6 +15,7 @@ class ClBookingReviewOverview extends StatelessWidget {
     required this.materialsRequested,
     required this.services,
     this.recurring = false,
+    this.roomSizeBreakdown,
   });
 
   final String service;
@@ -22,6 +24,7 @@ class ClBookingReviewOverview extends StatelessWidget {
   final bool materialsRequested;
   final List<String> services;
   final bool recurring;
+  final CleaningRoomSizeBreakdown? roomSizeBreakdown;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +36,24 @@ class ClBookingReviewOverview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _ReviewLine(label: 'نوع التنظيف', value: service),
+          if (roomSizeBreakdown != null && roomSizeBreakdown!.hasAnyRoom) ...[
+            const SizedBox(height: 10),
+            _ReviewLine(
+              label: 'المساحات',
+              value: [
+                for (final item in <(String, int)>[
+                  ('غرف النوم', roomSizeBreakdown!.bedroom.total),
+                  ('الحمامات', roomSizeBreakdown!.bathroom.total),
+                  ('المطابخ', roomSizeBreakdown!.kitchen.total),
+                  ('المعيشة', roomSizeBreakdown!.livingRoom.total),
+                  ('الشرفات', roomSizeBreakdown!.balcony.total),
+                  ('الممرات', roomSizeBreakdown!.corridor.total),
+                  ('المساحات الأخرى', roomSizeBreakdown!.shed.total),
+                ])
+                  if (item.$2 > 0) '${item.$1}: ${item.$2}',
+              ].join('، '),
+            ),
+          ],
           const SizedBox(height: 10),
           _ReviewLine(label: 'العنوان', value: address),
           const SizedBox(height: 10),

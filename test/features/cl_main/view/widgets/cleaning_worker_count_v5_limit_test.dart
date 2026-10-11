@@ -21,10 +21,7 @@ void main() {
         ),
       ),
     );
-    expect(
-      find.text('الحد الأقصى 20 عامل (حسب عدد الغرف والمساحات)'),
-      findsOneWidget,
-    );
+    expect(find.text('يمكنك اختيار حتى 20 عمال'), findsOneWidget);
     expect(find.text('20'), findsOneWidget);
     final addButton = tester.widget<InkWell>(
       find

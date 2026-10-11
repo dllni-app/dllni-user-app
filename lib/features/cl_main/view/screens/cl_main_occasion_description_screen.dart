@@ -12,6 +12,7 @@ import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_redesign_components.dart';
+import '../helpers/cl_event_collected_fields.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
@@ -772,6 +773,7 @@ class _ClMainOccasionDescriptionScreenState
 
   CleaningDynamicFieldConfigModel? _firstInvalidDynamicField() {
     for (final field in _routeArgs?.option.dynamicFields ?? const []) {
+      if (isPreviouslyCollectedGuestCount(field)) continue;
       if (!field.required) continue;
       final value = _eventDynamicAnswers[field.key];
       if (value == null || value == '' || (value is List && value.isEmpty)) {
@@ -797,11 +799,17 @@ class _ClMainOccasionDescriptionScreenState
       (_, value) =>
           value == null || value == '' || (value is List && value.isEmpty),
     );
-    return result;
+    return mergeCollectedGuestsIntoDynamicAnswers(
+      fields: _routeArgs?.option.dynamicFields ?? const [],
+      answers: result,
+      guestCount: _guestsCount,
+    );
   }
 
   Widget _buildDynamicFieldsCard() {
-    final fields = _routeArgs?.option.dynamicFields ?? const [];
+    final fields = (_routeArgs?.option.dynamicFields ?? const [])
+        .where((field) => !isPreviouslyCollectedGuestCount(field))
+        .toList(growable: false);
     if (fields.isEmpty) return const SizedBox.shrink();
     return ClRedesignCard(
       child: Column(
@@ -817,7 +825,7 @@ class _ClMainOccasionDescriptionScreenState
           ),
           const SizedBox(height: 6),
           const Text(
-            'هذه الحقول تأتي من إعدادات نوع المناسبة الحالية.',
+            'أضف التفاصيل التي تساعد الفريق على الاستعداد لمناسبتك.',
             textAlign: TextAlign.start,
             style: TextStyle(color: Color(0xFF667085), fontSize: 12),
           ),

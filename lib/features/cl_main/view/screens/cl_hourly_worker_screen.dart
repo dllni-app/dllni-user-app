@@ -61,7 +61,8 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     final value = await AppPickers.showAppDatePicker(
       context: context,
       startDate: CleaningScheduleDateTimeLogic.tomorrowDate(),
-      initialDate: _selectedDate ?? CleaningScheduleDateTimeLogic.tomorrowDate(),
+      initialDate:
+          _selectedDate ?? CleaningScheduleDateTimeLogic.tomorrowDate(),
     );
     if (!mounted || value.isEmpty) return;
     final parsed = CleaningScheduleDateTimeLogic.parseDateApi(value);
@@ -118,7 +119,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
 
     final form = _formKey.currentState;
     if (form != null && !form.validate()) {
-      _notesFocusNode.requestFocus();
+      FocusManager.instance.primaryFocus?.unfocus();
       final fieldContext = _notesFieldKey.currentContext;
       if (fieldContext != null) {
         await Scrollable.ensureVisible(

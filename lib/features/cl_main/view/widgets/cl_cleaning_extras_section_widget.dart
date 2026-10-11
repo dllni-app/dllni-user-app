@@ -95,11 +95,14 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
               Semantics(
                 label: 'cleaningExtras.requestMaterials'.tr(),
                 toggled: requestMaterials,
-                child: SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('إحضار مواد التنظيف'),
-                  value: requestMaterials,
-                  onChanged: onRequestMaterialsChanged,
+                child: Material(
+                  color: Colors.transparent,
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('إحضار مواد التنظيف'),
+                    value: requestMaterials,
+                    onChanged: onRequestMaterialsChanged,
+                  ),
                 ),
               ),
               if (requestMaterials && materials.isNotEmpty) ...[
@@ -209,11 +212,14 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                 Semantics(
                   label: 'cleaningExtras.requestOpenTime'.tr(),
                   toggled: openTime != null,
-                  child: SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text('cleaningExtras.requestOpenTime'.tr()),
-                    value: openTime != null,
-                    onChanged: onOpenTimeChanged,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('cleaningExtras.requestOpenTime'.tr()),
+                      value: openTime != null,
+                      onChanged: onOpenTimeChanged,
+                    ),
                   ),
                 ),
                 if (openTime != null) ...[

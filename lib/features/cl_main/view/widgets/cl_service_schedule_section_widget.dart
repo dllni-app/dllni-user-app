@@ -10,11 +10,13 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
     required this.toTimeController,
     required this.onPickDate,
     required this.onPickFromTime,
+    this.showExpectedEnd = true,
     super.key,
   });
   final String dayAr, dayDate;
   final TextEditingController fromTimeController, toTimeController;
   final VoidCallback onPickDate, onPickFromTime;
+  final bool showExpectedEnd;
 
   @override
   Widget build(BuildContext context) => ClServiceSectionCardWidget(
@@ -40,7 +42,9 @@ class ClServiceScheduleSectionWidget extends StatelessWidget {
           icon: Icons.schedule_outlined,
           onTap: onPickFromTime,
         ),
-        if (toTimeController.text.trim().isNotEmpty) ...[
+        if (showExpectedEnd &&
+            fromTimeController.text.trim().isNotEmpty &&
+            toTimeController.text.trim().isNotEmpty) ...[
           const SizedBox(height: 10),
           _PickerRow(
             label: 'وقت الانتهاء المتوقع',

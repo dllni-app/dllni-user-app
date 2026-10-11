@@ -149,6 +149,8 @@ class V7OrderStatusHero extends StatelessWidget {
                       if (reference != null && reference!.trim().isNotEmpty)
                         Text(
                           reference!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: SharedPlatformColors.muted,
                             fontSize: 12,

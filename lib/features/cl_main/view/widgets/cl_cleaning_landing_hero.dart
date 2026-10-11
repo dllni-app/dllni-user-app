@@ -15,7 +15,7 @@ class ClCleaningLandingHero extends StatelessWidget {
       borderRadius: BorderRadius.circular(22),
       child: SizedBox(
         width: double.infinity,
-        height: 212,
+        height: MediaQuery.textScalerOf(context).scale(22) > 27 ? 280 : 240,
         child: Stack(
           fit: StackFit.expand,
           children: [

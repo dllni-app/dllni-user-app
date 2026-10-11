@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:common_package/common_package.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -45,7 +45,9 @@ class UpdateService {
   static Future<void> checkOnStartup({
     required GlobalKey<NavigatorState> navigatorKey,
   }) async {
-    if (kIsWeb) return;
+    // Local debug builds are not Play/App Store installs; a failed store
+    // check must not look like a customer-facing application error.
+    if (kIsWeb || kDebugMode) return;
 
     try {
       final UpdateCheckResult result = await _performCheck();

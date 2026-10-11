@@ -33,7 +33,7 @@ CleaningLifecycleActionSpec cleaningLifecyclePrimaryAction(String? status) {
   return switch (normalized) {
     CleaningBookingStatus.pending => const CleaningLifecycleActionSpec(
       kind: CleaningLifecycleActionKind.refreshSearch,
-      label: 'تحديث حالة البحث',
+      label: 'تحديث حالة الطلب',
       icon: Icons.refresh_rounded,
     ),
     CleaningBookingStatus.workerAssigned => const CleaningLifecycleActionSpec(

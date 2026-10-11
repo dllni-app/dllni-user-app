@@ -126,374 +126,399 @@ class _ClMainServiceScheduleScreenState
       );
     }
 
-    return BlocProvider.value(
-      value: bloc,
-      child: BlocConsumer<ClMainBloc, ClMainState>(
-        listenWhen: (previous, current) =>
-            previous.createOrderStatus != current.createOrderStatus ||
-            previous.estimatePriceStatus != current.estimatePriceStatus,
-        listener: (context, state) {
-          if (state.estimatePriceStatus == BlocStatus.success &&
-              state.estimatePrice != null) {
-            setState(() {
-              _currentEstimate = state.estimatePrice;
-              _syncToTime();
-            });
-          } else if (state.estimatePriceStatus == BlocStatus.failed &&
-              state.errorMessage != null &&
-              state.errorMessage!.isNotEmpty) {
-            AppToast.showToast(
-              context: context,
-              message: state.errorMessage!,
-              type: ToastificationType.error,
-            );
-          }
-
-          if (state.createOrderStatus == BlocStatus.loading) {
-            Loading.show(context);
-            return;
-          }
-          Loading.close();
-          if (state.createOrderStatus == BlocStatus.success) {
-            final orderId = state.createOrderResult?.orderId;
-            if (orderId == null) {
+    return PopScope(
+      canPop: _scheduleStep == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _scheduleStep > 0) _previousScheduleStep();
+      },
+      child: BlocProvider.value(
+        value: bloc,
+        child: BlocConsumer<ClMainBloc, ClMainState>(
+          listenWhen: (previous, current) =>
+              previous.createOrderStatus != current.createOrderStatus ||
+              previous.estimatePriceStatus != current.estimatePriceStatus,
+          listener: (context, state) {
+            if (state.estimatePriceStatus == BlocStatus.success &&
+                state.estimatePrice != null) {
+              setState(() {
+                _currentEstimate = state.estimatePrice;
+                _syncToTime();
+              });
+            } else if (state.estimatePriceStatus == BlocStatus.failed &&
+                state.errorMessage != null &&
+                state.errorMessage!.isNotEmpty) {
               AppToast.showToast(
                 context: context,
-                message:
-                    'تم إنشاء الطلب، لكن تعذر فتح تفاصيله. يمكنك متابعته من السلة.',
-                type: ToastificationType.warning,
+                message: state.errorMessage!,
+                type: ToastificationType.error,
               );
-              context.pushRouteAndRemoveUntil('/clmain');
+            }
+
+            if (state.createOrderStatus == BlocStatus.loading) {
+              Loading.show(context);
               return;
             }
-            AppToast.showToast(
-              context: context,
-              message: 'تم إنشاء الطلب بنجاح، وهو الآن قيد الانتظار',
-              type: ToastificationType.success,
-            );
-            context.pushRouteAndRemoveUntil(
-              '/cleaning-order-details',
-              arguments: CleaningOrderDetailsArgs(orderId: orderId),
-              predicate: (route) => route.settings.name == '/clmain',
-            );
-          } else if (state.createOrderStatus == BlocStatus.failed) {
-            final message = (state.errorMessage ?? '').trim().isNotEmpty
-                ? state.errorMessage!
-                : 'فشل تنفيذ الطلب';
-            AppToast.showToast(
-              context: context,
-              message: message,
-              type: ToastificationType.error,
-            );
-          }
-        },
-        builder: (context, state) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF6F7F9),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  const HomeDetailsAppBar(),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      controller: _scheduleScrollController,
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        16,
-                        18,
-                        16,
-                        24,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ClRedesignStepHeader(
-                            currentStep: _scheduleStep + 4,
-                            totalSteps: 6,
-                            title: switch (_scheduleStep) {
-                              0 => 'الموعد والعنوان',
-                              1 => 'تفاصيل الخدمة',
-                              _ => 'مراجعة الطلب',
-                            },
-                            subtitle: switch (_scheduleStep) {
-                              0 => 'اختر الوقت والمكان المناسبين لك.',
-                              1 => 'خصص الخدمة بما يناسب احتياجاتك.',
-                              _ => 'راجع التفاصيل والتكلفة قبل إرسال طلبك.',
-                            },
-                          ),
-                          const SizedBox(height: 18),
-                          if (_scheduleStep == 0) ...[
-                            ClServiceScheduleSectionWidget(
-                              dayAr: dayAr,
-                              dayDate: dayDate,
-                              fromTimeController: _fromTimeController,
-                              toTimeController: _toTimeController,
-                              onPickDate: _pickDate,
-                              onPickFromTime: _pickFromTime,
-                            ),
-                            const SizedBox(height: 10),
-                            ClRecurringScheduleSectionWidget(
-                              enabled: _isRecurring,
-                              pattern: _recurringPattern,
-                              workerScope: _recurringWorkerScope,
-                              calculationMode: _recurringCalculationMode,
-                              hoursPerVisit: _recurringHoursPerVisit,
-                              occurrences: _recurringOccurrences,
-                              maxOccurrences: _recurringMaxOccurrences,
-                              sessions: _recurringSessions,
-                              onEnabledChanged: (enabled) =>
-                                  _setRecurringEnabled(enabled, state),
-                              onPatternChanged: (pattern) =>
-                                  _setRecurringPattern(pattern, state),
-                              onWorkerScopeChanged: (scope) =>
-                                  _setRecurringWorkerScope(scope, state),
-                              onCalculationModeChanged: (mode) =>
-                                  _setRecurringCalculationMode(mode, state),
-                              onHoursPerVisitChanged: (hours) =>
-                                  _setRecurringHoursPerVisit(hours, state),
-                              onOccurrencesChanged: (occurrences) =>
-                                  _setRecurringOccurrences(occurrences, state),
-                              onAddVisit: () => _addRecurringVisit(state),
-                              onEditVisit: (index) =>
-                                  _editRecurringVisit(index, state),
-                              onRemoveVisit: (index) =>
-                                  _removeRecurringVisit(index, state),
-                            ),
-                            const SizedBox(height: 10),
-                            CleaningAddressSelectWidget(
-                              selectedAddress: selectedAddress,
-                              onChangeTap: _selectAddress,
-                              afterBringDefault: () =>
-                                  _requestUpdatedEstimate(state),
-                            ),
-                          ],
-                          if (_scheduleStep == 1) ...[
-                            ClServiceGenderPreferenceSectionWidget(
-                              selectedPreference: _explicitGenderPreference,
-                              onChanged: (preference) {
-                                _handleGenderPreferenceChanged(
-                                  bloc,
-                                  preference,
-                                );
+            Loading.close();
+            if (state.createOrderStatus == BlocStatus.success) {
+              final orderId = state.createOrderResult?.orderId;
+              if (orderId == null) {
+                AppToast.showToast(
+                  context: context,
+                  message:
+                      'تم إنشاء الطلب، لكن تعذر فتح تفاصيله. يمكنك متابعته من السلة.',
+                  type: ToastificationType.warning,
+                );
+                context.pushRouteAndRemoveUntil('/clmain');
+                return;
+              }
+              AppToast.showToast(
+                context: context,
+                message: 'تم إنشاء الطلب بنجاح، وهو الآن قيد الانتظار',
+                type: ToastificationType.success,
+              );
+              context.pushRouteAndRemoveUntil(
+                '/cleaning-order-details',
+                arguments: CleaningOrderDetailsArgs(orderId: orderId),
+                predicate: (route) => route.settings.name == '/clmain',
+              );
+            } else if (state.createOrderStatus == BlocStatus.failed) {
+              final message = (state.errorMessage ?? '').trim().isNotEmpty
+                  ? state.errorMessage!
+                  : 'فشل تنفيذ الطلب';
+              AppToast.showToast(
+                context: context,
+                message: message,
+                type: ToastificationType.error,
+              );
+            }
+          },
+          builder: (context, state) {
+            return Scaffold(
+              backgroundColor: const Color(0xFFF6F7F9),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    HomeDetailsAppBar(onBack: _previousScheduleStep),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: _scheduleScrollController,
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          16,
+                          18,
+                          16,
+                          24,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ClRedesignStepHeader(
+                              currentStep: _scheduleStep + 4,
+                              totalSteps: 6,
+                              title: switch (_scheduleStep) {
+                                0 => 'الموعد والعنوان',
+                                1 => 'تفاصيل الخدمة',
+                                _ => 'مراجعة الطلب',
+                              },
+                              subtitle: switch (_scheduleStep) {
+                                0 => 'اختر الوقت والمكان المناسبين لك.',
+                                1 => 'خصص الخدمة بما يناسب احتياجاتك.',
+                                _ => 'راجع التفاصيل والتكلفة قبل إرسال طلبك.',
                               },
                             ),
-                            const SizedBox(height: 12),
-                            ClCleaningServicesSelectorWidget(
-                              availableServices: _availableCleaningServices,
-                              selectedServiceNames:
-                                  _selectedCleaningServiceNames,
-                              customServiceController: _customServiceController,
-                              isLoading:
-                                  _cleaningServicesStatus == BlocStatus.loading,
-                              errorMessage:
-                                  _cleaningServicesStatus == BlocStatus.failed
-                                  ? _cleaningServicesErrorMessage ??
-                                        'تعذر تحميل الخدمات'
-                                  : null,
-                              onToggleService: _toggleCleaningService,
-                              onAddCustomService: _addCustomCleaningService,
-                              onRemoveService: _removeCleaningService,
-                              onRetry: _loadCleaningServices,
-                            ),
-                            const SizedBox(height: 12),
-                            ClCleaningExtrasSectionWidget(
-                              showOpenTime: false,
-                              requestMaterials: _serviceExtras.requestMaterials,
-                              specialServices: _serviceExtras.specialServices,
-                              openTime: _serviceExtras.openTime,
-                              availableSpecialServices:
-                                  _availableSpecialServices,
-                              materials:
-                                  estimate?.materials ??
-                                  const <CleaningMaterialLineModel>[],
-                              estimatedSpecialServices:
-                                  estimate?.specialServices ??
-                                  const <CleaningSpecialServiceLineModel>[],
-                              estimatedOpenTime: estimate?.openTime,
-                              isSpecialServicesLoading:
-                                  _specialServicesStatus == BlocStatus.loading,
-                              isEstimateLoading:
-                                  state.estimatePriceStatus ==
-                                  BlocStatus.loading,
-                              specialServicesError:
-                                  _specialServicesStatus == BlocStatus.failed
-                                  ? _specialServicesErrorMessage
-                                  : null,
-                              estimateError:
-                                  state.estimatePriceStatus == BlocStatus.failed
-                                  ? state.errorMessage
-                                  : null,
-                              onRequestMaterialsChanged: (value) =>
-                                  _setMaterialsRequested(value, state),
-                              onAddSpecialService: () =>
-                                  _addSpecialService(state),
-                              onSpecialServiceChanged: (index, service) =>
-                                  _replaceSpecialService(index, service, state),
-                              onRemoveSpecialService: (index) =>
-                                  _removeSpecialService(index, state),
-                              onOpenTimeChanged: (enabled) =>
-                                  _setOpenTimeEnabled(enabled, state),
-                              onOpenTimeWorkerCountChanged: (count) =>
-                                  _setOpenTimeWorkerCount(count, state),
-                              onOpenTimeExpectedMaxMinutesChanged: (minutes) =>
-                                  _setOpenTimeExpectedMaxMinutes(
-                                    minutes,
-                                    state,
-                                  ),
-                              openTimeDurationOptions:
-                                  _suiteConfig.openTime.durationOptions,
-                              selectableSessionIds: _isRecurring
-                                  ? List<int>.generate(
-                                      _recurringSessions.length,
-                                      (index) => index + 1,
-                                    )
-                                  : const <int>[],
-                              sessionLabels: _isRecurring
-                                  ? <int, String>{
-                                      for (
-                                        var index = 0;
-                                        index < _recurringSessions.length;
-                                        index++
-                                      )
-                                        index + 1: 'الجلسة ${index + 1}',
-                                    }
-                                  : const <int, String>{},
-                              onRetryEstimate: () =>
-                                  _requestUpdatedEstimate(state),
-                              onRetrySpecialServices: _loadSpecialServices,
-                            ),
-                            if (_serviceExtras.openTime != null) ...[
+                            const SizedBox(height: 18),
+                            if (_scheduleStep == 0) ...[
+                              ClServiceScheduleSectionWidget(
+                                dayAr: dayAr,
+                                dayDate: dayDate,
+                                fromTimeController: _fromTimeController,
+                                toTimeController: _toTimeController,
+                                onPickDate: _pickDate,
+                                onPickFromTime: _pickFromTime,
+                                showExpectedEnd: _dateChosen && _timeChosen,
+                              ),
+                              const SizedBox(height: 10),
+                              ClRecurringScheduleSectionWidget(
+                                enabled: _isRecurring,
+                                pattern: _recurringPattern,
+                                workerScope: _recurringWorkerScope,
+                                calculationMode: _recurringCalculationMode,
+                                hoursPerVisit: _recurringHoursPerVisit,
+                                occurrences: _recurringOccurrences,
+                                maxOccurrences: _recurringMaxOccurrences,
+                                sessions: _recurringSessions,
+                                onEnabledChanged: (enabled) =>
+                                    _setRecurringEnabled(enabled, state),
+                                onPatternChanged: (pattern) =>
+                                    _setRecurringPattern(pattern, state),
+                                onWorkerScopeChanged: (scope) =>
+                                    _setRecurringWorkerScope(scope, state),
+                                onCalculationModeChanged: (mode) =>
+                                    _setRecurringCalculationMode(mode, state),
+                                onHoursPerVisitChanged: (hours) =>
+                                    _setRecurringHoursPerVisit(hours, state),
+                                onOccurrencesChanged: (occurrences) =>
+                                    _setRecurringOccurrences(
+                                      occurrences,
+                                      state,
+                                    ),
+                                onAddVisit: () => _addRecurringVisit(state),
+                                onEditVisit: (index) =>
+                                    _editRecurringVisit(index, state),
+                                onRemoveVisit: (index) =>
+                                    _removeRecurringVisit(index, state),
+                              ),
+                              const SizedBox(height: 10),
+                              CleaningAddressSelectWidget(
+                                selectedAddress: selectedAddress,
+                                onChangeTap: _selectAddress,
+                                afterBringDefault: () =>
+                                    _requestUpdatedEstimate(state),
+                              ),
+                            ],
+                            if (_scheduleStep == 1) ...[
+                              ClServiceGenderPreferenceSectionWidget(
+                                selectedPreference: _explicitGenderPreference,
+                                onChanged: (preference) {
+                                  _handleGenderPreferenceChanged(
+                                    bloc,
+                                    preference,
+                                  );
+                                },
+                              ),
                               const SizedBox(height: 12),
-                              ClOpenTimeSessionsSectionWidget(
-                                sessions: _openTimeSessions,
-                                durationOptions:
-                                    _suiteConfig.openTime.durationOptions,
-                                defaultExpectedMaxMinutes:
-                                    _serviceExtras.openTime!.expectedMaxMinutes,
-                                onAddSession: () => _addOpenTimeSession(state),
-                                onEditSession: (index) =>
-                                    _editOpenTimeSession(index, state),
-                                onRemoveSession: (index) =>
-                                    _removeOpenTimeSession(index, state),
-                                onDurationChanged: (index, minutes) =>
-                                    _setOpenTimeSessionDuration(
+                              ClCleaningServicesSelectorWidget(
+                                availableServices: _availableCleaningServices,
+                                selectedServiceNames:
+                                    _selectedCleaningServiceNames,
+                                customServiceController:
+                                    _customServiceController,
+                                isLoading:
+                                    _cleaningServicesStatus ==
+                                    BlocStatus.loading,
+                                errorMessage:
+                                    _cleaningServicesStatus == BlocStatus.failed
+                                    ? _cleaningServicesErrorMessage ??
+                                          'تعذر تحميل الخدمات'
+                                    : null,
+                                onToggleService: _toggleCleaningService,
+                                onAddCustomService: _addCustomCleaningService,
+                                onRemoveService: _removeCleaningService,
+                                onRetry: _loadCleaningServices,
+                              ),
+                              const SizedBox(height: 12),
+                              ClCleaningExtrasSectionWidget(
+                                showOpenTime: false,
+                                requestMaterials:
+                                    _serviceExtras.requestMaterials,
+                                specialServices: _serviceExtras.specialServices,
+                                openTime: _serviceExtras.openTime,
+                                availableSpecialServices:
+                                    _availableSpecialServices,
+                                materials:
+                                    estimate?.materials ??
+                                    const <CleaningMaterialLineModel>[],
+                                estimatedSpecialServices:
+                                    estimate?.specialServices ??
+                                    const <CleaningSpecialServiceLineModel>[],
+                                estimatedOpenTime: estimate?.openTime,
+                                isSpecialServicesLoading:
+                                    _specialServicesStatus ==
+                                    BlocStatus.loading,
+                                isEstimateLoading:
+                                    state.estimatePriceStatus ==
+                                    BlocStatus.loading,
+                                specialServicesError:
+                                    _specialServicesStatus == BlocStatus.failed
+                                    ? _specialServicesErrorMessage
+                                    : null,
+                                estimateError:
+                                    state.estimatePriceStatus ==
+                                        BlocStatus.failed
+                                    ? state.errorMessage
+                                    : null,
+                                onRequestMaterialsChanged: (value) =>
+                                    _setMaterialsRequested(value, state),
+                                onAddSpecialService: () =>
+                                    _addSpecialService(state),
+                                onSpecialServiceChanged: (index, service) =>
+                                    _replaceSpecialService(
                                       index,
+                                      service,
+                                      state,
+                                    ),
+                                onRemoveSpecialService: (index) =>
+                                    _removeSpecialService(index, state),
+                                onOpenTimeChanged: (enabled) =>
+                                    _setOpenTimeEnabled(enabled, state),
+                                onOpenTimeWorkerCountChanged: (count) =>
+                                    _setOpenTimeWorkerCount(count, state),
+                                onOpenTimeExpectedMaxMinutesChanged:
+                                    (minutes) => _setOpenTimeExpectedMaxMinutes(
                                       minutes,
                                       state,
                                     ),
+                                openTimeDurationOptions:
+                                    _suiteConfig.openTime.durationOptions,
+                                selectableSessionIds: _isRecurring
+                                    ? List<int>.generate(
+                                        _recurringSessions.length,
+                                        (index) => index + 1,
+                                      )
+                                    : const <int>[],
+                                sessionLabels: _isRecurring
+                                    ? <int, String>{
+                                        for (
+                                          var index = 0;
+                                          index < _recurringSessions.length;
+                                          index++
+                                        )
+                                          index + 1: 'الجلسة ${index + 1}',
+                                      }
+                                    : const <int, String>{},
+                                onRetryEstimate: () =>
+                                    _requestUpdatedEstimate(state),
+                                onRetrySpecialServices: _loadSpecialServices,
+                              ),
+                              if (_serviceExtras.openTime != null) ...[
+                                const SizedBox(height: 12),
+                                ClOpenTimeSessionsSectionWidget(
+                                  sessions: _openTimeSessions,
+                                  durationOptions:
+                                      _suiteConfig.openTime.durationOptions,
+                                  defaultExpectedMaxMinutes: _serviceExtras
+                                      .openTime!
+                                      .expectedMaxMinutes,
+                                  onAddSession: () =>
+                                      _addOpenTimeSession(state),
+                                  onEditSession: (index) =>
+                                      _editOpenTimeSession(index, state),
+                                  onRemoveSession: (index) =>
+                                      _removeOpenTimeSession(index, state),
+                                  onDurationChanged: (index, minutes) =>
+                                      _setOpenTimeSessionDuration(
+                                        index,
+                                        minutes,
+                                        state,
+                                      ),
+                                ),
+                              ],
+                              const SizedBox(height: 16),
+                              _buildWorkerSelectionSection(
+                                state: state,
+                                bloc: bloc,
+                                estimate: estimate,
                               ),
                             ],
-                            const SizedBox(height: 16),
-                            _buildWorkerSelectionSection(
-                              state: state,
-                              bloc: bloc,
-                              estimate: estimate,
-                            ),
-                          ],
-                          if (_scheduleStep == 2) ...[
-                            ClBookingReviewOverview(
-                              service:
-                                  _routeArgs?.cleaningType.title ?? 'تنظيف',
-                              address:
-                                  [
-                                        selectedAddress.value?.label,
-                                        selectedAddress.value?.line1,
-                                      ]
-                                      .whereType<String>()
-                                      .where((item) => item.trim().isNotEmpty)
-                                      .join('، '),
-                              workerLabel:
-                                  (_serviceExtras.openTime?.workerCount ??
-                                          _requiredWorkersCount(state))
-                                      .toString(),
-                              materialsRequested:
-                                  _serviceExtras.requestMaterials,
-                              services: _selectedCleaningServiceNames.toList()
-                                ..sort(),
-                              recurring: _isRecurring,
-                            ),
-                            const SizedBox(height: 12),
-                            ClServiceCouponSectionWidget(
-                              couponController: _couponController,
-                              status: _couponStatus,
-                              message: _couponMessage,
-                              onApply: _applyCoupon,
-                            ),
-                            if (_appliedCouponCode != null) ...[
-                              const SizedBox(height: 8),
-                              Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: AppText.bodySmall(
-                                  'الكوبون المطبق: $_appliedCouponCode',
-                                  color: const Color(0xFF047857),
-                                  fontWeight: FontWeight.w600,
+                            if (_scheduleStep == 2) ...[
+                              ClBookingReviewOverview(
+                                service:
+                                    _routeArgs?.cleaningType.title ?? 'تنظيف',
+                                address:
+                                    [
+                                          selectedAddress.value?.label,
+                                          selectedAddress.value?.line1,
+                                        ]
+                                        .whereType<String>()
+                                        .where((item) => item.trim().isNotEmpty)
+                                        .join('، '),
+                                workerLabel:
+                                    (_serviceExtras.openTime?.workerCount ??
+                                            _requiredWorkersCount(state))
+                                        .toString(),
+                                materialsRequested:
+                                    _serviceExtras.requestMaterials,
+                                services: _selectedCleaningServiceNames.toList()
+                                  ..sort(),
+                                recurring: _isRecurring,
+                                roomSizeBreakdown:
+                                    _routeArgs?.roomSizeBreakdown,
+                              ),
+                              const SizedBox(height: 12),
+                              ClServiceCouponSectionWidget(
+                                couponController: _couponController,
+                                status: _couponStatus,
+                                message: _couponMessage,
+                                onApply: _applyCoupon,
+                              ),
+                              if (_appliedCouponCode != null) ...[
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: AppText.bodySmall(
+                                    'الكوبون المطبق: $_appliedCouponCode',
+                                    color: const Color(0xFF047857),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 12),
+                              ClServiceOrderSummarySectionWidget(
+                                basePrice: estimate?.pricing?.basePrice ?? 0,
+                                travelFee: estimate?.pricing?.travelFee ?? 0,
+                                addonsTotal:
+                                    estimate?.pricing?.addonsTotal ?? 0,
+                                totalPrice: estimate?.pricing?.totalPrice ?? 0,
+                                discountAmount: _appliedCouponDiscount,
+                                totalAfterDiscount: _appliedCouponTotal,
+                                adminMargin: estimate?.pricing?.adminMargin,
+                                isPricingFinal:
+                                    estimate?.pricing?.isPricingFinal,
+                                minimumOrderPrice:
+                                    estimate?.pricing?.minimumOrderPrice,
+                                minimumOrderApplied:
+                                    estimate?.pricing?.minimumOrderApplied ??
+                                    false,
+                                currency: estimate?.pricing?.currency ?? 'SYP',
+                                scheduleDayLabel: dayAr,
+                                scheduleDateLabel: dayDate,
+                                scheduleTimeRange:
+                                    CleaningDateTimeUiFormat.timeRange(
+                                      _fromTimeHhMm,
+                                      _toTimeHhMm,
+                                    ),
+                              ),
+                              const SizedBox(height: 12),
+                              const ClRedesignCard(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.payments_outlined,
+                                      color: Color(0xFF0B7480),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'الدفع نقداً عند إتمام الخدمة.',
+                                        style: TextStyle(
+                                          color: Color(0xFF172554),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 12),
-                            ClServiceOrderSummarySectionWidget(
-                              basePrice: estimate?.pricing?.basePrice ?? 0,
-                              travelFee: estimate?.pricing?.travelFee ?? 0,
-                              addonsTotal: estimate?.pricing?.addonsTotal ?? 0,
-                              totalPrice: estimate?.pricing?.totalPrice ?? 0,
-                              discountAmount: _appliedCouponDiscount,
-                              totalAfterDiscount: _appliedCouponTotal,
-                              adminMargin: estimate?.pricing?.adminMargin,
-                              isPricingFinal: estimate?.pricing?.isPricingFinal,
-                              minimumOrderPrice:
-                                  estimate?.pricing?.minimumOrderPrice,
-                              minimumOrderApplied:
-                                  estimate?.pricing?.minimumOrderApplied ??
-                                  false,
-                              currency: estimate?.pricing?.currency ?? 'SYP',
-                              scheduleDayLabel: dayAr,
-                              scheduleDateLabel: dayDate,
-                              scheduleTimeRange:
-                                  CleaningDateTimeUiFormat.timeRange(
-                                    _fromTimeHhMm,
-                                    _toTimeHhMm,
-                                  ),
-                            ),
-                            const SizedBox(height: 12),
-                            const ClRedesignCard(
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.payments_outlined,
-                                    color: Color(0xFF0B7480),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'الدفع نقداً عند إتمام الخدمة.',
-                                      style: TextStyle(
-                                        color: Color(0xFF172554),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  ClRedesignStickyActions(
-                    primaryLabel: _scheduleStep == 2
-                        ? 'تأكيد وإرسال الطلب'
-                        : 'متابعة',
-                    onPrimary: () => _advanceSchedule(state),
-                    primaryEnabled:
-                        state.createOrderStatus != BlocStatus.loading,
-                    secondaryLabel: 'السابق',
-                    onSecondary: _previousScheduleStep,
-                  ),
-                ],
+                    ClRedesignStickyActions(
+                      primaryLabel: _scheduleStep == 2
+                          ? 'تأكيد وإرسال الطلب'
+                          : 'متابعة',
+                      onPrimary: () => _advanceSchedule(state),
+                      primaryEnabled:
+                          state.createOrderStatus != BlocStatus.loading,
+                      secondaryLabel: 'السابق',
+                      onSecondary: _previousScheduleStep,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

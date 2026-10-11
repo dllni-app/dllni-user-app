@@ -58,7 +58,6 @@ import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_last_hour_team_decision_card.dart';
 import '../widgets/cleaning_lifecycle_timeline_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
-import 'cleaning_order_problem_report_screen.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_order_sos_screen.dart';
 import 'multi_day_cleaning_order_details_screen.dart';
@@ -316,10 +315,10 @@ class _CleaningOrderDetailsScreenState
                 _orderEndTime(order) ?? '',
               ),
             ),
-            V7OrderInfoRow(
-              label: 'المكان',
-              value: order.locationName ?? 'عنوان الخدمة',
-            ),
+            if ((order.locationName ?? '').trim().isNotEmpty &&
+                order.locationName!.trim() !=
+                    (order.propertyDetails?.address ?? '').trim())
+              V7OrderInfoRow(label: 'المكان', value: order.locationName!),
             V7OrderInfoRow(
               label: 'العنوان',
               value: order.propertyDetails?.address ?? 'غير محدد',
@@ -499,10 +498,8 @@ class _CleaningOrderDetailsScreenState
             height: 50,
             child: OutlinedButton(
               onPressed: () => context.pushRoute(
-                '/cleaning-order-problem',
-                arguments: CleaningOrderProblemReportArgs(
-                  order: order.toCleaningOrderModel(),
-                ),
+                '/cleaning-order-sos',
+                arguments: CleaningOrderSosArgs(orderId: _activeOrderId),
               ),
               style: OutlinedButton.styleFrom(
                 padding: EdgeInsets.zero,
