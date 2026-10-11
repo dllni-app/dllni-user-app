@@ -133,3 +133,13 @@ Known limits: no individual golden comparison of all 96 design states; not every
 - Account widget regression: **12 passed** (both existing and new checks).
 - No authentication, coupon application, orders or profile persistence API logic was modified.
 - Pending strict V7 acceptance: individual golden comparison for 15 account Pen boards and functional fixtures for the add-address map, notification preferences, help center and destructive account actions. The currently connected phone yielded a black screen screenshot (sleep/locked), so no pixel-perfect QA is claimed.
+
+## Order detail / SOS / notifications follow-up (2026-10-11)
+- Added dedicated `V7OrderLifecyclePanel` aligned to Pen order-history structure: only actual lifecycle status is shown as current/completed, with no invented worker acceptance, timestamps, ETA or dispatch-radius information. Cancelled orders show cancellation rather than fictitious work stages.
+- Added `V7OrderServicesPanel` listing API service/addon line-items or actual property room-counts; no invented task rows.
+- Cleaning order-details now includes timeline and requested tasks between status hero and booking details.
+- Emergency SOS location attachment is now opt-in (off by default). It never requests current location unless the user enables the switch; SOS sending still works without location; an urgent safety disclaimer directs users to local emergency services for immediate danger.
+- Rebuilt notifications screen header, V7 category filter strip, and card spacing. Notification items without a parseable timestamp are no longer silently omitted; they appear in the older bucket.
+- New test coverage for progress/task states, location opt-in, notification filters. Broad order/account/booking widget regression: **65 tests passed**.
+- Connected Windows machine is online; phone was absent from ADB device list when this follow-up was checked. Android installation and full side-by-side phone visual verification remain pending.
+- **Not acceptance of all 96 Pen states**: remaining individual route-state screenshot checks and unconverted specialized forms require separate signoff.

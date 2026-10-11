@@ -50,6 +50,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   String? _messageError;
   bool _submitting = false;
   int _formStage = 0;
+  bool _shareLocation = false;
   CleaningSosAlertModel? _submittedCase;
 
   bool get _isEmergency => _kind == 'emergency';
@@ -68,6 +69,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
       _messageError = null;
       _attachments.clear();
       _formStage = 0;
+      _shareLocation = false;
     });
   }
 
@@ -137,7 +139,9 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
         '$_kind-${widget.args.orderId}-${DateTime.now().millisecondsSinceEpoch}';
 
     if (_isEmergency) {
-      final location = await _tryResolveLocation();
+      final location = _shareLocation
+          ? await _tryResolveLocation()
+          : (latitude: null, longitude: null);
       final result = await getIt<CreateCleaningUserSosUseCase>()(
         CreateCleaningUserSosParams(
           orderId: widget.args.orderId,
@@ -447,6 +451,47 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
               ],
             ),
           ),
+        if (_isEmergency && _formStage == 1) ...[
+          const SizedBox(height: 12),
+          _card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'عند وجود خطر مباشر، اتصل بخدمات الطوارئ المحلية أولاً.',
+                  style: TextStyle(
+                    color: Color(0xFFC43E47),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Material(
+                  color: Colors.transparent,
+                  child: SwitchListTile.adaptive(
+                    key: const Key('v7_emergency_location_opt_in'),
+                    value: _shareLocation,
+                    onChanged: _submitting
+                        ? null
+                        : (value) => setState(() => _shareLocation = value),
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'مشاركة موقعي الحالي',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'اختياري — يمكنك إرسال البلاغ دون مشاركة الموقع.',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (!_isEmergency && _formStage == 1) ...[
           const SizedBox(height: 14),
           _card(

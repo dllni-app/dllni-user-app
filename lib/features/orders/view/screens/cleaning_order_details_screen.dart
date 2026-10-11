@@ -2,6 +2,7 @@ import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:dllni_user_app/core/themes/v7_artwork.dart';
 import 'package:dllni_user_app/core/widgets/v7_spot_state.dart';
 import '../widgets/v7_order_detail_components.dart';
+import '../widgets/v7_order_progress_and_tasks.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -220,6 +221,7 @@ class _CleaningOrderDetailsScreenState
             ? Icons.event_busy_outlined
             : Icons.cleaning_services_outlined,
       ),
+      V7OrderLifecyclePanel(order: order),
       if (searching)
         V7OrderPanel(
           title: 'جارٍ إيجاد مقدم خدمة',
@@ -283,6 +285,7 @@ class _CleaningOrderDetailsScreenState
             style: TextStyle(color: SharedPlatformColors.muted),
           ),
         ),
+      V7OrderServicesPanel(order: order),
       V7OrderPanel(
         title: 'موعد الخدمة وموقعها',
         leading: const Icon(
