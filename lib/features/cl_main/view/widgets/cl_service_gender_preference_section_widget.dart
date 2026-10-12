@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/cleaning_gender_preference.dart';
-import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 import 'cl_service_section_card_widget.dart';
 
-/// V7 single-choice rows. The original preference enum and callbacks remain.
+/// V6 selection surface, preserving the existing gender preference enum.
 class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
   const ClServiceGenderPreferenceSectionWidget({
     required this.selectedPreference,
@@ -20,7 +20,7 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ClServiceSectionCardWidget(
     title: 'تفضيل مقدم الخدمة',
-    subtitle: 'اختر ما يناسبك.',
+    subtitle: 'اختر ما يناسبك. يخضع توفر مقدم الخدمة وقبوله لحالة الطلب.',
     step: step,
     showStepBadge: showStepBadge,
     child: Column(
@@ -29,56 +29,12 @@ class ClServiceGenderPreferenceSectionWidget extends StatelessWidget {
           CleaningGenderPreference.male,
           CleaningGenderPreference.female,
         ]) ...[
-          Semantics(
-            button: true,
+          AppChoiceTile(
+            key: Key('cleaning_gender_pref_${preference.apiValue}'),
+            title: preference.arabicLabel,
             selected: selectedPreference == preference,
-            child: InkWell(
-              key: Key('cleaning_gender_pref_' + preference.apiValue),
-              onTap: () => onChanged(preference),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 60),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 11,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: selectedPreference == preference
-                      ? const Color(0xFFEAF9FA)
-                      : const Color(0xFFF9FAFB),
-                  border: Border.all(
-                    color: selectedPreference == preference
-                        ? SharedPlatformColors.cleaning
-                        : const Color(0xFFE5E8ED),
-                    width: selectedPreference == preference ? 1.6 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      selectedPreference == preference
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_off,
-                      color: selectedPreference == preference
-                          ? const Color(0xFF007D88)
-                          : SharedPlatformColors.muted,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        preference.arabicLabel,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: SharedPlatformColors.primary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            section: AppSection.cleaning,
+            onTap: () => onChanged(preference),
           ),
           if (preference == CleaningGenderPreference.male)
             const SizedBox(height: 10),

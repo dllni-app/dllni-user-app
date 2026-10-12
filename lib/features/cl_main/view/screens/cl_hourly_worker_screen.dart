@@ -13,6 +13,7 @@ import '../helpers/cl_hourly_worker_validation.dart';
 import '../widgets/app_pickers.dart';
 import '../widgets/cl_hourly_worker_widgets.dart';
 import '../widgets/cl_redesign_components.dart';
+import '../widgets/v6_booking_decision_guide.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 
@@ -566,6 +567,10 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      const V6BookingDecisionGuide(
+                        topic: V6BookingDecisionTopic.hourlyDuration,
                       ),
                       const SizedBox(height: 12),
                       _sectionCard(

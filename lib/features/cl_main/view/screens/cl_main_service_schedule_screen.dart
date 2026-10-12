@@ -44,6 +44,8 @@ import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_schedule_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 import '../widgets/cl_redesign_components.dart';
+import '../widgets/v6_booking_decision_guide.dart';
+import '../helpers/v6_booking_quote_guard.dart';
 import '../widgets/cl_booking_review_overview.dart';
 
 @AutoRoutePage()
@@ -106,6 +108,8 @@ class _ClMainServiceScheduleScreenState
       const <CleaningOpenTimeSessionRequest>[];
   bool _manualRoomAssignmentEnabled = false;
   int _scheduleStep = 0;
+  bool _submissionRequested = false;
+  bool _confirmationOpen = false;
   final ScrollController _scheduleScrollController = ScrollController();
 
   @override
@@ -182,6 +186,7 @@ class _ClMainServiceScheduleScreenState
                 predicate: (route) => route.settings.name == '/clmain',
               );
             } else if (state.createOrderStatus == BlocStatus.failed) {
+              _submissionRequested = false;
               final message = (state.errorMessage ?? '').trim().isNotEmpty
                   ? state.errorMessage!
                   : 'فشل تنفيذ الطلب';
@@ -227,6 +232,10 @@ class _ClMainServiceScheduleScreenState
                             ),
                             const SizedBox(height: 18),
                             if (_scheduleStep == 0) ...[
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.appointment,
+                              ),
+                              const SizedBox(height: 12),
                               ClServiceScheduleSectionWidget(
                                 dayAr: dayAr,
                                 dayDate: dayDate,
@@ -235,6 +244,10 @@ class _ClMainServiceScheduleScreenState
                                 onPickDate: _pickDate,
                                 onPickFromTime: _pickFromTime,
                                 showExpectedEnd: _dateChosen && _timeChosen,
+                              ),
+                              const SizedBox(height: 10),
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.recurrence,
                               ),
                               const SizedBox(height: 10),
                               ClRecurringScheduleSectionWidget(
@@ -276,6 +289,10 @@ class _ClMainServiceScheduleScreenState
                               ),
                             ],
                             if (_scheduleStep == 1) ...[
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.tasksAndExtras,
+                              ),
+                              const SizedBox(height: 12),
                               ClServiceGenderPreferenceSectionWidget(
                                 selectedPreference: _explicitGenderPreference,
                                 onChanged: (preference) {
@@ -403,6 +420,10 @@ class _ClMainServiceScheduleScreenState
                                 ),
                               ],
                               const SizedBox(height: 16),
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.teamSelection,
+                              ),
+                              const SizedBox(height: 12),
                               _buildWorkerSelectionSection(
                                 state: state,
                                 bloc: bloc,
@@ -410,6 +431,10 @@ class _ClMainServiceScheduleScreenState
                               ),
                             ],
                             if (_scheduleStep == 2) ...[
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.bookingReview,
+                              ),
+                              const SizedBox(height: 12),
                               ClBookingReviewOverview(
                                 service:
                                     _routeArgs?.cleaningType.title ?? 'تنظيف',
@@ -510,7 +535,10 @@ class _ClMainServiceScheduleScreenState
                           : 'متابعة',
                       onPrimary: () => _advanceSchedule(state),
                       primaryEnabled:
-                          state.createOrderStatus != BlocStatus.loading,
+                          !_submissionRequested &&
+                          !_confirmationOpen &&
+                          state.createOrderStatus != BlocStatus.loading &&
+                          state.estimatePriceStatus != BlocStatus.loading,
                       secondaryLabel: 'السابق',
                       onSecondary: _previousScheduleStep,
                     ),
@@ -1888,6 +1916,11 @@ class _ClMainServiceScheduleScreenState
   }
 
   Future<void> _onSubmitPressed(ClMainState state) async {
+    if (_submissionRequested ||
+        _confirmationOpen ||
+        state.createOrderStatus == BlocStatus.loading) {
+      return;
+    }
     if (state.estimatePriceStatus == BlocStatus.loading ||
         state.estimatePriceStatus == BlocStatus.failed ||
         (_currentEstimate ?? _routeArgs?.estimate)?.pricing == null) {
@@ -1994,8 +2027,33 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
+    final approvedPrice =
+        _appliedCouponTotal ??
+        (_currentEstimate ?? args.estimate).pricing?.totalPrice;
+    _confirmationOpen = true;
     final acceptedPledge = await _showPersonalPropertyPledgeDialog();
-    if (!mounted || !acceptedPledge) return;
+    _confirmationOpen = false;
+    if (!mounted ||
+        !acceptedPledge ||
+        _submissionRequested ||
+        bloc.state.createOrderStatus == BlocStatus.loading) {
+      return;
+    }
+    final currentPrice =
+        _appliedCouponTotal ??
+        (_currentEstimate ?? args.estimate).pricing?.totalPrice;
+    if (!V6BookingQuoteGuard.canSubmit(
+      confirmedTotal: approvedPrice,
+      currentTotal: currentPrice,
+      estimateRefreshing: bloc.state.estimatePriceStatus == BlocStatus.loading,
+      estimateFailed: bloc.state.estimatePriceStatus == BlocStatus.failed,
+    )) {
+      _bookingFeedback(
+        'تم تحديث تقدير التكلفة. راجع السعر الجديد ثم أكد الطلب مرة أخرى.',
+      );
+      return;
+    }
+    _submissionRequested = true;
 
     final estimate = _currentEstimate ?? _routeArgs?.estimate;
     final selectedWorkerIds =
@@ -2202,10 +2260,28 @@ class _ClMainServiceScheduleScreenState
   Future<bool> _showPersonalPropertyPledgeDialog() async {
     const pledgeMessage =
         'أتعهد بحماية وتأمين كافة ممتلكاتي الشخصية والثمينة طوال فترة الخدمة، وأقر بأنني المسؤول الأول والأخير عنها دون أدنى مسؤولية على المنصة';
+    final pricing = (_currentEstimate ?? _routeArgs?.estimate)?.pricing;
+    final amount = _appliedCouponTotal ?? pricing?.totalPrice;
+    final currency = pricing?.currency ?? 'SYP';
     final accepted = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        content: const Text(pledgeMessage),
+        title: const Text('مراجعة السعر وتأكيد الطلب'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (amount != null)
+              Text(
+                'التقدير الحالي من النظام: ${amount.toStringAsFixed(0)} $currency',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            const SizedBox(height: 8),
+            const Text('الدفع نقداً عند إتمام الخدمة.'),
+            const SizedBox(height: 14),
+            const Text(pledgeMessage),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),

@@ -19,7 +19,7 @@ Widget wrapper(Widget child, {double scale = 1}) => MaterialApp(
 );
 
 void main() {
-  test('each supported room type provides distinct contextual examples', () {
+  test('all room types offer three real-life size descriptions', () {
     for (final type in CleaningRoomType.values) {
       final guide = RoomSizeGuidance.forType(type);
       expect(guide.roomName, isNotEmpty);
@@ -41,7 +41,7 @@ void main() {
     );
   });
 
-  testWidgets('explanation opens room-specific bottom sheet and dismisses', (
+  testWidgets('room-specific guide offers support and can dismiss', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -59,7 +59,7 @@ void main() {
     expect(find.text('كيف أختار حجم غرفة النوم؟'), findsOneWidget);
     expect(find.textContaining('سرير مفرد'), findsOneWidget);
     expect(find.textContaining('سرير مزدوج'), findsOneWidget);
-    expect(find.textContaining('قطع أثاث إضافية'), findsOneWidget);
+    expect(find.byKey(const Key('room_size_contact_support')), findsOneWidget);
     await tester.ensureVisible(find.text('فهمت'));
     await tester.tap(find.text('فهمت'));
     await tester.pumpAndSettle();
@@ -68,7 +68,7 @@ void main() {
   });
 
   for (final width in [320.0, 360.0, 430.0]) {
-    testWidgets('room help and examples fit RTL at ${width.toInt()}dp', (
+    testWidgets('room-size intro fits ${width.toInt()}dp at 180% RTL', (
       tester,
     ) async {
       tester.view.physicalSize = Size(width, 760);
@@ -76,20 +76,11 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
-        wrapper(
-          Column(
-            children: [
-              V6RoomSizeIntro(onHelp: () {}),
-              const SizedBox(height: 16),
-              const V6RoomSizeExamples(roomType: CleaningRoomType.kitchen),
-            ],
-          ),
-          scale: 1.8,
-        ),
+        wrapper(V6RoomSizeIntro(onHelp: () {}), scale: 1.8),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('أمثلة تساعدك'), findsOneWidget);
-      expect(find.textContaining('مطبخ صغير'), findsOneWidget);
+      expect(find.text('كيف أحدد حجم الغرفة؟'), findsOneWidget);
+      expect(find.text('أمثلة تساعدك'), findsNothing);
     });
   }
 }

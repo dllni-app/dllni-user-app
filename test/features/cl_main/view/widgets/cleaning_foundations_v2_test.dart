@@ -34,7 +34,7 @@ void main() {
     );
     await tester.tap(find.text('المناسبات'));
     expect(selected, 1);
-    await tester.tap(find.text('عامل بالساعة'));
+    await tester.tap(find.text('بالساعة'));
     expect(selected, 2);
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/design_system/design_system.dart';
+import '../../../../core/widgets/support_whatsapp_launcher.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 
 /// Illustrative advice only. These examples are not backend area thresholds or
@@ -122,53 +123,6 @@ class V6RoomSizeIntro extends StatelessWidget {
 }
 
 /// Three short, contextual examples fill useful space under the booking cards.
-class V6RoomSizeExamples extends StatelessWidget {
-  const V6RoomSizeExamples({super.key, required this.roomType});
-  final CleaningRoomType roomType;
-
-  @override
-  Widget build(BuildContext context) {
-    final guide = RoomSizeGuidance.forType(roomType);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppSectionHeading(
-          title: 'أمثلة تساعدك',
-          description:
-              'أمثلة تقريبية لـ${guide.roomName}، وليست حدود مساحة إلزامية.',
-        ),
-        const SizedBox(height: 10),
-        AppSurfaceCard(
-          section: AppSection.cleaning,
-          child: Column(
-            children: [
-              for (final size in CleaningRoomSize.values) ...[
-                _ExampleRow(size: size, text: guide.example(size)),
-                if (size != CleaningRoomSize.large)
-                  const Divider(color: AlnadhaTokens.border, height: 22),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 9),
-        const Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.info_outline, size: 17, color: AlnadhaTokens.muted),
-            SizedBox(width: 7),
-            Expanded(
-              child: Text(
-                'الحجم المتوسط مُختار مبدئياً لكل غرفة. يمكنك تغييره قبل المتابعة؛ ويحتسب النظام السعر بناءً على اختياراتك.',
-                style: AlnadhaTokens.caption,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 class _ExampleRow extends StatelessWidget {
   const _ExampleRow({required this.size, required this.text});
   final CleaningRoomSize size;
@@ -250,7 +204,21 @@ class V6RoomSizeHelpSheet extends StatelessWidget {
               'إذا كنت محتاراً، اختر الحجم الأقرب. يمكنك الرجوع وتغيير اختيارك قبل إرسال الطلب.',
               style: AlnadhaTokens.caption,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            const Text(
+              'إذا لم تتأكد من الاختيار، تواصل مع الدعم الفني لنساعدك في اختيار الأنسب.',
+              style: AlnadhaTokens.caption,
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                key: const Key('room_size_contact_support'),
+                onPressed: () => launchSupportWhatsApp(context),
+                icon: const Icon(Icons.support_agent_outlined),
+                label: const Text('تواصل مع الدعم الفني'),
+              ),
+            ),
+            const SizedBox(height: 12),
             AppActionButton(
               label: 'فهمت',
               onPressed: () => Navigator.of(context).pop(),

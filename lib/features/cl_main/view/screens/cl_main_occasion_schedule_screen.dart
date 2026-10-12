@@ -32,6 +32,8 @@ import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_previous_workers_section_widget.dart';
 import '../widgets/cl_service_section_card_widget.dart';
 import '../widgets/cl_redesign_components.dart';
+import '../widgets/v6_booking_decision_guide.dart';
+import '../helpers/v6_booking_quote_guard.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_worker_profile_detail_screen.dart';
 
@@ -55,6 +57,8 @@ class _ClMainOccasionScheduleScreenState
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
   int _v7Stage = 0;
+  bool _submissionRequested = false;
+  bool _confirmationOpen = false;
   EstimatePriceResponseModel? _currentEstimate;
   late final ValueNotifier<AddressListItem?> _selectedAddress;
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
@@ -164,6 +168,9 @@ class _ClMainOccasionScheduleScreenState
             listenWhen: (previous, current) =>
                 previous.createOrderStatus != current.createOrderStatus,
             listener: (context, state) {
+              if (state.createOrderStatus == BlocStatus.failed) {
+                _submissionRequested = false;
+              }
               if (state.createOrderStatus == BlocStatus.loading) {
                 Loading.show(context);
                 return;
@@ -251,6 +258,10 @@ class _ClMainOccasionScheduleScreenState
                         child: Column(
                           children: [
                             if (_v7Stage == 0) ...[
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.eventSchedule,
+                              ),
+                              const SizedBox(height: 12),
                               ClServiceSectionCardWidget(
                                 key: const Key(
                                   'occasion_schedule_details_card',
@@ -316,6 +327,10 @@ class _ClMainOccasionScheduleScreenState
                               _buildMultiDayScheduleCard(),
                             ],
                             if (_v7Stage == 1) ...[
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.teamSelection,
+                              ),
+                              const SizedBox(height: 12),
                               ClServiceGenderPreferenceSectionWidget(
                                 selectedPreference: _explicitGenderPreference,
                                 onChanged: (preference) {
@@ -369,6 +384,10 @@ class _ClMainOccasionScheduleScreenState
                               ),
                             ],
                             if (_v7Stage == 2) ...[
+                              const V6BookingDecisionGuide(
+                                topic: V6BookingDecisionTopic.bookingReview,
+                              ),
+                              const SizedBox(height: 12),
                               ClServiceCouponSectionWidget(
                                 couponController: _couponController,
                                 status: _couponStatus,
@@ -423,6 +442,8 @@ class _ClMainOccasionScheduleScreenState
                           : 'متابعة',
                       onPrimary: () => _advanceV7Occasion(state),
                       primaryEnabled:
+                          !_submissionRequested &&
+                          !_confirmationOpen &&
                           state.createOrderStatus != BlocStatus.loading &&
                           state.estimatePriceStatus != BlocStatus.loading,
                       secondaryLabel: 'السابق',
@@ -1057,10 +1078,12 @@ class _ClMainOccasionScheduleScreenState
     final seenSlots = <String>{};
     for (var index = 0; index < _sessions.length; index++) {
       final session = _sessions[index];
-      if (!session.dateChosen)
+      if (!session.dateChosen) {
         return 'يرجى اختيار تاريخ يوم العمل ${index + 1}';
-      if (!session.timeChosen)
+      }
+      if (!session.timeChosen) {
         return 'يرجى اختيار وقت بدء يوم العمل ${index + 1}';
+      }
       if (!session.hoursChosen) return 'يرجى تحديد مدة يوم العمل ${index + 1}';
       if (session.date.isBefore(_minimumDate)) {
         return 'تاريخ يوم العمل ${index + 1} يجب أن يكون غداً أو بعده';
@@ -1079,7 +1102,13 @@ class _ClMainOccasionScheduleScreenState
     return null;
   }
 
-  void _onSubmitPressed(ClMainState state) {
+  Future<void> _onSubmitPressed(ClMainState state) async {
+    if (_submissionRequested ||
+        _confirmationOpen ||
+        state.createOrderStatus == BlocStatus.loading ||
+        state.estimatePriceStatus == BlocStatus.loading) {
+      return;
+    }
     if (_explicitGenderPreference == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار جنس العامل: ذكر أو أنثى')),
@@ -1131,11 +1160,74 @@ class _ClMainOccasionScheduleScreenState
       return;
     }
 
+    final pricing = _activeEstimate?.pricing;
+    if (pricing == null ||
+        state.estimatePriceStatus == BlocStatus.loading ||
+        state.estimatePriceStatus == BlocStatus.failed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى انتظار تحديث التقدير قبل الإرسال.')),
+      );
+      return;
+    }
+    final quote = pricing.totalPrice;
+    if (quote == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تعذر عرض السعر. أعد محاولة تحديث التقدير.'),
+        ),
+      );
+      return;
+    }
+    _confirmationOpen = true;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('تأكيد طلب المناسبة'),
+        content: Text(
+          'راجع تقدير الخدمة الصادر من النظام: '
+          '${quote.toStringAsFixed(0)} ${pricing.currency}. '
+          '${_appliedCouponCode == null ? '' : 'تم تطبيق كوبون؛ راجع قيمة الخصم في صفحة المراجعة. '}'
+          'الدفع نقداً عند إتمام الخدمة. هل تريد إرسال الطلب؟',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('مراجعة التفاصيل'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('تأكيد وإرسال'),
+          ),
+        ],
+      ),
+    );
+    _confirmationOpen = false;
+    if (!mounted ||
+        accepted != true ||
+        _submissionRequested ||
+        bloc.state.createOrderStatus == BlocStatus.loading) {
+      return;
+    }
+    if (!V6BookingQuoteGuard.canSubmit(
+      confirmedTotal: quote,
+      currentTotal: _activeEstimate?.pricing?.totalPrice,
+      estimateRefreshing: bloc.state.estimatePriceStatus == BlocStatus.loading,
+      estimateFailed: bloc.state.estimatePriceStatus == BlocStatus.failed,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تغير تقدير التكلفة. راجع السعر الجديد قبل الإرسال.'),
+        ),
+      );
+      return;
+    }
+
     final first = _firstSession!;
     final specialRequirement = args.specialRequirementId == 'none'
         ? null
         : args.specialRequirementLabel;
     final assignment = _resolveAssignment(state);
+    _submissionRequested = true;
     bloc.add(
       CreateCleaningOrderEvent(
         params: CreateCleaningOrderParams.eventAssistance(
@@ -1256,9 +1348,8 @@ class _EventSessionDraft {
     required this.time,
     required this.hours,
     this.dateChosen = false,
-    this.timeChosen = false,
-    this.hoursChosen = false,
-  });
+  }) : timeChosen = false,
+       hoursChosen = false;
 
   String get endTime =>
       formatClServiceEndTime(startTime: time, durationHours: hours);

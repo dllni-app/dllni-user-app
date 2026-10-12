@@ -12,6 +12,7 @@ import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_redesign_components.dart';
+import '../widgets/v6_booking_decision_guide.dart';
 import '../helpers/cl_event_collected_fields.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
@@ -363,7 +364,11 @@ class _ClMainOccasionDescriptionScreenState
           subtitle:
               'أخبرنا بحجم المناسبة وطبيعة المساعدة حتى نقدر الوقت والفريق المناسبين.',
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
+        const V6BookingDecisionGuide(
+          topic: V6BookingDecisionTopic.eventRequirements,
+        ),
+        const SizedBox(height: 14),
         ClRedesignCard(
           child: Row(
             children: [

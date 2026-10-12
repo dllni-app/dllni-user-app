@@ -16,6 +16,7 @@ import '../widgets/cl_cleaning_type_option_card_widget.dart';
 import '../widgets/cl_redesign_components.dart';
 import '../widgets/home_details_app_bar.dart';
 import '../widgets/v6_room_size_guide.dart';
+import '../widgets/v6_booking_decision_guide.dart';
 import 'cl_main_service_schedule_screen.dart';
 
 @AutoRoutePage()
@@ -299,8 +300,6 @@ class _ClMainHomeDescriptionScreenState
           ),
           const SizedBox(height: 10),
         ],
-        const SizedBox(height: 8),
-        V6RoomSizeExamples(roomType: _roomState.units.first.roomType),
       ],
     );
   }
@@ -316,7 +315,11 @@ class _ClMainHomeDescriptionScreenState
           title: 'اختر نوع التنظيف',
           subtitle: 'اختر نوع الخدمة المناسب لمنزلك.',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
+        const V6BookingDecisionGuide(
+          topic: V6BookingDecisionTopic.cleaningType,
+        ),
+        const SizedBox(height: 14),
         ClCleaningTypeOptionCardWidget(
           title: CleaningType.regularCleaning.title,
           subtitle: CleaningType.regularCleaning.subtitle,

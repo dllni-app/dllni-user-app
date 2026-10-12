@@ -24,10 +24,12 @@ void main() {
     );
 
     final addButton = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.add),
+      find.widgetWithIcon(IconButton, Icons.add_circle_outline_rounded),
     );
     expect(addButton.onPressed, isNull);
-    await tester.tap(find.widgetWithIcon(IconButton, Icons.remove));
+    await tester.tap(
+      find.widgetWithIcon(IconButton, Icons.remove_circle_outline_rounded),
+    );
     expect(additions, 0);
     expect(removals, 1);
     expect(tester.takeException(), isNull);
