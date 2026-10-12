@@ -227,6 +227,17 @@ class _ClMainOccasionDescriptionScreenState
         ];
         break;
     }
+    // Special requirements are optional. Always expose and preselect "none"
+    // instead of forcing a user to open a picker just to opt out.
+    if (!_specialRequirementOptions.any((option) => option.id == 'none')) {
+      _specialRequirementOptions = <_MenuOption>[
+        const _MenuOption(id: 'none', label: 'لا يوجد'),
+        ..._specialRequirementOptions,
+      ];
+    }
+    _selectedSpecialRequirement = _specialRequirementOptions.firstWhere(
+      (option) => option.id == 'none',
+    );
   }
 
   @override
@@ -309,6 +320,7 @@ class _ClMainOccasionDescriptionScreenState
                 }
               },
               child: Scaffold(
+                resizeToAvoidBottomInset: false,
                 backgroundColor: const Color(0xFFF6F7F9),
                 body: SafeArea(
                   child: Column(
@@ -321,7 +333,12 @@ class _ClMainOccasionDescriptionScreenState
                       Expanded(
                         child: SingleChildScrollView(
                           controller: _detailsScrollController,
-                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                          padding: EdgeInsets.fromLTRB(
+                            16,
+                            18,
+                            16,
+                            24 + MediaQuery.viewInsetsOf(context).bottom,
+                          ),
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 180),
                             child: _descriptionStep == 0
@@ -526,7 +543,7 @@ class _ClMainOccasionDescriptionScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'متطلبات خاصة',
+                'متطلبات خاصة (اختياري)',
                 textAlign: TextAlign.start,
                 style: TextStyle(
                   color: Color(0xFF172033),
@@ -609,6 +626,7 @@ class _ClMainOccasionDescriptionScreenState
   }
 
   void _goToDescriptionStep(int step) {
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _descriptionStep = step);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _detailsScrollController.hasClients) {
@@ -618,6 +636,7 @@ class _ClMainOccasionDescriptionScreenState
   }
 
   void _onDescriptionPrimaryPressed(ClMainBloc bloc) {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_descriptionStep == 0) {
       final customService = _customServiceValue;
       if (customService.isEmpty) {
@@ -943,6 +962,8 @@ class _ClMainOccasionDescriptionScreenState
     );
     return TextFormField(
       controller: controller,
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      onFieldSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       keyboardType: field.type == 'number'
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,

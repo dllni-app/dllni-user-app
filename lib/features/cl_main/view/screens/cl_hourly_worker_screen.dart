@@ -117,6 +117,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
 
   Future<void> _submit() async {
     if (_submitting) return;
+    FocusManager.instance.primaryFocus?.unfocus();
 
     final form = _formKey.currentState;
     if (form != null && !form.validate()) {
@@ -502,6 +503,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: SharedPlatformColors.background,
         body: SafeArea(
           child: Column(
@@ -513,11 +515,11 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
                   child: ListView(
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: const EdgeInsetsDirectional.fromSTEB(
+                    padding: EdgeInsetsDirectional.fromSTEB(
                       16,
                       16,
                       16,
-                      28,
+                      28 + MediaQuery.viewInsetsOf(context).bottom,
                     ),
                     children: [
                       ClRedesignCard(

@@ -420,10 +420,32 @@ class _ClMainServiceScheduleScreenState
                                 ),
                               ],
                               const SizedBox(height: 16),
-                              const V6BookingDecisionGuide(
-                                topic: V6BookingDecisionTopic.teamSelection,
-                              ),
-                              const SizedBox(height: 12),
+                              if (_serviceExtras.openTime == null &&
+                                  (!_isRecurring ||
+                                      _recurringWorkerScope ==
+                                          CleaningRecurringWorkerScope
+                                              .specific)) ...[
+                                const V6BookingDecisionGuide(
+                                  topic: V6BookingDecisionTopic.teamSelection,
+                                ),
+                                const SizedBox(height: 12),
+                              ] else
+                                const ClRedesignCard(
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        color: Color(0xFF007D88),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          'سيبحث النظام عن عامل متاح لكل زيارة وفق تفضيلك ومواعيد الخدمة. لا تحتاج لاختيار عامل محدد هنا.',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               _buildWorkerSelectionSection(
                                 state: state,
                                 bloc: bloc,
