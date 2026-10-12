@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/auth/auth_gate.dart';
-import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 
+/// V6 shared navigation; the existing AuthGate remains responsible for orders.
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key, required this.controller});
-
   final TabController controller;
 
-  Future<void> _onTabTap(BuildContext context, int index) async {
+  Future<void> _select(BuildContext context, int index) async {
     if (index == 1) {
       await AuthGate.requireAuth(
         context,
@@ -22,113 +22,29 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const items = <_BottomNavItem>[
-      _BottomNavItem(
-        label: 'الرئيسية',
-        icon: Icons.home_outlined,
-        activeIcon: Icons.home_rounded,
-      ),
-      _BottomNavItem(
-        label: 'طلباتي',
-        icon: Icons.receipt_long_outlined,
-        activeIcon: Icons.receipt_long_rounded,
-      ),
-      _BottomNavItem(
-        label: 'حسابي',
-        icon: Icons.person_outline_rounded,
-        activeIcon: Icons.person_rounded,
-      ),
-    ];
-
     return AnimatedBuilder(
       animation: controller,
-      builder: (context, _) {
-        return SafeArea(
-          top: false,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFE7EAF0))),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x0D101828),
-                  blurRadius: 18,
-                  offset: Offset(0, -3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: List.generate(items.length, (index) {
-                final item = items[index];
-                final selected = controller.index == index;
-                return Expanded(
-                  child: Semantics(
-                    selected: selected,
-                    button: true,
-                    label: item.label,
-                    child: InkWell(
-                      onTap: () => _onTabTap(context, index),
-                      borderRadius: BorderRadius.circular(14),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        constraints: const BoxConstraints(minHeight: 54),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? const Color(0xFFEEF0FA)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              selected ? item.activeIcon : item.icon,
-                              size: 23,
-                              color: selected
-                                  ? SharedPlatformColors.primary
-                                  : const Color(0xFF98A2B3),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item.label,
-                              style: TextStyle(
-                                color: selected
-                                    ? SharedPlatformColors.primary
-                                    : const Color(0xFF667085),
-                                fontSize: 12,
-                                fontWeight: selected
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
+      builder: (context, _) => AppBottomNavigation(
+        selectedIndex: controller.index,
+        onSelect: (index) => _select(context, index),
+        destinations: const [
+          AppNavDestination(
+            label: 'الرئيسية',
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
           ),
-        );
-      },
+          AppNavDestination(
+            label: 'طلباتي',
+            icon: Icons.receipt_long_outlined,
+            selectedIcon: Icons.receipt_long_rounded,
+          ),
+          AppNavDestination(
+            label: 'حسابي',
+            icon: Icons.person_outline_rounded,
+            selectedIcon: Icons.person_rounded,
+          ),
+        ],
+      ),
     );
   }
-}
-
-class _BottomNavItem {
-  const _BottomNavItem({
-    required this.label,
-    required this.icon,
-    required this.activeIcon,
-  });
-
-  final String label;
-  final IconData icon;
-  final IconData activeIcon;
 }

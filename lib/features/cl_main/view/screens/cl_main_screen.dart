@@ -20,7 +20,8 @@ import '../data/cl_main_route_args.dart';
 import 'cl_hourly_worker_screen.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_main_service_tabs_widget.dart';
-import '../widgets/cl_cleaning_landing_hero.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
+import '../widgets/v6_cleaning_discovery.dart';
 import '../widgets/cl_occasion_type_card_widget.dart';
 import '../widgets/cl_property_type_card_widget.dart';
 
@@ -341,12 +342,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
       if (_selectedTabIndex != ClMainServiceTabsWidget.cleaningIndex) {
         return const SizedBox.shrink();
       }
-      return Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
-        child: ClCleaningLandingHero(
-          onBookApartment: _openQuickApartmentBooking,
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     return Padding(
@@ -406,7 +402,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
                 profileBloc: widget.params!.profileBloc,
               ),
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
               child: ClMainServiceTabsWidget(
                 selectedIndex: _selectedTabIndex,
                 onChanged: (index) {
@@ -423,13 +419,18 @@ class _ClMainScreenState extends State<ClMainScreen> {
                   ? ListView.separated(
                       key: const Key('cl_main_cleaning_list'),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 20,
+                        horizontal: 16,
+                        vertical: 16,
                       ),
-                      itemCount: _propertyTypes.length,
+                      itemCount: _propertyTypes.length + 1,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        final item = _propertyTypes[index];
+                        if (index == 0) {
+                          return V6CleaningDiscoveryIntro(
+                            onBookApartment: _openQuickApartmentBooking,
+                          );
+                        }
+                        final item = _propertyTypes[index - 1];
                         final propertyType = _nonEmpty(item.value, 'apartment');
                         return ClPropertyTypeCardWidget(
                           title: _nonEmpty(item.title, 'نوع تنظيف'),
@@ -448,13 +449,14 @@ class _ClMainScreenState extends State<ClMainScreen> {
                   ? ListView.separated(
                       key: const Key('cl_main_occasions_list'),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 20,
+                        horizontal: 16,
+                        vertical: 16,
                       ),
-                      itemCount: _occasionTypes.length,
+                      itemCount: _occasionTypes.length + 1,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        final item = _occasionTypes[index];
+                        if (index == 0) return const V6CleaningOccasionIntro();
+                        final item = _occasionTypes[index - 1];
                         final bookingValue = _nonEmpty(item.value, 'other');
                         final eventConfig = _eventTypesBySlug[bookingValue];
                         final option = ClMainOccasionOption(
@@ -486,69 +488,65 @@ class _ClMainScreenState extends State<ClMainScreen> {
                   : ListView(
                       key: const Key('cl_main_hourly_list'),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 20,
+                        horizontal: 16,
+                        vertical: 16,
                       ),
                       children: [
-                        InkWell(
+                        Column(
                           key: const Key('cl_main_hourly_worker_card'),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const ClHourlyWorkerScreen(),
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const AppSectionHeading(
+                              title: 'عامل بالساعة',
+                              description: 'حدّد ما تحتاجه والمدة المناسبة',
                             ),
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0xFFE5E7EB),
+                            const SizedBox(height: 16),
+                            AppSurfaceCard(
+                              section: AppSection.cleaning,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const ClHourlyWorkerScreen(),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 46,
+                                    height: 46,
+                                    decoration: BoxDecoration(
+                                      color: AppSection.cleaning.soft,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.schedule_outlined,
+                                      color: AppSection.cleaning.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'حجز عامل بالساعة',
+                                          style: AlnadhaTokens.sectionTitle,
+                                        ),
+                                        Text(
+                                          'اختر عدد العمال والموعد والمهام. تحدّد التكلفة بحسب الخدمة.',
+                                          style: AlnadhaTokens.caption,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_left_rounded,
+                                    color: AlnadhaTokens.muted,
+                                  ),
+                                ],
                               ),
                             ),
-                            child: const Row(
-                              children: [
-                                Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  size: 18,
-                                  color: Color(0xFF6B7280),
-                                ),
-                                Spacer(),
-                                Expanded(
-                                  flex: 6,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        'عامل بالساعة',
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF1E3A8A),
-                                        ),
-                                      ),
-                                      SizedBox(height: 6),
-                                      Text(
-                                        'اختر عدد العمال والموعد والمدة المتوقعة، وتكون الفوترة حسب وقت العمل الفعلي.',
-                                        textAlign: TextAlign.right,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Color(0xFF6B7280),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(width: 14),
-                                V7ArtTile(
-                                  asset: 'assets/images/v7/service-regular.png',
-                                  size: 56,
-                                ),
-                              ],
-                            ),
-                          ),
+                          ],
                         ),
                       ],
                     ),

@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cube_transition/flutter_cube_transition.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
-import '../../../../core/themes/v7_artwork.dart';
 
-/// Kept as the alternative V7 presentation, not the default customer UI.
-/// Enable via --dart-define=ALNADHA_AD_STYLE=cube.
-/// The same real backend offers are used by this and the editorial carousel.
+/// V6 shared-home advertising cube with four real offer faces.
+/// HomeScreen uses this directly and obtains offers from the existing HomeBloc.
+/// Missing media/text falls back to neutral service information, not fake offers.
 class HomeCube extends StatefulWidget {
   const HomeCube({super.key, required this.offers});
   final List<UserOfferItem> offers;
@@ -68,9 +67,13 @@ class _HomeCubeState extends State<HomeCube> {
 
   CubeFaceData _faceForOffer(UserOfferItem offer) {
     final image = (offer.imageUrl ?? '').trim();
-    final title = (offer.title ?? '').trim();
+    final rawTitle = (offer.title ?? '').trim();
+    final title = rawTitle.isEmpty ? 'تعرّف على خدماتنا' : rawTitle;
     final label = (offer.discountLabel ?? '').trim();
-    final desc = (offer.description ?? '').trim();
+    final rawDescription = (offer.description ?? '').trim();
+    final desc = rawDescription.isEmpty
+        ? 'اختَر ما يناسبك من خدمات ع الندهة'
+        : rawDescription;
     return CubeFaceData(
       color: SharedPlatformColors.primary,
       text: '',
@@ -83,17 +86,25 @@ class _HomeCubeState extends State<HomeCube> {
               image,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) =>
-                  Image.asset(V7Artwork.cleaningPhoto, fit: BoxFit.cover),
+                  const ColoredBox(color: SharedPlatformColors.primary),
             )
           else
-            Image.asset(V7Artwork.cleaningPhoto, fit: BoxFit.cover),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF172554), Color(0xFF303D81)],
+                  begin: AlignmentDirectional.topStart,
+                  end: AlignmentDirectional.bottomEnd,
+                ),
+              ),
+            ),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   Color(0xE6172554),
-                  Color(0x96172554),
-                  Color(0x18172554),
+                  Color(0xB9172554),
+                  Color(0x70172554),
                 ],
                 begin: AlignmentDirectional.centerStart,
                 end: AlignmentDirectional.centerEnd,

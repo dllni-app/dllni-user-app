@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 import '../../../../core/widgets/search_field_with_voice.dart';
 import '../../../profile/domain/usecases/fetch_notifications_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
@@ -97,8 +98,102 @@ class _HomeAppBarState extends State<HomeAppBar> {
     );
   }
 
+  Widget _buildV6CleaningHeader() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AlnadhaTokens.surface,
+        border: Border(bottom: BorderSide(color: AlnadhaTokens.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 10),
+        child: Row(
+          children: [
+            IconButton(
+              key: const Key('v6_cleaning_back'),
+              tooltip: 'العودة للرئيسية',
+              onPressed: () => context.pushRoute('/main'),
+              icon: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AlnadhaTokens.primary,
+                size: 20,
+              ),
+            ),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('التنظيفات', style: AlnadhaTokens.sectionTitle),
+                  Text('اختر الخدمة المناسبة لك', style: AlnadhaTokens.caption),
+                ],
+              ),
+            ),
+            IconButton(
+              key: const Key('v6_cleaning_cart'),
+              tooltip: 'سلة الخدمات',
+              onPressed: _openCart,
+              icon: const Icon(
+                Icons.shopping_bag_outlined,
+                color: AlnadhaTokens.primary,
+              ),
+            ),
+            BlocBuilder<ProfileBloc, ProfileState>(
+              bloc: profileBloc,
+              buildWhen: (previous, current) =>
+                  previous.unreadNotification != current.unreadNotification,
+              builder: (context, state) {
+                final count = AuthGate.isAuthenticated
+                    ? (state.unreadNotification ?? 0)
+                    : 0;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      key: const Key('v6_cleaning_notifications'),
+                      tooltip: 'الإشعارات',
+                      onPressed: _openNotifications,
+                      icon: const Icon(
+                        Icons.notifications_none_rounded,
+                        color: AlnadhaTokens.primary,
+                      ),
+                    ),
+                    if (count > 0)
+                      PositionedDirectional(
+                        top: 0,
+                        end: 0,
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minWidth: 17,
+                            minHeight: 17,
+                          ),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: const BoxDecoration(
+                            color: AlnadhaTokens.danger,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            count > 9 ? '9+' : count.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.isCleaning) return _buildV6CleaningHeader();
     final shouldShowSearch = widget.showSearch && !widget.isCleaning;
     final accent = widget.isCleaning
         ? SharedPlatformColors.cleaning

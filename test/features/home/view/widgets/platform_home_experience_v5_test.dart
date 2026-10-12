@@ -33,8 +33,8 @@ void main() {
           ),
         ),
       );
-      expect(find.text('ع الندهة'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('platform_home_v5_cleaning_cta')));
+      expect(find.text('الخدمات'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('platform_home_v5_cleaning_tile')));
       await tester.tap(
         find.byKey(const Key('platform_home_v5_restaurants_tile')),
       );

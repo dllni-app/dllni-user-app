@@ -6,6 +6,7 @@ import '../../../../core/auth/auth_gate.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/session/user_session_store.dart';
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
 import '../../../orders/data/models/cleaning_booking_status.dart';
 import '../../../orders/data/models/cleaning_orders_api_models.dart';
@@ -21,8 +22,8 @@ import '../../../rs_main/view/rs_main_screen.dart';
 import '../../../sm_main_page.dart';
 import '../../domain/usecases/fetch_user_offers_use_case.dart';
 import '../manager/bloc/home_bloc.dart';
-import '../widgets/v7_campaign_presenter.dart';
-import '../widgets/platform_home_widgets.dart';
+import '../widgets/home_cube.dart';
+import '../widgets/v6_home_widgets.dart';
 import '../widgets/platform_home_experience_v5.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -287,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGlobalActiveOrder() {
     if (!AuthGate.isAuthenticated) {
-      return PlatformGuestBenefitCard(
+      return V6GuestAccountPrompt(
         onLogin: _loginFromHome,
         onRegister: () => context.pushRoute('/register'),
       );
@@ -316,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final active = restaurant ?? supermarket ?? cleaning;
 
                 if (active != null) {
-                  return PlatformActiveOrderCard(
+                  return V6HomeActiveOrder(
                     section: active.section,
                     sectionLabel: active.sectionLabel,
                     title: active.title,
@@ -355,12 +356,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const PlatformSectionTitle(
-              title: 'عروض مختارة لك',
-              subtitle: 'تصفح العروض المتاحة',
-            ),
-            const SizedBox(height: 10),
-            V7CampaignPresenter(offers: state.userOffers.list),
+            const AppSectionHeading(title: 'العروض المختارة'),
+            const SizedBox(height: 8),
+            HomeCube(offers: state.userOffers.list),
           ],
         );
       },
@@ -388,7 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : 'اختر عنوانك')
                 : 'تصفح الخدمات كزائر';
 
-            return PlatformHomeHeader(
+            return V6HomeHeader(
               displayName: displayName,
               locationLabel: location,
               isAuthenticated: AuthGate.isAuthenticated,
@@ -421,8 +419,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
                   children: [
+                    V6ServiceFinder(
+                      onCleaning: _openCleaning,
+                      onRestaurants: _openRestaurants,
+                      onSupermarket: _openSupermarket,
+                      onDelivery: () => _requireAuth(
+                        message: 'سجّل الدخول لعرض طلبات التوصيل',
+                        onAuthenticated: () =>
+                            context.pushRoute('/delivery/orders'),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     _buildOffers(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     PlatformHomeExperienceV5(
                       onCleaning: _openCleaning,
                       onRestaurants: _openRestaurants,
@@ -434,32 +443,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    PlatformSectionTitle(
+                    AppSectionHeading(
                       title: 'طلبك الحالي',
-                      subtitle: AuthGate.isAuthenticated
+                      description: AuthGate.isAuthenticated
                           ? 'أهم طلب نشط لديك الآن'
                           : 'سجّل الدخول لحفظ العناوين ومتابعة الطلبات',
                     ),
                     const SizedBox(height: 10),
                     _buildGlobalActiveOrder(),
                     const SizedBox(height: 22),
-                    const PlatformSectionTitle(title: 'اختصارات مفيدة'),
+                    const AppSectionHeading(title: 'اختصارات سريعة'),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        PlatformQuickAction(
+                        V6HomeQuickAction(
                           label: 'العناوين',
                           icon: Icons.location_on_outlined,
                           onTap: _openAddresses,
                         ),
                         const SizedBox(width: 8),
-                        PlatformQuickAction(
+                        V6HomeQuickAction(
                           label: 'الكوبونات',
                           icon: Icons.local_offer_outlined,
                           onTap: _openCoupons,
                         ),
                         const SizedBox(width: 8),
-                        PlatformQuickAction(
+                        V6HomeQuickAction(
                           label: 'قوائمي',
                           icon: Icons.checklist_rounded,
                           onTap: _openShoppingLists,
@@ -502,18 +511,7 @@ class _HomeLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: SharedPlatformColors.border),
-      ),
-      child: const CircularProgressIndicator(
-        color: SharedPlatformColors.primary,
-      ),
-    );
+    return AppSkeleton(height: height);
   }
 }
 
@@ -522,14 +520,8 @@ class _NoActiveOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: SharedPlatformColors.border),
-      ),
-      child: const Row(
+    return const AppSurfaceCard(
+      child: Row(
         children: [
           Icon(
             Icons.check_circle_outline_rounded,
