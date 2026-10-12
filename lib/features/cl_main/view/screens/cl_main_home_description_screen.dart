@@ -15,6 +15,7 @@ import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_cleaning_type_option_card_widget.dart';
 import '../widgets/cl_redesign_components.dart';
 import '../widgets/home_details_app_bar.dart';
+import '../widgets/v6_room_size_guide.dart';
 import 'cl_main_service_schedule_screen.dart';
 
 @AutoRoutePage()
@@ -47,6 +48,7 @@ class _ClMainHomeDescriptionScreenState
   CleaningType? _selectedCleaningType;
   int _currentStep = 0;
   bool _showExtraSpaces = false;
+  final Set<String> _reviewedRoomKeys = <String>{};
 
   String _propertyType = 'apartment';
   AddressListItem? _defaultAddress;
@@ -182,24 +184,47 @@ class _ClMainHomeDescriptionScreenState
           totalSteps: 6,
           title: 'ما حجم كل غرفة؟',
           subtitle:
-              'اختر الحجم الأقرب لكل مساحة. يمكنك الرجوع وتعديل الأعداد دون فقدان الاختيارات.',
+              'استعن بالأمثلة واختَر الحجم الأقرب حسب المساحة والأثاث. يمكنك تغيير اختيارك لاحقاً.',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
+        V6RoomSizeIntro(
+          onHelp: () => V6RoomSizeHelpSheet.show(
+            context,
+            _roomState.units.first.roomType,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'راجعت أحجام ${_reviewedRoomKeys.length} من ${_roomState.units.length} مساحة',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF697386)),
+        ),
+        const SizedBox(height: 12),
         for (final unit in _roomState.units) ...[
           ClRedesignCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  '${_singleRoomLabel(unit.roomType)} ${unit.index}',
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF172033),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${_singleRoomLabel(unit.roomType)} ${unit.index}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF172554),
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () =>
+                          V6RoomSizeHelpSheet.show(context, unit.roomType),
+                      icon: const Icon(Icons.help_outline, size: 18),
+                      label: const Text('لست متأكداً؟'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 ClRedesignSegmentedChoice<CleaningRoomSize>(
                   values: CleaningRoomSize.values,
                   selected: unit.size,
@@ -211,14 +236,71 @@ class _ClMainHomeDescriptionScreenState
                         unit.index,
                         size,
                       );
+                      _reviewedRoomKeys.add(unit.key);
                     });
                   },
                 ),
+                const SizedBox(height: 10),
+                Text(
+                  _reviewedRoomKeys.contains(unit.key)
+                      ? 'اختيارك: ${_roomSizeLabel(unit.size)}'
+                      : 'الاختيار المبدئي: ${_roomSizeLabel(unit.size)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF006E79),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  RoomSizeGuidance.forType(unit.roomType).example(unit.size),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.5,
+                    color: Color(0xFF697386),
+                  ),
+                ),
+                if (_roomState.countFor(unit.roomType) > 1 &&
+                    unit.index == 1) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _roomState = _roomState.setAllUnitSizes(
+                            unit.roomType,
+                            unit.size,
+                          );
+                          for (final matching in _roomState.units) {
+                            if (matching.roomType == unit.roomType) {
+                              _reviewedRoomKeys.add(matching.key);
+                            }
+                          }
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'تم تطبيق ${_roomSizeLabel(unit.size)} على كل ${_roomTypeLabel(unit.roomType)}. يمكنك تعديل كل غرفة لاحقاً.',
+                            ),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.copy_all_outlined, size: 18),
+                      label: Text(
+                        'تطبيق الحجم على ${_roomState.countFor(unit.roomType)} غرف مشابهة',
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 10),
         ],
+        const SizedBox(height: 8),
+        V6RoomSizeExamples(roomType: _roomState.units.first.roomType),
       ],
     );
   }
@@ -316,6 +398,8 @@ class _ClMainHomeDescriptionScreenState
     final next = _roomState.countFor(roomType) + delta;
     setState(() {
       _roomState = _roomState.setCount(roomType, next);
+      final keys = _roomState.units.map((unit) => unit.key).toSet();
+      _reviewedRoomKeys.removeWhere((key) => !keys.contains(key));
     });
   }
 

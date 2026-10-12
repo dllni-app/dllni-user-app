@@ -110,6 +110,24 @@ class CleaningProgressiveRoomState {
     );
   }
 
+  /// Applies one chosen size to every room of the same type. Other types stay
+  /// untouched, and callers may still override individual units afterwards.
+  CleaningProgressiveRoomState setAllUnitSizes(
+    CleaningRoomType roomType,
+    CleaningRoomSize size,
+  ) {
+    final nextUnits = units
+        .map(
+          (unit) =>
+              unit.roomType == roomType ? unit.copyWith(size: size) : unit,
+        )
+        .toList(growable: false);
+    return CleaningProgressiveRoomState(
+      counts: counts,
+      units: List.unmodifiable(nextUnits),
+    );
+  }
+
   CleaningRoomSizeBreakdown toBreakdown() {
     var breakdown = const CleaningRoomSizeBreakdown();
     for (final unit in units) {

@@ -66,6 +66,43 @@ void main() {
       expect(state.totalBaseRooms, 30);
     });
 
+    test(
+      'apply size to matching rooms without altering other types or totals',
+      () {
+        final original = const CleaningProgressiveRoomState()
+            .setCount(CleaningRoomType.bedroom, 3)
+            .setCount(CleaningRoomType.bathroom, 2)
+            .setUnitSize(CleaningRoomType.bedroom, 2, CleaningRoomSize.small)
+            .setUnitSize(CleaningRoomType.bathroom, 1, CleaningRoomSize.large);
+
+        final allBedrooms = original.setAllUnitSizes(
+          CleaningRoomType.bedroom,
+          CleaningRoomSize.large,
+        );
+        final breakdown = allBedrooms.toBreakdown();
+
+        expect(original.units[1].size, CleaningRoomSize.small);
+        expect(breakdown.bedroom.large, 3);
+        expect(breakdown.bedroom.small, 0);
+        expect(breakdown.bathroom.large, 1);
+        expect(breakdown.bathroom.medium, 1);
+        expect(breakdown.toBackendJson()['bedroom'], {
+          'small': 0,
+          'medium': 0,
+          'large': 3,
+        });
+        expect(allBedrooms.totalBaseRooms, original.totalBaseRooms);
+
+        final overridden = allBedrooms.setUnitSize(
+          CleaningRoomType.bedroom,
+          2,
+          CleaningRoomSize.small,
+        );
+        expect(overridden.toBreakdown().bedroom.small, 1);
+        expect(overridden.toBreakdown().bedroom.large, 2);
+      },
+    );
+
     test('balcony alone cannot start a cleaning quote', () {
       final state = const CleaningProgressiveRoomState().setCount(
         CleaningRoomType.balcony,
