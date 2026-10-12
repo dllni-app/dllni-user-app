@@ -25,9 +25,10 @@ abstract final class SharedPlatformColors {
   static const dangerSoft = Color(0xFFFCEDEF);
 
   // Cleaning: accessible dark ink on the reference turquoise.
-  static const cleaning = Color(0xFF0CBBC7);
-  static const cleaningSoft = Color(0xFFE7F8F9);
-  static const cleaningInk = Color(0xFF006E79);
+  // Customer V6 override: use one coherent dark-blue family for cleaning.
+  static const cleaning = Color(0xFF365487);
+  static const cleaningSoft = Color(0xFFEEF2F9);
+  static const cleaningInk = Color(0xFF172554);
 
   // Restaurants: berry, deliberately replacing the legacy burnt orange.
   static const restaurant = Color(0xFFA63C66);

@@ -1,14 +1,14 @@
-import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
-import '../../../../core/widgets/shimmer_widget.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../../profile/domain/usecases/fetch_addresses_use_case.dart';
 import '../../../profile/view/manager/bloc/profile_bloc.dart';
 
+/// Read-only address preview; the caller remains responsible for selection.
 class ClServiceAddressSectionWidget extends StatelessWidget {
   const ClServiceAddressSectionWidget({
     super.key,
@@ -17,7 +17,7 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
     this.showChangeAction = true,
     this.changeActionEnabled = true,
     this.onChangeTap,
-    this.afterBringDefault,
+    required this.afterBringDefault,
   });
 
   final String locationName;
@@ -25,157 +25,18 @@ class ClServiceAddressSectionWidget extends StatelessWidget {
   final bool showChangeAction;
   final bool changeActionEnabled;
   final VoidCallback? onChangeTap;
-  final void afterBringDefault;
+  final void Function() afterBringDefault;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<ProfileBloc>(
-      lazy: false,
-      create: (_) =>
-          getIt<ProfileBloc>()
-            ..add(FetchAddressesEvent(params: FetchAddressesParams())),
-      child: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, state) {
-          final actionEnabled = changeActionEnabled && onChangeTap != null;
-          return Container(
-            child: switch (state.addressesStatus) {
-              null || BlocStatus.failed || BlocStatus.success => Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_rounded,
-                          color: SharedPlatformColors.cleaning,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        AppText.bodyLarge(
-                          'عنوان الخدمة',
-                          color: SharedPlatformColors.cleaning,
-                          fontWeight: FontWeight.w700,
-                          textAlign: TextAlign.right,
-                        ),
-                        const Spacer(),
-                        if (showChangeAction)
-                          InkWell(
-                            onTap: onChangeTap,
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: const EdgeInsetsDirectional.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: actionEnabled
-                                    ? const Color(0xFFE9E9F3)
-                                    : const Color(0xFFE5E7EB),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: AppText.labelLarge(
-                                'عرض',
-                                color: actionEnabled
-                                    ? SharedPlatformColors.cleaning
-                                    : const Color(0xFF9CA3AF),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        14,
-                        12,
-                        14,
-                        12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F6F8),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppText.bodyMedium(
-                            locationName,
-                            color: const Color(0xFF1F2937),
-                            fontWeight: FontWeight.w700,
-                            textAlign: TextAlign.right,
-                          ),
-                          const SizedBox(height: 4),
-                          AppText.labelLarge(
-                            address,
-                            color: const Color(0xFF6B7280),
-                            textAlign: TextAlign.right,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              BlocStatus.init || BlocStatus.loading => Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        ShimmerWidget(
-                          width: 20,
-                          height: 20,
-                          shape: BoxShape.circle,
-                        ),
-                        const SizedBox(width: 6),
-                        ShimmerWidget(
-                          width: 40,
-                          height: 20,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        const Spacer(),
-                        if (showChangeAction)
-                          ShimmerWidget(
-                            width: 70,
-                            height: 20,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    ShimmerWidget(
-                      width: double.infinity,
-                      height: 20,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ],
-                ),
-              ),
-            },
-          );
-        },
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _BookingAddressCard(
+    title: locationName,
+    address: address,
+    showChangeAction: showChangeAction,
+    onChangeTap: changeActionEnabled ? onChangeTap : null,
+  );
 }
 
+/// Keeps the existing address BLoC, default selection, and user callbacks.
 class CleaningAddressSelectWidget extends StatelessWidget {
   const CleaningAddressSelectWidget({
     super.key,
@@ -186,172 +47,130 @@ class CleaningAddressSelectWidget extends StatelessWidget {
   });
 
   final ValueNotifier<AddressListItem?> selectedAddress;
-
   final bool showChangeAction;
   final VoidCallback? onChangeTap;
   final VoidCallback? afterBringDefault;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<ProfileBloc>(
-      lazy: false,
-      create: (_) =>
-          getIt<ProfileBloc>()
-            ..add(FetchAddressesEvent(params: FetchAddressesParams())),
-      child: BlocConsumer<ProfileBloc, ProfileState>(
-        listener: (context, state) {
-          if (state.addressesStatus != BlocStatus.success) return;
-          if (selectedAddress.value != null) return;
-          final defaultAddress = state.defaultAddress;
-          if (defaultAddress == null) return;
-          selectedAddress.value = defaultAddress;
-          afterBringDefault?.call();
-        },
-        listenWhen: (pre, cur) => pre.addressesStatus != cur.addressesStatus,
-        builder: (context, state) {
-          return Container(
-            child: switch (state.addressesStatus) {
-              null ||
-              BlocStatus.failed ||
-              BlocStatus.success => ValueListenableBuilder<AddressListItem?>(
-                valueListenable: selectedAddress,
-                builder: (context, value, child) {
-                  return Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      14,
-                      12,
-                      14,
-                      12,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on_rounded,
-                              color: SharedPlatformColors.cleaning,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 6),
-                            AppText.bodyLarge(
-                              'عنوان الخدمة',
-                              color: SharedPlatformColors.cleaning,
-                              fontWeight: FontWeight.w700,
-                              textAlign: TextAlign.right,
-                            ),
-                            const Spacer(),
-                            // if (showChangeAction)
-                            InkWell(
-                              onTap: onChangeTap,
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsetsDirectional.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE9E9F3),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: AppText.labelLarge(
-                                  'عرض',
-                                  color: SharedPlatformColors.cleaning,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                            14,
-                            12,
-                            14,
-                            12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F6F8),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppText.bodyMedium(
-                                value?.label ?? 'اختر عنوان الخدمة',
-                                color: const Color(0xFF1F2937),
-                                fontWeight: FontWeight.w700,
-                                textAlign: TextAlign.right,
-                              ),
-                              const SizedBox(height: 4),
-                              AppText.labelLarge(
-                                value?.line1 ?? 'اضغط لاختيار العنوان',
-                                color: const Color(0xFF6B7280),
-                                textAlign: TextAlign.right,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+  Widget build(BuildContext context) => BlocProvider<ProfileBloc>(
+    lazy: false,
+    create: (_) =>
+        getIt<ProfileBloc>()
+          ..add(FetchAddressesEvent(params: FetchAddressesParams())),
+    child: BlocConsumer<ProfileBloc, ProfileState>(
+      listenWhen: (previous, current) =>
+          previous.addressesStatus != current.addressesStatus,
+      listener: (context, state) {
+        if (state.addressesStatus != BlocStatus.success ||
+            selectedAddress.value != null ||
+            state.defaultAddress == null) {
+          return;
+        }
+        selectedAddress.value = state.defaultAddress;
+        afterBringDefault?.call();
+      },
+      builder: (context, state) {
+        if (state.addressesStatus == BlocStatus.loading ||
+            state.addressesStatus == BlocStatus.init) {
+          return const _AddressSkeleton();
+        }
+        return ValueListenableBuilder<AddressListItem?>(
+          valueListenable: selectedAddress,
+          builder: (context, address, _) => _BookingAddressCard(
+            title: address?.label ?? 'لم تحدد عنوان الخدمة',
+            address:
+                address?.line1 ?? 'اختر عنواناً محفوظاً أو أضف عنواناً جديداً.',
+            showChangeAction: showChangeAction,
+            onChangeTap: onChangeTap,
+          ),
+        );
+      },
+    ),
+  );
+}
 
-              BlocStatus.init || BlocStatus.loading => Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        ShimmerWidget(
-                          width: 35,
-                          height: 35,
-                          shape: BoxShape.circle,
-                        ),
-                        const SizedBox(width: 6),
-                        ShimmerWidget(
-                          width: context.width * .3,
-                          height: 35,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        const Spacer(),
-                        // if (showChangeAction)
-                        ShimmerWidget(
-                          width: context.width * .15,
-                          height: 35,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    ShimmerWidget(
-                      width: double.infinity,
-                      height: 80,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ],
-                ),
+class _BookingAddressCard extends StatelessWidget {
+  const _BookingAddressCard({
+    required this.title,
+    required this.address,
+    required this.showChangeAction,
+    required this.onChangeTap,
+  });
+
+  final String title;
+  final String address;
+  final bool showChangeAction;
+  final VoidCallback? onChangeTap;
+
+  @override
+  Widget build(BuildContext context) => AppSurfaceCard(
+    section: AppSection.cleaning,
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.location_on_outlined,
+              color: AlnadhaTokens.primary,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text('عنوان الخدمة', style: AlnadhaTokens.sectionTitle),
+            ),
+            if (showChangeAction)
+              TextButton.icon(
+                onPressed: onChangeTap,
+                icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+                label: const Text('تغيير'),
               ),
-            },
-          );
-        },
-      ),
-    );
-  }
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AlnadhaTokens.background,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AlnadhaTokens.body.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+              Text(address, style: AlnadhaTokens.caption),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _AddressSkeleton extends StatelessWidget {
+  const _AddressSkeleton();
+  @override
+  Widget build(BuildContext context) => AppSurfaceCard(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('عنوان الخدمة', style: AlnadhaTokens.sectionTitle),
+        const SizedBox(height: 12),
+        Container(
+          height: 68,
+          decoration: BoxDecoration(
+            color: AlnadhaTokens.background,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      ],
+    ),
+  );
 }

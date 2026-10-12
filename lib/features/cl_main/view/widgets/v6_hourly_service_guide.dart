@@ -1,100 +1,46 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/design_system/design_system.dart';
 
-/// Guidance only: no promise of specific worker skills, price or availability.
+/// Only explains when to choose this tab, not how booking is performed.
 class V6HourlyServiceGuide extends StatelessWidget {
   const V6HourlyServiceGuide({super.key});
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => const Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const AppSectionHeading(
+      AppSectionHeading(
         title: 'متى تختار عاملاً بالساعة؟',
         description:
-            'إذا كنت تحتاج مساعدة لوقت محدد بدلاً من طلب تنظيف منزل كامل.',
+            'عندما تكون حاجتك مساعدة منزلية مؤقتة في مهام محددة، ولا تحتاج طلب تنظيف شامل.',
       ),
-      const SizedBox(height: 12),
-      const _GuidePoint(
-        icon: Icons.room_service_outlined,
-        title: 'مهام منزلية محددة',
-        description: 'عندما تريد وصف مهام بعينها وتحتاج مساعدة لإنجازها.',
-      ),
-      const SizedBox(height: 10),
-      const _GuidePoint(
-        icon: Icons.schedule_outlined,
-        title: 'مدة تناسب احتياجك',
-        description: 'عندما تفضّل تحديد عدد العمال والمدة المتوقعة قبل الحجز.',
-      ),
-      const SizedBox(height: 10),
-      const _GuidePoint(
-        icon: Icons.event_available_outlined,
-        title: 'مساعدة في يوم مزدحم',
+      SizedBox(height: 12),
+      _HourUseCase(
+        icon: Icons.home_repair_service_outlined,
+        title: 'ترتيب أو تنظيم المنزل',
         description:
-            'عندما تحتاج دعماً مؤقتاً في المنزل دون اختيار برنامج تنظيف كامل.',
+            'لمساعدتك في ترتيب الأغراض أو تنظيم مساحة قبل استقبال الضيوف.',
       ),
-      const SizedBox(height: 18),
-      const AppSectionHeading(
-        title: 'كيف يعمل الحجز؟',
-        description: 'ثلاث خطوات بسيطة قبل تأكيد الطلب',
+      SizedBox(height: 10),
+      _HourUseCase(
+        icon: Icons.inventory_2_outlined,
+        title: 'مهام خفيفة ومتنوعة',
+        description: 'عند وجود عدة أعمال خفيفة تريد تنفيذها خلال زيارة واحدة.',
       ),
-      const SizedBox(height: 12),
-      const _GuideStep(
-        number: '1',
-        title: 'اختر الوقت وعدد العمال',
-        description: 'حدّد الموعد والمدة التي تتوقع احتياجها.',
-      ),
-      const SizedBox(height: 10),
-      const _GuideStep(
-        number: '2',
-        title: 'أضف العنوان ووصف المهام',
-        description: 'اكتب المطلوب بوضوح ليكون ضمن تفاصيل الطلب.',
-      ),
-      const SizedBox(height: 10),
-      const _GuideStep(
-        number: '3',
-        title: 'راجع تقدير التكلفة',
+      SizedBox(height: 10),
+      _HourUseCase(
+        icon: Icons.access_time_rounded,
+        title: 'حاجة مؤقتة بمدة غير محسومة',
         description:
-            'يظهر التقدير من النظام؛ ترتبط الفوترة النهائية بالمدة الفعلية المسجلة.',
+            'عندما تعرف موعد البدء، لكن المدة الفعلية ستتضح أثناء العمل.',
       ),
-      const SizedBox(height: 16),
-      AppSurfaceCard(
-        section: AppSection.cleaning,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.lightbulb_outline_rounded,
-              color: AppSection.cleaning.ink,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'متى أختار التنظيف العادي أو العميق؟',
-                    style: AlnadhaTokens.sectionTitle,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'إذا أردت تنظيف غرف ومرافق المنزل وفق خدمة واضحة، اختر «التنظيفات». أما إذا كانت حاجتك لساعات ومهام محددة، فابدأ من «بالساعة».',
-                    style: AlnadhaTokens.caption,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 24),
+      SizedBox(height: 22),
     ],
   );
 }
 
-class _GuidePoint extends StatelessWidget {
-  const _GuidePoint({
+class _HourUseCase extends StatelessWidget {
+  const _HourUseCase({
     required this.icon,
     required this.title,
     required this.description,
@@ -102,19 +48,21 @@ class _GuidePoint extends StatelessWidget {
   final IconData icon;
   final String title;
   final String description;
+
   @override
   Widget build(BuildContext context) => AppSurfaceCard(
-    padding: const EdgeInsets.all(14),
+    section: AppSection.cleaning,
+    padding: const EdgeInsets.all(16),
     child: Row(
       children: [
         Container(
-          width: 46,
-          height: 46,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             color: AppSection.cleaning.soft,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(icon, color: AppSection.cleaning.ink, size: 23),
+          child: Icon(icon, size: 24, color: AppSection.cleaning.ink),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -122,57 +70,12 @@ class _GuidePoint extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: AlnadhaTokens.sectionTitle),
+              const SizedBox(height: 4),
               Text(description, style: AlnadhaTokens.caption),
             ],
           ),
         ),
       ],
     ),
-  );
-}
-
-class _GuideStep extends StatelessWidget {
-  const _GuideStep({
-    required this.number,
-    required this.title,
-    required this.description,
-  });
-  final String number;
-  final String title;
-  final String description;
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        width: 30,
-        height: 30,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppSection.cleaning.soft,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          number,
-          style: AlnadhaTokens.body.copyWith(
-            color: AppSection.cleaning.ink,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: AlnadhaTokens.body),
-              Text(description, style: AlnadhaTokens.caption),
-            ],
-          ),
-        ),
-      ),
-    ],
   );
 }

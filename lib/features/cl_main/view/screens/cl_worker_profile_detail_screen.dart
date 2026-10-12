@@ -154,7 +154,7 @@ class _ClWorkerProfileDetailScreenState
             if (_isLoading)
               const LinearProgressIndicator(
                 minHeight: 3,
-                color: Color(0xFF0CBBC7),
+                color: Color(0xFF365487),
                 backgroundColor: Color(0xFFE8ECF2),
               ),
             Expanded(
@@ -240,7 +240,7 @@ class _ClWorkerProfileDetailScreenState
                                       side: const BorderSide(
                                         color: Color(0xFFB6ECEF),
                                       ),
-                                      backgroundColor: const Color(0xFFE9F9FA),
+                                      backgroundColor: const Color(0xFFEEF2F9),
                                     ),
                                   )
                                   .toList(growable: false),
@@ -330,7 +330,7 @@ class _WorkerProfileHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
-          colors: [SharedPlatformColors.cleaning, Color(0xFF0CBBC7)],
+          colors: [SharedPlatformColors.cleaning, Color(0xFF365487)],
         ),
       ),
       child: SafeArea(
@@ -455,7 +455,7 @@ class _WorkerStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: const Color(0xFF0F8E98), size: 22),
+        Icon(icon, color: const Color(0xFF172554), size: 22),
         const SizedBox(height: 5),
         Text(
           value,
@@ -495,7 +495,7 @@ class _WorkerInfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: const Color(0xFF0F8E98)),
+        Icon(icon, size: 20, color: const Color(0xFF172554)),
         const SizedBox(width: 8),
         Text(
           '$label: ',

@@ -15,6 +15,44 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
   final String imagePath;
   final VoidCallback onTap;
 
+  IconData get _occasionIcon {
+    final key = '$title $imagePath'.toLowerCase();
+    if (key.contains('عشاء') || key.contains('dinner')) {
+      return Icons.dinner_dining_outlined;
+    }
+    if (key.contains('ميلاد') || key.contains('birthday')) {
+      return Icons.cake_outlined;
+    }
+    if (key.contains('عزاء') ||
+        key.contains('funeral') ||
+        key.contains('aza')) {
+      return Icons.volunteer_activism_outlined;
+    }
+    if (key.contains('تجمع') || key.contains('gathering')) {
+      return Icons.groups_2_outlined;
+    }
+    return Icons.celebration_outlined;
+  }
+
+  String get _occasionDescription {
+    final key = '$title $imagePath'.toLowerCase();
+    if (key.contains('عشاء') || key.contains('dinner')) {
+      return 'مساعدة في تجهيز المائدة والضيافة';
+    }
+    if (key.contains('ميلاد') || key.contains('birthday')) {
+      return 'مساعدة في التحضير وتقديم الضيافة';
+    }
+    if (key.contains('عزاء') ||
+        key.contains('funeral') ||
+        key.contains('aza')) {
+      return 'دعم هادئ لتنظيم الضيافة والمكان';
+    }
+    if (key.contains('تجمع') || key.contains('gathering')) {
+      return 'تنظيم ومساعدة للمناسبات الكبيرة';
+    }
+    return 'حدد مهام المساعدة المناسبة لك';
+  }
+
   @override
   Widget build(BuildContext context) {
     final uri = Uri.tryParse(imagePath);
@@ -46,15 +84,10 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
                     ? Image.network(
                         imagePath,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const Icon(
-                          Icons.celebration_outlined,
-                          color: AlnadhaTokens.primary,
-                        ),
+                        errorBuilder: (_, _, _) =>
+                            Icon(_occasionIcon, color: AlnadhaTokens.primary),
                       )
-                    : Icon(
-                        Icons.celebration_outlined,
-                        color: AppSection.cleaning.ink,
-                      ),
+                    : Icon(_occasionIcon, color: AppSection.cleaning.ink),
               ),
             ),
             const SizedBox(width: 12),
@@ -64,10 +97,7 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
                 children: [
                   Text(title, style: AlnadhaTokens.sectionTitle),
                   const SizedBox(height: 3),
-                  const Text(
-                    'اختر المهام والساعات المناسبة',
-                    style: AlnadhaTokens.caption,
-                  ),
+                  Text(_occasionDescription, style: AlnadhaTokens.caption),
                 ],
               ),
             ),

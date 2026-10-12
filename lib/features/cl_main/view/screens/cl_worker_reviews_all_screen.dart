@@ -106,12 +106,12 @@ class ClWorkerReviewsAllScreen extends StatelessWidget {
                     height: 52,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE9F9FA),
+                      color: const Color(0xFFEEF2F9),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(
                       Icons.rate_review_outlined,
-                      color: Color(0xFF0F8E98),
+                      color: Color(0xFF172554),
                       size: 27,
                     ),
                   ),

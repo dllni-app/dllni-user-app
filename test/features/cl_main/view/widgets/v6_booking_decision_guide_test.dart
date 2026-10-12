@@ -33,12 +33,15 @@ void main() {
       await tester.pumpWidget(
         makeWidget(V6BookingDecisionTopic.tasksAndExtras),
       );
-      expect(find.text('كيف أحدد المهام والإضافات؟'), findsOneWidget);
+      expect(find.text('متى أضيف خدمات إضافية؟'), findsOneWidget);
       expect(find.text('لست متأكداً؟'), findsOneWidget);
       expect(find.textContaining('اكتب مهمة خاصة'), findsNothing);
       await tester.tap(find.text('لست متأكداً؟'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('اكتب مهمة خاصة'), findsOneWidget);
+      expect(
+        find.textContaining('اكتب مهمة خاصة في وصف الطلب'),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const Key('booking_decision_contact_support')),
         findsOneWidget,

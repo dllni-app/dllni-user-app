@@ -414,7 +414,10 @@ class _ClMainScreenState extends State<ClMainScreen> {
                 },
               ),
             ),
-            _buildCleaningBannersSection(),
+            // Cleaning promotions belong to the cleaning tab only; do not
+            // push occasion and hourly decision content below an unrelated ad.
+            if (_selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex)
+              _buildCleaningBannersSection(),
             Expanded(
               child: _selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex
                   ? ListView.separated(

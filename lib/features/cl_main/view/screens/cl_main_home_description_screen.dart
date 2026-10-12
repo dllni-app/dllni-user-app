@@ -149,7 +149,7 @@ class _ClMainHomeDescriptionScreenState
         Text(
           'الغرف الأساسية: ${_roomState.totalBaseRooms} من ${CleaningProgressiveRoomState.maxBaseRooms}',
           textAlign: TextAlign.start,
-          style: const TextStyle(color: Color(0xFF667085), fontSize: 12),
+          style: const TextStyle(color: Color(0xFF697386), fontSize: 12),
         ),
         const SizedBox(height: 16),
         for (final type in visibleTypes) ...[
@@ -249,7 +249,7 @@ class _ClMainHomeDescriptionScreenState
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF006E79),
+                    color: Color(0xFF172554),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -341,7 +341,7 @@ class _ClMainHomeDescriptionScreenState
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline, color: Color(0xFF0F8E98)),
+              Icon(Icons.info_outline, color: Color(0xFF172554)),
               SizedBox(width: 10),
               Expanded(
                 child: Text(

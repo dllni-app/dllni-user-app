@@ -280,11 +280,39 @@ class CleaningDynamicFieldConfigModel {
       id: _integer(json['id']) ?? 0,
       key: _text(json['key']) ?? '',
       label: _text(json['label']) ?? '',
-      type: _text(json['type']) ?? 'text',
-      required: _boolean(json['required']) ?? false,
-      options: _list(json['options']),
+      type: normalizeCleaningDynamicFieldType(
+        _text(json['type'] ?? json['field_type']) ?? 'text',
+      ),
+      required: _boolean(json['required'] ?? json['is_required']) ?? false,
+      options: parseCleaningDynamicFieldOptions(json['options']),
     );
   }
+}
+
+/// The management API may use "select" while Flutter renders "single_select".
+String normalizeCleaningDynamicFieldType(String source) {
+  return switch (source.trim().toLowerCase()) {
+    'select' || 'choice' || 'dropdown' || 'single_select' => 'single_select',
+    'multi_select' || 'multiple_select' || 'multiselect' => 'multi_select',
+    'boolean' || 'bool' || 'yes_no' => 'yes_no',
+    'integer' || 'decimal' || 'numeric' || 'number' => 'number',
+    'textarea' || 'long_text' => 'textarea',
+    _ => 'text',
+  };
+}
+
+/// Backend seeders/config may serialize choices as JSON strings.
+List<dynamic> parseCleaningDynamicFieldOptions(dynamic value) {
+  if (value is List) return List<dynamic>.unmodifiable(value);
+  if (value is String && value.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is List) return List<dynamic>.unmodifiable(decoded);
+    } on FormatException {
+      // A broken/unsupported options payload must not become a fake option.
+    }
+  }
+  return const <dynamic>[];
 }
 
 Map<String, dynamic> _map(dynamic value) {

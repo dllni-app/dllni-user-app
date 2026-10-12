@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/design_system/design_system.dart';
 import '../../../../core/widgets/support_whatsapp_launcher.dart';
 
-/// Small contextual guidance; never decides price, eligibility, or availability.
+/// Decision guidance only. Server continues to own prices, eligibility, and limits.
 enum V6BookingDecisionTopic {
   cleaningType,
   appointment,
@@ -25,90 +25,90 @@ class V6DecisionCopy {
     V6BookingDecisionTopic topic,
   ) => switch (topic) {
     V6BookingDecisionTopic.cleaningType => const V6DecisionCopy(
-      'أي نوع تنظيف يناسبك؟',
-      'العادي للعناية المعتادة، والعميق عندما تحتاج عناية أشمل وتفاصيل أكثر.',
+      'أي مستوى تنظيف أحتاج؟',
+      'اختر بحسب حالة المنزل، لا بحسب عدد الغرف فقط.',
       [
-        'اختر التنظيف العادي إذا كانت حاجتك إلى المهام المنزلية المعتادة.',
-        'اختر التنظيف العميق إذا كانت المساحات تحتاج تنظيفاً تفصيلياً أكبر.',
-        'راجع الخدمات المضمنة والتقدير قبل الإرسال، فقد تختلف المهام والتكلفة.',
+        'العادي: عندما يكون المنزل معتنى به ويحتاج تنظيفاً معتاداً.',
+        'العميق: عند تراكم الأوساخ أو الحاجة لتنظيف تفصيلي بعد فترة طويلة.',
+        'إذا كانت الحاجة مهمة محددة فقط، راجع العامل بالساعة بدلاً من تنظيف كامل.',
       ],
     ),
     V6BookingDecisionTopic.appointment => const V6DecisionCopy(
-      'كيف أختار الموعد؟',
-      'اختر اليوم ووقت بدء الخدمة عندما يمكن استقبال العامل في العنوان المحدد.',
+      'أي موعد يناسبك؟',
+      'اختر وقتاً يمكنك فيه استقبال العامل وبدء الخدمة.',
       [
-        'راجع إمكانية وجود شخص لاستقبال مقدم الخدمة في الوقت المختار.',
-        'تأكد من عنوان المنزل والموقع على الخريطة قبل المتابعة.',
-        'إذا كنت تحتاج زيارات متعددة، راجع خيار الحجز الدوري وشروطه.',
+        'اختر وقتاً تستطيع فيه فتح المكان واستقبال العامل.',
+        'اترك وقتاً كافياً للمهام التي حددتها ولا تفترض انتهاءها في موعد ثابت.',
+        'إذا كنت تحتاج زيارة أخرى في أيام مختلفة، استخدم الحجز الدوري.',
       ],
     ),
     V6BookingDecisionTopic.recurrence => const V6DecisionCopy(
-      'زيارة واحدة أم حجز دوري؟',
-      'اختر الدوري فقط إذا كنت بحاجة لزيارات متكررة، وحدّد تواريخها بدقة.',
+      'هل أحتاج زيارات متكررة؟',
+      'استخدم الحجز الدوري فقط إذا كانت حاجتك تتكرر في عدة أيام.',
       [
-        'زيارة واحدة تناسب الطلب الذي ترغب بتنفيذه في موعد واحد.',
-        'الحجز الدوري يناسب المهام التي تتكرر أسبوعياً أو في أيام مختلفة.',
-        'راجع عدد الزيارات والمواعيد وطريقة حساب كل زيارة قبل التأكيد.',
+        'زيارة واحدة: لتنظيف المنزل مرة واحدة.',
+        'دوري: لزيارات أسبوعية أو أيام مخصصة ضمن 30 يوماً.',
+        'يمكن أن يختلف العامل بين الزيارات؛ لكل زيارة موعد وتغطية مستقلة.',
       ],
     ),
     V6BookingDecisionTopic.tasksAndExtras => const V6DecisionCopy(
-      'كيف أحدد المهام والإضافات؟',
-      'حدّد فقط الأعمال والمواد التي تحتاجها فعلاً؛ قد يتغيّر السعر بحسب الإضافات.',
+      'متى أضيف خدمات إضافية؟',
+      'أضف فقط ما تحتاجه خارج نطاق التنظيف الذي اخترته.',
       [
-        'اختر المهام الظاهرة التي ترغب من العامل إنجازها.',
-        'اكتب مهمة خاصة إذا لم تجدها ضمن الخيارات المتاحة.',
-        'أضف المواد أو الخدمات الخاصة فقط عند الحاجة وراجع تقدير التكلفة المحدث.',
+        'أضف توفير مواد التنظيف إذا لم تتوفر المواد المناسبة لديك.',
+        'اختر خدمة خاصة عند الحاجة إلى مهمة متخصصة وليست تنظيفاً معتاداً.',
+        'اكتب مهمة خاصة في وصف الطلب إذا كانت متاحة ضمن نوع الحجز؛ راجع التكلفة قبل التأكيد.',
       ],
     ),
     V6BookingDecisionTopic.teamSelection => const V6DecisionCopy(
-      'كيف أختار العمال؟',
-      'يمكنك اختيار عدد العمال أو تفضيل عامل سابق حسب الخيارات المتاحة.',
+      'كم عاملاً أحتاج؟',
+      'حدد العدد بحسب حجم المهام والوقت المتاح، لا بحسب عدد الضيوف وحده.',
       [
-        'عدد العمال المناسب يعتمد على حجم المهام والوقت؛ راجع الحد الأدنى المعروض من النظام.',
-        'إذا جرّبت عاملاً من قبل وتفضّل التعامل معه، استخدم خيار العامل المفضل عند توفره.',
-        'اختيار العامل أو العاملة يتبع التفضيل المدعوم؛ القبول والتوفر يؤكدهما النظام.',
+        'عامل واحد مناسب عادةً لمجموعة مهام محدودة يمكن لشخص واحد إنجازها.',
+        'عاملان أو أكثر عندما تحتاج تنفيذ مهام متزامنة في أماكن مختلفة.',
+        'قد يفرض النظام حداً أدنى بسبب مدة الجلسة أو التغطية؛ راجع العدد المسموح قبل المتابعة.',
       ],
     ),
     V6BookingDecisionTopic.bookingReview => const V6DecisionCopy(
-      'ماذا أراجع قبل تأكيد الطلب؟',
-      'راجع العنوان والموعد والمهام والعمال وتقدير التكلفة قبل الإرسال.',
+      'هل تفاصيل الطلب صحيحة؟',
+      'راجع فقط القرارات التي تؤثر في التنفيذ أو السعر قبل الإرسال.',
       [
-        'تحقق من ملخص الغرف أو المناسبة وعدد الزيارات.',
-        'راجع الإضافات والكوبون وصحة السعر المعروض، فهو صادر من الخادم.',
-        'الدفع نقدي عند إتمام الخدمة؛ إذا تغيّرت تفاصيل الطلب راجع التقدير مجدداً.',
+        'راجع المهام وعدد العمال وعنوان التنفيذ.',
+        'تحقق من الأيام والمواعيد والتقدير الصادر من النظام.',
+        'إذا غيّرت أحد الخيارات، راجع السعر الجديد قبل تأكيد الطلب.',
       ],
     ),
     V6BookingDecisionTopic.eventRequirements => const V6DecisionCopy(
-      'كيف أحدد احتياجات المناسبة؟',
-      'ابدأ بعدد الضيوف والمهام وساعات المساعدة المتوقعة، ثم أضف متطلباتك الخاصة.',
+      'كم عاملاً وكم ساعة أحتاج للمناسبة؟',
+      'قدّر العمل المطلوب في كل جلسة، ثم وزّعه بحسب ما يمكن إنجازه بالتوازي.',
       [
-        'احسب الضيوف المتوقع حضورهم لتوضيح حجم المناسبة.',
-        'اكتب طبيعة المساعدة بشكل محدد بدلاً من وصف عام.',
-        'اختر الساعات وعدد العمال، وراجع الحد الأدنى والتحقق من النظام قبل المتابعة.',
+        'حدد المهام: تجهيز المكان، خدمة الضيوف، أو الترتيب بعد المناسبة؛ فلكل مهمة وقت مختلف.',
+        'إذا احتجت مهمتين في الوقت نفسه وفي مكانين مختلفين فقد تحتاج عاملين، حتى لو كانت المناسبة قصيرة.',
+        'إذا امتدت الجلسة لأكثر من 8 ساعات، فالنظام يطلب أكثر من عامل لتغطية المدة ضمن حد عمل العامل اليومي؛ راجع عدد العمال المسموح.',
       ],
     ),
     V6BookingDecisionTopic.eventSchedule => const V6DecisionCopy(
-      'كيف أنظم أيام المناسبة؟',
-      'حدّد يوم ووقت كل جلسة، ثم راجع العدد الإجمالي للساعات والعمال.',
+      'كيف أختار أيام المناسبة؟',
+      'حدد الأيام التي ستحتاج فيها مساعدة بالفعل، ولكل يوم وقت ومدة مستقلان.',
       [
-        'أضف فقط الأيام التي تحتاج فيها إلى مساعدة فعلية.',
-        'راجع بداية كل جلسة ومدتها حتى لا تتداخل المواعيد.',
-        'تأكد من إجمالي الجلسات والفاتورة التقديرية قبل تأكيد المناسبة.',
+        'إن احتجت تجهيز المكان قبل المناسبة، أضف يوم التجهيز ضمن المواعيد.',
+        'يمكن أن يختلف وقت البدء والمدة بين يوم وآخر.',
+        'راجع عدد العمال لكل يوم؛ فتوفرهم لا يُضمن تلقائياً لجميع الجلسات.',
       ],
     ),
     V6BookingDecisionTopic.hourlyDuration => const V6DecisionCopy(
       'كيف أقدّر عدد العمال والمدة؟',
-      'اختر وقت البدء وعدد العمال والحد المتوقع، مع شرح الأعمال في الوصف.',
+      'فكّر في المهام التي ستُنجز معاً، ثم اختر سقفاً زمنياً يكفيها.',
       [
-        'إذا كانت المهام قليلة ومحددة، ابدأ بعدد عمال يناسبها.',
-        'اكتب وصفاً واضحاً كي يعرف العامل المطلوب عند وصوله.',
-        'التقدير الأولي مختلف عن الفوترة النهائية التي تعتمد على مدة العمل المسجلة.',
+        'عامل واحد يناسب المهام القليلة والمتتابعة، مثل ترتيب غرفة ونقل أغراض خفيفة.',
+        'اختر أكثر من عامل إذا كانت هناك مهام متزامنة أو حجم عمل لا يناسب شخصاً واحداً.',
+        'المدة المختارة تحجز الوقت المتوقع في جدول العامل، وليست فاتورة نهائية: المحاسبة تبدأ بحد أدنى ساعة ثم تقرّب إلى 15 دقيقة وفق الوقت الفعلي.',
       ],
     ),
   };
 }
 
-/// One short card at the decision point; examples only inside a bottom sheet.
+/// A visibly non-interactive information block. Only the help link is actionable.
 class V6BookingDecisionGuide extends StatelessWidget {
   const V6BookingDecisionGuide({super.key, required this.topic});
   final V6BookingDecisionTopic topic;
@@ -116,33 +116,54 @@ class V6BookingDecisionGuide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final copy = V6DecisionCopy.forTopic(topic);
-    return AppSurfaceCard(
-      section: AppSection.cleaning,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.tips_and_updates_outlined, color: AppSection.cleaning.ink),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(copy.title, style: AlnadhaTokens.sectionTitle),
-                const SizedBox(height: 4),
-                Text(copy.summary, style: AlnadhaTokens.caption),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () =>
-                        V6BookingDecisionHelpSheet.show(context, topic),
-                    icon: const Icon(Icons.help_outline, size: 18),
-                    label: const Text('لست متأكداً؟'),
-                  ),
-                ),
-              ],
-            ),
+    return Semantics(
+      container: true,
+      child: Container(
+        key: Key('decision_info_${topic.name}'),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AlnadhaTokens.primary.withValues(alpha: .045),
+          border: Border.all(
+            color: AlnadhaTokens.primary.withValues(alpha: .13),
           ),
-        ],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              size: 23,
+              color: AlnadhaTokens.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(copy.title, style: AlnadhaTokens.sectionTitle),
+                  const SizedBox(height: 6),
+                  Text(
+                    copy.summary,
+                    style: AlnadhaTokens.body.copyWith(
+                      color: AlnadhaTokens.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton.icon(
+                      onPressed: () =>
+                          V6BookingDecisionHelpSheet.show(context, topic),
+                      icon: const Icon(Icons.help_outline_rounded, size: 18),
+                      label: const Text('لست متأكداً؟'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -158,6 +179,7 @@ class V6BookingDecisionHelpSheet extends StatelessWidget {
       isScrollControlled: true,
       showDragHandle: true,
       useSafeArea: true,
+      backgroundColor: AlnadhaTokens.surface,
       builder: (_) => V6BookingDecisionHelpSheet(topic: topic),
     );
   }
@@ -167,7 +189,7 @@ class V6BookingDecisionHelpSheet extends StatelessWidget {
     final copy = V6DecisionCopy.forTopic(topic);
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * .83,
+        maxHeight: MediaQuery.sizeOf(context).height * .84,
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 24),
@@ -178,17 +200,22 @@ class V6BookingDecisionHelpSheet extends StatelessWidget {
             Text(copy.title, style: AlnadhaTokens.title),
             const SizedBox(height: 8),
             Text(copy.summary, style: AlnadhaTokens.body),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             for (var i = 0; i < copy.examples.length; i++) ...[
-              AppSurfaceCard(
-                section: AppSection.cleaning,
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AlnadhaTokens.background,
+                  border: Border.all(color: AlnadhaTokens.border),
+                  borderRadius: BorderRadius.circular(13),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      size: 22,
-                      color: AppSection.cleaning.ink,
+                    const Icon(
+                      Icons.lightbulb_outline_rounded,
+                      size: 20,
+                      color: AlnadhaTokens.primary,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -199,9 +226,9 @@ class V6BookingDecisionHelpSheet extends StatelessWidget {
               ),
               const SizedBox(height: 9),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             const Text(
-              'إذا لم تتأكد من الاختيار، تواصل مع الدعم الفني لنساعدك على اختيار الأنسب.',
+              'لم تتأكد من الاختيار؟ يمكن للدعم مساعدتك في تحديد احتياجك.',
               style: AlnadhaTokens.caption,
             ),
             TextButton.icon(

@@ -21,21 +21,18 @@ Widget wrap(Widget child, {double scale = 1}) => MaterialApp(
 );
 
 void main() {
-  testWidgets('hourly explanation answers when to use and fee expectations', (
-    tester,
-  ) async {
-    await tester.pumpWidget(wrap(const V6HourlyServiceGuide()));
-    expect(find.text('متى تختار عاملاً بالساعة؟'), findsOneWidget);
-    expect(find.text('مهام منزلية محددة'), findsOneWidget);
-    expect(find.text('مدة تناسب احتياجك'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('متى أختار التنظيف العادي أو العميق؟'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.textContaining('الفوترة النهائية'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'hourly discovery explains when to choose the tab without booking steps',
+    (tester) async {
+      await tester.pumpWidget(wrap(const V6HourlyServiceGuide()));
+      expect(find.text('متى تختار عاملاً بالساعة؟'), findsOneWidget);
+      expect(find.text('ترتيب أو تنظيم المنزل'), findsOneWidget);
+      expect(find.text('حاجة مؤقتة بمدة غير محسومة'), findsOneWidget);
+      expect(find.text('كيف يعمل الحجز؟'), findsNothing);
+      expect(find.textContaining('خطوات الحجز'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('booking action bar disables submission and routes previous', (
     tester,

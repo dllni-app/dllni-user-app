@@ -496,7 +496,7 @@ class _ClMainOccasionScheduleScreenState
             'أيام وأوقات المناسبة',
             textAlign: TextAlign.start,
             style: TextStyle(
-              color: Color(0xFF172033),
+              color: Color(0xFF182232),
               fontWeight: FontWeight.w800,
               fontSize: 16,
             ),

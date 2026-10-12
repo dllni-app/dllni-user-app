@@ -3,6 +3,7 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/cleaning_suite_config_model.dart';
@@ -41,6 +42,14 @@ class _ClMainOccasionDescriptionScreenState
   final TextEditingController _customServiceController =
       TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _specialRequirementsController =
+      TextEditingController();
+
+  String? get _specialRequirementText {
+    final value = _specialRequirementsController.text.trim();
+    return value.isEmpty ? null : value;
+  }
+
   final Map<String, TextEditingController> _dynamicControllers =
       <String, TextEditingController>{};
   final Map<String, dynamic> _dynamicValues = <String, dynamic>{};
@@ -267,9 +276,7 @@ class _ClMainOccasionDescriptionScreenState
             _didNavigateToSchedule = true;
             final eventType = _eventTypeFromOption(_routeArgs!.option);
             final customService = _customServiceValue;
-            final specialRequirement = _selectedSpecialRequirement!.id == 'none'
-                ? null
-                : _selectedSpecialRequirement!.label;
+            final specialRequirement = _specialRequirementText;
             final resolvedWorkersCount = _resolvedWorkersCount;
             final suggestedTeamSize =
                 state.estimatePrice?.suggestedTeamSize ?? resolvedWorkersCount;
@@ -279,14 +286,16 @@ class _ClMainOccasionDescriptionScreenState
               estimate: state.estimatePrice!,
               guestsCount: _guestsCount,
               eventType: eventType,
-              venueType: 'apartment',
+              venueType: resolveEventVenueType(_eventDynamicAnswers),
               customService: customService,
               hours: _hoursCount.toDouble(),
               numberOfWorkers: resolvedWorkersCount,
               suggestedTeamSize: suggestedTeamSize,
               helpTypeId: _selectedHelpType?.id ?? 'custom',
               helpTypeLabel: customService,
-              specialRequirementId: _selectedSpecialRequirement!.id,
+              specialRequirementId: specialRequirement == null
+                  ? 'none'
+                  : 'custom',
               specialRequirementLabel: specialRequirement ?? 'لا يوجد',
               defaultAddress: _selectedAddress.value,
               notes: _enableNotes ? _notesController.text.trim() : null,
@@ -394,12 +403,12 @@ class _ClMainOccasionDescriptionScreenState
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE9F9FA),
+                  color: const Color(0xFFEEF2F9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.event_rounded,
-                  color: Color(0xFF0F8E98),
+                  color: Color(0xFF172554),
                 ),
               ),
               const SizedBox(width: 12),
@@ -409,13 +418,13 @@ class _ClMainOccasionDescriptionScreenState
                   children: [
                     const Text(
                       'نوع المناسبة',
-                      style: TextStyle(color: Color(0xFF667085), fontSize: 12),
+                      style: TextStyle(color: Color(0xFF697386), fontSize: 12),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       occasionTitle,
                       style: const TextStyle(
-                        color: Color(0xFF172033),
+                        color: Color(0xFF182232),
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
                       ),
@@ -450,7 +459,7 @@ class _ClMainOccasionDescriptionScreenState
                 'طبيعة المساعدة المطلوبة',
                 textAlign: TextAlign.start,
                 style: TextStyle(
-                  color: Color(0xFF172033),
+                  color: Color(0xFF182232),
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -458,7 +467,7 @@ class _ClMainOccasionDescriptionScreenState
               const Text(
                 'اختر اقتراحاً أو اكتب وصفاً يناسب احتياج المناسبة.',
                 textAlign: TextAlign.start,
-                style: TextStyle(color: Color(0xFF667085), fontSize: 12),
+                style: TextStyle(color: Color(0xFF697386), fontSize: 12),
               ),
               const SizedBox(height: 12),
               ClSelectableMenuFieldWidget(
@@ -511,14 +520,42 @@ class _ClMainOccasionDescriptionScreenState
             setState(() => _workersCount -= 1);
           },
         ),
-        const SizedBox(height: 8),
-        Text(
-          'الحد الأدنى المقترح لهذه المدة: $_minimumWorkersForSelectedHours عامل',
-          textAlign: TextAlign.start,
-          style: const TextStyle(
-            color: Color(0xFF667085),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: SharedPlatformColors.cleaningSoft,
+            border: Border.all(color: SharedPlatformColors.border),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                color: SharedPlatformColors.cleaningInk,
+                size: 23,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'الحد الأدنى اللازم للمدة: $_minimumWorkersForSelectedHours عامل',
+                      style: AlnadhaTokens.body.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'يُحسب هذا العدد لأن الحد الأقصى لعمل العامل في اليوم الواحد 8 ساعات. مثال: 10 ساعات تحتاج عاملين على الأقل. هذا حد مرتبط بالساعات، وليس تقديراً لعدد العمال بحسب عدد الضيوف أو كثافة المهام؛ يمكنك اختيار عدد أكبر عند الحاجة إلى تنفيذ أعمال بالتوازي.',
+                      style: AlnadhaTokens.caption,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -542,20 +579,53 @@ class _ClMainOccasionDescriptionScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'متطلبات خاصة (اختياري)',
+              Text(
+                'هل تحتاج ترتيبات خاصة؟ (اختياري)',
+                style: AlnadhaTokens.sectionTitle,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'اذكر احتياجاً لا تغطيه المهام المختارة، مثل تخصيص منطقة للضيافة أو متطلبات الوصول. اترك الحقل فارغاً إن لم يكن لديك طلب إضافي.',
+                style: AlnadhaTokens.caption,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                key: const Key('occasion_special_requirements_field'),
+                controller: _specialRequirementsController,
+                maxLength: 255,
+                minLines: 2,
+                maxLines: 4,
+                textInputAction: TextInputAction.done,
                 textAlign: TextAlign.start,
-                style: TextStyle(
-                  color: Color(0xFF172033),
-                  fontWeight: FontWeight.w800,
+                onTapOutside: (_) =>
+                    FocusManager.instance.primaryFocus?.unfocus(),
+                decoration: _redesignInputDecoration(
+                  hintText: 'مثلاً: تجهيز ركن منفصل للضيافة (اختياري)',
                 ),
               ),
-              const SizedBox(height: 10),
-              ClSelectableMenuFieldWidget(
-                key: const Key('occasion_special_requirements_field'),
-                value: _selectedSpecialRequirement?.label,
-                hint: 'اختر المتطلبات الخاصة',
-                onTap: _selectSpecialRequirement,
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: SharedPlatformColors.cleaningSoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 20,
+                      color: SharedPlatformColors.cleaningInk,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'هذه تعليمات للمناسبة وليست طلب خدمة متخصصة مستقلة. الخدمات المتخصصة تُختار وتُسعّر بشكل منفصل عند توفرها.',
+                        style: AlnadhaTokens.caption,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -610,7 +680,7 @@ class _ClMainOccasionDescriptionScreenState
   InputDecoration _redesignInputDecoration({required String hintText}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(color: Color(0xFF98A2B3), fontSize: 13),
+      hintStyle: const TextStyle(color: Color(0xFF697386), fontSize: 13),
       filled: true,
       fillColor: const Color(0xFFF9FAFB),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -620,7 +690,7 @@ class _ClMainOccasionDescriptionScreenState
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF0CBBC7)),
+        borderSide: const BorderSide(color: Color(0xFF365487)),
       ),
     );
   }
@@ -669,11 +739,10 @@ class _ClMainOccasionDescriptionScreenState
     if (args is ClMainOccasionDescriptionArgs) {
       _routeArgs = args;
       for (final field in args.option.dynamicFields) {
-        if (field.type == 'boolean' || field.type == 'bool') {
+        if (field.type == 'yes_no') {
           _dynamicValues.putIfAbsent(field.key, () => false);
-        } else if (field.type != 'select' &&
-            field.type != 'choice' &&
-            field.type != 'dropdown') {
+        } else if (field.type != 'single_select' &&
+            field.type != 'multi_select') {
           _dynamicControllers.putIfAbsent(field.key, TextEditingController.new);
         }
       }
@@ -690,6 +759,7 @@ class _ClMainOccasionDescriptionScreenState
     _detailsScrollController.dispose();
     _customServiceController.dispose();
     _notesController.dispose();
+    _specialRequirementsController.dispose();
     for (final controller in _dynamicControllers.values) {
       controller.dispose();
     }
@@ -746,12 +816,6 @@ class _ClMainOccasionDescriptionScreenState
       );
       return;
     }
-    if (_selectedSpecialRequirement == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار المتطلبات الخاصة')),
-      );
-      return;
-    }
     final invalidDynamicField = _firstInvalidDynamicField();
     if (invalidDynamicField != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -779,9 +843,7 @@ class _ClMainOccasionDescriptionScreenState
     }
 
     final eventType = _eventTypeFromOption(args.option);
-    final specialRequirement = _selectedSpecialRequirement!.id == 'none'
-        ? null
-        : _selectedSpecialRequirement!.label;
+    final specialRequirement = _specialRequirementText;
 
     bloc.add(ClearPreferredWorkersEvent());
     bloc.add(
@@ -791,7 +853,7 @@ class _ClMainOccasionDescriptionScreenState
           eventTypeId: args.option.eventTypeId,
           eventDynamicAnswers: _eventDynamicAnswers,
           guestCount: _guestsCount,
-          venueType: 'apartment',
+          venueType: resolveEventVenueType(_eventDynamicAnswers),
           customService: customService,
           hours: _hoursCount.toDouble(),
           addressId: addressId,
@@ -819,6 +881,14 @@ class _ClMainOccasionDescriptionScreenState
     return null;
   }
 
+  bool _isDuplicateOptionalSpecialNotes(CleaningDynamicFieldConfigModel field) {
+    final key = field.key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return !field.required &&
+        (key == 'specialnotes' ||
+            key == 'specialrequirements' ||
+            key == 'specialrequestnotes');
+  }
+
   Map<String, dynamic> get _eventDynamicAnswers {
     final result = <String, dynamic>{..._dynamicValues};
     for (final entry in _dynamicControllers.entries) {
@@ -830,6 +900,17 @@ class _ClMainOccasionDescriptionScreenState
       result[entry.key] = field?.type == 'number'
           ? (num.tryParse(text) ?? text)
           : text;
+    }
+    for (final field
+        in _routeArgs?.option.dynamicFields ??
+            const <CleaningDynamicFieldConfigModel>[]) {
+      if (!_isDuplicateOptionalSpecialNotes(field)) continue;
+      final note = _specialRequirementText;
+      if (note != null) {
+        result[field.key] = note;
+      } else {
+        result.remove(field.key);
+      }
     }
     result.removeWhere(
       (_, value) =>
@@ -844,7 +925,11 @@ class _ClMainOccasionDescriptionScreenState
 
   Widget _buildDynamicFieldsCard() {
     final fields = (_routeArgs?.option.dynamicFields ?? const [])
-        .where((field) => !isPreviouslyCollectedGuestCount(field))
+        .where(
+          (field) =>
+              !isPreviouslyCollectedGuestCount(field) &&
+              !_isDuplicateOptionalSpecialNotes(field),
+        )
         .toList(growable: false);
     if (fields.isEmpty) return const SizedBox.shrink();
     return ClRedesignCard(
@@ -855,7 +940,7 @@ class _ClMainOccasionDescriptionScreenState
             'تفاصيل إضافية للمناسبة',
             textAlign: TextAlign.start,
             style: TextStyle(
-              color: Color(0xFF172033),
+              color: Color(0xFF182232),
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -863,7 +948,7 @@ class _ClMainOccasionDescriptionScreenState
           const Text(
             'أضف التفاصيل التي تساعد الفريق على الاستعداد لمناسبتك.',
             textAlign: TextAlign.start,
-            style: TextStyle(color: Color(0xFF667085), fontSize: 12),
+            style: TextStyle(color: Color(0xFF697386), fontSize: 12),
           ),
           const SizedBox(height: 14),
           for (var index = 0; index < fields.length; index++) ...[
@@ -873,6 +958,29 @@ class _ClMainOccasionDescriptionScreenState
         ],
       ),
     );
+  }
+
+  String _eventOptionLabel(
+    CleaningDynamicFieldConfigModel field,
+    String value,
+  ) {
+    for (final option in field.options) {
+      if (option is! Map) continue;
+      final optionValue = (option['value'] ?? option['id'])?.toString().trim();
+      if (optionValue != value) continue;
+      final label = (option['label'] ?? option['name'])?.toString().trim();
+      if (label != null && label.isNotEmpty) return label;
+    }
+    if (field.key.toLowerCase().replaceAll('_', '') == 'venuetype') {
+      return switch (value.toLowerCase()) {
+        'home' || 'apartment' => 'المنزل',
+        'hall' => 'صالة مناسبات',
+        'garden' => 'حديقة',
+        'office' => 'مكتب',
+        _ => value,
+      };
+    }
+    return value;
   }
 
   Widget _buildDynamicField(CleaningDynamicFieldConfigModel field) {
@@ -894,7 +1002,11 @@ class _ClMainOccasionDescriptionScreenState
     }
 
     final options = field.options
-        .map((value) => value.toString().trim())
+        .map(
+          (value) => value is Map
+              ? (value['value'] ?? value['id'] ?? '').toString().trim()
+              : value.toString().trim(),
+        )
         .where((value) => value.isNotEmpty)
         .toList(growable: false);
     if (field.type == 'single_select') {
@@ -907,8 +1019,10 @@ class _ClMainOccasionDescriptionScreenState
         ),
         items: options
             .map(
-              (value) =>
-                  DropdownMenuItem<String>(value: value, child: Text(value)),
+              (value) => DropdownMenuItem<String>(
+                value: value,
+                child: Text(_eventOptionLabel(field, value)),
+              ),
             )
             .toList(growable: false),
         onChanged: (value) => setState(() {
@@ -936,7 +1050,7 @@ class _ClMainOccasionDescriptionScreenState
                   (value) => ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 48),
                     child: FilterChip(
-                      label: Text(value),
+                      label: Text(_eventOptionLabel(field, value)),
                       selected: selected.contains(value),
                       onSelected: (enabled) => setState(() {
                         final next = <String>{...selected};
@@ -1005,18 +1119,6 @@ class _ClMainOccasionDescriptionScreenState
     });
   }
 
-  Future<void> _selectSpecialRequirement() async {
-    final value = await _showOptionsBottomSheet(
-      title: 'هل لديك أي متطلبات خاصة؟',
-      options: _specialRequirementOptions,
-      currentValue: _selectedSpecialRequirement,
-    );
-    if (!mounted || value == null) return;
-    setState(() {
-      _selectedSpecialRequirement = value;
-    });
-  }
-
   Future<_MenuOption?> _showOptionsBottomSheet({
     required String title,
     required List<_MenuOption> options,
@@ -1057,8 +1159,8 @@ class _ClMainOccasionDescriptionScreenState
                           ? Icons.radio_button_checked
                           : Icons.radio_button_off,
                       color: currentValue?.id == option.id
-                          ? const Color(0xFF11B9C8)
-                          : const Color(0xFF98A2B3),
+                          ? SharedPlatformColors.cleaningInk
+                          : SharedPlatformColors.muted,
                     ),
                     onTap: () => Navigator.of(ctx).pop(option),
                   ),

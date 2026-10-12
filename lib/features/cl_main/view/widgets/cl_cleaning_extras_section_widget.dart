@@ -1,6 +1,5 @@
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/models/cleaning_service_extras.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/cleaning_services_response_model.dart';
@@ -71,7 +70,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
         if (isEstimateLoading)
           Semantics(
             liveRegion: true,
-            label: 'cleaningExtras.loadingEstimate'.tr(),
+            label: 'جارٍ تحديث تقدير التكلفة',
             child: const Padding(
               padding: EdgeInsets.only(bottom: 10),
               child: LinearProgressIndicator(minHeight: 3),
@@ -79,7 +78,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
           ),
         if (estimateError != null) ...[
           _InlineFeedback(
-            message: 'cleaningExtras.estimateError'.tr(),
+            message: 'تعذر تحديث تقدير التكلفة',
             onRetry: onRetryEstimate,
           ),
           const SizedBox(height: 10),
@@ -93,7 +92,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Semantics(
-                label: 'cleaningExtras.requestMaterials'.tr(),
+                label: 'إحضار مواد التنظيف',
                 toggled: requestMaterials,
                 child: Material(
                   color: Colors.transparent,
@@ -131,8 +130,9 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
         ClServiceSectionCardWidget(
           step: 0,
           showStepBadge: false,
-          title: 'cleaningExtras.specialServicesTitle'.tr(),
-          subtitle: 'cleaningExtras.specialServicesDescription'.tr(),
+          title: 'الخدمات المتخصصة',
+          subtitle:
+              'اختر خدمة متخصصة فقط إذا كانت مطلوبة خارج مهام التنظيف المعتادة.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -145,12 +145,12 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                 )
               else if (specialServicesError != null)
                 _InlineFeedback(
-                  message: 'cleaningExtras.estimateError'.tr(),
+                  message: 'تعذر تحديث تقدير التكلفة',
                   onRetry: onRetrySpecialServices,
                 )
               else if (availableSpecialServices.isEmpty)
                 Text(
-                  'cleaningExtras.noSpecialServices'.tr(),
+                  'لا توجد خدمات متخصصة متاحة لهذا الطلب حالياً.',
                   style: const TextStyle(color: Color(0xFF6B7280)),
                 )
               else ...[
@@ -176,18 +176,18 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                 ],
                 Semantics(
                   button: true,
-                  label: 'cleaningExtras.addSpecialService'.tr(),
+                  label: 'إضافة خدمة متخصصة',
                   child: OutlinedButton.icon(
                     onPressed: onAddSpecialService,
                     icon: const Icon(Icons.add_circle_outline),
-                    label: Text('cleaningExtras.addSpecialService'.tr()),
+                    label: Text('إضافة خدمة متخصصة'),
                   ),
                 ),
               ],
               if (estimatedSpecialServices.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 _CalculatedLinesCard(
-                  title: 'cleaningExtras.specialServicesEstimate'.tr(),
+                  title: 'التكلفة المقدرة للخدمات المتخصصة',
                   children: estimatedSpecialServices
                       .map(
                         (line) =>
@@ -204,19 +204,19 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
           ClServiceSectionCardWidget(
             step: 0,
             showStepBadge: false,
-            title: 'cleaningExtras.openTimeTitle'.tr(),
-            subtitle: 'cleaningExtras.openTimeDescription'.tr(),
+            title: 'خدمة بوقت مفتوح',
+            subtitle: 'حجز مدة قصوى للجدولة؛ الحساب النهائي حسب الوقت الفعلي.',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Semantics(
-                  label: 'cleaningExtras.requestOpenTime'.tr(),
+                  label: 'أحتاج عملاً بوقت مفتوح',
                   toggled: openTime != null,
                   child: Material(
                     color: Colors.transparent,
                     child: SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
-                      title: Text('cleaningExtras.requestOpenTime'.tr()),
+                      title: Text('أحتاج عملاً بوقت مفتوح'),
                       value: openTime != null,
                       onChanged: onOpenTimeChanged,
                     ),
@@ -227,7 +227,7 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
                   DropdownButtonFormField<int>(
                     initialValue: openTime!.workerCount,
                     decoration: InputDecoration(
-                      labelText: 'cleaningExtras.workerCount'.tr(),
+                      labelText: 'عدد العمال',
                       border: const OutlineInputBorder(),
                     ),
                     items: List<DropdownMenuItem<int>>.generate(20, (index) {
@@ -322,7 +322,7 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'cleaningExtras.readOnlyDetails'.tr(),
+            'تفاصيل الخدمات الإضافية',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w800,
@@ -331,7 +331,7 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
           if (materials.isNotEmpty) ...[
             const SizedBox(height: 10),
             _CalculatedLinesCard(
-              title: 'cleaningExtras.materialsTitle'.tr(),
+              title: 'مواد التنظيف',
               children: materials
                   .map((line) => _MaterialLine(line: line, currency: currency))
                   .toList(growable: false),
@@ -340,7 +340,7 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
           if (specialServices.isNotEmpty) ...[
             const SizedBox(height: 10),
             _CalculatedLinesCard(
-              title: 'cleaningExtras.specialServicesTitle'.tr(),
+              title: 'الخدمات المتخصصة',
               children: specialServices
                   .map(
                     (line) =>
@@ -419,7 +419,7 @@ class _SpecialServiceForm extends StatelessWidget {
             isExpanded: true,
             initialValue: service.specialServiceId,
             decoration: InputDecoration(
-              labelText: 'cleaningExtras.selectSpecialService'.tr(),
+              labelText: 'اختر الخدمة المتخصصة',
               border: const OutlineInputBorder(),
             ),
             items: availableServices
@@ -534,7 +534,7 @@ class _SpecialServiceForm extends StatelessWidget {
             initialValue: service.notes,
             maxLength: 500,
             decoration: InputDecoration(
-              labelText: 'cleaningExtras.notesOptional'.tr(),
+              labelText: 'ملاحظات الخدمة (اختياري)',
               border: const OutlineInputBorder(),
             ),
             onChanged: (value) => onChanged(
@@ -546,7 +546,7 @@ class _SpecialServiceForm extends StatelessWidget {
             child: TextButton.icon(
               onPressed: onRemove,
               icon: const Icon(Icons.delete_outline),
-              label: Text('cleaningExtras.removeSpecialService'.tr()),
+              label: Text('إزالة الخدمة'),
             ),
           ),
         ],
@@ -874,12 +874,12 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
                   ],
                   if (service.pricingUnit?.trim().isNotEmpty == true)
                     _CatalogMetaLine(
-                      label: 'cleaningExtras.pricingUnit'.tr(),
+                      label: 'وحدة التسعير',
                       value: service.pricingUnit!.trim(),
                     ),
                   if (service.baseUnitPrice != null)
                     _CatalogMetaLine(
-                      label: 'cleaningExtras.baseUnitPrice'.tr(),
+                      label: 'سعر الوحدة الأساسي',
                       value: _money(service.baseUnitPrice, currency) ?? '-',
                     ),
                   if (service.estimatedDurationMinutes != null)
@@ -889,7 +889,7 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
                     ),
                   const SizedBox(height: 4),
                   Text(
-                    'cleaningExtras.requiredEquipment'.tr(),
+                    'المعدات المطلوبة',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 12,
@@ -899,7 +899,7 @@ class _SpecialServiceCatalogPreview extends StatelessWidget {
                   const SizedBox(height: 4),
                   if (equipment.isEmpty)
                     Text(
-                      'cleaningExtras.noRequiredEquipment'.tr(),
+                      'لا توجد معدات خاصة مطلوبة',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
@@ -1142,38 +1142,35 @@ class _OpenTimeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <MapEntry<String, String>>[
       if (openTime.workerCount != null)
-        MapEntry('cleaningExtras.workerCount'.tr(), '${openTime.workerCount}'),
+        MapEntry('عدد العمال', '${openTime.workerCount}'),
       if (openTime.hourlyRate != null)
         MapEntry(
-          'cleaningExtras.hourlyRate'.tr(),
-          '${_money(openTime.hourlyRate, currency)} ${'cleaningExtras.perHour'.tr()}',
+          'سعر الساعة',
+          '${_money(openTime.hourlyRate, currency)} ${'للساعة'}',
         ),
       if (openTime.minimumDuration != null)
         MapEntry(
-          'cleaningExtras.minimumDuration'.tr(),
-          '${_number(openTime.minimumDuration)} ${'cleaningExtras.hours'.tr()}',
+          'الحد الأدنى للمحاسبة',
+          '${_number(openTime.minimumDuration)} ${'ساعات'}',
         ),
       if (openTime.actualDuration != null)
         MapEntry(
-          'cleaningExtras.actualDuration'.tr(),
-          '${_number(openTime.actualDuration)} ${'cleaningExtras.hours'.tr()}',
+          'المدة الفعلية',
+          '${_number(openTime.actualDuration)} ${'ساعات'}',
         ),
       if (openTime.billableDuration != null)
         MapEntry(
-          'cleaningExtras.billableDuration'.tr(),
-          '${_number(openTime.billableDuration)} ${'cleaningExtras.hours'.tr()}',
+          'المدة المحاسبية',
+          '${_number(openTime.billableDuration)} ${'ساعات'}',
         ),
       if (openTime.totalPrice != null)
-        MapEntry(
-          'cleaningExtras.finalPrice'.tr(),
-          _money(openTime.totalPrice, currency)!,
-        ),
+        MapEntry('التكلفة النهائية', _money(openTime.totalPrice, currency)!),
     ];
 
     if (rows.isEmpty) return const SizedBox.shrink();
 
     return _CalculatedLinesCard(
-      title: 'cleaningExtras.openTimeEstimate'.tr(),
+      title: 'التقدير الأولي للوقت المفتوح',
       children: rows
           .map(
             (row) =>
@@ -1281,10 +1278,7 @@ class _InlineFeedback extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
-            TextButton(
-              onPressed: onRetry,
-              child: Text('cleaningExtras.retry'.tr()),
-            ),
+            TextButton(onPressed: onRetry, child: Text('إعادة المحاولة')),
           ],
         ),
       ),
@@ -1333,7 +1327,9 @@ List<CleaningSpecialServiceItemRequest> _normalizeItemsForService(
 String _dirtinessDisplayLabel(String value) {
   final normalized = value.trim();
   return switch (normalized) {
-    'light' || 'medium' || 'heavy' => 'cleaningExtras.$normalized'.tr(),
+    'light' => 'خفيف',
+    'medium' => 'متوسط',
+    'heavy' => 'شديد',
     _ => normalized.replaceAll('_', ' ').replaceAll('-', ' '),
   };
 }

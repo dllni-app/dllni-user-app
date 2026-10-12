@@ -14,6 +14,21 @@ bool isPreviouslyCollectedGuestCount(CleaningDynamicFieldConfigModel field) {
       field.label.trim().contains('عدد الضيوف');
 }
 
+/// Reuse the venue actually chosen from dynamic admin-configured event fields.
+/// Never silently replace the chosen venue with a constant apartment value.
+String resolveEventVenueType(
+  Map<String, dynamic> answers, {
+  String fallback = 'apartment',
+}) {
+  for (final entry in answers.entries) {
+    final key = entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (key != 'venuetype' && key != 'eventvenue') continue;
+    final value = entry.value?.toString().trim();
+    if (value != null && value.isNotEmpty) return value;
+  }
+  return fallback;
+}
+
 Map<String, dynamic> mergeCollectedGuestsIntoDynamicAnswers({
   required List<CleaningDynamicFieldConfigModel> fields,
   required Map<String, dynamic> answers,
