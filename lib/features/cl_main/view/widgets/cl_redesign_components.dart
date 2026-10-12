@@ -1,7 +1,7 @@
-import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 
+/// V6 booking primitives. Business state and limits stay in each calling screen.
 class ClRedesignStepHeader extends StatelessWidget {
   const ClRedesignStepHeader({
     super.key,
@@ -10,67 +10,59 @@ class ClRedesignStepHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
   });
-
   final int currentStep;
   final int totalSteps;
   final String title;
   final String? subtitle;
 
   @override
-  Widget build(BuildContext context) {
-    final progress = totalSteps <= 0
-        ? 0.0
-        : (currentStep / totalSteps).clamp(0.0, 1.0);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: AppText.labelLarge(
-                title,
-                textAlign: TextAlign.start,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF172033),
-                ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Text(title, style: AlnadhaTokens.title)),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppSection.cleaning.soft,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Text(
+              '$currentStep / $totalSteps',
+              textDirection: TextDirection.ltr,
+              style: AlnadhaTokens.caption.copyWith(
+                color: AppSection.cleaning.ink,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            AppText.labelSmall(
-              '$currentStep من $totalSteps',
-              style: const TextStyle(
-                color: Color(0xFF667085),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 6),
-          AppText.bodySmall(
-            subtitle!,
-            textAlign: TextAlign.start,
-            style: const TextStyle(color: Color(0xFF667085), height: 1.45),
           ),
         ],
-        const SizedBox(height: 14),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: const Color(0xFFE8ECF2),
-            valueColor: const AlwaysStoppedAnimation(
-              SharedPlatformColors.cleaning,
-            ),
-          ),
-        ),
+      ),
+      if (subtitle != null) ...[
+        const SizedBox(height: 6),
+        Text(subtitle!, style: AlnadhaTokens.caption),
       ],
-    );
-  }
+      const SizedBox(height: 16),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: LinearProgressIndicator(
+          value: totalSteps > 0
+              ? (currentStep / totalSteps).clamp(0.0, 1.0)
+              : 0.0,
+          minHeight: 6,
+          backgroundColor: AlnadhaTokens.border,
+          color: AppSection.cleaning.accent,
+          semanticsLabel: 'تقدم الحجز',
+        ),
+      ),
+    ],
+  );
 }
 
+/// V6 replaces the old shadowed rectangular card with the shared surface.
 class ClRedesignCard extends StatelessWidget {
   const ClRedesignCard({
     super.key,
@@ -79,43 +71,19 @@ class ClRedesignCard extends StatelessWidget {
     this.onTap,
     this.selected = false,
   });
-
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
   final bool selected;
 
   @override
-  Widget build(BuildContext context) {
-    final card = AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      padding: padding,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: selected
-              ? SharedPlatformColors.cleaning
-              : SharedPlatformColors.border,
-          width: selected ? 1.5 : 1,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D101828),
-            blurRadius: 16,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: child,
-    );
-    if (onTap == null) return card;
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: card,
-    );
-  }
+  Widget build(BuildContext context) => AppSurfaceCard(
+    padding: padding,
+    section: AppSection.cleaning,
+    selected: selected,
+    onTap: onTap,
+    child: child,
+  );
 }
 
 class ClRedesignCounter extends StatelessWidget {
@@ -128,7 +96,6 @@ class ClRedesignCounter extends StatelessWidget {
     this.maxValue,
     this.icon,
   });
-
   final String label;
   final int value;
   final VoidCallback onIncrement;
@@ -137,89 +104,52 @@ class ClRedesignCounter extends StatelessWidget {
   final IconData? icon;
 
   @override
-  Widget build(BuildContext context) {
-    return ClRedesignCard(
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE9F9FA),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: const Color(0xFF0F8E98)),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: AppText.labelMedium(
-              label,
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: Color(0xFF172033),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          _CounterButton(
-            icon: Icons.remove,
-            onPressed: value > 0 ? onDecrement : null,
-          ),
-          SizedBox(
+  Widget build(BuildContext context) => AppSurfaceCard(
+    section: AppSection.cleaning,
+    child: Row(
+      children: [
+        if (icon != null) ...[
+          Container(
+            height: 42,
             width: 42,
-            child: Center(
-              child: AppText.labelLarge(
-                '$value',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF172033),
-                ),
-              ),
+            decoration: BoxDecoration(
+              color: AppSection.cleaning.soft,
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Icon(icon, color: AppSection.cleaning.ink, size: 22),
           ),
-          _CounterButton(
-            icon: Icons.add,
-            onPressed: maxValue == null || value < maxValue!
-                ? onIncrement
-                : null,
-          ),
+          const SizedBox(width: 12),
         ],
-      ),
-    );
-  }
-}
-
-class _CounterButton extends StatelessWidget {
-  const _CounterButton({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: IconButton(
-        onPressed: onPressed,
-        tooltip: icon == Icons.add ? 'زيادة العدد' : 'تقليل العدد',
-        icon: Icon(icon, size: 20),
-        style: IconButton.styleFrom(
-          backgroundColor: onPressed == null
-              ? SharedPlatformColors.neutralSoft
-              : SharedPlatformColors.cleaningSoft,
-          foregroundColor: onPressed == null
-              ? SharedPlatformColors.muted
-              : SharedPlatformColors.cleaningInk,
+        Expanded(child: Text(label, style: AlnadhaTokens.body)),
+        IconButton(
+          tooltip: 'تقليل العدد',
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          onPressed: value > 0 ? onDecrement : null,
+          icon: const Icon(Icons.remove_circle_outline_rounded),
+          color: AppSection.cleaning.ink,
         ),
-      ),
-    );
-  }
+        SizedBox(
+          width: 30,
+          child: Text(
+            value.toString(),
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.ltr,
+            style: AlnadhaTokens.sectionTitle,
+          ),
+        ),
+        IconButton(
+          tooltip: 'زيادة العدد',
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          onPressed: maxValue == null || value < maxValue! ? onIncrement : null,
+          icon: const Icon(Icons.add_circle_outline_rounded),
+          color: AppSection.cleaning.ink,
+        ),
+      ],
+    ),
+  );
 }
 
+/// Back action and primary share one safe-area footer on every booking route.
 class ClRedesignStickyActions extends StatelessWidget {
   const ClRedesignStickyActions({
     super.key,
@@ -229,7 +159,6 @@ class ClRedesignStickyActions extends StatelessWidget {
     this.onSecondary,
     this.primaryEnabled = true,
   });
-
   final String primaryLabel;
   final VoidCallback onPrimary;
   final String? secondaryLabel;
@@ -237,57 +166,32 @@ class ClRedesignStickyActions extends StatelessWidget {
   final bool primaryEnabled;
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE7EAF0))),
-        ),
-        child: Row(
-          children: [
-            if (secondaryLabel != null) ...[
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onSecondary,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    side: const BorderSide(color: Color(0xFFD0D5DD)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(secondaryLabel!),
-                ),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              flex: secondaryLabel == null ? 1 : 2,
-              child: FilledButton(
-                onPressed: primaryEnabled ? onPrimary : null,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  backgroundColor: SharedPlatformColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: Text(
-                  primaryLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
+  Widget build(BuildContext context) => AppBottomActionBar(
+    child: Row(
+      children: [
+        if (secondaryLabel != null) ...[
+          Expanded(
+            child: AppActionButton(
+              label: secondaryLabel!,
+              variant: AppActionVariant.outlined,
+              onPressed: onSecondary,
             ),
-          ],
+          ),
+          const SizedBox(width: 10),
+        ],
+        Expanded(
+          flex: secondaryLabel == null ? 1 : 2,
+          child: AppActionButton(
+            label: primaryLabel,
+            onPressed: primaryEnabled ? onPrimary : null,
+          ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }
 
+/// Room-size choice returns the original enum value without state duplication.
 class ClRedesignSegmentedChoice<T> extends StatelessWidget {
   const ClRedesignSegmentedChoice({
     super.key,
@@ -296,52 +200,66 @@ class ClRedesignSegmentedChoice<T> extends StatelessWidget {
     required this.labelFor,
     required this.onChanged,
   });
-
   final List<T> values;
   final T selected;
   final String Function(T value) labelFor;
   final ValueChanged<T> onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var index = 0; index < values.length; index++) ...[
-          if (index > 0) const SizedBox(width: 8),
-          Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => onChanged(values[index]),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 140),
-                constraints: const BoxConstraints(minHeight: 46),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected == values[index]
-                      ? SharedPlatformColors.primary
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: selected == values[index]
-                        ? SharedPlatformColors.primary
-                        : SharedPlatformColors.border,
+  Widget build(BuildContext context) => Row(
+    children: [
+      for (var index = 0; index < values.length; index++) ...[
+        if (index > 0) const SizedBox(width: 8),
+        Expanded(
+          child: Semantics(
+            button: true,
+            selected: selected == values[index],
+            label: labelFor(values[index]),
+            child: Material(
+              color: selected == values[index]
+                  ? AppSection.cleaning.soft
+                  : AlnadhaTokens.surface,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: () => onChanged(values[index]),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  alignment: Alignment.center,
+                  constraints: const BoxConstraints(minHeight: 58),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 3,
+                    vertical: 8,
                   ),
-                ),
-                child: Text(
-                  labelFor(values[index]),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: selected == values[index]
-                        ? Colors.white
-                        : SharedPlatformColors.ink,
-                    fontWeight: FontWeight.w700,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: selected == values[index]
+                          ? AppSection.cleaning.accent
+                          : AlnadhaTokens.border,
+                    ),
+                  ),
+                  child: Text(
+                    labelFor(values[index]),
+                    maxLines: 2,
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AlnadhaTokens.body.copyWith(
+                      fontSize: 13,
+                      color: selected == values[index]
+                          ? AppSection.cleaning.ink
+                          : AlnadhaTokens.ink,
+                      fontWeight: selected == values[index]
+                          ? FontWeight.w800
+                          : FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ],
-    );
-  }
+    ],
+  );
 }

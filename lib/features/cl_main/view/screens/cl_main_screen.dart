@@ -22,6 +22,7 @@ import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_main_service_tabs_widget.dart';
 import '../../../../core/widgets/design_system/design_system.dart';
 import '../widgets/v6_cleaning_discovery.dart';
+import '../widgets/v6_hourly_service_guide.dart';
 import '../widgets/cl_occasion_type_card_widget.dart';
 import '../widgets/cl_property_type_card_widget.dart';
 
@@ -548,6 +549,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 20),
+                        const V6HourlyServiceGuide(),
                       ],
                     ),
             ),

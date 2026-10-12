@@ -300,36 +300,48 @@ class _ClMainOccasionDescriptionScreenState
           final isEstimating = state.estimatePriceStatus == BlocStatus.loading;
           return Directionality(
             textDirection: TextDirection.rtl,
-            child: Scaffold(
-              backgroundColor: const Color(0xFFF6F7F9),
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    const HomeDetailsAppBar(),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: _detailsScrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          child: _descriptionStep == 0
-                              ? _buildOccasionBasicsStep(occasionTitle)
-                              : _buildOccasionRequirementsStep(),
+            child: PopScope(
+              canPop: _descriptionStep == 0,
+              onPopInvokedWithResult: (didPop, result) {
+                if (!didPop && _descriptionStep > 0) {
+                  _goToDescriptionStep(_descriptionStep - 1);
+                }
+              },
+              child: Scaffold(
+                backgroundColor: const Color(0xFFF6F7F9),
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      HomeDetailsAppBar(
+                        onBack: () => _descriptionStep > 0
+                            ? _goToDescriptionStep(_descriptionStep - 1)
+                            : Navigator.of(context).maybePop(),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          controller: _detailsScrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            child: _descriptionStep == 0
+                                ? _buildOccasionBasicsStep(occasionTitle)
+                                : _buildOccasionRequirementsStep(),
+                          ),
                         ),
                       ),
-                    ),
-                    ClRedesignStickyActions(
-                      primaryLabel: _descriptionStep == 0
-                          ? 'التالي'
-                          : 'متابعة إلى الموعد',
-                      onPrimary: () => _onDescriptionPrimaryPressed(bloc),
-                      primaryEnabled: !isEstimating,
-                      secondaryLabel: _descriptionStep > 0 ? 'السابق' : null,
-                      onSecondary: _descriptionStep > 0
-                          ? () => _goToDescriptionStep(0)
-                          : null,
-                    ),
-                  ],
+                      ClRedesignStickyActions(
+                        primaryLabel: _descriptionStep == 0
+                            ? 'التالي'
+                            : 'متابعة إلى الموعد',
+                        onPrimary: () => _onDescriptionPrimaryPressed(bloc),
+                        primaryEnabled: !isEstimating,
+                        secondaryLabel: _descriptionStep > 0 ? 'السابق' : null,
+                        onSecondary: _descriptionStep > 0
+                            ? () => _goToDescriptionStep(0)
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

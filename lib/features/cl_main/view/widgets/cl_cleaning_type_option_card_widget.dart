@@ -1,18 +1,15 @@
-import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 
-import '../../../../core/themes/shared_platform_colors.dart';
-import '../../../../core/themes/v7_artwork.dart';
-
+/// V6 direct cleaning-mode selection; callback still updates original draft.
 class ClCleaningTypeOptionCardWidget extends StatelessWidget {
   const ClCleaningTypeOptionCardWidget({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.isSelected,
     required this.onTap,
-    super.key,
   });
-
   final String title;
   final String subtitle;
   final bool isSelected;
@@ -20,74 +17,50 @@ class ClCleaningTypeOptionCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deep = title.contains('عميق') || title.toLowerCase().contains('deep');
     return Semantics(
-      button: true,
       selected: isSelected,
+      button: true,
       label: title,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFFF0F3FC)
-                  : SharedPlatformColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected
-                    ? SharedPlatformColors.primary
-                    : SharedPlatformColors.border,
-                width: isSelected ? 1.7 : 1,
+      child: AppSurfaceCard(
+        section: AppSection.cleaning,
+        selected: isSelected,
+        onTap: onTap,
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppSection.cleaning.soft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                deep
+                    ? Icons.auto_awesome_outlined
+                    : Icons.cleaning_services_outlined,
+                color: AppSection.cleaning.ink,
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                V7ArtTile(
-                  asset: V7Artwork.cleaningMode(title),
-                  size: 56,
-                  background: isSelected
-                      ? SharedPlatformColors.cleaningSoft
-                      : SharedPlatformColors.background,
-                ),
-                const SizedBox(width: 10),
-                Icon(
-                  isSelected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
-                  color: isSelected
-                      ? SharedPlatformColors.primary
-                      : SharedPlatformColors.muted,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText.bodyMedium(
-                        title,
-                        fontWeight: FontWeight.w800,
-                        textAlign: TextAlign.start,
-                        color: SharedPlatformColors.ink,
-                      ),
-                      const SizedBox(height: 4),
-                      AppText.labelLarge(
-                        subtitle,
-                        textAlign: TextAlign.start,
-                        color: SharedPlatformColors.muted,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AlnadhaTokens.sectionTitle),
+                  const SizedBox(height: 3),
+                  Text(subtitle, style: AlnadhaTokens.caption),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: isSelected ? AppSection.cleaning.ink : AlnadhaTokens.muted,
+            ),
+          ],
         ),
       ),
     );

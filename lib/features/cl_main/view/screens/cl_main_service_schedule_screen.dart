@@ -420,6 +420,7 @@ class _ClMainServiceScheduleScreenState
                                         ]
                                         .whereType<String>()
                                         .where((item) => item.trim().isNotEmpty)
+                                        .toSet()
                                         .join('، '),
                                 workerLabel:
                                     (_serviceExtras.openTime?.workerCount ??

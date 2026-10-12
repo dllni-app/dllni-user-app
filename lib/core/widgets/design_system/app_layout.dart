@@ -71,7 +71,7 @@ class AppPageHeader extends StatelessWidget {
             width: 48,
             height: 48,
             child: IconButton(
-              tooltip: 'رجوع',
+              tooltip: 'الرجوع',
               icon: const BackButtonIcon(),
               onPressed:
                   onBack ??

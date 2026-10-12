@@ -69,34 +69,46 @@ class _ClMainHomeDescriptionScreenState
         builder: (context, state) {
           return Directionality(
             textDirection: TextDirection.rtl,
-            child: Scaffold(
-              backgroundColor: const Color(0xFFF6F7F9),
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    const HomeDetailsAppBar(),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: _bookingScrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          child: _buildStep(state),
+            child: PopScope(
+              canPop: _currentStep == 0,
+              onPopInvokedWithResult: (didPop, result) {
+                if (!didPop && _currentStep > 0) {
+                  _goToStep(_currentStep - 1);
+                }
+              },
+              child: Scaffold(
+                backgroundColor: const Color(0xFFF6F7F9),
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      HomeDetailsAppBar(
+                        onBack: () => _currentStep > 0
+                            ? _goToStep(_currentStep - 1)
+                            : Navigator.of(context).maybePop(),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          controller: _bookingScrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            child: _buildStep(state),
+                          ),
                         ),
                       ),
-                    ),
-                    ClRedesignStickyActions(
-                      primaryLabel: _currentStep == 2
-                          ? 'متابعة الحجز'
-                          : 'التالي',
-                      onPrimary: () => _onPrimaryPressed(bloc, state),
-                      primaryEnabled: _canContinueCurrentStep,
-                      secondaryLabel: _currentStep > 0 ? 'السابق' : null,
-                      onSecondary: _currentStep > 0
-                          ? () => _goToStep(_currentStep - 1)
-                          : null,
-                    ),
-                  ],
+                      ClRedesignStickyActions(
+                        primaryLabel: _currentStep == 2
+                            ? 'متابعة الحجز'
+                            : 'التالي',
+                        onPrimary: () => _onPrimaryPressed(bloc, state),
+                        primaryEnabled: _canContinueCurrentStep,
+                        secondaryLabel: _currentStep > 0 ? 'السابق' : null,
+                        onSecondary: _currentStep > 0
+                            ? () => _goToStep(_currentStep - 1)
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
