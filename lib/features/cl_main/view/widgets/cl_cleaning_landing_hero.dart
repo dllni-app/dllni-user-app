@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
-import '../../../../core/themes/v7_artwork.dart';
 
 /// Promotional editorial fallback, shown only if no admin-managed banners exist.
 class ClCleaningLandingHero extends StatelessWidget {
@@ -19,7 +18,11 @@ class ClCleaningLandingHero extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(V7Artwork.cleaningPhoto, fit: BoxFit.cover),
+            Image.asset(
+              'assets/images/cleaning_home_illustration.png',
+              excludeFromSemantics: true,
+              fit: BoxFit.cover,
+            ),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

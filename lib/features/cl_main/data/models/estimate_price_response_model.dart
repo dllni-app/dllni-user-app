@@ -7,9 +7,7 @@ import '../../domain/models/cl_worker_room_assignment_result.dart';
 Map<String, dynamic> _toMap(dynamic value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) {
-    return value.map(
-      (key, entry) => MapEntry(key.toString(), entry),
-    );
+    return value.map((key, entry) => MapEntry(key.toString(), entry));
   }
   return const <String, dynamic>{};
 }
@@ -294,6 +292,7 @@ class EstimatePricingModel {
   final double? eventHourlyRate;
   final double? eventHours;
   final List<EstimateServiceLineModel> serviceLines;
+  final EstimatePriceSummaryModel? priceSummary;
 
   const EstimatePricingModel({
     this.basePrice,
@@ -309,6 +308,7 @@ class EstimatePricingModel {
     this.eventHourlyRate,
     this.eventHours,
     this.serviceLines = const <EstimateServiceLineModel>[],
+    this.priceSummary,
   });
 
   factory EstimatePricingModel.fromJson(Map<String, dynamic> json) {
@@ -349,6 +349,40 @@ class EstimatePricingModel {
       ),
       eventHours: _toDouble(json['eventHours'] ?? json['event_hours']),
       serviceLines: serviceLines,
+      priceSummary: json['priceSummary'] is Map || json['price_summary'] is Map
+          ? EstimatePriceSummaryModel.fromJson(
+              _toMap(json['priceSummary'] ?? json['price_summary']),
+            )
+          : null,
+    );
+  }
+}
+
+class EstimatePriceSummaryModel {
+  const EstimatePriceSummaryModel({
+    required this.quoteKind,
+    required this.serviceCharge,
+    required this.transport,
+    required this.materials,
+    required this.specialServices,
+    required this.total,
+  });
+
+  final String quoteKind;
+  final double serviceCharge;
+  final double transport;
+  final double materials;
+  final double specialServices;
+  final double total;
+
+  factory EstimatePriceSummaryModel.fromJson(Map<String, dynamic> json) {
+    return EstimatePriceSummaryModel(
+      quoteKind: json['quoteKind']?.toString() ?? 'estimate',
+      serviceCharge: _toDouble(json['serviceCharge']) ?? 0,
+      transport: _toDouble(json['transport']) ?? 0,
+      materials: _toDouble(json['materials']) ?? 0,
+      specialServices: _toDouble(json['specialServices']) ?? 0,
+      total: _toDouble(json['total']) ?? 0,
     );
   }
 }

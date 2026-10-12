@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../../core/di/injection.dart';
-import '../../../../core/themes/v7_artwork.dart';
 import '../../../../core/widgets/failure_widget.dart';
 import '../../../../generated/assets.dart';
 import '../../../rs_home/view/widgets/home_app_bar.dart';
@@ -25,6 +24,7 @@ import '../widgets/v6_cleaning_discovery.dart';
 import '../widgets/v6_hourly_service_guide.dart';
 import '../widgets/cl_occasion_type_card_widget.dart';
 import '../widgets/cl_property_type_card_widget.dart';
+import '../widgets/cl_cleaning_landing_hero.dart';
 
 class ClMainScreenParams {
   final ProfileBloc profileBloc;
@@ -127,6 +127,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
 
   late final PageController _cleaningBannersPageController;
   Timer? _cleaningBannersTimer;
+  bool _bannerInteractionPaused = false;
 
   List<CleaningBannerModel> _cleaningBanners = const <CleaningBannerModel>[];
   List<CleaningHomeTypeModel> _propertyTypes = _fallbackPropertyTypes;
@@ -160,7 +161,9 @@ class _ClMainScreenState extends State<ClMainScreen> {
     _cleaningBannersTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (!mounted ||
           _lengthOfBanners < 2 ||
-          !_cleaningBannersPageController.hasClients) {
+          !_cleaningBannersPageController.hasClients ||
+          _bannerInteractionPaused ||
+          _selectedTabIndex != ClMainServiceTabsWidget.cleaningIndex) {
         return;
       }
       final currentPage = (_cleaningBannersPageController.page ?? 0).round();
@@ -225,18 +228,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
         _eventTypesBySlug = <String, CleaningEventTypeConfigModel>{
           for (final type in config.eventTypes) type.slug: type,
         };
-        _occasionTypes = config.eventTypes
-            .map(
-              (type) => CleaningHomeTypeModel(
-                section: 'occasion',
-                code: type.slug,
-                value: type.slug,
-                title: type.name,
-                imageUrl: _occasionFallbackImage(type.slug),
-                sortOrder: type.id,
-              ),
-            )
-            .toList(growable: false);
+        // The home-content endpoint owns customer card labels, descriptions,
+        // icons and order. Suite config only supplies booking field metadata.
       });
     } catch (_) {
       // Keep the server home-content/legacy list when suite config is absent.
@@ -247,6 +240,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
     final imageUrl = banner.imageUrl?.trim();
     if (imageUrl == null || imageUrl.isEmpty) return;
 
+    _bannerInteractionPaused = true;
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.72),
@@ -295,6 +289,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
         );
       },
     );
+    _bannerInteractionPaused = false;
   }
 
   Future<void> _openQuickApartmentBooking() async {
@@ -343,7 +338,12 @@ class _ClMainScreenState extends State<ClMainScreen> {
       if (_selectedTabIndex != ClMainServiceTabsWidget.cleaningIndex) {
         return const SizedBox.shrink();
       }
-      return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
+        child: ClCleaningLandingHero(
+          onBookApartment: _openQuickApartmentBooking,
+        ),
+      );
     }
 
     return Padding(
@@ -357,6 +357,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
             child: PageView.builder(
               key: const Key('cl_main_featured_banner_page_view'),
               controller: _cleaningBannersPageController,
+              onPageChanged: (_) {},
               itemCount: _cleaningBanners.length,
               itemBuilder: (_, index) => _ClMainBannerCard(
                 banner: _cleaningBanners[index],
@@ -438,10 +439,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
                         final propertyType = _nonEmpty(item.value, 'apartment');
                         return ClPropertyTypeCardWidget(
                           title: _nonEmpty(item.title, 'نوع تنظيف'),
-                          icon: _nonEmpty(
-                            item.imageUrl,
-                            _propertyFallbackImage(propertyType),
-                          ),
+                          icon: _nonEmpty(item.iconKey, propertyType),
+                          description: item.description,
                           args: ClMainHomeDescriptionArgs(
                             propertyType: propertyType,
                             bloc: bloc,
@@ -477,6 +476,8 @@ class _ClMainScreenState extends State<ClMainScreen> {
                         return ClOccasionTypeCardWidget(
                           title: option.title,
                           imagePath: option.imagePath,
+                          iconKey: _nonEmpty(item.iconKey, bookingValue),
+                          description: item.description,
                           onTap: () {
                             context.pushRoute(
                               '/clmainoccasiondescription',
@@ -568,15 +569,6 @@ class _ClMainScreenState extends State<ClMainScreen> {
     return normalized == null || normalized.isEmpty ? fallback : normalized;
   }
 
-  String _propertyFallbackImage(String propertyType) {
-    return switch (propertyType) {
-      'villa' => Assets.images.villaImage.path,
-      'office' => Assets.images.officeImage.path,
-      'studio' => Assets.images.studioImage.path,
-      _ => Assets.images.homeImage.path,
-    };
-  }
-
   String _occasionFallbackImage(String eventType) {
     return switch (eventType) {
       'family_dinner' => Assets.images.familyDinner.path,
@@ -639,12 +631,12 @@ class _ClMainBannerCard extends StatelessWidget {
                   height: 172,
                   fit: BoxFit.cover,
                   errorWidget: Image.asset(
-                    V7Artwork.cleaningPhoto,
+                    'assets/images/cleaning_hero_banner.png',
                     fit: BoxFit.cover,
                   ),
                 )
               : Image.asset(
-                  V7Artwork.cleaningPhoto,
+                  'assets/images/cleaning_hero_banner.png',
                   height: 172,
                   width: double.infinity,
                   fit: BoxFit.cover,

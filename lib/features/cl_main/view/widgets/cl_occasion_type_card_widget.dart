@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/auth/auth_gate.dart';
 import '../../../../core/widgets/design_system/design_system.dart';
+import '../helpers/cleaning_category_icon.dart';
 
 /// V6 occasion entry. Backend-configured event option and navigation preserved.
 class ClOccasionTypeCardWidget extends StatelessWidget {
@@ -9,11 +10,15 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
     required this.title,
     required this.imagePath,
     required this.onTap,
+    this.iconKey,
+    this.description,
     super.key,
   });
   final String title;
   final String imagePath;
   final VoidCallback onTap;
+  final String? iconKey;
+  final String? description;
 
   IconData get _occasionIcon {
     final key = '$title $imagePath'.toLowerCase();
@@ -55,9 +60,6 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uri = Uri.tryParse(imagePath);
-    final isRemote =
-        uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
     return Semantics(
       button: true,
       label: 'خدمة مناسبة: $title',
@@ -80,14 +82,12 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
                 width: 46,
                 height: 46,
                 color: AppSection.cleaning.soft,
-                child: isRemote
-                    ? Image.network(
-                        imagePath,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            Icon(_occasionIcon, color: AlnadhaTokens.primary),
-                      )
-                    : Icon(_occasionIcon, color: AppSection.cleaning.ink),
+                child: Icon(
+                  iconKey == null
+                      ? _occasionIcon
+                      : cleaningCategoryIcon(iconKey, occasion: true),
+                  color: AppSection.cleaning.ink,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -97,7 +97,12 @@ class ClOccasionTypeCardWidget extends StatelessWidget {
                 children: [
                   Text(title, style: AlnadhaTokens.sectionTitle),
                   const SizedBox(height: 3),
-                  Text(_occasionDescription, style: AlnadhaTokens.caption),
+                  Text(
+                    description?.trim().isNotEmpty == true
+                        ? description!.trim()
+                        : _occasionDescription,
+                    style: AlnadhaTokens.caption,
+                  ),
                 ],
               ),
             ),

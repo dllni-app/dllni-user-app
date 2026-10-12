@@ -92,6 +92,8 @@ class CleaningHomeTypeModel {
   final String? value;
   final String? title;
   final String? imageUrl;
+  final String? iconKey;
+  final String? description;
   final int? sortOrder;
 
   const CleaningHomeTypeModel({
@@ -102,6 +104,8 @@ class CleaningHomeTypeModel {
     this.value,
     this.title,
     this.imageUrl,
+    this.iconKey,
+    this.description,
     this.sortOrder,
   });
 
@@ -114,6 +118,8 @@ class CleaningHomeTypeModel {
       value: _toString(json['value'] ?? json['booking_value']),
       title: _toString(json['title']),
       imageUrl: _toString(json['imageUrl'] ?? json['image_url']),
+      iconKey: _toString(json['iconKey'] ?? json['icon_key']),
+      description: _toString(json['description']),
       sortOrder: _toInt(json['sortOrder'] ?? json['sort_order']),
     );
   }

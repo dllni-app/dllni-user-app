@@ -2,6 +2,7 @@ import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
+import '../../data/models/estimate_price_response_model.dart';
 
 class ClServiceScheduleEntry {
   const ClServiceScheduleEntry({required this.dayDate, required this.time});
@@ -23,6 +24,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     this.isPricingFinal,
     this.minimumOrderPrice,
     this.minimumOrderApplied = false,
+    this.priceSummary,
     required this.currency,
     this.scheduleDayLabel,
     this.scheduleDateLabel,
@@ -42,6 +44,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   final bool? isPricingFinal;
   final double? minimumOrderPrice;
   final bool minimumOrderApplied;
+  final EstimatePriceSummaryModel? priceSummary;
   final String currency;
   final String? scheduleDayLabel;
   final String? scheduleDateLabel;
@@ -69,20 +72,19 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
         minimumOrderPrice! > 0;
     final scheduleDateLine = _scheduleDateLine;
     final hasScheduleEntries = scheduleEntries.isNotEmpty;
-    // totalPrice is the backend-authoritative customer amount before any coupon.
-    // Derive the service value from it so commission that is already embedded in
-    // a configured minimum price is not added a second time. Travel stays separate.
-    final displayedServicePrice = (totalPrice - travelFee)
+    // Split the server total for presentation only. Minimum-order adjustment
+    // and management margin remain in the service row; neither is added again.
+    final displayedAddons = addonsTotal
+        .clamp(0, (totalPrice - travelFee).clamp(0, double.infinity))
+        .toDouble();
+    final displayedServicePrice = (totalPrice - travelFee - displayedAddons)
         .clamp(0, double.infinity)
         .toDouble();
     final hasDiscount = discountAmount != null && discountAmount! > 0;
-    // Coupon amounts are calculated on the coupon-eligible subtotal only.
-    // Keep non-coupon charges (for example admin margin/travel) in the final
-    // customer total by subtracting the authoritative discount from the
-    // estimate total instead of displaying coupon.amounts.total directly.
-    final displayedTotal = hasDiscount
-        ? (totalPrice - discountAmount!).clamp(0, double.infinity).toDouble()
-        : totalPrice;
+    // The coupon preview prices one visit without all selected extras.
+    // Submission re-quotes the full booking, so this total stays unchanged.
+    final displayedTotal = totalPrice;
+    final summary = priceSummary;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -95,7 +97,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppText.bodyLarge(
-            'ملخص الطلب',
+            'ملخص السعر',
             color: SharedPlatformColors.primary,
             fontWeight: FontWeight.w700,
             textAlign: TextAlign.right,
@@ -139,13 +141,35 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
             const SizedBox(height: 8),
           ],
           _SummaryRowWidget(
-            label: 'قيمة الخدمة',
-            value: displayedServicePrice.formatMoney(),
+            label: 'الخدمة والعمال',
+            value: (summary?.serviceCharge ?? displayedServicePrice)
+                .formatMoney(),
           ),
           const SizedBox(height: 8),
+          if (summary != null && summary.materials > 0) ...[
+            _SummaryRowWidget(
+              label: 'مواد التنظيف',
+              value: summary.materials.formatMoney(),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (summary != null && summary.specialServices > 0) ...[
+            _SummaryRowWidget(
+              label: 'الخدمات المتخصصة',
+              value: summary.specialServices.formatMoney(),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (summary == null && displayedAddons > 0) ...[
+            _SummaryRowWidget(
+              label: 'الخدمات والمواد الإضافية',
+              value: displayedAddons.formatMoney(),
+            ),
+            const SizedBox(height: 8),
+          ],
           _SummaryRowWidget(
             label: 'رسوم التنقل',
-            value: travelFee.formatMoney(),
+            value: (summary?.transport ?? travelFee).formatMoney(),
           ),
           if (distanceKm != null) ...[
             const SizedBox(height: 8),
@@ -157,7 +181,7 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
           if (hasDiscount) ...[
             const SizedBox(height: 8),
             _SummaryRowWidget(
-              label: 'الخصم',
+              label: 'الخصم المتوقع',
               value: '- ${discountAmount!.formatMoney()}',
               valueColor: const Color(0xFF047857),
             ),
@@ -166,10 +190,21 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
           const Divider(color: Color(0xFFE5E7EB), thickness: 1),
           const SizedBox(height: 8),
           _SummaryRowWidget(
-            label: hasDiscount ? 'الإجمالي بعد الخصم' : 'الإجمالي',
+            label: summary?.quoteKind == 'preliminary'
+                ? 'الإجمالي المبدئي (الحد الأدنى)'
+                : isPricingFinal == false
+                ? 'الإجمالي التقديري'
+                : 'الإجمالي',
             value: displayedTotal.formatMoney(),
             isTotal: true,
           ),
+          if (hasDiscount) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'الخصم المعروض مبدئي. سيؤكد النظام المبلغ النهائي عند إرسال الطلب.',
+              style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+            ),
+          ],
           if (showMinimumOrderWarning) ...[
             const SizedBox(height: 12),
             Container(

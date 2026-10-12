@@ -407,6 +407,7 @@ class _ClMainOccasionScheduleScreenState
                               ],
                               const SizedBox(height: 12),
                               ClServiceOrderSummarySectionWidget(
+                                priceSummary: estimate?.pricing?.priceSummary,
                                 basePrice: estimate?.pricing?.basePrice ?? 0,
                                 travelFee: estimate?.pricing?.travelFee ?? 0,
                                 addonsTotal:

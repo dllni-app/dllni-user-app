@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/auth/auth_gate.dart';
 import '../../../../core/widgets/design_system/design_system.dart';
 import '../data/cl_main_route_args.dart';
+import '../helpers/cleaning_category_icon.dart';
 
 /// V6 compact property entry retaining authenticated route and backend value.
 class ClPropertyTypeCardWidget extends StatelessWidget {
@@ -11,24 +12,19 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.args,
+    this.description,
     super.key,
   });
   final String title;
   final String icon;
   final ClMainHomeDescriptionArgs args;
+  final String? description;
 
-  IconData get _icon => switch (args.propertyType) {
-    'villa' => Icons.villa_outlined,
-    'office' => Icons.business_outlined,
-    'studio' => Icons.weekend_outlined,
-    _ => Icons.apartment_outlined,
-  };
+  IconData get _icon =>
+      cleaningCategoryIcon(icon.isEmpty ? args.propertyType : icon);
 
   @override
   Widget build(BuildContext context) {
-    final uri = Uri.tryParse(icon);
-    final isRemote =
-        uri != null && (uri.scheme == 'https' || uri.scheme == 'http');
     return Semantics(
       button: true,
       label: 'اختيار $title',
@@ -51,14 +47,7 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
                 width: 46,
                 height: 46,
                 color: AppSection.cleaning.soft,
-                child: isRemote
-                    ? Image.network(
-                        icon,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            Icon(_icon, color: AppSection.cleaning.ink),
-                      )
-                    : Icon(_icon, color: AppSection.cleaning.ink),
+                child: Icon(_icon, color: AppSection.cleaning.ink),
               ),
             ),
             const SizedBox(width: 12),
@@ -68,8 +57,10 @@ class ClPropertyTypeCardWidget extends StatelessWidget {
                 children: [
                   Text(title, style: AlnadhaTokens.sectionTitle),
                   const SizedBox(height: 3),
-                  const Text(
-                    'حدّد الغرف والموعد في الخطوة التالية',
+                  Text(
+                    description?.trim().isNotEmpty == true
+                        ? description!.trim()
+                        : 'حدّد الغرف والموعد في الخطوة التالية',
                     style: AlnadhaTokens.caption,
                   ),
                 ],

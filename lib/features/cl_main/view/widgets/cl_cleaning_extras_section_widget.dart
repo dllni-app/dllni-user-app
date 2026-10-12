@@ -91,19 +91,86 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Semantics(
-                label: 'إحضار مواد التنظيف',
-                toggled: requestMaterials,
-                child: Material(
-                  color: Colors.transparent,
-                  child: SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('إحضار مواد التنظيف'),
-                    value: requestMaterials,
-                    onChanged: onRequestMaterialsChanged,
+              const Text(
+                'اختر من سيوفر المواد. ستُحدّث التكلفة تلقائياً عند تغيير اختيارك.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 10),
+              for (final suppliedByService in [true, false])
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Semantics(
+                    button: true,
+                    selected: requestMaterials == suppliedByService,
+                    label: suppliedByService
+                        ? 'أحضروا مواد التنظيف'
+                        : 'سأوفر مواد التنظيف بنفسي',
+                    child: InkWell(
+                      key: Key(
+                        suppliedByService
+                            ? 'cleaning_materials_from_service'
+                            : 'cleaning_materials_from_customer',
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => onRequestMaterialsChanged(suppliedByService),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: requestMaterials == suppliedByService
+                              ? const Color(0xFFE7F7F5)
+                              : const Color(0xFFF8FAFC),
+                          border: Border.all(
+                            color: requestMaterials == suppliedByService
+                                ? const Color(0xFF0F9E92)
+                                : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              requestMaterials == suppliedByService
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                              color: requestMaterials == suppliedByService
+                                  ? const Color(0xFF0F9E92)
+                                  : const Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    suppliedByService
+                                        ? 'أحضروا مواد التنظيف'
+                                        : 'سأوفر مواد التنظيف بنفسي',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    suppliedByService
+                                        ? 'نجهّز المواد اللازمة ونُظهر تكلفتها في التقدير.'
+                                        : 'استخدم موادي دون إضافة تكلفة مواد من الخدمة.',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
               if (requestMaterials && materials.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 ExpansionTile(

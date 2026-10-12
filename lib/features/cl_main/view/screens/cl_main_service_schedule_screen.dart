@@ -28,7 +28,6 @@ import '../data/cl_main_route_args.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
-import '../widgets/cl_cleaning_services_selector_widget.dart';
 import '../widgets/cl_cleaning_extras_section_widget.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_open_time_sessions_section_widget.dart';
@@ -72,7 +71,6 @@ class _ClMainServiceScheduleScreenState
   late TextEditingController _fromTimeController;
   late TextEditingController _toTimeController;
   late TextEditingController _couponController;
-  late TextEditingController _customServiceController;
   ClMainScheduleArgs? _routeArgs;
   bool _didReadArgs = false;
   EstimatePriceResponseModel? _currentEstimate;
@@ -82,10 +80,6 @@ class _ClMainServiceScheduleScreenState
   String? _appliedCouponCode;
   double? _appliedCouponDiscount;
   double? _appliedCouponTotal;
-  BlocStatus _cleaningServicesStatus = BlocStatus.init;
-  String? _cleaningServicesErrorMessage;
-  List<CleaningServiceModel> _availableCleaningServices =
-      const <CleaningServiceModel>[];
   BlocStatus _specialServicesStatus = BlocStatus.init;
   String? _specialServicesErrorMessage;
   List<CleaningServiceModel> _availableSpecialServices =
@@ -218,20 +212,23 @@ class _ClMainServiceScheduleScreenState
                           children: [
                             ClRedesignStepHeader(
                               currentStep: _scheduleStep + 4,
-                              totalSteps: 6,
+                              totalSteps: 7,
                               title: switch (_scheduleStep) {
-                                0 => 'الموعد والعنوان',
-                                1 => 'تفاصيل الخدمة',
+                                0 => 'العمال',
+                                1 => 'المواد والخدمات المتخصصة',
+                                2 => 'الموعد والعنوان',
                                 _ => 'مراجعة الطلب',
                               },
                               subtitle: switch (_scheduleStep) {
-                                0 => 'اختر الوقت والمكان المناسبين لك.',
-                                1 => 'خصص الخدمة بما يناسب احتياجاتك.',
+                                0 => 'اختر فريق العمل المناسب لاحتياجك.',
+                                1 =>
+                                  'حدد المواد والخدمات الإضافية التي تحتاجها.',
+                                2 => 'اختر الوقت والمكان المناسبين لك.',
                                 _ => 'راجع التفاصيل والتكلفة قبل إرسال طلبك.',
                               },
                             ),
                             const SizedBox(height: 18),
-                            if (_scheduleStep == 0) ...[
+                            if (_scheduleStep == 2) ...[
                               const V6BookingDecisionGuide(
                                 topic: V6BookingDecisionTopic.appointment,
                               ),
@@ -288,7 +285,7 @@ class _ClMainServiceScheduleScreenState
                                     _requestUpdatedEstimate(state),
                               ),
                             ],
-                            if (_scheduleStep == 1) ...[
+                            if (_scheduleStep == 0) ...[
                               const V6BookingDecisionGuide(
                                 topic: V6BookingDecisionTopic.tasksAndExtras,
                               ),
@@ -303,26 +300,8 @@ class _ClMainServiceScheduleScreenState
                                 },
                               ),
                               const SizedBox(height: 12),
-                              ClCleaningServicesSelectorWidget(
-                                availableServices: _availableCleaningServices,
-                                selectedServiceNames:
-                                    _selectedCleaningServiceNames,
-                                customServiceController:
-                                    _customServiceController,
-                                isLoading:
-                                    _cleaningServicesStatus ==
-                                    BlocStatus.loading,
-                                errorMessage:
-                                    _cleaningServicesStatus == BlocStatus.failed
-                                    ? _cleaningServicesErrorMessage ??
-                                          'تعذر تحميل الخدمات'
-                                    : null,
-                                onToggleService: _toggleCleaningService,
-                                onAddCustomService: _addCustomCleaningService,
-                                onRemoveService: _removeCleaningService,
-                                onRetry: _loadCleaningServices,
-                              ),
-                              const SizedBox(height: 12),
+                            ],
+                            if (_scheduleStep == 1) ...[
                               ClCleaningExtrasSectionWidget(
                                 showOpenTime: false,
                                 requestMaterials:
@@ -419,6 +398,8 @@ class _ClMainServiceScheduleScreenState
                                       ),
                                 ),
                               ],
+                            ],
+                            if (_scheduleStep == 0) ...[
                               const SizedBox(height: 16),
                               if (_serviceExtras.openTime == null &&
                                   (!_isRecurring ||
@@ -452,7 +433,7 @@ class _ClMainServiceScheduleScreenState
                                 estimate: estimate,
                               ),
                             ],
-                            if (_scheduleStep == 2) ...[
+                            if (_scheduleStep == 3) ...[
                               const V6BookingDecisionGuide(
                                 topic: V6BookingDecisionTopic.bookingReview,
                               ),
@@ -501,6 +482,7 @@ class _ClMainServiceScheduleScreenState
                               ],
                               const SizedBox(height: 12),
                               ClServiceOrderSummarySectionWidget(
+                                priceSummary: estimate?.pricing?.priceSummary,
                                 basePrice: estimate?.pricing?.basePrice ?? 0,
                                 travelFee: estimate?.pricing?.travelFee ?? 0,
                                 addonsTotal:
@@ -552,7 +534,7 @@ class _ClMainServiceScheduleScreenState
                       ),
                     ),
                     ClRedesignStickyActions(
-                      primaryLabel: _scheduleStep == 2
+                      primaryLabel: _scheduleStep == 3
                           ? 'تأكيد وإرسال الطلب'
                           : 'متابعة',
                       onPrimary: () => _advanceSchedule(state),
@@ -576,7 +558,7 @@ class _ClMainServiceScheduleScreenState
 
   void _setScheduleStep(int nextStep) {
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _scheduleStep = nextStep.clamp(0, 2));
+    setState(() => _scheduleStep = nextStep.clamp(0, 3));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scheduleScrollController.hasClients) {
         _scheduleScrollController.jumpTo(0);
@@ -600,6 +582,31 @@ class _ClMainServiceScheduleScreenState
 
   void _advanceSchedule(ClMainState state) {
     if (_scheduleStep == 0) {
+      if (_explicitGenderPreference == null) {
+        _bookingFeedback('اختر عامل أو عاملة للمتابعة.');
+        return;
+      }
+      if (state.genderPreference.apiValue == 'female' &&
+          state.safetyConfirmation == null) {
+        _bookingFeedback('أكد بيئة العمل قبل طلب عاملة.');
+        return;
+      }
+      _setScheduleStep(1);
+      return;
+    }
+    if (_scheduleStep == 1) {
+      if (state.estimatePriceStatus == BlocStatus.loading) {
+        _bookingFeedback('انتظر قليلاً حتى يتم تحديث التكلفة.');
+        return;
+      }
+      if (state.estimatePriceStatus == BlocStatus.failed) {
+        _bookingFeedback('تعذر تحديث التكلفة. أعد المحاولة.');
+        return;
+      }
+      _setScheduleStep(2);
+      return;
+    }
+    if (_scheduleStep == 2) {
       if (!_dateChosen) {
         _bookingFeedback('اختر تاريخ الخدمة للمتابعة.');
         return;
@@ -617,19 +624,6 @@ class _ClMainServiceScheduleScreenState
         _bookingFeedback('اختر عنواناً واضحاً مع موقعه على الخريطة.');
         return;
       }
-      _setScheduleStep(1);
-      return;
-    }
-    if (_scheduleStep == 1) {
-      if (_explicitGenderPreference == null) {
-        _bookingFeedback('اختر عامل أو عاملة للمتابعة.');
-        return;
-      }
-      if (state.genderPreference.apiValue == 'female' &&
-          state.safetyConfirmation == null) {
-        _bookingFeedback('أكد بيئة العمل قبل طلب عاملة.');
-        return;
-      }
       if (state.estimatePriceStatus == BlocStatus.loading) {
         _bookingFeedback('انتظر قليلاً حتى يتم تحديث التكلفة.');
         return;
@@ -642,7 +636,7 @@ class _ClMainServiceScheduleScreenState
         _bookingFeedback('تعذر عرض تكلفة الطلب حالياً. حاول مجدداً.');
         return;
       }
-      _setScheduleStep(2);
+      _setScheduleStep(3);
       return;
     }
     _onSubmitPressed(state);
@@ -836,7 +830,6 @@ class _ClMainServiceScheduleScreenState
         args.defaultAddress ?? widget.item?.defaultAddress,
       );
       _syncToTime();
-      _loadCleaningServices();
       _loadSpecialServices();
       _loadSuiteConfig();
     } else if (args is AddressListItem) {
@@ -850,7 +843,6 @@ class _ClMainServiceScheduleScreenState
     _fromTimeController.dispose();
     _toTimeController.dispose();
     _couponController.dispose();
-    _customServiceController.dispose();
     selectedAddress.dispose();
     super.dispose();
   }
@@ -866,7 +858,6 @@ class _ClMainServiceScheduleScreenState
       text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
     );
     _couponController = TextEditingController();
-    _customServiceController = TextEditingController();
   }
 
   void _updateTimeDisplay() {
@@ -874,27 +865,6 @@ class _ClMainServiceScheduleScreenState
         ? CleaningDateTimeUiFormat.time(_fromTimeHhMm)
         : '';
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
-  }
-
-  void _addCustomCleaningService() {
-    final normalized = _customServiceController.text.trim();
-    if (normalized.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى كتابة اسم الخدمة أولاً')),
-      );
-      return;
-    }
-    if (normalized.length > 255) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('اسم الخدمة طويل جداً')));
-      return;
-    }
-    setState(() {
-      _selectedCleaningServiceNames.add(normalized);
-      _customServiceController.clear();
-      _resetAppliedCoupon();
-    });
   }
 
   Future<void> _handleGenderPreferenceChanged(
@@ -1479,30 +1449,7 @@ class _ClMainServiceScheduleScreenState
     return double.parse((estimatedHours / numberOfWorkers).toStringAsFixed(1));
   }
 
-  Future<void> _loadCleaningServices() async {
-    if (!mounted) return;
-    setState(() {
-      _cleaningServicesStatus = BlocStatus.loading;
-      _cleaningServicesErrorMessage = null;
-    });
-    final response = await getIt<GetCleaningServicesUseCase>()(
-      GetCleaningServicesParams(category: 'cleaning'),
-    );
-    if (!mounted) return;
-    response.fold(
-      (failure) => setState(() {
-        _cleaningServicesStatus = BlocStatus.failed;
-        _cleaningServicesErrorMessage = failure.message;
-      }),
-      (result) => setState(() {
-        _cleaningServicesStatus = BlocStatus.success;
-        _cleaningServicesErrorMessage = null;
-        _availableCleaningServices = result.data
-            .where((service) => service.name?.trim().isNotEmpty == true)
-            .toList(growable: false);
-      }),
-    );
-  }
+
 
   Future<void> _loadSpecialServices() async {
     if (!mounted) return;
@@ -1611,12 +1558,18 @@ class _ClMainServiceScheduleScreenState
       );
       return;
     }
+    final selectedIds = _serviceExtras.specialServices
+        .map((service) => service.specialServiceId)
+        .toSet();
     final firstService = _availableSpecialServices.firstWhere(
-      (service) => service.id != null,
+      (service) => service.id != null && !selectedIds.contains(service.id),
       orElse: () => const CleaningServiceModel(),
     );
     final id = firstService.id;
-    if (id == null) return;
+    if (id == null) {
+      _bookingFeedback('أضفت كل الخدمات المتخصصة المتاحة.');
+      return;
+    }
     _updateServiceExtras(
       _serviceExtras.copyWith(
         specialServices: <CleaningSpecialServiceRequest>[
@@ -1653,6 +1606,16 @@ class _ClMainServiceScheduleScreenState
     ClMainState state,
   ) {
     if (index < 0 || index >= _serviceExtras.specialServices.length) return;
+    if (_serviceExtras.specialServices.asMap().entries.any(
+      (entry) =>
+          entry.key != index &&
+          entry.value.specialServiceId == service.specialServiceId,
+    )) {
+      _bookingFeedback(
+        'هذه الخدمة المتخصصة مضافة بالفعل. عدّل كميتها بدلاً من تكرارها.',
+      );
+      return;
+    }
     CleaningServiceModel? catalogService;
     for (final item in _availableSpecialServices) {
       if (item.id == service.specialServiceId) {
@@ -2150,16 +2113,7 @@ class _ClMainServiceScheduleScreenState
     );
   }
 
-  void _removeCleaningService(String name) {
-    final normalized = name.trim();
-    if (normalized.isEmpty) return;
-    setState(() {
-      _selectedCleaningServiceNames.remove(normalized);
-      _resetAppliedCoupon(
-        message: 'تم تغيير بيانات الخدمة. أعد تطبيق الكوبون.',
-      );
-    });
-  }
+
 
   Future<void> _selectAddress() async {
     final selectedAddressVal = await context.pushRoute(
@@ -2184,7 +2138,7 @@ class _ClMainServiceScheduleScreenState
     final args = _routeArgs;
     final bloc = _bloc;
     final address = selectedAddress.value;
-    if (args == null || bloc == null || address == null) return;
+    if (args == null || bloc == null) return;
 
     if (_appliedCouponCode != null) {
       setState(() {
@@ -2245,7 +2199,7 @@ class _ClMainServiceScheduleScreenState
           livingRoomSize: args.livingRoomSize,
           roomSizeBreakdown: args.roomSizeBreakdown,
           cleaningType: args.cleaningType,
-          addressId: int.tryParse(address.id),
+          addressId: address == null ? null : int.tryParse(address.id),
           addressLatitude: null,
           addressLongitude: null,
           assignmentMode: assignmentMode,
@@ -2283,7 +2237,7 @@ class _ClMainServiceScheduleScreenState
     const pledgeMessage =
         'أتعهد بحماية وتأمين كافة ممتلكاتي الشخصية والثمينة طوال فترة الخدمة، وأقر بأنني المسؤول الأول والأخير عنها دون أدنى مسؤولية على المنصة';
     final pricing = (_currentEstimate ?? _routeArgs?.estimate)?.pricing;
-    final amount = _appliedCouponTotal ?? pricing?.totalPrice;
+    final amount = pricing?.totalPrice;
     final currency = pricing?.currency ?? 'SYP';
     final accepted = await showDialog<bool>(
       context: context,
@@ -2319,18 +2273,5 @@ class _ClMainServiceScheduleScreenState
     return accepted ?? false;
   }
 
-  void _toggleCleaningService(String name) {
-    final normalized = name.trim();
-    if (normalized.isEmpty) return;
-    setState(() {
-      if (_selectedCleaningServiceNames.contains(normalized)) {
-        _selectedCleaningServiceNames.remove(normalized);
-      } else {
-        _selectedCleaningServiceNames.add(normalized);
-      }
-      _resetAppliedCoupon(
-        message: 'تم تغيير بيانات الخدمة. أعد تطبيق الكوبون.',
-      );
-    });
-  }
+
 }

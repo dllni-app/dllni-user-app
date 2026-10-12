@@ -1533,6 +1533,17 @@ class CleaningCompletionSnapshotItemModel {
 }
 
 class CleaningRoomAssignmentModel {
+  String get localizedDisplayLabel {
+    final source = displayLabel?.trim().isNotEmpty == true
+        ? displayLabel!
+        : roomKey?.trim().isNotEmpty == true
+        ? roomKey!
+        : roomType ?? 'غرفة';
+    return CleaningCompletionSnapshotItemModel._localizedCompletionLabel(
+      source,
+    );
+  }
+
   final int? id;
   final String? roomKey;
   final String? roomType;

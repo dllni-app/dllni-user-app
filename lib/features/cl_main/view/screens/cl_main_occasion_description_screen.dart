@@ -35,8 +35,10 @@ class _ClMainOccasionDescriptionScreenState
   late int _guestsCount;
   late int _hoursCount;
   late int _workersCount;
-  late final List<_MenuOption> _helpTypeOptions;
-  late final List<_MenuOption> _specialRequirementOptions;
+  late List<_MenuOption> _helpTypeOptions;
+  // The default 'none' option may need to be prepended to event-specific
+  // requirements (for example, large gatherings). This list is mutable.
+  late List<_MenuOption> _specialRequirementOptions;
 
   final ScrollController _detailsScrollController = ScrollController();
   final TextEditingController _customServiceController =
@@ -81,12 +83,14 @@ class _ClMainOccasionDescriptionScreenState
   @override
   void initState() {
     super.initState();
-    _initializeDefaults();
+    _initializeDefaults(widget.args);
     _selectedAddress = ValueNotifier<AddressListItem?>(null);
   }
 
-  void _initializeDefaults() {
-    final occasionId = widget.args?.option.id;
+  void _initializeDefaults(ClMainOccasionDescriptionArgs? args) {
+    // The admin-managed card ID can differ from the booking slug.
+    // Use the backend booking value to select occasion defaults.
+    final occasionId = args?.option.bookingValue;
 
     switch (occasionId) {
       case 'family_dinner':
@@ -111,6 +115,7 @@ class _ClMainOccasionDescriptionScreenState
         break;
 
       case 'birthday_party':
+      case 'birthday':
         _guestsCount = 20;
         _hoursCount = 4;
         _workersCount = 2;
@@ -186,6 +191,7 @@ class _ClMainOccasionDescriptionScreenState
         break;
 
       case 'condolences':
+      case 'funeral':
         _guestsCount = 30;
         _hoursCount = 5;
         _workersCount = 2;
@@ -247,6 +253,30 @@ class _ClMainOccasionDescriptionScreenState
     _selectedSpecialRequirement = _specialRequirementOptions.firstWhere(
       (option) => option.id == 'none',
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant ClMainOccasionDescriptionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.args?.option.bookingValue == widget.args?.option.bookingValue) {
+      return;
+    }
+    for (final controller in _dynamicControllers.values) {
+      controller.dispose();
+    }
+    _dynamicControllers.clear();
+    _dynamicValues.clear();
+    _customServiceController.clear();
+    _notesController.clear();
+    _specialRequirementsController.clear();
+    _selectedHelpType = null;
+    _routeArgs = widget.args;
+    _bloc = widget.args?.bloc;
+    _didReadArgs = widget.args != null;
+    _didNavigateToSchedule = false;
+    _descriptionStep = 0;
+    _selectedAddress.value = null;
+    _initializeDefaults(widget.args);
   }
 
   @override
@@ -738,6 +768,7 @@ class _ClMainOccasionDescriptionScreenState
     final args = widget.args ?? ModalRoute.of(context)?.settings.arguments;
     if (args is ClMainOccasionDescriptionArgs) {
       _routeArgs = args;
+      if (widget.args == null) _initializeDefaults(args);
       for (final field in args.option.dynamicFields) {
         if (field.type == 'yes_no') {
           _dynamicValues.putIfAbsent(field.key, () => false);

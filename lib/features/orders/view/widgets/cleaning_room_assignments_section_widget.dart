@@ -91,9 +91,7 @@ class _RoomAssignmentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = room.displayLabel?.trim().isNotEmpty == true
-        ? room.displayLabel!
-        : room.roomType ?? 'غرفة';
+    final label = room.localizedDisplayLabel;
     return Row(
       children: [
         Container(
@@ -155,7 +153,7 @@ class _RoomAssignmentRow extends StatelessWidget {
                     child: Text(
                       (assignment.worker?.name?.trim().isNotEmpty ?? false)
                           ? assignment.worker!.name!
-                          : 'العامل #' + assignment.workerId.toString(),
+                          : 'العامل #${assignment.workerId}',
                     ),
                   ),
             ],
