@@ -269,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       containerColor: const Color(0xFFEEF0FA),
                       image: const Icon(
                         Icons.support_agent_rounded,
-                        color: Color(0xFF0F8E98),
+                        color: Color(0xFF172554),
                       ),
                       title: 'الدعم والمساعدة',
                       subtitle: 'تواصل مع فريق الدعم عبر واتساب',
@@ -334,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       containerColor: const Color(0xFFEEF0FA),
                       image: const Icon(
                         Icons.location_on_outlined,
-                        color: Color(0xFF0F8E98),
+                        color: Color(0xFF172554),
                       ),
                       title: 'العناوين المحفوظة',
                       subtitle: 'أدر عناوين التوصيل والخدمة والعنوان الافتراضي',
@@ -410,7 +410,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       containerColor: const Color(0xFFEEF0FA),
                       image: const Icon(
                         Icons.support_agent_rounded,
-                        color: Color(0xFF0F8E98),
+                        color: Color(0xFF172554),
                       ),
                       title: 'الدعم والمساعدة',
                       subtitle: 'تواصل مع فريق الدعم عبر واتساب',

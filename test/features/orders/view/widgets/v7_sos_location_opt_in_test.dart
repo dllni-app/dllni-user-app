@@ -15,6 +15,8 @@ void main() {
       ),
     );
     expect(find.text('مشاركة موقعي الحالي'), findsNothing);
+    await tester.tap(find.text('حالة طوارئ'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('أشعر بعدم الأمان أو بوجود تهديد'));
     await tester.tap(find.text('التالي'));
     await tester.pumpAndSettle();

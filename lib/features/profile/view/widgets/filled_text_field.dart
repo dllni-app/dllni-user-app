@@ -272,7 +272,7 @@ class FilledTextField extends StatelessWidget {
               borderSide: BorderSide(
                 color: invalid
                     ? const Color(0xFFC5414D)
-                    : const Color(0xFF0CBBC7),
+                    : const Color(0xFF365487),
                 width: 1.6,
               ),
             ),

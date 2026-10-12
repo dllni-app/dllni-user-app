@@ -70,18 +70,21 @@ void main() {
     expect(locations, 1);
   });
 
-  testWidgets('cleaning mode explainer uses existing apartment callback', (
-    tester,
-  ) async {
-    var pressed = 0;
-    await tester.pumpWidget(
-      _wrap(V6CleaningDiscoveryIntro(onBookApartment: () => pressed++)),
-    );
-    expect(find.text('تنظيف عادي'), findsOneWidget);
-    expect(find.text('تنظيف عميق'), findsOneWidget);
-    await tester.tap(find.text('ابدأ حجز تنظيف شقة'));
-    expect(pressed, 1);
-  });
+  testWidgets(
+    'cleaning discovery explains when to use the tab without duplicate booking actions',
+    (tester) async {
+      var pressed = 0;
+      await tester.pumpWidget(
+        _wrap(V6CleaningDiscoveryIntro(onBookApartment: () => pressed++)),
+      );
+      expect(find.text('متى تختار التنظيفات؟'), findsOneWidget);
+      expect(find.text('مكان يحتاج عناية'), findsOneWidget);
+      expect(find.text('تنظيف عادي'), findsNothing);
+      expect(find.text('تنظيف عميق'), findsNothing);
+      expect(find.text('ابدأ حجز تنظيف شقة'), findsNothing);
+      expect(pressed, 0);
+    },
+  );
 
   testWidgets(
     'V6 active order opens details and guest prompt retains auth callbacks',

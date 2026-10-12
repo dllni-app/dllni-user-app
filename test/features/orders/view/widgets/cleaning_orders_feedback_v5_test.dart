@@ -32,7 +32,7 @@ void main() {
 
     expect(find.text('تعذر تحميل طلبات التنظيف'), findsOneWidget);
     expect(find.text('تحقق من الاتصال بالإنترنت'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('cleaning_orders_retry')));
+    await tester.tap(find.text('إعادة المحاولة'));
     expect(retryCalls, 1);
     expect(tester.takeException(), isNull);
   });

@@ -4,6 +4,7 @@ import 'package:common_package/helpers/error_handler.dart';
 import 'package:common_package/helpers/typedef.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/widgets/design_system/design_system.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/cleaning_banners_response_model.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/create_cleaning_order_response_model.dart';
@@ -344,10 +345,10 @@ void main() {
     await _pumpScreen(tester, useCase, order: order);
     await tester.pumpAndSettle();
 
-    final maleChip = tester.widget<ChoiceChip>(
+    final maleChip = tester.widget<AppChoiceTile>(
       find.byKey(const Key('cleaning_gender_pref_male')),
     );
-    final femaleChip = tester.widget<ChoiceChip>(
+    final femaleChip = tester.widget<AppChoiceTile>(
       find.byKey(const Key('cleaning_gender_pref_female')),
     );
     expect(maleChip.selected, isTrue);
@@ -366,10 +367,10 @@ void main() {
     await _pumpScreen(tester, useCase);
     await tester.pumpAndSettle();
 
-    final maleChip = tester.widget<ChoiceChip>(
+    final maleChip = tester.widget<AppChoiceTile>(
       find.byKey(const Key('cleaning_gender_pref_male')),
     );
-    final femaleChip = tester.widget<ChoiceChip>(
+    final femaleChip = tester.widget<AppChoiceTile>(
       find.byKey(const Key('cleaning_gender_pref_female')),
     );
     expect(maleChip.selected, isFalse);

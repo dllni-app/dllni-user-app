@@ -44,7 +44,7 @@ class SupportHandoffScreen extends StatelessWidget {
                             ),
                             child: const Icon(
                               Icons.support_agent_rounded,
-                              color: Color(0xFF0F8E98),
+                              color: Color(0xFF172554),
                               size: 36,
                             ),
                           ),

@@ -1,5 +1,4 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
@@ -11,7 +10,6 @@ import 'package:dllni_user_app/core/utils/cleaning_schedule_date_time_logic.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/extensions/date_time_extensions.dart';
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
 import '../../../cl_main/domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../../cl_main/view/manager/bloc/cl_main_bloc.dart';
@@ -409,7 +407,7 @@ class _CleaningOrderRescheduleScreenState
                               child: ElevatedButton(
                                 onPressed: isSaveDisabled ? null : _onSave,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF11B9C8),
+                                  backgroundColor: const Color(0xFF365487),
                                   foregroundColor: Colors.white,
                                   disabledBackgroundColor: const Color(
                                     0xFF8DD8DE,

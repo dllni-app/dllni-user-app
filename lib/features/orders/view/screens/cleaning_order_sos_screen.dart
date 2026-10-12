@@ -1,13 +1,13 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
-import 'package:dllni_user_app/core/themes/app_colors.dart';
 import 'package:dllni_user_app/features/orders/data/models/sos_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/repository/orders_repo.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/sos_use_cases.dart';
 import 'package:dllni_user_app/features/profile/domain/services/user_location_service.dart';
 import '../widgets/v7_order_detail_components.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CleaningOrderSosArgs {
@@ -45,7 +45,8 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   final List<XFile> _attachments = <XFile>[];
 
-  String _kind = 'emergency';
+  // Regular help is the safe default; emergencies require explicit selection.
+  String _kind = 'complaint';
   String? _selectedCategory;
   String? _messageError;
   bool _submitting = false;
@@ -205,6 +206,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   }
 
   void _advanceForm() {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_formStage == 0) {
       if (_selectedCategory == null) {
         ScaffoldMessenger.of(
@@ -222,7 +224,8 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
   Widget build(BuildContext context) {
     final submitted = _submittedCase;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      resizeToAvoidBottomInset: false,
+      backgroundColor: AlnadhaTokens.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
@@ -248,7 +251,12 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsetsDirectional.fromSTEB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
                 child: submitted == null
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -279,8 +287,8 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(top: BorderSide(color: Color(0xFFE6E9EE))),
+                  color: AlnadhaTokens.surface,
+                  border: Border(top: BorderSide(color: AlnadhaTokens.border)),
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -435,13 +443,10 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
                     hintText: _isEmergency
                         ? 'صف الموقف باختصار'
                         : 'اكتب كل التفاصيل التي تساعد في مراجعة الشكوى',
-                    hintStyle: const TextStyle(
-                      color: AppColors.hintText,
-                      fontSize: 14,
-                    ),
+                    hintStyle: AlnadhaTokens.caption,
                     errorText: _messageError,
                     filled: true,
-                    fillColor: const Color(0xffF3F4F6),
+                    fillColor: AlnadhaTokens.background,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -558,7 +563,7 @@ class _CleaningOrderSosScreenState extends State<CleaningOrderSosScreen> {
               : 'تم استلام التفاصيل. ستظهر التحديثات عند توفرها.',
           reference: supportCase.id == null
               ? null
-              : 'رقم البلاغ #' + supportCase.id.toString(),
+              : 'رقم البلاغ #${supportCase.id}',
           tone: closed ? V7OrderTone.success : V7OrderTone.info,
           icon: closed ? Icons.task_alt_outlined : Icons.support_agent_outlined,
         ),

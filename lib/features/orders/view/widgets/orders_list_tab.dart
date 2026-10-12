@@ -35,14 +35,14 @@ class OrdersListTab extends StatefulWidget {
 }
 
 class _OrdersListTabState extends State<OrdersListTab> {
-  static const int _currentCleaningOrdersIndex = 0;
-  static const int _previousCleaningOrdersIndex = 1;
+  static const int _currentMerchantOrdersIndex = 0;
+  static const int _previousMerchantOrdersIndex = 1;
   static const Duration _cleaningPollInterval = Duration(seconds: 10);
   static const Duration _foodDeliveryPollInterval = Duration(seconds: 20);
 
   late int segmentIndex;
-  int cleaningOrdersTabIndex = _currentCleaningOrdersIndex;
-  int merchantOrdersTabIndex = _currentCleaningOrdersIndex;
+  CleaningOrdersListFilter cleaningOrdersFilter = CleaningOrdersListFilter.all;
+  int merchantOrdersTabIndex = _currentMerchantOrdersIndex;
   Timer? _cleaningPollTimer;
   Timer? _foodDeliveryPollTimer;
 
@@ -167,10 +167,14 @@ class _OrdersListTabState extends State<OrdersListTab> {
               vertical: 14,
             ),
             child: _CleaningOrdersTabBar(
-              selectedIndex: cleaningOrdersTabIndex,
+              selectedIndex: cleaningOrdersFilter.index,
               accent: SharedPlatformColors.cleaning,
+              titles: const ['الكل', 'النشطة', 'المكتملة', 'الملغاة'],
               onChanged: (index) {
-                setState(() => cleaningOrdersTabIndex = index);
+                setState(
+                  () => cleaningOrdersFilter =
+                      CleaningOrdersListFilter.values[index],
+                );
               },
             ),
           ),
@@ -215,10 +219,9 @@ class _OrdersListTabState extends State<OrdersListTab> {
                 child: OrdersListBody(
                   state: widget.state,
                   scrollController: widget.scrollController,
-                  showCompletedCleaningOrders:
-                      cleaningOrdersTabIndex == _previousCleaningOrdersIndex,
+                  cleaningOrdersFilter: cleaningOrdersFilter,
                   showCompletedMerchantOrders:
-                      merchantOrdersTabIndex == _previousCleaningOrdersIndex,
+                      merchantOrdersTabIndex == _previousMerchantOrdersIndex,
                 ),
               ),
             ],
@@ -234,13 +237,13 @@ class _CleaningOrdersTabBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onChanged,
     required this.accent,
+    this.titles = const ['الطلبات الحالية', 'الطلبات السابقة'],
   });
 
   final int selectedIndex;
   final ValueChanged<int> onChanged;
   final Color accent;
-
-  static const _titles = <String>['الطلبات الحالية', 'الطلبات السابقة'];
+  final List<String> titles;
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +254,7 @@ class _CleaningOrdersTabBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        children: List.generate(_titles.length, (index) {
+        children: List.generate(titles.length, (index) {
           final isSelected = selectedIndex == index;
           return Expanded(
             child: GestureDetector(
@@ -275,7 +278,7 @@ class _CleaningOrdersTabBar extends StatelessWidget {
                       : null,
                 ),
                 child: AppText.labelLarge(
-                  _titles[index],
+                  titles[index],
                   textAlign: TextAlign.center,
                   fontWeight: FontWeight.bold,
                   color: isSelected ? accent : const Color(0xff6B7280),

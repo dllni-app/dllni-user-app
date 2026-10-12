@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/themes/shared_platform_colors.dart';
-import '../../../../core/themes/v7_artwork.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 
-/// One simple, accessible Pen V7 account action row.
+/// Shared V6 account navigation row; the caller owns its action.
 class SectionCard extends StatelessWidget {
   const SectionCard({
     super.key,
@@ -12,6 +11,7 @@ class SectionCard extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
   });
+
   final Color containerColor;
   final Widget image;
   final String title, subtitle;
@@ -20,56 +20,51 @@ class SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: title,
+    label: '$title، $subtitle',
     child: Material(
-      color: Colors.transparent,
+      color: AlnadhaTokens.surface,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 65),
+          constraints: const BoxConstraints(minHeight: 72),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+            padding: const EdgeInsetsDirectional.fromSTEB(8, 12, 8, 12),
             child: Row(
               children: [
                 Container(
-                  width: 43,
-                  height: 43,
-                  padding: const EdgeInsets.all(4),
+                  width: 48,
+                  height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: containerColor,
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: switch (title) {
-                    'العناوين المحفوظة' => Image.asset(V7Artwork.address),
-                    'الدعم والمساعدة' => Image.asset(V7Artwork.support),
-                    _ => image,
-                  },
+                  child: IconTheme(
+                    data: const IconThemeData(
+                      color: AlnadhaTokens.primary,
+                      size: 25,
+                    ),
+                    child: image,
+                  ),
                 ),
-                const SizedBox(width: 11),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          color: SharedPlatformColors.ink,
+                        style: AlnadhaTokens.body.copyWith(
                           fontWeight: FontWeight.w800,
-                          fontSize: 13,
                         ),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         subtitle,
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SharedPlatformColors.muted,
-                          fontSize: 11,
-                          height: 1.4,
-                        ),
+                        style: AlnadhaTokens.caption,
                       ),
                     ],
                   ),
@@ -77,8 +72,8 @@ class SectionCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 const Icon(
                   Icons.chevron_left_rounded,
-                  size: 20,
-                  color: SharedPlatformColors.muted,
+                  size: 23,
+                  color: AlnadhaTokens.primary,
                 ),
               ],
             ),

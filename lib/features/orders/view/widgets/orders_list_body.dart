@@ -18,18 +18,40 @@ import 'cleaning_order_card.dart';
 import 'cleaning_orders_feedback_state.dart';
 import 'restaurant_order_card.dart';
 
+enum CleaningOrdersListFilter { all, active, completed, cancelled }
+
+bool cleaningOrderMatchesFilter(
+  String? status,
+  CleaningOrdersListFilter filter,
+) {
+  if (filter == CleaningOrdersListFilter.all) return true;
+  final normalized = (status ?? '').trim().toLowerCase();
+  return switch (filter) {
+    CleaningOrdersListFilter.all => true,
+    CleaningOrdersListFilter.active =>
+      normalized != CleaningBookingStatus.completed &&
+          normalized != CleaningBookingStatus.cancelled,
+    CleaningOrdersListFilter.completed =>
+      normalized == CleaningBookingStatus.completed,
+    CleaningOrdersListFilter.cancelled =>
+      normalized == CleaningBookingStatus.cancelled,
+  };
+}
+
 class OrdersListBody extends StatelessWidget {
   const OrdersListBody({
     super.key,
     required this.state,
     required this.scrollController,
     this.showCompletedCleaningOrders = false,
+    this.cleaningOrdersFilter,
     this.showCompletedMerchantOrders = false,
   });
 
   final OrdersState state;
   final ScrollController scrollController;
   final bool showCompletedCleaningOrders;
+  final CleaningOrdersListFilter? cleaningOrdersFilter;
   final bool showCompletedMerchantOrders;
 
   bool _isPreviousCleaningOrder(String? status) {
@@ -57,6 +79,12 @@ class OrdersListBody extends StatelessWidget {
     final isCleaningSection = state.selectedTabIndex == 2;
     final cleaningOrders = state.cleaningOrders.list
         .where((order) {
+          if (cleaningOrdersFilter != null) {
+            return cleaningOrderMatchesFilter(
+              order.status,
+              cleaningOrdersFilter!,
+            );
+          }
           final isPreviousOrder = _isPreviousCleaningOrder(order.status);
           return showCompletedCleaningOrders
               ? isPreviousOrder
@@ -113,9 +141,16 @@ class OrdersListBody extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
           children: [
             CleaningOrdersFeedbackState(
-              kind: showCompletedCleaningOrders
-                  ? CleaningOrdersFeedbackKind.historyEmpty
-                  : CleaningOrdersFeedbackKind.activeEmpty,
+              kind: switch (cleaningOrdersFilter) {
+                CleaningOrdersListFilter.completed =>
+                  CleaningOrdersFeedbackKind.completedEmpty,
+                CleaningOrdersListFilter.cancelled =>
+                  CleaningOrdersFeedbackKind.cancelledEmpty,
+                _ =>
+                  showCompletedCleaningOrders
+                      ? CleaningOrdersFeedbackKind.historyEmpty
+                      : CleaningOrdersFeedbackKind.activeEmpty,
+              },
             ),
           ],
         );

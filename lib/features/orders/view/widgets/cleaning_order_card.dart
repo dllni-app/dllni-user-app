@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../../core/extensions/extentions.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/themes/shared_platform_colors.dart';
-import '../../../../core/themes/v7_artwork.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 import '../../data/models/cleaning_booking_status.dart';
 import '../../data/models/cleaning_orders_api_models.dart';
 import '../helpers/cleaning_event_assistance_helper.dart';
 
-/// Redesigned Pen V7 order item; only display logic lives here.
+/// V6 customer order tile. Existing order model and command callbacks are
+/// authoritative; only their presentation belongs here.
 class CleaningOrderCard extends StatelessWidget {
   const CleaningOrderCard({
     super.key,
@@ -18,12 +19,18 @@ class CleaningOrderCard extends StatelessWidget {
     this.onReportIssueTap,
     this.onCancelTap,
   });
+
   final CleaningOrderModel order;
-  final VoidCallback? onTap, onRescheduleTap, onReportIssueTap, onCancelTap;
+  final VoidCallback? onTap;
+  final VoidCallback? onRescheduleTap;
+  final VoidCallback? onReportIssueTap;
+  final VoidCallback? onCancelTap;
 
   bool get _ended =>
       order.status == CleaningBookingStatus.completed ||
       order.status == CleaningBookingStatus.cancelled;
+
+  bool get _cancelled => order.status == CleaningBookingStatus.cancelled;
 
   String get _status {
     if (order.isSearchingForWorkers) {
@@ -48,11 +55,19 @@ class CleaningOrderCard extends StatelessWidget {
     );
   }
 
+  IconData get _serviceIcon {
+    if (order.openTime != null) {
+      return Icons.access_time_rounded;
+    }
+    if (order.propertyType == 'event_assistance') {
+      return Icons.celebration_outlined;
+    }
+    return Icons.cleaning_services_outlined;
+  }
+
   String get _reference {
     final code = order.bookingNumber?.trim();
-    return code == null || code.isEmpty
-        ? 'رقم الطلب #' + (order.id?.toString() ?? '-')
-        : 'رقم الطلب #' + code;
+    return 'رقم الطلب #${code == null || code.isEmpty ? (order.id?.toString() ?? '-') : code}';
   }
 
   String get _date {
@@ -71,147 +86,161 @@ class CleaningOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE6E9EE)),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  V7ArtTile(
-                    asset: V7Artwork.categoryCleaning,
-                    size: 54,
-                    background: SharedPlatformColors.cleaningSoft,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _service,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: SharedPlatformColors.primary,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          _reference,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: SharedPlatformColors.muted,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 6,
-                      ),
+    final badgeInk = _cancelled
+        ? SharedPlatformColors.danger
+        : _ended
+        ? SharedPlatformColors.muted
+        : SharedPlatformColors.cleaningInk;
+    final badgeSurface = _cancelled
+        ? const Color(0xFFFFF0F1)
+        : _ended
+        ? SharedPlatformColors.background
+        : SharedPlatformColors.cleaningSoft;
+    return Semantics(
+      container: true,
+      label: '$_service، $_reference، $_status',
+      child: Material(
+        color: SharedPlatformColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: SharedPlatformColors.border),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: _ended
-                            ? const Color(0xFFF3F4F7)
-                            : SharedPlatformColors.cleaningSoft,
-                        borderRadius: BorderRadius.circular(20),
+                        color: SharedPlatformColors.cleaningSoft,
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Text(
-                        _status,
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: _ended
-                              ? SharedPlatformColors.muted
-                              : const Color(0xFF047B87),
-                        ),
+                      child: Icon(
+                        _serviceIcon,
+                        color: SharedPlatformColors.cleaningInk,
+                        size: 24,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _Meta(icon: Icons.calendar_today_outlined, label: _date),
-              if (order.locationName?.isNotEmpty == true) ...[
-                const SizedBox(height: 7),
-                _Meta(
-                  icon: Icons.location_on_outlined,
-                  label: order.locationName!,
-                ),
-              ],
-              const Divider(height: 22, color: Color(0xFFE9ECF1)),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      order.totalPrice == null
-                          ? 'التكلفة قيد التحديد'
-                          : order.totalPrice!.formatMoney(),
-                      style: const TextStyle(
-                        color: SharedPlatformColors.primary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: onTap,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _ended ? 'عرض التفاصيل' : 'متابعة الطلب',
-                          style: const TextStyle(
-                            color: Color(0xFF0A7F8C),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _service,
+                            style: AlnadhaTokens.sectionTitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(
+                          const SizedBox(height: 3),
+                          Text(
+                            _reference,
+                            textDirection: TextDirection.rtl,
+                            maxLines: 2,
+                            style: AlnadhaTokens.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(10, 6, 10, 6),
+                    decoration: BoxDecoration(
+                      color: badgeSurface,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _status,
+                      style: AlnadhaTokens.caption.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: badgeInk,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _OrderMeta(icon: Icons.event_outlined, label: _date),
+                if (order.locationName?.trim().isNotEmpty == true) ...[
+                  const SizedBox(height: 8),
+                  _OrderMeta(
+                    icon: Icons.location_on_outlined,
+                    label: order.locationName!.trim(),
+                  ),
+                ],
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1, color: SharedPlatformColors.border),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('التكلفة', style: AlnadhaTokens.caption),
+                          const SizedBox(height: 2),
+                          Text(
+                            order.totalPrice == null
+                                ? 'قيد التحديد'
+                                : order.totalPrice!.formatMoney(),
+                            style: AlnadhaTokens.sectionTitle.copyWith(
+                              color: SharedPlatformColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (onTap != null)
+                      TextButton.icon(
+                        onPressed: onTap,
+                        icon: const Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          size: 12,
-                          color: Color(0xFF0A7F8C),
+                          size: 15,
                         ),
-                      ],
+                        label: Text(_ended ? 'التفاصيل' : 'متابعة الطلب'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: SharedPlatformColors.primary,
+                          minimumSize: const Size(48, 48),
+                          textStyle: AlnadhaTokens.button,
+                        ),
+                      ),
+                  ],
+                ),
+                if (onRescheduleTap != null && !_ended) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: onRescheduleTap,
+                    icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+                    label: const Text('تعديل الموعد'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: SharedPlatformColors.primary,
+                      side: const BorderSide(
+                        color: SharedPlatformColors.border,
+                      ),
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: AlnadhaTokens.button,
                     ),
                   ),
                 ],
-              ),
-              if (onRescheduleTap != null && !_ended) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: onRescheduleTap,
-                  icon: const Icon(Icons.event_available_outlined, size: 16),
-                  label: const Text('تعديل الموعد'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: SharedPlatformColors.primary,
-                    minimumSize: const Size.fromHeight(44),
-                  ),
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -219,24 +248,25 @@ class CleaningOrderCard extends StatelessWidget {
   }
 }
 
-class _Meta extends StatelessWidget {
-  const _Meta({required this.icon, required this.label});
+class _OrderMeta extends StatelessWidget {
+  const _OrderMeta({required this.icon, required this.label});
   final IconData icon;
   final String label;
+
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, size: 16, color: const Color(0xFF08818B)),
-      const SizedBox(width: 7),
+      Icon(icon, size: 18, color: SharedPlatformColors.cleaningInk),
+      const SizedBox(width: 8),
       Expanded(
         child: Text(
           label,
-          maxLines: 2,
+          maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: AlnadhaTokens.body.copyWith(
+            fontSize: 13,
             color: SharedPlatformColors.muted,
-            fontSize: 12,
-            height: 1.5,
           ),
         ),
       ),
