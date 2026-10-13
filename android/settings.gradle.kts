@@ -11,6 +11,8 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
+        // Official Google CDN fallback when dl.google.com is unreachable locally.
+        maven("https://redirector.gvt1.com/edgedl/dl/android/maven2/")
         google()
         mavenCentral()
         gradlePluginPortal()

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:common_package/helpers/typedef.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dllni_user_app/features/cl_main/data/models/cleaning_banners_response_model.dart';
@@ -69,7 +71,6 @@ void main() {
       tester,
     ) async {
       final bloc = _bloc();
-      addTearDown(bloc.close);
       await tester.pumpWidget(
         MaterialApp(
           home: ClMainOccasionDescriptionScreen(
@@ -89,6 +90,10 @@ void main() {
       await tester.pump();
       expect(tester.takeException(), isNull);
       expect(find.text('مناسبة اختبار'), findsWidgets);
+      // Dispose the widget first so BlocConsumer releases its subscription.
+      await tester.pumpWidget(const SizedBox.shrink());
+      // Do not block the widget test on unrelated queued Bloc cleanup events.
+      unawaited(bloc.close());
     });
   }
 }

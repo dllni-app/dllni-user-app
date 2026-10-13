@@ -39,15 +39,14 @@ class V6DecisionCopy {
       [
         'اختر وقتاً تستطيع فيه فتح المكان واستقبال العامل.',
         'اترك وقتاً كافياً للمهام التي حددتها ولا تفترض انتهاءها في موعد ثابت.',
-        'إذا كنت تحتاج زيارة أخرى في أيام مختلفة، استخدم الحجز الدوري.',
       ],
     ),
     V6BookingDecisionTopic.recurrence => const V6DecisionCopy(
       'هل أحتاج زيارات متكررة؟',
-      'استخدم الحجز الدوري فقط إذا كانت حاجتك تتكرر في عدة أيام.',
+      'الحجز الدوري مخصص لحاجة تنظيف تتكرر، مو لمجرد اختيار يوم آخر.',
       [
         'زيارة واحدة: لتنظيف المنزل مرة واحدة.',
-        'دوري: لزيارات أسبوعية أو أيام مخصصة ضمن 30 يوماً.',
+        'دوري: لزيارات تتكرر يومياً أو أسبوعياً أو شهرياً، أو بتواريخ تحددها.',
         'يمكن أن يختلف العامل بين الزيارات؛ لكل زيارة موعد وتغطية مستقلة.',
       ],
     ),
@@ -132,7 +131,7 @@ class V6BookingDecisionGuide extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(
-              Icons.info_outline_rounded,
+              Icons.lightbulb_outline_rounded,
               size: 23,
               color: AlnadhaTokens.primary,
             ),

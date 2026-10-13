@@ -268,7 +268,8 @@ class EstimateCleaningPriceParams with Params {
       if (!hasAddressId && addressLongitude != null)
         'addressLongitude': addressLongitude,
       'assignmentMode': workerSelection.assignmentMode.apiValue,
-      if (isRecurring) 'workerScope': workerSelection.scope.apiValue,
+      if (isRecurring || workerIds.length > 1)
+        'workerScope': isRecurring ? workerSelection.scope.apiValue : 'specific',
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'numberOfWorkers': workerSelection.numberOfWorkers,
       ...serviceExtras.toJson(),

@@ -168,9 +168,9 @@ class _CleaningStartVerificationDialogContentState
                     final hasValue = _controllers[index].text.isNotEmpty;
                     final isActive = hasFocus || hasValue;
                     return Container(
-                      width: 52,
+                      width: 48,
                       height: 56,
-                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
                       child: TextField(
                         controller: _controllers[index],
                         focusNode: _focusNodes[index],
@@ -255,21 +255,6 @@ class _CleaningStartVerificationDialogContentState
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              if (widget.bookingId != null)
-                TextButton(
-                  child: AppText.labelMedium(
-                    'إلغاء الطلب',
-                    textAlign: TextAlign.center,
-                    color: const Color(0xffE51C28),
-                    fontWeight: FontWeight.w600,
-                  ),
-                  onPressed: () async {
-                    await showCancelOrderWarningDialog(
-                      context,
-                      orderId: widget.bookingId!,
-                    );
-                  },
-                ),
 
               if (_submitting) ...[
                 const SizedBox(height: 16),

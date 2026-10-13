@@ -19,82 +19,98 @@ void main() {
     expect(model.lastHourTeamDecision?['workerIds'], [19]);
   });
 
-  testWidgets('customer can assign all tasks to the accepted worker', (
-    tester,
-  ) async {
-    String? selectedChoice;
-    int? selectedWorker;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Scaffold(
-            body: SingleChildScrollView(
-              child: CleaningLastHourTeamDecisionCard(
-                decision: const {
-                  'required': true,
-                  'workerIds': [19],
-                },
-                onChoose: (choice, workerId) async {
-                  selectedChoice = choice;
-                  selectedWorker = workerId;
-                },
-              ),
+  Widget buildCard({
+    required Map<String, dynamic> decision,
+    required Future<void> Function(String, int?) onChoose,
+  }) {
+    return MaterialApp(
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          body: SingleChildScrollView(
+            child: CleaningLastHourTeamDecisionCard(
+              decision: decision,
+              onChoose: onChoose,
             ),
           ),
         ),
       ),
     );
+  }
+
+  testWidgets('assign-all requires explicit confirmation and sends worker ID', (
+    tester,
+  ) async {
+    String? selectedChoice;
+    int? selectedWorker;
+    await tester.pumpWidget(
+      buildCard(
+        decision: const {
+          'required': true,
+          'workerIds': [19],
+        },
+        onChoose: (choice, workerId) async {
+          selectedChoice = choice;
+          selectedWorker = workerId;
+        },
+      ),
+    );
+
     await tester.tap(find.byKey(const Key('cleaning_last_hour_assign_all')));
+    await tester.pumpAndSettle();
+    expect(selectedChoice, isNull);
+    expect(find.textContaining('إسناد جميع مهام الطلب'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('cleaning_last_hour_dismiss')));
+    await tester.pumpAndSettle();
+    expect(selectedChoice, isNull);
+
+    await tester.tap(find.byKey(const Key('cleaning_last_hour_assign_all')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cleaning_last_hour_confirm')));
+    await tester.pumpAndSettle();
     expect(selectedChoice, 'all_tasks');
     expect(selectedWorker, 19);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'customer can retain assigned tasks with multiple accepted workers',
-    (tester) async {
-      String? selectedChoice;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: CleaningLastHourTeamDecisionCard(
-                decision: const {
-                  'required': true,
-                  'workerIds': [19, 25],
-                },
-                onChoose: (choice, workerId) async => selectedChoice = choice,
-              ),
-            ),
-          ),
-        ),
-      );
-      final allButton = tester.widget<FilledButton>(
-        find.byKey(const Key('cleaning_last_hour_assign_all')),
-      );
-      expect(allButton.onPressed, isNull);
-      await tester.tap(
-        find.byKey(const Key('cleaning_last_hour_keep_assignment')),
-      );
-      expect(selectedChoice, 'assigned_only');
-    },
-  );
+  testWidgets('multiple accepted workers cannot get all-tasks choice', (
+    tester,
+  ) async {
+    String? selectedChoice;
+    await tester.pumpWidget(
+      buildCard(
+        decision: const {
+          'required': true,
+          'workerIds': [19, 25],
+        },
+        onChoose: (choice, workerId) async => selectedChoice = choice,
+      ),
+    );
 
-  testWidgets('decision is not shown when backend says it is unavailable', (
+    expect(
+      find.byKey(const Key('cleaning_last_hour_assign_all')),
+      findsNothing,
+    );
+    await tester.tap(
+      find.byKey(const Key('cleaning_last_hour_keep_assignment')),
+    );
+    await tester.pumpAndSettle();
+    expect(selectedChoice, isNull);
+    await tester.tap(find.byKey(const Key('cleaning_last_hour_confirm')));
+    await tester.pumpAndSettle();
+    expect(selectedChoice, 'assigned_only');
+  });
+
+  testWidgets('decision is not shown when backend says unavailable', (
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: CleaningLastHourTeamDecisionCard(
-            decision: const {
-              'required': false,
-              'workerIds': [19],
-            },
-            onChoose: (choice, workerId) async {},
-          ),
-        ),
+      buildCard(
+        decision: const {
+          'required': false,
+          'workerIds': [19],
+        },
+        onChoose: (choice, workerId) async {},
       ),
     );
     expect(find.byKey(const Key('cleaning_last_hour_decision')), findsNothing);

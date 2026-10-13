@@ -848,7 +848,21 @@ class _MultiDayCleaningOrderDetailsScreenState
 
   Widget _buildBody() {
     if (_loading) {
-      return const V7OrderLoadingView();
+      // The parent Scaffold owns the app bar; avoid a second order-details header.
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 30, 20, 20),
+        children: const [
+          SizedBox(height: 80),
+          Center(child: CircularProgressIndicator(strokeWidth: 3)),
+          SizedBox(height: 18),
+          Text(
+            'جارٍ تحميل الزيارات...',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF64748B)),
+          ),
+        ],
+      );
     }
     if (_error != null) {
       return ListView(
@@ -1500,7 +1514,7 @@ class _MultiDayCleaningOrderDetailsScreenState
         : '${CleaningDateTimeUiFormat.weekday(date)}، ${CleaningDateTimeUiFormat.date(date)}';
     final time = session.time;
     if (time == null || time.trim().isEmpty) return dateText;
-    return '$dateText - ${CleaningDateTimeUiFormat.time(time)}';
+    return '$dateText  •  ${CleaningDateTimeUiFormat.time(time)}';
   }
 
   String _statusLabel(String status) {

@@ -277,7 +277,7 @@ class _ClMainScreenState extends State<ClMainScreen> {
                     minScale: 1,
                     maxScale: 3,
                     child: AppImage.network(
-                      imageUrl,
+                      _reachableBannerUrl(imageUrl),
                       width: double.infinity,
                       fit: BoxFit.contain,
                     ),
@@ -415,10 +415,9 @@ class _ClMainScreenState extends State<ClMainScreen> {
                 },
               ),
             ),
-            // Cleaning promotions belong to the cleaning tab only; do not
-            // push occasion and hourly decision content below an unrelated ad.
-            if (_selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex)
-              _buildCleaningBannersSection(),
+            // One shared promotion carousel remains visible across the
+            // cleaning, occasions and hourly tabs.
+            _buildCleaningBannersSection(),
             Expanded(
               child: _selectedTabIndex == ClMainServiceTabsWidget.cleaningIndex
                   ? ListView.separated(
@@ -605,6 +604,21 @@ class _ClMainScreenState extends State<ClMainScreen> {
   }
 }
 
+String _reachableBannerUrl(String source) {
+  final sourceUri = Uri.tryParse(source);
+  final backend = Uri.tryParse(
+    const String.fromEnvironment('API_BASE_URL', defaultValue: ''),
+  );
+  if (sourceUri == null || backend == null || backend.host.isEmpty) {
+    return source;
+  }
+  if (sourceUri.host != '127.0.0.1' &&
+      sourceUri.host.toLowerCase() != 'localhost') {
+    return source;
+  }
+  return sourceUri.replace(host: backend.host, port: backend.port).toString();
+}
+
 class _ClMainBannerCard extends StatelessWidget {
   const _ClMainBannerCard({required this.banner, required this.onTap});
 
@@ -626,7 +640,7 @@ class _ClMainBannerCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           child: _hasImage
               ? AppImage.network(
-                  banner.imageUrl!,
+                  _reachableBannerUrl(banner.imageUrl!),
                   width: double.infinity,
                   height: 172,
                   fit: BoxFit.cover,

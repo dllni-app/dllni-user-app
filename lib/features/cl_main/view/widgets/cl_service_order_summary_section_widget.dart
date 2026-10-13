@@ -51,10 +51,8 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
   final String? scheduleTimeRange;
   final List<ClServiceScheduleEntry> scheduleEntries;
 
-  String _formatDistance(double distance) {
-    final fixed = distance.toStringAsFixed(3);
-    return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
-  }
+  String get _currencyLabel =>
+      currency.trim().toUpperCase() == 'SYP' ? 'ل.س' : currency;
 
   String? get _scheduleDateLine {
     if (scheduleDayLabel == null && scheduleDateLabel == null) return null;
@@ -85,146 +83,210 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
     // Submission re-quotes the full booking, so this total stays unchanged.
     final displayedTotal = totalPrice;
     final summary = priceSummary;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: SharedPlatformColors.border),
-      ),
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppText.bodyLarge(
-            'ملخص السعر',
-            color: SharedPlatformColors.primary,
-            fontWeight: FontWeight.w700,
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 14),
-          if (hasScheduleEntries) ...[
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: AppText.bodyMedium(
-                'مواعيد الخدمة',
-                color: SharedPlatformColors.primary,
-                fontWeight: FontWeight.w800,
-                textAlign: TextAlign.right,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (hasScheduleEntries ||
+            scheduleDateLine != null ||
+            (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty)) ...[
+          Container(
+            padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F8FC),
+              border: Border.all(color: const Color(0xFFE5EAF2)),
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(height: 10),
-            ...List.generate(scheduleEntries.length, (index) {
-              final entry = scheduleEntries[index];
-              return Padding(
-                padding: EdgeInsets.only(
-                  bottom: index == scheduleEntries.length - 1 ? 0 : 9,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.event_available_outlined,
+                      size: 20,
+                      color: SharedPlatformColors.primary,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'موعد الخدمة',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: _ScheduleEntryRowWidget(entry: entry),
-              );
-            }),
-            const SizedBox(height: 10),
-          ] else ...[
-            if (scheduleDateLine != null) ...[
-              _SummaryRowWidget(label: 'موعد الخدمة', value: scheduleDateLine),
-              const SizedBox(height: 8),
-            ],
-            if (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty) ...[
-              _SummaryRowWidget(label: 'الوقت', value: scheduleTimeRange!),
-              const SizedBox(height: 8),
-            ],
-          ],
-          if (hasScheduleEntries ||
-              scheduleDateLine != null ||
-              (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty)) ...[
-            const Divider(color: Color(0xFFE5E7EB), thickness: 1),
-            const SizedBox(height: 8),
-          ],
-          _SummaryRowWidget(
-            label: 'الخدمة والعمال',
-            value: (summary?.serviceCharge ?? displayedServicePrice)
-                .formatMoney(),
+                const SizedBox(height: 10),
+                if (hasScheduleEntries)
+                  ExpansionTile(
+                    key: const Key('price_schedule_visits'),
+                    tilePadding: EdgeInsets.zero,
+                    title: Text('${scheduleEntries.length} زيارات'),
+                    subtitle: Text(
+                      'أول زيارة: ${scheduleEntries.first.dayDate}',
+                    ),
+                    children: [
+                      for (final entry in scheduleEntries)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: _ScheduleEntryRowWidget(entry: entry),
+                        ),
+                    ],
+                  )
+                else ...[
+                  if (scheduleDateLine != null)
+                    Text(
+                      scheduleDateLine,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  if (scheduleTimeRange != null &&
+                      scheduleTimeRange!.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      scheduleTimeRange!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: SharedPlatformColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          if (summary != null && summary.materials > 0) ...[
-            _SummaryRowWidget(
-              label: 'مواد التنظيف',
-              value: summary.materials.formatMoney(),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (summary != null && summary.specialServices > 0) ...[
-            _SummaryRowWidget(
-              label: 'الخدمات المتخصصة',
-              value: summary.specialServices.formatMoney(),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (summary == null && displayedAddons > 0) ...[
-            _SummaryRowWidget(
-              label: 'الخدمات والمواد الإضافية',
-              value: displayedAddons.formatMoney(),
-            ),
-            const SizedBox(height: 8),
-          ],
-          _SummaryRowWidget(
-            label: 'رسوم التنقل',
-            value: (summary?.transport ?? travelFee).formatMoney(),
-          ),
-          if (distanceKm != null) ...[
-            const SizedBox(height: 8),
-            _SummaryRowWidget(
-              label: 'المسافة',
-              value: '${_formatDistance(distanceKm!)} كم',
-            ),
-          ],
-          if (hasDiscount) ...[
-            const SizedBox(height: 8),
-            _SummaryRowWidget(
-              label: 'الخصم المتوقع',
-              value: '- ${discountAmount!.formatMoney()}',
-              valueColor: const Color(0xFF047857),
-            ),
-          ],
-          const SizedBox(height: 10),
-          const Divider(color: Color(0xFFE5E7EB), thickness: 1),
-          const SizedBox(height: 8),
-          _SummaryRowWidget(
-            label: summary?.quoteKind == 'preliminary'
-                ? 'الإجمالي المبدئي (الحد الأدنى)'
-                : isPricingFinal == false
-                ? 'الإجمالي التقديري'
-                : 'الإجمالي',
-            value: displayedTotal.formatMoney(),
-            isTotal: true,
-          ),
-          if (hasDiscount) ...[
-            const SizedBox(height: 6),
-            const Text(
-              'الخصم المعروض مبدئي. سيؤكد النظام المبلغ النهائي عند إرسال الطلب.',
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-            ),
-          ],
-          if (showMinimumOrderWarning) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF7E8),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFF3D6A1)),
-              ),
-              child: AppText.bodySmall(
-                'أقل قيمة لطلب التنظيف هي ${minimumOrderPrice!.formatMoney()}، وتم اعتمادها لأن قيمة الطلب أقل من الحد الأدنى.',
-                color: const Color(0xFF8A5A12),
-                fontWeight: FontWeight.w600,
-                textAlign: TextAlign.right,
-              ),
-            ),
-          ],
+          const SizedBox(height: 12),
         ],
-      ),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: SharedPlatformColors.border),
+          ),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 22,
+                    color: SharedPlatformColors.primary,
+                  ),
+                  SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'ملخص السعر',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: SharedPlatformColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const SizedBox(height: 8),
+              _SummaryRowWidget(
+                label: 'قيمة الخدمة',
+                value: (summary?.serviceCharge ?? displayedServicePrice)
+                    .formatMoney(),
+              ),
+              const SizedBox(height: 8),
+              if (summary != null && summary.materials > 0) ...[
+                _SummaryRowWidget(
+                  label: 'مواد التنظيف',
+                  value: summary.materials.formatMoney(),
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (summary != null && summary.specialServices > 0) ...[
+                _SummaryRowWidget(
+                  label: 'الخدمات المتخصصة',
+                  value: summary.specialServices.formatMoney(),
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (summary == null && displayedAddons > 0) ...[
+                _SummaryRowWidget(
+                  label: 'الخدمات والمواد الإضافية',
+                  value: displayedAddons.formatMoney(),
+                ),
+                const SizedBox(height: 8),
+              ],
+              _SummaryRowWidget(
+                label: 'رسوم التنقل',
+                value: (summary?.transport ?? travelFee).formatMoney(),
+              ),
+              if (hasDiscount) ...[
+                const SizedBox(height: 8),
+                _SummaryRowWidget(
+                  label: 'الخصم المتوقع',
+                  value: '- ${discountAmount!.formatMoney()}',
+                  valueColor: const Color(0xFF047857),
+                ),
+              ],
+              const SizedBox(height: 10),
+              const Divider(color: Color(0xFFE5E7EB), thickness: 1),
+              const SizedBox(height: 8),
+              Container(
+                key: const Key('price_total_card'),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDF3FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: _SummaryRowWidget(
+                  label: summary?.quoteKind == 'preliminary'
+                      ? 'الإجمالي المبدئي'
+                      : isPricingFinal == false
+                      ? 'الإجمالي التقديري'
+                      : 'الإجمالي',
+                  value: '${displayedTotal.formatMoney()} $_currencyLabel',
+                  isTotal: true,
+                ),
+              ),
+              if (hasDiscount) ...[
+                const SizedBox(height: 6),
+                const Text(
+                  'الخصم المعروض مبدئي. سيؤكد النظام المبلغ النهائي عند إرسال الطلب.',
+                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                ),
+              ],
+              if (showMinimumOrderWarning) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7E8),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFF3D6A1)),
+                  ),
+                  child: AppText.bodySmall(
+                    'أقل قيمة لطلب التنظيف هي ${minimumOrderPrice!.formatMoney()}، وتم اعتمادها لأن قيمة الطلب أقل من الحد الأدنى.',
+                    color: const Color(0xFF8A5A12),
+                    fontWeight: FontWeight.w600,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

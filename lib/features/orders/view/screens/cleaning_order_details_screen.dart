@@ -3,6 +3,7 @@ import 'package:dllni_user_app/core/themes/v7_artwork.dart';
 import 'package:dllni_user_app/core/widgets/v7_spot_state.dart';
 import '../widgets/v7_order_detail_components.dart';
 import '../widgets/v7_order_progress_and_tasks.dart';
+import '../widgets/cleaning_order_extras_panels.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -24,7 +25,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 import '../../../cl_main/domain/usecases/create_cleaning_order_use_case.dart';
-import '../../../cl_main/view/widgets/cl_cleaning_extras_section_widget.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/cleaning_booking_schedule_model.dart';
 import '../../data/models/cleaning_booking_status.dart';
@@ -135,8 +135,9 @@ class _CleaningOrderDetailsScreenState
         ),
       );
     }
-    if (order == null)
+    if (order == null) {
       return const V7OrderLoadingView(message: 'لا تتوفر تفاصيل هذا الطلب');
+    }
 
     final status = _normStatus(order.status);
     final terminal =
@@ -164,12 +165,14 @@ class _CleaningOrderDetailsScreenState
     final editLocked =
         _blocksReschedule(order) || _isRebooking || !leadTime.allowed;
     final primary = cleaningLifecyclePrimaryAction(order.status);
-    final statusLabel = cleaningOrderStatusLabelAr(
-      order.status,
-      startedTravelAt: order.startedTravelAt,
-      arrivedAt: order.arrivedAt,
-      forceTravelling: _liveWorkerTravelling,
-    );
+    final statusLabel = searching
+        ? 'جارٍ البحث عن عامل مناسب'
+        : cleaningOrderStatusLabelAr(
+            order.status,
+            startedTravelAt: order.startedTravelAt,
+            arrivedAt: order.arrivedAt,
+            forceTravelling: _liveWorkerTravelling,
+          );
     final tone = switch (status) {
       CleaningBookingStatus.completed => V7OrderTone.success,
       CleaningBookingStatus.cancelled => V7OrderTone.danger,
@@ -419,20 +422,14 @@ class _CleaningOrderDetailsScreenState
             ? order.addonsTotal?.formatMoney()
             : null,
         total: order.totalPrice?.formatMoney(),
-        finalPrice: order.isPricingFinal != false,
+        finalPrice: order.isPricingFinal == true,
       ),
-      if (order.materials.isNotEmpty ||
-          order.specialServices.isNotEmpty ||
-          order.openTime != null)
-        V7OrderPanel(
-          title: 'الخدمات والمواد الإضافية',
-          child: CleaningOrderExtrasDetailsSection(
-            materials: order.materials,
-            specialServices: order.specialServices,
-            openTime: order.openTime,
-            currency: order.openTime?.currency ?? 'SYP',
-          ),
-        ),
+      ...buildCleaningOrderExtrasPanels(
+        materials: order.materials,
+        specialServices: order.specialServices,
+        openTime: order.openTime,
+        currency: order.openTime?.currency ?? 'SYP',
+      ),
       if (order.openTime != null)
         CleaningOpenTimeLiveCard(
           orderId: order.id ?? _activeOrderId,
@@ -689,7 +686,10 @@ class _CleaningOrderDetailsScreenState
 
   bool _blocksReschedule(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
-    return s == CleaningBookingStatus.awaitingStartVerification ||
+    return s == CleaningBookingStatus.completed ||
+        s == CleaningBookingStatus.cancelled ||
+        s == CleaningBookingStatus.underDispute ||
+        s == CleaningBookingStatus.awaitingStartVerification ||
         s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
         s == CleaningBookingStatus.awaitingCustomerCompletion ||
         s == CleaningBookingStatus.inProgress ||

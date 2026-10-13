@@ -64,6 +64,7 @@ class EstimatePriceResponseModel {
   final double? maxHoursPerWorker;
   final List<CleaningWorkerRoomAssignment> workerRoomAssignments;
   final List<CleaningMaterialLineModel> materials;
+  final List<CleaningMaterialLineModel> availableMaterials;
   final List<CleaningSpecialServiceLineModel> specialServices;
   final CleaningOpenTimeModel? openTime;
 
@@ -79,6 +80,7 @@ class EstimatePriceResponseModel {
     this.maxHoursPerWorker,
     this.workerRoomAssignments = const [],
     this.materials = const <CleaningMaterialLineModel>[],
+    this.availableMaterials = const <CleaningMaterialLineModel>[],
     this.specialServices = const <CleaningSpecialServiceLineModel>[],
     this.openTime,
   });
@@ -132,6 +134,9 @@ class EstimatePriceResponseModel {
       ),
       workerRoomAssignments: parseWorkerRoomAssignments(
         json['workerRoomAssignments'] ?? json['worker_room_assignments'],
+      ),
+      availableMaterials: cleaningMaterialLinesFromJson(
+        json['materialsPreview'] ?? json['materials_preview'],
       ),
       materials: cleaningMaterialLinesFromJson(
         json['materials'] ??

@@ -1,5 +1,12 @@
 allprojects {
+    buildscript {
+        repositories {
+            // Official Google CDN fallback for older Android Gradle plugins.
+            maven("https://redirector.gvt1.com/edgedl/dl/android/maven2/")
+        }
+    }
     repositories {
+        maven("https://redirector.gvt1.com/edgedl/dl/android/maven2/")
         google()
         mavenCentral()
     }

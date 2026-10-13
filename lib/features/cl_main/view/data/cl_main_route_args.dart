@@ -103,10 +103,13 @@ class ClMainScheduleArgs {
   final CleaningRoomSizeBreakdown roomSizeBreakdown;
   final double addressLatitude;
   final double addressLongitude;
-  final EstimatePriceResponseModel estimate;
+  final EstimatePriceResponseModel? estimate;
   final CleaningType cleaningType;
   final ClMainBloc bloc;
   final AddressListItem? defaultAddress;
+
+  /// Scoped in-memory draft; survives returning to the property screen.
+  final Map<String, dynamic>? draft;
 
   const ClMainScheduleArgs({
     required this.propertyType,
@@ -121,5 +124,6 @@ class ClMainScheduleArgs {
     required this.cleaningType,
     required this.bloc,
     this.defaultAddress,
+    this.draft,
   });
 }

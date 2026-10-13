@@ -1,18 +1,25 @@
 class CleaningServiceExtrasRequest {
   const CleaningServiceExtrasRequest({
     this.requestMaterials = false,
+    this.materialTypeIds,
     this.specialServices = const <CleaningSpecialServiceRequest>[],
     this.openTime,
   });
 
   final bool requestMaterials;
+
+  /// Null = all materials if requested; non-null = only selected missing types.
+  final List<int>? materialTypeIds;
   final List<CleaningSpecialServiceRequest> specialServices;
   final CleaningOpenTimeRequest? openTime;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'requestMaterials': requestMaterials,
-      'materials': <String, dynamic>{'providedByPlatform': requestMaterials},
+      'materials': <String, dynamic>{
+        'providedByPlatform': requestMaterials,
+        if (materialTypeIds != null) 'materialTypeIds': materialTypeIds,
+      },
       'specialServices': specialServices.map((item) => item.toJson()).toList(),
       if (openTime != null) 'openTime': openTime!.toJson(),
     };
@@ -20,12 +27,17 @@ class CleaningServiceExtrasRequest {
 
   CleaningServiceExtrasRequest copyWith({
     bool? requestMaterials,
+    List<int>? materialTypeIds,
+    bool clearMaterialTypeIds = false,
     List<CleaningSpecialServiceRequest>? specialServices,
     CleaningOpenTimeRequest? openTime,
     bool clearOpenTime = false,
   }) {
     return CleaningServiceExtrasRequest(
       requestMaterials: requestMaterials ?? this.requestMaterials,
+      materialTypeIds: clearMaterialTypeIds
+          ? null
+          : (materialTypeIds ?? this.materialTypeIds),
       specialServices: specialServices ?? this.specialServices,
       openTime: clearOpenTime ? null : (openTime ?? this.openTime),
     );
@@ -178,17 +190,23 @@ class CleaningOpenTimeSessionRequest {
 class CleaningMaterialLineModel {
   const CleaningMaterialLineModel({
     this.materialId,
+    this.materialTypeId,
     this.name,
+    this.categoryKey,
     this.quantity,
     this.unit,
+    this.unitLabel,
     this.unitPrice,
     this.totalPrice,
   });
 
   final int? materialId;
+  final int? materialTypeId;
   final String? name;
+  final String? categoryKey;
   final double? quantity;
   final String? unit;
+  final String? unitLabel;
   final double? unitPrice;
   final double? totalPrice;
 
@@ -197,8 +215,15 @@ class CleaningMaterialLineModel {
       materialId: _cleaningExtrasInt(
         json['materialId'] ?? json['material_id'] ?? json['id'],
       ),
+      materialTypeId: _cleaningExtrasInt(
+        json['materialTypeId'] ?? json['material_type_id'],
+      ),
       name: _cleaningExtrasString(json['name']),
+      categoryKey: _cleaningExtrasString(
+        json['categoryKey'] ?? json['category_key'],
+      ),
       quantity: _cleaningExtrasDouble(json['quantity']),
+      unitLabel: _cleaningExtrasString(json['unitLabel'] ?? json['unit_label']),
       unit: _cleaningExtrasString(
         json['unit'] ?? json['unitCode'] ?? json['unit_code'],
       ),

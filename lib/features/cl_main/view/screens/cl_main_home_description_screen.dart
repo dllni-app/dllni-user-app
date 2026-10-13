@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../profile/domain/models/address_list_item.dart';
-import '../../domain/models/cl_worker_room_assignment.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_progressive_room_state.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
@@ -55,8 +54,7 @@ class _ClMainHomeDescriptionScreenState
   AddressListItem? _defaultAddress;
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
-  bool _isLoadingOverlayVisible = false;
-  bool _isEstimatingForContinue = false;
+  bool _exitDialogOpen = false;
 
   CleaningRoomSizeBreakdown get _roomSizeBreakdown => _roomState.toBreakdown();
 
@@ -65,30 +63,21 @@ class _ClMainHomeDescriptionScreenState
     final bloc = _bloc ?? getIt<ClMainBloc>();
     return BlocProvider.value(
       value: bloc,
-      child: BlocConsumer<ClMainBloc, ClMainState>(
-        listenWhen: (previous, current) =>
-            previous.estimatePriceStatus != current.estimatePriceStatus,
-        listener: (context, state) => _listenToEstimate(bloc, state),
+      child: BlocBuilder<ClMainBloc, ClMainState>(
         builder: (context, state) {
           return Directionality(
             textDirection: TextDirection.rtl,
             child: PopScope(
-              canPop: _currentStep == 0,
+              canPop: false,
               onPopInvokedWithResult: (didPop, result) {
-                if (!didPop && _currentStep > 0) {
-                  _goToStep(_currentStep - 1);
-                }
+                if (!didPop) _confirmExit();
               },
               child: Scaffold(
                 backgroundColor: const Color(0xFFF6F7F9),
                 body: SafeArea(
                   child: Column(
                     children: [
-                      HomeDetailsAppBar(
-                        onBack: () => _currentStep > 0
-                            ? _goToStep(_currentStep - 1)
-                            : Navigator.of(context).maybePop(),
-                      ),
+                      HomeDetailsAppBar(onBack: _confirmExit),
                       Expanded(
                         child: SingleChildScrollView(
                           controller: _bookingScrollController,
@@ -358,11 +347,39 @@ class _ClMainHomeDescriptionScreenState
   }
 
   bool get _canContinueCurrentStep {
-    if (_isEstimatingForContinue) return false;
     if (_currentStep == 0 || _currentStep == 1) {
       return _roomState.hasAnyRoom;
     }
     return _selectedCleaningType != null;
+  }
+
+  Future<void> _confirmExit() async {
+    if (_exitDialogOpen || !mounted) return;
+    _exitDialogOpen = true;
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('هل تريد مغادرة طلب التنظيف؟'),
+        content: const Text(
+          'إذا غادرت الآن، ستفقد التعديلات التي لم تحفظها في هذا الطلب.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('متابعة الطلب'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('مغادرة'),
+          ),
+        ],
+      ),
+    );
+    _exitDialogOpen = false;
+    if (shouldLeave == true && mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _goToStep(int step) {
@@ -394,7 +411,10 @@ class _ClMainHomeDescriptionScreenState
       );
       return;
     }
-    _estimateAndContinue(bloc, state);
+    // Do not block the booking journey with an estimate API call.
+    // The material catalog is fetched on the dedicated materials step.
+    bloc.add(ResetCreateOrderStatusEvent());
+    _openScheduleScreen(bloc, null, _selectedCleaningType!);
   }
 
   void _changeRoomCount(CleaningRoomType roomType, int delta) {
@@ -404,80 +424,6 @@ class _ClMainHomeDescriptionScreenState
       final keys = _roomState.units.map((unit) => unit.key).toSet();
       _reviewedRoomKeys.removeWhere((key) => !keys.contains(key));
     });
-  }
-
-  void _listenToEstimate(ClMainBloc bloc, ClMainState state) {
-    if (!_isEstimatingForContinue) return;
-    if (state.estimatePriceStatus == BlocStatus.loading) {
-      _showLoadingOverlay();
-      return;
-    }
-    if (state.estimatePriceStatus == BlocStatus.success &&
-        state.estimatePrice != null) {
-      final cleaningType = _selectedCleaningType;
-      _isEstimatingForContinue = false;
-      _closeLoadingOverlay();
-      if (cleaningType == null) return;
-      _openScheduleScreen(bloc, state.estimatePrice!, cleaningType);
-      return;
-    }
-    if (state.estimatePriceStatus == BlocStatus.failed) {
-      _isEstimatingForContinue = false;
-      _closeLoadingOverlay();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.errorMessage ?? 'حدث خطأ أثناء حساب التكلفة'),
-        ),
-      );
-    }
-  }
-
-  void _estimateAndContinue(ClMainBloc bloc, ClMainState state) {
-    if (_isEstimatingForContinue || !_roomState.hasAnyRoom) return;
-
-    final breakdown = _roomSizeBreakdown;
-    final address = _defaultAddress;
-    final roomUnits = enumerateRoomUnits(breakdown);
-    final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
-      slotByRoomKey: state.workerRoomAssignments,
-      units: roomUnits,
-      preferredWorkerId: state.primarySelectedWorkerId,
-      assignmentMode: state.assignmentMode,
-    );
-
-    _isEstimatingForContinue = true;
-    // A shared ClMainBloc can still contain the success/result of the
-    // previous booking. Clear it before starting a new estimate so opening
-    // the schedule cannot replay the previous order success.
-    bloc.add(ResetCreateOrderStatusEvent());
-    bloc.add(
-      EstimateCleaningPriceEvent(
-        params: EstimateCleaningPriceParams(
-          propertyType: _propertyType,
-          bedrooms: breakdown.legacyBedroomsCount,
-          rooms: breakdown.legacyRoomsCount,
-          bathrooms: breakdown.legacyBathroomsCount,
-          balconies: breakdown.legacyBalconiesCount,
-          livingRoomSize: breakdown.legacyLivingRoomSize,
-          roomSizeBreakdown: breakdown,
-          cleaningType: _selectedCleaningType!,
-          addressId: int.tryParse(address?.id ?? ''),
-          addressLatitude: address?.latitude,
-          addressLongitude: address?.longitude,
-          assignmentMode: state.assignmentMode,
-          numberOfWorkers:
-              state.assignmentMode == CleaningAssignmentMode.openCount
-              ? state.numberOfWorkers
-              : (state.selectedWorkerIds.length > 1
-                    ? state.selectedWorkerIds.length
-                    : 1),
-          preferredWorkerIds: state.selectedWorkerIds,
-          workerRoomAssignments: workerRoomAssignments.isEmpty
-              ? null
-              : workerRoomAssignments,
-        ),
-      ),
-    );
   }
 
   @override
@@ -498,18 +444,19 @@ class _ClMainHomeDescriptionScreenState
 
   @override
   void dispose() {
-    _closeLoadingOverlay();
     _bookingScrollController.dispose();
     super.dispose();
   }
 
-  void _openScheduleScreen(
+  final Map<String, dynamic> _bookingDraft = <String, dynamic>{};
+
+  Future<void> _openScheduleScreen(
     ClMainBloc bloc,
-    EstimatePriceResponseModel estimate,
+    EstimatePriceResponseModel? estimate,
     CleaningType cleaningType,
-  ) {
+  ) async {
     final breakdown = _roomSizeBreakdown;
-    Navigator.of(context).push(
+    final leaveBooking = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ClMainServiceScheduleScreen(
           args: ClMainScheduleArgs(
@@ -525,22 +472,14 @@ class _ClMainHomeDescriptionScreenState
             cleaningType: cleaningType,
             bloc: bloc,
             defaultAddress: _defaultAddress,
+            draft: _bookingDraft,
           ),
         ),
       ),
     );
-  }
-
-  void _showLoadingOverlay() {
-    if (_isLoadingOverlayVisible || !mounted) return;
-    _isLoadingOverlayVisible = true;
-    Loading.show(context);
-  }
-
-  void _closeLoadingOverlay() {
-    if (!_isLoadingOverlayVisible) return;
-    _isLoadingOverlayVisible = false;
-    Loading.close();
+    if (leaveBooking == true && mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   String _roomTypeLabel(CleaningRoomType type) => switch (type) {

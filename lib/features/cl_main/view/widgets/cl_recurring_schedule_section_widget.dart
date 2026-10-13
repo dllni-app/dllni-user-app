@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
+import '../../../../core/utils/cleaning_date_time_ui_format.dart';
 
 import '../../domain/models/cleaning_recurring_session.dart';
 
@@ -88,6 +89,9 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxWindowDays = pattern == CleaningRecurringPattern.monthly
+        ? cleaningRecurringMaxWindowDays
+        : cleaningRecurringStandardWindowDays;
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(14),
@@ -111,110 +115,18 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: const Text(
-                'فعّل الخيار لتنفيذ نفس خدمة التنظيف في أكثر من موعد ضمن حجز واحد، خلال فترة لا تتجاوز 30 يوماً.',
+                'كرّر نفس خدمة التنظيف في مواعيد متعددة ضمن حجز واحد.',
               ),
             ),
             if (enabled) ...[
               const Divider(height: 22),
-              DropdownButtonFormField<CleaningRecurringWorkerScope>(
-                initialValue: workerScope,
-                decoration: const InputDecoration(
-                  labelText: 'نطاق العمال لكل زيارة',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                items: CleaningRecurringWorkerScope.values
-                    .map(
-                      (item) => DropdownMenuItem<CleaningRecurringWorkerScope>(
-                        value: item,
-                        child: Text(item.labelAr),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: (value) {
-                  if (value != null) onWorkerScopeChanged?.call(value);
-                },
-              ),
-              const SizedBox(height: 6),
-              Text(
-                workerScope.descriptionAr,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              const Padding(
+                padding: EdgeInsets.only(bottom: 14),
+                child: Text(
+                  'حدد أيام الزيارات ومواعيدها. رح نحسب مدة كل زيارة تلقائياً حسب تفاصيل التنظيف.',
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
                 ),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<CleaningRecurringCalculationMode>(
-                initialValue: calculationMode,
-                decoration: const InputDecoration(
-                  labelText: 'طريقة احتساب كل زيارة',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                items: CleaningRecurringCalculationMode.values
-                    .map(
-                      (item) =>
-                          DropdownMenuItem<CleaningRecurringCalculationMode>(
-                            value: item,
-                            child: Text(item.labelAr),
-                          ),
-                    )
-                    .toList(growable: false),
-                onChanged: (value) {
-                  if (value != null) onCalculationModeChanged?.call(value);
-                },
-              ),
-              const SizedBox(height: 6),
-              Text(
-                calculationMode.descriptionAr,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (calculationMode ==
-                  CleaningRecurringCalculationMode.hours) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'الساعات لكل زيارة',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'تقليل ساعات الزيارة',
-                      onPressed: hoursPerVisit > 1
-                          ? () => onHoursPerVisitChanged?.call(
-                              hoursPerVisit - 0.5,
-                            )
-                          : null,
-                      icon: const Icon(Icons.remove_circle_outline),
-                    ),
-                    Container(
-                      constraints: const BoxConstraints(minWidth: 54),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${hoursPerVisit.toStringAsFixed(hoursPerVisit % 1 == 0 ? 0 : 1)} ساعة',
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'زيادة ساعات الزيارة',
-                      onPressed: hoursPerVisit < 24
-                          ? () => onHoursPerVisitChanged?.call(
-                              hoursPerVisit + 0.5,
-                            )
-                          : null,
-                      icon: const Icon(Icons.add_circle_outline),
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 12),
               DropdownButtonFormField<CleaningRecurringPattern>(
                 initialValue: pattern,
                 decoration: const InputDecoration(
@@ -234,6 +146,21 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                   if (value != null) onPatternChanged(value);
                 },
               ),
+              if (pattern.isGenerated) ...[
+                const SizedBox(height: 6),
+                Text(
+                  pattern == CleaningRecurringPattern.weekly
+                      ? 'أسبوعي: زيارة كل 7 أيام، بنفس الموعد.'
+                      : pattern == CleaningRecurringPattern.monthly
+                      ? 'شهري: بنفس اليوم من كل شهر. الشهر اللي ما فيه هاليوم منتجاوزه بدون تغيير الموعد.'
+                      : 'يومي: زيارة كل يوم بنفس الموعد.',
+                  style: const TextStyle(
+                    color: SharedPlatformColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               if (pattern.isGenerated) ...[
                 Row(
@@ -273,8 +200,8 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                 ),
                 Text(
                   maxOccurrences >= 2
-                      ? 'الحد الأقصى لهذا النمط ضمن 30 يوماً: $maxOccurrences زيارات.'
-                      : 'لا توجد زيارة ثانية متاحة لهذا النمط ضمن نافذة 30 يوماً من التاريخ المختار.',
+                      ? 'يمكن حجز حتى $maxOccurrences زيارات خلال $maxWindowDays يومًا.'
+                      : 'لا توجد زيارة ثانية متاحة خلال $maxWindowDays يومًا من التاريخ المختار.',
                   style: TextStyle(
                     color: maxOccurrences >= 2
                         ? const Color(0xFF6B7280)
@@ -342,11 +269,33 @@ class ClRecurringScheduleSectionWidget extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${session.dateApi} • ${session.time}',
-                                style: const TextStyle(
-                                  color: Color(0xFF6B7280),
-                                  fontSize: 13,
+                                CleaningDateTimeUiFormat.dateFromApiDate(
+                                  session.dateApi,
                                 ),
+                                style: const TextStyle(
+                                  color: Color(0xFF475569),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.schedule_outlined,
+                                    size: 15,
+                                    color: SharedPlatformColors.primary,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    CleaningDateTimeUiFormat.time(session.time),
+                                    style: const TextStyle(
+                                      color: SharedPlatformColors.primary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

@@ -21,10 +21,31 @@ void main() {
       final copy = V6DecisionCopy.forTopic(topic);
       expect(copy.title, isNotEmpty);
       expect(copy.summary, isNotEmpty);
-      expect(copy.examples.length, greaterThanOrEqualTo(3));
+      expect(
+        copy.examples.length,
+        greaterThanOrEqualTo(
+          topic == V6BookingDecisionTopic.appointment ? 2 : 3,
+        ),
+      );
       expect(copy.examples.toSet().length, copy.examples.length);
       expect(seen.add(copy.title), isTrue);
     }
+  });
+
+  testWidgets('appointment tips do not mislabel a second date as recurring', (
+    tester,
+  ) async {
+    final tips = V6DecisionCopy.forTopic(V6BookingDecisionTopic.appointment);
+    expect(tips.examples, hasLength(2));
+    expect(
+      tips.examples.any((example) => example.contains('الحجز الدوري')),
+      isFalse,
+    );
+    await tester.pumpWidget(makeWidget(V6BookingDecisionTopic.appointment));
+    await tester.tap(find.text('لست متأكداً؟'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('إذا كنت تحتاج زيارة أخرى'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

@@ -1,3 +1,4 @@
+import '../../../../core/themes/shared_platform_colors.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/models/cleaning_service_extras.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,10 @@ import 'cl_service_section_card_widget.dart';
 
 class ClCleaningExtrasSectionWidget extends StatelessWidget {
   const ClCleaningExtrasSectionWidget({
+    this.showMaterials = true,
+    this.showAddButton = true,
+    this.compactSpecialEditor = false,
+    this.showSpecialServices = true,
     required this.requestMaterials,
     required this.specialServices,
     required this.openTime,
@@ -34,6 +39,10 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
     super.key,
   });
 
+  final bool showMaterials;
+  final bool showAddButton;
+  final bool compactSpecialEditor;
+  final bool showSpecialServices;
   final bool requestMaterials;
   final List<CleaningSpecialServiceRequest> specialServices;
   final CleaningOpenTimeRequest? openTime;
@@ -83,189 +92,213 @@ class ClCleaningExtrasSectionWidget extends StatelessWidget {
           ),
           const SizedBox(height: 10),
         ],
-        ClServiceSectionCardWidget(
-          step: 0,
-          showStepBadge: false,
-          title: 'مواد التنظيف',
-          subtitle: 'هل ترغب أن نحضر المواد اللازمة معنا؟',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'اختر من سيوفر المواد. ستُحدّث التكلفة تلقائياً عند تغيير اختيارك.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 10),
-              for (final suppliedByService in [true, false])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Semantics(
-                    button: true,
-                    selected: requestMaterials == suppliedByService,
-                    label: suppliedByService
-                        ? 'أحضروا مواد التنظيف'
-                        : 'سأوفر مواد التنظيف بنفسي',
-                    child: InkWell(
-                      key: Key(
-                        suppliedByService
-                            ? 'cleaning_materials_from_service'
-                            : 'cleaning_materials_from_customer',
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => onRequestMaterialsChanged(suppliedByService),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
+        if (showMaterials)
+          ClServiceSectionCardWidget(
+            step: 0,
+            showStepBadge: false,
+            title: 'مواد التنظيف',
+            subtitle: 'هل ترغب أن نحضر المواد اللازمة معنا؟',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'اختر من سيوفر المواد. ستُحدّث التكلفة تلقائياً عند تغيير اختيارك.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 10),
+                for (final suppliedByService in [true, false])
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Semantics(
+                      button: true,
+                      selected: requestMaterials == suppliedByService,
+                      label: suppliedByService
+                          ? 'أحضروا مواد التنظيف'
+                          : 'سأوفر مواد التنظيف بنفسي',
+                      child: InkWell(
+                        key: Key(
+                          suppliedByService
+                              ? 'cleaning_materials_from_service'
+                              : 'cleaning_materials_from_customer',
                         ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: requestMaterials == suppliedByService
-                              ? const Color(0xFFE7F7F5)
-                              : const Color(0xFFF8FAFC),
-                          border: Border.all(
-                            color: requestMaterials == suppliedByService
-                                ? const Color(0xFF0F9E92)
-                                : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () =>
+                            onRequestMaterialsChanged(suppliedByService),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              requestMaterials == suppliedByService
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_unchecked,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: requestMaterials == suppliedByService
+                                ? const Color(0xFFE7F7F5)
+                                : const Color(0xFFF8FAFC),
+                            border: Border.all(
                               color: requestMaterials == suppliedByService
                                   ? const Color(0xFF0F9E92)
-                                  : const Color(0xFF64748B),
+                                  : const Color(0xFFE2E8F0),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    suppliedByService
-                                        ? 'أحضروا مواد التنظيف'
-                                        : 'سأوفر مواد التنظيف بنفسي',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    suppliedByService
-                                        ? 'نجهّز المواد اللازمة ونُظهر تكلفتها في التقدير.'
-                                        : 'استخدم موادي دون إضافة تكلفة مواد من الخدمة.',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                  ),
-                                ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                requestMaterials == suppliedByService
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: requestMaterials == suppliedByService
+                                    ? const Color(0xFF0F9E92)
+                                    : const Color(0xFF64748B),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      suppliedByService
+                                          ? 'أحضروا مواد التنظيف'
+                                          : 'سأوفر مواد التنظيف بنفسي',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      suppliedByService
+                                          ? 'نجهّز المواد اللازمة ونُظهر تكلفتها في التقدير.'
+                                          : 'استخدم موادي دون إضافة تكلفة مواد من الخدمة.',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              if (requestMaterials && materials.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  title: const Text('عرض تفاصيل المواد'),
-                  subtitle: const Text('يمكن مراجعة الكميات والتكلفة هنا'),
-                  children: [
-                    _CalculatedLinesCard(
-                      title: 'المواد المطلوبة',
-                      children: materials
-                          .map(
-                            (line) =>
-                                _MaterialLine(line: line, currency: currency),
-                          )
-                          .toList(growable: false),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        ClServiceSectionCardWidget(
-          step: 0,
-          showStepBadge: false,
-          title: 'الخدمات المتخصصة',
-          subtitle:
-              'اختر خدمة متخصصة فقط إذا كانت مطلوبة خارج مهام التنظيف المعتادة.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (isSpecialServicesLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(),
+                if (requestMaterials && materials.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: const Text('عرض تفاصيل المواد'),
+                    subtitle: const Text('يمكن مراجعة الكميات والتكلفة هنا'),
+                    children: [
+                      _CalculatedLinesCard(
+                        title: 'المواد المطلوبة',
+                        children: materials
+                            .map(
+                              (line) =>
+                                  _MaterialLine(line: line, currency: currency),
+                            )
+                            .toList(growable: false),
+                      ),
+                    ],
                   ),
-                )
-              else if (specialServicesError != null)
-                _InlineFeedback(
-                  message: 'تعذر تحديث تقدير التكلفة',
-                  onRetry: onRetrySpecialServices,
-                )
-              else if (availableSpecialServices.isEmpty)
-                Text(
-                  'لا توجد خدمات متخصصة متاحة لهذا الطلب حالياً.',
-                  style: const TextStyle(color: Color(0xFF6B7280)),
-                )
-              else ...[
-                for (
-                  var index = 0;
-                  index < specialServices.length;
-                  index++
-                ) ...[
-                  _SpecialServiceForm(
-                    key: ValueKey<String>(
-                      '${specialServices[index].specialServiceId}-$index',
-                    ),
-                    service: specialServices[index],
-                    availableServices: availableSpecialServices,
-                    currency: currency,
-                    selectableSessionIds: selectableSessionIds,
-                    sessionLabels: sessionLabels,
-                    onChanged: (service) =>
-                        onSpecialServiceChanged(index, service),
-                    onRemove: () => onRemoveSpecialService(index),
-                  ),
-                  const SizedBox(height: 10),
                 ],
-                Semantics(
-                  button: true,
-                  label: 'إضافة خدمة متخصصة',
-                  child: OutlinedButton.icon(
-                    onPressed: onAddSpecialService,
-                    icon: const Icon(Icons.add_circle_outline),
-                    label: Text('إضافة خدمة متخصصة'),
-                  ),
-                ),
               ],
-              if (estimatedSpecialServices.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _CalculatedLinesCard(
-                  title: 'التكلفة المقدرة للخدمات المتخصصة',
-                  children: estimatedSpecialServices
-                      .map(
-                        (line) =>
-                            _SpecialServiceLine(line: line, currency: currency),
-                      )
-                      .toList(growable: false),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+        const SizedBox(height: 10),
+        if (showSpecialServices && compactSpecialEditor) ...[
+          for (var index = 0; index < specialServices.length; index++) ...[
+            _SpecialServiceForm(
+              key: ValueKey<String>(
+                'compact-special-${specialServices[index].specialServiceId}-$index',
+              ),
+              compact: true,
+              service: specialServices[index],
+              availableServices: availableSpecialServices,
+              currency: currency,
+              selectableSessionIds: selectableSessionIds,
+              sessionLabels: sessionLabels,
+              onChanged: (service) => onSpecialServiceChanged(index, service),
+              onRemove: () => onRemoveSpecialService(index),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ],
+        if (showSpecialServices && !compactSpecialEditor)
+          ClServiceSectionCardWidget(
+            step: 0,
+            showStepBadge: false,
+            title: 'الخدمات المتخصصة',
+            subtitle:
+                'اختر خدمة متخصصة فقط إذا كانت مطلوبة خارج مهام التنظيف المعتادة.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isSpecialServicesLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(12),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (specialServicesError != null)
+                  _InlineFeedback(
+                    message: 'تعذر تحديث تقدير التكلفة',
+                    onRetry: onRetrySpecialServices,
+                  )
+                else if (availableSpecialServices.isEmpty)
+                  Text(
+                    'لا توجد خدمات متخصصة متاحة لهذا الطلب حالياً.',
+                    style: const TextStyle(color: Color(0xFF6B7280)),
+                  )
+                else ...[
+                  for (
+                    var index = 0;
+                    index < specialServices.length;
+                    index++
+                  ) ...[
+                    _SpecialServiceForm(
+                      key: ValueKey<String>(
+                        '${specialServices[index].specialServiceId}-$index',
+                      ),
+                      service: specialServices[index],
+                      availableServices: availableSpecialServices,
+                      currency: currency,
+                      selectableSessionIds: selectableSessionIds,
+                      sessionLabels: sessionLabels,
+                      onChanged: (service) =>
+                          onSpecialServiceChanged(index, service),
+                      onRemove: () => onRemoveSpecialService(index),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (showAddButton)
+                    Semantics(
+                      button: true,
+                      label: 'إضافة خدمة متخصصة',
+                      child: OutlinedButton.icon(
+                        onPressed: onAddSpecialService,
+                        icon: const Icon(Icons.add_circle_outline),
+                        label: Text('إضافة خدمة متخصصة'),
+                      ),
+                    ),
+                ],
+                if (estimatedSpecialServices.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _CalculatedLinesCard(
+                    title: 'التكلفة المقدرة للخدمات المتخصصة',
+                    children: estimatedSpecialServices
+                        .map(
+                          (line) => _SpecialServiceLine(
+                            line: line,
+                            currency: currency,
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
+                ],
+              ],
+            ),
+          ),
         if (showOpenTime) ...[
           const SizedBox(height: 10),
           ClServiceSectionCardWidget(
@@ -426,8 +459,77 @@ class CleaningOrderExtrasDetailsSection extends StatelessWidget {
   }
 }
 
+/// Material-only rows for the order details card. The outer V7OrderPanel
+/// provides the heading/border; don't nest another duplicate card here.
+class CleaningOrderMaterialLines extends StatelessWidget {
+  const CleaningOrderMaterialLines({
+    super.key,
+    required this.materials,
+    required this.currency,
+  });
+
+  final List<CleaningMaterialLineModel> materials;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < materials.length; index++) ...[
+          if (index > 0) const Divider(height: 16),
+          _MaterialLine(line: materials[index], currency: currency),
+        ],
+      ],
+    );
+  }
+}
+
+/// Specialized service rows (including pieces, notes and evidence), never
+/// mixed into the cleaning materials card.
+class CleaningOrderSpecialServiceLines extends StatelessWidget {
+  const CleaningOrderSpecialServiceLines({
+    super.key,
+    required this.specialServices,
+    required this.currency,
+  });
+
+  final List<CleaningSpecialServiceLineModel> specialServices;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < specialServices.length; index++) ...[
+          if (index > 0) const Divider(height: 16),
+          _SpecialServiceLine(line: specialServices[index], currency: currency),
+        ],
+      ],
+    );
+  }
+}
+
+/// Hourly work also has an independent heading in the order details page.
+class CleaningOrderHourlyDetails extends StatelessWidget {
+  const CleaningOrderHourlyDetails({
+    super.key,
+    required this.openTime,
+    required this.currency,
+  });
+
+  final CleaningOpenTimeModel openTime;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) =>
+      _OpenTimeCard(openTime: openTime, currency: currency, showCard: false);
+}
+
 class _SpecialServiceForm extends StatelessWidget {
   const _SpecialServiceForm({
+    this.compact = false,
     required super.key,
     required this.service,
     required this.availableServices,
@@ -438,6 +540,7 @@ class _SpecialServiceForm extends StatelessWidget {
     required this.sessionLabels,
   });
 
+  final bool compact;
   final CleaningSpecialServiceRequest service;
   final List<CleaningServiceModel> availableServices;
   final String currency;
@@ -482,45 +585,75 @@ class _SpecialServiceForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DropdownButtonFormField<int>(
-            isExpanded: true,
-            initialValue: service.specialServiceId,
-            decoration: InputDecoration(
-              labelText: 'اختر الخدمة المتخصصة',
-              border: const OutlineInputBorder(),
-            ),
-            items: availableServices
-                .where((item) => item.id != null && item.name != null)
-                .map(
-                  (item) => DropdownMenuItem<int>(
-                    value: item.id,
-                    child: Text(
-                      item.categoryName?.trim().isNotEmpty == true
-                          ? '${item.categoryName!.trim()} — ${item.name!}'
-                          : item.name!,
-                      overflow: TextOverflow.ellipsis,
+          if (compact) ...[
+            Row(
+              children: [
+                const Icon(
+                  Icons.tune_rounded,
+                  color: SharedPlatformColors.primary,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    selectedService?.name ?? 'خدمة متخصصة',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                )
-                .toList(growable: false),
-            onChanged: (id) {
-              if (id == null) return;
-              final nextService = _findServiceById(availableServices, id);
-              final nextDirtiness =
-                  nextService?.normalizeDirtinessLevel(
-                    service.dirtinessLevel,
-                  ) ??
-                  service.dirtinessLevel;
-              onChanged(
-                service.copyWith(
-                  specialServiceId: id,
-                  dirtinessLevel: nextDirtiness,
-                  items: _normalizeItemsForService(effectiveItems, nextService),
                 ),
-              );
-            },
-          ),
-          if (selectedService != null) ...[
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'حدد تفاصيل القطع التي تتطلب الخدمة، ثم راجع السعر في الخطوة الأخيرة.',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (!compact)
+            DropdownButtonFormField<int>(
+              isExpanded: true,
+              initialValue: service.specialServiceId,
+              decoration: InputDecoration(
+                labelText: 'اختر الخدمة المتخصصة',
+                border: const OutlineInputBorder(),
+              ),
+              items: availableServices
+                  .where((item) => item.id != null && item.name != null)
+                  .map(
+                    (item) => DropdownMenuItem<int>(
+                      value: item.id,
+                      child: Text(
+                        item.categoryName?.trim().isNotEmpty == true
+                            ? '${item.categoryName!.trim()} — ${item.name!}'
+                            : item.name!,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (id) {
+                if (id == null) return;
+                final nextService = _findServiceById(availableServices, id);
+                final nextDirtiness =
+                    nextService?.normalizeDirtinessLevel(
+                      service.dirtinessLevel,
+                    ) ??
+                    service.dirtinessLevel;
+                onChanged(
+                  service.copyWith(
+                    specialServiceId: id,
+                    dirtinessLevel: nextDirtiness,
+                    items: _normalizeItemsForService(
+                      effectiveItems,
+                      nextService,
+                    ),
+                  ),
+                );
+              },
+            ),
+          if (selectedService != null && !compact) ...[
             const SizedBox(height: 10),
             _SpecialServiceCatalogPreview(
               service: selectedService,
@@ -575,6 +708,7 @@ class _SpecialServiceForm extends StatelessWidget {
           ],
           const SizedBox(height: 10),
           _SpecialServiceItemsEditor(
+            compact: compact,
             items: effectiveItems,
             catalogService: selectedService,
             onChanged: (items) {
@@ -597,17 +731,21 @@ class _SpecialServiceForm extends StatelessWidget {
             },
           ),
           const SizedBox(height: 10),
-          TextFormField(
-            initialValue: service.notes,
-            maxLength: 500,
-            decoration: InputDecoration(
-              labelText: 'ملاحظات الخدمة (اختياري)',
-              border: const OutlineInputBorder(),
+          if (!compact)
+            TextFormField(
+              initialValue: service.notes,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                labelText: 'ملاحظات الخدمة',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => onChanged(
+                service.copyWith(
+                  notes: value,
+                  clearNotes: value.trim().isEmpty,
+                ),
+              ),
             ),
-            onChanged: (value) => onChanged(
-              service.copyWith(notes: value, clearNotes: value.trim().isEmpty),
-            ),
-          ),
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: TextButton.icon(
@@ -624,11 +762,13 @@ class _SpecialServiceForm extends StatelessWidget {
 
 class _SpecialServiceItemsEditor extends StatelessWidget {
   const _SpecialServiceItemsEditor({
+    this.compact = false,
     required this.items,
     required this.catalogService,
     required this.onChanged,
   });
 
+  final bool compact;
   final List<CleaningSpecialServiceItemRequest> items;
   final CleaningServiceModel? catalogService;
   final ValueChanged<List<CleaningSpecialServiceItemRequest>> onChanged;
@@ -661,6 +801,7 @@ class _SpecialServiceItemsEditor extends StatelessWidget {
           const SizedBox(height: 8),
           for (var index = 0; index < items.length; index++) ...[
             _SpecialServiceItemEditor(
+              compact: compact,
               key: ValueKey<String>('${service?.id ?? 0}-item-$index'),
               index: index,
               item: items[index],
@@ -713,6 +854,7 @@ class _SpecialServiceItemsEditor extends StatelessWidget {
 
 class _SpecialServiceItemEditor extends StatelessWidget {
   const _SpecialServiceItemEditor({
+    this.compact = false,
     required super.key,
     required this.index,
     required this.item,
@@ -725,6 +867,7 @@ class _SpecialServiceItemEditor extends StatelessWidget {
     required this.onRemove,
   });
 
+  final bool compact;
   final int index;
   final CleaningSpecialServiceItemRequest item;
   final String? inputType;
@@ -742,9 +885,15 @@ class _SpecialServiceItemEditor extends StatelessWidget {
         ? item.dirtinessLevelId
         : dirtinessRules.firstOrNull?.id;
     final unit = unitCode?.trim();
-    final quantityLabel = unit == null || unit.isEmpty
-        ? 'الكمية أو القياس'
-        : 'الكمية أو القياس ($unit)';
+    final translatedUnit = switch (unit?.toLowerCase()) {
+      'piece' || 'pcs' || 'item' => 'قطعة',
+      'sqm' || 'square_meter' => 'متر مربع',
+      'hour' => 'ساعة',
+      _ => unit,
+    };
+    final quantityLabel = translatedUnit == null || translatedUnit.isEmpty
+        ? 'الكمية المطلوبة'
+        : 'الكمية ($translatedUnit)';
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -802,53 +951,88 @@ class _SpecialServiceItemEditor extends StatelessWidget {
               }
             },
           ),
-          if (dirtinessRules.isNotEmpty) ...[
+          if (compact && dirtinessRules.isNotEmpty) ...[
             const SizedBox(height: 10),
-            DropdownButtonFormField<int>(
-              isExpanded: true,
-              initialValue: selectedLevel,
-              decoration: const InputDecoration(
-                labelText: 'مستوى الاتساخ لهذا العنصر',
-                helperText: 'اختر الوصف الأقرب لحالة هذا العنصر.',
-                border: OutlineInputBorder(),
-              ),
-              items: dirtinessRules
-                  .where((rule) => rule.id != null)
-                  .map(
-                    (rule) => DropdownMenuItem<int>(
-                      value: rule.id,
-                      child: Text(
-                        rule.name?.trim().isNotEmpty == true
-                            ? rule.name!.trim()
-                            : _dirtinessDisplayLabel(
-                                rule.level ?? rule.slug ?? '',
-                              ),
-                      ),
+            const Text(
+              'كيف حالة القطعة؟',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'اختار الأقرب لحالتها حتى نجهّز الطريقة المناسبة.',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 7,
+              runSpacing: 6,
+              children: [
+                for (final rule in dirtinessRules)
+                  if (rule.id != null)
+                    ChoiceChip(
+                      label: Text(switch (rule.level) {
+                        'low' || 'light' => 'اتساخ خفيف',
+                        'medium' || 'normal' => 'اتساخ عادي',
+                        'high' || 'heavy' => 'بحاجة عناية أكثر',
+                        _ => rule.name ?? 'مستوى آخر',
+                      }),
+                      selected: selectedLevel == rule.id,
+                      onSelected: (_) =>
+                          onChanged(item.copyWith(dirtinessLevelId: rule.id)),
                     ),
-                  )
-                  .toList(growable: false),
-              onChanged: (id) => onChanged(
-                item.copyWith(
-                  dirtinessLevelId: id,
-                  clearDirtinessLevel: id == null,
-                ),
-              ),
+              ],
             ),
           ],
-          const SizedBox(height: 10),
-          TextFormField(
-            initialValue: item.notes,
-            maxLength: 2000,
-            minLines: 1,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'ملاحظات العنصر (اختياري)',
-              border: OutlineInputBorder(),
+          if (!compact) ...[
+            if (dirtinessRules.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              DropdownButtonFormField<int>(
+                isExpanded: true,
+                initialValue: selectedLevel,
+                decoration: const InputDecoration(
+                  labelText: 'مستوى الاتساخ لهذا العنصر',
+                  helperText: 'اختر الوصف الأقرب لحالة هذا العنصر.',
+                  border: OutlineInputBorder(),
+                ),
+                items: dirtinessRules
+                    .where((rule) => rule.id != null)
+                    .map(
+                      (rule) => DropdownMenuItem<int>(
+                        value: rule.id,
+                        child: Text(
+                          rule.name?.trim().isNotEmpty == true
+                              ? rule.name!.trim()
+                              : _dirtinessDisplayLabel(
+                                  rule.level ?? rule.slug ?? '',
+                                ),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (id) => onChanged(
+                  item.copyWith(
+                    dirtinessLevelId: id,
+                    clearDirtinessLevel: id == null,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+          ],
+          if (!compact)
+            TextFormField(
+              initialValue: item.notes,
+              maxLength: 2000,
+              minLines: 1,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'ملاحظات القطعة (اختياري)',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => onChanged(
+                item.copyWith(notes: value, clearNotes: value.trim().isEmpty),
+              ),
             ),
-            onChanged: (value) => onChanged(
-              item.copyWith(notes: value, clearNotes: value.trim().isEmpty),
-            ),
-          ),
           if (requiresBeforeImage || item.attachments.isNotEmpty) ...[
             const SizedBox(height: 4),
             Row(
@@ -1200,10 +1384,15 @@ class _SpecialServiceItemDetail extends StatelessWidget {
 }
 
 class _OpenTimeCard extends StatelessWidget {
-  const _OpenTimeCard({required this.openTime, required this.currency});
+  const _OpenTimeCard({
+    required this.openTime,
+    required this.currency,
+    this.showCard = true,
+  });
 
   final CleaningOpenTimeModel openTime;
   final String currency;
+  final bool showCard;
 
   @override
   Widget build(BuildContext context) {
@@ -1235,6 +1424,21 @@ class _OpenTimeCard extends StatelessWidget {
     ];
 
     if (rows.isEmpty) return const SizedBox.shrink();
+
+    if (!showCard) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: rows
+            .map(
+              (row) => _DetailLine(
+                title: row.key,
+                subtitle: row.value,
+                amount: null,
+              ),
+            )
+            .toList(growable: false),
+      );
+    }
 
     return _CalculatedLinesCard(
       title: 'التقدير الأولي للوقت المفتوح',

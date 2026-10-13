@@ -15,6 +15,7 @@ import 'cl_service_previous_workers_section_widget.dart';
 class ClScheduledPreviousWorkersSectionWidget extends StatefulWidget {
   const ClScheduledPreviousWorkersSectionWidget({
     required this.bloc,
+    this.maxSelectedWorkers,
     required this.propertyType,
     required this.scheduledDate,
     required this.scheduledTime,
@@ -24,6 +25,7 @@ class ClScheduledPreviousWorkersSectionWidget extends StatefulWidget {
   });
 
   final ClMainBloc bloc;
+  final int? maxSelectedWorkers;
   final String propertyType;
   final String scheduledDate;
   final String scheduledTime;
@@ -123,6 +125,17 @@ class _ClScheduledPreviousWorkersSectionWidgetState
     if (workerIds.contains(workerId)) {
       workerIds.remove(workerId);
     } else {
+      if (widget.maxSelectedWorkers != null &&
+          workerIds.length >= widget.maxSelectedWorkers!) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'وصلت إلى عدد العمال المحدد. زد العدد أولاً إذا لزم الأمر.',
+            ),
+          ),
+        );
+        return;
+      }
       workerIds.add(workerId);
     }
 

@@ -387,8 +387,8 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     emit(
       state.copyWith(
         numberOfWorkers: safeCount,
-        assignmentMode: CleaningAssignmentMode.openCount,
-        clearSelectedWorkers: true,
+        assignmentMode: state.assignmentMode,
+        clearSelectedWorkers: state.assignmentMode == CleaningAssignmentMode.openCount,
         workerRoomAssignments: _clampWorkerRoomAssignments(
           state.workerRoomAssignments,
           safeCount,

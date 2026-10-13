@@ -120,14 +120,51 @@ void main() {
     );
   });
 
-  test('generates monthly visits with end-of-month clamping', () {
-    final next = CleaningRecurringScheduleGenerator.occurrenceDate(
+  test('monthly never moves a missing calendar day to month end', () {
+    final sessions = CleaningRecurringScheduleGenerator.generate(
       pattern: CleaningRecurringPattern.monthly,
       startDate: DateTime(2027, 1, 31),
-      occurrenceIndex: 1,
+      time: '10:00',
+      occurrences: 2,
     );
+    expect(sessions.map((e) => e.dateApi).toList(), [
+      '2027-01-31',
+      '2027-03-31',
+    ]);
+    expect(
+      CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+        pattern: CleaningRecurringPattern.monthly,
+        startDate: DateTime(2027, 1, 31),
+      ),
+      2,
+    );
+  });
 
-    expect(next, DateTime(2027, 2, 28));
+  test('monthly keeps leap-day dates instead of forcing February 28', () {
+    final sessions = CleaningRecurringScheduleGenerator.generate(
+      pattern: CleaningRecurringPattern.monthly,
+      startDate: DateTime(2028, 1, 29),
+      time: '09:00',
+      occurrences: 3,
+    );
+    expect(sessions.map((e) => e.dateApi).toList(), [
+      '2028-01-29',
+      '2028-02-29',
+      '2028-03-29',
+    ]);
+  });
+
+  test('monthly skips February 29 on non-leap years', () {
+    final sessions = CleaningRecurringScheduleGenerator.generate(
+      pattern: CleaningRecurringPattern.monthly,
+      startDate: DateTime(2027, 1, 29),
+      time: '09:00',
+      occurrences: 2,
+    );
+    expect(sessions.map((e) => e.dateApi).toList(), [
+      '2027-01-29',
+      '2027-03-29',
+    ]);
   });
 
   test('does not silently truncate generated visits beyond thirty days', () {
@@ -148,18 +185,43 @@ void main() {
       CleaningRecurringSessionInput(date: DateTime(2026, 10, 1), time: '09:00'),
     ];
 
-    expect(sessions.windowDays, cleaningRecurringMaxWindowDays);
+    expect(sessions.windowDays, cleaningRecurringStandardWindowDays);
     expect(sessions.exceedsMaxWindow, isFalse);
   });
 
-  test('rejects recurring visit models spanning more than thirty days', () {
+  test('rejects recurring visit models spanning more than ninety days', () {
     final sessions = <CleaningRecurringSessionInput>[
       CleaningRecurringSessionInput(date: DateTime(2026, 9, 1), time: '09:00'),
-      CleaningRecurringSessionInput(date: DateTime(2026, 10, 2), time: '09:00'),
+      CleaningRecurringSessionInput(date: DateTime(2026, 12, 1), time: '09:00'),
     ];
 
-    expect(sessions.windowDays, 31);
+    expect(sessions.windowDays, 91);
     expect(sessions.exceedsMaxWindow, isTrue);
+  });
+
+  test('weekly and monthly recurrence have different dates', () {
+    final start = DateTime(2026, 10, 14);
+    final week = CleaningRecurringScheduleGenerator.generate(
+      pattern: CleaningRecurringPattern.weekly,
+      startDate: start,
+      time: '08:00',
+      occurrences: 2,
+    );
+    final month = CleaningRecurringScheduleGenerator.generate(
+      pattern: CleaningRecurringPattern.monthly,
+      startDate: start,
+      time: '08:00',
+      occurrences: 2,
+    );
+    expect(week.map((e) => e.dateApi).toList(), ['2026-10-14', '2026-10-21']);
+    expect(month.map((e) => e.dateApi).toList(), ['2026-10-14', '2026-11-14']);
+    expect(
+      CleaningRecurringScheduleGenerator.maxOccurrencesWithinWindow(
+        pattern: CleaningRecurringPattern.monthly,
+        startDate: start,
+      ),
+      greaterThanOrEqualTo(2),
+    );
   });
 
   test('does not serialize a recurring schedule for an empty visit list', () {

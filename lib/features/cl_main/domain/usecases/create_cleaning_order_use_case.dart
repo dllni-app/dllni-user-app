@@ -103,6 +103,7 @@ class CreateCleaningOrderParams with Params {
     this.termsAccepted = true,
     this.workerRoomAssignments,
     this.couponCode,
+    this.notes,
     this.serviceExtras = const CleaningServiceExtrasRequest(),
   }) : eventType = null,
        eventTypeId = null,
@@ -112,8 +113,7 @@ class CreateCleaningOrderParams with Params {
        customService = null,
        hours = null,
        eventSessions = const <CleaningEventSessionInput>[],
-       specialRequirement = null,
-       notes = null;
+       specialRequirement = null;
 
   CreateCleaningOrderParams.eventAssistance({
     required this.addressId,
@@ -349,7 +349,10 @@ class CreateCleaningOrderParams with Params {
           workEnvironmentConfirmation != null)
         'workEnvironmentConfirmation': workEnvironmentConfirmation!.toJson(),
       'assignmentMode': workerSelection.assignmentMode.apiValue,
-      if (isRecurring) 'workerScope': workerSelection.scope.apiValue,
+      if (isRecurring || workerIds.length > 1)
+        'workerScope': isRecurring
+            ? workerSelection.scope.apiValue
+            : 'specific',
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'termsAccepted': termsAccepted,
       if (normalizedCouponCode != null && normalizedCouponCode.isNotEmpty)

@@ -17,9 +17,6 @@ class ClServiceWorkerRoomAssignmentWidget extends StatelessWidget {
     super.key,
   });
 
-  static const Color _screenBlue = SharedPlatformColors.primary;
-  static const String _autoAssignLabel = 'تلقائي';
-
   final List<CleaningRoomUnit> units;
   final int numberOfWorkers;
   final Map<String, int> slotByRoomKey;
@@ -45,10 +42,9 @@ class ClServiceWorkerRoomAssignmentWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText.bodySmall(
-            'يمكنك تعيين عامل محدد لكل غرفة، أو اختيار «$_autoAssignLabel» ليتولّى النظام التوزيع (اختياري)',
-            color: const Color(0xFF6B7280),
-            textAlign: TextAlign.right,
+          const Text(
+            'وزّع الغرف إذا حبيت، أو خلي التوزيع تلقائي.',
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
           ),
           if (_generalAssignmentErrors(fieldErrors).isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -96,7 +92,7 @@ class _RoomAssignmentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 8, 4),
       decoration: BoxDecoration(
         color: SharedPlatformColors.background,
         borderRadius: BorderRadius.circular(12),
@@ -107,77 +103,49 @@ class _RoomAssignmentRow extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText.bodyMedium(
-            unit.displayLabel,
-            fontWeight: FontWeight.w700,
-            textAlign: TextAlign.start,
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Row(
             children: [
-              _SlotChip(
-                label: ClServiceWorkerRoomAssignmentWidget._autoAssignLabel,
-                isSelected: selectedSlot == null,
-                onTap: () => onAssign(unit.roomKey, 0),
+              const Icon(
+                Icons.meeting_room_outlined,
+                color: SharedPlatformColors.primary,
+                size: 20,
               ),
-              for (var slot = 1; slot <= numberOfWorkers; slot++)
-                _SlotChip(
-                  label: 'عامل $slot',
-                  isSelected: selectedSlot == slot,
-                  onTap: () => onAssign(unit.roomKey, slot),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  unit.displayLabel,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
+              ),
+              SizedBox(
+                width: 140,
+                child: DropdownButtonFormField<int>(
+                  key: Key('room_assignment_${unit.roomKey}'),
+                  isExpanded: true,
+                  initialValue: selectedSlot ?? 0,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 8,
+                    ),
+                  ),
+                  items: [
+                    const DropdownMenuItem(value: 0, child: Text('تلقائي')),
+                    for (var slot = 1; slot <= numberOfWorkers; slot++)
+                      DropdownMenuItem(value: slot, child: Text('عامل $slot')),
+                  ],
+                  onChanged: (slot) {
+                    if (slot != null) onAssign(unit.roomKey, slot);
+                  },
+                ),
+              ),
             ],
           ),
-          if (roomErrors.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            _FieldErrorsBanner(messages: roomErrors),
-          ],
+          if (roomErrors.isNotEmpty) _FieldErrorsBanner(messages: roomErrors),
         ],
-      ),
-    );
-  }
-}
-
-class _SlotChip extends StatelessWidget {
-  const _SlotChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: const BoxConstraints(minHeight: 44),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? ClServiceWorkerRoomAssignmentWidget._screenBlue
-              : SharedPlatformColors.neutralSoft,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? ClServiceWorkerRoomAssignmentWidget._screenBlue
-                : SharedPlatformColors.border,
-          ),
-        ),
-        child: AppText.labelMedium(
-          label,
-          color: isSelected ? Colors.white : const Color(0xFF1F2937),
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }

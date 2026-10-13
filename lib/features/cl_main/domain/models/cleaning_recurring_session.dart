@@ -1,6 +1,9 @@
 import 'cleaning_assignment_mode.dart';
 
-const int cleaningRecurringMaxWindowDays = 30;
+// Monthly cleaning can span more than a 30-day window (e.g. Oct 14 -> Nov 14).
+// API validates the complete schedule to this 90-day outer bound.
+const int cleaningRecurringMaxWindowDays = 90;
+const int cleaningRecurringStandardWindowDays = 30;
 
 enum CleaningRecurringPattern { custom, daily, weekly, monthly }
 
@@ -196,10 +199,13 @@ class CleaningRecurringScheduleGenerator {
       growable: false,
     );
 
-    if (sessions.exceedsMaxWindow) {
+    final maxSpanDays = pattern == CleaningRecurringPattern.monthly
+        ? cleaningRecurringMaxWindowDays
+        : cleaningRecurringStandardWindowDays;
+    if (sessions.windowDays > maxSpanDays) {
       throw RangeError(
         'Generated recurring schedule exceeds the '
-        '$cleaningRecurringMaxWindowDays-day booking window.',
+        '$maxSpanDays-day booking window.',
       );
     }
 
@@ -213,8 +219,11 @@ class CleaningRecurringScheduleGenerator {
     if (!pattern.isGenerated) return 0;
 
     final start = DateTime(startDate.year, startDate.month, startDate.day);
+    final maxSpanDays = pattern == CleaningRecurringPattern.monthly
+        ? cleaningRecurringMaxWindowDays
+        : cleaningRecurringStandardWindowDays;
     var count = 1;
-    for (var index = 1; index <= cleaningRecurringMaxWindowDays; index++) {
+    for (var index = 1; index <= maxSpanDays; index++) {
       final occurrence = occurrenceDate(
         pattern: pattern,
         startDate: start,
@@ -225,8 +234,7 @@ class CleaningRecurringScheduleGenerator {
         occurrence.month,
         occurrence.day,
       );
-      if (normalized.difference(start).inDays >
-          cleaningRecurringMaxWindowDays) {
+      if (normalized.difference(start).inDays > maxSpanDays) {
         break;
       }
       count++;
@@ -250,7 +258,7 @@ class CleaningRecurringScheduleGenerator {
       CleaningRecurringPattern.weekly => startDate.add(
         Duration(days: occurrenceIndex * 7),
       ),
-      CleaningRecurringPattern.monthly => _addMonthsClamped(
+      CleaningRecurringPattern.monthly => _addMonthsExactDay(
         startDate,
         occurrenceIndex,
       ),
@@ -262,27 +270,40 @@ class CleaningRecurringScheduleGenerator {
     };
   }
 
-  static DateTime _addMonthsClamped(DateTime anchor, int monthOffset) {
-    final targetMonthStart = DateTime(anchor.year, anchor.month + monthOffset);
-    final lastDayOfTargetMonth = DateTime(
-      targetMonthStart.year,
-      targetMonthStart.month + 1,
-      0,
-    ).day;
-    final targetDay = anchor.day > lastDayOfTargetMonth
-        ? lastDayOfTargetMonth
-        : anchor.day;
-
-    return DateTime(
-      targetMonthStart.year,
-      targetMonthStart.month,
-      targetDay,
-      anchor.hour,
-      anchor.minute,
-      anchor.second,
-      anchor.millisecond,
-      anchor.microsecond,
-    );
+  /// Keeps the exact calendar day. If a month does not have it (for example
+  /// February when the first visit is on the 31st), skip that month rather
+  /// than silently booking the 28th or the last day.
+  static DateTime _addMonthsExactDay(DateTime anchor, int occurrenceIndex) {
+    if (occurrenceIndex == 0) return anchor;
+    var remaining = occurrenceIndex;
+    var monthOffset = 0;
+    while (remaining > 0) {
+      monthOffset++;
+      final targetMonthStart = DateTime(
+        anchor.year,
+        anchor.month + monthOffset,
+      );
+      final lastDayOfTargetMonth = DateTime(
+        targetMonthStart.year,
+        targetMonthStart.month + 1,
+        0,
+      ).day;
+      if (anchor.day > lastDayOfTargetMonth) continue;
+      remaining--;
+      if (remaining == 0) {
+        return DateTime(
+          targetMonthStart.year,
+          targetMonthStart.month,
+          anchor.day,
+          anchor.hour,
+          anchor.minute,
+          anchor.second,
+          anchor.millisecond,
+          anchor.microsecond,
+        );
+      }
+    }
+    return anchor;
   }
 }
 

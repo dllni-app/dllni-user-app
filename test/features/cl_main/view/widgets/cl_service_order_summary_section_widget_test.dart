@@ -20,23 +20,23 @@ void main() {
     );
   }
 
-  testWidgets(
-    'uses authoritative total minus travel for service value',
-    (tester) async {
-      await tester.pumpWidget(_buildWidget(isPricingFinal: false));
+  testWidgets('uses authoritative total minus travel for service value', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_buildWidget(isPricingFinal: false));
 
-      expect(find.text('قيمة الخدمة'), findsOneWidget);
-      expect(find.text('رسوم التنقل'), findsOneWidget);
-      expect(find.text('المسافة'), findsOneWidget);
-      expect(find.text('الإجمالي'), findsOneWidget);
-      expect(find.text('هامش الإدارة'), findsNothing);
-      // Service = totalPrice (1300) - travelFee (120) = 1180.
-      // This includes add-ons/commission exactly once, as priced by backend.
-      expect(find.textContaining('1,180'), findsOneWidget);
-      expect(find.textContaining('120'), findsOneWidget);
-      expect(find.textContaining('1,100'), findsNothing);
-    },
-  );
+    expect(find.text('قيمة الخدمة'), findsOneWidget);
+    expect(find.text('رسوم التنقل'), findsOneWidget);
+    expect(find.text('المسافة'), findsNothing);
+    expect(find.textContaining('الإجمالي'), findsOneWidget);
+    expect(find.text('هامش الإدارة'), findsNothing);
+    // The backend total is split into service (1100), add-ons (80),
+    // and transport (120), without changing the authoritative 1300 total.
+    expect(find.textContaining('1,100'), findsOneWidget);
+    expect(find.textContaining('80'), findsOneWidget);
+    expect(find.textContaining('120'), findsOneWidget);
+    expect(find.textContaining('1,300'), findsOneWidget);
+  });
 
   testWidgets(
     'does not add admin margin again when minimum price already includes it',
@@ -94,10 +94,7 @@ void main() {
       ),
     );
 
-    expect(
-      find.textContaining('أقل قيمة لطلب التنظيف هي'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('أقل قيمة لطلب التنظيف هي'), findsOneWidget);
     expect(find.textContaining('1,500'), findsNWidgets(2));
   });
 }

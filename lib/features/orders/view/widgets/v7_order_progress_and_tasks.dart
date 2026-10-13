@@ -14,31 +14,88 @@ class V7OrderLifecyclePanel extends StatelessWidget {
     CleaningBookingStatus.completed => 4,
     CleaningBookingStatus.awaitingCustomerCompletion => 3,
     CleaningBookingStatus.inProgress ||
-    CleaningBookingStatus.timeExtensionRequested ||
-    CleaningBookingStatus.underDispute => 2,
-    CleaningBookingStatus.workerAssigned ||
+    CleaningBookingStatus.timeExtensionRequested => 2,
     CleaningBookingStatus.awaitingStartVerification ||
-    CleaningBookingStatus.awaitingWorkerStartConfirmation => 1,
+    CleaningBookingStatus.awaitingWorkerStartConfirmation => 2,
+    CleaningBookingStatus.workerAssigned => 1,
     _ => 0,
   };
 
   @override
   Widget build(BuildContext context) {
-    final cancelled =
-        (order.status ?? '').toLowerCase().trim() ==
-        CleaningBookingStatus.cancelled;
+    final status = (order.status ?? '').toLowerCase().trim();
+    if (status == CleaningBookingStatus.underDispute) {
+      // A dispute can start in different lifecycle stages. Never invent
+      // completed worker, travel, or cleaning milestones in this state.
+      return const V7OrderPanel(
+        key: Key('cleaning_order_dispute_timeline'),
+        title: 'مراجعة المشكلة',
+        subtitle: 'حالة الطلب قيد المراجعة',
+        leading: Icon(Icons.report_problem_outlined, color: Color(0xFFAB691C)),
+        child: Text(
+          'تم تسجيل المشكلة المرتبطة بطلبك. ستظهر التحديثات بعد مراجعتها، ولا يُعد العمل مكتملاً حتى تتغير حالة الطلب.',
+          textAlign: TextAlign.start,
+        ),
+      );
+    }
+    final cancelled = status == CleaningBookingStatus.cancelled;
     final int stage = _stage;
+    final travelStarted = order.startedTravelAt?.trim().isNotEmpty == true;
+    final arrived = order.arrivedAt?.trim().isNotEmpty == true;
+    final acceptedCount =
+        order.workerAcceptance?.accepted ??
+        order.acceptedWorkerAssignments.length;
+    final workerStep = switch (status) {
+      CleaningBookingStatus.pending when acceptedCount > 0 => const _OrderStep(
+        'بانتظار اكتمال الفريق',
+        'قبل بعض العمال طلبك، وننتظر اكتمال العدد المطلوب',
+      ),
+      CleaningBookingStatus.workerAssigned when arrived => const _OrderStep(
+        'وصل مقدم الخدمة',
+        'تم تسجيل وصول مقدم الخدمة إلى الموقع',
+      ),
+      CleaningBookingStatus.workerAssigned when travelStarted =>
+        const _OrderStep(
+          'مقدم الخدمة في الطريق',
+          'بدأ مقدم الخدمة التحرك نحو موقع العمل',
+        ),
+      CleaningBookingStatus.awaitingStartVerification ||
+      CleaningBookingStatus.awaitingWorkerStartConfirmation => const _OrderStep(
+        'وصل مقدم الخدمة',
+        'أصبح العامل جاهزاً للتحقق من بدء الخدمة',
+      ),
+      _ => const _OrderStep('تأكيد مقدم الخدمة', 'سنخبرك عند قبول الطلب'),
+    };
+    final workStep = switch (status) {
+      CleaningBookingStatus.awaitingStartVerification => const _OrderStep(
+        'التحقق من رمز الأمان',
+        'أدخل الرمز المكوّن من 4 أرقام الذي يقدّمه العامل',
+      ),
+      CleaningBookingStatus.awaitingWorkerStartConfirmation => const _OrderStep(
+        'بانتظار بدء العمل',
+        'تم التحقق من الرمز، وننتظر تأكيد العامل',
+      ),
+      CleaningBookingStatus.inProgress => const _OrderStep(
+        'الخدمة قيد التنفيذ',
+        'بدأ العمل بعد اكتمال خطوات التحقق',
+      ),
+      CleaningBookingStatus.timeExtensionRequested => const _OrderStep(
+        'طلب التمديد قيد المعالجة',
+        'ننتظر رد العامل على طلب الوقت الإضافي',
+      ),
+      _ => const _OrderStep('بدء تنفيذ الخدمة', 'يبدأ العمل بعد التحقق'),
+    };
     final steps = cancelled
         ? const <_OrderStep>[
             _OrderStep('تم استلام الطلب', 'تم تسجيل طلب الخدمة'),
             _OrderStep('تم إلغاء الطلب', 'لن تُنفّذ هذه الخدمة'),
           ]
-        : const <_OrderStep>[
-            _OrderStep('تم استلام الطلب', 'سُجل طلبك في النظام'),
-            _OrderStep('تأكيد مقدم الخدمة', 'سنخبرك عند قبول الطلب'),
-            _OrderStep('بدء تنفيذ الخدمة', 'يبدأ العمل بعد التحقق'),
-            _OrderStep('مراجعة الإنجاز', 'تأكيد اكتمال المهام'),
-            _OrderStep('اكتمال الطلب', 'انتهاء الخدمة'),
+        : <_OrderStep>[
+            const _OrderStep('تم استلام الطلب', 'سُجل طلبك في النظام'),
+            workerStep,
+            workStep,
+            const _OrderStep('مراجعة الإنجاز', 'تأكيد اكتمال المهام'),
+            const _OrderStep('اكتمال الطلب', 'انتهاء الخدمة'),
           ];
     return V7OrderPanel(
       title: 'سجل الطلب',
@@ -151,7 +208,9 @@ class _TimelineRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  current && !cancelled ? 'المرحلة الحالية' : description,
+                  current && !cancelled
+                      ? 'المرحلة الحالية • $description'
+                      : description,
                   style: const TextStyle(
                     fontSize: 11,
                     color: SharedPlatformColors.muted,

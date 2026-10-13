@@ -43,8 +43,8 @@ void main() {
 
     expect(find.text('حجز دوري لخدمة التنظيف'), findsOneWidget);
     expect(find.text('تواريخ مخصصة'), findsOneWidget);
-    expect(find.text('2026-09-12 • 09:00'), findsOneWidget);
-    expect(find.text('2026-09-19 • 09:00'), findsOneWidget);
+    expect(find.text('12 أيلول 2026'), findsOneWidget);
+    expect(find.text('19 أيلول 2026'), findsOneWidget);
 
     await tester.tap(find.text('إضافة زيارة أخرى'));
     expect(addCount, 1);
@@ -98,10 +98,7 @@ void main() {
 
     expect(find.text('أسبوعي'), findsOneWidget);
     expect(find.text('عدد الزيارات'), findsOneWidget);
-    expect(
-      find.text('الحد الأقصى لهذا النمط ضمن 30 يوماً: 5 زيارات.'),
-      findsOneWidget,
-    );
+    expect(find.text('يمكن حجز حتى 5 زيارات خلال 30 يومًا.'), findsOneWidget);
     expect(find.text('إضافة زيارة أخرى'), findsNothing);
     expect(find.byTooltip('تعديل الزيارة'), findsNothing);
     expect(find.byTooltip('حذف الزيارة'), findsNothing);
@@ -113,106 +110,85 @@ void main() {
     expect(occurrences, 2);
   });
 
-  testWidgets('forwards recurring calculation mode and hour changes', (
-    tester,
-  ) async {
+  testWidgets('monthly schedule explains the 90-day range', (tester) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(800, 1200);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    var mode = CleaningRecurringCalculationMode.task;
-    var hours = 2.0;
-    final sessions = <CleaningRecurringSessionInput>[
-      CleaningRecurringSessionInput(date: DateTime(2026, 9, 12), time: '09:00'),
-      CleaningRecurringSessionInput(date: DateTime(2026, 9, 19), time: '09:00'),
-    ];
-
-    Future<void> pump() => tester.pumpWidget(
+    final sessions = CleaningRecurringScheduleGenerator.generate(
+      pattern: CleaningRecurringPattern.monthly,
+      startDate: DateTime(2026, 10, 14),
+      time: '10:00',
+      occurrences: 2,
+    );
+    await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ClRecurringScheduleSectionWidget(
-            enabled: true,
-            pattern: CleaningRecurringPattern.custom,
-            calculationMode: mode,
-            hoursPerVisit: hours,
-            occurrences: 2,
-            maxOccurrences: 0,
-            sessions: sessions,
-            onEnabledChanged: (_) {},
-            onPatternChanged: (_) {},
-            onCalculationModeChanged: (value) => mode = value,
-            onHoursPerVisitChanged: (value) => hours = value,
-            onOccurrencesChanged: (_) {},
-            onAddVisit: () {},
-            onEditVisit: (_) {},
-            onRemoveVisit: (_) {},
+          body: SingleChildScrollView(
+            child: ClRecurringScheduleSectionWidget(
+              enabled: true,
+              pattern: CleaningRecurringPattern.monthly,
+              occurrences: 2,
+              maxOccurrences: 3,
+              sessions: sessions,
+              onEnabledChanged: (_) {},
+              onPatternChanged: (_) {},
+              onOccurrencesChanged: (_) {},
+              onAddVisit: () {},
+              onEditVisit: (_) {},
+              onRemoveVisit: (_) {},
+            ),
           ),
         ),
       ),
     );
-
-    await pump();
-    await tester.tap(find.text('حسب المهام'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('حسب الساعات').last);
-    expect(mode, CleaningRecurringCalculationMode.hours);
-
-    mode = CleaningRecurringCalculationMode.hours;
-    await pump();
-    expect(find.text('الساعات لكل زيارة'), findsOneWidget);
-    await tester.tap(find.byTooltip('زيادة ساعات الزيارة'));
-    expect(hours, 2.5);
+    expect(find.text('يمكن حجز حتى 3 زيارات خلال 90 يومًا.'), findsOneWidget);
+    expect(find.textContaining('30 يوم'), findsNothing);
+    expect(find.text('14 تشرين الثاني 2026'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('forwards recurring worker scope and explains specific lock', (
+  testWidgets('recurring dates page omits billing and worker scope choices', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = const Size(800, 1200);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    var scope = CleaningRecurringWorkerScope.any;
     final sessions = <CleaningRecurringSessionInput>[
       CleaningRecurringSessionInput(date: DateTime(2026, 9, 12), time: '09:00'),
       CleaningRecurringSessionInput(date: DateTime(2026, 9, 19), time: '09:00'),
     ];
-
-    Future<void> pump() => tester.pumpWidget(
+    await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ClRecurringScheduleSectionWidget(
-            enabled: true,
-            pattern: CleaningRecurringPattern.custom,
-            workerScope: scope,
-            occurrences: 2,
-            maxOccurrences: 0,
-            sessions: sessions,
-            onEnabledChanged: (_) {},
-            onPatternChanged: (_) {},
-            onWorkerScopeChanged: (value) => scope = value,
-            onOccurrencesChanged: (_) {},
-            onAddVisit: () {},
-            onEditVisit: (_) {},
-            onRemoveVisit: (_) {},
+          body: SingleChildScrollView(
+            child: ClRecurringScheduleSectionWidget(
+              enabled: true,
+              pattern: CleaningRecurringPattern.custom,
+              calculationMode: CleaningRecurringCalculationMode.hours,
+              hoursPerVisit: 2,
+              workerScope: CleaningRecurringWorkerScope.any,
+              occurrences: 2,
+              maxOccurrences: 0,
+              sessions: sessions,
+              onEnabledChanged: (_) {},
+              onPatternChanged: (_) {},
+              onOccurrencesChanged: (_) {},
+              onAddVisit: () {},
+              onEditVisit: (_) {},
+              onRemoveVisit: (_) {},
+            ),
           ),
         ),
       ),
     );
-
-    await pump();
-    expect(find.text('نطاق العمال لكل زيارة'), findsOneWidget);
-    expect(find.text('أي عامل متاح'), findsOneWidget);
-    await tester.tap(find.text('أي عامل متاح'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('عمال محددون فقط').last);
-    expect(scope, CleaningRecurringWorkerScope.specific);
-
-    await pump();
-    expect(
-      find.text(
-        'تُحصر الزيارات بالعمال الذين تختارهم فقط، ولن يتم فتحها تلقائياً لعمال آخرين.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.textContaining('حدد أيام الزيارات ومواعيدها'), findsOneWidget);
+    expect(find.textContaining('12 أيلول 2026'), findsOneWidget);
+    expect(find.textContaining('19 أيلول 2026'), findsOneWidget);
+    expect(find.text('حسب المهام'), findsNothing);
+    expect(find.text('نطاق العمال لكل زيارة'), findsNothing);
+    expect(find.text('طريقة الحساب لكل زيارة'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }

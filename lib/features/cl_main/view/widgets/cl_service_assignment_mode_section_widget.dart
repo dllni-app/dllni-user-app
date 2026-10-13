@@ -30,7 +30,7 @@ class ClServiceAssignmentModeSectionWidget extends StatelessWidget {
         AppChoiceTile(
           key: const Key('cleaning_assignment_open_count'),
           title: 'اختيار العمال تلقائياً',
-          description: 'الخيار الأسهل: يبحث النظام عن العمال المتاحين لطلبك.',
+          description: 'يبحث النظام عن العمال المتاحين وفق مهام طلبك وموعده.',
           icon: Icons.groups_outlined,
           selected: selectedMode == CleaningAssignmentMode.openCount,
           section: AppSection.cleaning,

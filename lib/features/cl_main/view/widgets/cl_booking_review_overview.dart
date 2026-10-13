@@ -4,8 +4,7 @@ import '../../../../core/themes/shared_platform_colors.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
 import 'cl_service_section_card_widget.dart';
 
-/// A customer-readable snapshot of the draft. This widget does not calculate
-/// pricing or change booking data; the price remains backend-authoritative.
+/// Short, scannable booking confirmation, never a raw API payload.
 class ClBookingReviewOverview extends StatelessWidget {
   const ClBookingReviewOverview({
     super.key,
@@ -13,6 +12,8 @@ class ClBookingReviewOverview extends StatelessWidget {
     required this.address,
     required this.workerLabel,
     required this.materialsRequested,
+    this.missingMaterialNames = const <String>[],
+    this.missingMaterialTypeIds,
     required this.services,
     this.recurring = false,
     this.roomSizeBreakdown,
@@ -22,86 +23,92 @@ class ClBookingReviewOverview extends StatelessWidget {
   final String address;
   final String workerLabel;
   final bool materialsRequested;
+  final List<String> missingMaterialNames;
+  final List<int>? missingMaterialTypeIds;
   final List<String> services;
   final bool recurring;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
 
+  String get _materialLabel {
+    if (!materialsRequested) {
+      return 'المواد متوفرة لدى العميل';
+    }
+    if (missingMaterialTypeIds == null) {
+      return 'الفريق يوفر جميع المواد المطلوبة';
+    }
+    if (missingMaterialNames.isNotEmpty && missingMaterialNames.length <= 2) {
+      return 'الفريق يوفر الناقص: ${missingMaterialNames.join('، ')}';
+    }
+    return 'الفريق يوفر ${missingMaterialTypeIds!.length} مواد ناقصة';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rooms = roomSizeBreakdown == null
+        ? 0
+        : roomSizeBreakdown!.bedroom.total +
+              roomSizeBreakdown!.bathroom.total +
+              roomSizeBreakdown!.kitchen.total +
+              roomSizeBreakdown!.livingRoom.total +
+              roomSizeBreakdown!.balcony.total +
+              roomSizeBreakdown!.corridor.total +
+              roomSizeBreakdown!.shed.total;
     return ClServiceSectionCardWidget(
-      title: 'راجع تفاصيل الحجز',
+      title: 'تفاصيل الحجز',
       step: 0,
       showStepBadge: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ReviewLine(label: 'نوع التنظيف', value: service),
-          if (roomSizeBreakdown != null && roomSizeBreakdown!.hasAnyRoom) ...[
-            const SizedBox(height: 10),
-            _ReviewLine(
-              label: 'المساحات',
-              value: [
-                for (final item in <(String, int)>[
-                  ('غرف النوم', roomSizeBreakdown!.bedroom.total),
-                  ('الحمامات', roomSizeBreakdown!.bathroom.total),
-                  ('المطابخ', roomSizeBreakdown!.kitchen.total),
-                  ('المعيشة', roomSizeBreakdown!.livingRoom.total),
-                  ('الشرفات', roomSizeBreakdown!.balcony.total),
-                  ('الممرات', roomSizeBreakdown!.corridor.total),
-                  ('المساحات الأخرى', roomSizeBreakdown!.shed.total),
-                ])
-                  if (item.$2 > 0) '${item.$1}: ${item.$2}',
-              ].join('، '),
-            ),
-          ],
-          const SizedBox(height: 10),
-          _ReviewLine(label: 'العنوان', value: address),
-          const SizedBox(height: 10),
-          _ReviewLine(label: 'العمال', value: workerLabel),
-          const SizedBox(height: 10),
-          _ReviewLine(
-            label: 'مواد التنظيف',
-            value: materialsRequested ? 'إحضار مواد التنظيف' : 'دون طلب مواد',
+          _ReviewInfoRow(
+            icon: Icons.cleaning_services_outlined,
+            label: 'الخدمة',
+            value: service,
           ),
-          if (recurring) ...[
-            const SizedBox(height: 10),
-            const _ReviewLine(label: 'نوع الحجز', value: 'حجز متكرر'),
-          ],
-          if (services.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Text(
-              'الخدمات الإضافية المختارة',
-              style: TextStyle(
-                fontSize: 13,
-                color: SharedPlatformColors.muted,
-                fontWeight: FontWeight.w700,
-              ),
+          if (rooms > 0) ...[
+            const SizedBox(height: 14),
+            _ReviewInfoRow(
+              icon: Icons.home_work_outlined,
+              label: 'المكان',
+              value: '$rooms غرف ومساحات',
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final name in services)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SharedPlatformColors.cleaningSoft,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: SharedPlatformColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-              ],
+          ],
+          const SizedBox(height: 14),
+          _ReviewInfoRow(
+            icon: Icons.location_on_outlined,
+            label: 'العنوان',
+            value: address,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 14),
+          _ReviewInfoRow(
+            icon: Icons.groups_outlined,
+            label: 'الفريق',
+            value: workerLabel,
+          ),
+          const SizedBox(height: 14),
+          _ReviewInfoRow(
+            icon: Icons.inventory_2_outlined,
+            label: 'المواد',
+            value: _materialLabel,
+            maxLines: 2,
+          ),
+          if (services.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _ReviewInfoRow(
+              icon: Icons.auto_awesome_outlined,
+              label: 'خدمات متخصصة',
+              value: services.length <= 2
+                  ? services.join('، ')
+                  : '${services.length} خدمات مختارة',
+            ),
+          ],
+          if (recurring) ...[
+            const SizedBox(height: 14),
+            const _ReviewInfoRow(
+              icon: Icons.event_repeat_outlined,
+              label: 'التكرار',
+              value: 'زيارات متكررة',
             ),
           ],
         ],
@@ -110,42 +117,62 @@ class ClBookingReviewOverview extends StatelessWidget {
   }
 }
 
-class _ReviewLine extends StatelessWidget {
-  const _ReviewLine({required this.label, required this.value});
+class _ReviewInfoRow extends StatelessWidget {
+  const _ReviewInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.maxLines = 2,
+  });
 
+  final IconData icon;
   final String label;
   final String value;
+  final int maxLines;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 102,
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: const Color(0xFFEDF3FF),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 19, color: SharedPlatformColors.primary),
+      ),
+      const SizedBox(width: 10),
+      SizedBox(
+        width: 73,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 7),
           child: Text(
             label,
             style: const TextStyle(
+              fontSize: 12,
               color: SharedPlatformColors.muted,
-              fontSize: 13,
-              height: 1.5,
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 6),
           child: Text(
             value,
-            textAlign: TextAlign.start,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: SharedPlatformColors.ink,
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              height: 1.5,
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
