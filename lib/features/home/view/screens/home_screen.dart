@@ -429,7 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             context.pushRoute('/delivery/orders'),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 22),
                     _buildOffers(),
                     const SizedBox(height: 18),
                     PlatformHomeExperienceV5(
@@ -442,6 +442,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             context.pushRoute('/delivery/orders'),
                       ),
                     ),
+
                     const SizedBox(height: 20),
                     AppSectionHeading(
                       title: 'طلبك الحالي',
