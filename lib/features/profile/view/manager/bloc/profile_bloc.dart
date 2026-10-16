@@ -58,6 +58,10 @@ part 'profile_state.dart';
 
 @injectable
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
+  // Cursor is based on API pages, not unique visible items: overlapping
+  // pages can contain duplicate notification IDs.
+  int _nextNotificationsPage = 1;
+
   final FetchAddressesUseCase fetchAddressesUseCase;
   final SetDefaultAddressUseCase setDefaultAddressUseCase;
   final FetchNotificationsUseCase fetchNotificationsUseCase;
@@ -454,7 +458,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       ),
     );
 
-    final page = isLoadMore ? pagination.pageNumber : 1;
+    final page = isLoadMore ? _nextNotificationsPage : 1;
     final perPage = pagination.perPage;
     final response = await fetchNotificationsUseCase(
       FetchNotificationsParams(
@@ -485,6 +489,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           if (item.id == null) return true;
           return seenIds.add(item.id.toString());
         }).toList();
+        _nextNotificationsPage = page + 1;
         final resolvedPerPage = result.meta?.perPage ?? perPage;
         emit(
           state.copyWith(
