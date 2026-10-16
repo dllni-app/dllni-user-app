@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/utils/app_date_time_locale.dart';
+import '../../../../core/utils/cleaning_schedule_date_time_logic.dart';
 
 /// Cleaning pickers show Arabic UI but always return English canonical values
 /// (`yyyy-MM-dd`, `HH:mm`) for business logic and API payloads.
@@ -10,6 +11,7 @@ class AppPickers {
   static Future<String> showAppTimePicker({
     required BuildContext context,
     DateTime? minimumTime,
+    DateTime? scheduledDate,
   }) async {
     final TimeOfDay? res = await showTimePicker(
       context: context,
@@ -48,15 +50,28 @@ class AppPickers {
 
     selectedTime = _roundToHalfHour(selectedTime);
 
-    if (minimumTime != null) {
-      final roundedMinimum = _roundToHalfHour(minimumTime);
-
-      if (selectedTime.isBefore(roundedMinimum)) {
-        selectedTime = roundedMinimum;
+    final timeLabel = AppDateTimeLocale.dateFormat('HH:mm').format(selectedTime);
+    String? error;
+    if (selectedTime.day != now.day || selectedTime.month != now.month) {
+      error = 'اختر وقتًا قبل منتصف الليل، أو غيّر تاريخ الحجز.';
+    } else if (minimumTime != null && selectedTime.isBefore(minimumTime)) {
+      error = 'هذا الوقت انقضى أو يسبق الحد المسموح. اختر وقتًا لاحقًا.';
+    } else if (scheduledDate != null) {
+      error = CleaningScheduleDateTimeLogic.futureAppointmentError(
+        date: scheduledDate,
+        time: timeLabel,
+      );
+    }
+    if (error != null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error)),
+        );
       }
+      return '';
     }
 
-    return AppDateTimeLocale.dateFormat('HH:mm').format(selectedTime);
+    return timeLabel;
   }
 
   static DateTime _roundToHalfHour(DateTime dateTime) {
@@ -105,10 +120,10 @@ class AppPickers {
             startDate.day,
           );
 
-    final firstSelectableDate =
-        requestedStartDate.difference(todayDate).inDays <= 1
-            ? todayDate
-            : requestedStartDate;
+    // Never permit expired dates, and respect a caller's stricter startDate.
+    final firstSelectableDate = requestedStartDate.isBefore(todayDate)
+        ? todayDate
+        : requestedStartDate;
 
     final lastSelectableDate = todayDate.add(const Duration(days: 365 * 5));
 
