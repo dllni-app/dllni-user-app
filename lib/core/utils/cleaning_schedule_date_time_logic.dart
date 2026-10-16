@@ -34,9 +34,7 @@ class CleaningScheduleDateTimeLogic {
         '${minute.toString().padLeft(2, '0')}';
   }
 
-  /// Validate a local appointment against the current local device time.
-  /// Recheck on submission because a once-valid selection can expire while
-  /// the customer is completing the booking form.
+  /// Recheck on submission: a time can become past while the form is open.
   static String? futureAppointmentError({
     required DateTime date,
     required String time,
@@ -48,12 +46,7 @@ class CleaningScheduleDateTimeLogic {
       return 'لا يمكن اختيار تاريخ منقضٍ. اختر تاريخًا جديدًا.';
     }
 
-    final match = RegExp(r'^([01]\\d|2[0-3]):([0-5]\\d)(?::[0-5]\\d)?
-    if (value == null || value.isEmpty) return null;
-    return DateTime.tryParse(value);
-  }
-}
-)
+    final match = RegExp(r'^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$')
         .firstMatch(time.trim());
     if (match == null) {
       return 'يرجى اختيار وقت صحيح للطلب.';
