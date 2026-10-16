@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dllni_user_app/core/widgets/legal_links_launcher.dart';
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
@@ -88,6 +89,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: 'التواصل مع الدعم الفني',
             onTap: _openSupport,
           ),
+        ),
+        SizedBox(height: 12),
+        SectionCard(
+          containerColor: Color(0xFFEEF0FA),
+          image: Icon(Icons.privacy_tip_outlined),
+          title: 'سياسة الخصوصية',
+          subtitle: 'سياسة استخدام البيانات الشخصية',
+          onTap: () => launchPrivacyPolicy(context),
+        ),
+        SizedBox(height: 12),
+        SectionCard(
+          containerColor: Color(0xFFEEF0FA),
+          image: Icon(Icons.description_outlined),
+          title: 'شروط الاستخدام',
+          subtitle: 'شروط وأحكام استخدام التطبيق',
+          onTap: () => launchTermsAndConditions(context),
         ),
       ],
     );

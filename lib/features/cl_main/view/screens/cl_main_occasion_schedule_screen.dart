@@ -646,6 +646,16 @@ class _ClMainOccasionScheduleScreenState
       );
       return;
     }
+    final appointmentError = CleaningScheduleDateTimeLogic.futureAppointmentError(
+      date: _selectedDate,
+      time: _fromTimeHhMm,
+    );
+    if (appointmentError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(appointmentError)),
+      );
+      return;
+    }
 
     if (_explicitGenderPreference == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -720,7 +730,10 @@ class _ClMainOccasionScheduleScreenState
   }
 
   Future<void> _pickFromTime() async {
-    final value = await AppPickers.showAppTimePicker(context: context);
+    final value = await AppPickers.showAppTimePicker(
+      context: context,
+      scheduledDate: _selectedDate,
+    );
     if (value.isEmpty) return;
     setState(() {
       _fromTimeHhMm = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);

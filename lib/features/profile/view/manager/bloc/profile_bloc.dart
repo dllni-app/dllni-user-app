@@ -58,6 +58,10 @@ part 'profile_state.dart';
 
 @injectable
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
+  // Cursor is based on API pages, not unique visible items: overlapping
+  // pages can contain duplicate notification IDs.
+  int _nextNotificationsPage = 1;
+
   final FetchAddressesUseCase fetchAddressesUseCase;
   final SetDefaultAddressUseCase setDefaultAddressUseCase;
   final FetchNotificationsUseCase fetchNotificationsUseCase;
@@ -441,17 +445,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final pagination = state.notificationsPagination;
     final isLoadMore = event.loadMore && !event.isReload;
     if (isLoadMore && pagination.isEndPage) return;
+    // A fresh first page replaces the old feed instead of appending it.
+    // Reloads used to duplicate every notification already in the list.
+    final basePagination = isLoadMore
+        ? pagination
+        : pagination.resetData().copyWith(perPage: pagination.perPage);
 
     emit(
       state.copyWith(
-        notificationsPagination: pagination.setLoading(
-          isReload: event.isReload,
-        ),
+        notificationsPagination: basePagination.setLoading(isReload: !isLoadMore),
         clearNotificationActionError: true,
       ),
     );
 
-    final page = isLoadMore ? pagination.pageNumber : 1;
+    final page = isLoadMore ? _nextNotificationsPage : 1;
     final perPage = pagination.perPage;
     final response = await fetchNotificationsUseCase(
       FetchNotificationsParams(
@@ -463,7 +470,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     response.fold(
       (failure) => emit(
         state.copyWith(
-          notificationsPagination: pagination.setFaild(
+          notificationsPagination: basePagination.setFaild(
             errorMessage: failure.message,
           ),
           errorMessage: failure.message,
@@ -473,15 +480,27 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         final mapped = (result.data ?? const <NotificationResourceModel>[])
             .map(_toNotificationItem)
             .toList();
+        // Deduplicate by stable server notification ID, including overlapping pages.
+        final seenIds = <String>{
+          for (final item in basePagination.list)
+            if (item.id != null) item.id.toString(),
+        };
+        final uniqueItems = mapped.where((item) {
+          if (item.id == null) return true;
+          return seenIds.add(item.id.toString());
+        }).toList();
+        _nextNotificationsPage = page + 1;
+        final resolvedPerPage = result.meta?.perPage ?? perPage;
         emit(
           state.copyWith(
-            notificationsPagination: pagination.setSuccess(
-              data: mapped,
-              total: result.meta?.total ?? pagination.total,
-              perPage: result.meta?.perPage ?? perPage,
-
-            ),
-            unreadNotification: result.countUnread
+            notificationsPagination: basePagination
+                .setSuccess(
+                  data: uniqueItems,
+                  total: result.meta?.total ?? pagination.total,
+                  perPage: resolvedPerPage,
+                )
+                .copyWith(isEndPage: mapped.length < resolvedPerPage),
+            unreadNotification: result.countUnread,
           ),
         );
         if (event.markAllReadOnSuccess) {

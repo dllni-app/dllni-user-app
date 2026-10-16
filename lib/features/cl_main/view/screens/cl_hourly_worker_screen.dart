@@ -69,7 +69,14 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
   }
 
   Future<void> _pickTime() async {
-    final value = await AppPickers.showAppTimePicker(context: context);
+    if (_selectedDate == null) {
+      _showMessage('اختر تاريخ الخدمة قبل تحديد الوقت.');
+      return;
+    }
+    final value = await AppPickers.showAppTimePicker(
+      context: context,
+      scheduledDate: _selectedDate,
+    );
     if (!mounted || value.isEmpty) return;
     setState(() {
       _selectedTime = CleaningScheduleDateTimeLogic.normalizeTimeHhMm(value);
@@ -121,6 +128,14 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     }
     if (_selectedTime == null) {
       _showMessage('يرجى اختيار وقت بدء الخدمة.');
+      return;
+    }
+    final appointmentError = CleaningScheduleDateTimeLogic.futureAppointmentError(
+      date: _selectedDate!,
+      time: _selectedTime!,
+    );
+    if (appointmentError != null) {
+      _showMessage(appointmentError);
       return;
     }
 

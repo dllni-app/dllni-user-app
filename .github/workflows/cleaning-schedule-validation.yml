@@ -1,0 +1,32 @@
+name: Cleaning Schedule Future Validation
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - 'lib/core/utils/cleaning_schedule_date_time_logic.dart'
+      - 'lib/features/cl_main/view/widgets/app_pickers.dart'
+      - 'lib/features/cl_main/view/screens/cl_hourly_worker_screen.dart'
+      - 'lib/features/cl_main/view/screens/cl_main_service_schedule_screen.dart'
+      - 'lib/features/cl_main/view/screens/cl_main_occasion_schedule_screen.dart'
+      - 'lib/features/orders/view/screens/cleaning_order_reschedule_screen.dart'
+      - 'test/core/utils/cleaning_schedule_date_time_logic_test.dart'
+      - '.github/workflows/cleaning-schedule-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Validate customer appointment date and time
+        run: flutter test test/core/utils/cleaning_schedule_date_time_logic_test.dart
