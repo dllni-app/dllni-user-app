@@ -576,6 +576,7 @@ class _ClMainServiceScheduleScreenState
     final value = await AppPickers.showAppTimePicker(
       context: context,
       minimumTime: isToday ? now.add(const Duration(hours: 1)) : null,
+      scheduledDate: _selectedDate,
     );
     if (value.isEmpty) return;
     setState(() {
@@ -650,6 +651,17 @@ class _ClMainServiceScheduleScreenState
     }
     if (!_timeChosen) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار وقت بدء الخدمة')));
+      return;
+    }
+
+    final appointmentError = CleaningScheduleDateTimeLogic.futureAppointmentError(
+      date: _selectedDate,
+      time: _fromTimeHhMm,
+    );
+    if (appointmentError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(appointmentError)),
+      );
       return;
     }
 
