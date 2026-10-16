@@ -34,6 +34,44 @@ class CleaningScheduleDateTimeLogic {
         '${minute.toString().padLeft(2, '0')}';
   }
 
+  /// Validate a local appointment against the current local device time.
+  /// Recheck on submission because a once-valid selection can expire while
+  /// the customer is completing the booking form.
+  static String? futureAppointmentError({
+    required DateTime date,
+    required String time,
+    DateTime? now,
+  }) {
+    final current = now ?? DateTime.now();
+    final day = dateOnly(date);
+    if (day.isBefore(dateOnly(current))) {
+      return 'لا يمكن اختيار تاريخ منقضٍ. اختر تاريخًا جديدًا.';
+    }
+
+    final match = RegExp(r'^([01]\\d|2[0-3]):([0-5]\\d)(?::[0-5]\\d)?
+    if (value == null || value.isEmpty) return null;
+    return DateTime.tryParse(value);
+  }
+}
+)
+        .firstMatch(time.trim());
+    if (match == null) {
+      return 'يرجى اختيار وقت صحيح للطلب.';
+    }
+
+    final appointment = DateTime(
+      day.year,
+      day.month,
+      day.day,
+      int.parse(match.group(1)!),
+      int.parse(match.group(2)!),
+    );
+    if (!appointment.isAfter(current)) {
+      return 'لا يمكن اختيار وقت منقضٍ. اختر موعدًا لاحقًا.';
+    }
+    return null;
+  }
+
   static DateTime? parseDateApi(String? value) {
     if (value == null || value.isEmpty) return null;
     return DateTime.tryParse(value);
