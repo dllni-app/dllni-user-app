@@ -3,34 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/cleaning_services_response_model.dart';
 import '../../../../core/models/cleaning_service_extras.dart';
 import 'cl_redesign_components.dart';
-
-IconData _iconForSpecialService(String rawName) {
-  final name = rawName.trim().toLowerCase();
-  if (name.contains('زجاج') || name.contains('نافذ') || name.contains('شباك')) {
-    return Icons.window_outlined;
-  }
-  if (name.contains('أرض') ||
-      name.contains('بلاط') ||
-      name.contains('سيراميك')) {
-    return Icons.grid_on_outlined;
-  }
-  if (name.contains('سجاد') || name.contains('موكيت')) {
-    return Icons.layers_outlined;
-  }
-  if (name.contains('كنب') ||
-      name.contains('أريكة') ||
-      name.contains('مفروش')) {
-    return Icons.weekend_outlined;
-  }
-  if (name.contains('مطبخ') || name.contains('دهون') || name.contains('فرن')) {
-    return Icons.kitchen_outlined;
-  }
-  if (name.contains('حمام') || name.contains('تعقيم')) {
-    return Icons.bathtub_outlined;
-  }
-  if (name.contains('ستار')) return Icons.curtains_outlined;
-  return Icons.auto_awesome_outlined;
-}
+import 'cl_special_service_visuals.dart';
 
 /// Selection is only from the server catalog. Editing quantity, item details,
 /// dirtiness and schedule is handled by the detailed form below this selector.
@@ -87,14 +60,14 @@ class ClSpecialServicesStepWidget extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 10),
           child: Material(
             color: selectedIds.contains(service.id)
-                ? const Color(0xFFEDF3FF)
+                ? const Color(0xFFF2F6FC)
                 : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(
                 color: selectedIds.contains(service.id)
-                    ? SharedPlatformColors.primary
-                    : const Color(0xFFE2E8F0),
+                    ? const Color(0xFF284778)
+                    : const Color(0xFFD7E0EA),
               ),
             ),
             child: Column(
@@ -111,11 +84,11 @@ class ClSpecialServicesStepWidget extends StatelessWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEDF3FF),
+                            color: const Color(0xFFE6EEF9),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            _iconForSpecialService(service.name ?? ''),
+                            iconForSpecialService(service.name ?? ''),
                             color: SharedPlatformColors.primary,
                           ),
                         ),
@@ -128,6 +101,7 @@ class ClSpecialServicesStepWidget extends StatelessWidget {
                                 service.name ?? 'خدمة متخصصة',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w800,
+                                  color: Color(0xFF172554),
                                 ),
                               ),
                               if ((service.description ?? '').trim().isNotEmpty)
@@ -373,7 +347,7 @@ class _DirtOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: selected ? const Color(0xFFEDF3FF) : Colors.white,
+    color: selected ? const Color(0xFFE9EFFA) : Colors.white,
     borderRadius: BorderRadius.circular(10),
     child: InkWell(
       onTap: onTap,
@@ -384,9 +358,7 @@ class _DirtOption extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected
-                ? SharedPlatformColors.primary
-                : const Color(0xFFE2E8F0),
+            color: selected ? const Color(0xFF284778) : const Color(0xFFD7E0EA),
           ),
         ),
         child: Text(
@@ -394,9 +366,7 @@ class _DirtOption extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-            color: selected
-                ? SharedPlatformColors.primary
-                : const Color(0xFF334155),
+            color: selected ? const Color(0xFF172554) : const Color(0xFF334155),
           ),
         ),
       ),

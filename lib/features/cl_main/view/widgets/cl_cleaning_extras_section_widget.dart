@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/cleaning_services_response_model.dart';
 import 'cl_service_section_card_widget.dart';
+import 'cl_special_service_visuals.dart';
 
 class ClCleaningExtrasSectionWidget extends StatelessWidget {
   const ClCleaningExtrasSectionWidget({
@@ -605,10 +606,6 @@ class _SpecialServiceForm extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'حدد تفاصيل القطع التي تتطلب الخدمة، ثم راجع السعر في الخطوة الأخيرة.',
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-            ),
             const SizedBox(height: 12),
           ],
           if (!compact)
@@ -791,11 +788,11 @@ class _SpecialServiceItemsEditor extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'عناصر الخدمة',
+                  'تفاصيل الخدمة',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
-              Text('${items.length}'),
+              if (items.length > 1) Text('${items.length}'),
             ],
           ),
           const SizedBox(height: 8),
@@ -886,7 +883,7 @@ class _SpecialServiceItemEditor extends StatelessWidget {
         : dirtinessRules.firstOrNull?.id;
     final unit = unitCode?.trim();
     final translatedUnit = switch (unit?.toLowerCase()) {
-      'piece' || 'pcs' || 'item' => 'قطعة',
+      'piece' || 'pcs' || 'item' => null,
       'sqm' || 'square_meter' => 'متر مربع',
       'hour' => 'ساعة',
       _ => unit,
@@ -909,7 +906,7 @@ class _SpecialServiceItemEditor extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'العنصر ${index + 1}',
+                  'العنصر ' + (index + 1).toString(),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -954,12 +951,12 @@ class _SpecialServiceItemEditor extends StatelessWidget {
           if (compact && dirtinessRules.isNotEmpty) ...[
             const SizedBox(height: 10),
             const Text(
-              'كيف حالة القطعة؟',
+              'مستوى الاتساخ',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             const Text(
-              'اختار الأقرب لحالتها حتى نجهّز الطريقة المناسبة.',
+              'اختر مستوى الاتساخ.',
               style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
             ),
             const SizedBox(height: 6),
@@ -991,7 +988,7 @@ class _SpecialServiceItemEditor extends StatelessWidget {
                 initialValue: selectedLevel,
                 decoration: const InputDecoration(
                   labelText: 'مستوى الاتساخ لهذا العنصر',
-                  helperText: 'اختر الوصف الأقرب لحالة هذا العنصر.',
+                  helperText: 'اختر مستوى الاتساخ المناسب.',
                   border: OutlineInputBorder(),
                 ),
                 items: dirtinessRules
@@ -1026,7 +1023,7 @@ class _SpecialServiceItemEditor extends StatelessWidget {
               minLines: 1,
               maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'ملاحظات القطعة (اختياري)',
+                labelText: 'ملاحظات إضافية (اختياري)',
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) => onChanged(
@@ -1273,110 +1270,94 @@ class _SpecialServiceLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final quantity = _number(line.quantity);
-    final details = <String>[
-      ?quantity,
-      if (line.pricingUnit?.trim().isNotEmpty == true) line.pricingUnit!.trim(),
-      if (line.dirtinessLabel?.trim().isNotEmpty == true)
-        line.dirtinessLabel!.trim()
-      else if (line.dirtinessLevel?.trim().isNotEmpty == true)
-        _dirtinessDisplayLabel(line.dirtinessLevel!.trim()),
-      if (line.items.isNotEmpty) '${line.items.length} عناصر',
-      if (line.executionStatus?.trim().isNotEmpty == true)
-        line.executionStatus!.trim(),
-    ];
+    final levels = <String>{
+      if (line.dirtinessLevel?.trim().isNotEmpty == true)
+        _dirtinessDisplayLabel(line.dirtinessLevel!),
+      for (final item in line.items)
+        if (item.dirtinessLevel?.trim().isNotEmpty == true)
+          _dirtinessDisplayLabel(item.dirtinessLevel!),
+    };
+    if (levels.isEmpty && line.dirtinessLabel?.trim().isNotEmpty == true) {
+      levels.add(_dirtinessDisplayLabel(line.dirtinessLabel!));
+    }
+    final description = levels.isEmpty
+        ? null
+        : 'مستوى الاتساخ: ${levels.join('، ')}';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _DetailLine(
-          title: line.name ?? '-',
-          subtitle: details.join(' · '),
-          amount: _money(line.totalPrice, currency),
-          imageUrl: line.imageUrl,
-        ),
-        for (var index = 0; index < line.items.length; index++)
-          _SpecialServiceItemDetail(
-            item: line.items[index],
-            index: index,
-            currency: currency,
-          ),
-      ],
-    );
-  }
-}
-
-class _SpecialServiceItemDetail extends StatelessWidget {
-  const _SpecialServiceItemDetail({
-    required this.item,
-    required this.index,
-    required this.currency,
-  });
-
-  final CleaningSpecialServiceItemLineModel item;
-  final int index;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final description = <String>[
-      if (item.quantity != null) 'الكمية: ${_number(item.quantity)}',
-      if (item.dirtinessLevel?.trim().isNotEmpty == true)
-        'الاتساخ: ${_dirtinessDisplayLabel(item.dirtinessLevel!.trim())}',
-      if (item.beforeImages.isNotEmpty) 'صور قبل: ${item.beforeImages.length}',
-      if (item.afterImages.isNotEmpty) 'صور بعد: ${item.afterImages.length}',
-    ];
-    final note = item.notes?.trim();
-    final evidence = <String>[...item.beforeImageUrls, ...item.afterImageUrls]
-        .where(
-          (url) =>
-              Uri.tryParse(url)?.hasScheme == true &&
-              (url.startsWith('https://') || url.startsWith('http://')),
-        )
-        .toList();
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(start: 12, top: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Semantics(
+      container: true,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _DetailLine(
-            title: 'العنصر ${index + 1}',
-            subtitle: description.join(' · '),
-            amount: _money(item.totalPrice, currency),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6EEF9),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              iconForSpecialService(line.name ?? ''),
+              color: const Color(0xFF172554),
+              size: 24,
+            ),
           ),
-          if (note != null && note.isNotEmpty)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(start: 4, bottom: 6),
-              child: Text(
-                'ملاحظات: $note',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          if (evidence.isNotEmpty)
-            SizedBox(
-              height: 58,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: evidence.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, imageIndex) => ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    evidence[imageIndex],
-                    width: 58,
-                    height: 58,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const SizedBox(
-                          width: 58,
-                          height: 58,
-                          child: Icon(Icons.broken_image_outlined),
-                        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    line.name ?? 'خدمة متخصصة',
+                    style: const TextStyle(
+                      color: Color(0xFF172554),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
+                  if (description != null) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: Color(0xFF52637C),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                  if (line.items.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    for (var index = 0; index < line.items.length; index++) ...[
+                      if (index > 0) const Divider(height: 12),
+                      Text(
+                        'العنصر ' + (index + 1).toString(),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      if (line.items[index].quantity != null)
+                        Text(
+                          'الكمية: ' +
+                              (_number(line.items[index].quantity) ?? '—'),
+                        ),
+                      if (line.items[index].notes?.trim().isNotEmpty == true)
+                        Text('ملاحظات: ' + line.items[index].notes!.trim()),
+                      if (line.items[index].beforeImages.isNotEmpty)
+                        Text(
+                          'صور قبل: ' +
+                              line.items[index].beforeImages.length.toString(),
+                        ),
+                      if (line.items[index].afterImages.isNotEmpty)
+                        Text(
+                          'صور بعد: ' +
+                              line.items[index].afterImages.length.toString(),
+                        ),
+                    ],
+                  ],
+                ],
               ),
             ),
+          ),
         ],
       ),
     );
@@ -1457,37 +1438,19 @@ class _DetailLine extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.amount,
-    this.imageUrl,
   });
 
   final String title;
   final String subtitle;
   final String? amount;
-  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
-    final normalizedImage = imageUrl?.trim();
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (normalizedImage != null && normalizedImage.isNotEmpty) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.network(
-                normalizedImage,
-                width: 36,
-                height: 36,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) =>
-                    const SizedBox(width: 36, height: 36),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1598,9 +1561,9 @@ List<CleaningSpecialServiceItemRequest> _normalizeItemsForService(
 String _dirtinessDisplayLabel(String value) {
   final normalized = value.trim();
   return switch (normalized) {
-    'light' => 'خفيف',
-    'medium' => 'متوسط',
-    'heavy' => 'شديد',
+    'light' || 'خفيف' => 'اتساخ بسيط',
+    'medium' || 'متوسط' => 'اتساخ متوسط',
+    'heavy' || 'شديد' => 'اتساخ شديد',
     _ => normalized.replaceAll('_', ' ').replaceAll('-', ' '),
   };
 }

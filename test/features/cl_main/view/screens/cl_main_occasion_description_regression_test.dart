@@ -90,6 +90,8 @@ void main() {
       await tester.pump();
       expect(tester.takeException(), isNull);
       expect(find.text('مناسبة اختبار'), findsWidgets);
+      expect(find.text('مدة الخدمة بالساعات'), findsNothing);
+      expect(find.text('الحد الأدنى اللازم للمدة: 1 عامل'), findsNothing);
       // Dispose the widget first so BlocConsumer releases its subscription.
       await tester.pumpWidget(const SizedBox.shrink());
       // Do not block the widget test on unrelated queued Bloc cleanup events.

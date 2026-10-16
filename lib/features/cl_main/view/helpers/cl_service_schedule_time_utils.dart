@@ -1,3 +1,17 @@
+import 'dart:math' as math;
+
+/// Return a positive per-worker duration whenever the quoted service is
+/// positive. Rounding to one decimal used to erase short multi-worker visits.
+double effectiveCleaningWorkerDurationHours({
+  required double estimatedHours,
+  required int numberOfWorkers,
+}) {
+  if (!estimatedHours.isFinite || estimatedHours <= 0) return 0;
+  final workers = math.max(1, numberOfWorkers);
+  final minutes = (estimatedHours * 60 / workers).ceil();
+  return math.max(1, minutes) / 60;
+}
+
 /// Returns [startTime] + [durationHours] formatted as `HH:mm`.
 String formatClServiceEndTime({
   required String startTime,

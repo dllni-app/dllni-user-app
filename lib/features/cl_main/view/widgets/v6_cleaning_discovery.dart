@@ -7,27 +7,75 @@ class V6CleaningDiscoveryIntro extends StatelessWidget {
   final VoidCallback onBookApartment;
 
   @override
-  Widget build(BuildContext context) => const Column(
+  Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      AppSectionHeading(
-        title: 'متى تختار التنظيفات؟',
-        description:
-            'عندما تحتاج تنظيف غرف ومرافق المنزل أو المكتب، سواء للعناية المعتادة أو لتنظيف شامل.',
+      Container(
+        key: const Key('pencil_cleaning_discovery_hero'),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppSection.cleaning.soft,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AlnadhaTokens.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'نظافة على مقاس بيتك',
+                    style: AlnadhaTokens.title.copyWith(
+                      color: AppSection.cleaning.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'اختَر المكان، وحدّد التنظيف المناسب لكل غرفة.',
+                    style: AlnadhaTokens.body,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                color: AlnadhaTokens.surface,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.home_outlined,
+                    size: 38,
+                    color: AppSection.cleaning.accent,
+                  ),
+                  Positioned.directional(
+                    textDirection: Directionality.of(context),
+                    top: 7,
+                    end: 8,
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 17,
+                      color: AppSection.cleaning.accent,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      SizedBox(height: 12),
-      _TabInformation(
-        icon: Icons.home_work_outlined,
-        title: 'مكان يحتاج عناية',
-        description:
-            'منزل أو مكتب يحتاج تنظيف الغرف والمرافق، لا مجرد مهمة واحدة بالساعة.',
+      const SizedBox(height: 20),
+      const AppSectionHeading(
+        title: 'وين بدك ننظّف؟',
+        description: 'اختيار المكان يبدأ حجزك في 7 خطوات واضحة.',
       ),
-      SizedBox(height: 18),
-      AppSectionHeading(
-        title: 'مكان الخدمة',
-        description: 'اختر المكان الذي تريد تنظيفه',
-      ),
-      SizedBox(height: 10),
+      const SizedBox(height: 10),
     ],
   );
 }
@@ -39,17 +87,11 @@ class V6CleaningOccasionIntro extends StatelessWidget {
   Widget build(BuildContext context) => const Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      AppSectionHeading(
+      _TabInformation(
+        icon: Icons.info_outline_rounded,
         title: 'متى تختار مساعدة في المناسبات؟',
         description:
             'عندما تستضيف ضيوفاً أو تنظم مناسبة وتحتاج فريقاً للمساعدة في التجهيز أو الضيافة أو الترتيب بعدها.',
-      ),
-      SizedBox(height: 12),
-      _TabInformation(
-        icon: Icons.celebration_outlined,
-        title: 'مناسبتك تحتاج فريقاً',
-        description:
-            'مناسبة في يوم واحد أو عدة أيام، مع مهام وأوقات يختلف احتياجها من جلسة لأخرى.',
       ),
       SizedBox(height: 18),
       AppSectionHeading(
@@ -77,13 +119,21 @@ class _TabInformation extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AlnadhaTokens.primary.withValues(alpha: .045),
-        border: Border.all(color: AlnadhaTokens.primary.withValues(alpha: .13)),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFDCE4EE)),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 28, color: AlnadhaTokens.primary),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEDF2FA),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 21, color: AlnadhaTokens.primary),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

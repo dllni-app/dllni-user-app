@@ -738,6 +738,9 @@ class CleaningOrderModel {
 }
 
 class CleaningOrderDetailModel {
+  final int contractVersion;
+  final List<Map<String, dynamic>> bookingRooms;
+  final List<Map<String, dynamic>> bookingVisits;
   final int? id;
   final int? customerId;
   final int? workerId;
@@ -802,6 +805,9 @@ class CleaningOrderDetailModel {
   final List<CleaningCompletionRequestModel> completionRequests;
 
   CleaningOrderDetailModel({
+    this.contractVersion = 1,
+    this.bookingRooms = const [],
+    this.bookingVisits = const [],
     this.id,
     this.customerId,
     this.workerId,
@@ -867,6 +873,9 @@ class CleaningOrderDetailModel {
   factory CleaningOrderDetailModel.fromJson(Map<String, dynamic> json) {
     final m = _withTracking(json);
     return CleaningOrderDetailModel(
+      contractVersion: _toInt(m['contractVersion']) ?? 1,
+      bookingRooms: _toMapList(m['rooms']),
+      bookingVisits: _toMapList(m['visits']),
       id: _toInt(_pick(m, const <String>['id'])),
       customerId: _toInt(_pick(m, const <String>['customerId', 'customer_id'])),
       workerId: _toInt(_pick(m, const <String>['workerId', 'worker_id'])),

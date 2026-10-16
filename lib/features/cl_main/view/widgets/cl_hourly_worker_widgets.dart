@@ -122,7 +122,7 @@ class ClHourlyWorkerPriceRow extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 fontSize: emphasize ? 18 : 15,
                 color: emphasize
-                    ? const Color(0xFF0B7480)
+                    ? const Color(0xFF172554)
                     : SharedPlatformColors.ink,
               ),
             ),

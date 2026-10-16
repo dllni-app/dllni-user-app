@@ -14,6 +14,7 @@ class V7OrderDetailScaffold extends StatelessWidget {
     required this.onRefresh,
     this.helpAction,
     this.primaryAction,
+    this.secondaryAction,
   });
 
   final String heading;
@@ -21,6 +22,7 @@ class V7OrderDetailScaffold extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final Widget? helpAction;
   final Widget? primaryAction;
+  final Widget? secondaryAction;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -65,15 +67,23 @@ class V7OrderDetailScaffold extends StatelessWidget {
               ),
             ),
           ),
-          if (primaryAction != null)
+          if (primaryAction != null || secondaryAction != null)
             Container(
               width: double.infinity,
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 12),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 12),
               decoration: const BoxDecoration(
                 color: AlnadhaTokens.surface,
                 border: Border(top: BorderSide(color: AlnadhaTokens.border)),
               ),
-              child: primaryAction,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ?primaryAction,
+                  if (primaryAction != null && secondaryAction != null)
+                    const SizedBox(height: 8),
+                  ?secondaryAction,
+                ],
+              ),
             ),
         ],
       ),
@@ -357,33 +367,55 @@ class V7OrderPricePanel extends StatelessWidget {
     required this.travelFee,
     required this.addonsTotal,
     required this.total,
+    this.materialsPrice,
+    this.specializedPrice,
     this.finalPrice = true,
+    this.totalLabel = 'الإجمالي',
+    this.pendingNote = 'قد يتغير الإجمالي عند اكتمال تفاصيل الخدمة.',
   });
   final String? basePrice, travelFee, addonsTotal, total;
+  final String? materialsPrice, specializedPrice;
   final bool finalPrice;
+  final String totalLabel, pendingNote;
 
   @override
   Widget build(BuildContext context) => V7OrderPanel(
-    title: 'ملخص التكلفة',
+    title: 'ملخص السعر',
     leading: const Icon(Icons.receipt_long_outlined),
-    subtitle: finalPrice ? null : 'تقدير السعر قابل للتحديث حتى اكتمال الخدمة',
     child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         V7OrderInfoRow(
           label: 'قيمة الخدمة',
           value: basePrice ?? 'لم تُحدد بعد',
         ),
-        if (travelFee != null)
-          V7OrderInfoRow(label: 'رسوم التنقل', value: travelFee!),
+        if (materialsPrice != null)
+          V7OrderInfoRow(label: 'مواد التنظيف', value: materialsPrice!),
+        if (specializedPrice != null)
+          V7OrderInfoRow(label: 'الخدمات المتخصصة', value: specializedPrice!),
         if (addonsTotal != null)
           V7OrderInfoRow(label: 'الإضافات', value: addonsTotal!),
-        const Divider(height: 20, color: AlnadhaTokens.border),
-        V7OrderInfoRow(
-          label: 'المجموع',
-          value: total ?? 'سيتم تحديد التكلفة',
-          emphasized: true,
+        if (travelFee != null)
+          V7OrderInfoRow(label: 'رسوم التنقل', value: travelFee!),
+        const Divider(height: 24, color: AlnadhaTokens.border),
+        Container(
+          key: const Key('order_price_total_card'),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEDF3FF),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: V7OrderInfoRow(
+            label: totalLabel,
+            value: total ?? 'سيتم تحديد التكلفة',
+            emphasized: true,
+          ),
         ),
-        const SizedBox(height: 5),
+        if (!finalPrice) ...[
+          const SizedBox(height: 7),
+          Text(pendingNote, style: AlnadhaTokens.caption),
+        ],
+        const SizedBox(height: 9),
         Row(
           children: [
             const Icon(

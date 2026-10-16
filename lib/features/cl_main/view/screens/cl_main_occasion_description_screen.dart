@@ -3,17 +3,13 @@ import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/widgets/design_system/design_system.dart';
 
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/cleaning_suite_config_model.dart';
-import '../../domain/models/cleaning_assignment_mode.dart';
-import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../helpers/cl_event_assignment_helper.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/cl_redesign_components.dart';
-import '../widgets/v6_booking_decision_guide.dart';
 import '../helpers/cl_event_collected_fields.dart';
 import '../widgets/cl_selectable_menu_field_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
@@ -38,19 +34,11 @@ class _ClMainOccasionDescriptionScreenState
   late List<_MenuOption> _helpTypeOptions;
   // The default 'none' option may need to be prepended to event-specific
   // requirements (for example, large gatherings). This list is mutable.
-  late List<_MenuOption> _specialRequirementOptions;
 
   final ScrollController _detailsScrollController = ScrollController();
   final TextEditingController _customServiceController =
       TextEditingController();
   final TextEditingController _notesController = TextEditingController();
-  final TextEditingController _specialRequirementsController =
-      TextEditingController();
-
-  String? get _specialRequirementText {
-    final value = _specialRequirementsController.text.trim();
-    return value.isEmpty ? null : value;
-  }
 
   final Map<String, TextEditingController> _dynamicControllers =
       <String, TextEditingController>{};
@@ -62,8 +50,8 @@ class _ClMainOccasionDescriptionScreenState
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
   _MenuOption? _selectedHelpType;
-  _MenuOption? _selectedSpecialRequirement;
   bool _didNavigateToSchedule = false;
+  bool _exitConfirmed = false;
   int _descriptionStep = 0;
 
   String get _customServiceValue {
@@ -71,14 +59,6 @@ class _ClMainOccasionDescriptionScreenState
     if (typed.isNotEmpty) return typed;
     return _selectedHelpType?.label ?? '';
   }
-
-  int get _minimumWorkersForSelectedHours =>
-      resolveMinimumEventWorkersForHours(_hoursCount.toDouble());
-
-  int get _resolvedWorkersCount => resolveEventWorkerCountForHours(
-    hours: _hoursCount.toDouble(),
-    requestedWorkers: _workersCount,
-  );
 
   @override
   void initState() {
@@ -103,15 +83,6 @@ class _ClMainOccasionDescriptionScreenState
           const _MenuOption(id: 'serving', label: 'تقديم الطعام للضيوف'),
           const _MenuOption(id: 'cleanup', label: 'تنظيف المائدة بعد العشاء'),
         ];
-        _specialRequirementOptions = [
-          const _MenuOption(id: 'none', label: 'لا يوجد'),
-          const _MenuOption(id: 'quick_setup', label: 'تجهيز سريع قبل الوصول'),
-          const _MenuOption(
-            id: 'kids_safety',
-            label: 'انتباه خاص لسلامة الأطفال',
-          ),
-          const _MenuOption(id: 'extra_seating', label: 'ترتيب مقاعد إضافية'),
-        ];
         break;
 
       case 'birthday_party':
@@ -132,18 +103,6 @@ class _ClMainOccasionDescriptionScreenState
           const _MenuOption(
             id: 'post_party_cleanup',
             label: 'تنظيف المكان بعد الحفلة',
-          ),
-        ];
-        _specialRequirementOptions = [
-          const _MenuOption(id: 'none', label: 'لا يوجد'),
-          const _MenuOption(id: 'cake_ceremony', label: 'تنسيق فقرة الكيك'),
-          const _MenuOption(
-            id: 'music_coordination',
-            label: 'متابعة وتيرة الموسيقى',
-          ),
-          const _MenuOption(
-            id: 'extra_attention',
-            label: 'عناية إضافية لمنطقة البوفيه',
           ),
         ];
         break;
@@ -168,24 +127,6 @@ class _ClMainOccasionDescriptionScreenState
           const _MenuOption(
             id: 'full_cleanup',
             label: 'تنظيف شامل وتنسيق بعد المناسبة',
-          ),
-        ];
-        _specialRequirementOptions = [
-          const _MenuOption(
-            id: 'separate_teams',
-            label: 'توزيع فريق العمل على أقسام',
-          ),
-          const _MenuOption(
-            id: 'valet_support',
-            label: 'المساعدة في تنظيم المواقف',
-          ),
-          const _MenuOption(
-            id: 'security_awareness',
-            label: 'انتباه وتنسيق حركة الضيوف',
-          ),
-          const _MenuOption(
-            id: 'dynamic_service',
-            label: 'خدمة مرنة حسب احتياج القاعة',
           ),
         ];
         break;
@@ -213,21 +154,6 @@ class _ClMainOccasionDescriptionScreenState
             label: 'تنظيف وتغيير أكواب الضيافة',
           ),
         ];
-        _specialRequirementOptions = [
-          const _MenuOption(id: 'none', label: 'لا يوجد'),
-          const _MenuOption(
-            id: 'continuous_cleaning',
-            label: 'تنظيف مستمر أثناء العزاء',
-          ),
-          const _MenuOption(
-            id: 'high_traffic',
-            label: 'عناية إضافية بالمداخل والممرات',
-          ),
-          const _MenuOption(
-            id: 'restrooms',
-            label: 'متابعة نظافة دورات المياه',
-          ),
-        ];
         break;
 
       default:
@@ -237,28 +163,15 @@ class _ClMainOccasionDescriptionScreenState
         _helpTypeOptions = const [
           _MenuOption(id: 'custom', label: 'مساعدة عامة'),
         ];
-        _specialRequirementOptions = const [
-          _MenuOption(id: 'none', label: 'لا يوجد'),
-        ];
         break;
     }
-    // Special requirements are optional. Always expose and preselect "none"
-    // instead of forcing a user to open a picker just to opt out.
-    if (!_specialRequirementOptions.any((option) => option.id == 'none')) {
-      _specialRequirementOptions = <_MenuOption>[
-        const _MenuOption(id: 'none', label: 'لا يوجد'),
-        ..._specialRequirementOptions,
-      ];
-    }
-    _selectedSpecialRequirement = _specialRequirementOptions.firstWhere(
-      (option) => option.id == 'none',
-    );
   }
 
   @override
   void didUpdateWidget(covariant ClMainOccasionDescriptionScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.args?.option.bookingValue == widget.args?.option.bookingValue) {
+    if (oldWidget.args?.option.bookingValue ==
+        widget.args?.option.bookingValue) {
       return;
     }
     for (final controller in _dynamicControllers.values) {
@@ -268,7 +181,6 @@ class _ClMainOccasionDescriptionScreenState
     _dynamicValues.clear();
     _customServiceController.clear();
     _notesController.clear();
-    _specialRequirementsController.clear();
     _selectedHelpType = null;
     _routeArgs = widget.args;
     _bloc = widget.args?.bloc;
@@ -292,71 +204,14 @@ class _ClMainOccasionDescriptionScreenState
 
     return BlocProvider.value(
       value: bloc,
-      child: BlocConsumer<ClMainBloc, ClMainState>(
-        listenWhen: (previous, current) =>
-            previous.estimatePriceStatus != current.estimatePriceStatus,
-        listener: (context, state) async {
-          if (state.estimatePriceStatus == BlocStatus.loading) return;
-          if ((_routeArgs?.navigateToScheduleOnEstimate ?? true) &&
-              !_didNavigateToSchedule &&
-              state.estimatePriceStatus == BlocStatus.success &&
-              state.estimatePrice != null &&
-              _routeArgs != null &&
-              _selectedSpecialRequirement != null) {
-            _didNavigateToSchedule = true;
-            final eventType = _eventTypeFromOption(_routeArgs!.option);
-            final customService = _customServiceValue;
-            final specialRequirement = _specialRequirementText;
-            final resolvedWorkersCount = _resolvedWorkersCount;
-            final suggestedTeamSize =
-                state.estimatePrice?.suggestedTeamSize ?? resolvedWorkersCount;
-            final scheduleArgs = ClMainOccasionScheduleArgs(
-              option: _routeArgs!.option,
-              bloc: bloc,
-              estimate: state.estimatePrice!,
-              guestsCount: _guestsCount,
-              eventType: eventType,
-              venueType: resolveEventVenueType(_eventDynamicAnswers),
-              customService: customService,
-              hours: _hoursCount.toDouble(),
-              numberOfWorkers: resolvedWorkersCount,
-              suggestedTeamSize: suggestedTeamSize,
-              helpTypeId: _selectedHelpType?.id ?? 'custom',
-              helpTypeLabel: customService,
-              specialRequirementId: specialRequirement == null
-                  ? 'none'
-                  : 'custom',
-              specialRequirementLabel: specialRequirement ?? 'لا يوجد',
-              defaultAddress: _selectedAddress.value,
-              notes: _enableNotes ? _notesController.text.trim() : null,
-              eventTypeId: _routeArgs!.option.eventTypeId,
-              eventDynamicAnswers: _eventDynamicAnswers,
-            );
-            await context.pushRoute(
-              '/clmainoccasionschedule',
-              arguments: scheduleArgs,
-            );
-            _didNavigateToSchedule = false;
-          } else if (state.estimatePriceStatus == BlocStatus.failed) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.errorMessage ?? 'تعذر حساب تكلفة طلب المناسبة',
-                ),
-              ),
-            );
-          }
-        },
+      child: BlocBuilder<ClMainBloc, ClMainState>(
         builder: (context, state) {
-          final isEstimating = state.estimatePriceStatus == BlocStatus.loading;
           return Directionality(
             textDirection: TextDirection.rtl,
             child: PopScope(
-              canPop: _descriptionStep == 0,
+              canPop: _exitConfirmed,
               onPopInvokedWithResult: (didPop, result) {
-                if (!didPop && _descriptionStep > 0) {
-                  _goToDescriptionStep(_descriptionStep - 1);
-                }
+                if (!didPop) _confirmExit();
               },
               child: Scaffold(
                 resizeToAvoidBottomInset: false,
@@ -365,9 +220,9 @@ class _ClMainOccasionDescriptionScreenState
                   child: Column(
                     children: [
                       HomeDetailsAppBar(
-                        onBack: () => _descriptionStep > 0
-                            ? _goToDescriptionStep(_descriptionStep - 1)
-                            : Navigator.of(context).maybePop(),
+                        title: 'طلب مناسبة',
+                        subtitle: 'أكمل تفاصيل مناسبتك خطوة بخطوة',
+                        onBack: _confirmExit,
                       ),
                       Expanded(
                         child: SingleChildScrollView(
@@ -391,7 +246,7 @@ class _ClMainOccasionDescriptionScreenState
                             ? 'التالي'
                             : 'متابعة إلى الموعد',
                         onPrimary: () => _onDescriptionPrimaryPressed(bloc),
-                        primaryEnabled: !isEstimating,
+                        primaryEnabled: !_didNavigateToSchedule,
                         secondaryLabel: _descriptionStep > 0 ? 'السابق' : null,
                         onSecondary: _descriptionStep > 0
                             ? () => _goToDescriptionStep(0)
@@ -415,14 +270,10 @@ class _ClMainOccasionDescriptionScreenState
       children: [
         const ClRedesignStepHeader(
           currentStep: 1,
-          totalSteps: 2,
+          totalSteps: 5,
           title: 'تفاصيل المناسبة',
           subtitle:
               'أخبرنا بحجم المناسبة وطبيعة المساعدة حتى نقدر الوقت والفريق المناسبين.',
-        ),
-        const SizedBox(height: 14),
-        const V6BookingDecisionGuide(
-          topic: V6BookingDecisionTopic.eventRequirements,
         ),
         const SizedBox(height: 14),
         ClRedesignCard(
@@ -521,73 +372,6 @@ class _ClMainOccasionDescriptionScreenState
           ),
         ),
         const SizedBox(height: 12),
-        ClRedesignCounter(
-          label: 'مدة الخدمة بالساعات',
-          icon: Icons.schedule_outlined,
-          value: _hoursCount,
-          maxValue: maxEventHours,
-          onIncrement: () {
-            if (_hoursCount >= maxEventHours) return;
-            _setHoursCount(_hoursCount + 1);
-          },
-          onDecrement: () {
-            if (_hoursCount <= 1) return;
-            _setHoursCount(_hoursCount - 1);
-          },
-        ),
-        const SizedBox(height: 12),
-        ClRedesignCounter(
-          label: 'عدد العمال المطلوبين',
-          icon: Icons.engineering_outlined,
-          value: _workersCount,
-          maxValue: maxEventWorkerCount,
-          onIncrement: () {
-            if (_workersCount >= maxEventWorkerCount) return;
-            setState(() => _workersCount += 1);
-          },
-          onDecrement: () {
-            if (_workersCount <= _minimumWorkersForSelectedHours) return;
-            setState(() => _workersCount -= 1);
-          },
-        ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            color: SharedPlatformColors.cleaningSoft,
-            border: Border.all(color: SharedPlatformColors.border),
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                color: SharedPlatformColors.cleaningInk,
-                size: 23,
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'الحد الأدنى اللازم للمدة: $_minimumWorkersForSelectedHours عامل',
-                      style: AlnadhaTokens.body.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'يُحسب هذا العدد لأن الحد الأقصى لعمل العامل في اليوم الواحد 8 ساعات. مثال: 10 ساعات تحتاج عاملين على الأقل. هذا حد مرتبط بالساعات، وليس تقديراً لعدد العمال بحسب عدد الضيوف أو كثافة المهام؛ يمكنك اختيار عدد أكبر عند الحاجة إلى تنفيذ أعمال بالتوازي.',
-                      style: AlnadhaTokens.caption,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -599,67 +383,12 @@ class _ClMainOccasionDescriptionScreenState
       children: [
         const ClRedesignStepHeader(
           currentStep: 2,
-          totalSteps: 2,
+          totalSteps: 5,
           title: 'المتطلبات ومكان الخدمة',
           subtitle:
               'أكمل التفاصيل المدعومة للطلب. يمكنك إضافة الملاحظات فقط عند الحاجة.',
         ),
         const SizedBox(height: 18),
-        ClRedesignCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'هل تحتاج ترتيبات خاصة؟ (اختياري)',
-                style: AlnadhaTokens.sectionTitle,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'اذكر احتياجاً لا تغطيه المهام المختارة، مثل تخصيص منطقة للضيافة أو متطلبات الوصول. اترك الحقل فارغاً إن لم يكن لديك طلب إضافي.',
-                style: AlnadhaTokens.caption,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('occasion_special_requirements_field'),
-                controller: _specialRequirementsController,
-                maxLength: 255,
-                minLines: 2,
-                maxLines: 4,
-                textInputAction: TextInputAction.done,
-                textAlign: TextAlign.start,
-                onTapOutside: (_) =>
-                    FocusManager.instance.primaryFocus?.unfocus(),
-                decoration: _redesignInputDecoration(
-                  hintText: 'مثلاً: تجهيز ركن منفصل للضيافة (اختياري)',
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: SharedPlatformColors.cleaningSoft,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 20,
-                      color: SharedPlatformColors.cleaningInk,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'هذه تعليمات للمناسبة وليست طلب خدمة متخصصة مستقلة. الخدمات المتخصصة تُختار وتُسعّر بشكل منفصل عند توفرها.',
-                        style: AlnadhaTokens.caption,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
         if (_routeArgs?.option.dynamicFields.isNotEmpty == true) ...[
           const SizedBox(height: 12),
           _buildDynamicFieldsCard(),
@@ -723,6 +452,31 @@ class _ClMainOccasionDescriptionScreenState
         borderSide: const BorderSide(color: Color(0xFF365487)),
       ),
     );
+  }
+
+  Future<void> _confirmExit() async {
+    final shouldLeave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('هل تريد مغادرة طلب المناسبة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('متابعة الطلب'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('مغادرة'),
+          ),
+        ],
+      ),
+    );
+    if (shouldLeave == true && mounted) {
+      setState(() => _exitConfirmed = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+    }
   }
 
   void _goToDescriptionStep(int step) {
@@ -790,23 +544,11 @@ class _ClMainOccasionDescriptionScreenState
     _detailsScrollController.dispose();
     _customServiceController.dispose();
     _notesController.dispose();
-    _specialRequirementsController.dispose();
     for (final controller in _dynamicControllers.values) {
       controller.dispose();
     }
     _selectedAddress.dispose();
     super.dispose();
-  }
-
-  void _setHoursCount(int value) {
-    final safeHours = value.clamp(1, maxEventHours).toInt();
-    setState(() {
-      _hoursCount = safeHours;
-      final minimumWorkers = _minimumWorkersForSelectedHours;
-      if (_workersCount < minimumWorkers) {
-        _workersCount = minimumWorkers;
-      }
-    });
   }
 
   String _eventTypeFromOption(ClMainOccasionOption option) {
@@ -873,31 +615,40 @@ class _ClMainOccasionDescriptionScreenState
       return;
     }
 
-    final eventType = _eventTypeFromOption(args.option);
-    final specialRequirement = _specialRequirementText;
-
-    bloc.add(ClearPreferredWorkersEvent());
-    bloc.add(
-      EstimateCleaningPriceEvent(
-        params: EstimateCleaningPriceParams.eventAssistance(
-          eventType: eventType,
-          eventTypeId: args.option.eventTypeId,
-          eventDynamicAnswers: _eventDynamicAnswers,
-          guestCount: _guestsCount,
-          venueType: resolveEventVenueType(_eventDynamicAnswers),
-          customService: customService,
-          hours: _hoursCount.toDouble(),
-          addressId: addressId,
-          addressLatitude: selectedAddress.latitude,
-          addressLongitude: selectedAddress.longitude,
-          numberOfWorkers: _resolvedWorkersCount,
-          preferredWorkerIds: const <int>[],
-          assignmentMode: CleaningAssignmentMode.openCount,
-          specialRequirement: specialRequirement,
-          notes: _enableNotes ? _notesController.text.trim() : null,
-        ),
-      ),
+    if (_didNavigateToSchedule) return;
+    _didNavigateToSchedule = true;
+    final scheduleArgs = ClMainOccasionScheduleArgs(
+      option: args.option,
+      bloc: bloc,
+      estimate: null,
+      guestsCount: _guestsCount,
+      eventType: _eventTypeFromOption(args.option),
+      venueType: resolveEventVenueType(_eventDynamicAnswers),
+      customService: customService,
+      hours: _hoursCount.toDouble(),
+      numberOfWorkers: _workersCount,
+      suggestedTeamSize: null,
+      helpTypeId: _selectedHelpType?.id ?? 'custom',
+      helpTypeLabel: customService,
+      specialRequirementId: 'none',
+      specialRequirementLabel: 'لا يوجد',
+      defaultAddress: selectedAddress,
+      notes: _enableNotes ? _notesController.text.trim() : null,
+      eventTypeId: args.option.eventTypeId,
+      eventDynamicAnswers: _eventDynamicAnswers,
     );
+    if (!(args.navigateToScheduleOnEstimate)) {
+      _didNavigateToSchedule = false;
+      return;
+    }
+    Future<void>.sync(() async {
+      await context.pushRoute(
+        '/clmainoccasionschedule',
+        arguments: scheduleArgs,
+      );
+    }).whenComplete(() {
+      if (mounted) setState(() => _didNavigateToSchedule = false);
+    });
   }
 
   CleaningDynamicFieldConfigModel? _firstInvalidDynamicField() {
@@ -931,17 +682,6 @@ class _ClMainOccasionDescriptionScreenState
       result[entry.key] = field?.type == 'number'
           ? (num.tryParse(text) ?? text)
           : text;
-    }
-    for (final field
-        in _routeArgs?.option.dynamicFields ??
-            const <CleaningDynamicFieldConfigModel>[]) {
-      if (!_isDuplicateOptionalSpecialNotes(field)) continue;
-      final note = _specialRequirementText;
-      if (note != null) {
-        result[field.key] = note;
-      } else {
-        result.remove(field.key);
-      }
     }
     result.removeWhere(
       (_, value) =>

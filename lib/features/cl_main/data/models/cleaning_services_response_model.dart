@@ -148,7 +148,7 @@ class CleaningServiceModel {
         : const <CleaningServiceEquipmentModel>[];
 
     return CleaningServiceModel(
-      id: _toInt(json['id']),
+      id: _toInt(json['id'] ?? json['specialServiceId']),
       name: _toString(json['name'] ?? json['nameAr']),
       category: _toString(json['category']),
       categoryId: _toInt(json['categoryId'] ?? json['category_id']),

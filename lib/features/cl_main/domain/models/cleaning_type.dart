@@ -1,7 +1,4 @@
-enum CleaningType {
-  deepCleaning,
-  regularCleaning,
-}
+enum CleaningType { deepCleaning, regularCleaning }
 
 extension CleaningTypeX on CleaningType {
   String get apiValue {
@@ -25,18 +22,18 @@ extension CleaningTypeX on CleaningType {
   String get title {
     switch (this) {
       case CleaningType.deepCleaning:
-        return 'تنظيف عميق';
+        return 'تعزيل';
       case CleaningType.regularCleaning:
-        return 'تنظيف عادي';
+        return 'حوسة';
     }
   }
 
   String get subtitle {
     switch (this) {
       case CleaningType.deepCleaning:
-        return 'يشمل شطف الارضيات ومسح الجدران والاسقف ومسح الغبرا';
+        return 'تنظيف شامل للأماكن التي تحتاج عناية إضافية؛ يشمل إزالة الغبار المتراكم وتنظيف الزوايا والأسطح والأرضيات بعمق حسب حالة الغرفة.';
       case CleaningType.regularCleaning:
-        return 'يشمل مسح الغبرا ومسح الارضيات';
+        return 'ترتيب وتنظيف يومي خفيف للغرفة؛ إزالة الغبار الظاهر ومسح الأسطح والأرضيات من دون نقل الأثاث أو معالجة الاتساخ المتراكم.';
     }
   }
 }

@@ -54,6 +54,13 @@ EstimatePriceResponseModel estimatePriceResponseModelFromJson(dynamic json) {
 
 class EstimatePriceResponseModel {
   final EstimateSizeModel? size;
+  final String? quoteSignature;
+  final String? quoteId;
+  final DateTime? quoteExpiresAt;
+  final List<Map<String, dynamic>> visits;
+  final Map<String, dynamic> schedulingPolicy;
+  final List<Map<String, dynamic>> specialServicesCatalog;
+  final List<Map<String, dynamic>> roomPeriods;
   final EstimatePricingModel? pricing;
   final EstimateScheduleModel? schedule;
   final EstimateQuoteModel? quote;
@@ -65,11 +72,19 @@ class EstimatePriceResponseModel {
   final List<CleaningWorkerRoomAssignment> workerRoomAssignments;
   final List<CleaningMaterialLineModel> materials;
   final List<CleaningMaterialLineModel> availableMaterials;
+  final Map<String, int> roomWorkMinutes;
   final List<CleaningSpecialServiceLineModel> specialServices;
   final CleaningOpenTimeModel? openTime;
 
   const EstimatePriceResponseModel({
     this.size,
+    this.quoteSignature,
+    this.quoteId,
+    this.quoteExpiresAt,
+    this.visits = const [],
+    this.schedulingPolicy = const {},
+    this.specialServicesCatalog = const [],
+    this.roomPeriods = const <Map<String, dynamic>>[],
     this.pricing,
     this.schedule,
     this.quote,
@@ -81,6 +96,7 @@ class EstimatePriceResponseModel {
     this.workerRoomAssignments = const [],
     this.materials = const <CleaningMaterialLineModel>[],
     this.availableMaterials = const <CleaningMaterialLineModel>[],
+    this.roomWorkMinutes = const <String, int>{},
     this.specialServices = const <CleaningSpecialServiceLineModel>[],
     this.openTime,
   });
@@ -96,6 +112,26 @@ class EstimatePriceResponseModel {
         ? _toMap(estimationRaw)
         : const <String, dynamic>{};
     return EstimatePriceResponseModel(
+      quoteSignature: json['quoteSignature']?.toString(),
+      quoteId: json['quoteId']?.toString(),
+      quoteExpiresAt: DateTime.tryParse(
+        json['quoteExpiresAt']?.toString() ?? '',
+      ),
+      visits: (json['visits'] as List? ?? [])
+          .whereType<Map>()
+          .map(_toMap)
+          .toList(),
+      schedulingPolicy: _toMap(json['schedulingPolicy']),
+      specialServicesCatalog: (json['specialServicesCatalog'] as List? ?? [])
+          .whereType<Map>()
+          .map(_toMap)
+          .toList(),
+      roomPeriods: json['roomPeriods'] is List
+          ? (json['roomPeriods'] as List)
+                .whereType<Map>()
+                .map((entry) => _toMap(entry))
+                .toList(growable: false)
+          : const <Map<String, dynamic>>[],
       size: json['size'] is Map
           ? EstimateSizeModel.fromJson(_toMap(json['size']))
           : null,
@@ -135,8 +171,17 @@ class EstimatePriceResponseModel {
       workerRoomAssignments: parseWorkerRoomAssignments(
         json['workerRoomAssignments'] ?? json['worker_room_assignments'],
       ),
+      roomWorkMinutes: _toMap(
+        _toMap(
+          json['materialsPreview'] ?? json['materials_preview'],
+        )['roomWorkMinutes'],
+      ).map((key, value) => MapEntry(key, _toInt(value) ?? 0)),
       availableMaterials: cleaningMaterialLinesFromJson(
-        json['materialsPreview'] ?? json['materials_preview'],
+        _toMap(
+              json['materialsPreview'] ?? json['materials_preview'],
+            )['items'] ??
+            json['materialsPreview'] ??
+            json['materials_preview'],
       ),
       materials: cleaningMaterialLinesFromJson(
         json['materials'] ??
@@ -266,11 +311,17 @@ class EstimateWorkerAcceptanceModel {
 class EstimateSizeModel {
   final int? estimatedSqm;
   final double? estimatedHours;
+  final double? estimatedWorkHours;
+  final double? estimatedDurationHours;
+  final int? estimatedDurationMinutes;
   final String? sizeTier;
 
   const EstimateSizeModel({
     this.estimatedSqm,
     this.estimatedHours,
+    this.estimatedWorkHours,
+    this.estimatedDurationHours,
+    this.estimatedDurationMinutes,
     this.sizeTier,
   });
 
@@ -278,6 +329,9 @@ class EstimateSizeModel {
     return EstimateSizeModel(
       estimatedSqm: (json['estimatedSqm'] as num?)?.toInt(),
       estimatedHours: (json['estimatedHours'] as num?)?.toDouble(),
+      estimatedWorkHours: _toDouble(json['estimatedWorkHours']),
+      estimatedDurationHours: _toDouble(json['estimatedDurationHours']),
+      estimatedDurationMinutes: _toInt(json['estimatedDurationMinutes']),
       sizeTier: json['sizeTier'] as String?,
     );
   }

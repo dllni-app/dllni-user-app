@@ -9,11 +9,7 @@ class V6HourlyServiceGuide extends StatelessWidget {
   Widget build(BuildContext context) => const Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      AppSectionHeading(
-        title: 'متى تختار عاملاً بالساعة؟',
-        description:
-            'عندما تكون حاجتك مساعدة منزلية مؤقتة في مهام محددة، ولا تحتاج طلب تنظيف شامل.',
-      ),
+      _HourlyInformation(),
       SizedBox(height: 12),
       _HourUseCase(
         icon: Icons.home_repair_service_outlined,
@@ -50,28 +46,57 @@ class _HourUseCase extends StatelessWidget {
   final String description;
 
   @override
-  Widget build(BuildContext context) => AppSurfaceCard(
-    section: AppSection.cleaning,
-    padding: const EdgeInsets.all(16),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.fromSTEB(4, 9, 4, 9),
     child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppSection.cleaning.soft,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(icon, size: 24, color: AppSection.cleaning.ink),
-        ),
+        Icon(icon, size: 23, color: const Color(0xFF354E7D)),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: AlnadhaTokens.sectionTitle),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(description, style: AlnadhaTokens.caption),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _HourlyInformation extends StatelessWidget {
+  const _HourlyInformation();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: const Color(0xFFDCE4EE)),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.info_outline_rounded, color: Color(0xFF172554)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'متى تختار عاملاً بالساعة؟',
+                style: AlnadhaTokens.sectionTitle,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'عندما تكون حاجتك مساعدة منزلية مؤقتة في مهام محددة، ولا تحتاج طلب تنظيف شامل.',
+                style: AlnadhaTokens.caption,
+              ),
             ],
           ),
         ),

@@ -17,6 +17,7 @@ class ClBookingReviewOverview extends StatelessWidget {
     required this.services,
     this.recurring = false,
     this.roomSizeBreakdown,
+    this.roomCleaningModes = const <String, String>{},
   });
 
   final String service;
@@ -28,6 +29,19 @@ class ClBookingReviewOverview extends StatelessWidget {
   final List<String> services;
   final bool recurring;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
+  final Map<String, String> roomCleaningModes;
+
+  int get _deepRoomCount =>
+      roomCleaningModes.values.where((value) => value == 'deep').length;
+
+  int get _regularRoomCount =>
+      roomCleaningModes.values.where((value) => value != 'deep').length;
+
+  String get _serviceLabel {
+    if (roomCleaningModes.isEmpty) return service;
+    if (_deepRoomCount > 0 && _regularRoomCount > 0) return 'حوسة وتعزيل';
+    return _deepRoomCount > 0 ? 'تعزيل' : 'حوسة';
+  }
 
   String get _materialLabel {
     if (!materialsRequested) {
@@ -54,7 +68,7 @@ class ClBookingReviewOverview extends StatelessWidget {
               roomSizeBreakdown!.corridor.total +
               roomSizeBreakdown!.shed.total;
     return ClServiceSectionCardWidget(
-      title: 'تفاصيل الحجز',
+      title: 'راجع تفاصيل الحجز',
       step: 0,
       showStepBadge: false,
       child: Column(
@@ -63,7 +77,7 @@ class ClBookingReviewOverview extends StatelessWidget {
           _ReviewInfoRow(
             icon: Icons.cleaning_services_outlined,
             label: 'الخدمة',
-            value: service,
+            value: _serviceLabel,
           ),
           if (rooms > 0) ...[
             const SizedBox(height: 14),
@@ -71,6 +85,28 @@ class ClBookingReviewOverview extends StatelessWidget {
               icon: Icons.home_work_outlined,
               label: 'المكان',
               value: '$rooms غرف ومساحات',
+            ),
+            for (final entry in <(String, int)>[
+              ('غرف النوم', roomSizeBreakdown?.bedroom.total ?? 0),
+              ('الحمامات', roomSizeBreakdown?.bathroom.total ?? 0),
+              ('المطابخ', roomSizeBreakdown?.kitchen.total ?? 0),
+              ('الصالات', roomSizeBreakdown?.livingRoom.total ?? 0),
+              ('الشرفات', roomSizeBreakdown?.balcony.total ?? 0),
+              ('الممرات', roomSizeBreakdown?.corridor.total ?? 0),
+              ('المستودعات', roomSizeBreakdown?.shed.total ?? 0),
+            ])
+              if (entry.$2 > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Text(entry.$1 + ': ' + entry.$2.toString()),
+                ),
+          ],
+          if (roomCleaningModes.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _ReviewInfoRow(
+              icon: Icons.checklist_outlined,
+              label: 'نوع التنظيف',
+              value: 'تعزيل: $_deepRoomCount · حوسة: $_regularRoomCount',
             ),
           ],
           const SizedBox(height: 14),
@@ -89,7 +125,7 @@ class ClBookingReviewOverview extends StatelessWidget {
           const SizedBox(height: 14),
           _ReviewInfoRow(
             icon: Icons.inventory_2_outlined,
-            label: 'المواد',
+            label: materialsRequested ? 'إحضار مواد التنظيف' : 'المواد',
             value: _materialLabel,
             maxLines: 2,
           ),
@@ -102,6 +138,11 @@ class ClBookingReviewOverview extends StatelessWidget {
                   ? services.join('، ')
                   : '${services.length} خدمات مختارة',
             ),
+            for (final selected in services)
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(selected),
+              ),
           ],
           if (recurring) ...[
             const SizedBox(height: 14),

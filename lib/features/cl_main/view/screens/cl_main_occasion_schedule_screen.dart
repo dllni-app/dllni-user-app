@@ -25,14 +25,13 @@ import '../helpers/cl_previous_workers_gender_filter.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
+import '../widgets/cl_booking_confirmation_sheet.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
 import '../widgets/cl_service_previous_workers_section_widget.dart';
-import '../widgets/cl_service_section_card_widget.dart';
 import '../widgets/cl_redesign_components.dart';
-import '../widgets/v6_booking_decision_guide.dart';
 import '../helpers/v6_booking_quote_guard.dart';
 import '../widgets/home_details_app_bar.dart';
 import 'cl_worker_profile_detail_screen.dart';
@@ -59,14 +58,17 @@ class _ClMainOccasionScheduleScreenState
   int _v7Stage = 0;
   bool _submissionRequested = false;
   bool _confirmationOpen = false;
+  bool _isCheckingSafetyPolicy = false;
+  bool _processingOpen = false;
+  int _requestedWorkerCount = 1;
   EstimatePriceResponseModel? _currentEstimate;
   late final ValueNotifier<AddressListItem?> _selectedAddress;
   ClCouponUiStatus _couponStatus = ClCouponUiStatus.idle;
   String? _couponMessage;
   String? _appliedCouponCode;
 
-  EstimatePriceResponseModel? get _activeEstimate =>
-      _currentEstimate ?? _routeArgs?.estimate;
+  // Price quotes are deliberately absent until the last review step.
+  EstimatePriceResponseModel? get _activeEstimate => _currentEstimate;
 
   double get _defaultSessionHours {
     final routedHours = _routeArgs?.hours;
@@ -93,14 +95,17 @@ class _ClMainOccasionScheduleScreenState
       )
       .toList(growable: false);
 
-  int get _routeNumberOfWorkers {
-    final requested = _routeArgs?.numberOfWorkers ?? 1;
-    return requested < 1 ? 1 : requested;
-  }
+  double get _longestSessionHours => _sessions.fold<double>(
+    0,
+    (longest, session) => session.hours > longest ? session.hours : longest,
+  );
+
+  int get _minimumWorkerCount =>
+      resolveMinimumEventWorkersForHours(_longestSessionHours);
 
   int get _resolvedNumberOfWorkers => resolveEventWorkerCountForHours(
-    hours: _defaultSessionHours,
-    requestedWorkers: _routeNumberOfWorkers,
+    hours: _longestSessionHours,
+    requestedWorkers: _requestedWorkerCount,
   );
 
   bool get _isMultiDay => _sessions.length > 1;
@@ -125,20 +130,6 @@ class _ClMainOccasionScheduleScreenState
     }
 
     final estimate = _activeEstimate;
-    final numberOfWorkers = _resolvedNumberOfWorkers;
-    final scheduleEntries = _sessions
-        .map(
-          (session) => ClServiceScheduleEntry(
-            dayDate: session.dateChosen
-                ? '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}'
-                : 'لم يتم اختيار التاريخ',
-            time: CleaningDateTimeUiFormat.timeRange(
-              session.time,
-              session.endTime,
-            ),
-          ),
-        )
-        .toList(growable: false);
 
     return BlocProvider.value(
       value: bloc,
@@ -150,9 +141,9 @@ class _ClMainOccasionScheduleScreenState
             listener: (context, state) {
               if (state.estimatePriceStatus == BlocStatus.success &&
                   state.estimatePrice != null) {
-                setState(() {
-                  _currentEstimate = state.estimatePrice;
-                });
+                if (_v7Stage == 2) {
+                  setState(() => _currentEstimate = state.estimatePrice);
+                }
               } else if (state.estimatePriceStatus == BlocStatus.failed &&
                   state.errorMessage != null &&
                   state.errorMessage!.isNotEmpty) {
@@ -172,11 +163,10 @@ class _ClMainOccasionScheduleScreenState
                 _submissionRequested = false;
               }
               if (state.createOrderStatus == BlocStatus.loading) {
-                Loading.show(context);
+                _showOrderPreparation();
                 return;
               }
-
-              Loading.close();
+              _dismissOrderPreparation();
               if (state.createOrderStatus == BlocStatus.success) {
                 final orderId = state.createOrderResult?.orderId;
                 if (orderId == null) {
@@ -226,233 +216,289 @@ class _ClMainOccasionScheduleScreenState
         ],
         child: BlocBuilder<ClMainBloc, ClMainState>(
           builder: (context, state) {
-            return Scaffold(
-              backgroundColor: const Color(0xFFF6F7F9),
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    const HomeDetailsAppBar(),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-                      child: ClRedesignStepHeader(
-                        currentStep: _v7Stage + 1,
-                        totalSteps: 3,
-                        title: switch (_v7Stage) {
-                          0 => 'أيام المناسبة',
-                          1 => 'فريق الخدمة',
-                          _ => 'مراجعة المناسبة',
-                        },
-                        subtitle: switch (_v7Stage) {
-                          0 => 'حدد أيام وأوقات الخدمة.',
-                          1 => 'اختر مقدم الخدمة المناسب.',
-                          _ => 'تأكد من التفاصيل والتكلفة قبل إرسال الطلب.',
+            return PopScope(
+              canPop: _v7Stage == 0,
+              onPopInvokedWithResult: (didPop, result) {
+                if (!didPop && _v7Stage > 0) {
+                  setState(() => _v7Stage--);
+                }
+              },
+              child: Scaffold(
+                backgroundColor: const Color(0xFFF6F7F9),
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      HomeDetailsAppBar(
+                        title: 'طلب مناسبة',
+                        subtitle: 'أكمل تفاصيل مناسبتك خطوة بخطوة',
+                        onBack: () {
+                          if (_v7Stage > 0) {
+                            setState(() => _v7Stage--);
+                          } else {
+                            Navigator.of(context).maybePop();
+                          }
                         },
                       ),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsetsDirectional.only(
-                          start: 20,
-                          end: 20,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                        child: ClRedesignStepHeader(
+                          currentStep: _v7Stage + 3,
+                          totalSteps: 5,
+                          title: switch (_v7Stage) {
+                            0 => 'أيام المناسبة',
+                            1 => 'فريق الخدمة',
+                            _ => 'مراجعة المناسبة',
+                          },
+                          subtitle: switch (_v7Stage) {
+                            0 => 'حدد أيام وأوقات الخدمة.',
+                            1 => 'اختر مقدم الخدمة المناسب.',
+                            _ => 'تأكد من التفاصيل والتكلفة قبل إرسال الطلب.',
+                          },
                         ),
-                        child: Column(
-                          children: [
-                            if (_v7Stage == 0) ...[
-                              const V6BookingDecisionGuide(
-                                topic: V6BookingDecisionTopic.eventSchedule,
-                              ),
-                              const SizedBox(height: 12),
-                              ClServiceSectionCardWidget(
-                                key: const Key(
-                                  'occasion_schedule_details_card',
-                                ),
-                                step: 0,
-                                showStepBadge: false,
-                                title: 'تفاصيل المناسبة',
-                                child: Column(
-                                  children: [
-                                    _OccasionInfoRow(
-                                      label: 'نوع المناسبة',
-                                      value: args.option.title,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _OccasionInfoRow(
-                                      label: 'عدد الضيوف',
-                                      value: '${args.guestsCount}',
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _OccasionInfoRow(
-                                      label: 'طبيعة المساعدة',
-                                      value: args.helpTypeLabel,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _OccasionInfoRow(
-                                      label: 'عدد الأيام',
-                                      value: '${_sessions.length}',
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _OccasionInfoRow(
-                                      label: 'إجمالي الساعات لكل عامل',
-                                      value:
-                                          '${_formatHours(_scheduleTotalHours)} ساعة',
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _OccasionInfoRow(
-                                      label: 'عدد العمال',
-                                      value: '$numberOfWorkers',
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _OccasionInfoRow(
-                                      label: 'إجمالي ساعات العمل',
-                                      value:
-                                          '${_formatHours(_scheduleTotalHours * numberOfWorkers)} ساعة',
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _OccasionInfoRow(
-                                      label: 'متطلبات خاصة',
-                                      value: args.specialRequirementLabel,
-                                    ),
-                                    if (args.notes != null &&
-                                        args.notes!.isNotEmpty) ...[
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsetsDirectional.only(
+                            start: 20,
+                            end: 20,
+                          ),
+                          child: Column(
+                            children: [
+                              if (_v7Stage == 0) ...[
+                                _buildMultiDayScheduleCard(),
+                              ],
+                              if (_v7Stage == 1) ...[
+                                ClRedesignCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      const Text(
+                                        'عدد العمال للمناسبة',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 16,
+                                          color: Color(0xFF172554),
+                                        ),
+                                      ),
                                       const SizedBox(height: 8),
-                                      _OccasionInfoRow(
-                                        label: 'ملاحظات',
-                                        value: args.notes!,
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            key: const Key(
+                                              'event_workers_increase',
+                                            ),
+                                            onPressed:
+                                                _requestedWorkerCount >=
+                                                    maxEventWorkerCount
+                                                ? null
+                                                : () => setState(
+                                                    () => _requestedWorkerCount =
+                                                        _resolvedNumberOfWorkers +
+                                                        1,
+                                                  ),
+                                            icon: const Icon(
+                                              Icons.add_circle_outline,
+                                            ),
+                                          ),
+                                          Text(
+                                            '$_resolvedNumberOfWorkers',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            key: const Key(
+                                              'event_workers_decrease',
+                                            ),
+                                            onPressed:
+                                                _requestedWorkerCount <=
+                                                    _minimumWorkerCount
+                                                ? null
+                                                : () => setState(
+                                                    () =>
+                                                        _requestedWorkerCount--,
+                                                  ),
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          const Icon(
+                                            Icons.groups_2_outlined,
+                                            color: Color(0xFF172554),
+                                          ),
+                                        ],
                                       ),
                                     ],
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              _buildMultiDayScheduleCard(),
-                            ],
-                            if (_v7Stage == 1) ...[
-                              const V6BookingDecisionGuide(
-                                topic: V6BookingDecisionTopic.teamSelection,
-                              ),
-                              const SizedBox(height: 12),
-                              ClServiceGenderPreferenceSectionWidget(
-                                selectedPreference: _explicitGenderPreference,
-                                onChanged: (preference) {
-                                  _handleGenderPreferenceChanged(
-                                    bloc,
-                                    preference,
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 10),
-                              ClServicePreviousWorkersSectionWidget(
-                                workers: filterPreviousWorkersByGender(
-                                  state.previousWorkers.list,
-                                  state.genderPreference,
-                                ),
-                                selectedWorkerIds: state.selectedWorkerIds,
-                                isLoading:
-                                    state.previousWorkersStatus ==
-                                    BlocStatus.loading,
-                                errorMessage:
-                                    state.previousWorkersStatus ==
-                                        BlocStatus.failed
-                                    ? state.errorMessage
-                                    : null,
-                                onSelectWorker: (workerId) {
-                                  final updatedWorkerIds = List<int>.from(
-                                    state.selectedWorkerIds,
-                                  );
-                                  if (updatedWorkerIds.contains(workerId)) {
-                                    updatedWorkerIds.remove(workerId);
-                                  } else {
-                                    updatedWorkerIds.add(workerId);
-                                  }
-                                  bloc.add(
-                                    SetPreferredWorkerEvent(workerId: workerId),
-                                  );
-                                  _requestUpdatedEstimate(
-                                    state,
-                                    selectedWorkerIds: updatedWorkerIds,
-                                  );
-                                },
-                                onOpenWorkerProfile: (worker) {
-                                  context.pushRoute(
-                                    '/clworkerprofiledetail',
-                                    arguments:
-                                        WorkerProfileRouteArgs.fromPreviousWorker(
-                                          worker,
-                                        ),
-                                  );
-                                },
-                              ),
-                            ],
-                            if (_v7Stage == 2) ...[
-                              const V6BookingDecisionGuide(
-                                topic: V6BookingDecisionTopic.bookingReview,
-                              ),
-                              const SizedBox(height: 12),
-                              ClServiceCouponSectionWidget(
-                                couponController: _couponController,
-                                status: _couponStatus,
-                                message: _couponMessage,
-                                onApply: _onApplyCoupon,
-                              ),
-                              if (_appliedCouponCode != null) ...[
-                                const SizedBox(height: 8),
-                                Align(
-                                  alignment: AlignmentDirectional.centerStart,
-                                  child: AppText.bodySmall(
-                                    'الكوبون المطبق: $_appliedCouponCode',
-                                    color: const Color(0xFF047857),
-                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
-                              const SizedBox(height: 12),
-                              ClServiceOrderSummarySectionWidget(
-                                priceSummary: estimate?.pricing?.priceSummary,
-                                basePrice: estimate?.pricing?.basePrice ?? 0,
-                                travelFee: estimate?.pricing?.travelFee ?? 0,
-                                addonsTotal:
-                                    estimate?.pricing?.addonsTotal ?? 0,
-                                totalPrice: estimate?.pricing?.totalPrice ?? 0,
-                                adminMargin: estimate?.pricing?.adminMargin,
-                                isPricingFinal:
-                                    estimate?.pricing?.isPricingFinal,
-                                currency: estimate?.pricing?.currency ?? 'SYP',
-                                scheduleEntries: scheduleEntries,
-                              ),
-                              const SizedBox(height: 12),
-                              const ClRedesignCard(
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.payments_outlined,
-                                      color: Color(0xFF0B7480),
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text('الدفع نقداً عند إتمام الخدمة.'),
-                                  ],
+                                const SizedBox(height: 12),
+                                ClServiceGenderPreferenceSectionWidget(
+                                  selectedPreference: _explicitGenderPreference,
+                                  onChanged: (preference) {
+                                    _handleGenderPreferenceChanged(
+                                      bloc,
+                                      preference,
+                                    );
+                                  },
                                 ),
-                              ),
+                                const SizedBox(height: 10),
+                                if (state.previousWorkersStatus ==
+                                        BlocStatus.success &&
+                                    filterPreviousWorkersByGender(
+                                      state.previousWorkers.list,
+                                      _explicitGenderPreference ??
+                                          state.genderPreference,
+                                    ).isNotEmpty)
+                                  ClRedesignCard(
+                                    child: ClServicePreviousWorkersSectionWidget(
+                                      workers: filterPreviousWorkersByGender(
+                                        state.previousWorkers.list,
+                                        _explicitGenderPreference ??
+                                            state.genderPreference,
+                                      ),
+                                      selectedWorkerIds:
+                                          state.selectedWorkerIds,
+                                      isLoading: false,
+                                      errorMessage:
+                                          state.previousWorkersStatus ==
+                                              BlocStatus.failed
+                                          ? state.errorMessage
+                                          : null,
+                                      onSelectWorker: (workerId) {
+                                        final updatedWorkerIds = List<int>.from(
+                                          state.selectedWorkerIds,
+                                        );
+                                        if (updatedWorkerIds.contains(
+                                          workerId,
+                                        )) {
+                                          updatedWorkerIds.remove(workerId);
+                                        } else {
+                                          updatedWorkerIds.add(workerId);
+                                        }
+                                        bloc.add(
+                                          SetPreferredWorkerEvent(
+                                            workerId: workerId,
+                                          ),
+                                        );
+                                        // Worker preference is local until final review.
+                                      },
+                                      onOpenWorkerProfile: (worker) {
+                                        context.pushRoute(
+                                          '/clworkerprofiledetail',
+                                          arguments:
+                                              WorkerProfileRouteArgs.fromPreviousWorker(
+                                                worker,
+                                              ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ],
+                              if (_v7Stage == 2) ...[
+                                ClServiceCouponSectionWidget(
+                                  couponController: _couponController,
+                                  status: _couponStatus,
+                                  message: _couponMessage,
+                                  onApply: _onApplyCoupon,
+                                ),
+                                if (_appliedCouponCode != null) ...[
+                                  const SizedBox(height: 8),
+                                  Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: AppText.bodySmall(
+                                      'الكوبون المطبق: $_appliedCouponCode',
+                                      color: const Color(0xFF047857),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                if (state.estimatePriceStatus ==
+                                    BlocStatus.failed)
+                                  ClRedesignCard(
+                                    child: Column(
+                                      children: [
+                                        const Icon(
+                                          Icons.wifi_off_outlined,
+                                          color: Color(0xFFB42318),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                          'تعذر جلب السعر. يمكنك المحاولة مجدداً.',
+                                        ),
+                                        const SizedBox(height: 10),
+                                        OutlinedButton.icon(
+                                          onPressed: () =>
+                                              _requestUpdatedEstimate(state),
+                                          icon: const Icon(Icons.refresh),
+                                          label: const Text(
+                                            'إعادة محاولة جلب السعر',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else if (estimate == null ||
+                                    state.estimatePriceStatus ==
+                                        BlocStatus.loading)
+                                  const ClRedesignCard(
+                                    child: Column(
+                                      children: [
+                                        LinearProgressIndicator(),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'جارٍ تجهيز السعر النهائي للمراجعة',
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  ClServiceOrderSummarySectionWidget(
+                                    priceSummary:
+                                        estimate.pricing?.priceSummary,
+                                    basePrice: estimate.pricing?.basePrice ?? 0,
+                                    travelFee: estimate.pricing?.travelFee ?? 0,
+                                    addonsTotal:
+                                        estimate.pricing?.addonsTotal ?? 0,
+                                    totalPrice:
+                                        estimate.pricing?.totalPrice ?? 0,
+                                    adminMargin: estimate.pricing?.adminMargin,
+                                    isPricingFinal:
+                                        estimate.pricing?.isPricingFinal,
+                                    currency:
+                                        estimate.pricing?.currency ?? 'SYP',
+                                    scheduleEntries:
+                                        const <ClServiceScheduleEntry>[],
+                                  ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                    ClRedesignStickyActions(
-                      primaryLabel: _v7Stage == 2
-                          ? 'تأكيد طلب المناسبة'
-                          : 'متابعة',
-                      onPrimary: () => _advanceV7Occasion(state),
-                      primaryEnabled:
-                          !_submissionRequested &&
-                          !_confirmationOpen &&
-                          state.createOrderStatus != BlocStatus.loading &&
-                          state.estimatePriceStatus != BlocStatus.loading,
-                      secondaryLabel: 'السابق',
-                      onSecondary: () => _v7Stage > 0
-                          ? setState(() => _v7Stage--)
-                          : context.pop(),
-                    ),
-                  ],
+                      ClRedesignStickyActions(
+                        primaryLabel: _v7Stage == 2
+                            ? 'تأكيد طلب المناسبة'
+                            : 'متابعة',
+                        onPrimary: () => _advanceV7Occasion(state),
+                        primaryEnabled:
+                            !_submissionRequested &&
+                            !_confirmationOpen &&
+                            !_isCheckingSafetyPolicy &&
+                            state.createOrderStatus != BlocStatus.loading &&
+                            (_v7Stage != 2 ||
+                                (estimate?.pricing?.totalPrice != null &&
+                                    state.estimatePriceStatus !=
+                                        BlocStatus.loading)),
+                        secondaryLabel: 'السابق',
+                        onSecondary: () => _v7Stage > 0
+                            ? setState(() => _v7Stage--)
+                            : context.pop(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -464,13 +510,20 @@ class _ClMainOccasionScheduleScreenState
 
   void _advanceV7Occasion(ClMainState state) {
     if (_v7Stage == 0) {
-      if (_sessions.any((session) => !session.dateChosen)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('اختر موعد كل يوم قبل المتابعة.')),
-        );
+      final error = _validateSchedule();
+      if (error != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
         return;
       }
-      setState(() => _v7Stage = 1);
+      setState(() {
+        _v7Stage = 1;
+        if (_requestedWorkerCount < _minimumWorkerCount) {
+          _requestedWorkerCount = _minimumWorkerCount;
+        }
+      });
+      _requestPreviousWorkers();
       return;
     }
     if (_v7Stage == 1) {
@@ -480,78 +533,62 @@ class _ClMainOccasionScheduleScreenState
         );
         return;
       }
-      setState(() => _v7Stage = 2);
+      if (_explicitGenderPreference == CleaningGenderPreference.female &&
+          state.safetyConfirmation == null) {
+        _confirmFemaleSafetyOnContinue();
+        return;
+      }
+      _openReview(state);
       return;
     }
     _onSubmitPressed(state);
   }
 
   Widget _buildMultiDayScheduleCard() {
-    final estimateSchedule = _activeEstimate?.schedule;
-    return ClRedesignCard(
-      key: const Key('occasion_multi_day_schedule_card'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'أيام وأوقات المناسبة',
-            textAlign: TextAlign.start,
-            style: TextStyle(
-              color: Color(0xFF182232),
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: AppText.bodySmall(
-                  '${_sessions.length} ${_sessions.length == 1 ? 'يوم عمل مختار' : 'أيام عمل مختارة'}',
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF374151),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'أيام وأوقات المناسبة',
+                style: TextStyle(
+                  color: Color(0xFF172554),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 17,
                 ),
               ),
-              TextButton.icon(
-                key: const Key('add_event_session_day'),
-                onPressed: _sessions.length >= 31 ? null : _addSessionDate,
-                icon: const Icon(Icons.add_circle_outline, size: 18),
-                label: const Text('إضافة يوم عمل'),
-              ),
-            ],
-          ),
-          if (_sessions.length > 1) ...[
-            const SizedBox(height: 4),
-            OutlinedButton.icon(
-              key: const Key('apply_event_time_to_all'),
-              onPressed: _applyFirstSessionToAll,
-              icon: const Icon(Icons.copy_all_outlined, size: 18),
-              label: const Text('توحيد وقت الخدمة'),
+            ),
+            TextButton.icon(
+              key: const Key('add_event_session_day'),
+              onPressed: _sessions.length >= 31 ? null : _addSessionDate,
+              icon: const Icon(Icons.add_circle_outline, size: 18),
+              label: const Text('إضافة يوم'),
             ),
           ],
-          const SizedBox(height: 10),
-          ...List.generate(_sessions.length, (index) {
-            final session = _sessions[index];
-            final estimateSession = estimateSchedule?.sessionAt(index);
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: index == _sessions.length - 1 ? 0 : 10,
-              ),
-              child: _EventSessionCard(
-                sequence: index + 1,
-                session: session,
-                canRemove: _sessions.length > 1,
-                estimatedPrice: estimateSession?.totalPrice,
-                currency: _activeEstimate?.pricing?.currency ?? 'SYP',
-                onEditDate: () => _pickSessionDate(index),
-                onEditTime: () => _pickSessionTime(index),
-                onEditDuration: () => _editSessionDuration(index),
-                onRemove: () => _removeSession(index),
-              ),
-            );
-          }),
+        ),
+        if (_sessions.length > 1)
+          TextButton.icon(
+            key: const Key('apply_event_time_to_all'),
+            onPressed: _applyFirstSessionToAll,
+            icon: const Icon(Icons.copy_all_outlined),
+            label: const Text('نسخ وقت اليوم الأول للأيام الأخرى'),
+          ),
+        const SizedBox(height: 10),
+        for (var index = 0; index < _sessions.length; index++) ...[
+          _EventSessionCard(
+            sequence: index + 1,
+            session: _sessions[index],
+            canRemove: _sessions.length > 1,
+            onEditDate: () => _pickSessionDate(index),
+            onEditTime: () => _pickSessionTime(index),
+            onEditDuration: () => _editSessionDuration(index),
+            onRemove: () => _removeSession(index),
+          ),
+          const SizedBox(height: 12),
         ],
-      ),
+      ],
     );
   }
 
@@ -564,7 +601,8 @@ class _ClMainOccasionScheduleScreenState
     if (args is ClMainOccasionScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
-      _currentEstimate = args.estimate;
+      _currentEstimate = null;
+      _requestedWorkerCount = args.numberOfWorkers;
       _selectedAddress.value = args.defaultAddress;
       _sessions.add(
         _EventSessionDraft(
@@ -574,7 +612,6 @@ class _ClMainOccasionScheduleScreenState
         ),
       );
       _sortSessions();
-      _requestPreviousWorkers();
     }
   }
 
@@ -854,9 +891,10 @@ class _ClMainOccasionScheduleScreenState
         _couponMessage = 'تم تعديل أيام المناسبة. أعد تطبيق الكوبون.';
       });
     }
-    _requestPreviousWorkers();
-    final state = _bloc?.state;
-    if (state != null) _requestUpdatedEstimate(state);
+    // A different day/time invalidates previously selected workers.
+    _bloc?.add(ClearPreferredWorkersEvent());
+    // Schedule edits are in-memory; request a single quote at final review.
+    _currentEstimate = null;
   }
 
   void _requestPreviousWorkers() {
@@ -882,27 +920,24 @@ class _ClMainOccasionScheduleScreenState
     );
   }
 
-  Future<void> _handleGenderPreferenceChanged(
+  void _handleGenderPreferenceChanged(
     ClMainBloc bloc,
     CleaningGenderPreference preference,
-  ) async {
-    final selectedWorkerIds = _workerIdsMatchingPreference(
-      bloc.state,
-      preference,
-    );
-
+  ) {
+    if (_explicitGenderPreference != preference) {
+      bloc.add(ClearPreferredWorkersEvent());
+    }
     setState(() => _explicitGenderPreference = preference);
     if (preference != CleaningGenderPreference.female) {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
-      _requestUpdatedEstimate(bloc.state, selectedWorkerIds: selectedWorkerIds);
-      return;
     }
+  }
 
-    Loading.show(context);
+  Future<void> _confirmFemaleSafetyOnContinue() async {
+    if (_isCheckingSafetyPolicy) return;
+    setState(() => _isCheckingSafetyPolicy = true);
     final response = await getIt<ClMainRepo>().getFemaleWorkerSafetyPolicy();
-    Loading.close();
     if (!mounted) return;
-
     await response.fold(
       (failure) async {
         ToastComponent.showToast(context, msg: failure.message);
@@ -913,36 +948,24 @@ class _ClMainOccasionScheduleScreenState
           policy: policy,
         );
         if (!mounted || confirmation == null) return;
-        bloc.add(
+        _bloc!.add(
           SetGenderPreferenceEvent(
-            preference: preference,
+            preference: CleaningGenderPreference.female,
             workEnvironmentConfirmation: confirmation,
           ),
         );
-        _requestUpdatedEstimate(
-          bloc.state,
-          selectedWorkerIds: selectedWorkerIds,
-        );
+        _openReview(_bloc!.state);
       },
     );
+    if (mounted) setState(() => _isCheckingSafetyPolicy = false);
   }
 
-  List<int> _workerIdsMatchingPreference(
-    ClMainState state,
-    CleaningGenderPreference preference,
-  ) {
-    if (preference == CleaningGenderPreference.any) {
-      return List<int>.from(state.selectedWorkerIds);
-    }
-
-    final allowedIds = filterPreviousWorkersByGender(
-      state.previousWorkers.list,
-      preference,
-    ).map((worker) => worker.id).whereType<int>().toSet();
-
-    return state.selectedWorkerIds
-        .where(allowedIds.contains)
-        .toList(growable: false);
+  void _openReview(ClMainState state) {
+    setState(() {
+      _v7Stage = 2;
+      _currentEstimate = null;
+    });
+    _requestUpdatedEstimate(state);
   }
 
   Future<void> _onApplyCoupon(String code) async {
@@ -1103,6 +1126,58 @@ class _ClMainOccasionScheduleScreenState
     return null;
   }
 
+  void _showOrderPreparation() {
+    if (_processingOpen || !mounted) return;
+    _processingOpen = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(26),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 5,
+                    color: Color(0xFF172554),
+                  ),
+                ),
+                SizedBox(height: 22),
+                Text(
+                  'عم نرسل طلبك',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'ثواني وبنوصل طلبك للفريق... خلّي الباقي علينا!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _dismissOrderPreparation() {
+    if (!_processingOpen || !mounted) return;
+    _processingOpen = false;
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
   Future<void> _onSubmitPressed(ClMainState state) async {
     if (_submissionRequested ||
         _confirmationOpen ||
@@ -1134,7 +1209,7 @@ class _ClMainOccasionScheduleScreenState
       return;
     }
 
-    if (state.genderPreference == CleaningGenderPreference.female &&
+    if (_explicitGenderPreference == CleaningGenderPreference.female &&
         state.safetyConfirmation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
@@ -1180,27 +1255,12 @@ class _ClMainOccasionScheduleScreenState
       return;
     }
     _confirmationOpen = true;
-    final accepted = await showDialog<bool>(
+    final accepted = await showClBookingConfirmationSheet(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('تأكيد طلب المناسبة'),
-        content: Text(
-          'راجع تقدير الخدمة الصادر من النظام: '
-          '${quote.toStringAsFixed(0)} ${pricing.currency}. '
-          '${_appliedCouponCode == null ? '' : 'تم تطبيق كوبون؛ راجع قيمة الخصم في صفحة المراجعة. '}'
-          'الدفع نقداً عند إتمام الخدمة. هل تريد إرسال الطلب؟',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('مراجعة التفاصيل'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('تأكيد وإرسال'),
-          ),
-        ],
-      ),
+      title: 'تأكيد طلب المناسبة',
+      total: quote,
+      currency: pricing.currency ?? 'SYP',
+      icon: Icons.event_available_outlined,
     );
     _confirmationOpen = false;
     if (!mounted ||
@@ -1247,7 +1307,7 @@ class _ClMainOccasionScheduleScreenState
             first.date,
           ),
           scheduledTime: first.time,
-          genderPreference: state.genderPreference,
+          genderPreference: _explicitGenderPreference ?? state.genderPreference,
           workEnvironmentConfirmation: state.safetyConfirmation,
           assignmentMode: assignment.assignmentMode,
           preferredWorkerIds: assignment.preferredWorkerIds,
@@ -1357,129 +1417,102 @@ class _EventSessionDraft {
 }
 
 class _EventSessionCard extends StatelessWidget {
-  final int sequence;
-  final _EventSessionDraft session;
-  final bool canRemove;
-  final double? estimatedPrice;
-  final String currency;
-  final VoidCallback onEditDate;
-  final VoidCallback onEditTime;
-  final VoidCallback onEditDuration;
-  final VoidCallback onRemove;
-
   const _EventSessionCard({
     required this.sequence,
     required this.session,
     required this.canRemove,
-    required this.estimatedPrice,
-    required this.currency,
     required this.onEditDate,
     required this.onEditTime,
     required this.onEditDuration,
     required this.onRemove,
   });
 
-  String _hours(double value) =>
-      value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
-
-  String _money(double value) =>
-      value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(2);
+  final int sequence;
+  final _EventSessionDraft session;
+  final bool canRemove;
+  final VoidCallback onEditDate;
+  final VoidCallback onEditTime;
+  final VoidCallback onEditDuration;
+  final VoidCallback onRemove;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: Key('event_session_card_$sequence'),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: AppText.bodyMedium(
-                  'اليوم $sequence',
+  Widget build(BuildContext context) => ClRedesignCard(
+    key: Key('event_session_card_$sequence'),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'اليوم $sequence',
+                style: const TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
+                  color: Color(0xFF172554),
                 ),
               ),
-              if (canRemove)
-                IconButton(
-                  tooltip: 'إزالة يوم العمل',
-                  onPressed: onRemove,
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Color(0xFFB91C1C),
-                  ),
+            ),
+            if (canRemove)
+              IconButton(
+                onPressed: onRemove,
+                tooltip: 'إزالة اليوم',
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Color(0xFFB42318),
                 ),
-            ],
-          ),
-          AppText.bodySmall(
-            '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}',
-            fontWeight: FontWeight.w700,
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: onEditDate,
-            icon: const Icon(Icons.event_outlined, size: 17),
-            label: const Text('تعديل يوم العمل'),
-          ),
-          const SizedBox(height: 10),
-          _OccasionInfoRow(
-            label: 'من',
-            value: session.timeChosen
-                ? CleaningDateTimeUiFormat.time(session.time)
-                : 'اختر الوقت',
-          ),
-          const SizedBox(height: 6),
-          _OccasionInfoRow(
-            label: 'إلى',
-            value: session.timeChosen
-                ? CleaningDateTimeUiFormat.time(session.endTime)
-                : '—',
-          ),
-          const SizedBox(height: 6),
-          _OccasionInfoRow(
-            label: 'المدة',
-            value: session.hoursChosen
-                ? '${_hours(session.hours)} ساعة'
-                : 'اختر المدة',
-          ),
-          if (estimatedPrice != null) ...[
-            const SizedBox(height: 6),
-            _OccasionInfoRow(
-              label: 'السعر التقديري',
-              value: '${_money(estimatedPrice!)} $currency',
+              ),
+          ],
+        ),
+        Text(
+          session.dateChosen
+              ? '${CleaningDateTimeUiFormat.weekday(session.date)}، ${CleaningDateTimeUiFormat.date(session.date)}'
+              : 'اختر تاريخ اليوم',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: onEditDate,
+          icon: const Icon(Icons.event_outlined),
+          label: const Text('اختيار التاريخ'),
+        ),
+        const SizedBox(height: 12),
+        const Divider(color: Color(0xFFE4E9F1)),
+        _OccasionInfoRow(
+          label: 'وقت البدء',
+          value: session.timeChosen
+              ? CleaningDateTimeUiFormat.time(session.time)
+              : 'لم يُحدد',
+        ),
+        _OccasionInfoRow(
+          label: 'مدة العمل',
+          value: session.hoursChosen
+              ? '${session.hours.toStringAsFixed(session.hours % 1 == 0 ? 0 : 1)} ساعة'
+              : 'لم تُحدد',
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onEditTime,
+                icon: const Icon(Icons.schedule_outlined),
+                label: const Text('تحديد الوقت'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onEditDuration,
+                icon: const Icon(Icons.timelapse_outlined),
+                label: const Text('تحديد المدة'),
+              ),
             ),
           ],
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onEditTime,
-                  icon: const Icon(Icons.schedule, size: 17),
-                  label: const Text('تعديل الوقت'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onEditDuration,
-                  icon: const Icon(Icons.timelapse, size: 17),
-                  label: const Text('تعديل المدة'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
 class _OccasionInfoRow extends StatelessWidget {

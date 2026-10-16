@@ -31,12 +31,14 @@ class EstimateCleaningPriceUseCase
 
 class EstimateCleaningPriceParams with Params {
   final String propertyType;
+  final List<Map<String, dynamic>>? roomPeriods;
   final int? bedrooms;
   final int? rooms;
   final int? bathrooms;
   final int? balconies;
   final String? livingRoomSize;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
+  final Map<String, String> roomCleaningModes;
   final CleaningType? cleaningType;
   final int? addressId;
   final double? addressLatitude;
@@ -64,12 +66,14 @@ class EstimateCleaningPriceParams with Params {
 
   EstimateCleaningPriceParams({
     required this.propertyType,
+    this.roomPeriods,
     required this.bedrooms,
     required this.rooms,
     required this.bathrooms,
     this.balconies,
     required this.livingRoomSize,
     this.roomSizeBreakdown,
+    this.roomCleaningModes = const <String, String>{},
     this.cleaningType,
     this.addressId,
     required this.addressLatitude,
@@ -115,13 +119,15 @@ class EstimateCleaningPriceParams with Params {
     this.numberOfWorkers,
     this.assignmentMode = CleaningAssignmentMode.openCount,
     this.serviceExtras = const CleaningServiceExtrasRequest(),
-  }) : bedrooms = null,
+  }) : roomPeriods = null,
+       bedrooms = null,
        workerRoomAssignments = null,
        rooms = null,
        bathrooms = null,
        balconies = null,
        livingRoomSize = null,
        roomSizeBreakdown = null,
+       roomCleaningModes = const <String, String>{},
        cleaningType = null,
        recurringSessions = const <CleaningRecurringSessionInput>[],
        recurringCalculationMode = CleaningRecurringCalculationMode.task,
@@ -132,13 +138,15 @@ class EstimateCleaningPriceParams with Params {
     required this.addressId,
     required int workerCount,
     required int expectedMaxMinutes,
-  }) : propertyType = 'apartment',
+  }) : roomPeriods = null,
+       propertyType = 'apartment',
        bedrooms = 0,
        rooms = 0,
        bathrooms = 0,
        balconies = 0,
        livingRoomSize = CleaningRoomSize.small.apiValue,
        roomSizeBreakdown = const CleaningRoomSizeBreakdown(),
+       roomCleaningModes = const <String, String>{},
        cleaningType = CleaningType.regularCleaning,
        addressLatitude = null,
        addressLongitude = null,
@@ -230,6 +238,8 @@ class EstimateCleaningPriceParams with Params {
       'living_room_size': _resolvedLivingRoomSize,
       if (roomSizeBreakdown != null)
         'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
+      if (roomCleaningModes.isNotEmpty)
+        'room_cleaning_modes': roomCleaningModes,
       if (cleaningType != null)
         'cleaning_mode': cleaningType!.cleaningModeValue,
     };
@@ -269,13 +279,27 @@ class EstimateCleaningPriceParams with Params {
         'addressLongitude': addressLongitude,
       'assignmentMode': workerSelection.assignmentMode.apiValue,
       if (isRecurring || workerIds.length > 1)
-        'workerScope': isRecurring ? workerSelection.scope.apiValue : 'specific',
+        'workerScope': isRecurring
+            ? workerSelection.scope.apiValue
+            : 'specific',
       if (workerIds.isNotEmpty) 'preferredWorkerIds': workerIds,
       'numberOfWorkers': workerSelection.numberOfWorkers,
       ...serviceExtras.toJson(),
     };
     if (schedule != null) {
       body['schedule'] = schedule;
+    }
+    if (roomPeriods != null) {
+      body
+        ..remove('requestMaterials')
+        ..remove('materials')
+        ..remove('specialServices')
+        ..remove('workerRoomAssignments')
+        ..remove('preferredWorkerIds')
+        ..remove('workerScope')
+        ..remove('openTime');
+      body['assignmentMode'] = 'open_count';
+      body['roomPeriods'] = roomPeriods;
     }
 
     final assignments = workerRoomAssignments == null

@@ -46,9 +46,11 @@ void main() {
     expect(find.text('سجل الطلب'), findsOneWidget);
     expect(find.textContaining('المرحلة الحالية'), findsOneWidget);
     expect(find.text('تم استلام الطلب'), findsOneWidget);
-    expect(find.text('المهام المطلوبة'), findsOneWidget);
-    expect(find.text('غرف النوم'), findsOneWidget);
-    expect(find.text('الحمامات'), findsOneWidget);
+    // Property room counts belong in the separate room-details section,
+    // not inside the user-facing tasks card.
+    expect(find.text('المهام المطلوبة'), findsNothing);
+    expect(find.text('غرف النوم'), findsNothing);
+    expect(find.text('الحمامات'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

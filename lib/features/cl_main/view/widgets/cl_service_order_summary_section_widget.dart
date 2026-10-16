@@ -64,33 +64,15 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showMinimumOrderWarning =
-        minimumOrderApplied &&
-        minimumOrderPrice != null &&
-        minimumOrderPrice! > 0;
     final scheduleDateLine = _scheduleDateLine;
-    final hasScheduleEntries = scheduleEntries.isNotEmpty;
-    // Split the server total for presentation only. Minimum-order adjustment
-    // and management margin remain in the service row; neither is added again.
-    final displayedAddons = addonsTotal
-        .clamp(0, (totalPrice - travelFee).clamp(0, double.infinity))
-        .toDouble();
-    final displayedServicePrice = (totalPrice - travelFee - displayedAddons)
-        .clamp(0, double.infinity)
-        .toDouble();
-    final hasDiscount = discountAmount != null && discountAmount! > 0;
-    // The coupon preview prices one visit without all selected extras.
-    // Submission re-quotes the full booking, so this total stays unchanged.
-    final displayedTotal = totalPrice;
-    final summary = priceSummary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (hasScheduleEntries ||
+        if (scheduleEntries.isNotEmpty ||
             scheduleDateLine != null ||
-            (scheduleTimeRange != null && scheduleTimeRange!.isNotEmpty)) ...[
+            (scheduleTimeRange?.isNotEmpty ?? false)) ...[
           Container(
-            padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFFF5F8FC),
               border: Border.all(color: const Color(0xFFE5EAF2)),
@@ -99,63 +81,28 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.event_available_outlined,
-                      size: 20,
-                      color: SharedPlatformColors.primary,
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'موعد الخدمة',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
+                const Text(
+                  'موعد الخدمة',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
                 ),
-                const SizedBox(height: 10),
-                if (hasScheduleEntries)
-                  ExpansionTile(
-                    key: const Key('price_schedule_visits'),
-                    tilePadding: EdgeInsets.zero,
-                    title: Text('${scheduleEntries.length} زيارات'),
-                    subtitle: Text(
-                      'أول زيارة: ${scheduleEntries.first.dayDate}',
+                const SizedBox(height: 8),
+                if (scheduleEntries.isNotEmpty)
+                  ...scheduleEntries.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: _ScheduleEntryRowWidget(entry: entry),
                     ),
-                    children: [
-                      for (final entry in scheduleEntries)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: _ScheduleEntryRowWidget(entry: entry),
-                        ),
-                    ],
                   )
                 else ...[
-                  if (scheduleDateLine != null)
-                    Text(
-                      scheduleDateLine,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  if (scheduleTimeRange != null &&
-                      scheduleTimeRange!.isNotEmpty) ...[
-                    const SizedBox(height: 5),
+                  if (scheduleDateLine != null) Text(scheduleDateLine),
+                  if (scheduleTimeRange?.isNotEmpty ?? false)
                     Text(
                       scheduleTimeRange!,
                       style: const TextStyle(
-                        fontSize: 14,
-                        color: SharedPlatformColors.primary,
                         fontWeight: FontWeight.w800,
+                        color: SharedPlatformColors.primary,
                       ),
                     ),
-                  ],
                 ],
               ],
             ),
@@ -163,124 +110,41 @@ class ClServiceOrderSummarySectionWidget extends StatelessWidget {
           const SizedBox(height: 12),
         ],
         Container(
+          key: const Key('price_total_card'),
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFFEDF3FF),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: SharedPlatformColors.border),
           ),
-          padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.receipt_long_outlined,
-                    size: 22,
-                    color: SharedPlatformColors.primary,
-                  ),
-                  SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      'ملخص السعر',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: SharedPlatformColors.primary,
-                      ),
-                    ),
-                  ),
-                ],
+              const Text(
+                'السعر الإجمالي للطلب',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: SharedPlatformColors.primary,
+                ),
               ),
               const SizedBox(height: 10),
-              const SizedBox(height: 8),
-              _SummaryRowWidget(
-                label: 'قيمة الخدمة',
-                value: (summary?.serviceCharge ?? displayedServicePrice)
-                    .formatMoney(),
-              ),
-              const SizedBox(height: 8),
-              if (summary != null && summary.materials > 0) ...[
-                _SummaryRowWidget(
-                  label: 'مواد التنظيف',
-                  value: summary.materials.formatMoney(),
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (summary != null && summary.specialServices > 0) ...[
-                _SummaryRowWidget(
-                  label: 'الخدمات المتخصصة',
-                  value: summary.specialServices.formatMoney(),
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (summary == null && displayedAddons > 0) ...[
-                _SummaryRowWidget(
-                  label: 'الخدمات والمواد الإضافية',
-                  value: displayedAddons.formatMoney(),
-                ),
-                const SizedBox(height: 8),
-              ],
-              _SummaryRowWidget(
-                label: 'رسوم التنقل',
-                value: (summary?.transport ?? travelFee).formatMoney(),
-              ),
-              if (hasDiscount) ...[
-                const SizedBox(height: 8),
-                _SummaryRowWidget(
-                  label: 'الخصم المتوقع',
-                  value: '- ${discountAmount!.formatMoney()}',
-                  valueColor: const Color(0xFF047857),
-                ),
-              ],
-              const SizedBox(height: 10),
-              const Divider(color: Color(0xFFE5E7EB), thickness: 1),
-              const SizedBox(height: 8),
-              Container(
-                key: const Key('price_total_card'),
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEDF3FF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: _SummaryRowWidget(
-                  label: summary?.quoteKind == 'preliminary'
-                      ? 'الإجمالي المبدئي'
-                      : isPricingFinal == false
-                      ? 'الإجمالي التقديري'
-                      : 'الإجمالي',
-                  value: '${displayedTotal.formatMoney()} $_currencyLabel',
-                  isTotal: true,
+              Text(
+                '${totalPrice.formatMoney()} $_currencyLabel',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.w900,
+                  color: SharedPlatformColors.primary,
                 ),
               ),
-              if (hasDiscount) ...[
-                const SizedBox(height: 6),
+              if (isPricingFinal == false) ...[
+                const SizedBox(height: 8),
                 const Text(
-                  'الخصم المعروض مبدئي. سيؤكد النظام المبلغ النهائي عند إرسال الطلب.',
-                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
-                ),
-              ],
-              if (showMinimumOrderWarning) ...[
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7E8),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFF3D6A1)),
-                  ),
-                  child: AppText.bodySmall(
-                    'أقل قيمة لطلب التنظيف هي ${minimumOrderPrice!.formatMoney()}، وتم اعتمادها لأن قيمة الطلب أقل من الحد الأدنى.',
-                    color: const Color(0xFF8A5A12),
-                    fontWeight: FontWeight.w600,
-                    textAlign: TextAlign.right,
-                  ),
+                  'السعر تقديري، ويتم تأكيده عند إسناد العامل.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
                 ),
               ],
             ],
@@ -316,49 +180,6 @@ class _ScheduleEntryRowWidget extends StatelessWidget {
             entry.time,
             color: const Color(0xFF111827),
             fontWeight: FontWeight.w700,
-            textAlign: TextAlign.end,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SummaryRowWidget extends StatelessWidget {
-  const _SummaryRowWidget({
-    required this.label,
-    required this.value,
-    this.isTotal = false,
-    this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final bool isTotal;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isTotal
-        ? SharedPlatformColors.primary
-        : SharedPlatformColors.ink;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: AppText.bodyMedium(
-            label,
-            color: color,
-            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
-            textAlign: TextAlign.start,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: AppText.bodyMedium(
-            value,
-            color: valueColor ?? color,
-            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
             textAlign: TextAlign.end,
           ),
         ),

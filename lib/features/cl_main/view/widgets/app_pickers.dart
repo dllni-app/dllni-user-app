@@ -21,13 +21,27 @@ class AppPickers {
         locale: _pickerUiLocale,
         child: Theme(
           data: ThemeData.light().copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor,
-              onSurface: Colors.black,
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF192857),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF172554),
             ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: Colors.white,
+            timePickerTheme: TimePickerThemeData(
+              dayPeriodColor: WidgetStateColor.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? const Color(0xFF192857)
+                    : Colors.white,
+              ),
+              dayPeriodTextColor: WidgetStateColor.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? Colors.white
+                    : const Color(0xFF192857),
+              ),
+              dayPeriodBorderSide: const BorderSide(color: Color(0xFFB5C3DA)),
+              dialHandColor: const Color(0xFF192857),
+              dialBackgroundColor: const Color(0xFFF1F5FA),
             ),
+            dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         ),
@@ -99,32 +113,25 @@ class AppPickers {
 
     final requestedStartDate = startDate == null
         ? todayDate
-        : DateTime(
-            startDate.year,
-            startDate.month,
-            startDate.day,
-          );
+        : DateTime(startDate.year, startDate.month, startDate.day);
 
     final firstSelectableDate =
         requestedStartDate.difference(todayDate).inDays <= 1
-            ? todayDate
-            : requestedStartDate;
+        ? todayDate
+        : requestedStartDate;
 
     final lastSelectableDate = todayDate.add(const Duration(days: 365 * 5));
 
     final requestedInitialDate = initialDate == null
         ? requestedStartDate
-        : DateTime(
-            initialDate.year,
-            initialDate.month,
-            initialDate.day,
-          );
+        : DateTime(initialDate.year, initialDate.month, initialDate.day);
 
-    final clampedInitialDate = requestedInitialDate.isBefore(firstSelectableDate)
+    final clampedInitialDate =
+        requestedInitialDate.isBefore(firstSelectableDate)
         ? firstSelectableDate
         : requestedInitialDate.isAfter(lastSelectableDate)
-            ? lastSelectableDate
-            : requestedInitialDate;
+        ? lastSelectableDate
+        : requestedInitialDate;
 
     final DateTime? res = await showDatePicker(
       context: context,
@@ -142,9 +149,7 @@ class AppPickers {
               onPrimary: Colors.white,
               onSurface: Colors.black,
             ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: Colors.white,
-            ),
+            dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         ),

@@ -1,23 +1,30 @@
 import 'cleaning_room_size_breakdown.dart';
+import 'cleaning_type.dart';
 
 class CleaningProgressiveRoomUnit {
   const CleaningProgressiveRoomUnit({
     required this.roomType,
     required this.index,
     required this.size,
+    this.cleaningType = CleaningType.regularCleaning,
   });
 
   final CleaningRoomType roomType;
   final int index;
   final CleaningRoomSize size;
+  final CleaningType cleaningType;
 
   String get key => '${roomType.apiKey}.$index';
 
-  CleaningProgressiveRoomUnit copyWith({CleaningRoomSize? size}) {
+  CleaningProgressiveRoomUnit copyWith({
+    CleaningRoomSize? size,
+    CleaningType? cleaningType,
+  }) {
     return CleaningProgressiveRoomUnit(
       roomType: roomType,
       index: index,
       size: size ?? this.size,
+      cleaningType: cleaningType ?? this.cleaningType,
     );
   }
 }
@@ -108,6 +115,50 @@ class CleaningProgressiveRoomState {
       counts: counts,
       units: List.unmodifiable(nextUnits),
     );
+  }
+
+  CleaningProgressiveRoomState setUnitCleaningType(
+    CleaningRoomType roomType,
+    int index,
+    CleaningType cleaningType,
+  ) {
+    final updated = units
+        .map(
+          (unit) => unit.roomType == roomType && unit.index == index
+              ? unit.copyWith(cleaningType: cleaningType)
+              : unit,
+        )
+        .toList(growable: false);
+    return CleaningProgressiveRoomState(
+      counts: counts,
+      units: List.unmodifiable(updated),
+    );
+  }
+
+  CleaningProgressiveRoomState setAllCleaningTypes(CleaningType cleaningType) {
+    return CleaningProgressiveRoomState(
+      counts: counts,
+      units: List.unmodifiable(
+        units.map((unit) => unit.copyWith(cleaningType: cleaningType)),
+      ),
+    );
+  }
+
+  /// Match the room keys used by worker assignment and backend pricing.
+  Map<String, String> get roomCleaningModes {
+    final values = <String, String>{};
+    for (final type in backendAcceptedRoomSizeBreakdownTypes) {
+      for (final size in CleaningRoomSize.values) {
+        var index = 0;
+        for (final unit in units) {
+          if (unit.roomType != type || unit.size != size) continue;
+          index++;
+          values['${type.apiKey}.${size.apiValue}.$index'] =
+              unit.cleaningType.cleaningModeValue;
+        }
+      }
+    }
+    return Map.unmodifiable(values);
   }
 
   /// Applies one chosen size to every room of the same type. Other types stay

@@ -43,10 +43,10 @@ class CleaningRoomAssignmentsSectionWidget extends StatelessWidget {
           (entry) => entry.workerId != null && entry.workerId! > 0,
         );
     return V7OrderPanel(
-      title: 'المهام والغرف',
+      title: 'تفاصيل الغرف',
       subtitle: editable
-          ? 'يمكنك تحديد العامل المناسب لكل غرفة.'
-          : 'تفاصيل توزيع العمل في طلبك.',
+          ? 'راجع نوع كل غرفة وحجمها، ويمكنك تحديد العامل المناسب لها.'
+          : 'الغرف المطلوب تنظيفها وتوزيعها على العمال.',
       trailing: isSaving
           ? const SizedBox(
               width: 20,
@@ -91,7 +91,16 @@ class _RoomAssignmentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = room.localizedDisplayLabel;
+    final sourceLabel = room.localizedDisplayLabel;
+    final size = switch (room.roomSize?.trim().toLowerCase()) {
+      'small' => 'صغير',
+      'medium' => 'متوسط',
+      'large' => 'كبير',
+      _ => null,
+    };
+    final label = size != null && !sourceLabel.contains(size)
+        ? '$sourceLabel · حجم $size'
+        : sourceLabel;
     return Row(
       children: [
         Container(

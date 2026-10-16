@@ -24,6 +24,7 @@ part 'cl_main_state.dart';
 
 @injectable
 class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
+  int _latestEstimateRequest = 0;
   final EstimateCleaningPriceUseCase estimateCleaningPriceUseCase;
   final GetCleaningServicesUseCase getCleaningServicesUseCase;
   final GetPreviousCleaningWorkersUseCase getPreviousCleaningWorkersUseCase;
@@ -93,21 +94,27 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     EstimateCleaningPriceEvent event,
     Emitter<ClMainState> emit,
   ) async {
+    final requestId = ++_latestEstimateRequest;
     debugPrint('ClMainBloc estimate request -> ${event.params.getBody()}');
     emit(
       state.copyWith(
         estimatePriceStatus: BlocStatus.loading,
+        clearEstimatePrice: true,
         clearErrorMessage: true,
         clearAssignmentFieldErrors: true,
       ),
     );
     final response = await estimateCleaningPriceUseCase(event.params);
+    // Bloc handles async estimate events concurrently. Never allow an older
+    // response to replace the newest quote or its failure state.
+    if (requestId != _latestEstimateRequest || emit.isDone) return;
     response.fold(
       (failure) {
         debugPrint('ClMainBloc estimate failed -> ${failure.message}');
         emit(
           state.copyWith(
             estimatePriceStatus: BlocStatus.failed,
+            clearEstimatePrice: true,
             errorMessage: failure.message,
             assignmentFieldErrors: filterWorkerRoomAssignmentFieldErrors(
               failure,
@@ -227,8 +234,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
           clearAssignmentFieldErrors: true,
         ),
       );
-
-    }else{
+    } else {
       final updated = List<int>.from(state.selectedWorkerIds);
       if (updated.contains(event.workerId)) {
         updated.remove(event.workerId);
@@ -238,8 +244,6 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
 
       emit(_stateWithPreferredWorkers(updated));
     }
-
-
   }
 
   FutureOr<void> _setPreferredWorkers(
@@ -253,10 +257,12 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     AddPreferredWorkerEvent event,
     Emitter<ClMainState> emit,
   ) {
-    emit(_stateWithPreferredWorkers(<int>[
-      ...state.selectedWorkerIds,
-      event.workerId,
-    ]));
+    emit(
+      _stateWithPreferredWorkers(<int>[
+        ...state.selectedWorkerIds,
+        event.workerId,
+      ]),
+    );
   }
 
   FutureOr<void> _updatePreferredWorkers(
@@ -309,17 +315,19 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
   ) {
     final filteredWorkerIds = event.preference == CleaningGenderPreference.any
         ? state.selectedWorkerIds
-        : state.selectedWorkerIds.where((workerId) {
-            PreviousWorkerModel? selectedWorker;
-            for (final worker in state.previousWorkers.list) {
-              if (worker.id == workerId) {
-                selectedWorker = worker;
-                break;
-              }
-            }
-            return selectedWorker == null ||
-                selectedWorker.matchesGenderPreference(event.preference);
-          }).toList(growable: false);
+        : state.selectedWorkerIds
+              .where((workerId) {
+                PreviousWorkerModel? selectedWorker;
+                for (final worker in state.previousWorkers.list) {
+                  if (worker.id == workerId) {
+                    selectedWorker = worker;
+                    break;
+                  }
+                }
+                return selectedWorker == null ||
+                    selectedWorker.matchesGenderPreference(event.preference);
+              })
+              .toList(growable: false);
     final requiresSafetyConfirmation =
         event.preference == CleaningGenderPreference.female;
 
@@ -330,7 +338,8 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
             ? event.workEnvironmentConfirmation
             : null,
         clearSafetyConfirmation:
-            !requiresSafetyConfirmation || event.workEnvironmentConfirmation == null,
+            !requiresSafetyConfirmation ||
+            event.workEnvironmentConfirmation == null,
         selectedWorkerIds: filteredWorkerIds,
         clearErrorMessage: true,
       ),
@@ -352,7 +361,7 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
     Emitter<ClMainState> emit,
   ) {
     if (event.mode == CleaningAssignmentMode.openCount) {
-      final safeCount = state.numberOfWorkers ==0 ? 1 : state.numberOfWorkers;
+      final safeCount = state.numberOfWorkers == 0 ? 1 : state.numberOfWorkers;
       emit(
         state.copyWith(
           assignmentMode: event.mode,
@@ -388,7 +397,8 @@ class ClMainBloc extends Bloc<ClMainEvent, ClMainState> {
       state.copyWith(
         numberOfWorkers: safeCount,
         assignmentMode: state.assignmentMode,
-        clearSelectedWorkers: state.assignmentMode == CleaningAssignmentMode.openCount,
+        clearSelectedWorkers:
+            state.assignmentMode == CleaningAssignmentMode.openCount,
         workerRoomAssignments: _clampWorkerRoomAssignments(
           state.workerRoomAssignments,
           safeCount,

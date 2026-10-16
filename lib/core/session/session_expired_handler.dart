@@ -10,6 +10,19 @@ class SessionExpiredHandler {
 
   static GlobalKey<NavigatorState>? navigatorKey;
   static bool _isNavigatingToLogin = false;
+  static Object? _recoveryOwner;
+  static VoidCallback? _prepareRecovery;
+
+  static void registerRecovery(Object owner, VoidCallback prepareRecovery) {
+    _recoveryOwner = owner;
+    _prepareRecovery = prepareRecovery;
+  }
+
+  static void unregisterRecovery(Object owner) {
+    if (!identical(_recoveryOwner, owner)) return;
+    _recoveryOwner = null;
+    _prepareRecovery = null;
+  }
 
   static Future<void> handle() async {
     if (_isNavigatingToLogin) return;
@@ -20,6 +33,7 @@ class SessionExpiredHandler {
 
     _isNavigatingToLogin = true;
     try {
+      _prepareRecovery?.call();
       await getIt<CleaningBookingPusherService>().disposeAllForSession();
       await SharedPreferencesHelper.clearData();
       navigatorKey?.currentState?.pushNamedAndRemoveUntil(

@@ -2,6 +2,7 @@ import '../../../profile/domain/models/address_list_item.dart';
 import '../../data/models/estimate_price_response_model.dart';
 import '../../data/models/cleaning_suite_config_model.dart';
 import '../../domain/models/cleaning_room_size_breakdown.dart';
+import '../../domain/models/cleaning_progressive_room_state.dart';
 import '../../domain/models/cleaning_type.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 
@@ -55,7 +56,7 @@ class ClMainOccasionDescriptionArgs {
 class ClMainOccasionScheduleArgs {
   final ClMainOccasionOption option;
   final ClMainBloc bloc;
-  final EstimatePriceResponseModel estimate;
+  final EstimatePriceResponseModel? estimate;
   final int guestsCount;
   final String eventType;
   final String venueType;
@@ -75,7 +76,7 @@ class ClMainOccasionScheduleArgs {
   const ClMainOccasionScheduleArgs({
     required this.option,
     required this.bloc,
-    required this.estimate,
+    this.estimate,
     required this.guestsCount,
     required this.eventType,
     required this.venueType,
@@ -101,6 +102,8 @@ class ClMainScheduleArgs {
   final int bathrooms;
   final String livingRoomSize;
   final CleaningRoomSizeBreakdown roomSizeBreakdown;
+  final Map<String, String> roomCleaningModes;
+  final List<CleaningProgressiveRoomUnit> roomUnits;
   final double addressLatitude;
   final double addressLongitude;
   final EstimatePriceResponseModel? estimate;
@@ -118,6 +121,8 @@ class ClMainScheduleArgs {
     required this.bathrooms,
     required this.livingRoomSize,
     required this.roomSizeBreakdown,
+    this.roomCleaningModes = const <String, String>{},
+    this.roomUnits = const <CleaningProgressiveRoomUnit>[],
     required this.addressLatitude,
     required this.addressLongitude,
     required this.estimate,

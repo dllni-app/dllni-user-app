@@ -16,10 +16,15 @@ typedef PendingAuthAction = FutureOr<void> Function();
 abstract final class AuthGate {
   static PendingAuthAction? _pendingAction;
 
+  static void rememberAction(PendingAuthAction action) {
+    _pendingAction = action;
+  }
+
   static bool get isAuthenticated {
-    final token = (SharedPreferencesHelper.getData(key: UserSessionKeys.token) ?? '')
-        .toString()
-        .trim();
+    final token =
+        (SharedPreferencesHelper.getData(key: UserSessionKeys.token) ?? '')
+            .toString()
+            .trim();
     return token.isNotEmpty;
   }
 

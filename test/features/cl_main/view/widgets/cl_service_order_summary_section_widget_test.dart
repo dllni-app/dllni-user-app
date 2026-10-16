@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget _buildWidget({required bool? isPricingFinal}) {
+  Widget buildSummary({bool? isPricingFinal = false, double total = 1300}) {
     return MaterialApp(
       home: Scaffold(
         body: ClServiceOrderSummarySectionWidget(
           basePrice: 1000,
           travelFee: 120,
           addonsTotal: 80,
-          totalPrice: 1300,
-          distanceKm: 2.5,
+          totalPrice: total,
           adminMargin: 100,
           isPricingFinal: isPricingFinal,
           currency: 'SYP',
@@ -20,81 +19,62 @@ void main() {
     );
   }
 
-  testWidgets('uses authoritative total minus travel for service value', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_buildWidget(isPricingFinal: false));
-
-    expect(find.text('قيمة الخدمة'), findsOneWidget);
-    expect(find.text('رسوم التنقل'), findsOneWidget);
-    expect(find.text('المسافة'), findsNothing);
-    expect(find.textContaining('الإجمالي'), findsOneWidget);
-    expect(find.text('هامش الإدارة'), findsNothing);
-    // The backend total is split into service (1100), add-ons (80),
-    // and transport (120), without changing the authoritative 1300 total.
-    expect(find.textContaining('1,100'), findsOneWidget);
-    expect(find.textContaining('80'), findsOneWidget);
-    expect(find.textContaining('120'), findsOneWidget);
-    expect(find.textContaining('1,300'), findsOneWidget);
-  });
-
   testWidgets(
-    'does not add admin margin again when minimum price already includes it',
+    'customer sees final total only and no internal financial breakdown',
     (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ClServiceOrderSummarySectionWidget(
-              basePrice: 1500,
-              travelFee: 0,
-              addonsTotal: 0,
-              totalPrice: 1500,
-              adminMargin: 375,
-              isPricingFinal: false,
-              currency: 'SYP',
-            ),
-          ),
-        ),
-      );
-
-      expect(find.textContaining('1,500'), findsNWidgets(2));
-      expect(find.textContaining('1,875'), findsNothing);
+      await tester.pumpWidget(buildSummary());
+      expect(find.byKey(const Key('price_total_card')), findsOneWidget);
+      expect(find.text('السعر الإجمالي للطلب'), findsOneWidget);
+      expect(find.textContaining('1,300'), findsOneWidget);
+      for (final internalLabel in <String>[
+        'قيمة الخدمة',
+        'رسوم التنقل',
+        'مواد التنظيف',
+        'الخدمات المتخصصة',
+        'هامش الإدارة',
+        'الحد الأدنى لإجمالي الطلب هو',
+      ]) {
+        expect(find.textContaining(internalLabel), findsNothing);
+      }
+      expect(find.textContaining('120'), findsNothing);
+      expect(find.textContaining('80'), findsNothing);
     },
   );
 
-  testWidgets('never shows the obsolete provisional travel-fee warning', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_buildWidget(isPricingFinal: false));
-
-    expect(
-      find.text(
-        'السعر المعروض تقديري وغير نهائي، وسيتم اضافة رسوم التنقل بعد قبول مقدم الخدمة للطلب.',
-      ),
-      findsNothing,
-    );
+  testWidgets('does not add transport or admin margin twice', (tester) async {
+    await tester.pumpWidget(buildSummary(total: 1500));
+    expect(find.textContaining('1,500'), findsOneWidget);
+    expect(find.textContaining('1,875'), findsNothing);
   });
 
-  testWidgets('shows backend minimum-order warning only when applied', (
+  testWidgets('clarifies provisional price but not final price', (
     tester,
   ) async {
+    await tester.pumpWidget(buildSummary(isPricingFinal: false));
+    expect(find.textContaining('السعر تقديري'), findsOneWidget);
+    await tester.pumpWidget(buildSummary(isPricingFinal: true));
+    expect(find.textContaining('السعر تقديري'), findsNothing);
+  });
+
+  testWidgets('keeps scheduling separate from the total card', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
           body: ClServiceOrderSummarySectionWidget(
-            basePrice: 1000,
-            travelFee: 300,
+            basePrice: 500,
+            travelFee: 0,
             addonsTotal: 0,
-            totalPrice: 1800,
-            minimumOrderPrice: 1500,
-            minimumOrderApplied: true,
+            totalPrice: 500,
             currency: 'SYP',
+            scheduleDayLabel: 'الخميس',
+            scheduleDateLabel: '2026-10-15',
+            scheduleTimeRange: '09:00 - 11:00',
           ),
         ),
       ),
     );
-
-    expect(find.textContaining('أقل قيمة لطلب التنظيف هي'), findsOneWidget);
-    expect(find.textContaining('1,500'), findsNWidgets(2));
+    expect(find.text('موعد الخدمة'), findsOneWidget);
+    expect(find.textContaining('2026-10-15'), findsOneWidget);
+    expect(find.text('السعر الإجمالي للطلب'), findsOneWidget);
   });
 }

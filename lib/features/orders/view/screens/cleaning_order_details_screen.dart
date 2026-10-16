@@ -3,7 +3,9 @@ import 'package:dllni_user_app/core/themes/v7_artwork.dart';
 import 'package:dllni_user_app/core/widgets/v7_spot_state.dart';
 import '../widgets/v7_order_detail_components.dart';
 import '../widgets/v7_order_progress_and_tasks.dart';
+import '../widgets/v7_event_order_panel.dart';
 import '../widgets/cleaning_order_extras_panels.dart';
+import '../widgets/cleaning_time_periods_summary.dart';
 import 'dart:async';
 
 import 'package:common_package/common_package.dart';
@@ -203,6 +205,22 @@ class _CleaningOrderDetailsScreenState
       _ => 'تابع حالة طلبك وتفاصيل الخدمة هنا.',
     };
 
+    final materialsPriceSum = order.materials.fold<double>(
+      0,
+      (sum, material) => sum + (material.totalPrice ?? 0),
+    );
+    final specializedPriceSum = order.specialServices.fold<double>(
+      0,
+      (sum, service) => sum + (service.totalPrice ?? 0),
+    );
+    final hasItemizedExtras =
+        (order.materials.isNotEmpty || order.specialServices.isNotEmpty) &&
+        order.materials.every((item) => item.totalPrice != null) &&
+        order.specialServices.every((item) => item.totalPrice != null) &&
+        ((materialsPriceSum + specializedPriceSum) - (order.addonsTotal ?? 0))
+                .abs() <
+            0.01;
+
     final sections = <Widget>[
       if (_isRebooking)
         const V7OrderStatusHero(
@@ -221,6 +239,10 @@ class _CleaningOrderDetailsScreenState
             ? Icons.task_alt_rounded
             : status == CleaningBookingStatus.cancelled
             ? Icons.event_busy_outlined
+            : CleaningEventAssistanceHelper.isEventAssistance(
+                order.propertyType,
+              )
+            ? Icons.celebration_outlined
             : Icons.cleaning_services_outlined,
       ),
       V7OrderLifecyclePanel(order: order),
@@ -287,9 +309,25 @@ class _CleaningOrderDetailsScreenState
             style: TextStyle(color: SharedPlatformColors.muted),
           ),
         ),
-      V7OrderServicesPanel(order: order),
+      if (!CleaningEventAssistanceHelper.isEventAssistance(
+            order.propertyType,
+          ) &&
+          order.openTime == null)
+        V7OrderServicesPanel(order: order),
+      if (order.openTime != null &&
+          (order.propertyDetails?.notes?.trim().isNotEmpty ?? false))
+        V7OrderPanel(
+          title: 'المهام المطلوبة',
+          leading: const Icon(Icons.description_outlined),
+          child: Text(order.propertyDetails!.notes!.trim()),
+        ),
       V7OrderPanel(
-        title: 'موعد الخدمة وموقعها',
+        title:
+            CleaningEventAssistanceHelper.isEventAssistance(order.propertyType)
+            ? 'موعد البداية وموقع المناسبة'
+            : order.openTime != null
+            ? 'موعد بدء العمل وموقعه'
+            : 'موعد الخدمة وموقعها',
         leading: const Icon(
           Icons.event_available_outlined,
           color: SharedPlatformColors.cleaning,
@@ -312,11 +350,13 @@ class _CleaningOrderDetailsScreenState
               ),
             ),
             V7OrderInfoRow(
-              label: 'الوقت',
-              value: CleaningDateTimeUiFormat.timeRange(
-                order.scheduledTime ?? '',
-                _orderEndTime(order) ?? '',
-              ),
+              label: order.openTime == null ? 'الوقت' : 'وقت البدء',
+              value: order.openTime == null
+                  ? CleaningDateTimeUiFormat.timeRange(
+                      order.scheduledTime ?? '',
+                      _orderEndTime(order) ?? '',
+                    )
+                  : CleaningDateTimeUiFormat.time(order.scheduledTime ?? ''),
             ),
             if ((order.locationName ?? '').trim().isNotEmpty &&
                 order.locationName!.trim() !=
@@ -354,7 +394,11 @@ class _CleaningOrderDetailsScreenState
           assignments: order.acceptedWorkerAssignments,
           onCallWorker: _callWorker,
         ),
-      if ((order.roomAssignments ?? const []).isNotEmpty)
+      if (!CleaningEventAssistanceHelper.isEventAssistance(
+            order.propertyType,
+          ) &&
+          order.openTime == null &&
+          (order.roomAssignments ?? const []).isNotEmpty)
         CleaningRoomAssignmentsSectionWidget(
           roomAssignments: order.roomAssignments!,
           acceptedWorkers: order.acceptedWorkerAssignments,
@@ -363,37 +407,22 @@ class _CleaningOrderDetailsScreenState
           onAssignRoom: _assignRoom,
         ),
       if (CleaningEventAssistanceHelper.isEventAssistance(order.propertyType))
-        V7OrderPanel(
-          title: 'المناسبة',
-          child: Column(
-            children: [
-              V7OrderInfoRow(
-                label: 'النوع',
-                value: CleaningEventAssistanceHelper.eventTypeLabelAr(
-                  order.propertyDetails?.eventType,
-                ),
+        V7EventOrderPanel(
+          eventType: order.propertyDetails?.eventType,
+          guestCount: order.propertyDetails?.guestCount,
+          helpDescription: order.propertyDetails?.customService,
+          specialRequirements: order.propertyDetails?.specialRequirement,
+          onOpenSessions: () async {
+            await Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) =>
+                    MultiDayCleaningOrderDetailsScreen(orderId: _activeOrderId),
               ),
-              V7OrderInfoRow(
-                label: 'عدد الضيوف',
-                value: (order.propertyDetails?.guestCount ?? '-').toString(),
-              ),
-              OutlinedButton(
-                onPressed: () async {
-                  await Navigator.of(context).push<void>(
-                    MaterialPageRoute(
-                      builder: (_) => MultiDayCleaningOrderDetailsScreen(
-                        orderId: _activeOrderId,
-                      ),
-                    ),
-                  );
-                  if (mounted) await _fetchDetails(showLoading: false);
-                },
-                child: const Text('عرض جلسات المناسبة'),
-              ),
-            ],
-          ),
+            );
+            if (mounted) await _fetchDetails(showLoading: false);
+          },
         )
-      else
+      else if (order.openTime == null && order.contractVersion != 2)
         CleaningRecurringScheduleLauncherWidget(
           orderId: _activeOrderId,
           onReturn: () => _fetchDetails(showLoading: false),
@@ -415,38 +444,55 @@ class _CleaningOrderDetailsScreenState
                 order.startedTravelAt != null && order.arrivedAt == null,
           ),
         ),
-      V7OrderPricePanel(
-        basePrice: order.basePrice?.formatMoney(),
-        travelFee: order.travelFee?.formatMoney(),
-        addonsTotal: (order.addonsTotal ?? 0) > 0
-            ? order.addonsTotal?.formatMoney()
-            : null,
-        total: order.totalPrice?.formatMoney(),
-        finalPrice: order.isPricingFinal == true,
-      ),
-      ...buildCleaningOrderExtrasPanels(
-        materials: order.materials,
-        specialServices: order.specialServices,
-        openTime: order.openTime,
-        currency: order.openTime?.currency ?? 'SYP',
-      ),
+      if (order.contractVersion == 2) CleaningTimePeriodsSummary(order: order),
+      if (order.contractVersion != 2)
+        ...buildCleaningOrderExtrasPanels(
+          materials: order.materials,
+          specialServices: order.specialServices,
+          openTime: order.openTime,
+          currency: order.openTime?.currency ?? 'SYP',
+        ),
       if (order.openTime != null)
         CleaningOpenTimeLiveCard(
           orderId: order.id ?? _activeOrderId,
           initialValue: order.openTime!,
         ),
-      if (!terminal && !_blocksCancel(order))
-        Align(
-          alignment: Alignment.center,
-          child: TextButton.icon(
-            onPressed: () => _cancelOrder(order),
-            icon: const Icon(Icons.cancel_outlined),
-            label: const Text('إلغاء الطلب'),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFB42318),
-            ),
-          ),
-        ),
+      V7OrderPricePanel(
+        basePrice: order.contractVersion == 2
+            ? null
+            : order.basePrice?.formatMoney(),
+        travelFee: order.contractVersion == 2
+            ? null
+            : order.travelFee?.formatMoney(),
+        addonsTotal:
+            order.contractVersion != 2 &&
+                !hasItemizedExtras &&
+                (order.addonsTotal ?? 0) > 0
+            ? order.addonsTotal?.formatMoney()
+            : null,
+        materialsPrice:
+            order.contractVersion != 2 &&
+                hasItemizedExtras &&
+                materialsPriceSum > 0
+            ? materialsPriceSum.formatMoney()
+            : null,
+        specializedPrice:
+            order.contractVersion != 2 &&
+                hasItemizedExtras &&
+                specializedPriceSum > 0
+            ? specializedPriceSum.formatMoney()
+            : null,
+        total: order.totalPrice?.formatMoney(),
+        finalPrice: order.isPricingFinal == true,
+        totalLabel: order.openTime != null && order.isPricingFinal != true
+            ? 'الإجمالي المتوقع'
+            : 'الإجمالي',
+        pendingNote: order.contractVersion == 2
+            ? 'السعر المعتمد عند تأكيد الطلب.'
+            : order.openTime != null
+            ? 'الفاتورة النهائية بحسب مدة العمل الفعلية.'
+            : 'قد يتغير الإجمالي عند اكتمال تفاصيل الخدمة.',
+      ),
     ];
 
     return V7OrderDetailScaffold(
@@ -471,10 +517,40 @@ class _CleaningOrderDetailsScreenState
               action: primary,
               isTerminalStatus: terminal,
             ),
+      secondaryAction: !terminal && !_blocksCancel(order)
+          ? OutlinedButton.icon(
+              key: const Key('cleaning_order_cancel_button'),
+              onPressed: () => _cancelOrder(order),
+              icon: const Icon(Icons.cancel_outlined, size: 18),
+              label: const Text('إلغاء الطلب'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFB42318),
+                side: const BorderSide(color: Color(0xFFDA9B98)),
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            )
+          : null,
     );
   }
 
   String? _orderEndTime(CleaningOrderDetailModel order) {
+    if (order.contractVersion == 2) {
+      // Legacy totalHours may sum multiple visits. The customer's time
+      // range must instead reflect the authoritative first visit.
+      final visit = order.bookingVisits.firstOrNull;
+      if (visit == null) return null;
+      final schedules = (visit['roomSchedules'] as List? ?? []).cast<Map>();
+      final ends = [
+        for (final schedule in schedules)
+          if (schedule['endAt']?.toString().isNotEmpty ?? false)
+            schedule['endAt'].toString(),
+      ]..sort();
+      if (ends.isEmpty) return null;
+      return RegExp(r'T(\d{2}:\d{2})').firstMatch(ends.last)?.group(1);
+    }
     final start = _resolveStartDateTime(order);
     if (start == null) return null;
     return CleaningScheduleDateTimeLogic.formatTimeApi(

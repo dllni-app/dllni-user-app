@@ -15,12 +15,14 @@ void main() {
     expect(source, contains('if (_scheduleStep == 1)'));
     expect(source, contains('if (_scheduleStep == 2)'));
     expect(source, contains('currentStep: _scheduleStep + 4'));
-    expect(source, contains('totalSteps: 6'));
+    expect(source, contains('totalSteps: 8'));
     final initialStepSource = File(
       'lib/features/cl_main/view/screens/cl_main_home_description_screen.dart',
     ).readAsStringSync();
-    expect(initialStepSource, contains('totalSteps: 6'));
-    expect(source, contains('primaryLabel: _scheduleStep == 2'));
+    expect(initialStepSource, contains('ClBookingPencilHeader('));
+    expect(initialStepSource, contains('step: _currentStep'));
+    expect(initialStepSource, isNot(contains('totalSteps: 9')));
+    expect(source, contains('primaryLabel: _scheduleStep == 4'));
     expect(source, contains('تأكيد وإرسال الطلب'));
     expect(ClMainServiceScheduleScreen, isNotNull);
     expect(source, contains('void _advanceSchedule(ClMainState state)'));
@@ -85,7 +87,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('طلب تنظيف'), findsOneWidget);
+    expect(find.text('تنظيف المنزل'), findsOneWidget);
     expect(find.byTooltip('الرجوع'), findsOneWidget);
     final rect = tester.getRect(find.byType(HomeDetailsAppBar));
     expect(rect.height, lessThan(90));

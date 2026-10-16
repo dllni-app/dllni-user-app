@@ -11,12 +11,12 @@ import '../../domain/models/cleaning_type.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../data/cl_main_route_args.dart';
 import '../manager/bloc/cl_main_bloc.dart';
-import '../widgets/cl_cleaning_type_option_card_widget.dart';
 import '../widgets/cl_redesign_components.dart';
-import '../widgets/home_details_app_bar.dart';
+import '../widgets/cl_booking_pencil_header.dart';
+import '../../../../core/widgets/design_system/design_system.dart';
 import '../widgets/v6_room_size_guide.dart';
-import '../widgets/v6_booking_decision_guide.dart';
-import 'cl_main_service_schedule_screen.dart';
+import 'cleaning_booking_v2_screen.dart';
+import '../../domain/models/cleaning_booking_draft.dart';
 
 @AutoRoutePage()
 class ClMainHomeDescriptionScreen extends StatefulWidget {
@@ -29,25 +29,22 @@ class ClMainHomeDescriptionScreen extends StatefulWidget {
 
 class _ClMainHomeDescriptionScreenState
     extends State<ClMainHomeDescriptionScreen> {
-  static const _primaryRoomTypes = <CleaningRoomType>[
-    CleaningRoomType.bedroom,
-    CleaningRoomType.bathroom,
-    CleaningRoomType.kitchen,
-    CleaningRoomType.livingRoom,
+  static const _pencilTitles = [
+    'شو بدك ننظّف؟',
+    'ما حجم كل غرفة؟',
+    'تنظيف يومي أم أعمق؟',
   ];
-
-  static const _extraRoomTypes = <CleaningRoomType>[
-    CleaningRoomType.balcony,
-    CleaningRoomType.corridor,
-    CleaningRoomType.shed,
+  static const _pencilHints = [
+    'حدّد عدد المساحات المطلوبة.',
+    'اختَر الأقرب لمساحتك. علامة المساعدة توضّح الأمثلة.',
+    'يمكنك اختيار نوع مختلف لكل غرفة.',
   ];
+  static const _primaryRoomTypes = allCleaningRoomTypes;
 
   final ScrollController _bookingScrollController = ScrollController();
   CleaningProgressiveRoomState _roomState =
       const CleaningProgressiveRoomState();
-  CleaningType? _selectedCleaningType;
   int _currentStep = 0;
-  bool _showExtraSpaces = false;
   final Set<String> _reviewedRoomKeys = <String>{};
 
   String _propertyType = 'apartment';
@@ -73,11 +70,24 @@ class _ClMainHomeDescriptionScreenState
                 if (!didPop) _confirmExit();
               },
               child: Scaffold(
-                backgroundColor: const Color(0xFFF6F7F9),
+                backgroundColor: AlnadhaTokens.background,
                 body: SafeArea(
                   child: Column(
                     children: [
-                      HomeDetailsAppBar(onBack: _confirmExit),
+                      ClBookingTopBar(onExit: _confirmExit),
+                      Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          20,
+                          8,
+                          20,
+                          6,
+                        ),
+                        child: ClBookingPencilHeader(
+                          step: _currentStep,
+                          title: _pencilTitles[_currentStep],
+                          subtitle: _pencilHints[_currentStep],
+                        ),
+                      ),
                       Expanded(
                         child: SingleChildScrollView(
                           controller: _bookingScrollController,
@@ -89,9 +99,7 @@ class _ClMainHomeDescriptionScreenState
                         ),
                       ),
                       ClRedesignStickyActions(
-                        primaryLabel: _currentStep == 2
-                            ? 'متابعة الحجز'
-                            : 'التالي',
+                        primaryLabel: _currentStep == 2 ? 'متابعة' : 'متابعة',
                         onPrimary: () => _onPrimaryPressed(bloc, state),
                         primaryEnabled: _canContinueCurrentStep,
                         secondaryLabel: _currentStep > 0 ? 'السابق' : null,
@@ -119,22 +127,12 @@ class _ClMainHomeDescriptionScreenState
   }
 
   Widget _buildRoomCountsStep() {
-    final visibleTypes = <CleaningRoomType>[
-      ..._primaryRoomTypes,
-      if (_showExtraSpaces) ..._extraRoomTypes,
-    ];
+    final visibleTypes = _primaryRoomTypes;
     return Column(
       key: const ValueKey('room_counts_step'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ClRedesignStepHeader(
-          currentStep: 1,
-          totalSteps: 6,
-          title: 'كم غرفة تريد تنظيفها؟',
-          subtitle:
-              'حدد عدد الغرف أولاً، وسنطلب حجم كل غرفة في الخطوة التالية.',
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
         Text(
           'الغرف الأساسية: ${_roomState.totalBaseRooms} من ${CleaningProgressiveRoomState.maxBaseRooms}',
           textAlign: TextAlign.start,
@@ -153,13 +151,6 @@ class _ClMainHomeDescriptionScreenState
           ),
           const SizedBox(height: 10),
         ],
-        TextButton.icon(
-          onPressed: () => setState(() => _showExtraSpaces = !_showExtraSpaces),
-          icon: Icon(_showExtraSpaces ? Icons.expand_less : Icons.add),
-          label: Text(
-            _showExtraSpaces ? 'إخفاء المساحات الإضافية' : 'إضافة مساحة أخرى',
-          ),
-        ),
       ],
     );
   }
@@ -169,14 +160,7 @@ class _ClMainHomeDescriptionScreenState
       key: const ValueKey('room_sizes_step'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ClRedesignStepHeader(
-          currentStep: 2,
-          totalSteps: 6,
-          title: 'ما حجم كل غرفة؟',
-          subtitle:
-              'استعن بالأمثلة واختَر الحجم الأقرب حسب المساحة والأثاث. يمكنك تغيير اختيارك لاحقاً.',
-        ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 4),
         V6RoomSizeIntro(
           onHelp: () => V6RoomSizeHelpSheet.show(
             context,
@@ -293,55 +277,232 @@ class _ClMainHomeDescriptionScreenState
     );
   }
 
+  void _showRoomCleaningHelp(CleaningRoomType type) {
+    final descriptions = switch (type) {
+      CleaningRoomType.bedroom => (
+        'ترتيب الغرفة ومسح الأسطح الظاهرة وتنظيف الأرضية.',
+        'تنظيف أعمق للزوايا والتفاصيل والأوساخ المتراكمة.',
+      ),
+      CleaningRoomType.bathroom => (
+        'تنظيف المغسلة والمرحاض والأرضية والأسطح المعتادة.',
+        'تنظيف مكثف للبلاط والفواصل والتراكمات ضمن نطاق الخدمة.',
+      ),
+      CleaningRoomType.kitchen => (
+        'تنظيف الأسطح الظاهرة والحوض والأرضية.',
+        'معالجة أعمق للدهون والزوايا والأسطح ضمن نطاق الخدمة.',
+      ),
+      CleaningRoomType.livingRoom => (
+        'ترتيب الجلسة ومسح الأسطح وتنظيف الأرضية.',
+        'تنظيف مكثف للتفاصيل والزوايا والأوساخ المتراكمة.',
+      ),
+      CleaningRoomType.corridor => (
+        'كنس ومسح الممر والأسطح الظاهرة.',
+        'عناية أعمق بالحواف والزوايا والأوساخ المتراكمة.',
+      ),
+      CleaningRoomType.balcony => (
+        'كنس ومسح أرضية الشرفة والأسطح المكشوفة.',
+        'تنظيف أعمق للأرضية والزوايا والتراكمات المتاحة.',
+      ),
+      CleaningRoomType.shed => (
+        'ترتيب المساحة وتنظيف الأرضية والأسطح القابلة للوصول.',
+        'عناية أعمق بالزوايا والغبار المتراكم ضمن نطاق الخدمة.',
+      ),
+    };
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'ما معنى حوسة وتعزيل في ' + _singleRoomLabel(type) + '؟',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'حوسة — تنظيف اعتيادي',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              Text(descriptions.$1),
+              const SizedBox(height: 12),
+              const Text(
+                'تعزيل — تنظيف عميق',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              Text(descriptions.$2),
+              const SizedBox(height: 12),
+              const Text(
+                'غسيل الكنب والسجاد والأجهزة من الداخل خدمات منفصلة عند توفرها.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCleaningTypeStep() {
     return Column(
       key: const ValueKey('cleaning_type_step'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const ClRedesignStepHeader(
-          currentStep: 3,
-          totalSteps: 6,
-          title: 'اختر نوع التنظيف',
-          subtitle: 'اختر نوع الخدمة المناسب لمنزلك.',
-        ),
-        const SizedBox(height: 14),
-        const V6BookingDecisionGuide(
-          topic: V6BookingDecisionTopic.cleaningType,
-        ),
-        const SizedBox(height: 14),
-        ClCleaningTypeOptionCardWidget(
-          title: CleaningType.regularCleaning.title,
-          subtitle: CleaningType.regularCleaning.subtitle,
-          isSelected: _selectedCleaningType == CleaningType.regularCleaning,
-          onTap: () => setState(
-            () => _selectedCleaningType = CleaningType.regularCleaning,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ClCleaningTypeOptionCardWidget(
-          title: CleaningType.deepCleaning.title,
-          subtitle: CleaningType.deepCleaning.subtitle,
-          isSelected: _selectedCleaningType == CleaningType.deepCleaning,
-          onTap: () =>
-              setState(() => _selectedCleaningType = CleaningType.deepCleaning),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 4),
         const ClRedesignCard(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.info_outline, color: Color(0xFF172554)),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'يمكنك تخصيص التفاصيل قبل إرسال الطلب.',
-                  textAlign: TextAlign.start,
-                  style: TextStyle(color: Color(0xFF475467), height: 1.5),
+              Row(
+                children: [
+                  Icon(
+                    Icons.cleaning_services_outlined,
+                    color: Color(0xFF0B7480),
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'حوسة — تنظيف وترتيب يومي',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF172554),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 7),
+              Text(
+                'مناسبة للغرفة المرتبة نسبياً: ترتيب المكان، إزالة الغبار الظاهر، كنس ومسح الأرضيات وتنظيف الأسطح التي تُستخدم يومياً.',
+                style: TextStyle(
+                  height: 1.6,
+                  fontSize: 13,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              Divider(height: 24, color: Color(0xFFE5EAF2)),
+              Row(
+                children: [
+                  Icon(Icons.auto_awesome_outlined, color: Color(0xFF8655A6)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'تعزيل — تنظيف أعمق وأكثر تفصيلاً',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF172554),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 7),
+              Text(
+                'يشمل أعمال الحوسة، إضافة إلى الاهتمام بالزوايا والحواف والأماكن صعبة الوصول، والأوساخ والدهون أو الترسبات المتراكمة بحسب نوع الغرفة. يحتاج عادةً وقتاً أطول.',
+                style: TextStyle(
+                  height: 1.6,
+                  fontSize: 13,
+                  color: Color(0xFF334155),
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'غسيل الكنب أو السجاد والتنظيفات التي تحتاج أدوات خاصة تُحدَّد ضمن الخدمات المتخصصة عند توفرها، وليست مشمولة تلقائياً.',
+                style: TextStyle(
+                  height: 1.5,
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
                 ),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(
+                  () => _roomState = _roomState.setAllCleaningTypes(
+                    CleaningType.regularCleaning,
+                  ),
+                ),
+                child: const Text('حوسة للكل'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(
+                  () => _roomState = _roomState.setAllCleaningTypes(
+                    CleaningType.deepCleaning,
+                  ),
+                ),
+                child: const Text('تعزيل للكل'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        for (final unit in _roomState.units) ...[
+          ClRedesignCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _singleRoomLabel(unit.roomType) +
+                            ' ' +
+                            unit.index.toString() +
+                            ' — ' +
+                            _roomSizeLabel(unit.size),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      key: Key('room_help_' + unit.key.replaceAll('.', '_')),
+                      tooltip: 'ما معنى حوسة وتعزيل لهذه الغرفة؟',
+                      onPressed: () => _showRoomCleaningHelp(unit.roomType),
+                      icon: const Icon(
+                        Icons.help_outline,
+                        color: Color(0xFF0B7480),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClRedesignSegmentedChoice<CleaningType>(
+                  values: CleaningType.values,
+                  selected: unit.cleaningType,
+                  labelFor: (type) => type.title,
+                  onChanged: (type) => setState(() {
+                    _roomState = _roomState.setUnitCleaningType(
+                      unit.roomType,
+                      unit.index,
+                      type,
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ],
     );
   }
@@ -350,7 +511,7 @@ class _ClMainHomeDescriptionScreenState
     if (_currentStep == 0 || _currentStep == 1) {
       return _roomState.hasAnyRoom;
     }
-    return _selectedCleaningType != null;
+    return _roomState.hasAnyRoom;
   }
 
   Future<void> _confirmExit() async {
@@ -362,7 +523,7 @@ class _ClMainHomeDescriptionScreenState
       builder: (dialogContext) => AlertDialog(
         title: const Text('هل تريد مغادرة طلب التنظيف؟'),
         content: const Text(
-          'إذا غادرت الآن، ستفقد التعديلات التي لم تحفظها في هذا الطلب.',
+          'إذا غادرت الآن، ستفقد تقدمك واختيارات الغرف والتفاصيل التي أدخلتها. لن يتم إرسال الطلب.',
         ),
         actions: [
           TextButton(
@@ -405,19 +566,39 @@ class _ClMainHomeDescriptionScreenState
       _goToStep(_currentStep + 1);
       return;
     }
-    if (_selectedCleaningType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار نوع التنظيف قبل المتابعة')),
-      );
-      return;
-    }
     // Do not block the booking journey with an estimate API call.
     // The material catalog is fetched on the dedicated materials step.
     bloc.add(ResetCreateOrderStatusEvent());
-    _openScheduleScreen(bloc, null, _selectedCleaningType!);
+    _openScheduleScreen(bloc, null, CleaningType.regularCleaning);
   }
 
-  void _changeRoomCount(CleaningRoomType roomType, int delta) {
+  Future<void> _changeRoomCount(CleaningRoomType roomType, int delta) async {
+    final saved = _bookingDraft['bookingV2'];
+    if (delta < 0 && saved is CleaningBookingDraft) {
+      final roomKey = '${roomType.apiKey}.${_roomState.countFor(roomType)}';
+      if (saved.schedules.any((schedule) => schedule.roomKey == roomKey)) {
+        final approved = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('إزالة الغرفة؟'),
+            content: const Text(
+              'ستُحذف مواعيد هذه الغرفة، وسنطلب منك مراجعة مواد وخدمات الفترات المتأثرة.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('إلغاء'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('إزالة الغرفة'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || approved != true) return;
+      }
+    }
     final next = _roomState.countFor(roomType) + delta;
     setState(() {
       _roomState = _roomState.setCount(roomType, next);
@@ -458,7 +639,7 @@ class _ClMainHomeDescriptionScreenState
     final breakdown = _roomSizeBreakdown;
     final leaveBooking = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ClMainServiceScheduleScreen(
+        builder: (_) => CleaningBookingV2Screen(
           args: ClMainScheduleArgs(
             propertyType: _propertyType,
             bedrooms: breakdown.legacyBedroomsCount,
@@ -466,6 +647,8 @@ class _ClMainHomeDescriptionScreenState
             bathrooms: breakdown.legacyBathroomsCount,
             livingRoomSize: breakdown.legacyLivingRoomSize,
             roomSizeBreakdown: breakdown,
+            roomCleaningModes: _roomState.roomCleaningModes,
+            roomUnits: _roomState.units,
             addressLatitude: _defaultAddress?.latitude ?? 0,
             addressLongitude: _defaultAddress?.longitude ?? 0,
             estimate: estimate,

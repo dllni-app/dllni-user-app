@@ -39,6 +39,7 @@ class ClMainState {
 
   ClMainState copyWith({
     EstimatePriceResponseModel? estimatePrice,
+    bool clearEstimatePrice = false,
     BlocStatus? estimatePriceStatus,
     List<CleaningServiceModel>? cleaningServices,
     BlocStatus? cleaningServicesStatus,
@@ -61,7 +62,9 @@ class ClMainState {
     bool clearErrorMessage = false,
   }) {
     return ClMainState(
-      estimatePrice: estimatePrice ?? this.estimatePrice,
+      estimatePrice: clearEstimatePrice
+          ? null
+          : (estimatePrice ?? this.estimatePrice),
       estimatePriceStatus: estimatePriceStatus ?? this.estimatePriceStatus,
       cleaningServices: cleaningServices ?? this.cleaningServices,
       cleaningServicesStatus:

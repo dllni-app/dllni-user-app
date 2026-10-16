@@ -24,4 +24,36 @@ void main() {
       );
     });
   });
+
+  group('effectiveCleaningWorkerDurationHours', () {
+    test('never rounds positive small multi-worker visit to zero', () {
+      final duration = effectiveCleaningWorkerDurationHours(
+        estimatedHours: 0.04,
+        numberOfWorkers: 8,
+      );
+      expect(duration, greaterThan(0));
+      expect(duration, closeTo(1 / 60, 0.000001));
+      expect(
+        formatClServiceEndTime(startTime: '09:00', durationHours: duration),
+        '09:01',
+      );
+    });
+
+    test('rounds worker share upward to next minute', () {
+      expect(
+        effectiveCleaningWorkerDurationHours(
+          estimatedHours: 1,
+          numberOfWorkers: 3,
+        ),
+        closeTo(20 / 60, 0.000001),
+      );
+      expect(
+        effectiveCleaningWorkerDurationHours(
+          estimatedHours: 0,
+          numberOfWorkers: 3,
+        ),
+        0,
+      );
+    });
+  });
 }

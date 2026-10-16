@@ -31,6 +31,8 @@ class CreateCleaningOrderUseCase
 
 class CreateCleaningOrderParams with Params {
   final String propertyType;
+  final List<Map<String, dynamic>>? roomPeriods;
+  final String? quoteSignature;
   final String? bookingKind;
   final int? bedrooms;
   final int? rooms;
@@ -38,6 +40,7 @@ class CreateCleaningOrderParams with Params {
   final int? balconies;
   final String? livingRoomSize;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
+  final Map<String, String> roomCleaningModes;
   final CleaningType? cleaningType;
   final String? address;
   final String? locationName;
@@ -75,6 +78,8 @@ class CreateCleaningOrderParams with Params {
   CreateCleaningOrderParams({
     required this.addressId,
     required this.propertyType,
+    this.roomPeriods,
+    this.quoteSignature,
     this.bookingKind,
     required this.bedrooms,
     required this.rooms,
@@ -82,6 +87,7 @@ class CreateCleaningOrderParams with Params {
     this.balconies,
     required this.livingRoomSize,
     this.roomSizeBreakdown,
+    this.roomCleaningModes = const <String, String>{},
     this.cleaningType,
     required this.address,
     required this.locationName,
@@ -143,13 +149,16 @@ class CreateCleaningOrderParams with Params {
     this.termsAccepted = true,
     this.couponCode,
     this.serviceExtras = const CleaningServiceExtrasRequest(),
-  }) : bedrooms = null,
+  }) : roomPeriods = null,
+       quoteSignature = null,
+       bedrooms = null,
        workerRoomAssignments = null,
        rooms = null,
        bathrooms = null,
        balconies = null,
        livingRoomSize = null,
        roomSizeBreakdown = null,
+       roomCleaningModes = const <String, String>{},
        cleaningType = null,
        cleaningServices = null,
        recurringSessions = const <CleaningRecurringSessionInput>[],
@@ -168,7 +177,9 @@ class CreateCleaningOrderParams with Params {
     this.locationName,
     this.notes,
     this.couponCode,
-  }) : propertyType = 'apartment',
+  }) : roomPeriods = null,
+       quoteSignature = null,
+       propertyType = 'apartment',
        bookingKind = 'open_time',
        bedrooms = 0,
        rooms = 0,
@@ -176,6 +187,7 @@ class CreateCleaningOrderParams with Params {
        balconies = 0,
        livingRoomSize = CleaningRoomSize.small.apiValue,
        roomSizeBreakdown = const CleaningRoomSizeBreakdown(),
+       roomCleaningModes = const <String, String>{},
        cleaningType = CleaningType.regularCleaning,
        addressLatitude = null,
        addressLongitude = null,
@@ -302,6 +314,8 @@ class CreateCleaningOrderParams with Params {
       'living_room_size': _resolvedLivingRoomSize,
       if (roomSizeBreakdown != null)
         'room_size_breakdown': roomSizeBreakdown!.toBackendJson(),
+      if (roomCleaningModes.isNotEmpty)
+        'room_cleaning_modes': roomCleaningModes,
       if (cleaningType != null)
         'cleaning_mode': cleaningType!.cleaningModeValue,
       if (notes != null && notes!.trim().isNotEmpty) 'notes': notes!.trim(),
@@ -369,7 +383,20 @@ class CreateCleaningOrderParams with Params {
         body['cleaning_services'] = cleanServices;
       }
     }
-    final assignments = workerRoomAssignments == null
+    if (roomPeriods != null) {
+      body
+        ..remove('requestMaterials')
+        ..remove('materials')
+        ..remove('specialServices')
+        ..remove('workerRoomAssignments')
+        ..remove('preferredWorkerIds')
+        ..remove('workerScope')
+        ..remove('openTime');
+      body['assignmentMode'] = 'open_count';
+      body['roomPeriods'] = roomPeriods;
+      if (quoteSignature != null) body['quoteSignature'] = quoteSignature;
+    }
+    final assignments = roomPeriods != null || workerRoomAssignments == null
         ? null
         : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
     if (assignments != null && assignments.isNotEmpty) {

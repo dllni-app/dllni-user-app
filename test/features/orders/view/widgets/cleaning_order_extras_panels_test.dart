@@ -91,6 +91,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'specialized order summary shows only service and dirtiness, with matching icon',
+    (tester) async {
+      await pump(
+        tester,
+        specialServices: const [
+          CleaningSpecialServiceLineModel(
+            name: 'تنظيف الفرن من الداخل',
+            quantity: 4,
+            pricingUnit: 'piece',
+            dirtinessLevel: 'light',
+            totalPrice: 340,
+          ),
+        ],
+      );
+      expect(find.text('تنظيف الفرن من الداخل'), findsOneWidget);
+      expect(find.text('مستوى الاتساخ: اتساخ بسيط'), findsOneWidget);
+      expect(find.byIcon(Icons.kitchen_outlined), findsOneWidget);
+      expect(find.textContaining('piece'), findsNothing);
+      expect(find.textContaining('340'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('both categories render as two separate cards', (tester) async {
     await pump(tester, materials: [material], specialServices: [service]);
     expect(find.byType(V7OrderPanel), findsNWidgets(2));

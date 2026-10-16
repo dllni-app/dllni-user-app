@@ -11,9 +11,9 @@ import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../helpers/cl_hourly_worker_validation.dart';
 import '../widgets/app_pickers.dart';
+import '../widgets/cl_booking_confirmation_sheet.dart';
 import '../widgets/cl_hourly_worker_widgets.dart';
 import '../widgets/cl_redesign_components.dart';
-import '../widgets/v6_booking_decision_guide.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/home_details_app_bar.dart';
 
@@ -41,6 +41,11 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
   EstimatePriceResponseModel? _estimate;
   bool _estimating = false;
   bool _submitting = false;
+  bool _confirming = false;
+  bool _reviewing = false;
+  bool _sendingDialogOpen = false;
+  bool _exitApproved = false;
+  int _estimateRevision = 0;
   String? _estimateError;
 
   @override
@@ -55,7 +60,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     final result = await context.pushRoute('/myaddresses', arguments: true);
     if (!mounted || result is! AddressListItem) return;
     _selectedAddress.value = result;
-    await _refreshEstimate();
+    _invalidateEstimate();
   }
 
   Future<void> _pickDate() async {
@@ -79,16 +84,26 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     });
   }
 
-  Future<void> _refreshEstimate() async {
-    final address = _selectedAddress.value;
-    final addressId = int.tryParse(address?.id ?? '');
-    if (addressId == null || addressId <= 0 || _estimating) return;
+  void _invalidateEstimate() {
+    ++_estimateRevision;
+    if (!mounted) return;
+    setState(() {
+      _estimate = null;
+      _estimateError = null;
+      _estimating = false;
+    });
+  }
 
+  Future<void> _refreshEstimate() async {
+    if (!_reviewing || _estimating) return;
+    final addressId = int.tryParse(_selectedAddress.value?.id ?? '');
+    if (addressId == null || addressId <= 0) return;
+    final revision = ++_estimateRevision;
     setState(() {
       _estimating = true;
+      _estimate = null;
       _estimateError = null;
     });
-
     final response = await getIt<EstimateCleaningPriceUseCase>()(
       EstimateCleaningPriceParams.hourlyWorker(
         addressId: addressId,
@@ -96,27 +111,111 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
         expectedMaxMinutes: _expectedMaxMinutes,
       ),
     );
-
-    if (!mounted) return;
+    if (!mounted || !_reviewing || revision != _estimateRevision) return;
     response.fold(
-      (failure) {
-        setState(() {
-          _estimating = false;
-          _estimateError = failure.message;
-        });
-      },
-      (result) {
-        setState(() {
-          _estimating = false;
-          _estimateError = null;
-          _estimate = result;
-        });
-      },
+      (failure) => setState(() {
+        _estimating = false;
+        _estimateError = failure.message;
+      }),
+      (result) => setState(() {
+        _estimating = false;
+        _estimateError = null;
+        _estimate = result;
+      }),
     );
   }
 
+  double? get _currentQuote =>
+      _estimate?.openTime?.totalPrice ?? _estimate?.pricing?.totalPrice;
+
+  void _editBooking() {
+    ++_estimateRevision;
+    setState(() {
+      _reviewing = false;
+      _estimate = null;
+      _estimateError = null;
+      _estimating = false;
+    });
+  }
+
+  Future<void> _confirmExit() async {
+    if (_reviewing) {
+      _editBooking();
+      return;
+    }
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('هل تريد مغادرة طلب العامل بالساعة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('متابعة الطلب'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('مغادرة'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || approved != true) return;
+    setState(() => _exitApproved = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  void _showSendingDialog() {
+    if (_sendingDialogOpen || !mounted) return;
+    _sendingDialogOpen = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 26, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 5,
+                    color: Color(0xFF172554),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'عم نرسل طلبك',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 19),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'ثواني وبنوصل طلبك للفريق... خلّي الباقي علينا!',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _hideSendingDialog() {
+    if (!_sendingDialogOpen || !mounted) return;
+    _sendingDialogOpen = false;
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
   Future<void> _submit() async {
-    if (_submitting) return;
+    if (_submitting || _confirming) return;
     FocusManager.instance.primaryFocus?.unfocus();
 
     final form = _formKey.currentState;
@@ -156,7 +255,34 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
       return;
     }
 
+    if (!_reviewing) {
+      setState(() => _reviewing = true);
+      await _refreshEstimate();
+      return;
+    }
+    final quote = _currentQuote;
+    if (_estimating || _estimateError != null || quote == null) {
+      _showMessage('يرجى مراجعة السعر قبل إرسال الطلب.');
+      return;
+    }
+    setState(() => _confirming = true);
+    final accepted = await showClBookingConfirmationSheet(
+      context: context,
+      title: 'تأكيد طلب عامل بالساعة',
+      total: quote,
+      currency:
+          _estimate?.openTime?.currency ??
+          _estimate?.pricing?.currency ??
+          'SYP',
+      icon: Icons.schedule_outlined,
+      priceLabel: 'الإجمالي المتوقع',
+      paymentNote: 'الدفع نقداً عند إتمام الخدمة، حسب مدة العمل الفعلية.',
+    );
+    if (!mounted) return;
+    setState(() => _confirming = false);
+    if (!accepted || _currentQuote != quote || _estimating) return;
     setState(() => _submitting = true);
+    _showSendingDialog();
     final response = await getIt<CreateCleaningOrderUseCase>()(
       CreateCleaningOrderParams.hourlyWorker(
         addressId: addressId,
@@ -173,6 +299,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     );
 
     if (!mounted) return;
+    _hideSendingDialog();
     response.fold(
       (failure) {
         setState(() => _submitting = false);
@@ -326,7 +453,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
           enabled: _workerCount > 1,
           onPressed: () {
             setState(() => _workerCount--);
-            _refreshEstimate();
+            _invalidateEstimate();
           },
         ),
         Expanded(
@@ -352,7 +479,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
           enabled: _workerCount < 20,
           onPressed: () {
             setState(() => _workerCount++);
-            _refreshEstimate();
+            _invalidateEstimate();
           },
         ),
       ],
@@ -430,7 +557,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'اختر عنوان الخدمة لعرض السعر الساعي التقديري.',
+              'سيظهر السعر بعد اكتمال حساب الطلب.',
               textAlign: TextAlign.start,
               style: TextStyle(color: SharedPlatformColors.muted, height: 1.45),
             ),
@@ -458,7 +585,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
             borderRadius: BorderRadius.circular(14),
           ),
           child: ClHourlyWorkerPriceRow(
-            label: 'القيمة التقديرية حتى الحد المختار',
+            label: 'الإجمالي المتوقع',
             amount: total,
             currency: currency,
             emphasize: true,
@@ -476,7 +603,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'الفوترة النهائية تعتمد على مدة العمل الفعلية المسجلة في النظام، ولا يتوقف العداد عند مغادرة شاشة الطلب.',
+                'الفاتورة النهائية بحسب مدة العمل الفعلية.',
                 textAlign: TextAlign.start,
                 style: TextStyle(
                   fontSize: 12,
@@ -491,6 +618,87 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     );
   }
 
+  Widget _buildReviewCard() {
+    final address = _selectedAddress.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _sectionCard(
+          title: 'تفاصيل العمل بالساعة',
+          icon: Icons.fact_check_outlined,
+          child: Column(
+            children: [
+              _summaryLine(
+                'الموعد',
+                _selectedDate == null || _selectedTime == null
+                    ? 'غير محدد'
+                    : '${CleaningDateTimeUiFormat.scheduleLabel(_selectedDate!)} - ${CleaningDateTimeUiFormat.time(_selectedTime!)}',
+              ),
+              const SizedBox(height: 12),
+              _summaryLine('عدد العمال', '$_workerCount'),
+              _summaryLine('المدة القصوى', _durationLabel(_expectedMaxMinutes)),
+              _summaryLine(
+                'عنوان الخدمة',
+                address?.label ?? address?.line1 ?? 'غير محدد',
+              ),
+              _summaryLine('المهام المطلوبة', _notesController.text.trim()),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _sectionCard(
+          title: 'ملخص السعر',
+          icon: Icons.receipt_long_outlined,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildEstimateCard(),
+              if (_estimate == null && !_estimating) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  key: const Key('hourly_retry_price'),
+                  onPressed: _refreshEstimate,
+                  icon: const Icon(Icons.refresh_outlined),
+                  label: const Text('إعادة محاولة جلب السعر'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryLine(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 112,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: SharedPlatformColors.muted,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: SharedPlatformColors.ink,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final dateLabel = _selectedDate == null
@@ -502,201 +710,175 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
 
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        backgroundColor: SharedPlatformColors.background,
-        body: SafeArea(
-          child: Column(
-            children: [
-              const HomeDetailsAppBar(),
-              Expanded(
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: EdgeInsetsDirectional.fromSTEB(
-                      16,
-                      16,
-                      16,
-                      28 + MediaQuery.viewInsetsOf(context).bottom,
-                    ),
-                    children: [
-                      ClRedesignCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: SharedPlatformColors.cleaningSoft,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.timer_outlined,
-                                size: 26,
-                                color: SharedPlatformColors.cleaning,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'عامل بالساعة',
-                                    textAlign: TextAlign.start,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w800,
-                                      color: SharedPlatformColors.ink,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'اطلب عاملاً أو أكثر للعمل بالساعة، وتُحتسب الفاتورة حسب مدة العمل الفعلية.',
-                                    textAlign: TextAlign.start,
-                                    style: TextStyle(
-                                      color: SharedPlatformColors.muted,
-                                      fontSize: 12,
-                                      height: 1.45,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+      child: PopScope(
+        canPop: _exitApproved,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop && !_submitting && !_confirming) _confirmExit();
+        },
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          backgroundColor: SharedPlatformColors.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                HomeDetailsAppBar(
+                  title: 'طلب عامل بالساعة',
+                  subtitle: 'أكمل بيانات الخدمة ثم راجع السعر',
+                  onBack: _confirmExit,
+                ),
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        16,
+                        16,
+                        16,
+                        28 + MediaQuery.viewInsetsOf(context).bottom,
+                      ),
+                      children: [
+                        ClRedesignStepHeader(
+                          currentStep: _reviewing ? 2 : 1,
+                          totalSteps: 2,
+                          title: _reviewing ? 'مراجعة طلبك' : 'تفاصيل الخدمة',
+                          subtitle: _reviewing
+                              ? 'راجع التفاصيل والتكلفة قبل الإرسال.'
+                              : 'حدد الموعد والمدة والمهام المطلوبة.',
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      const V6BookingDecisionGuide(
-                        topic: V6BookingDecisionTopic.hourlyDuration,
-                      ),
-                      const SizedBox(height: 12),
-                      _sectionCard(
-                        title: 'عدد العمال',
-                        subtitle: 'يمكنك طلب أكثر من عامل في نفس الحجز.',
-                        icon: Icons.groups_2_outlined,
-                        child: _buildCountSelector(),
-                      ),
-                      const SizedBox(height: 12),
-                      _sectionCard(
-                        title: 'الموعد',
-                        subtitle: 'اختر اليوم والوقت المناسبين لبدء الخدمة.',
-                        icon: Icons.event_available_outlined,
-                        child: Column(
-                          children: [
-                            ClHourlyWorkerAppointmentTile(
-                              label: 'التاريخ',
-                              value: dateLabel,
-                              icon: Icons.calendar_month_outlined,
-                              onTap: _pickDate,
-                            ),
-                            const SizedBox(height: 10),
-                            ClHourlyWorkerAppointmentTile(
-                              label: 'الوقت',
-                              value: timeLabel,
-                              icon: Icons.schedule_outlined,
-                              onTap: _pickTime,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _sectionCard(
-                        title: 'المدة القصوى المتوقعة',
-                        subtitle:
-                            'هي حد الحجز المتوقع، بينما الحساب النهائي حسب الوقت الفعلي.',
-                        icon: Icons.timelapse_outlined,
-                        child: DropdownButtonFormField<int>(
-                          initialValue: _expectedMaxMinutes,
-                          isExpanded: true,
-                          decoration: _fieldDecoration(
-                            hintText: 'اختر المدة القصوى',
+                        const SizedBox(height: 14),
+                        if (!_reviewing) ...[
+                          _sectionCard(
+                            title: 'عدد العمال',
+                            subtitle: 'يمكنك طلب أكثر من عامل في نفس الحجز.',
+                            icon: Icons.groups_2_outlined,
+                            child: _buildCountSelector(),
                           ),
-                          items: _durationOptions
-                              .map(
-                                (minutes) => DropdownMenuItem<int>(
-                                  value: minutes,
-                                  child: Text(
-                                    _durationLabel(minutes),
-                                    textAlign: TextAlign.start,
-                                  ),
+                          const SizedBox(height: 12),
+                          _sectionCard(
+                            title: 'الموعد',
+                            subtitle:
+                                'اختر اليوم والوقت المناسبين لبدء الخدمة.',
+                            icon: Icons.event_available_outlined,
+                            child: Column(
+                              children: [
+                                ClHourlyWorkerAppointmentTile(
+                                  label: 'التاريخ',
+                                  value: dateLabel,
+                                  icon: Icons.calendar_month_outlined,
+                                  onTap: _pickDate,
                                 ),
-                              )
-                              .toList(growable: false),
-                          onChanged: (minutes) {
-                            if (minutes == null) return;
-                            setState(() => _expectedMaxMinutes = minutes);
-                            _refreshEstimate();
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      CleaningAddressSelectWidget(
-                        selectedAddress: _selectedAddress,
-                        onChangeTap: _selectAddress,
-                        afterBringDefault: _refreshEstimate,
-                      ),
-                      const SizedBox(height: 12),
-                      _sectionCard(
-                        title: 'وصف العمل *',
-                        subtitle:
-                            'مطلوب — اشرح للعامل المهمة بوضوح في 20 حرفاً على الأقل.',
-                        icon: Icons.description_outlined,
-                        child: ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _notesController,
-                          builder: (context, value, _) {
-                            final length = value.text.trim().length;
-                            final helper =
-                                length >=
-                                    ClHourlyWorkerValidation
-                                        .minimumDescriptionLength
-                                ? 'يمكنك كتابة حتى ${ClHourlyWorkerValidation.maximumDescriptionLength} حرف.'
-                                : 'اكتب 20 حرفاً على الأقل — $length/${ClHourlyWorkerValidation.minimumDescriptionLength}';
-                            return TextFormField(
-                              key: _notesFieldKey,
-                              controller: _notesController,
-                              focusNode: _notesFocusNode,
-                              minLines: 4,
-                              maxLines: 6,
-                              maxLength: ClHourlyWorkerValidation
-                                  .maximumDescriptionLength,
-                              autovalidateMode:
-                                  AutovalidateMode.onUserInteraction,
-                              textAlign: TextAlign.start,
-                              validator: _validateDescription,
+                                const SizedBox(height: 10),
+                                ClHourlyWorkerAppointmentTile(
+                                  label: 'الوقت',
+                                  value: timeLabel,
+                                  icon: Icons.schedule_outlined,
+                                  onTap: _pickTime,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _sectionCard(
+                            title: 'المدة القصوى المتوقعة',
+                            subtitle:
+                                'هي حد الحجز المتوقع، بينما الحساب النهائي حسب الوقت الفعلي.',
+                            icon: Icons.timelapse_outlined,
+                            child: DropdownButtonFormField<int>(
+                              initialValue: _expectedMaxMinutes,
+                              isExpanded: true,
                               decoration: _fieldDecoration(
-                                hintText:
-                                    'مثال: مساعدة في ترتيب المنزل أو نقل أغراض خفيفة...',
-                                helperText: helper,
+                                hintText: 'اختر المدة القصوى',
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _sectionCard(
-                        title: 'التكلفة التقديرية',
-                        subtitle: 'السعر الظاهر تقديري حتى المدة التي اخترتها.',
-                        icon: Icons.payments_outlined,
-                        child: _buildEstimateCard(),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
+                              items: _durationOptions
+                                  .map(
+                                    (minutes) => DropdownMenuItem<int>(
+                                      value: minutes,
+                                      child: Text(
+                                        _durationLabel(minutes),
+                                        textAlign: TextAlign.start,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                              onChanged: (minutes) {
+                                if (minutes == null) return;
+                                setState(() => _expectedMaxMinutes = minutes);
+                                _invalidateEstimate();
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          CleaningAddressSelectWidget(
+                            selectedAddress: _selectedAddress,
+                            onChangeTap: _selectAddress,
+                            afterBringDefault: _invalidateEstimate,
+                          ),
+                          const SizedBox(height: 12),
+                          _sectionCard(
+                            title: 'وصف العمل *',
+                            subtitle: 'صف المهام التي تريد من العامل تنفيذها.',
+                            icon: Icons.description_outlined,
+                            child: ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _notesController,
+                              builder: (context, value, _) {
+                                final length = value.text.trim().length;
+                                final helper =
+                                    length <
+                                        ClHourlyWorkerValidation
+                                            .minimumDescriptionLength
+                                    ? 'الحد الأدنى للوصف 20 حرفاً'
+                                    : null;
+                                return TextFormField(
+                                  key: _notesFieldKey,
+                                  controller: _notesController,
+                                  focusNode: _notesFocusNode,
+                                  minLines: 4,
+                                  maxLines: 6,
+                                  maxLength: ClHourlyWorkerValidation
+                                      .maximumDescriptionLength,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
+                                  textAlign: TextAlign.start,
+                                  validator: _validateDescription,
+                                  decoration: _fieldDecoration(
+                                    hintText:
+                                        'مثال: مساعدة في ترتيب المنزل أو نقل أغراض خفيفة...',
+                                    helperText: helper,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ] else ...[
+                          _buildReviewCard(),
+                        ],
+                        const SizedBox(height: 18),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              ClRedesignStickyActions(
-                primaryLabel: _submitting
-                    ? 'جارٍ إرسال الطلب…'
-                    : 'تأكيد طلب عامل بالساعة',
-                onPrimary: _submit,
-                primaryEnabled: !_submitting,
-              ),
-            ],
+                ClRedesignStickyActions(
+                  primaryLabel: _submitting
+                      ? 'جارٍ إرسال الطلب…'
+                      : _reviewing
+                      ? 'تأكيد الطلب'
+                      : 'مراجعة السعر',
+                  onPrimary: _submit,
+                  secondaryLabel: _reviewing ? 'السابق' : null,
+                  onSecondary: _reviewing ? _editBooking : null,
+                  primaryEnabled:
+                      !_submitting &&
+                      !_confirming &&
+                      (!_reviewing ||
+                          (!_estimating &&
+                              _currentQuote != null &&
+                              _estimateError == null)),
+                ),
+              ],
+            ),
           ),
         ),
       ),

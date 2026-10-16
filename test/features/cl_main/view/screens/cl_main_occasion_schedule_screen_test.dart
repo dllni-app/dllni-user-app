@@ -27,11 +27,14 @@ class _FakeClMainRepo implements ClMainRepo {
 
   final List<PreviousWorkerModel> previousWorkers;
   final void Function(CreateCleaningOrderParams params)? onCreateOrder;
+  int estimateCalls = 0;
+  int previousWorkerCalls = 0;
 
   @override
   DataResponse<EstimatePriceResponseModel> estimateCleaningPrice(
     EstimateCleaningPriceParams params,
   ) async {
+    estimateCalls++;
     return const Right(EstimatePriceResponseModel());
   }
 
@@ -39,6 +42,7 @@ class _FakeClMainRepo implements ClMainRepo {
   DataResponse<PreviousWorkersResponseModel> getPreviousCleaningWorkers(
     GetPreviousCleaningWorkersParams params,
   ) async {
+    previousWorkerCalls++;
     return Right(PreviousWorkersResponseModel(data: previousWorkers));
   }
 
@@ -149,7 +153,21 @@ void main() {
     expect(find.text('أيام المناسبة'), findsOneWidget);
     expect(find.byType(ClServicePreviousWorkersSectionWidget), findsNothing);
     expect(find.text('Worker 77'), findsNothing);
-
+    expect(
+      repo.estimateCalls,
+      0,
+      reason: 'No price requests before final order review',
+    );
+    expect(
+      repo.previousWorkerCalls,
+      0,
+      reason: 'Previous workers load only when the team step opens',
+    );
+    expect(
+      find.text('تفاصيل المناسبة'),
+      findsNothing,
+      reason: 'Do not repeat the earlier occasion details',
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -178,7 +196,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(createCalled, isFalse);
-    expect(find.text('اختر موعد كل يوم قبل المتابعة.'), findsOneWidget);
+    expect(find.text('يرجى اختيار تاريخ يوم العمل 1'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

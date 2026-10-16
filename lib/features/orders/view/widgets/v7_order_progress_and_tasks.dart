@@ -236,14 +236,7 @@ class V7OrderServicesPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final services = order.services ?? const <CleaningOrderLineItemModel>[];
     final addons = order.addons ?? const <CleaningOrderLineItemModel>[];
-    final details = order.propertyDetails;
-    final roomCounts = <String, int?>{
-      'غرف النوم': details?.bedrooms,
-      'الحمامات': details?.bathrooms,
-      'المطابخ': details?.kitchens ?? order.numberOfKitchens,
-    };
-    final hasCounts = roomCounts.values.any((v) => v != null && v > 0);
-    if (services.isEmpty && addons.isEmpty && !hasCounts) {
+    if (services.isEmpty && addons.isEmpty) {
       return const SizedBox.shrink();
     }
     return V7OrderPanel(
@@ -264,11 +257,7 @@ class V7OrderServicesPanel extends StatelessWidget {
                     ? item.name!.trim()
                     : 'خدمة تنظيف',
                 count: item.quantity,
-              )
-          else if (hasCounts)
-            for (final entry in roomCounts.entries)
-              if ((entry.value ?? 0) > 0)
-                _ServiceRow(label: entry.key, count: entry.value),
+              ),
           if (addons.isNotEmpty) ...[
             const Divider(height: 20, color: Color(0xFFE9EDF1)),
             const Text(

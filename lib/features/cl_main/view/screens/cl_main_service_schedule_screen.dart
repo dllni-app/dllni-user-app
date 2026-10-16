@@ -20,6 +20,8 @@ import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_recurring_session.dart';
 import '../../domain/models/cleaning_type.dart';
+import '../../domain/models/cleaning_room_size_breakdown.dart';
+import '../../domain/models/cleaning_room_period_draft.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
@@ -28,8 +30,10 @@ import '../data/cl_main_route_args.dart';
 import '../helpers/cl_service_schedule_time_utils.dart';
 import '../manager/bloc/cl_main_bloc.dart';
 import '../widgets/app_pickers.dart';
+import '../widgets/cl_booking_confirmation_sheet.dart';
 import '../widgets/cl_cleaning_extras_section_widget.dart';
 import '../widgets/cl_cleaning_materials_step_widget.dart';
+import '../widgets/cl_room_periods_editor.dart';
 import '../widgets/cl_special_services_step_widget.dart';
 import '../widgets/cl_female_worker_safety_confirmation_sheet.dart';
 import '../widgets/cl_open_time_sessions_section_widget.dart';
@@ -94,6 +98,126 @@ class _ClMainServiceScheduleScreenState
       const CleaningServiceExtrasRequest();
   CleaningSuiteConfigModel _suiteConfig = const CleaningSuiteConfigModel();
   bool _isRecurring = false;
+  CleaningRoomPeriodDrafts? _roomPeriods;
+  final Map<String, int> _roomWorkMinutes = <String, int>{};
+  int _periodQuoteRefreshGeneration = 0;
+  bool get _isPeriodBooking =>
+      (_routeArgs?.roomUnits.isNotEmpty ?? false) && _roomPeriods != null;
+
+  void _updateRoomPeriods(CleaningRoomPeriodDrafts next) {
+    final prior = {
+      for (final period
+          in _roomPeriods?.periods ?? const <CleaningRoomPeriodDraft>[])
+        period.clientKey: period,
+    };
+
+    setState(() {
+      for (final updated in next.periods) {
+        final previous = prior[updated.clientKey];
+        if (previous == null ||
+            !_samePeriodServices(
+              previous.specialServices,
+              updated.specialServices,
+            )) {
+          // Specialized work changes total work minutes. Never show a stale
+          // duration while its fresh room quote is pending.
+          _roomWorkMinutes.remove(updated.clientKey);
+        }
+      }
+      _roomPeriods = next;
+      _priceNeedsRefresh = true;
+      _currentEstimate = null;
+    });
+
+    // Changes to a period must refresh the backend quote even before review,
+    // but fast counter taps should not create a burst of HTTP requests.
+    final revision = ++_periodQuoteRefreshGeneration;
+    Future<void>.delayed(const Duration(milliseconds: 260), () {
+      if (!mounted || revision != _periodQuoteRefreshGeneration) return;
+      final address = selectedAddress.value;
+      final bloc = _bloc;
+      if (bloc != null &&
+          address != null &&
+          (int.tryParse(address.id) ?? 0) > 0 &&
+          address.hasCompleteServiceLocation) {
+        _requestUpdatedEstimate(bloc.state, force: true);
+      }
+    });
+  }
+
+  bool _samePeriodServices(
+    List<Map<String, dynamic>> before,
+    List<Map<String, dynamic>> after,
+  ) {
+    if (before.length != after.length) return false;
+    for (var index = 0; index < before.length; index++) {
+      final original = before[index];
+      final revised = after[index];
+      if (original.length != revised.length) return false;
+      for (final entry in original.entries) {
+        if (!revised.containsKey(entry.key) ||
+            revised[entry.key] != entry.value) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  Widget _buildPeriodReview() {
+    final periodDrafts = _roomPeriods;
+    if (periodDrafts == null) return const SizedBox.shrink();
+    final quotePeriods =
+        _currentEstimate?.roomPeriods ?? const <Map<String, dynamic>>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'ملخص فترات الغرف',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        for (final period in periodDrafts.periods)
+          Card(
+            child: ListTile(
+              title: Text(
+                period.room.roomType.apiKey +
+                    ' ' +
+                    period.room.index.toString() +
+                    ' · ' +
+                    period.room.cleaningType.title,
+              ),
+              subtitle: Text(
+                period.scheduledDate.toIso8601String().substring(0, 10) +
+                    ' · ' +
+                    period.scheduledTime +
+                    ' · ' +
+                    period.workers.toString() +
+                    ' عامل · ' +
+                    (period.providedByPlatform
+                        ? 'مواد من المنصة'
+                        : 'مواد من العميل') +
+                    ' · ' +
+                    period.specialServices.length.toString() +
+                    ' خدمات',
+              ),
+              trailing: Text(
+                (() {
+                  final value = quotePeriods
+                      .where((q) => q['clientKey'] == period.clientKey)
+                      .firstOrNull;
+                  return value == null
+                      ? ''
+                      : (value['estimatedDurationMinutes']?.toString() ?? '') +
+                            ' د';
+                })(),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   CleaningRecurringPattern _recurringPattern = CleaningRecurringPattern.custom;
   CleaningRecurringCalculationMode _recurringCalculationMode =
       CleaningRecurringCalculationMode.hours;
@@ -126,7 +250,7 @@ class _ClMainServiceScheduleScreenState
     final dayDate = _dateChosen
         ? CleaningDateTimeUiFormat.date(_selectedDate)
         : '';
-    final estimate = _currentEstimate ?? _routeArgs?.estimate;
+    final estimate = _currentEstimate;
     final bloc = _bloc;
 
     if (bloc == null) {
@@ -146,12 +270,27 @@ class _ClMainServiceScheduleScreenState
         child: BlocConsumer<ClMainBloc, ClMainState>(
           listenWhen: (previous, current) =>
               previous.createOrderStatus != current.createOrderStatus ||
-              previous.estimatePriceStatus != current.estimatePriceStatus,
+              previous.estimatePriceStatus != current.estimatePriceStatus ||
+              !identical(previous.estimatePrice, current.estimatePrice),
           listener: (context, state) {
-            if (state.estimatePriceStatus == BlocStatus.success &&
+            if (state.estimatePriceStatus == BlocStatus.loading &&
+                _currentEstimate != null) {
+              setState(() {
+                _currentEstimate = null;
+                _priceNeedsRefresh = true;
+              });
+            } else if (state.estimatePriceStatus == BlocStatus.success &&
                 state.estimatePrice != null) {
               setState(() {
                 _currentEstimate = state.estimatePrice;
+                for (final room in state.estimatePrice!.roomPeriods) {
+                  final key = room['clientKey']?.toString();
+                  final minutes = (room['estimatedWorkMinutes'] as num?)
+                      ?.toInt();
+                  if (key != null && minutes != null && minutes > 0) {
+                    _roomWorkMinutes[key] = minutes;
+                  }
+                }
                 if (state.estimatePrice!.availableMaterials.isNotEmpty) {
                   _availableMaterialsCatalog =
                       state.estimatePrice!.availableMaterials;
@@ -164,6 +303,10 @@ class _ClMainServiceScheduleScreenState
             } else if (state.estimatePriceStatus == BlocStatus.failed &&
                 state.errorMessage != null &&
                 state.errorMessage!.isNotEmpty) {
+              setState(() {
+                _currentEstimate = null;
+                _priceNeedsRefresh = true;
+              });
               AppToast.showToast(
                 context: context,
                 message: state.errorMessage!,
@@ -248,7 +391,29 @@ class _ClMainServiceScheduleScreenState
                               },
                             ),
                             const SizedBox(height: 18),
-                            if (_scheduleStep == 2) ...[
+                            if (_scheduleStep == 2 && _isPeriodBooking) ...[
+                              const Text(
+                                'حدد وقت وعدد عمال كل فترة',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 17,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              ClRoomPeriodsEditor(
+                                phase: ClPeriodEditingPhase.schedule,
+                                workMinutesByRoom: _roomWorkMinutes,
+                                drafts: _roomPeriods!,
+                                onChanged: _updateRoomPeriods,
+                              ),
+                              CleaningAddressSelectWidget(
+                                selectedAddress: selectedAddress,
+                                onChangeTap: _selectAddress,
+                                afterBringDefault: () =>
+                                    _requestUpdatedEstimate(state),
+                              ),
+                            ],
+                            if (_scheduleStep == 2 && !_isPeriodBooking) ...[
                               const V6BookingDecisionGuide(
                                 topic: V6BookingDecisionTopic.appointment,
                               ),
@@ -339,7 +504,15 @@ class _ClMainServiceScheduleScreenState
                                 ),
                               const SizedBox(height: 12),
                             ],
-                            if (_scheduleStep == 0) ...[
+                            if (_scheduleStep == 0 && _isPeriodBooking) ...[
+                              ClRoomPeriodsEditor(
+                                phase: ClPeriodEditingPhase.materials,
+                                drafts: _roomPeriods!,
+                                materials: _availableMaterialsCatalog,
+                                onChanged: _updateRoomPeriods,
+                              ),
+                            ],
+                            if (_scheduleStep == 0 && !_isPeriodBooking) ...[
                               ClCleaningMaterialsStepWidget(
                                 customerProvides: _customerProvidesMaterials,
                                 requiredMaterials:
@@ -352,14 +525,23 @@ class _ClMainServiceScheduleScreenState
                                     _availableMaterialsCatalog.isEmpty &&
                                     state.estimatePriceStatus ==
                                         BlocStatus.loading,
-                                onRetry: () => _requestUpdatedEstimate(state),
+                                onRetry: () =>
+                                    _requestUpdatedEstimate(state, force: true),
                                 onCustomerProvidesChanged: (customer) =>
                                     _setMaterialsProvider(customer, state),
                                 onMissingChanged: (ids) =>
                                     _setMissingMaterialTypes(ids, state),
                               ),
                             ],
-                            if (_scheduleStep == 1) ...[
+                            if (_scheduleStep == 1 && _isPeriodBooking) ...[
+                              ClRoomPeriodsEditor(
+                                phase: ClPeriodEditingPhase.specialized,
+                                drafts: _roomPeriods!,
+                                services: _availableSpecialServices,
+                                onChanged: _updateRoomPeriods,
+                              ),
+                            ],
+                            if (_scheduleStep == 1 && !_isPeriodBooking) ...[
                               ClSpecialServicesStepWidget(
                                 catalog: _availableSpecialServices,
                                 selectedIds: _serviceExtras.specialServices
@@ -463,7 +645,10 @@ class _ClMainServiceScheduleScreenState
                                         }
                                       : const <int, String>{},
                                   onRetryEstimate: () =>
-                                      _requestUpdatedEstimate(state),
+                                      _requestUpdatedEstimate(
+                                        state,
+                                        force: true,
+                                      ),
                                   onRetrySpecialServices: _loadSpecialServices,
                                 ),
                               ),
@@ -528,49 +713,60 @@ class _ClMainServiceScheduleScreenState
                                 topic: V6BookingDecisionTopic.bookingReview,
                               ),
                               const SizedBox(height: 12),
-                              ClBookingReviewOverview(
-                                service:
-                                    _routeArgs?.cleaningType.title ?? 'تنظيف',
-                                address:
-                                    [
-                                          selectedAddress.value?.label,
-                                          selectedAddress.value?.line1,
-                                        ]
-                                        .whereType<String>()
-                                        .where((item) => item.trim().isNotEmpty)
-                                        .toSet()
-                                        .join('، '),
-                                workerLabel:
-                                    (_serviceExtras.openTime?.workerCount ??
-                                            _requiredWorkersCount(state))
-                                        .toString(),
-                                materialsRequested:
-                                    _serviceExtras.requestMaterials,
-                                missingMaterialTypeIds:
-                                    _serviceExtras.materialTypeIds,
-                                missingMaterialNames:
-                                    (estimate?.availableMaterials ??
-                                            const <CleaningMaterialLineModel>[])
-                                        .where(
-                                          (line) => _missingMaterialTypeIds
-                                              .contains(line.materialTypeId),
-                                        )
-                                        .map((line) => line.name)
-                                        .whereType<String>()
-                                        .toList(growable: false),
-                                services: _selectedCleaningServiceNames.toList()
-                                  ..sort(),
-                                recurring: _isRecurring,
-                                roomSizeBreakdown:
-                                    _routeArgs?.roomSizeBreakdown,
-                              ),
+                              if (_isPeriodBooking) _buildPeriodReview(),
+                              if (!_isPeriodBooking)
+                                ClBookingReviewOverview(
+                                  service:
+                                      _routeArgs?.cleaningType.title ?? 'تنظيف',
+                                  address:
+                                      [
+                                            selectedAddress.value?.label,
+                                            selectedAddress.value?.line1,
+                                          ]
+                                          .whereType<String>()
+                                          .where(
+                                            (item) => item.trim().isNotEmpty,
+                                          )
+                                          .toSet()
+                                          .join('، '),
+                                  workerLabel:
+                                      (_serviceExtras.openTime?.workerCount ??
+                                              _requiredWorkersCount(state))
+                                          .toString(),
+                                  materialsRequested:
+                                      _serviceExtras.requestMaterials,
+                                  missingMaterialTypeIds:
+                                      _serviceExtras.materialTypeIds,
+                                  missingMaterialNames:
+                                      (estimate?.availableMaterials ??
+                                              const <
+                                                CleaningMaterialLineModel
+                                              >[])
+                                          .where(
+                                            (line) => _missingMaterialTypeIds
+                                                .contains(line.materialTypeId),
+                                          )
+                                          .map((line) => line.name)
+                                          .whereType<String>()
+                                          .toList(growable: false),
+                                  services:
+                                      _selectedCleaningServiceNames.toList()
+                                        ..sort(),
+                                  recurring: _isRecurring,
+                                  roomSizeBreakdown:
+                                      _routeArgs?.roomSizeBreakdown,
+                                  roomCleaningModes:
+                                      _routeArgs?.roomCleaningModes ??
+                                      const <String, String>{},
+                                ),
                               const SizedBox(height: 12),
-                              ClServiceCouponSectionWidget(
-                                couponController: _couponController,
-                                status: _couponStatus,
-                                message: _couponMessage,
-                                onApply: _applyCoupon,
-                              ),
+                              if (!_isPeriodBooking)
+                                ClServiceCouponSectionWidget(
+                                  couponController: _couponController,
+                                  status: _couponStatus,
+                                  message: _couponMessage,
+                                  onApply: _applyCoupon,
+                                ),
                               if (_appliedCouponCode != null) ...[
                                 const SizedBox(height: 8),
                                 Align(
@@ -606,32 +802,67 @@ class _ClMainServiceScheduleScreenState
                                   ),
                                 ),
                               ],
-                              ClServiceOrderSummarySectionWidget(
-                                priceSummary: estimate?.pricing?.priceSummary,
-                                basePrice: estimate?.pricing?.basePrice ?? 0,
-                                travelFee: estimate?.pricing?.travelFee ?? 0,
-                                addonsTotal:
-                                    estimate?.pricing?.addonsTotal ?? 0,
-                                totalPrice: estimate?.pricing?.totalPrice ?? 0,
-                                discountAmount: _appliedCouponDiscount,
-                                totalAfterDiscount: _appliedCouponTotal,
-                                adminMargin: estimate?.pricing?.adminMargin,
-                                isPricingFinal:
-                                    estimate?.pricing?.isPricingFinal,
-                                minimumOrderPrice:
-                                    estimate?.pricing?.minimumOrderPrice,
-                                minimumOrderApplied:
-                                    estimate?.pricing?.minimumOrderApplied ??
-                                    false,
-                                currency: estimate?.pricing?.currency ?? 'SYP',
-                                scheduleDayLabel: dayAr,
-                                scheduleDateLabel: dayDate,
-                                scheduleTimeRange:
-                                    CleaningDateTimeUiFormat.timeRange(
-                                      _fromTimeHhMm,
-                                      _toTimeHhMm,
-                                    ),
-                              ),
+                              if (_isPeriodBooking)
+                                ClRedesignCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      const Text(
+                                        'السعر النهائي لطلب التنظيف',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        estimate?.pricing?.totalPrice == null
+                                            ? 'جارٍ حساب السعر...'
+                                            : estimate!.pricing!.totalPrice!
+                                                      .toStringAsFixed(0) +
+                                                  ' ل.س',
+                                        style: const TextStyle(
+                                          fontSize: 25,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF075A50),
+                                        ),
+                                      ),
+                                      const Text(
+                                        'المبلغ الكامل للحجز، دون رسوم إضافية مفصلة.',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (!_isPeriodBooking)
+                                ClServiceOrderSummarySectionWidget(
+                                  priceSummary: estimate?.pricing?.priceSummary,
+                                  basePrice: estimate?.pricing?.basePrice ?? 0,
+                                  travelFee: estimate?.pricing?.travelFee ?? 0,
+                                  addonsTotal:
+                                      estimate?.pricing?.addonsTotal ?? 0,
+                                  totalPrice:
+                                      estimate?.pricing?.totalPrice ?? 0,
+                                  discountAmount: _appliedCouponDiscount,
+                                  totalAfterDiscount: _appliedCouponTotal,
+                                  adminMargin: estimate?.pricing?.adminMargin,
+                                  isPricingFinal:
+                                      estimate?.pricing?.isPricingFinal,
+                                  minimumOrderPrice:
+                                      estimate?.pricing?.minimumOrderPrice,
+                                  minimumOrderApplied:
+                                      estimate?.pricing?.minimumOrderApplied ??
+                                      false,
+                                  currency:
+                                      estimate?.pricing?.currency ?? 'SYP',
+                                  scheduleDayLabel: dayAr,
+                                  scheduleDateLabel: dayDate,
+                                  scheduleTimeRange:
+                                      CleaningDateTimeUiFormat.timeRange(
+                                        _fromTimeHhMm,
+                                        _toTimeHhMm,
+                                      ),
+                                ),
                               const SizedBox(height: 12),
                               const ClRedesignCard(
                                 child: Row(
@@ -699,9 +930,6 @@ class _ClMainServiceScheduleScreenState
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: const Text('هل تريد مغادرة طلب التنظيف؟'),
-        content: const Text(
-          'إذا غادرت الآن، ستفقد التعديلات التي لم تحفظها في هذا الطلب.',
-        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -739,6 +967,10 @@ class _ClMainServiceScheduleScreenState
     // Final booking sequence: materials -> specialized services ->
     // appointment/address -> workers -> review/submit.
     if (_scheduleStep == 0) {
+      if (_isPeriodBooking) {
+        _setScheduleStep(1);
+        return;
+      }
       if (state.estimatePriceStatus == BlocStatus.loading) {
         _bookingFeedback('عم نجهّز قائمة مواد التنظيف، انتظر شوي.');
         return;
@@ -752,9 +984,24 @@ class _ClMainServiceScheduleScreenState
     }
     if (_scheduleStep == 1) {
       _setScheduleStep(2);
+      if (_isPeriodBooking) {
+        _requestUpdatedEstimate(state, force: true);
+      }
       return;
     }
     if (_scheduleStep == 2) {
+      if (_isPeriodBooking) {
+        final address = selectedAddress.value;
+        if (address == null ||
+            !address.hasCompleteServiceLocation ||
+            (int.tryParse(address.id) ?? 0) <= 0) {
+          _bookingFeedback('حدد عنوان خدمة واضحاً قبل المتابعة');
+          return;
+        }
+        _setScheduleStep(3);
+        _requestUpdatedEstimate(state, force: true);
+        return;
+      }
       if (!_dateChosen) {
         _bookingFeedback('اختر تاريخ الخدمة للمتابعة.');
         return;
@@ -772,7 +1019,11 @@ class _ClMainServiceScheduleScreenState
         _bookingFeedback('اختر عنواناً واضحاً مع موقعه على الخريطة.');
         return;
       }
+      // Worker availability needs a quote for the selected address and extras.
+      // Clear the provisional quote before rendering the worker list.
+      setState(() => _currentEstimate = null);
       _setScheduleStep(3);
+      _requestUpdatedEstimate(state, force: true);
       return;
     }
     if (_scheduleStep == 3) {
@@ -785,11 +1036,20 @@ class _ClMainServiceScheduleScreenState
         _bookingFeedback('أكد بيئة العمل قبل طلب عاملة.');
         return;
       }
-      if (!_isRecurring &&
+      if (!_isPeriodBooking &&
+          !_isRecurring &&
           state.assignmentMode == CleaningAssignmentMode.preferredWorker &&
           state.selectedWorkerIds.length != state.numberOfWorkers) {
         _bookingFeedback(
           'حدد ${state.numberOfWorkers} عامل من الذين تعاملت معهم سابقاً، أو اختر البحث التلقائي.',
+        );
+        return;
+      }
+      if (_isRecurring &&
+          _recurringWorkerScope == CleaningRecurringWorkerScope.specific &&
+          state.selectedWorkerIds.isEmpty) {
+        _bookingFeedback(
+          'يرجى اختيار عامل واحد على الأقل للحجز الدوري المحدد.',
         );
         return;
       }
@@ -808,7 +1068,7 @@ class _ClMainServiceScheduleScreenState
     required EstimatePriceResponseModel? estimate,
   }) {
     final args = _routeArgs;
-    if (args == null) return const SizedBox.shrink();
+    if (args == null || _isPeriodBooking) return const SizedBox.shrink();
 
     if (_serviceExtras.openTime != null) {
       return const SizedBox.shrink();
@@ -821,20 +1081,12 @@ class _ClMainServiceScheduleScreenState
 
     if (_isRecurring &&
         _recurringWorkerScope == CleaningRecurringWorkerScope.specific) {
-      return ClScheduledPreviousWorkersSectionWidget(
+      return _buildScheduledPreviousWorkers(
+        state: state,
         bloc: bloc,
+        estimate: estimate,
         propertyType: args.propertyType,
-        scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
-          _selectedDate,
-        ),
-        scheduledTime: _fromTimeHhMm,
-        durationHours: _effectiveServiceHours(
-          estimatedHours: _perVisitEstimatedHours(estimate),
-          numberOfWorkers: _requiredWorkersCount(state),
-        ),
-        onSelectedWorkersChanged: (workerIds) {
-          _requestUpdatedEstimate(state, selectedWorkerIds: workerIds);
-        },
+        numberOfWorkersForDuration: _requiredWorkersCount(state),
       );
     }
 
@@ -895,26 +1147,20 @@ class _ClMainServiceScheduleScreenState
             },
           ),
           const SizedBox(height: 10),
+          _workerDurationHint(state.numberOfWorkers, estimate),
+          const SizedBox(height: 10),
           Text(
             'اختر من العمال السابقين نفس العدد المحدد أعلاه. عند اختيار أكثر من عامل سيُرسل الطلب إلى هؤلاء العمال تحديداً.',
             style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
           ),
           const SizedBox(height: 10),
-          ClScheduledPreviousWorkersSectionWidget(
+          _buildScheduledPreviousWorkers(
+            state: state,
+            estimate: estimate,
             maxSelectedWorkers: state.numberOfWorkers,
             bloc: bloc,
             propertyType: args.propertyType,
-            scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(
-              _selectedDate,
-            ),
-            scheduledTime: _fromTimeHhMm,
-            durationHours: _effectiveServiceHours(
-              estimatedHours: _perVisitEstimatedHours(estimate),
-              numberOfWorkers: 1,
-            ),
-            onSelectedWorkersChanged: (workerIds) {
-              _requestUpdatedEstimate(state, selectedWorkerIds: workerIds);
-            },
+            numberOfWorkersForDuration: 1,
           ),
         ],
         if (state.assignmentMode == CleaningAssignmentMode.openCount) ...[
@@ -937,6 +1183,14 @@ class _ClMainServiceScheduleScreenState
               );
             },
           ),
+          const SizedBox(height: 10),
+          _workerDurationHint(state.numberOfWorkers, estimate),
+        ],
+        if (roomUnits.isNotEmpty &&
+            (state.numberOfWorkers > 1 ||
+                (state.assignmentMode ==
+                        CleaningAssignmentMode.preferredWorker &&
+                    state.selectedWorkerIds.isNotEmpty))) ...[
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
@@ -977,7 +1231,9 @@ class _ClMainServiceScheduleScreenState
                 slotByRoomKey: state.workerRoomAssignments,
                 units: roomUnits,
                 preferredWorkerId: state.primarySelectedWorkerId,
-                assignmentMode: state.assignmentMode,
+                assignmentMode: state.numberOfWorkers > 1
+                    ? CleaningAssignmentMode.openCount
+                    : state.assignmentMode,
               ),
               onAssign: (roomKey, workerSlot) {
                 bloc.add(
@@ -986,11 +1242,108 @@ class _ClMainServiceScheduleScreenState
                     workerSlot: workerSlot,
                   ),
                 );
+                _requestUpdatedEstimate(
+                  state.copyWith(
+                    workerRoomAssignments: {
+                      ...state.workerRoomAssignments,
+                      roomKey: workerSlot,
+                    },
+                  ),
+                );
               },
             ),
           ],
         ],
       ],
+    );
+  }
+
+  /// Presentation-only duration derived from the last authoritative work estimate.
+  /// Selecting more workers updates this immediately while the new quote loads.
+  Widget _workerDurationHint(
+    int workerCount,
+    EstimatePriceResponseModel? estimate,
+  ) {
+    final workHours = _isRecurring
+        ? _perVisitEstimatedHours(estimate)
+        : (estimate?.size?.estimatedWorkHours ??
+              _perVisitEstimatedHours(estimate));
+    if (workHours <= 0) return const SizedBox.shrink();
+    final totalMinutes = (workHours * 60).ceil();
+    final durationMinutes = (totalMinutes / workerCount.clamp(1, 20)).ceil();
+    final hourPart = durationMinutes ~/ 60;
+    final minutePart = durationMinutes % 60;
+    return Container(
+      key: const Key('worker_duration_preview'),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF7F6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFB8DBD4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.schedule_outlined, color: Color(0xFF006B60)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'مدة التنفيذ المتوقعة مع $workerCount عامل: $hourPart ساعة و$minutePart دقيقة',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF075A50),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduledPreviousWorkers({
+    required ClMainState state,
+    required ClMainBloc bloc,
+    required EstimatePriceResponseModel? estimate,
+    required String propertyType,
+    required int numberOfWorkersForDuration,
+    int? maxSelectedWorkers,
+  }) {
+    final estimatedHours = _perVisitEstimatedHours(estimate);
+    final durationHours = _effectiveServiceHours(
+      estimatedHours: estimatedHours,
+      numberOfWorkers: numberOfWorkersForDuration,
+    );
+    if (state.estimatePriceStatus == BlocStatus.loading || durationHours <= 0) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: state.estimatePriceStatus == BlocStatus.loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  const Text('تعذر تقدير مدة الخدمة. أعد تحميل التقدير.'),
+                  TextButton.icon(
+                    onPressed: () =>
+                        _requestUpdatedEstimate(state, force: true),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              ),
+      );
+    }
+    return ClScheduledPreviousWorkersSectionWidget(
+      bloc: bloc,
+      maxSelectedWorkers: maxSelectedWorkers,
+      propertyType: propertyType,
+      scheduledDate: CleaningScheduleDateTimeLogic.formatDateApi(_selectedDate),
+      scheduledTime: _fromTimeHhMm,
+      durationHours: durationHours,
+      onSelectedWorkersChanged: (workerIds) => _requestUpdatedEstimate(
+        state,
+        selectedWorkerIds: workerIds,
+        force: true,
+      ),
     );
   }
 
@@ -1003,6 +1356,19 @@ class _ClMainServiceScheduleScreenState
     if (args is ClMainScheduleArgs) {
       _routeArgs = args;
       _bloc = args.bloc;
+      if (args.roomUnits.isNotEmpty) {
+        final previousPeriods = args.draft?['roomPeriodDrafts'];
+        _roomPeriods = previousPeriods is CleaningRoomPeriodDrafts
+            ? previousPeriods.reconcileRooms(
+                args.roomUnits,
+                defaultDate: DateTime.now().add(const Duration(days: 1)),
+              )
+            : CleaningRoomPeriodDrafts.fromRooms(
+                args.roomUnits,
+                date: DateTime.now().add(const Duration(days: 1)),
+              );
+        _isRecurring = false;
+      }
       // Defensive reset for direct/reused navigation into this screen. The
       // create-order result belongs only to the current explicit submission.
       _bloc?.add(ResetCreateOrderStatusEvent());
@@ -1047,6 +1413,10 @@ class _ClMainServiceScheduleScreenState
             draft['manualRoomAssignment'] as bool? ??
             _manualRoomAssignmentEnabled;
       }
+      if (_isPeriodBooking) _isRecurring = false;
+      // A restored worker/review step needs a fresh address- and worker-scoped
+      // quote before exposing availability or payment figures.
+      if (_scheduleStep >= 3) _currentEstimate = null;
       selectedAddress = ValueNotifier(
         (draft?['address'] as AddressListItem?) ??
             args.defaultAddress ??
@@ -1072,9 +1442,10 @@ class _ClMainServiceScheduleScreenState
       }
       // Restoring a booking draft never triggers a blocking overlay.
       // Fetch a fresh catalog only when the restored step needs one.
-      if (_scheduleStep == 0 &&
-          _availableMaterialsCatalog.isEmpty &&
-          (_currentEstimate?.availableMaterials.isEmpty ?? true)) {
+      if ((_scheduleStep == 0 &&
+              _availableMaterialsCatalog.isEmpty &&
+              (_currentEstimate?.availableMaterials.isEmpty ?? true)) ||
+          (_scheduleStep >= 3)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _requestUpdatedEstimate(args.bloc.state, force: true);
         });
@@ -1090,6 +1461,7 @@ class _ClMainServiceScheduleScreenState
     if (draft != null) {
       draft
         ..['step'] = _scheduleStep
+        ..['roomPeriodDrafts'] = _roomPeriods
         ..['extras'] = _serviceExtras
         ..['customerProvides'] = _customerProvidesMaterials
         ..['missingMaterialIds'] = {..._missingMaterialTypeIds}
@@ -1278,6 +1650,8 @@ class _ClMainServiceScheduleScreenState
       'balconies': args.roomSizeBreakdown.legacyBalconiesCount,
       'living_room_size': args.roomSizeBreakdown.legacyLivingRoomSize,
       'room_size_breakdown': args.roomSizeBreakdown.toBackendJson(),
+      if (args.roomCleaningModes.isNotEmpty)
+        'room_cleaning_modes': args.roomCleaningModes,
       'cleaning_mode': args.cleaningType.cleaningModeValue,
     };
   }
@@ -1396,9 +1770,7 @@ class _ClMainServiceScheduleScreenState
       _recurringWorkerScope = enabled && state.selectedWorkerIds.isNotEmpty
           ? CleaningRecurringWorkerScope.specific
           : CleaningRecurringWorkerScope.any;
-      final estimatedVisitHours =
-          (_currentEstimate ?? _routeArgs?.estimate)?.size?.estimatedHours ??
-          2.0;
+      final estimatedVisitHours = _currentEstimate?.size?.estimatedHours ?? 2.0;
       final roundedHours =
           (estimatedVisitHours.clamp(1.0, 24.0) * 2).round() / 2;
       _recurringHoursPerVisit =
@@ -1428,12 +1800,14 @@ class _ClMainServiceScheduleScreenState
     });
     if (scope == CleaningRecurringWorkerScope.any) {
       _bloc?.add(ClearPreferredWorkersEvent());
-      _requestUpdatedEstimate(state, selectedWorkerIds: const <int>[]);
+      _requestUpdatedEstimate(
+        state,
+        selectedWorkerIds: const <int>[],
+        force: _scheduleStep >= 3,
+      );
       return;
     }
-    if (state.selectedWorkerIds.isNotEmpty) {
-      _requestUpdatedEstimate(state);
-    }
+    _requestUpdatedEstimate(state, force: _scheduleStep >= 3);
   }
 
   void _setRecurringCalculationMode(
@@ -1697,7 +2071,7 @@ class _ClMainServiceScheduleScreenState
   }
 
   void _syncToTime() {
-    final estimate = _currentEstimate ?? _routeArgs?.estimate;
+    final estimate = _currentEstimate;
     final estimatedHours = _perVisitEstimatedHours(estimate);
     final blocState = _bloc?.state;
     final numberOfWorkers = blocState == null
@@ -1729,8 +2103,10 @@ class _ClMainServiceScheduleScreenState
     required double estimatedHours,
     required int numberOfWorkers,
   }) {
-    if (numberOfWorkers <= 1 || estimatedHours <= 0) return estimatedHours;
-    return double.parse((estimatedHours / numberOfWorkers).toStringAsFixed(1));
+    return effectiveCleaningWorkerDurationHours(
+      estimatedHours: estimatedHours,
+      numberOfWorkers: numberOfWorkers,
+    );
   }
 
   Future<void> _loadSpecialServices() async {
@@ -1848,11 +2224,13 @@ class _ClMainServiceScheduleScreenState
 
   void _setMissingMaterialTypes(Set<int> ids, ClMainState state) {
     final availableIds =
-        (_currentEstimate ?? _routeArgs?.estimate)?.availableMaterials
+        (_availableMaterialsCatalog.isNotEmpty
+                ? _availableMaterialsCatalog
+                : _currentEstimate?.availableMaterials ??
+                      const <CleaningMaterialLineModel>[])
             .map((e) => e.materialTypeId)
             .whereType<int>()
-            .toSet() ??
-        <int>{};
+            .toSet();
     final validIds = ids.intersection(availableIds);
     setState(() {
       _customerProvidesMaterials = true;
@@ -2271,17 +2649,21 @@ class _ClMainServiceScheduleScreenState
     if (_priceNeedsRefresh ||
         state.estimatePriceStatus == BlocStatus.loading ||
         state.estimatePriceStatus == BlocStatus.failed ||
-        (_currentEstimate ?? _routeArgs?.estimate)?.pricing == null) {
+        _currentEstimate?.pricing == null) {
       _bookingFeedback('يرجى تحديث تكلفة الخدمة قبل إرسال الطلب.');
       return;
     }
-    if (!_dateChosen) {
+    if (_isPeriodBooking && _currentEstimate?.quoteSignature == null) {
+      _bookingFeedback('انتظر تحديث السعر النهائي للفترات');
+      return;
+    }
+    if (!_isPeriodBooking && !_dateChosen) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('يرجى اختيار تاريخ الخدمة')));
       return;
     }
-    if (!_timeChosen) {
+    if (!_isPeriodBooking && !_timeChosen) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى اختيار وقت بدء الخدمة')),
       );
@@ -2342,7 +2724,7 @@ class _ClMainServiceScheduleScreenState
       return;
     }
 
-    final estimateForWorkers = _currentEstimate ?? args.estimate;
+    final estimateForWorkers = _currentEstimate;
     final estimatedHours = _perVisitEstimatedHours(estimateForWorkers);
     final selectedWorkers =
         _serviceExtras.openTime?.workerCount ?? _requiredWorkersCount(state);
@@ -2350,7 +2732,7 @@ class _ClMainServiceScheduleScreenState
         estimateForWorkers?.requiredWorkers ??
         (estimatedHours <= 0 ? 1 : (estimatedHours / 8).ceil());
 
-    if (selectedWorkers < requiredWorkers) {
+    if (!_isPeriodBooking && selectedWorkers < requiredWorkers) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -2376,8 +2758,7 @@ class _ClMainServiceScheduleScreenState
     }
 
     final approvedPrice =
-        _appliedCouponTotal ??
-        (_currentEstimate ?? args.estimate)?.pricing?.totalPrice;
+        _appliedCouponTotal ?? _currentEstimate?.pricing?.totalPrice;
     _confirmationOpen = true;
     final acceptedPledge = await _showPersonalPropertyPledgeDialog();
     _confirmationOpen = false;
@@ -2388,8 +2769,7 @@ class _ClMainServiceScheduleScreenState
       return;
     }
     final currentPrice =
-        _appliedCouponTotal ??
-        (_currentEstimate ?? args.estimate)?.pricing?.totalPrice;
+        _appliedCouponTotal ?? _currentEstimate?.pricing?.totalPrice;
     if (!V6BookingQuoteGuard.canSubmit(
       confirmedTotal: approvedPrice,
       currentTotal: currentPrice,
@@ -2403,7 +2783,7 @@ class _ClMainServiceScheduleScreenState
     }
     _submissionRequested = true;
 
-    final estimate = _currentEstimate ?? _routeArgs?.estimate;
+    final estimate = _currentEstimate;
     final selectedWorkerIds =
         _serviceExtras.openTime != null ||
             (_isRecurring &&
@@ -2420,20 +2800,26 @@ class _ClMainServiceScheduleScreenState
                     : CleaningAssignmentMode.openCount))
         : state.assignmentMode;
     final normalizedAssignments = estimate?.workerRoomAssignments ?? const [];
-    final workerRoomAssignments = normalizedAssignments.isNotEmpty
+    final explicitAssignments = buildWorkerRoomAssignmentsJson(
+      slotByRoomKey: state.workerRoomAssignments,
+      units: enumerateRoomUnits(args.roomSizeBreakdown),
+      preferredWorkerId: selectedWorkerIds.length == 1
+          ? selectedWorkerIds.first
+          : null,
+      assignmentMode: requestAssignmentMode,
+    );
+    final workerRoomAssignments =
+        _manualRoomAssignmentEnabled && explicitAssignments.isNotEmpty
+        ? explicitAssignments
+        : normalizedAssignments.isNotEmpty
         ? workerRoomAssignmentsToRequestJson(normalizedAssignments)
-        : buildWorkerRoomAssignmentsJson(
-            slotByRoomKey: state.workerRoomAssignments,
-            units: enumerateRoomUnits(args.roomSizeBreakdown),
-            preferredWorkerId: selectedWorkerIds.isEmpty
-                ? null
-                : selectedWorkerIds.first,
-            assignmentMode: requestAssignmentMode,
-          );
+        : explicitAssignments;
 
     bloc.add(
       CreateCleaningOrderEvent(
         params: CreateCleaningOrderParams(
+          roomPeriods: _isPeriodBooking ? _roomPeriods!.toApiJson() : null,
+          quoteSignature: _isPeriodBooking ? estimate?.quoteSignature : null,
           propertyType: args.propertyType,
           bedrooms: args.bedrooms,
           rooms: args.rooms,
@@ -2441,6 +2827,7 @@ class _ClMainServiceScheduleScreenState
           balconies: args.roomSizeBreakdown.legacyBalconiesCount,
           livingRoomSize: args.livingRoomSize,
           roomSizeBreakdown: args.roomSizeBreakdown,
+          roomCleaningModes: args.roomCleaningModes,
           cleaningType: args.cleaningType,
           addressId: addressId,
           address: address.line1,
@@ -2545,9 +2932,11 @@ class _ClMainServiceScheduleScreenState
   }) {
     if (_scheduleStep < 4 && !force) {
       _priceNeedsRefresh = true;
+      _currentEstimate = null;
       return;
     }
     _priceNeedsRefresh = true;
+    _currentEstimate = null;
     final args = _routeArgs;
     final bloc = _bloc;
     final address = selectedAddress.value;
@@ -2560,14 +2949,17 @@ class _ClMainServiceScheduleScreenState
     }
 
     final rawWorkerIds = selectedWorkerIds ?? state.selectedWorkerIds;
-    if (_isRecurring &&
-        _recurringWorkerScope == CleaningRecurringWorkerScope.specific &&
-        rawWorkerIds.isEmpty) {
-      return;
-    }
-    final workerIds =
+    final needsSpecificWorkerSelection =
         _isRecurring &&
-            _recurringWorkerScope == CleaningRecurringWorkerScope.any
+        _recurringWorkerScope == CleaningRecurringWorkerScope.specific &&
+        rawWorkerIds.isEmpty;
+    // Bootstrap the worker picker with an unscoped estimate. The final booking
+    // remains specific and is validated before advancing from worker selection.
+    final estimateWorkerScope = needsSpecificWorkerSelection
+        ? CleaningRecurringWorkerScope.any
+        : _recurringWorkerScope;
+    final workerIds =
+        _isRecurring && estimateWorkerScope == CleaningRecurringWorkerScope.any
         ? const <int>[]
         : rawWorkerIds;
     final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
@@ -2577,7 +2969,7 @@ class _ClMainServiceScheduleScreenState
     final requestedWorkers =
         _serviceExtras.openTime?.workerCount ??
         (_isRecurring
-            ? (_recurringWorkerScope == CleaningRecurringWorkerScope.specific
+            ? (estimateWorkerScope == CleaningRecurringWorkerScope.specific
                   ? (workerIds.isEmpty ? 1 : workerIds.length)
                   : stateWorkerCount)
             : (workerIds.length > stateWorkerCount
@@ -2586,7 +2978,7 @@ class _ClMainServiceScheduleScreenState
     final assignmentMode = _serviceExtras.openTime != null
         ? CleaningAssignmentMode.openCount
         : _isRecurring
-        ? (_recurringWorkerScope == CleaningRecurringWorkerScope.any
+        ? (estimateWorkerScope == CleaningRecurringWorkerScope.any
               ? CleaningAssignmentMode.openCount
               : (workerIds.length <= 1
                     ? CleaningAssignmentMode.preferredWorker
@@ -2604,6 +2996,7 @@ class _ClMainServiceScheduleScreenState
     bloc.add(
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams(
+          roomPeriods: _isPeriodBooking ? _roomPeriods!.toApiJson() : null,
           propertyType: args.propertyType,
           bedrooms: args.bedrooms,
           rooms: args.rooms,
@@ -2611,6 +3004,7 @@ class _ClMainServiceScheduleScreenState
           balconies: args.roomSizeBreakdown.legacyBalconiesCount,
           livingRoomSize: args.livingRoomSize,
           roomSizeBreakdown: args.roomSizeBreakdown,
+          roomCleaningModes: args.roomCleaningModes,
           cleaningType: args.cleaningType,
           addressId: address == null ? null : int.tryParse(address.id),
           addressLatitude: null,
@@ -2625,7 +3019,7 @@ class _ClMainServiceScheduleScreenState
                   CleaningRecurringCalculationMode.hours
               ? _recurringHoursPerVisit
               : null,
-          recurringWorkerScope: _recurringWorkerScope,
+          recurringWorkerScope: estimateWorkerScope,
           workerRoomAssignments: workerRoomAssignments.isEmpty
               ? null
               : workerRoomAssignments,
@@ -2649,40 +3043,19 @@ class _ClMainServiceScheduleScreenState
   Future<bool> _showPersonalPropertyPledgeDialog() async {
     const pledgeMessage =
         'أتعهد بحماية وتأمين كافة ممتلكاتي الشخصية والثمينة طوال فترة الخدمة، وأقر بأنني المسؤول الأول والأخير عنها دون أدنى مسؤولية على المنصة';
-    final pricing = (_currentEstimate ?? _routeArgs?.estimate)?.pricing;
-    final amount = pricing?.totalPrice;
-    final currency = pricing?.currency ?? 'SYP';
-    final accepted = await showDialog<bool>(
+    final pricing = _currentEstimate?.pricing;
+    final amount = _appliedCouponTotal ?? pricing?.totalPrice;
+    if (amount == null || pricing == null) {
+      _bookingFeedback('تعذر عرض السعر. أعد محاولة مراجعة التكلفة.');
+      return false;
+    }
+    return showClBookingConfirmationSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('مراجعة السعر وتأكيد الطلب'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (amount != null)
-              Text(
-                'التقدير الحالي من النظام: ${amount.toStringAsFixed(0)} $currency',
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            const SizedBox(height: 8),
-            const Text('الدفع نقداً عند إتمام الخدمة.'),
-            const SizedBox(height: 14),
-            const Text(pledgeMessage),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('أوافق'),
-          ),
-        ],
-      ),
+      title: 'تأكيد طلب التنظيف',
+      total: amount,
+      currency: pricing.currency ?? 'SYP',
+      icon: Icons.cleaning_services_outlined,
+      acknowledgement: pledgeMessage,
     );
-    return accepted ?? false;
   }
 }
