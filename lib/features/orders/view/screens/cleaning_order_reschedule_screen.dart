@@ -201,7 +201,7 @@ class _CleaningOrderRescheduleScreenState
   Future<void> _pickFromTime() async {
     final value = await AppPickers.showAppTimePicker(
       context: context,
-      minimumTime: DateTime.now().add(const Duration(hours: 1)),
+      scheduledDate: _selectedDate,
     );
     if (value.isEmpty) return;
     setState(() {
@@ -239,6 +239,16 @@ class _CleaningOrderRescheduleScreenState
     if (!leadTimeCheck.allowed) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_leadTimeBlockMessage(leadTimeCheck.remaining))),
+      );
+      return;
+    }
+    final appointmentError = CleaningScheduleDateTimeLogic.futureAppointmentError(
+      date: _selectedDate,
+      time: _fromTimeHhMm,
+    );
+    if (appointmentError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(appointmentError)),
       );
       return;
     }
