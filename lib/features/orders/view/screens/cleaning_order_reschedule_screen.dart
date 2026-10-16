@@ -25,9 +25,10 @@ import '../helpers/cleaning_lifecycle_error_mapper.dart';
 import '../helpers/cleaning_rebook_policy.dart';
 
 class CleaningOrderRescheduleArgs {
-  const CleaningOrderRescheduleArgs({required this.order});
+  const CleaningOrderRescheduleArgs({required this.order, this.rebookPolicy});
 
   final CleaningOrderModel order;
+  final CleaningRebookPolicy? rebookPolicy;
 }
 
 class CleaningOrderRescheduleResult {
@@ -247,10 +248,12 @@ class _CleaningOrderRescheduleScreenState
       _isSaving = true;
     });
 
-    final policy = CleaningRebookPolicy(
-      cancelOrder: (params) => getIt<CancelCleaningOrderUseCase>()(params),
-      createOrder: (params) => getIt<CreateCleaningOrderUseCase>()(params),
-    );
+    final policy =
+        widget.args.rebookPolicy ??
+        CleaningRebookPolicy(
+          cancelOrder: (params) => getIt<CancelCleaningOrderUseCase>()(params),
+          createOrder: (params) => getIt<CreateCleaningOrderUseCase>()(params),
+        );
     final result = await policy.execute(
       request: CleaningRebookRequest(
         existingOrderId: order.id!,
@@ -403,6 +406,9 @@ class _CleaningOrderRescheduleScreenState
                             child: SizedBox(
                               height: 52,
                               child: ElevatedButton(
+                                key: const Key(
+                                  'cleaning_reschedule_save_button',
+                                ),
                                 onPressed: isSaveDisabled ? null : _onSave,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF11B9C8),

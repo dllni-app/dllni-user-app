@@ -11,25 +11,29 @@ import '../../../profile/view/screens/notifications_screen.dart';
 import '../../../sm_cart/view/screens/sm_cart_screen.dart';
 
 class ClHomeAppBar extends StatefulWidget {
-  const ClHomeAppBar({super.key});
+  const ClHomeAppBar({super.key, this.profileBloc});
+
+  final ProfileBloc? profileBloc;
 
   @override
   State<ClHomeAppBar> createState() => _ClHomeAppBarState();
 }
 
 class _ClHomeAppBarState extends State<ClHomeAppBar> {
-  late final ProfileBloc profileBloc;
+  ProfileBloc? _profileBloc;
 
   @override
   void initState() {
-    profileBloc = getIt<ProfileBloc>()
-      ..add(
-        FetchNotificationsEvent(
-          params: FetchNotificationsParams(),
-          isReload: true,
-        ),
-      );
     super.initState();
+    _profileBloc =
+        widget.profileBloc ??
+        (getIt.isRegistered<ProfileBloc>() ? getIt<ProfileBloc>() : null);
+    _profileBloc?.add(
+      FetchNotificationsEvent(
+        params: FetchNotificationsParams(),
+        isReload: true,
+      ),
+    );
   }
 
   @override
@@ -92,9 +96,11 @@ class _ClHomeAppBarState extends State<ClHomeAppBar> {
               ),
               SizedBox(width: 12),
               _AppBarNotificationWidget(
-                profileBloc: profileBloc,
+                profileBloc: _profileBloc,
                 icon: FontAwesomeIcons.bell,
                 onTap: () {
+                  final profileBloc = _profileBloc;
+                  if (profileBloc == null) return;
                   context.pushRoute(
                     '/notifications',
                     arguments: NotificationsScreenParams(
@@ -172,11 +178,15 @@ class _AppBarNotificationWidget extends StatelessWidget {
   });
 
   final FaIconData icon;
-  final ProfileBloc profileBloc;
+  final ProfileBloc? profileBloc;
   final void Function() onTap;
 
   @override
   Widget build(BuildContext context) {
+    final profileBloc = this.profileBloc;
+    if (profileBloc == null) {
+      return _AppBarAction(icon: icon, onTap: onTap);
+    }
     return InkWell(
       onTap: onTap,
       customBorder: CircleBorder(),

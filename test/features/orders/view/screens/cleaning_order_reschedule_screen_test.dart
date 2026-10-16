@@ -20,8 +20,11 @@ import 'package:dllni_user_app/features/cl_main/domain/usecases/get_previous_cle
 import 'package:dllni_user_app/features/cl_main/view/manager/bloc/cl_main_bloc.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_order_cancel_api_models.dart';
 import 'package:dllni_user_app/features/orders/data/models/cleaning_orders_api_models.dart';
+import 'package:dllni_user_app/features/orders/data/models/orders_api_models.dart';
 import 'package:dllni_user_app/features/orders/domain/repository/orders_repo.dart';
 import 'package:dllni_user_app/features/orders/domain/usecases/cancel_cleaning_order_use_case.dart';
+import 'package:dllni_user_app/features/orders/domain/usecases/patch_cleaning_order_use_case.dart';
+import 'package:dllni_user_app/features/orders/view/helpers/cleaning_rebook_policy.dart';
 import 'package:dllni_user_app/features/orders/view/screens/cleaning_order_reschedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -122,6 +125,7 @@ Future<void> _pumpScreen(
   WidgetTester tester,
   EstimateCleaningPriceUseCase useCase, {
   CleaningOrderModel? order,
+  CleaningRebookPolicy? rebookPolicy,
 }) async {
   if (getIt.isRegistered<ClMainBloc>()) {
     await getIt.unregister<ClMainBloc>();
@@ -177,7 +181,10 @@ Future<void> _pumpScreen(
   await tester.pumpWidget(
     MaterialApp(
       home: CleaningOrderRescheduleScreen(
-        args: CleaningOrderRescheduleArgs(order: order ?? fallbackOrder),
+        args: CleaningOrderRescheduleArgs(
+          order: order ?? fallbackOrder,
+          rebookPolicy: rebookPolicy,
+        ),
       ),
     ),
   );
@@ -288,14 +295,14 @@ void main() {
     final maleChip = tester.widget<ChoiceChip>(
       find.byKey(const Key('cleaning_gender_pref_male')),
     );
-    final anyChip = tester.widget<ChoiceChip>(
-      find.byKey(const Key('cleaning_gender_pref_any')),
+    final femaleChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('cleaning_gender_pref_female')),
     );
     expect(maleChip.selected, isTrue);
-    expect(anyChip.selected, isFalse);
+    expect(femaleChip.selected, isFalse);
   });
 
-  testWidgets('falls back to any as initial gender selection', (
+  testWidgets('legacy any preference leaves explicit gender unselected', (
     WidgetTester tester,
   ) async {
     final useCase = EstimateCleaningPriceUseCase(
@@ -307,16 +314,20 @@ void main() {
     await _pumpScreen(tester, useCase);
     await tester.pumpAndSettle();
 
-    final anyChip = tester.widget<ChoiceChip>(
-      find.byKey(const Key('cleaning_gender_pref_any')),
+    final maleChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('cleaning_gender_pref_male')),
     );
-    expect(anyChip.selected, isTrue);
+    final femaleChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('cleaning_gender_pref_female')),
+    );
+    expect(maleChip.selected, isFalse);
+    expect(femaleChip.selected, isFalse);
   });
 
-  testWidgets('save flow sends selected gender preference in create request', (
+  testWidgets('save flow sends selected gender preference in patch request', (
     WidgetTester tester,
   ) async {
-    CreateCleaningOrderParams? sentCreateParams;
+    PatchCleaningOrderParams? sentPatchParams;
     final useCase = EstimateCleaningPriceUseCase(
       clMainRepo: _FakeClMainRepo(
         estimateHandler: (_) async => const Right(
@@ -329,25 +340,54 @@ void main() {
             ),
           ),
         ),
-        createOrderHandler: (params) async {
-          sentCreateParams = params;
-          return const Right(
-            CreateCleaningOrderResponseModel(success: true, orderId: 90),
-          );
-        },
       ),
     );
 
-    await _pumpScreen(tester, useCase);
+    final current = CleaningOrderDetailModel(
+      id: 7,
+      status: 'pending',
+      propertyType: 'villa',
+      scheduledDate: _dateOnly(DateTime.now().add(const Duration(days: 3))),
+      scheduledTime: '11:00',
+      addressLatitude: 33.6,
+      addressLongitude: 36.4,
+      locationName: 'المنزل',
+      genderPreference: CleaningGenderPreference.any,
+      propertyDetails: CleaningPropertyDetailsModel(
+        address: 'Test Address',
+        bedrooms: 2,
+        rooms: 3,
+        bathrooms: 1,
+        livingRoomSize: 'large',
+      ),
+    );
+    final policy = CleaningRebookPolicy(
+      cancelOrder: (_) async => const Left(ServerFailure(message: 'unused')),
+      createOrder: (_) async => const Left(ServerFailure(message: 'unused')),
+      fetchOrderDetails: (_) async =>
+          Right(FetchCleaningOrderDetailsModel(data: current)),
+      patchOrder: (params) async {
+        sentPatchParams = params;
+        return Right(OrdersActionResultModel(message: 'updated'));
+      },
+    );
+
+    await _pumpScreen(tester, useCase, rebookPolicy: policy);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('cleaning_gender_pref_female')));
+    final femalePreference = find.byKey(
+      const Key('cleaning_gender_pref_female'),
+    );
+    await tester.ensureVisible(femalePreference);
+    await tester.tap(femalePreference);
+    await tester.pump();
+
+    final saveButton = find.byKey(const Key('cleaning_reschedule_save_button'));
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(ElevatedButton).first);
-    await tester.pumpAndSettle();
-
-    expect(sentCreateParams, isNotNull);
-    expect(sentCreateParams!.genderPreference, CleaningGenderPreference.female);
+    expect(sentPatchParams, isNotNull);
+    expect(sentPatchParams!.changes['genderPreference'], 'female');
   });
 }

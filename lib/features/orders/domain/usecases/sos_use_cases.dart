@@ -124,11 +124,8 @@ class CreateCleaningUserSosParams with Params {
   @override
   BodyMap getBody() {
     final body = <String, dynamic>{
-      'kind': 'emergency',
-      'bookingId': orderId,
-      'bookingType': 'cleaning_booking',
-      'emergencyType': emergencyType,
-      'description': message.trim(),
+      'emergency_type': emergencyType,
+      'message': message.trim(),
     };
     if (latitude != null && longitude != null) {
       body['latitude'] = latitude;
@@ -136,7 +133,7 @@ class CreateCleaningUserSosParams with Params {
     }
     final requestId = clientRequestId?.trim();
     if (requestId != null && requestId.isNotEmpty) {
-      body['clientRequestId'] = requestId;
+      body['client_request_id'] = requestId;
     }
     return body;
   }
@@ -149,7 +146,9 @@ class CreateCleaningComplaintUseCase
   CreateCleaningComplaintUseCase({required this.ordersRepo});
 
   @override
-  DataResponse<CleaningSosAlertModel> call(CreateCleaningComplaintParams params) {
+  DataResponse<CleaningSosAlertModel> call(
+    CreateCleaningComplaintParams params,
+  ) {
     return ordersRepo.createCleaningComplaint(params);
   }
 }
@@ -171,12 +170,12 @@ class CreateCleaningComplaintParams with Params {
 
   @override
   BodyMap getBody() => <String, dynamic>{
-        'kind': 'complaint',
-        'bookingId': orderId,
-        'bookingType': 'cleaning_booking',
-        'category': category,
-        'description': description.trim(),
-        if (clientRequestId != null && clientRequestId!.trim().isNotEmpty)
-          'clientRequestId': clientRequestId!.trim(),
-      };
+    'kind': 'complaint',
+    'bookingId': orderId,
+    'bookingType': 'cleaning_booking',
+    'category': category,
+    'description': description.trim(),
+    if (clientRequestId != null && clientRequestId!.trim().isNotEmpty)
+      'clientRequestId': clientRequestId!.trim(),
+  };
 }

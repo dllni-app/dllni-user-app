@@ -104,8 +104,12 @@ class _ClMainOccasionScheduleScreenState
       );
     }
 
-    final dayAr = _dateChosen ? CleaningDateTimeUiFormat.weekday(_selectedDate) : 'اختر التاريخ';
-    final dayDate = _dateChosen ? CleaningDateTimeUiFormat.date(_selectedDate) : '';
+    final dayAr = _dateChosen
+        ? CleaningDateTimeUiFormat.weekday(_selectedDate)
+        : 'اختر التاريخ';
+    final dayDate = _dateChosen
+        ? CleaningDateTimeUiFormat.date(_selectedDate)
+        : '';
     final estimate = _activeEstimate;
     final numberOfWorkers = _resolvedNumberOfWorkers;
 
@@ -253,17 +257,15 @@ class _ClMainOccasionScheduleScreenState
                           ClServiceGenderPreferenceSectionWidget(
                             selectedPreference: _explicitGenderPreference,
                             onChanged: (preference) {
-                              _handleGenderPreferenceChanged(
-                                bloc,
-                                preference,
-                              );
+                              _handleGenderPreferenceChanged(bloc, preference);
                             },
                           ),
                           const SizedBox(height: 10),
                           ClServicePreviousWorkersSectionWidget(
                             workers: filterPreviousWorkersByGender(
                               state.previousWorkers.list,
-                              state.genderPreference,
+                              _explicitGenderPreference ??
+                                  CleaningGenderPreference.any,
                             ),
                             selectedWorkerIds: state.selectedWorkerIds,
                             isLoading:
@@ -390,9 +392,7 @@ class _ClMainOccasionScheduleScreenState
     _selectedDate = CleaningScheduleDateTimeLogic.tomorrowDate();
     _fromTimeHhMm = '09:00';
     _toTimeHhMm = '09:00';
-    _fromTimeController = TextEditingController(
-      text: '',
-    );
+    _fromTimeController = TextEditingController(text: '');
     _toTimeController = TextEditingController(
       text: CleaningDateTimeUiFormat.time(_toTimeHhMm),
     );
@@ -401,7 +401,9 @@ class _ClMainOccasionScheduleScreenState
   }
 
   void _updateTimeDisplay() {
-    _fromTimeController.text = _timeChosen ? CleaningDateTimeUiFormat.time(_fromTimeHhMm) : '';
+    _fromTimeController.text = _timeChosen
+        ? CleaningDateTimeUiFormat.time(_fromTimeHhMm)
+        : '';
     _toTimeController.text = CleaningDateTimeUiFormat.time(_toTimeHhMm);
   }
 
@@ -438,10 +440,7 @@ class _ClMainOccasionScheduleScreenState
     setState(() => _explicitGenderPreference = preference);
     if (preference != CleaningGenderPreference.female) {
       bloc.add(SetGenderPreferenceEvent(preference: preference));
-      _requestUpdatedEstimate(
-        bloc.state,
-        selectedWorkerIds: selectedWorkerIds,
-      );
+      _requestUpdatedEstimate(bloc.state, selectedWorkerIds: selectedWorkerIds);
       return;
     }
 
@@ -616,12 +615,35 @@ class _ClMainOccasionScheduleScreenState
   }
 
   void _onSubmitPressed(ClMainState state) {
+    final selectedAddress = _selectedAddress.value;
+    final addressId = int.tryParse(selectedAddress?.id ?? '') ?? 0;
+    if (selectedAddress == null || addressId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
+      );
+      return;
+    }
+    if (!selectedAddress.hasCompleteServiceLocation) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'يرجى اختيار عنوان يحتوي على موقع محدد على الخريطة وعنوان واضح',
+          ),
+        ),
+      );
+      return;
+    }
+
     if (!_dateChosen) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار تاريخ المناسبة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار تاريخ المناسبة')),
+      );
       return;
     }
     if (!_timeChosen) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار وقت بدء المناسبة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى اختيار وقت بدء المناسبة')),
+      );
       return;
     }
 
@@ -645,25 +667,6 @@ class _ClMainOccasionScheduleScreenState
         state.safetyConfirmation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى تأكيد بيئة العمل قبل طلب عاملة')),
-      );
-      return;
-    }
-
-    final selectedAddress = _selectedAddress.value;
-    final addressId = int.tryParse(selectedAddress?.id ?? '') ?? 0;
-    if (selectedAddress == null || addressId <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار عنوان الخدمة أولاً')),
-      );
-      return;
-    }
-    if (!selectedAddress.hasCompleteServiceLocation) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'يرجى اختيار عنوان يحتوي على موقع محدد على الخريطة وعنوان واضح',
-          ),
-        ),
       );
       return;
     }

@@ -339,7 +339,6 @@ class _ClMainHomeDescriptionScreenState
       _propertyType = args.propertyType;
       _defaultAddress = args.defaultAddress;
       _bloc = args.bloc;
-
     }
   }
 
@@ -441,7 +440,7 @@ class _ClMainHomeDescriptionScreenState
             addressLatitude: _defaultAddress?.latitude ?? 0,
             addressLongitude: _defaultAddress?.longitude ?? 0,
             estimate: estimate,
-            cleaningType: _selectedCleaningType,
+            cleaningType: _selectedCleaningType!,
             bloc: bloc,
             defaultAddress: _defaultAddress,
           ),

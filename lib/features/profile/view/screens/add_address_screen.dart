@@ -195,7 +195,7 @@ class AddAddressBottomActions extends StatelessWidget {
 
 class _AddAddressScreenState extends State<AddAddressScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _cityController = TextEditingController(text: '');
+  final _cityController = TextEditingController(text: 'حلب');
   final _addressController = TextEditingController();
   final _neighborhoodSearchController = TextEditingController();
   String? _selectedNeighborhood;
@@ -222,7 +222,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               .where((item) => item.toLowerCase().contains(query))
               .toList(growable: true);
 
-    if (selected != null && selected.isNotEmpty && !filtered.contains(selected)) {
+    if (selected != null &&
+        selected.isNotEmpty &&
+        !filtered.contains(selected)) {
       filtered.add(selected);
     }
 
@@ -332,12 +334,130 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                             ),
                           ],
                           const SizedBox(height: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  AppText.bodyMedium(
+                                    'المدينة',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  AppText.bodyMedium(
+                                    '*',
+                                    color: context.error,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                key: const Key('address_city_dropdown'),
+                                initialValue: _cityController.text,
+                                decoration: _dropdownDecoration(
+                                  context,
+                                  hintText: 'اختر المدينة',
+                                ),
+                                items: const [
+                                  DropdownMenuItem<String>(
+                                    value: 'حلب',
+                                    child: Text('حلب'),
+                                  ),
+                                ],
+                                validator: _requiredCityValidator,
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  _cityController.text = value;
+                                  unawaited(_loadNeighborhoods(city: value));
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  AppText.bodyMedium(
+                                    'الحي',
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  AppText.bodyMedium(
+                                    '*',
+                                    color: context.error,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                key: const Key('address_neighborhood_search'),
+                                controller: _neighborhoodSearchController,
+                                textInputAction: TextInputAction.search,
+                                decoration:
+                                    _dropdownDecoration(
+                                      context,
+                                      hintText: 'اكتب اسم الحي للبحث',
+                                    ).copyWith(
+                                      prefixIcon: const Icon(Icons.search),
+                                      suffixIcon:
+                                          _neighborhoodSearchQuery.isEmpty
+                                          ? null
+                                          : IconButton(
+                                              tooltip: 'مسح البحث',
+                                              onPressed: () {
+                                                _neighborhoodSearchController
+                                                    .clear();
+                                                setState(() {
+                                                  _neighborhoodSearchQuery = '';
+                                                });
+                                              },
+                                              icon: const Icon(Icons.close),
+                                            ),
+                                    ),
+                                onChanged: (value) => setState(() {
+                                  _neighborhoodSearchQuery = value;
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<String>(
+                                key: ValueKey<String>(
+                                  'address_neighborhood_${_selectedNeighborhood ?? ''}_${_neighborhoodSearchQuery.trim()}',
+                                ),
+                                initialValue:
+                                    _selectedNeighborhood?.isEmpty ?? true
+                                    ? null
+                                    : _selectedNeighborhood,
+                                decoration: _dropdownDecoration(
+                                  context,
+                                  hintText: _filteredNeighborhoods.isEmpty
+                                      ? 'لا توجد نتائج مطابقة'
+                                      : 'اختر الحي',
+                                ),
+                                items: _filteredNeighborhoods
+                                    .map(
+                                      (item) => DropdownMenuItem<String>(
+                                        value: item,
+                                        child: Text(item),
+                                      ),
+                                    )
+                                    .toList(),
+                                validator: _requiredNeighborhoodValidator,
+                                onChanged: (value) => setState(
+                                  () => _selectedNeighborhood = value ?? '',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           FilledTextField(
                             label: 'العنوان',
                             isRequired: true,
                             hintText: 'يُستخرج تلقائياً من الخريطة',
                             controller: _addressController,
-                            validator: (value) => value == null || value.trim().isEmpty
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
                                 ? 'يرجى تحديد الموقع واستخراج العنوان'
                                 : null,
                           ),
@@ -491,6 +611,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   void initState() {
     super.initState();
     final item = widget.params.addressItem;
+    unawaited(_loadNeighborhoods());
     if (item == null) {
       String? phone;
       final rawUser = SharedPreferencesHelper.getData(
@@ -530,6 +651,35 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       };
     }
     _phoneController.text = _phoneController.text.replaceAll('+963', '');
+  }
+
+  InputDecoration _dropdownDecoration(
+    BuildContext context, {
+    required String hintText,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        color: AppColors.hintText,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+      filled: true,
+      fillColor: const Color(0xffF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xffE5E7EB), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: context.primary, width: 1.2),
+      ),
+    );
   }
 
   Future<void> _loadNeighborhoods({String city = 'حلب'}) async {
@@ -620,14 +770,17 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           'format': 'json',
           'accept-language': 'ar',
         },
-        options: Options(headers: {'User-Agent': 'DllniCustomerApp/1.0 (address picker)'}),
+        options: Options(
+          headers: {'User-Agent': 'DllniCustomerApp/1.0 (address picker)'},
+        ),
       );
       if (!mounted) return;
       setState(() {
         final resolved =
             response.data?['display_name']?.toString().trim() ?? '';
-        _addressController.text =
-            resolved.length > 255 ? resolved.substring(0, 255) : resolved;
+        _addressController.text = resolved.length > 255
+            ? resolved.substring(0, 255)
+            : resolved;
       });
     } catch (error) {
       if (!mounted) return;

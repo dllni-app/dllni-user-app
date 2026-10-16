@@ -92,6 +92,7 @@ class CleaningExtensionDecisionPresenter {
         .any(
           (status) =>
               status == CleaningBookingStatus.timeExtensionRequested ||
+              status == CleaningBookingStatus.awaitingCustomerCompletion ||
               status == CleaningBookingStatus.completed,
         );
   }

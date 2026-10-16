@@ -13,26 +13,31 @@ import '../../../profile/view/screens/notifications_screen.dart';
 import '../../../sm_main_page.dart';
 
 class HomeAppBar extends StatefulWidget {
-  const HomeAppBar({super.key});
+  const HomeAppBar({super.key, this.profileBloc});
+
+  final ProfileBloc? profileBloc;
 
   @override
   State<HomeAppBar> createState() => _HomeAppBarState();
 }
 
 class _HomeAppBarState extends State<HomeAppBar> {
+  ProfileBloc? _profileBloc;
 
-  late final ProfileBloc profileBloc;
   @override
   void initState() {
-    profileBloc = getIt<ProfileBloc>()
-      ..add(
-        FetchNotificationsEvent(
-          params: FetchNotificationsParams(),
-          isReload: true,
-        ),
-      );
     super.initState();
+    _profileBloc =
+        widget.profileBloc ??
+        (getIt.isRegistered<ProfileBloc>() ? getIt<ProfileBloc>() : null);
+    _profileBloc?.add(
+      FetchNotificationsEvent(
+        params: FetchNotificationsParams(),
+        isReload: true,
+      ),
+    );
   }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -90,12 +95,17 @@ class _HomeAppBarState extends State<HomeAppBar> {
               ),
               SizedBox(width: 12),
               _AppBarNotificationWidget(
-                profileBloc: profileBloc,
+                profileBloc: _profileBloc,
                 icon: FontAwesomeIcons.bell,
                 onTap: () {
-                  context.pushRoute('/notifications',arguments: NotificationsScreenParams(
-                      profileBloc: profileBloc
-                  ));
+                  final profileBloc = _profileBloc;
+                  if (profileBloc == null) return;
+                  context.pushRoute(
+                    '/notifications',
+                    arguments: NotificationsScreenParams(
+                      profileBloc: profileBloc,
+                    ),
+                  );
                 },
               ),
             ],
@@ -178,11 +188,15 @@ class _AppBarNotificationWidget extends StatelessWidget {
   });
 
   final FaIconData icon;
-  final ProfileBloc profileBloc;
+  final ProfileBloc? profileBloc;
   final void Function() onTap;
 
   @override
   Widget build(BuildContext context) {
+    final profileBloc = this.profileBloc;
+    if (profileBloc == null) {
+      return _AppBarAction(icon: icon, onTap: onTap);
+    }
     return InkWell(
       onTap: onTap,
       customBorder: CircleBorder(),
