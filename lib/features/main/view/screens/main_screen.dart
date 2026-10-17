@@ -68,17 +68,17 @@ class _MainScreenState extends State<MainScreen>
       },
       child: Directionality(
         textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: SharedPlatformColors.background,
-        body: SafeArea(
-          child: TabBarView(
-            controller: controller,
-            physics: const NeverScrollableScrollPhysics(),
-            children: const [HomeScreen(), OrdersScreen(), ProfileScreen()],
+        child: Scaffold(
+          backgroundColor: SharedPlatformColors.background,
+          body: SafeArea(
+            child: TabBarView(
+              controller: controller,
+              physics: const NeverScrollableScrollPhysics(),
+              children: const [HomeScreen(), OrdersScreen(), ProfileScreen()],
+            ),
           ),
+          bottomNavigationBar: BottomNavBar(controller: controller),
         ),
-        bottomNavigationBar: BottomNavBar(controller: controller),
-      ),
       ),
     );
   }
