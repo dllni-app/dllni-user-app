@@ -19,6 +19,7 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasAcceptedWorker = (acceptance?.accepted ?? 0) > 0;
+    final isTeam = (numberOfWorkers ?? acceptance?.required ?? 1) > 1;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -49,6 +50,8 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
                       ? 'انضم عامل إلى طلبك'
                       : isHotOrder
                       ? 'طلبك المستعجل قيد المتابعة'
+                      : isTeam
+                      ? 'جارٍ تجهيز فريق التنظيف'
                       : 'جارٍ البحث عن عامل مناسب',
                   color: SharedPlatformColors.primary,
                   fontWeight: FontWeight.w800,
@@ -57,6 +60,10 @@ class CleaningTeamSearchBannerWidget extends StatelessWidget {
                 AppText.bodySmall(
                   hasAcceptedWorker
                       ? 'نعمل على تأكيد بقية الفريق. سنخبرك عند حدوث أي تغيير.'
+                      : isHotOrder
+                      ? 'سنرسل إليك إشعاراً فور تأكيد طلبك المستعجل.'
+                      : isTeam
+                      ? 'سنخبرك عند اكتمال انضمام أعضاء الفريق وتأكيد الطلب.'
                       : 'سنرسل إليك إشعاراً فور توفر عامل وتأكيد طلبك.',
                   color: SharedPlatformColors.muted,
                 ),

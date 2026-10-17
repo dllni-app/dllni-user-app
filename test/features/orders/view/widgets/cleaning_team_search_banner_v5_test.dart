@@ -57,6 +57,23 @@ void main() {
       );
     }
 
+    testWidgets('a standard two-worker booking searches for the team', (
+      tester,
+    ) async {
+      await showBanner(
+        tester,
+        isHotOrder: false,
+        acceptance: CleaningWorkerAcceptanceModel(
+          accepted: 0,
+          required: 2,
+          remaining: 2,
+        ),
+      );
+      expect(find.text('جارٍ تجهيز فريق التنظيف'), findsOneWidget);
+      expect(find.textContaining('أعضاء الفريق'), findsOneWidget);
+      expect(find.text('جارٍ البحث عن عامل مناسب'), findsNothing);
+    });
+
     testWidgets('matching status hides internal radius and timing', (
       tester,
     ) async {
@@ -145,7 +162,7 @@ void main() {
         ),
       );
       expect(find.textContaining('(0/2)'), findsNothing);
-      expect(find.textContaining('جارٍ البحث عن عامل مناسب'), findsOneWidget);
+      expect(find.textContaining('جارٍ تجهيز فريق التنظيف'), findsOneWidget);
     });
   });
 }

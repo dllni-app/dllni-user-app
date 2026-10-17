@@ -1,15 +1,51 @@
-enum CleaningRoomType {
-  bedroom,
-  bathroom,
-  kitchen,
-  livingRoom,
-  balcony,
-  corridor,
-  shed,
+/// Stable room identity; Filament may add codes that are unknown at build time.
+/// The seven legacy constants are preserved for existing screens and drafts.
+final class CleaningRoomType {
+  const CleaningRoomType._(this.apiKey);
+
+  final String apiKey;
+  static const bedroom = CleaningRoomType._('bedroom');
+  static const bathroom = CleaningRoomType._('bathroom');
+  static const kitchen = CleaningRoomType._('kitchen');
+  static const livingRoom = CleaningRoomType._('living_room');
+  static const balcony = CleaningRoomType._('balcony');
+  static const corridor = CleaningRoomType._('corridor');
+  static const shed = CleaningRoomType._('shed');
+  static const values = <CleaningRoomType>[
+    bedroom,
+    bathroom,
+    kitchen,
+    livingRoom,
+    balcony,
+    corridor,
+    shed,
+  ];
+
+  static final _validCode = RegExp(r'^[a-z][a-z0-9_]*$');
+
+  static CleaningRoomType fromCode(String code) {
+    if (!_validCode.hasMatch(code)) {
+      throw ArgumentError.value(code, 'code', 'Invalid room catalog code');
+    }
+    for (final existing in values) {
+      if (existing.apiKey == code) return existing;
+    }
+    return CleaningRoomType._(code);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is CleaningRoomType && other.apiKey == apiKey;
+
+  @override
+  int get hashCode => apiKey.hashCode;
+
+  @override
+  String toString() => apiKey;
 }
 
-/// Room types accepted by the backend validator for `room_size_breakdown`
-/// and worker room assignment payloads.
+/// Original room types used when the catalog cannot be fetched. Additional
+/// valid codes come from the server's active Filament catalog at runtime.
 const backendAcceptedRoomSizeBreakdownTypes = <CleaningRoomType>[
   CleaningRoomType.bedroom,
   CleaningRoomType.bathroom,
@@ -22,27 +58,6 @@ const backendAcceptedRoomSizeBreakdownTypes = <CleaningRoomType>[
 
 /// All room types supported in the local UI.
 const allCleaningRoomTypes = backendAcceptedRoomSizeBreakdownTypes;
-
-extension CleaningRoomTypeX on CleaningRoomType {
-  String get apiKey {
-    switch (this) {
-      case CleaningRoomType.bedroom:
-        return 'bedroom';
-      case CleaningRoomType.bathroom:
-        return 'bathroom';
-      case CleaningRoomType.kitchen:
-        return 'kitchen';
-      case CleaningRoomType.livingRoom:
-        return 'living_room';
-      case CleaningRoomType.balcony:
-        return 'balcony';
-      case CleaningRoomType.corridor:
-        return 'corridor';
-      case CleaningRoomType.shed:
-        return 'shed';
-    }
-  }
-}
 
 enum CleaningRoomSize { small, medium, large }
 
@@ -100,6 +115,7 @@ class CleaningRoomSizeBreakdown {
     this.balcony = const CleaningRoomSizeBucket(),
     this.corridor = const CleaningRoomSizeBucket(),
     this.shed = const CleaningRoomSizeBucket(),
+    this.extra = const <String, CleaningRoomSizeBucket>{},
   });
 
   final CleaningRoomSizeBucket bedroom;
@@ -109,6 +125,12 @@ class CleaningRoomSizeBreakdown {
   final CleaningRoomSizeBucket balcony;
   final CleaningRoomSizeBucket corridor;
   final CleaningRoomSizeBucket shed;
+  final Map<String, CleaningRoomSizeBucket> extra;
+
+  Iterable<CleaningRoomType> get roomTypes => [
+    ...backendAcceptedRoomSizeBreakdownTypes,
+    ...extra.keys.map(CleaningRoomType.fromCode),
+  ];
 
   int get totalRooms =>
       bedroom.total +
@@ -116,16 +138,17 @@ class CleaningRoomSizeBreakdown {
       kitchen.total +
       livingRoom.total +
       corridor.total +
-      shed.total;
+      shed.total +
+      extra.values.fold<int>(0, (sum, bucket) => sum + bucket.total);
 
   /// Sum of all room units including balconies (max worker count cap).
   int get totalUnits => totalRooms + balcony.total;
 
   bool get hasAnyRoom => totalRooms > 0;
 
-  int get legacyBedroomsCount => bedroom.total;//bedRooms
+  int get legacyBedroomsCount => bedroom.total; //bedRooms
 
-  int get legacyRoomsCount =>  totalRooms;//all
+  int get legacyRoomsCount => totalRooms; //all
 
   int get legacyBathroomsCount => bathroom.total;
 
@@ -155,6 +178,8 @@ class CleaningRoomSizeBreakdown {
         return corridor;
       case CleaningRoomType.shed:
         return shed;
+      default:
+        return extra[roomType.apiKey] ?? const CleaningRoomSizeBucket();
     }
   }
 
@@ -183,10 +208,23 @@ class CleaningRoomSizeBreakdown {
     CleaningRoomType roomType,
     CleaningRoomSizeBucket bucket,
   ) {
+    if (!allCleaningRoomTypes.contains(roomType)) {
+      return CleaningRoomSizeBreakdown(
+        bedroom: bedroom,
+        bathroom: bathroom,
+        kitchen: kitchen,
+        livingRoom: livingRoom,
+        balcony: balcony,
+        corridor: corridor,
+        shed: shed,
+        extra: {...extra, roomType.apiKey: bucket},
+      );
+    }
     switch (roomType) {
       case CleaningRoomType.bedroom:
         return CleaningRoomSizeBreakdown(
           bedroom: bucket,
+          extra: extra,
           bathroom: bathroom,
           kitchen: kitchen,
           livingRoom: livingRoom,
@@ -198,6 +236,7 @@ class CleaningRoomSizeBreakdown {
         return CleaningRoomSizeBreakdown(
           bedroom: bedroom,
           bathroom: bucket,
+          extra: extra,
           kitchen: kitchen,
           livingRoom: livingRoom,
           balcony: balcony,
@@ -209,6 +248,7 @@ class CleaningRoomSizeBreakdown {
           bedroom: bedroom,
           bathroom: bathroom,
           kitchen: bucket,
+          extra: extra,
           livingRoom: livingRoom,
           balcony: balcony,
           corridor: corridor,
@@ -220,6 +260,7 @@ class CleaningRoomSizeBreakdown {
           bathroom: bathroom,
           kitchen: kitchen,
           livingRoom: bucket,
+          extra: extra,
           balcony: balcony,
           corridor: corridor,
           shed: shed,
@@ -231,6 +272,7 @@ class CleaningRoomSizeBreakdown {
           kitchen: kitchen,
           livingRoom: livingRoom,
           balcony: bucket,
+          extra: extra,
           corridor: corridor,
           shed: shed,
         );
@@ -242,6 +284,7 @@ class CleaningRoomSizeBreakdown {
           livingRoom: livingRoom,
           balcony: balcony,
           corridor: bucket,
+          extra: extra,
           shed: shed,
         );
       case CleaningRoomType.shed:
@@ -253,14 +296,17 @@ class CleaningRoomSizeBreakdown {
           balcony: balcony,
           corridor: corridor,
           shed: bucket,
+          extra: extra,
         );
+      default:
+        throw StateError('Unexpected room type: ${roomType.apiKey}');
     }
   }
 
   /// Serializes only backend-accepted room types with total > 0 for API payloads.
   Map<String, dynamic> toBackendJson() {
     final json = <String, dynamic>{};
-    for (final roomType in backendAcceptedRoomSizeBreakdownTypes) {
+    for (final roomType in roomTypes) {
       final bucket = bucketFor(roomType);
       if (bucket.total > 0) {
         json[roomType.apiKey] = bucket.toJson();

@@ -1,6 +1,7 @@
 import 'cleaning_assignment_mode.dart';
 import 'cleaning_room_size_breakdown.dart';
 import 'cl_worker_room_assignment_result.dart';
+
 class CleaningRoomUnit {
   const CleaningRoomUnit({
     required this.roomKey,
@@ -21,7 +22,7 @@ class CleaningRoomUnit {
   };
 }
 
-const Map<CleaningRoomType, String> _roomTypeLabelsAr = {
+final Map<CleaningRoomType, String> _roomTypeLabelsAr = {
   CleaningRoomType.bedroom: 'غرفة نوم',
   CleaningRoomType.bathroom: 'حمام',
   CleaningRoomType.kitchen: 'مطبخ',
@@ -40,8 +41,9 @@ const Map<CleaningRoomSize, String> _roomSizeLabelsAr = {
 List<CleaningRoomUnit> enumerateRoomUnits(CleaningRoomSizeBreakdown breakdown) {
   final units = <CleaningRoomUnit>[];
 
-  for (final roomType in backendAcceptedRoomSizeBreakdownTypes) {
-    final typeLabel = _roomTypeLabelsAr[roomType] ?? roomType.apiKey;
+  for (final roomType in breakdown.roomTypes) {
+    final typeLabel =
+        _roomTypeLabelsAr[roomType] ?? roomType.apiKey.replaceAll('_', ' ');
     for (final size in CleaningRoomSize.values) {
       final count = breakdown.countFor(roomType, size);
       final sizeLabel = _roomSizeLabelsAr[size] ?? size.apiValue;
@@ -86,7 +88,9 @@ List<Map<String, dynamic>> buildWorkerRoomAssignmentsJson({
   for (final unit in units) {
     final slot = slotByRoomKey[unit.roomKey];
     if (slot == null || slot < 1) continue;
-    slotRooms.putIfAbsent(slot, () => <Map<String, dynamic>>[]).add(unit.toJson());
+    slotRooms
+        .putIfAbsent(slot, () => <Map<String, dynamic>>[])
+        .add(unit.toJson());
   }
 
   if (slotRooms.isEmpty) return const [];

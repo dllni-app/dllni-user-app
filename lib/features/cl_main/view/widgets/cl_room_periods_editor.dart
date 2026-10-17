@@ -34,7 +34,8 @@ class ClRoomPeriodsEditor extends StatelessWidget {
       'bedroom' => 'غرفة نوم',
       'bathroom' => 'حمام',
       'kitchen' => 'مطبخ',
-      _ => 'غرفة معيشة',
+      'living_room' => 'غرفة معيشة',
+      _ => p.room.displayName ?? p.room.roomType.apiKey.replaceAll('_', ' '),
     };
     return name + ' ' + p.room.index.toString();
   }

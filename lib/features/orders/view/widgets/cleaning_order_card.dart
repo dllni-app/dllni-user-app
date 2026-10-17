@@ -38,6 +38,8 @@ class CleaningOrderCard extends StatelessWidget {
           ? 'انضم عامل إلى طلبك'
           : order.isHotOrder
           ? 'طلبك المستعجل قيد المتابعة'
+          : (order.numberOfWorkers ?? 1) > 1
+          ? 'جارٍ تجهيز فريق التنظيف'
           : 'جارٍ البحث عن عامل مناسب';
     }
     return cleaningOrderStatusLabelAr(

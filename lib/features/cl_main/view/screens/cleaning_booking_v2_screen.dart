@@ -2021,7 +2021,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                   ))
                     IconButton(
                       key: Key('special_service_remove_${service.id}'),
-                      tooltip: 'Ø¥Ø²Ø§Ù„Ø© Ø§Ù„Ø®Ø¯Ù…Ø©',
+                      tooltip: 'إزالة الخدمة',
                       onPressed: () {
                         _bookingServices.removeWhere(
                           (selected) => selected.serviceId == service.id,
@@ -2042,8 +2042,8 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                       _bookingServices.any(
                             (selected) => selected.serviceId == service.id,
                           )
-                          ? 'ØªØ¹Ø¯ÙŠÙ„'
-                          : 'Ø¥Ø¶Ø§ÙØ©',
+                          ? 'تعديل'
+                          : 'إضافة',
                     ),
                   ),
                 ],

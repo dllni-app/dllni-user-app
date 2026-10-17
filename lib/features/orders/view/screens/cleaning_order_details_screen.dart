@@ -60,6 +60,7 @@ import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_last_hour_team_decision_card.dart';
 import '../widgets/cleaning_lifecycle_timeline_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
+import 'supervised_team_customer_screen.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_order_sos_screen.dart';
 import 'multi_day_cleaning_order_details_screen.dart';
@@ -141,6 +142,10 @@ class _CleaningOrderDetailsScreenState
       return const V7OrderLoadingView(message: 'لا تتوفر تفاصيل هذا الطلب');
     }
 
+    if (order.isSupervisedTeam) {
+      return SupervisedTeamCustomerScreen(orderId: order.id ?? _activeOrderId);
+    }
+
     final status = _normStatus(order.status);
     final terminal =
         status == CleaningBookingStatus.completed ||
@@ -168,7 +173,9 @@ class _CleaningOrderDetailsScreenState
         _blocksReschedule(order) || _isRebooking || !leadTime.allowed;
     final primary = cleaningLifecyclePrimaryAction(order.status);
     final statusLabel = searching
-        ? 'جارٍ البحث عن عامل مناسب'
+        ? ((workerCount ?? 1) > 1
+              ? 'جارٍ تجهيز فريق التنظيف'
+              : 'جارٍ البحث عن عامل مناسب')
         : cleaningOrderStatusLabelAr(
             order.status,
             startedTravelAt: order.startedTravelAt,
@@ -184,7 +191,9 @@ class _CleaningOrderDetailsScreenState
     };
     final message = switch (status) {
       CleaningBookingStatus.pending =>
-        'تم استلام طلبك، وسنخبرك عندما يقبل أحد مقدمي الخدمة.',
+        (workerCount ?? 1) > 1
+            ? 'تم استلام طلبك الجماعي، وسنخبرك مع اكتمال انضمام فريق التنظيف.'
+            : 'تم استلام طلبك، وسنخبرك عندما يقبل أحد مقدمي الخدمة.',
       CleaningBookingStatus.workerAssigned =>
         'تم قبول الطلب. يمكنك متابعة التفاصيل والتواصل مع مقدم الخدمة.',
       CleaningBookingStatus.awaitingStartVerification =>
@@ -1071,7 +1080,7 @@ class _CleaningOrderDetailsScreenState
         fallbackReason: fallbackReason,
       );
     }
-    if (triggerGatePrompts) {
+    if (triggerGatePrompts && _order?.isSupervisedTeam != true) {
       unawaited(_maybePromptForCompletionGate());
       final order = _order;
       final coordinator =
@@ -1216,7 +1225,7 @@ class _CleaningOrderDetailsScreenState
 
   Future<void> _maybePromptForCompletionGate({bool force = false}) async {
     final order = _order;
-    if (!mounted || order == null) return;
+    if (!mounted || order == null || order.isSupervisedTeam) return;
     final orderId = order.id;
     if (orderId == null) return;
     final status = _normStatus(order.status);
@@ -1425,7 +1434,7 @@ class _CleaningOrderDetailsScreenState
 
   Future<void> _openCompletionSheet({bool force = false}) async {
     final order = _order;
-    if (order == null || !mounted) return;
+    if (order == null || !mounted || order.isSupervisedTeam) return;
     final orderId = order.id;
     if (orderId == null) return;
     final status = _normStatus(order.status);

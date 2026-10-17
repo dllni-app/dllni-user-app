@@ -415,6 +415,9 @@ class CleaningOrderModel {
   final int? id;
   final int? customerId;
   final int? workerId;
+  final String bookingKind;
+  bool get isSupervisedTeam => bookingKind == 'supervised_team';
+
   final String? bookingNumber;
   final String? status;
   final String? propertyType;
@@ -471,6 +474,7 @@ class CleaningOrderModel {
     this.id,
     this.customerId,
     this.workerId,
+    this.bookingKind = 'standard',
     this.bookingNumber,
     this.status,
     this.propertyType,
@@ -528,6 +532,8 @@ class CleaningOrderModel {
       id: _toInt(_pick(m, const <String>['id'])),
       customerId: _toInt(_pick(m, const <String>['customerId', 'customer_id'])),
       workerId: _toInt(_pick(m, const <String>['workerId', 'worker_id'])),
+      bookingKind:
+          _toStringValue(m['bookingKind'] ?? m['booking_kind']) ?? 'standard',
       bookingNumber: _toStringValue(
         _pick(m, const <String>['bookingNumber', 'booking_number']),
       ),
@@ -744,6 +750,9 @@ class CleaningOrderDetailModel {
   final int? id;
   final int? customerId;
   final int? workerId;
+  final String bookingKind;
+  bool get isSupervisedTeam => bookingKind == 'supervised_team';
+
   final String? bookingNumber;
   final String? status;
   final String? propertyType;
@@ -811,6 +820,7 @@ class CleaningOrderDetailModel {
     this.id,
     this.customerId,
     this.workerId,
+    this.bookingKind = 'standard',
     this.bookingNumber,
     this.status,
     this.propertyType,
@@ -879,6 +889,8 @@ class CleaningOrderDetailModel {
       id: _toInt(_pick(m, const <String>['id'])),
       customerId: _toInt(_pick(m, const <String>['customerId', 'customer_id'])),
       workerId: _toInt(_pick(m, const <String>['workerId', 'worker_id'])),
+      bookingKind:
+          _toStringValue(m['bookingKind'] ?? m['booking_kind']) ?? 'standard',
       bookingNumber: _toStringValue(
         _pick(m, const <String>['bookingNumber', 'booking_number']),
       ),
@@ -1155,6 +1167,7 @@ class CleaningOrderDetailModel {
       id: id,
       customerId: customerId,
       workerId: workerId,
+      bookingKind: bookingKind,
       bookingNumber: bookingNumber,
       status: status,
       propertyType: propertyType,

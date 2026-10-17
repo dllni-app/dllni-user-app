@@ -71,8 +71,9 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     return orders
         .where(
           (order) =>
+              !order.isSupervisedTeam &&
               (order.status ?? '').toLowerCase() ==
-              CleaningBookingStatus.awaitingStartVerification,
+                  CleaningBookingStatus.awaitingStartVerification,
         )
         .map((order) => order.id)
         .whereType<int>()
@@ -86,8 +87,9 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     return orders
         .where(
           (order) =>
+              !order.isSupervisedTeam &&
               (order.status ?? '').toLowerCase() ==
-              CleaningBookingStatus.awaitingCustomerCompletion,
+                  CleaningBookingStatus.awaitingCustomerCompletion,
         )
         .map((order) => order.id)
         .whereType<int>()
@@ -679,7 +681,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     final details = await _fetchOrderDetails(orderId);
     if (!_started || _gatePromptOpen) return;
 
-    if (details == null) return;
+    if (details == null || details.isSupervisedTeam) return;
     final status = (details.status ?? '').toLowerCase();
     if (status != CleaningBookingStatus.awaitingStartVerification) {
       _syncGateSessionWithDetails(details);
@@ -759,7 +761,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     final details = await _fetchOrderDetails(orderId);
     if (!_started || _gatePromptOpen) return;
     if (!force && _isOrderDetailsScreenOpenFor(orderId)) return;
-    if (details == null) return;
+    if (details == null || details.isSupervisedTeam) return;
 
     _syncGateSessionWithDetails(details);
     final status = (details.status ?? '').toLowerCase();
@@ -954,9 +956,8 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     ];
   }
 
-  Future<_SessionStartVerificationTarget?> _resolveSessionStartVerificationTarget(
-    int orderId,
-  ) async {
+  Future<_SessionStartVerificationTarget?>
+  _resolveSessionStartVerificationTarget(int orderId) async {
     try {
       final envelope = await getIt<CleaningSessionRemoteDataSource>()
           .fetchBookingSchedule(orderId);
@@ -1077,7 +1078,8 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
 
       CleaningBookingSessionModel? target;
       for (final session in sessions) {
-        if (session.canConfirmCompletion || session.isAwaitingCustomerCompletion) {
+        if (session.canConfirmCompletion ||
+            session.isAwaitingCustomerCompletion) {
           target = session;
           break;
         }
@@ -1099,7 +1101,9 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         final preferred = preferredWorkerId;
         if (preferred != null &&
             preferred > 0 &&
-            (target.workerAssignments.any((item) => item.workerId == preferred) ||
+            (target.workerAssignments.any(
+                  (item) => item.workerId == preferred,
+                ) ||
                 target.workerAssignmentState?.workerId == preferred)) {
           return (sessionId: target.id, workerId: preferred);
         }

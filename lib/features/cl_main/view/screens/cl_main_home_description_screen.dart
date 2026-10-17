@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../data/models/cleaning_room_catalog_model.dart';
+import '../../data/source/cl_main_remote_data_source.dart';
 import '../../../profile/domain/models/address_list_item.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_progressive_room_state.dart';
@@ -15,6 +17,7 @@ import '../widgets/cl_redesign_components.dart';
 import '../widgets/cl_booking_pencil_header.dart';
 import '../../../../core/widgets/design_system/design_system.dart';
 import '../widgets/v6_room_size_guide.dart';
+import '../helpers/cleaning_room_catalog_icons.dart';
 import 'cleaning_booking_v2_screen.dart';
 import '../../domain/models/cleaning_booking_draft.dart';
 
@@ -39,19 +42,52 @@ class _ClMainHomeDescriptionScreenState
     'اختَر الأقرب لمساحتك. علامة المساعدة توضّح الأمثلة.',
     'يمكنك اختيار نوع مختلف لكل غرفة.',
   ];
-  static const _primaryRoomTypes = allCleaningRoomTypes;
+  List<CleaningRoomType> _primaryRoomTypes = allCleaningRoomTypes;
+  Map<String, CleaningRoomCatalogItem> _roomCatalog = const {};
 
   final ScrollController _bookingScrollController = ScrollController();
   CleaningProgressiveRoomState _roomState =
       const CleaningProgressiveRoomState();
   int _currentStep = 0;
   final Set<String> _reviewedRoomKeys = <String>{};
+  final Set<String> _invalidHourKeys = <String>{};
 
   String _propertyType = 'apartment';
   AddressListItem? _defaultAddress;
   ClMainBloc? _bloc;
   bool _didReadArgs = false;
   bool _exitDialogOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoomCatalog();
+  }
+
+  Future<void> _loadRoomCatalog() async {
+    try {
+      final catalog = await getIt<ClMainRemoteDataSource>()
+          .getCleaningRoomCatalog();
+      if (!mounted) return;
+      final byCode = {for (final room in catalog) room.code: room};
+      // Once selected, a room stays in this draft even if deactivated while
+      // the customer is editing. New selections only use active catalog codes.
+      setState(() {
+        _roomCatalog = Map.unmodifiable(byCode);
+        _primaryRoomTypes = selectableRoomTypes(
+          catalog,
+          selected: _roomState.units.map((unit) => unit.roomType),
+        );
+        _roomState = _roomState.withRoomNames({
+          for (final room in catalog)
+            if (room.name.trim().isNotEmpty) room.code: room.name.trim(),
+        });
+      });
+    } catch (_) {
+      // Network failures must not prevent an in-progress booking from opening.
+      // The established room catalog remains the fallback until API recovers.
+    }
+  }
 
   CleaningRoomSizeBreakdown get _roomSizeBreakdown => _roomState.toBreakdown();
 
@@ -307,6 +343,10 @@ class _ClMainHomeDescriptionScreenState
         'ترتيب المساحة وتنظيف الأرضية والأسطح القابلة للوصول.',
         'عناية أعمق بالزوايا والغبار المتراكم ضمن نطاق الخدمة.',
       ),
+      _ => (
+        'تنظيف المساحة والأسطح المعتادة والأرضية بحسب نوع الغرفة.',
+        'تنظيف أعمق للتفاصيل والزوايا والأوساخ المتراكمة.',
+      ),
     };
     showModalBottomSheet<void>(
       context: context,
@@ -321,7 +361,7 @@ class _ClMainHomeDescriptionScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'ما معنى حوسة وتعزيل في ' + _singleRoomLabel(type) + '؟',
+                'ما معنى حوسة وتعزيل في ${_singleRoomLabel(type)}؟',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -463,11 +503,7 @@ class _ClMainHomeDescriptionScreenState
                   children: [
                     Expanded(
                       child: Text(
-                        _singleRoomLabel(unit.roomType) +
-                            ' ' +
-                            unit.index.toString() +
-                            ' — ' +
-                            _roomSizeLabel(unit.size),
+                        '${_singleRoomLabel(unit.roomType)} ${unit.index} — ${_roomSizeLabel(unit.size)}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 15,
@@ -475,7 +511,7 @@ class _ClMainHomeDescriptionScreenState
                       ),
                     ),
                     IconButton(
-                      key: Key('room_help_' + unit.key.replaceAll('.', '_')),
+                      key: Key('room_help_${unit.key.replaceAll('.', '_')}'),
                       tooltip: 'ما معنى حوسة وتعزيل لهذه الغرفة؟',
                       onPressed: () => _showRoomCleaningHelp(unit.roomType),
                       icon: const Icon(
@@ -491,12 +527,60 @@ class _ClMainHomeDescriptionScreenState
                   selected: unit.cleaningType,
                   labelFor: (type) => type.title,
                   onChanged: (type) => setState(() {
+                    _invalidHourKeys.remove(unit.key);
                     _roomState = _roomState.setUnitCleaningType(
                       unit.roomType,
                       unit.index,
                       type,
                     );
                   }),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  key: ValueKey(
+                    'room_hours_${unit.key}_${unit.size.apiValue}_${unit.cleaningType.name}_${_roomCatalog[unit.roomType.apiKey]?.suggestedHours(unit.size.apiValue, unit.cleaningType.cleaningModeValue) ?? 'fallback'}',
+                  ),
+                  initialValue:
+                      (unit.estimatedHours ??
+                              (_roomCatalog[unit.roomType.apiKey]
+                                      ?.suggestedHours(
+                                        unit.size.apiValue,
+                                        unit.cleaningType.cleaningModeValue,
+                                      ) ??
+                                  (unit.cleaningType ==
+                                          CleaningType.deepCleaning
+                                      ? 1.0
+                                      : 0.5)))
+                          .toString(),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'الوقت المتوقع (بالساعات)',
+                    helperText:
+                        'مدة مقترحة قابلة للتعديل، ويتغير السعر حسب الوقت',
+                    suffixText: 'ساعة',
+                    errorText: _invalidHourKeys.contains(unit.key)
+                        ? 'أدخل مدة بين ربع ساعة و24 ساعة'
+                        : null,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (input) {
+                    final hours = double.tryParse(input.replaceAll(',', '.'));
+                    final valid = hours != null && hours >= 0.25 && hours <= 24;
+                    setState(() {
+                      if (!valid) {
+                        _invalidHourKeys.add(unit.key);
+                      } else {
+                        _invalidHourKeys.remove(unit.key);
+                        _roomState = _roomState.setUnitEstimatedHours(
+                          unit.roomType,
+                          unit.index,
+                          hours,
+                        );
+                      }
+                    });
+                  },
                 ),
               ],
             ),
@@ -511,7 +595,7 @@ class _ClMainHomeDescriptionScreenState
     if (_currentStep == 0 || _currentStep == 1) {
       return _roomState.hasAnyRoom;
     }
-    return _roomState.hasAnyRoom;
+    return _roomState.hasAnyRoom && _invalidHourKeys.isEmpty;
   }
 
   Future<void> _confirmExit() async {
@@ -601,9 +685,24 @@ class _ClMainHomeDescriptionScreenState
     }
     final next = _roomState.countFor(roomType) + delta;
     setState(() {
-      _roomState = _roomState.setCount(roomType, next);
+      // Stamp new rooms with the current server-provided Arabic names. Catalog
+      // data is loaded before rooms are added, so a one-off label update during
+      // the initial fetch is not enough for later-created room units.
+      _roomState = _roomState.setCount(roomType, next).withRoomNames({
+        for (final item in _roomCatalog.values)
+          if (item.name.trim().isNotEmpty) item.code: item.name.trim(),
+      });
       final keys = _roomState.units.map((unit) => unit.key).toSet();
       _reviewedRoomKeys.removeWhere((key) => !keys.contains(key));
+      _invalidHourKeys.removeWhere((key) => !keys.contains(key));
+      if (_roomState.countFor(roomType) == 0 &&
+          _roomCatalog.containsKey(roomType.apiKey) &&
+          !_roomCatalog[roomType.apiKey]!.active) {
+        _primaryRoomTypes = selectableRoomTypes(
+          _roomCatalog.values.toList(),
+          selected: _roomState.units.map((unit) => unit.roomType),
+        );
+      }
     });
   }
 
@@ -665,25 +764,39 @@ class _ClMainHomeDescriptionScreenState
     }
   }
 
-  String _roomTypeLabel(CleaningRoomType type) => switch (type) {
-    CleaningRoomType.bedroom => 'غرف النوم',
-    CleaningRoomType.bathroom => 'الحمامات',
-    CleaningRoomType.kitchen => 'المطبخ',
-    CleaningRoomType.livingRoom => 'الصالون / غرفة المعيشة',
-    CleaningRoomType.balcony => 'البلكونات',
-    CleaningRoomType.corridor => 'الموزع',
-    CleaningRoomType.shed => 'السقيفة',
-  };
+  String _roomTypeLabel(CleaningRoomType type) {
+    final configuredName = _roomCatalog[type.apiKey]?.name.trim();
+    if (configuredName != null && configuredName.isNotEmpty) {
+      return configuredName;
+    }
+    return switch (type) {
+      CleaningRoomType.bedroom => 'غرف النوم',
+      CleaningRoomType.bathroom => 'الحمامات',
+      CleaningRoomType.kitchen => 'المطبخ',
+      CleaningRoomType.livingRoom => 'الصالون / غرفة المعيشة',
+      CleaningRoomType.balcony => 'البلكونات',
+      CleaningRoomType.corridor => 'الموزع',
+      CleaningRoomType.shed => 'السقيفة',
+      _ => type.apiKey.replaceAll('_', ' '),
+    };
+  }
 
-  String _singleRoomLabel(CleaningRoomType type) => switch (type) {
-    CleaningRoomType.bedroom => 'غرفة النوم',
-    CleaningRoomType.bathroom => 'الحمام',
-    CleaningRoomType.kitchen => 'المطبخ',
-    CleaningRoomType.livingRoom => 'غرفة المعيشة',
-    CleaningRoomType.balcony => 'البلكونة',
-    CleaningRoomType.corridor => 'الموزع',
-    CleaningRoomType.shed => 'السقيفة',
-  };
+  String _singleRoomLabel(CleaningRoomType type) {
+    final configuredName = _roomCatalog[type.apiKey]?.name.trim();
+    if (configuredName != null && configuredName.isNotEmpty) {
+      return configuredName;
+    }
+    return switch (type) {
+      CleaningRoomType.bedroom => 'غرفة النوم',
+      CleaningRoomType.bathroom => 'الحمام',
+      CleaningRoomType.kitchen => 'المطبخ',
+      CleaningRoomType.livingRoom => 'غرفة المعيشة',
+      CleaningRoomType.balcony => 'البلكونة',
+      CleaningRoomType.corridor => 'الموزع',
+      CleaningRoomType.shed => 'السقيفة',
+      _ => type.apiKey.replaceAll('_', ' '),
+    };
+  }
 
   String _roomSizeLabel(CleaningRoomSize size) => switch (size) {
     CleaningRoomSize.small => 'صغيرة',
@@ -691,13 +804,10 @@ class _ClMainHomeDescriptionScreenState
     CleaningRoomSize.large => 'كبيرة',
   };
 
-  IconData _roomTypeIcon(CleaningRoomType type) => switch (type) {
-    CleaningRoomType.bedroom => Icons.bedroom_parent_outlined,
-    CleaningRoomType.bathroom => Icons.bathtub_outlined,
-    CleaningRoomType.kitchen => Icons.soup_kitchen_outlined,
-    CleaningRoomType.livingRoom => Icons.chair_alt_outlined,
-    CleaningRoomType.balcony => Icons.balcony_outlined,
-    CleaningRoomType.corridor => Icons.meeting_room_outlined,
-    CleaningRoomType.shed => Icons.garage_outlined,
-  };
+  IconData _roomTypeIcon(CleaningRoomType type) {
+    return cleaningRoomCatalogIcon(
+      type,
+      iconKey: _roomCatalog[type.apiKey]?.iconKey,
+    );
+  }
 }

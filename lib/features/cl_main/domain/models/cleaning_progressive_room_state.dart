@@ -7,6 +7,8 @@ class CleaningProgressiveRoomUnit {
     required this.index,
     required this.size,
     this.cleaningType = CleaningType.regularCleaning,
+    this.estimatedHours,
+    this.displayName,
   });
 
   final CleaningRoomType roomType;
@@ -14,17 +16,30 @@ class CleaningProgressiveRoomUnit {
   final CleaningRoomSize size;
   final CleaningType cleaningType;
 
+  /// Optional customer override; null uses the server-configured suggestion.
+  final double? estimatedHours;
+
+  /// Name captured from the catalog for drafts even when a code becomes inactive.
+  final String? displayName;
+
   String get key => '${roomType.apiKey}.$index';
 
   CleaningProgressiveRoomUnit copyWith({
     CleaningRoomSize? size,
     CleaningType? cleaningType,
+    double? estimatedHours,
+    bool resetEstimatedHours = false,
+    String? displayName,
   }) {
     return CleaningProgressiveRoomUnit(
       roomType: roomType,
       index: index,
       size: size ?? this.size,
       cleaningType: cleaningType ?? this.cleaningType,
+      displayName: displayName ?? this.displayName,
+      estimatedHours: resetEstimatedHours
+          ? null
+          : (estimatedHours ?? this.estimatedHours),
     );
   }
 }
@@ -46,9 +61,9 @@ class CleaningProgressiveRoomState {
   /// Balconies are extra spaces, not a replacement for a room to clean.
   static const int maxBaseRooms = 30;
 
-  int get totalBaseRooms => allCleaningRoomTypes
-      .where((type) => type != CleaningRoomType.balcony)
-      .fold<int>(0, (sum, type) => sum + countFor(type));
+  int get totalBaseRooms => counts.entries
+      .where((entry) => entry.key != CleaningRoomType.balcony)
+      .fold<int>(0, (sum, entry) => sum + entry.value);
 
   bool get hasAnyRoom => totalBaseRooms > 0;
 
@@ -61,6 +76,7 @@ class CleaningProgressiveRoomState {
       CleaningRoomType.balcony ||
       CleaningRoomType.shed => 20,
       CleaningRoomType.livingRoom || CleaningRoomType.corridor => maxBaseRooms,
+      _ => maxBaseRooms,
     };
     if (roomType == CleaningRoomType.balcony) return perTypeLimit;
     final available = maxBaseRooms - (totalBaseRooms - countFor(roomType));
@@ -78,7 +94,10 @@ class CleaningProgressiveRoomState {
     };
     final nextUnits = <CleaningProgressiveRoomUnit>[];
 
-    for (final type in allCleaningRoomTypes) {
+    for (final type in [
+      ...allCleaningRoomTypes,
+      ...nextCounts.keys.where((type) => !allCleaningRoomTypes.contains(type)),
+    ]) {
       final count = nextCounts[type] ?? 0;
       for (var index = 1; index <= count; index++) {
         final key = '${type.apiKey}.$index';
@@ -99,6 +118,16 @@ class CleaningProgressiveRoomState {
     );
   }
 
+  /// Keep server labels in an already configured draft without erasing choices.
+  CleaningProgressiveRoomState withRoomNames(Map<String, String> names) =>
+      CleaningProgressiveRoomState(
+        counts: counts,
+        units: List.unmodifiable([
+          for (final unit in units)
+            unit.copyWith(displayName: names[unit.roomType.apiKey]),
+        ]),
+      );
+
   CleaningProgressiveRoomState setUnitSize(
     CleaningRoomType roomType,
     int index,
@@ -107,7 +136,7 @@ class CleaningProgressiveRoomState {
     final nextUnits = units
         .map(
           (unit) => unit.roomType == roomType && unit.index == index
-              ? unit.copyWith(size: size)
+              ? unit.copyWith(size: size, resetEstimatedHours: true)
               : unit,
         )
         .toList(growable: false);
@@ -125,7 +154,10 @@ class CleaningProgressiveRoomState {
     final updated = units
         .map(
           (unit) => unit.roomType == roomType && unit.index == index
-              ? unit.copyWith(cleaningType: cleaningType)
+              ? unit.copyWith(
+                  cleaningType: cleaningType,
+                  resetEstimatedHours: true,
+                )
               : unit,
         )
         .toList(growable: false);
@@ -139,15 +171,38 @@ class CleaningProgressiveRoomState {
     return CleaningProgressiveRoomState(
       counts: counts,
       units: List.unmodifiable(
-        units.map((unit) => unit.copyWith(cleaningType: cleaningType)),
+        units.map(
+          (unit) => unit.copyWith(
+            cleaningType: cleaningType,
+            resetEstimatedHours: true,
+          ),
+        ),
       ),
     );
   }
 
+  CleaningProgressiveRoomState setUnitEstimatedHours(
+    CleaningRoomType roomType,
+    int index,
+    double hours,
+  ) => CleaningProgressiveRoomState(
+    counts: counts,
+    units: List.unmodifiable(
+      units.map(
+        (unit) => unit.roomType == roomType && unit.index == index
+            ? unit.copyWith(estimatedHours: hours)
+            : unit,
+      ),
+    ),
+  );
+
   /// Match the room keys used by worker assignment and backend pricing.
   Map<String, String> get roomCleaningModes {
     final values = <String, String>{};
-    for (final type in backendAcceptedRoomSizeBreakdownTypes) {
+    for (final type in {
+      ...backendAcceptedRoomSizeBreakdownTypes,
+      ...units.map((unit) => unit.roomType),
+    }) {
       for (final size in CleaningRoomSize.values) {
         var index = 0;
         for (final unit in units) {
@@ -192,7 +247,7 @@ class CleaningProgressiveRoomState {
     CleaningRoomSizeBreakdown breakdown,
   ) {
     var state = const CleaningProgressiveRoomState();
-    for (final roomType in allCleaningRoomTypes) {
+    for (final roomType in breakdown.roomTypes) {
       final count = breakdown.totalForType(roomType);
       state = state.setCount(roomType, count);
     }
@@ -203,7 +258,7 @@ class CleaningProgressiveRoomState {
     }
 
     final sizedUnits = <CleaningProgressiveRoomUnit>[];
-    for (final roomType in allCleaningRoomTypes) {
+    for (final roomType in breakdown.roomTypes) {
       final generated = unitsByType[roomType] ?? const [];
       var cursor = 0;
       for (final size in CleaningRoomSize.values) {

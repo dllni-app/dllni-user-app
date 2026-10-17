@@ -3,15 +3,16 @@ import 'cleaning_room_size_breakdown.dart';
 import 'cleaning_type.dart';
 
 String cleaningRoomLabel(CleaningProgressiveRoomUnit room) =>
-    '${switch (room.roomType) {
-      CleaningRoomType.bedroom => 'غرفة نوم',
-      CleaningRoomType.bathroom => 'حمام',
-      CleaningRoomType.kitchen => 'مطبخ',
-      CleaningRoomType.livingRoom => 'غرفة معيشة',
-      CleaningRoomType.corridor => 'ممر',
-      CleaningRoomType.balcony => 'شرفة',
-      CleaningRoomType.shed => 'مستودع',
-    }} ${room.index}';
+    '${room.displayName ?? switch (room.roomType) {
+          CleaningRoomType.bedroom => 'غرفة نوم',
+          CleaningRoomType.bathroom => 'حمام',
+          CleaningRoomType.kitchen => 'مطبخ',
+          CleaningRoomType.livingRoom => 'غرفة معيشة',
+          CleaningRoomType.corridor => 'ممر',
+          CleaningRoomType.balcony => 'شرفة',
+          CleaningRoomType.shed => 'مستودع',
+          _ => room.roomType.apiKey.replaceAll('_', ' '),
+        }} ${room.index}';
 
 String cleaningSizeLabel(CleaningRoomSize size) => switch (size) {
   CleaningRoomSize.small => 'صغيرة',
@@ -537,6 +538,8 @@ class CleaningBookingDraft {
           'roomType': room.roomType.apiKey,
           'size': room.size.apiValue,
           'cleaningMode': room.cleaningType.cleaningModeValue,
+          if (room.estimatedHours != null)
+            'estimatedHours': room.estimatedHours,
         },
     ],
     'visits': [

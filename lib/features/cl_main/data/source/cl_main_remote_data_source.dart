@@ -2,16 +2,14 @@ import 'package:injectable/injectable.dart';
 import 'package:common_package/helpers/api_handler.dart';
 import 'package:common_package/helpers/dio_network.dart';
 
-import '../../../../core/models/cleaning_service_extras.dart';
-
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
 import '../../domain/usecases/estimate_cleaning_price_use_case.dart';
 import '../../domain/usecases/get_cleaning_banners_use_case.dart';
 import '../../domain/usecases/get_cleaning_services_use_case.dart';
 import '../../domain/usecases/get_previous_cleaning_workers_use_case.dart';
 import '../models/cleaning_banners_response_model.dart';
-import '../models/estimate_price_response_model.dart';
 import '../models/cleaning_services_response_model.dart';
+import '../models/cleaning_room_catalog_model.dart';
 import '../models/cleaning_suite_config_model.dart';
 import '../models/create_cleaning_order_response_model.dart';
 import '../models/female_worker_safety_policy_model.dart';
@@ -22,6 +20,16 @@ class ClMainRemoteDataSource with HandlingApiManager {
   final DioNetwork dioNetwork;
 
   ClMainRemoteDataSource({required this.dioNetwork});
+
+  /// The public suite configuration includes Filament-managed room types.
+  /// Room selection may happen before login, so never use an auth-only
+  /// customer endpoint here. Offline selection still uses safe fallbacks.
+  Future<List<CleaningRoomCatalogItem>> getCleaningRoomCatalog() =>
+      wrapHandlingApi(
+        tryCall: () =>
+            dioNetwork.getData(endPoint: '/api/v1/cleaning/suite-config'),
+        jsonConvert: parseCleaningRoomCatalog,
+      );
 
   Future<EstimatePriceResponseModel> estimateBookingV2(
     Map<String, dynamic> booking,

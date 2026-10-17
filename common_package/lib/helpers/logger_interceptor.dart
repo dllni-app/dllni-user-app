@@ -32,6 +32,9 @@ class LoggerInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (options.path.contains('/supervised-team/customer/bookings')) {
+      return super.onRequest(options, handler);
+    }
     final requestPath = '${options.baseUrl}${options.path}';
     _logger.i(
       '${options.method} REQUEST => $requestPath\n'
@@ -44,6 +47,9 @@ class LoggerInterceptor extends Interceptor {
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
+    if (response.requestOptions.path.contains('/supervised-team/customer/bookings')) {
+      return super.onResponse(response, handler);
+    }
     final requestPath =
         '${response.requestOptions.baseUrl}${response.requestOptions.path}';
     _logger.i(
@@ -55,6 +61,9 @@ class LoggerInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (err.requestOptions.path.contains('/supervised-team/customer/bookings')) {
+      return super.onError(err, handler);
+    }
     final options = err.requestOptions;
     final requestPath = '${options.baseUrl}${options.path}';
     _logger.e(
