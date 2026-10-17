@@ -1,5 +1,7 @@
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../../core/widgets/exit_confirmation_dialog.dart';
 import '../../../../core/themes/shared_platform_colors.dart';
 
 import '../../../home/view/screens/home_screen.dart';
@@ -20,6 +22,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   late final TabController controller;
+  bool _isExitDialogVisible = false;
 
   @override
   void initState() {
@@ -32,6 +35,24 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
+  Future<void> _handleBackPressed() async {
+    if (controller.index != 0) {
+      controller.animateTo(0);
+      return;
+    }
+
+    if (_isExitDialogVisible) return;
+    _isExitDialogVisible = true;
+    try {
+      final shouldExit = await showExitConfirmationDialog(context);
+      if (shouldExit && mounted) {
+        await SystemNavigator.pop();
+      }
+    } finally {
+      _isExitDialogVisible = false;
+    }
+  }
+
   @override
   void dispose() {
     controller.dispose();
@@ -40,8 +61,13 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _handleBackPressed();
+      },
+      child: Directionality(
+        textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: SharedPlatformColors.background,
         body: SafeArea(
@@ -52,6 +78,7 @@ class _MainScreenState extends State<MainScreen>
           ),
         ),
         bottomNavigationBar: BottomNavBar(controller: controller),
+      ),
       ),
     );
   }
