@@ -33,15 +33,10 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
@@ -52,16 +47,16 @@
 		<string>remote-notification</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>نستخدم موقعك لاقتراح مطاعم قريبة في صندوق الحظ.</string>
+	<string>نستخدم موقعك لتحديد عنوانك، عرض الخدمات القريبة، ودعم التتبع المرتبط بطلباتك.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>نستخدم موقعك لتحديد موقعك وحساب المسافة بينك وبين مقدم الخدمة واقتراح الخدمات القريبة عند استخدام ميزات الموقع في التطبيق.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>نحتاج إلى الميكروفون لتحويل كلامك إلى نص أثناء البحث الصوتي.</string>
+	<string>نستخدم الميكروفون لتحويل كلامك إلى نص عند استخدام البحث الصوتي.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>نستخدم التعرف على الكلام لعرض كلمات البحث التي تنطقها في حقل البحث.</string>
+	<string>نستخدم التعرف على الكلام لتحويل كلمات البحث التي تنطقها إلى نص داخل التطبيق.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>نستخدم الكاميرا لالتقاط صورة شخصية لحسابك.</string>
+	<string>نستخدم الكاميرا لالتقاط صورة لحسابك أو لإرفاق صور عند الإبلاغ عن مشكلة في الطلب.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>نستخدم معرض الصور لاختيار صورة شخصية لحسابك.</string>
+	<string>نستخدم مكتبة الصور لاختيار صورة لحسابك أو لإرفاق صور عند الإبلاغ عن مشكلة في الطلب.</string>
 </dict>
 </plist>
