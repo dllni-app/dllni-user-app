@@ -54,8 +54,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await SharedPreferencesHelper.clearData();
     await UserSessionStore.clear();
     AuthGate.clearPendingAction();
-    if (!context.mounted) return;
+    if (!mounted) return;
     context.pushRouteAndRemoveUntil('/main');
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('حذف الحساب'),
+          content: const Text(
+            'سيتم تسجيل خروجك الآن. إذا لم تقم بتسجيل الدخول إلى حسابك لمدة 90 يوماً، فسيتم حذف الحساب.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('متابعة وتسجيل الخروج'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout == true && mounted) {
+      await _logout();
+    }
   }
 
   Widget _supportSection(BuildContext context) {
@@ -80,11 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: EdgeInsetsDirectional.all(16),
           child: SectionCard(
             containerColor: Color(0xff6366F1).withAlpha(25),
-            image: Icon(
-              Icons.headphones,
-              size: 18,
-              color: Color(0xff6366F1),
-            ),
+            image: Icon(Icons.headphones, size: 18, color: Color(0xff6366F1)),
             title: 'الدعم والمساعدة',
             subtitle: 'التواصل مع الدعم الفني',
             onTap: _openSupport,
@@ -392,7 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(height: 12),
                   InkWell(
                     key: const Key('profile_delete_account_button'),
-                    onTap: _logout,
+                    onTap: _confirmDeleteAccount,
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
                       decoration: BoxDecoration(
