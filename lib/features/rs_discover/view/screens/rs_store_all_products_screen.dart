@@ -1,15 +1,12 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:dllni_user_app/core/widgets/rs_app_product_card.dart';
 import 'package:flutter/material.dart';
-import 'package:toastification/toastification.dart';
 
 import '../../data/models/fetch_restaurant_details_model.dart';
 import '../../data/models/fetch_restaurant_products_search_model.dart';
-import '../../domain/usecases/add_restaurant_cart_item_use_case.dart';
 import '../../domain/usecases/fetch_restaurant_details_use_case.dart';
 import '../models/product_preview_data.dart';
 import '../models/store_product_item.dart';
@@ -214,10 +211,6 @@ class _AllProductsCardState extends State<_AllProductsCard> {
   Widget build(BuildContext context) {
     final safeImage = (product.imageUrl ?? '').trim();
     final safeRestaurant = restaurantName.trim().isNotEmpty ? restaurantName.trim() : 'مطعم';
-    final safeOffer = ((product.offerBadgeText ?? product.offer ?? '').trim()).isNotEmpty
-        ? (product.offerBadgeText ?? product.offer ?? '').trim()
-        : 'عرض';
-
     return RsAppProductCard(
       image: safeImage,
       productId: product.id!,

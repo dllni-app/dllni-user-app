@@ -139,10 +139,6 @@ class _StoreProductCardState extends State<StoreProductCard> {
   Widget build(BuildContext context) {
     final safeImage = (product.imageUrl ?? '').trim();
     final safeRestaurant = restaurantName.trim().isNotEmpty ? restaurantName.trim() : 'مطعم';
-    final safeOffer = ((product.offerBadgeText ?? product.offer ?? '').trim()).isNotEmpty
-        ? (product.offerBadgeText ?? product.offer ?? '').trim()
-        : 'عرض';
-
     return RsAppProductCard(
       image: safeImage,
       productId: product.id!,

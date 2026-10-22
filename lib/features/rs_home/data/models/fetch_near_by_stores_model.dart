@@ -17,20 +17,7 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -47,10 +34,6 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-List<dynamic>? _asDynamicList(dynamic value) {
-  if (value is! List) return null;
-  return value.map(_asDynamic).toList();
-}
 
 dynamic _asDynamic(dynamic value) {
   if (value == null) return null;
@@ -70,12 +53,12 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-FetchNearByStoresModel fetchNearByStoresModelFromJson(str) => FetchNearByStoresModel.fromJson(str);
+FetchNearByStoresModel fetchNearByStoresModelFromJson(dynamic str) => FetchNearByStoresModel.fromJson(str);
 
 String fetchNearByStoresModelToJson(FetchNearByStoresModel data) => json.encode(data.toJson());
 
 
-FetchNearByStoresModelStoresItem fetchNearByStoresModelStoresItemFromJson(str) => FetchNearByStoresModelStoresItem.fromJson(str);
+FetchNearByStoresModelStoresItem fetchNearByStoresModelStoresItemFromJson(dynamic str) => FetchNearByStoresModelStoresItem.fromJson(str);
 
 String fetchNearByStoresModelStoresItemToJson(FetchNearByStoresModelStoresItem data) => json.encode(data.toJson());
 

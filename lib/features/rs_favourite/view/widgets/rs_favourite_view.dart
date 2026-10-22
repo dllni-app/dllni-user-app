@@ -1,6 +1,5 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
 import 'package:common_package/common_package.dart';
-import 'package:dllni_user_app/core/widgets/app_app_bars.dart';
 import 'package:flutter/material.dart';
 
 import 'favourite_app_bar.dart';

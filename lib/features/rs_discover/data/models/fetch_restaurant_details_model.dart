@@ -308,7 +308,7 @@ class RestaurantRatingSummary {
     final rawDist = _asMap(json['distribution']) ?? const <String, dynamic>{};
     final dist = <int, int>{};
     rawDist.forEach((key, value) {
-      final parsedKey = int.tryParse('$key');
+      final parsedKey = int.tryParse(key);
       final parsedValue = _asInt(value);
       if (parsedKey != null && parsedValue != null) {
         dist[parsedKey] = parsedValue;

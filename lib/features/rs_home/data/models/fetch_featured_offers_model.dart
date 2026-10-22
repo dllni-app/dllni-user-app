@@ -70,17 +70,17 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-FetchFeaturedOffersModel fetchFeaturedOffersModelFromJson(str) => FetchFeaturedOffersModel.fromJson(str);
+FetchFeaturedOffersModel fetchFeaturedOffersModelFromJson(dynamic str) => FetchFeaturedOffersModel.fromJson(str);
 
 String fetchFeaturedOffersModelToJson(FetchFeaturedOffersModel data) => json.encode(data.toJson());
 
 
-FetchFeaturedOffersModelOffersItem fetchFeaturedOffersModelOffersItemFromJson(str) => FetchFeaturedOffersModelOffersItem.fromJson(str);
+FetchFeaturedOffersModelOffersItem fetchFeaturedOffersModelOffersItemFromJson(dynamic str) => FetchFeaturedOffersModelOffersItem.fromJson(str);
 
 String fetchFeaturedOffersModelOffersItemToJson(FetchFeaturedOffersModelOffersItem data) => json.encode(data.toJson());
 
 
-FetchFeaturedOffersModelRestaurant fetchFeaturedOffersModelRestaurantFromJson(str) =>
+FetchFeaturedOffersModelRestaurant fetchFeaturedOffersModelRestaurantFromJson(dynamic str) =>
     FetchFeaturedOffersModelRestaurant.fromJson(str);
 
 String fetchFeaturedOffersModelRestaurantToJson(FetchFeaturedOffersModelRestaurant data) =>

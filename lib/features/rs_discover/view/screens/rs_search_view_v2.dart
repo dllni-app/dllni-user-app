@@ -309,7 +309,7 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
       backgroundColor: Colors.transparent,
       builder: (_) => const SmartSearchSheet(isSupermarket: false),
     );
-    if (!mounted || words == null || words.isEmpty) return;
+    if (!context.mounted || words == null || words.isEmpty) return;
     _submitSearch(context, words.join(' , '));
   }
 

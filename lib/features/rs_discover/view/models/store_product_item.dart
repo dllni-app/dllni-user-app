@@ -15,23 +15,20 @@ class StoreProductItem {
     this.cartItemId,
     this.imageUrl,
     this.restaurantName,
-    String? offerName,
+    this.offerName,
     String? offerBadgeText,
     String? offerUrgencyTag,
-    String? offerDiscountType,
-    num? offerDiscountValue,
+    this.offerDiscountType,
+    this.offerDiscountValue,
     bool? isOfferActive,
     this.isFavorited = false,
   }) : displayPriceValue = displayPriceValue,
        oldPriceValue = oldPriceValue,
        offer = offer ?? _fallbackOfferLabel(displayPriceValue, oldPriceValue),
-       offerName = offerName,
        offerBadgeText = offerBadgeText ??
            _fallbackOfferLabel(displayPriceValue, oldPriceValue),
        offerUrgencyTag = offerUrgencyTag ??
            _fallbackOfferUrgency(displayPriceValue, oldPriceValue),
-       offerDiscountType = offerDiscountType,
-       offerDiscountValue = offerDiscountValue,
        isOfferActive = isOfferActive ??
            _hasDiscountedPrice(displayPriceValue, oldPriceValue);
 

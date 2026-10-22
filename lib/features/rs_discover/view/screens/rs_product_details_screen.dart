@@ -1088,13 +1088,6 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
     );
   }
 
-  String _priceText(num? value) {
-    if (value == null) return '-';
-    final clean = value % 1 == 0 ? value.toInt().toString() : value.toString();
-    final currency = (widget.params.product.currency ?? '').trim();
-    return currency.isEmpty ? clean : '$clean $currency';
-  }
-
   void _removeSavedNote(int index) {
     if (index < 0 || index >= _savedNotes.length) return;
     setState(() {
