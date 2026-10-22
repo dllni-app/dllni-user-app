@@ -1,4 +1,6 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
+import 'package:dllni_user_app/core/di/injection.dart';
+import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'dart:ui' as ui;
 
 import 'package:common_package/common_package.dart';
@@ -156,8 +158,12 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'سيتم تحديث حالة التوصيل تلقائياً ويمكنك متابعة المندوب من شاشة التتبع.',
+                Text(
+                  // Pickup orders must never promise a courier or delivery tracking.
+                  deliveryOrderId != null ||
+                          placedOrder.fulfillment?.type?.toLowerCase().trim() == 'delivery'
+                      ? 'سيتم تحديث حالة التوصيل تلقائياً ويمكنك متابعة المندوب من شاشة التتبع.'
+                      : 'يمكنك استلام طلبك بنفسك من المطعم عندما يصبح جاهزاً.',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
@@ -228,6 +234,13 @@ class RestaurantOrderFulfillmentScreen extends StatelessWidget {
       context.read<OrdersBloc>().add(
         FetchSupermarketCartEvent(params: FetchSupermarketCartParams()),
       );
+    }
+
+    // Checkout clears the cart in OrdersBloc. Re-fetch the shared badge too,
+    // otherwise the previous item count remains visible after a successful order.
+    if (args.section != 'supermarket' &&
+        getIt.isRegistered<CartProductsCountCubit>()) {
+      getIt<CartProductsCountCubit>().fetchCount();
     }
 
     context.read<OrdersBloc>().add(FetchOrdersEvent(isReload: true));
