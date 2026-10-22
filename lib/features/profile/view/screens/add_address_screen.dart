@@ -713,6 +713,23 @@ class _AddressMapPickerScreen extends StatefulWidget {
 
 class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
   LatLng? _selected;
+  bool _mapTilesUnavailable = false;
+  int _mapTileRequestGeneration = 0;
+
+  void _showTileError() {
+    if (_mapTilesUnavailable || !mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _mapTilesUnavailable) return;
+      setState(() => _mapTilesUnavailable = true);
+    });
+  }
+
+  void _retryMapTiles() {
+    setState(() {
+      _mapTilesUnavailable = false;
+      _mapTileRequestGeneration++;
+    });
+  }
   bool _isResolvingInitialLocation = false;
 
   bool get _hasInitialCoordinates =>
@@ -750,6 +767,8 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
                     ),
                     children: [
                       TileLayer(
+                        key: ValueKey('map-tiles-$_mapTileRequestGeneration'),
+                        errorTileCallback: (_, _, _) => _showTileError(),
                         urlTemplate:
                             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.dllni.user',
@@ -777,6 +796,33 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_mapTilesUnavailable) ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xffFFF7ED),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.wifi_off_outlined,
+                            color: Color(0xff9A3412)),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'تعذّر تحميل صور الخريطة. تحقّق من اتصال الإنترنت؛ ما زال بالإمكان تأكيد الموقع المحدد.',
+                            style: TextStyle(color: Color(0xff9A3412)),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _retryMapTiles,
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 if (selected != null)
                   Text(
                     'Lat: ${selected.latitude.toStringAsFixed(6)}  •  Lng: ${selected.longitude.toStringAsFixed(6)}',
