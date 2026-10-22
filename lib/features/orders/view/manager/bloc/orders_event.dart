@@ -10,6 +10,7 @@ class OrdersSectionChangedEvent extends OrdersEvent {
 
 class FetchOrdersEvent extends OrdersEvent with EventWithReload {
   final bool loadMore;
+  @override
   final bool isReload;
   final bool silentRefresh;
   final int? orderDeletedId;

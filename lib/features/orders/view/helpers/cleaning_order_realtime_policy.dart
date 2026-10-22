@@ -85,42 +85,4 @@ class CleaningOrderRealtimePolicy {
     );
   }
 
-  static bool _shouldReopenCompletionSheet({
-    required String normalizedEvent,
-    required Map<String, dynamic> payload,
-    required String? currentStatus,
-  }) {
-    final normalizedCurrent = (currentStatus ?? '').trim().toLowerCase();
-    if (normalizedCurrent == CleaningBookingStatus.timeExtensionRequested) {
-      return false;
-    }
-
-    if (normalizedEvent == CleaningRealtimeContract.awaitingCustomerCompletion) {
-      return true;
-    }
-
-    if (normalizedEvent == CleaningRealtimeContract.completionDecisionMade) {
-      final unwrapped = CleaningRealtimeContract.unwrapPayload(payload);
-      final decision = (CleaningRealtimeContract.extractDecision(unwrapped) ??
-              unwrapped['decision']?.toString())
-          ?.trim()
-          .toLowerCase();
-      if (decision == 'extension_rejected' ||
-          decision == 'extension_accepted' ||
-          decision == 'extension_requested') {
-        return false;
-      }
-      if (decision == 'rejected' &&
-          normalizedCurrent == CleaningBookingStatus.timeExtensionRequested) {
-        return false;
-      }
-    }
-
-    if (normalizedEvent == CleaningRealtimeContract.trackingUpdated &&
-        normalizedCurrent == CleaningBookingStatus.timeExtensionRequested) {
-      return false;
-    }
-
-    return false;
-  }
 }

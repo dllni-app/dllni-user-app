@@ -27,7 +27,7 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
       'shed' => 'مستودع',
       _ => 'غرفة',
     };
-    return name + ' ' + key.split('.').last;
+    return '$name ${key.split('.').last}';
   }
 
   String _mode(String key) => switch (_room(key)['cleaningMode']) {
@@ -119,7 +119,7 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'الزيارة ' + (visit['sequence'] ?? index + 1).toString(),
+                    'الزيارة ${visit['sequence'] ?? index + 1}',
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -133,9 +133,7 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'الموعد: من ' +
-                      time +
-                      (_time(end).isEmpty ? '' : ' إلى ' + _time(end)),
+                  'الموعد: من $time${_time(end).isEmpty ? '' : ' إلى ${_time(end)}'}',
                 ),
               ),
             const Divider(height: 26),
@@ -164,18 +162,9 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                           Text(
-                            _size(schedule['roomKey']?.toString() ?? '') +
-                                ' · ' +
-                                _mode(schedule['roomKey']?.toString() ?? '') +
-                                ' · العمال: ' +
-                                (schedule['numberOfWorkers'] ?? '—')
-                                    .toString() +
-                                (schedule['estimatedDurationMinutes'] == null
+                            '${_size(schedule['roomKey']?.toString() ?? '')} · ${_mode(schedule['roomKey']?.toString() ?? '')} · العمال: ${schedule['numberOfWorkers'] ?? '—'}${schedule['estimatedDurationMinutes'] == null
                                     ? ''
-                                    : ' · ' +
-                                          schedule['estimatedDurationMinutes']
-                                              .toString() +
-                                          ' دقيقة'),
+                                    : ' · ${schedule['estimatedDurationMinutes']} دقيقة'}',
                           ),
                         ],
                       ),
@@ -198,16 +187,11 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    '• ' +
-                        (supply['name'] ?? 'مادة تنظيف').toString() +
-                        (supply['quantity'] == null
+                    '• ${supply['name'] ?? 'مادة تنظيف'}${supply['quantity'] == null
                             ? ''
-                            : ' · ' +
-                                  _quantity(supply['quantity']) +
-                                  ' ' +
-                                  _unitLabel(
+                            : ' · ${_quantity(supply['quantity'])} ${_unitLabel(
                                     (supply['unit'] ?? '').toString(),
-                                  )),
+                                  )}'}',
                   ),
                 ),
             ],
@@ -221,21 +205,15 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '• ' +
-                        _serviceName(service) +
-                        ' · ' +
-                        (service['targetRoomKeys'] is List
+                    '• ${_serviceName(service)} · ${service['targetRoomKeys'] is List
                             ? (service['targetRoomKeys'] as List)
                                   .map((key) => _roomName(key.toString()))
                                   .join('، ')
-                            : '') +
-                        ' · الكمية ' +
-                        (service['quantity'] ?? 1).toString() +
-                        (service['dirtinessLevel'] == 'heavy'
+                            : ''} · الكمية ${service['quantity'] ?? 1}${service['dirtinessLevel'] == 'heavy'
                             ? ' · اتساخ شديد'
                             : service['dirtinessLevel'] == 'light'
                             ? ' · اتساخ بسيط'
-                            : ''),
+                            : ''}',
                   ),
                 ),
             ],
