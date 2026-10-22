@@ -1,18 +1,13 @@
-import 'package:flutter/foundation.dart' show kReleaseMode;
-
 class AppConfig {
   const AppConfig._();
 
   static const String appName = 'My App';
   static const String orgIdentifier = 'com.dllni.userapp';
+  /// All build modes use the deployed HTTPS API unless explicitly overridden
+  /// with --dart-define=API_BASE_URL=... for local development.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    // Debug/profile builds use the developer's local Laravel server.
-    // Android emulator requires `adb reverse tcp:8000 tcp:8000`.
-    // Release builds retain the deployed HTTPS endpoint unless overridden.
-    defaultValue: kReleaseMode
-        ? 'https://dllni.mustafafares.com'
-        : 'http://127.0.0.1:8000',
+    defaultValue: 'https://dllni.mustafafares.com',
   );
   static const String privacyPolicyUrl = '$baseUrl/legal/user-app';
   static const String termsAndConditionsUrl = '$baseUrl/legal/user-app/terms';

@@ -23,4 +23,4 @@ if (-not $booted) { throw 'Android emulator did not finish booting.' }
 $device = @(& adb devices | Select-String '^(emulator-\d+)\s+device' | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1)
 if (-not $device) { throw 'Cannot detect emulator device.' }
 if ($BootOnly) { Write-Host "Android emulator $device is ready for VS Code debugging."; exit 0 }
-& flutter run -d $device --dart-define=API_BASE_URL=http://10.0.2.2:8000
+& flutter run -d $device
