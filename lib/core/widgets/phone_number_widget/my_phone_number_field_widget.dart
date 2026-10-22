@@ -249,20 +249,24 @@ class MyPhoneNumberInitField extends StatelessWidget {
     this.enabled = true,
     this.initialCountryCode = 'SY',
   }) {
+    String? initialCountryDialCode;
     if (initialPhoneNumber != null && initialPhoneNumber!.startsWith('+')) {
-      final match = RegExp(r'^\+(\d{1,3})(.*)$').firstMatch(initialPhoneNumber!);
+      final match = RegExp(
+        r'^\+(\d{1,3})(.*)$',
+      ).firstMatch(initialPhoneNumber!);
       if (match != null) {
         final countryDial = match.group(1)!;
         final local = match.group(2)!.trim();
-        _initialCountryDialCode = countryDial;
+        initialCountryDialCode = countryDial;
         controller.text = local;
         internationalPhoneValue?.value = '+$countryDial$local';
       }
     }
+    _initialCountryDialCode = initialCountryDialCode;
   }
 
   final String? initialPhoneNumber;
-  String? _initialCountryDialCode;
+  late final String? _initialCountryDialCode;
   final Function(Country)? onCountryChanged;
   final TextEditingController controller;
   final String? hintText;
@@ -310,7 +314,8 @@ class MyPhoneNumberInitField extends StatelessWidget {
       child: MyCustomIntlField(
         textInputAction: textInputAction,
         initialCountryCode: _initialCountryDialCode != null
-            ? _countryCodeFromDial(_initialCountryDialCode!) ?? initialCountryCode
+            ? _countryCodeFromDial(_initialCountryDialCode) ??
+                  initialCountryCode
             : initialCountryCode,
         controller: controller,
         enabled: enabled,

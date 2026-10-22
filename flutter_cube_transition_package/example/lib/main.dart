@@ -20,8 +20,6 @@ class InteractiveCubePage extends StatefulWidget {
 }
 
 class InteractiveCubePageState extends State<InteractiveCubePage> {
-  double _currentRotation = 0;
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -51,11 +49,6 @@ class InteractiveCubePageState extends State<InteractiveCubePage> {
                 // Biroz sekinroq qilish
                 dragThreshold: 0.6,
                 // Osonroq switch qilish
-                onRotationChanged: (rotation) {
-                  setState(() {
-                    _currentRotation = rotation;
-                  });
-                },
                 faceTextStyle: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -64,7 +57,7 @@ class InteractiveCubePageState extends State<InteractiveCubePage> {
                 ),
                 faces: {
                   CubeFace.front: CubeFaceData(
-                    color: Colors.red.withOpacity(0.8),
+                    color: Colors.red.withValues(alpha: 0.8),
                     text: "OLD",
                     child: Image.network(
                       "https://picsum.photos/512/512?random=5",
@@ -84,14 +77,14 @@ class InteractiveCubePageState extends State<InteractiveCubePage> {
                         return Container(
                           width: 280,
                           height: 280,
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha: 0.3),
                           child: const Center(child: CircularProgressIndicator(color: Colors.white)),
                         );
                       },
                     ),
                   ),
                   CubeFace.back: CubeFaceData(
-                    color: Colors.green.withOpacity(0.8),
+                    color: Colors.green.withValues(alpha: 0.8),
                     text: "ORQA",
                     child: Image.network(
                       "https://picsum.photos/512/512?random=3",
@@ -109,12 +102,12 @@ class InteractiveCubePageState extends State<InteractiveCubePage> {
                     ),
                   ),
                   CubeFace.right: CubeFaceData(
-                    color: Colors.yellow.withOpacity(0.8),
+                    color: Colors.yellow.withValues(alpha: 0.8),
                     text: "O'NG",
                     child: Image.network("https://picsum.photos/512/512?random=9"),
                   ),
                   CubeFace.left: CubeFaceData(
-                    color: Colors.blue.withOpacity(0.8),
+                    color: Colors.blue.withValues(alpha: 0.8),
                     text: "CHAP",
                     child: Image.network(
                       "https://picsum.photos/512/512?random=7",

@@ -125,7 +125,7 @@ enum DataSource {
 class ErrorHandler implements Exception {
   late Failure failure;
 
-  ErrorHandler.handle(error) {
+  ErrorHandler.handle(Object? error) {
     if (error is DioException) {
       failure = _handleError(error);
     } else {
