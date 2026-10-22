@@ -906,7 +906,7 @@ class _SpecialServiceItemEditor extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'العنصر ' + (index + 1).toString(),
+                  'العنصر ${index + 1}',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -1332,25 +1332,22 @@ class _SpecialServiceLine extends StatelessWidget {
                     for (var index = 0; index < line.items.length; index++) ...[
                       if (index > 0) const Divider(height: 12),
                       Text(
-                        'العنصر ' + (index + 1).toString(),
+                        'العنصر ${index + 1}',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       if (line.items[index].quantity != null)
                         Text(
-                          'الكمية: ' +
-                              (_number(line.items[index].quantity) ?? '—'),
+                          'الكمية: ${_number(line.items[index].quantity) ?? '—'}',
                         ),
                       if (line.items[index].notes?.trim().isNotEmpty == true)
-                        Text('ملاحظات: ' + line.items[index].notes!.trim()),
+                        Text('ملاحظات: ${line.items[index].notes!.trim()}'),
                       if (line.items[index].beforeImages.isNotEmpty)
                         Text(
-                          'صور قبل: ' +
-                              line.items[index].beforeImages.length.toString(),
+                          'صور قبل: ${line.items[index].beforeImages.length}',
                         ),
                       if (line.items[index].afterImages.isNotEmpty)
                         Text(
-                          'صور بعد: ' +
-                              line.items[index].afterImages.length.toString(),
+                          'صور بعد: ${line.items[index].afterImages.length}',
                         ),
                     ],
                   ],

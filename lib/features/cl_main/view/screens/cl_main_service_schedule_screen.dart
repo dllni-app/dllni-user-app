@@ -20,7 +20,6 @@ import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_recurring_session.dart';
 import '../../domain/models/cleaning_type.dart';
-import '../../domain/models/cleaning_room_size_breakdown.dart';
 import '../../domain/models/cleaning_room_period_draft.dart';
 import '../../domain/repository/cl_main_repo.dart';
 import '../../domain/usecases/create_cleaning_order_use_case.dart';
@@ -181,25 +180,12 @@ class _ClMainServiceScheduleScreenState
           Card(
             child: ListTile(
               title: Text(
-                period.room.roomType.apiKey +
-                    ' ' +
-                    period.room.index.toString() +
-                    ' · ' +
-                    period.room.cleaningType.title,
+                '${period.room.roomType.apiKey} ${period.room.index} · ${period.room.cleaningType.title}',
               ),
               subtitle: Text(
-                period.scheduledDate.toIso8601String().substring(0, 10) +
-                    ' · ' +
-                    period.scheduledTime +
-                    ' · ' +
-                    period.workers.toString() +
-                    ' عامل · ' +
-                    (period.providedByPlatform
+                '${period.scheduledDate.toIso8601String().substring(0, 10)} · ${period.scheduledTime} · ${period.workers} عامل · ${period.providedByPlatform
                         ? 'مواد من المنصة'
-                        : 'مواد من العميل') +
-                    ' · ' +
-                    period.specialServices.length.toString() +
-                    ' خدمات',
+                        : 'مواد من العميل'} · ${period.specialServices.length} خدمات',
               ),
               trailing: Text(
                 (() {
@@ -208,8 +194,7 @@ class _ClMainServiceScheduleScreenState
                       .firstOrNull;
                   return value == null
                       ? ''
-                      : (value['estimatedDurationMinutes']?.toString() ?? '') +
-                            ' د';
+                      : '${value['estimatedDurationMinutes']?.toString() ?? ''} د';
                 })(),
               ),
             ),
@@ -755,6 +740,23 @@ class _ClMainServiceScheduleScreenState
                                   recurring: _isRecurring,
                                   roomSizeBreakdown:
                                       _routeArgs?.roomSizeBreakdown,
+                                  roomNamesByCode:
+                                      Map<String, String>.fromEntries(
+                                        (_routeArgs?.roomUnits ?? const [])
+                                            .where(
+                                              (unit) =>
+                                                  unit.displayName
+                                                      ?.trim()
+                                                      .isNotEmpty ??
+                                                  false,
+                                            )
+                                            .map(
+                                              (unit) => MapEntry(
+                                                unit.roomType.apiKey,
+                                                unit.displayName!.trim(),
+                                              ),
+                                            ),
+                                      ),
                                   roomCleaningModes:
                                       _routeArgs?.roomCleaningModes ??
                                       const <String, String>{},
@@ -819,9 +821,8 @@ class _ClMainServiceScheduleScreenState
                                       Text(
                                         estimate?.pricing?.totalPrice == null
                                             ? 'جارٍ حساب السعر...'
-                                            : estimate!.pricing!.totalPrice!
-                                                      .toStringAsFixed(0) +
-                                                  ' ل.س',
+                                            : '${estimate!.pricing!.totalPrice!
+                                                      .toStringAsFixed(0)} ل.س',
                                         style: const TextStyle(
                                           fontSize: 25,
                                           fontWeight: FontWeight.w800,

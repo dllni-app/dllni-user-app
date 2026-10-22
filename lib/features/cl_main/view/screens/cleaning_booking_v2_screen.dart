@@ -310,7 +310,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                       .any((schedule) => schedule.roomKey == key),
                 ))
                   PeriodSpecialistService(
-                    serviceKey: service.serviceKey + '.' + period.periodKey,
+                    serviceKey: '${service.serviceKey}.${period.periodKey}',
                     serviceId: service.serviceId,
                     targetRoomKeys: service.targetRoomKeys
                         .where(
@@ -537,9 +537,9 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
           for (final piece in [item.city, item.neighborhood, item.street])
             if (piece?.trim().isNotEmpty ?? false) piece!.trim(),
           if (item.building?.trim().isNotEmpty ?? false)
-            'بناء ' + (item.building ?? ''),
+            'بناء ${item.building ?? ''}',
           if (item.floor?.trim().isNotEmpty ?? false)
-            'طابق ' + (item.floor ?? ''),
+            'طابق ${item.floor ?? ''}',
         ];
         _address.value = AddressListItem(
           id: item.id?.toString() ?? '',
@@ -976,7 +976,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
           CleaningGenderPreference.female,
         ])
           InkWell(
-            key: Key('cleaning_gender_pref_' + preference.apiValue),
+            key: Key('cleaning_gender_pref_${preference.apiValue}'),
             onTap: () => _selectGender(preference),
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -1349,13 +1349,9 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'المدة الإجمالية المتوقعة: ' +
-                        (minutes >= 60
-                            ? (minutes ~/ 60).toString() +
-                                  ' ساعة و' +
-                                  (minutes % 60).toString() +
-                                  ' دقيقة'
-                            : minutes.toString() + ' دقيقة'),
+                    'المدة الإجمالية المتوقعة: ${minutes >= 60
+                            ? '${minutes ~/ 60} ساعة و${minutes % 60} دقيقة'
+                            : '$minutes دقيقة'}',
                     key: const Key('booking_total_duration'),
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
@@ -1534,7 +1530,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                   CleaningRecurringPattern.monthly,
                 ])
                   ChoiceChip(
-                    key: Key('booking_repeat_' + pattern.name),
+                    key: Key('booking_repeat_${pattern.name}'),
                     label: Text(pattern.labelAr),
                     selected: _recurrencePattern == pattern,
                     onSelected: (_) => _changeRecurrence(pattern: pattern),
@@ -1952,9 +1948,6 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
     ],
   );
 
-  List<CleaningMaterialLineModel> _eligibleMaterials(TimePeriodDraft? period) =>
-      _materialsForBooking;
-
   Widget _specialistChoices() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
@@ -1985,7 +1978,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
           child: Material(
             color: Colors.transparent,
             child: ListTile(
-              key: Key('special_service_' + service.id.toString()),
+              key: Key('special_service_${service.id}'),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14,
                 vertical: 8,
@@ -2254,7 +2247,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
               ),
             ),
             IconButton(
-              tooltip: 'تعديل ' + title,
+              tooltip: 'تعديل $title',
               onPressed: () => _editReviewStep(editStep),
               icon: const Icon(Icons.edit_outlined, size: 20),
             ),
@@ -2291,10 +2284,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
               const SizedBox(height: 8),
               if (_visitDates.isNotEmpty)
                 Text(
-                  'موعد البداية: ' +
-                      _visitDates.first.toIso8601String().substring(0, 10) +
-                      ' · ' +
-                      cleaningClock(_visitDates.first),
+                  'موعد البداية: ${_visitDates.first.toIso8601String().substring(0, 10)} · ${cleaningClock(_visitDates.first)}',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
             ],
@@ -2307,9 +2297,9 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('عدد العمال: ' + _teamWorkers.toString()),
+              Text('عدد العمال: $_teamWorkers'),
               if (duration != null)
-                Text('المدة المتوقعة: ' + duration.toString() + ' دقيقة'),
+                Text('المدة المتوقعة: $duration دقيقة'),
               Text(
                 _preferred && _workerIds.isNotEmpty
                     ? 'تم تحديد تفضيل لعامل سبق التعامل معه.'
@@ -2328,11 +2318,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
             children: [
               Text(
                 _recurring
-                    ? 'حجز ' +
-                          _recurrencePattern.labelAr +
-                          ' · ' +
-                          _visitDates.length.toString() +
-                          ' مواعيد'
+                    ? 'حجز ${_recurrencePattern.labelAr} · ${_visitDates.length} مواعيد'
                     : 'حجز لمرة واحدة',
               ),
               const SizedBox(height: 8),
@@ -2356,9 +2342,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                   ),
                   title: Text(cleaningRoomLabel(room)),
                   subtitle: Text(
-                    cleaningSizeLabel(room.size) +
-                        ' · ' +
-                        room.cleaningType.title,
+                    '${cleaningSizeLabel(room.size)} · ${room.cleaningType.title}',
                   ),
                 ),
             ],
@@ -2378,18 +2362,14 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
               if (_materialChoice ==
                   CleaningMaterialChoice.customerPartial) ...[
                 Text(
-                  'ستوفر المنصة المواد الناقصة المختارة فقط (' +
-                      materialNames.length.toString() +
-                      '):',
+                  'ستوفر المنصة المواد الناقصة المختارة فقط (${materialNames.length}):',
                 ),
                 Text(materialNames.join('، ')),
                 const Text('بقية مواد التنظيف سيوفرها العميل.'),
               ],
               if (_materialChoice == CleaningMaterialChoice.platformAll)
                 Text(
-                  'ستوفر المنصة جميع المواد المطلوبة (' +
-                      _materialsForBooking.length.toString() +
-                      ').',
+                  'ستوفر المنصة جميع المواد المطلوبة (${_materialsForBooking.length}).',
                 ),
               if (_materialChoice == CleaningMaterialChoice.customerAll)
                 const Text(
@@ -2400,9 +2380,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                   key: const Key('booking_review_materials'),
                   tilePadding: EdgeInsets.zero,
                   title: Text(
-                    'عرض جميع المواد المطلوبة للغرف (' +
-                        _materialsForBooking.length.toString() +
-                        ')',
+                    'عرض جميع المواد المطلوبة للغرف (${_materialsForBooking.length})',
                   ),
                   subtitle: Text(
                     _materialChoice == CleaningMaterialChoice.customerAll
@@ -2419,9 +2397,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                         subtitle: material.quantity == null
                             ? null
                             : Text(
-                                material.quantity.toString() +
-                                    ' ' +
-                                    (material.unitLabel ?? material.unit ?? ''),
+                                '${material.quantity} ${material.unitLabel ?? material.unit ?? ''}',
                               ),
                       ),
                   ],
@@ -2442,13 +2418,11 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 5),
                         child: Text(
-                          '• ' +
-                              _serviceSummary(selection) +
-                              (selection.dirtiness == 'heavy'
+                          '• ${_serviceSummary(selection)}${selection.dirtiness == 'heavy'
                                   ? ' · اتساخ شديد'
                                   : selection.dirtiness == 'light'
                                   ? ' · اتساخ بسيط'
-                                  : ''),
+                                  : ''}',
                         ),
                       ),
                   ],
@@ -2489,11 +2463,9 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
               const SizedBox(height: 8),
               Text(
                 _quoteCurrent
-                    ? (_quote!.pricing?.totalPrice?.toStringAsFixed(0) ?? '—') +
-                          ' ' +
-                          ((_quote!.pricing?.currency ?? 'SYP') == 'SYP'
+                    ? '${_quote!.pricing?.totalPrice?.toStringAsFixed(0) ?? '—'} ${(_quote!.pricing?.currency ?? 'SYP') == 'SYP'
                               ? 'ل.س'
-                              : (_quote!.pricing?.currency ?? ''))
+                              : (_quote!.pricing?.currency ?? '')}'
                     : 'بانتظار تحديث الإجمالي',
                 key: const Key('booking_total'),
                 style: const TextStyle(
