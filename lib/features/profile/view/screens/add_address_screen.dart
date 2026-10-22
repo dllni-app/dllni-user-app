@@ -630,10 +630,16 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     );
     if (!mounted || selected == null) return;
 
+    // Reverse geocoding is an external service that may be unreachable.
+    // Preserve a meaningful map-derived address with exact coordinates, even
+    // when Nominatim is offline, so delivery checkout is not blocked.
+    final fallbackAddress =
+        'موقع على الخريطة (${selected.latitude.toStringAsFixed(6)}, '
+        '${selected.longitude.toStringAsFixed(6)})';
     setState(() {
       _latitude = selected.latitude;
       _longitude = selected.longitude;
-      _addressController.clear();
+      _addressController.text = fallbackAddress;
     });
     try {
       final response = await Dio().get<Map<String, dynamic>>(
@@ -652,9 +658,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       setState(() {
         final resolved =
             response.data?['display_name']?.toString().trim() ?? '';
-        _addressController.text = resolved.length > 255
-            ? resolved.substring(0, 255)
-            : resolved;
+        // Do not overwrite text manually edited while the request was pending.
+        if (resolved.isNotEmpty && _addressController.text == fallbackAddress) {
+          _addressController.text =
+              resolved.length > 255 ? resolved.substring(0, 255) : resolved;
+        }
       });
     } catch (error) {
       if (!mounted) return;
