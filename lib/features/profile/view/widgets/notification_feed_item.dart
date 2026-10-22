@@ -40,7 +40,7 @@ class NotificationFeedItem extends StatelessWidget {
         'message',
       ]) {
         final value = notification.data?[key]?.toString().trim();
-        if (value != null && value.isNotEmpty) return 'رد العامل: ' + value;
+        if (value != null && value.isNotEmpty) return 'رد العامل: $value';
       }
     }
     return notification.body ?? '';
@@ -52,10 +52,11 @@ class NotificationFeedItem extends StatelessWidget {
     if (date == null) return '';
     final diff = DateTime.now().difference(date.toLocal());
     if (diff.isNegative || diff.inMinutes < 1) return 'الآن';
-    if (diff.inMinutes < 60)
-      return 'منذ ' + diff.inMinutes.toString() + ' دقيقة';
-    if (diff.inHours < 24) return 'منذ ' + diff.inHours.toString() + ' ساعة';
-    if (diff.inDays < 7) return 'منذ ' + diff.inDays.toString() + ' يوم';
+    if (diff.inMinutes < 60) {
+      return 'منذ ${diff.inMinutes} دقيقة';
+    }
+    if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
+    if (diff.inDays < 7) return 'منذ ${diff.inDays} يوم';
     return 'منذ أسبوع';
   }
 

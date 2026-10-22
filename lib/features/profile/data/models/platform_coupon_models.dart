@@ -81,13 +81,13 @@ class PlatformCouponModel extends RestaurantCouponModel {
   final PlatformCouponAppliesToModel appliesTo;
 
   const PlatformCouponModel({
-    required int? id,
-    required String? code,
-    required String? discountType,
-    required double? discountValue,
-    required int? minOrderAmount,
-    required DateTime? startsAt,
-    required DateTime? endsAt,
+    required super.id,
+    required super.code,
+    required super.discountType,
+    required super.discountValue,
+    required super.minOrderAmount,
+    required super.startsAt,
+    required super.endsAt,
     required this.title,
     required this.description,
     required this.section,
@@ -95,13 +95,6 @@ class PlatformCouponModel extends RestaurantCouponModel {
     required this.minimumOrderAmount,
     required this.appliesTo,
   }) : super(
-          id: id,
-          code: code,
-          discountType: discountType,
-          discountValue: discountValue,
-          minOrderAmount: minOrderAmount,
-          startsAt: startsAt,
-          endsAt: endsAt,
           isActive: true,
         );
 

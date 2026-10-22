@@ -1,8 +1,6 @@
 import 'package:common_package/extensions/theme_extension.dart';
 import 'package:common_package/widgets/app_text.dart';
-import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:flutter/material.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
 import '../../../../core/widgets/phone_number_widget/my_phone_number_field_widget.dart';
 import 'filled_text_field.dart';

@@ -198,81 +198,73 @@ class _LuckyBoxSetupBodyState extends State<_LuckyBoxSetupBody> {
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText.titleMedium(
-                      'نوع المطاعم',
-                      fontWeight: FontWeight.w700,
-                      color: SharedPlatformColors.restaurant,
-                    ),
-                    const SizedBox(height: 10),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: AppText.bodyMedium('الكل'),
-                      trailing: Radio<int?>(
-                        value: null,
-                        groupValue: current,
-                        activeColor: const Color(0xFF172554),
-                        onChanged: (value) {
-                          setModalState(() {
-                            current = value;
-                          });
-                        },
+                child: RadioGroup<int?>(
+                  groupValue: current,
+                  onChanged: (value) => setModalState(() => current = value),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.titleMedium(
+                        'نوع المطاعم',
+                        fontWeight: FontWeight.w700,
+                        color: SharedPlatformColors.restaurant,
                       ),
-                      onTap: () {
-                        setModalState(() {
-                          current = null;
-                        });
-                      },
-                    ),
-                    ...options.cuisineTypes.map((c) {
-                      final id = c.id;
-                      if (id == null) return const SizedBox.shrink();
-                      return ListTile(
+                      const SizedBox(height: 10),
+                      ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: AppText.bodyMedium(c.name ?? ''),
+                        title: AppText.bodyMedium('الكل'),
                         trailing: Radio<int?>(
-                          value: id,
-                          groupValue: current,
+                          value: null,
                           activeColor: const Color(0xFF172554),
-                          onChanged: (value) {
-                            setModalState(() {
-                              current = value;
-                            });
-                          },
                         ),
                         onTap: () {
                           setModalState(() {
-                            current = id;
+                            current = null;
                           });
                         },
-                      );
-                    }),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            Navigator.of(modalContext).pop(current),
-                        style: ElevatedButton.styleFrom(
-                          elevation: 0,
-                          backgroundColor: SharedPlatformColors.restaurant,
-                          foregroundColor: context.onPrimary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      ),
+                      ...options.cuisineTypes.map((c) {
+                        final id = c.id;
+                        if (id == null) return const SizedBox.shrink();
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: AppText.bodyMedium(c.name ?? ''),
+                          trailing: Radio<int?>(
+                            value: id,
+                            activeColor: const Color(0xFF172554),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                        ),
-                        child: AppText.labelLarge(
-                          'تأكيد',
-                          color: context.onPrimary,
-                          fontWeight: FontWeight.w700,
+                          onTap: () {
+                            setModalState(() {
+                              current = id;
+                            });
+                          },
+                        );
+                      }),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              Navigator.of(modalContext).pop(current),
+                          style: ElevatedButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor: SharedPlatformColors.restaurant,
+                            foregroundColor: context.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          child: AppText.labelLarge(
+                            'تأكيد',
+                            color: context.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );

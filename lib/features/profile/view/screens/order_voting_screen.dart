@@ -566,35 +566,35 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                         const SizedBox(height: 10),
                         ConstrainedBox(
                           constraints: BoxConstraints(maxHeight: maxListHeight),
-                          child: ListView(
-                            shrinkWrap: true,
-                            children: labels.map((option) {
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: AppText.bodyMedium(option),
-                                trailing: Radio<String>(
-                                  value: option,
-                                  groupValue: current.isEmpty
-                                      ? null
-                                      : current.first,
-                                  activeColor: SharedPlatformColors.restaurant,
-                                  onChanged: (value) {
+                          child: RadioGroup<String>(
+                            groupValue: current.isEmpty ? null : current.first,
+                            onChanged: (value) {
+                              setModalState(() {
+                                current
+                                  ..clear()
+                                  ..addAll(value == null ? [] : [value]);
+                              });
+                            },
+                            child: ListView(
+                              shrinkWrap: true,
+                              children: labels.map((option) {
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: AppText.bodyMedium(option),
+                                  trailing: Radio<String>(
+                                    value: option,
+                                    activeColor: SharedPlatformColors.restaurant,
+                                  ),
+                                  onTap: () {
                                     setModalState(() {
                                       current
                                         ..clear()
-                                        ..addAll(value == null ? [] : [value]);
+                                        ..add(option);
                                     });
                                   },
-                                ),
-                                onTap: () {
-                                  setModalState(() {
-                                    current
-                                      ..clear()
-                                      ..add(option);
-                                  });
-                                },
-                              );
-                            }).toList(),
+                                );
+                              }).toList(),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -782,35 +782,35 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                         const SizedBox(height: 10),
                         ConstrainedBox(
                           constraints: BoxConstraints(maxHeight: maxListHeight),
-                          child: ListView(
-                            shrinkWrap: true,
-                            children: labels.map((option) {
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: AppText.bodyMedium(option),
-                                trailing: Radio<String>(
-                                  value: option,
-                                  groupValue: current.isEmpty
-                                      ? null
-                                      : current.first,
-                                  activeColor: SharedPlatformColors.restaurant,
-                                  onChanged: (value) {
+                          child: RadioGroup<String>(
+                            groupValue: current.isEmpty ? null : current.first,
+                            onChanged: (value) {
+                              setModalState(() {
+                                current
+                                  ..clear()
+                                  ..addAll(value == null ? [] : [value]);
+                              });
+                            },
+                            child: ListView(
+                              shrinkWrap: true,
+                              children: labels.map((option) {
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: AppText.bodyMedium(option),
+                                  trailing: Radio<String>(
+                                    value: option,
+                                    activeColor: SharedPlatformColors.restaurant,
+                                  ),
+                                  onTap: () {
                                     setModalState(() {
                                       current
                                         ..clear()
-                                        ..addAll(value == null ? [] : [value]);
+                                        ..add(option);
                                     });
                                   },
-                                ),
-                                onTap: () {
-                                  setModalState(() {
-                                    current
-                                      ..clear()
-                                      ..add(option);
-                                  });
-                                },
-                              );
-                            }).toList(),
+                                );
+                              }).toList(),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
