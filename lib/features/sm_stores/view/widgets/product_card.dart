@@ -1,5 +1,4 @@
 import 'package:dllni_user_app/core/themes/shared_platform_colors.dart';
-import 'dart:developer';
 
 import 'package:common_package/common_package.dart';
 import 'package:flutter/material.dart';

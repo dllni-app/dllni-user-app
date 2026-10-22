@@ -17,20 +17,7 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -47,45 +34,22 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-List<dynamic>? _asDynamicList(dynamic value) {
-  if (value is! List) return null;
-  return value.map(_asDynamic).toList();
-}
 
-dynamic _asDynamic(dynamic value) {
-  if (value == null) return null;
-  if (value is List) {
-    return value.map(_asDynamic).toList();
-  }
-  if (value is Map) {
-    final map = <String, dynamic>{};
-    value.forEach((key, nestedValue) {
-      map['$key'] = _asDynamic(nestedValue);
-    });
-    return map;
-  }
-  if (value is String || value is num || value is bool) {
-    return value;
-  }
-  return value.toString();
-}
 
-ChangeStoreFavoriteModel changeStoreFavoriteModelFromJson(str) =>
+ChangeStoreFavoriteModel changeStoreFavoriteModelFromJson(dynamic str) =>
     ChangeStoreFavoriteModel.fromJson(str);
 
 String changeStoreFavoriteModelToJson(ChangeStoreFavoriteModel data) =>
     json.encode(data.toJson());
 
-ChangeStoreFavoriteModelStore changeStoreFavoriteModelStoreFromJson(str) =>
+ChangeStoreFavoriteModelStore changeStoreFavoriteModelStoreFromJson(dynamic str) =>
     ChangeStoreFavoriteModelStore.fromJson(str);
 
 String changeStoreFavoriteModelStoreToJson(
   ChangeStoreFavoriteModelStore data,
 ) => json.encode(data.toJson());
 
-ChangeStoreFavoriteModelStoreOwner changeStoreFavoriteModelStoreOwnerFromJson(
-  str,
-) => ChangeStoreFavoriteModelStoreOwner.fromJson(str);
+ChangeStoreFavoriteModelStoreOwner changeStoreFavoriteModelStoreOwnerFromJson(dynamic str,) => ChangeStoreFavoriteModelStoreOwner.fromJson(str);
 
 String changeStoreFavoriteModelStoreOwnerToJson(
   ChangeStoreFavoriteModelStoreOwner data,

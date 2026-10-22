@@ -109,6 +109,5 @@ class _SmAllProductsScreenState extends State<SmAllProductsScreen> {
         ),
       ),
     );
-    ;
   }
 }

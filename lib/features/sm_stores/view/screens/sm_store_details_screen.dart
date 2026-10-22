@@ -108,10 +108,7 @@ class _StoreCouponsSection extends StatelessWidget {
                 subtitle: Text(
                   discount.isEmpty
                       ? 'استخدم هذا الكود عند الدفع'
-                      : 'خصم ' +
-                            discount +
-                            suffix +
-                            ' — استخدم الكود عند الدفع',
+                      : 'خصم $discount$suffix — استخدم الكود عند الدفع',
                 ),
                 trailing: IconButton(
                   tooltip: 'نسخ الكوبون',

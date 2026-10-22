@@ -17,20 +17,7 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -47,10 +34,6 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-List<dynamic>? _asDynamicList(dynamic value) {
-  if (value is! List) return null;
-  return value.map(_asDynamic).toList();
-}
 
 dynamic _asDynamic(dynamic value) {
   if (value == null) return null;
@@ -70,38 +53,38 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-BrowseStoresModel browseStoresModelFromJson(str) =>
+BrowseStoresModel browseStoresModelFromJson(dynamic str) =>
     BrowseStoresModel.fromJson(str);
 
 String browseStoresModelToJson(BrowseStoresModel data) =>
     json.encode(data.toJson());
 
-BrowseStoresModelMeta browseStoresModelMetaFromJson(str) =>
+BrowseStoresModelMeta browseStoresModelMetaFromJson(dynamic str) =>
     BrowseStoresModelMeta.fromJson(str);
 
 String browseStoresModelMetaToJson(BrowseStoresModelMeta data) =>
     json.encode(data.toJson());
 
-BrowseStoresModelMetaLinksItem browseStoresModelMetaLinksItemFromJson(str) =>
+BrowseStoresModelMetaLinksItem browseStoresModelMetaLinksItemFromJson(dynamic str) =>
     BrowseStoresModelMetaLinksItem.fromJson(str);
 
 String browseStoresModelMetaLinksItemToJson(
   BrowseStoresModelMetaLinksItem data,
 ) => json.encode(data.toJson());
 
-BrowseStoresModelLinks browseStoresModelLinksFromJson(str) =>
+BrowseStoresModelLinks browseStoresModelLinksFromJson(dynamic str) =>
     BrowseStoresModelLinks.fromJson(str);
 
 String browseStoresModelLinksToJson(BrowseStoresModelLinks data) =>
     json.encode(data.toJson());
 
-BrowseStoresModelDataItem browseStoresModelDataItemFromJson(str) =>
+BrowseStoresModelDataItem browseStoresModelDataItemFromJson(dynamic str) =>
     BrowseStoresModelDataItem.fromJson(str);
 
 String browseStoresModelDataItemToJson(BrowseStoresModelDataItem data) =>
     json.encode(data.toJson());
 
-BrowseStoresModelDataItemOwner browseStoresModelDataItemOwnerFromJson(str) =>
+BrowseStoresModelDataItemOwner browseStoresModelDataItemOwnerFromJson(dynamic str) =>
     BrowseStoresModelDataItemOwner.fromJson(str);
 
 String browseStoresModelDataItemOwnerToJson(

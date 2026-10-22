@@ -12,40 +12,6 @@ import '../../data/models/get_nearby_stores_model.dart';
 import '../../domain/usecases/change_store_favorite_use_case.dart';
 import '../manager/bloc/sm_home_bloc.dart';
 
-String _mapCurrency(String? currency) {
-  switch (currency) {
-    case 'IQD':
-      return 'د.ع';
-    case 'USD':
-      return '\$';
-    case 'EUR':
-      return '€';
-    case 'SAR':
-      return 'ر.س';
-    case 'AED':
-      return 'د.إ';
-    case 'KWD':
-      return 'د.ك';
-    case 'SYP':
-      return 'ل.س';
-    default:
-      return currency ?? '';
-  }
-}
-
-String _mapDistanceUnit(String? unit) {
-  switch (unit) {
-    case 'km':
-      return 'كم';
-    case 'm':
-      return 'م';
-    case 'mi':
-      return 'ميل';
-    default:
-      return unit ?? '';
-  }
-}
-
 class StoreCard extends StatefulWidget {
   final GetNearbyStoresModelStoresItem store;
   const StoreCard({super.key, required this.store});

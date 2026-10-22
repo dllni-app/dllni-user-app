@@ -377,7 +377,7 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
       backgroundColor: Colors.transparent,
       builder: (_) => const SmartSearchSheet(isSupermarket: true),
     );
-    if (!mounted || words == null || words.isEmpty) return;
+    if (!context.mounted || words == null || words.isEmpty) return;
     _submitSearch(context, words.join(' , '));
   }
 
@@ -485,7 +485,7 @@ class _SmSearchViewV2State extends State<SmSearchViewV2> {
 
     minController.dispose();
     maxController.dispose();
-    if (!mounted || result == null) return;
+    if (!context.mounted || result == null) return;
     if (result.$1 != null && result.$2 != null && result.$2! < result.$1!) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

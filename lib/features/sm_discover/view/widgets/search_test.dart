@@ -15,7 +15,6 @@ class _SpeechPageState extends State<SpeechPage> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   String _text = 'اضغط على الزر وابدأ التحدث';
-  double _confidence = 1.0;
   String _lastResult = '';
   final TextEditingController _fileNameController = TextEditingController();
 
@@ -36,7 +35,7 @@ class _SpeechPageState extends State<SpeechPage> {
   Future<void> _startListening() async {
     bool available = await _speech.initialize(
       onStatus: (val) => _handleStatus(val),
-      onError: (val) => print('onError: $val'),
+        onError: (val) => debugPrint('onError: $val'),
     );
 
     if (available) {
@@ -47,8 +46,10 @@ class _SpeechPageState extends State<SpeechPage> {
       });
 
       _speech.listen(
-        localeId: 'ar',
-        listenMode: stt.ListenMode.dictation,
+        listenOptions: stt.SpeechListenOptions(
+          localeId: 'ar',
+          listenMode: stt.ListenMode.dictation,
+        ),
         onResult: (val) {
           if (val.recognizedWords != _lastResult) {
             setState(() {
@@ -65,9 +66,6 @@ class _SpeechPageState extends State<SpeechPage> {
 
               _lastResult = val.recognizedWords;
 
-              if (val.hasConfidenceRating && val.confidence > 0) {
-                _confidence = val.confidence;
-              }
             });
           }
         },
@@ -111,6 +109,7 @@ class _SpeechPageState extends State<SpeechPage> {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/$fileName.txt');
       await file.writeAsString(_text);
+      if (!mounted) return;
 
       ScaffoldMessenger.of(
         context,
@@ -121,6 +120,7 @@ class _SpeechPageState extends State<SpeechPage> {
         _fileNameController.clear();
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('خطأ في حفظ الملف: $e')));

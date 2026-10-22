@@ -17,20 +17,7 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -70,42 +57,42 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-GetCompareProductsModel getCompareProductsModelFromJson(str) => GetCompareProductsModel.fromJson(str);
+GetCompareProductsModel getCompareProductsModelFromJson(dynamic str) => GetCompareProductsModel.fromJson(str);
 
 String getCompareProductsModelToJson(GetCompareProductsModel data) => json.encode(data.toJson());
 
 
-GetCompareProductsModelMeta getCompareProductsModelMetaFromJson(str) => GetCompareProductsModelMeta.fromJson(str);
+GetCompareProductsModelMeta getCompareProductsModelMetaFromJson(dynamic str) => GetCompareProductsModelMeta.fromJson(str);
 
 String getCompareProductsModelMetaToJson(GetCompareProductsModelMeta data) => json.encode(data.toJson());
 
 
-GetCompareProductsModelMetaLinksItem getCompareProductsModelMetaLinksItemFromJson(str) => GetCompareProductsModelMetaLinksItem.fromJson(str);
+GetCompareProductsModelMetaLinksItem getCompareProductsModelMetaLinksItemFromJson(dynamic str) => GetCompareProductsModelMetaLinksItem.fromJson(str);
 
 String getCompareProductsModelMetaLinksItemToJson(GetCompareProductsModelMetaLinksItem data) => json.encode(data.toJson());
 
 
-GetCompareProductsModelLinks getCompareProductsModelLinksFromJson(str) => GetCompareProductsModelLinks.fromJson(str);
+GetCompareProductsModelLinks getCompareProductsModelLinksFromJson(dynamic str) => GetCompareProductsModelLinks.fromJson(str);
 
 String getCompareProductsModelLinksToJson(GetCompareProductsModelLinks data) => json.encode(data.toJson());
 
 
-GetCompareProductsModelDataItem getCompareProductsModelDataItemFromJson(str) => GetCompareProductsModelDataItem.fromJson(str);
+GetCompareProductsModelDataItem getCompareProductsModelDataItemFromJson(dynamic str) => GetCompareProductsModelDataItem.fromJson(str);
 
 String getCompareProductsModelDataItemToJson(GetCompareProductsModelDataItem data) => json.encode(data.toJson());
 
 
-GetCompareProductsModelDataItemImagesItem getCompareProductsModelDataItemImagesItemFromJson(str) => GetCompareProductsModelDataItemImagesItem.fromJson(str);
+GetCompareProductsModelDataItemImagesItem getCompareProductsModelDataItemImagesItemFromJson(dynamic str) => GetCompareProductsModelDataItemImagesItem.fromJson(str);
 
 String getCompareProductsModelDataItemImagesItemToJson(GetCompareProductsModelDataItemImagesItem data) => json.encode(data.toJson());
 
 
-GetCompareProductsModelDataItemImage getCompareProductsModelDataItemImageFromJson(str) => GetCompareProductsModelDataItemImage.fromJson(str);
+GetCompareProductsModelDataItemImage getCompareProductsModelDataItemImageFromJson(dynamic str) => GetCompareProductsModelDataItemImage.fromJson(str);
 
 String getCompareProductsModelDataItemImageToJson(GetCompareProductsModelDataItemImage data) => json.encode(data.toJson());
 
 
-GetCompareProductsModelDataItemCategory getCompareProductsModelDataItemCategoryFromJson(str) => GetCompareProductsModelDataItemCategory.fromJson(str);
+GetCompareProductsModelDataItemCategory getCompareProductsModelDataItemCategoryFromJson(dynamic str) => GetCompareProductsModelDataItemCategory.fromJson(str);
 
 String getCompareProductsModelDataItemCategoryToJson(GetCompareProductsModelDataItemCategory data) => json.encode(data.toJson());
 
