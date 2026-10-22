@@ -187,7 +187,10 @@ class _RestaurantOrderTrackingScreenState
 
   Future<void> _refreshOrderAndTracking() async {
     final orderId = _order.id;
-    if (orderId == null) return;
+    if (orderId == null) {
+      await _fetchTracking();
+      return;
+    }
 
     final result = await getIt<FetchOrderDetailsUseCase>()(
       FetchOrderDetailsParams(
