@@ -87,7 +87,8 @@ class _RestaurantOrderTrackingScreenState
   void initState() {
     super.initState();
     _order = widget.args.order;
-    _fetchTracking();
+    // The order passed from checkout/list may lack its items and final amounts.
+    _refreshOrderAndTracking();
     _fcmSubscription = FirebaseMessaging.onMessage.listen((message) {
       if (!mounted || !_isRelevantMessage(message)) return;
       _fetchTracking(silent: true);
@@ -135,15 +136,8 @@ class _RestaurantOrderTrackingScreenState
         FetchDeliveryOrderDetailsParams(orderId: deliveryOrderId),
       );
       if (!mounted) return;
-      deliveryResult.fold(
-        (Failure f) {
-          if (!silent) {
-            setState(() {
-              _error = f.message;
-              _loading = false;
-            });
-          }
-        },
+      final loaded = deliveryResult.fold<bool>(
+        (_) => false,
         (FetchDeliveryOrderDetailsModel r) {
           setState(() {
             _deliveryOrder = r.data;
@@ -151,9 +145,13 @@ class _RestaurantOrderTrackingScreenState
             _error = null;
           });
           _syncPollTimer();
+          return true;
         },
       );
-      return;
+      if (loaded) return;
+      // A missing/unavailable delivery record must not hide a valid restaurant
+      // order. Fall back to restaurant tracking and keep polling.
+      _deliveryOrder = null;
     }
 
     final Either<Failure, FetchRestaurantOrderTrackingModel> result =
