@@ -77,8 +77,16 @@ void main() {
       await tester.pumpWidget(
         _wrap(V6CleaningDiscoveryIntro(onBookApartment: () => pressed++)),
       );
-      expect(find.text('متى تختار التنظيفات؟'), findsOneWidget);
-      expect(find.text('مكان يحتاج عناية'), findsOneWidget);
+      expect(
+        find.byKey(const Key('pencil_cleaning_discovery_hero')),
+        findsOneWidget,
+      );
+      expect(find.text('نظافة على مقاس بيتك'), findsOneWidget);
+      expect(
+        find.text('اختَر المكان، وحدّد التنظيف المناسب لكل غرفة.'),
+        findsOneWidget,
+      );
+      expect(find.text('وين بدك ننظّف؟'), findsOneWidget);
       expect(find.text('تنظيف عادي'), findsNothing);
       expect(find.text('تنظيف عميق'), findsNothing);
       expect(find.text('ابدأ حجز تنظيف شقة'), findsNothing);

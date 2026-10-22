@@ -178,6 +178,7 @@ class SvgGenImage {
     Clip clipBehavior = Clip.hardEdge,
     Color? color,
     BlendMode colorBlendMode = BlendMode.srcIn,
+    @Deprecated('This setting no longer affects SVG rendering.')
     bool cacheColorFilter = false,
   }) {
     return SvgPicture.asset(
@@ -195,10 +196,10 @@ class SvgGenImage {
       semanticsLabel: semanticsLabel,
       excludeFromSemantics: excludeFromSemantics,
       theme: theme,
-      color: color,
-      colorBlendMode: colorBlendMode,
+      colorFilter: color == null
+          ? null
+          : ColorFilter.mode(color, colorBlendMode),
       clipBehavior: clipBehavior,
-      cacheColorFilter: cacheColorFilter,
     );
   }
 

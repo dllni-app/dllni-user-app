@@ -32,7 +32,6 @@ import 'package:dllni_user_app/features/profile/view/screens/group_order_followu
 import 'package:dllni_user_app/features/profile/view/screens/group_order_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_setup_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_screen.dart';
-import 'package:dllni_user_app/features/profile/view/screens/lucky_box_suggestions_args.dart';
 import 'package:dllni_user_app/features/profile/view/screens/my_addresses_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/notifications_screen.dart';
 import 'package:dllni_user_app/features/profile/view/screens/order_voting_screen.dart';

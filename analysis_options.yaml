@@ -13,6 +13,10 @@ analyzer:
     - android/**
     - ios/**
     - web/**
+    # Historical QA screenshots/code backups are not compilable app sources.
+    # Keep them for audit, but do not report their broken relative imports as
+    # errors in the live application analyzer gate.
+    - qa/**
 include: package:flutter_lints/flutter.yaml
 
 linter:
