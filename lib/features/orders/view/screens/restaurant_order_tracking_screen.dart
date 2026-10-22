@@ -39,7 +39,7 @@ class RestaurantOrderTrackingScreen extends StatefulWidget {
 }
 
 class _RestaurantOrderTrackingScreenState
-    extends State<RestaurantOrderTrackingScreen> {
+    extends State<RestaurantOrderTrackingScreen> with WidgetsBindingObserver {
   late OrderResourceModel _order;
   RestaurantOrderTrackingDataModel? _tracking;
   DeliveryOrderModel? _deliveryOrder;
@@ -47,12 +47,13 @@ class _RestaurantOrderTrackingScreenState
   bool _actionLoading = false;
   String? _error;
   Timer? _pollTimer;
+  bool _refreshInFlight = false;
   StreamSubscription<RemoteMessage>? _fcmSubscription;
   static const _pollInterval = Duration(seconds: 15);
 
   bool get _isTerminal {
     if (_deliveryOrder != null) return _deliveryOrder!.isTerminal;
-    final status = (_tracking?.latestToStatus ?? _order.status ?? '')
+    final status = (_order.status ?? _tracking?.latestToStatus ?? '')
         .toLowerCase();
     return status.contains('delivered') ||
         status.contains('completed') ||
@@ -86,17 +87,24 @@ class _RestaurantOrderTrackingScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _order = widget.args.order;
     // The order passed from checkout/list may lack its items and final amounts.
     _refreshOrderAndTracking();
     _fcmSubscription = FirebaseMessaging.onMessage.listen((message) {
       if (!mounted || !_isRelevantMessage(message)) return;
-      _fetchTracking(silent: true);
+      _refreshOrderAndTracking();
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshOrderAndTracking();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fcmSubscription?.cancel();
     _pollTimer?.cancel();
     super.dispose();
@@ -105,7 +113,7 @@ class _RestaurantOrderTrackingScreenState
   void _syncPollTimer() {
     if (!_isTerminal) {
       _pollTimer ??= Timer.periodic(_pollInterval, (_) {
-        _fetchTracking(silent: true);
+        _refreshOrderAndTracking();
       });
     } else {
       _pollTimer?.cancel();
@@ -176,7 +184,11 @@ class _RestaurantOrderTrackingScreenState
       },
       (FetchRestaurantOrderTrackingModel r) {
         setState(() {
-          _tracking = r.data;
+          final lastStatus = (r.data?.latestToStatus ?? '').toLowerCase();
+          final actualStatus = (_order.status ?? '').toLowerCase();
+          // When the timeline API lags, never roll a terminal order back to pending.
+          final terminalOrder = {'completed', 'delivered', 'cancelled', 'rejected'}.contains(actualStatus);
+          _tracking = terminalOrder && lastStatus != actualStatus ? null : r.data;
           _loading = false;
           _error = null;
         });
@@ -186,6 +198,9 @@ class _RestaurantOrderTrackingScreenState
   }
 
   Future<void> _refreshOrderAndTracking() async {
+    if (_refreshInFlight || !mounted) return;
+    _refreshInFlight = true;
+    try {
     final orderId = _order.id;
     if (orderId == null) {
       await _fetchTracking();
@@ -212,6 +227,7 @@ class _RestaurantOrderTrackingScreenState
       },
     );
     await _fetchTracking(silent: true);
+    } finally { _refreshInFlight = false; }
   }
 
   Future<void> _runOrderAction(
@@ -352,7 +368,7 @@ class _RestaurantOrderTrackingScreenState
         backgroundColor: const Color(0xffF3F4F6),
         body: SafeArea(
           child: RefreshIndicator(
-            onRefresh: () => _fetchTracking(),
+            onRefresh: _refreshOrderAndTracking,
             child: RestaurantOrderTrackingView(
               order: _order,
               section: widget.args.section,
