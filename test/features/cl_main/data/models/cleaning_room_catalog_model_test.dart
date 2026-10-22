@@ -63,6 +63,7 @@ void main() {
       });
       expect(selectableRoomTypes(catalog).map((room) => room.apiKey), [
         'study_room',
+        'storage-unsafe',
         'utility_room',
       ]);
       expect(
@@ -73,8 +74,40 @@ void main() {
             CleaningRoomType.fromCode('archived_area'),
           ],
         ).map((room) => room.apiKey),
-        ['study_room', 'utility_room', 'bedroom', 'archived_area'],
+        [
+          'study_room',
+          'storage-unsafe',
+          'utility_room',
+          'bedroom',
+          'archived_area',
+        ],
       );
     },
   );
+
+  test('catalog selection accepts exact hyphen/digit codes up to 64 chars', () {
+    final maxCode = 'a${'b' * 61}-9';
+    final catalog = parseCleaningRoomCatalog({
+      'data': [
+        {'code': 'utility-9', 'name': 'خدمات'},
+        {'code': maxCode, 'name': 'غرفة طويلة'},
+        {'code': '${maxCode}x', 'name': 'too long'},
+        {'code': 'Uppercase', 'name': 'uppercase'},
+        {'code': 'room_é', 'name': 'unicode'},
+        {'code': 'room.name', 'name': 'dot'},
+      ],
+    });
+
+    expect(selectableRoomTypes(catalog).map((room) => room.apiKey), [
+      'utility-9',
+      maxCode,
+    ]);
+    expect(
+      selectableRoomTypes(
+        catalog,
+        selected: [CleaningRoomType.fromCode('archived-2')],
+      ).map((room) => room.apiKey),
+      ['utility-9', maxCode, 'archived-2'],
+    );
+  });
 }

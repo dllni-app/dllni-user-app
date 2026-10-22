@@ -21,10 +21,15 @@ final class CleaningRoomType {
     shed,
   ];
 
-  static final _validCode = RegExp(r'^[a-z][a-z0-9_]*$');
+  static final _validCode = RegExp(r'^[a-z][a-z0-9_-]{0,63}$');
+
+  static bool isValidCode(String code) {
+    final match = _validCode.matchAsPrefix(code);
+    return match != null && match.end == code.length;
+  }
 
   static CleaningRoomType fromCode(String code) {
-    if (!_validCode.hasMatch(code)) {
+    if (!isValidCode(code)) {
       throw ArgumentError.value(code, 'code', 'Invalid room catalog code');
     }
     for (final existing in values) {
