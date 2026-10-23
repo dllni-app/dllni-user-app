@@ -377,7 +377,7 @@ class _MealSearchCard extends StatelessWidget {
       restaurant: (mapped.restaurantName ?? '').trim().isEmpty
           ? 'مطعم'
           : mapped.restaurantName!.trim(),
-      price: mapped.resolvedDisplayPriceValue.formatMoney(),
+      price: mapped.resolvedDisplayPriceValue?.formatMoney() ?? mapped.priceText,
       offer: FetchRestaurantProductsSearchModelActiveOffer(
         badgeText: mapped.displayedSavingsBadge,
         discountType: mapped.offerIsEffective ? mapped.offerDiscountType : null,
