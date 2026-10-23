@@ -3,6 +3,7 @@ import '../../../rs_home/data/models/fetch_restaurant_home_exclusive_offers_mode
 import '../../../rs_home/data/models/fetch_restaurant_home_latest_ordered_products_model.dart';
 import '../../../rs_home/data/models/fetch_restaurant_home_suggested_products_model.dart';
 import 'store_product_item.dart';
+import '../../../../core/pricing/restaurant_discount_label.dart';
 
 class ProductPreviewData {
   final int productId;
@@ -41,8 +42,16 @@ class ProductPreviewData {
 
   bool get hasActiveOffer => isOfferActive == true;
 
+  bool get offerIsEffective => RestaurantDiscountLabel.offerApplies(
+    original: originalPrice,
+    payable: displayPrice,
+    type: offerDiscountType,
+    value: offerDiscountValue,
+    isActive: hasActiveOffer,
+  );
+
   bool get hasVisibleOfferDetails =>
-      hasActiveOffer &&
+      offerIsEffective &&
       ((offerName ?? '').trim().isNotEmpty ||
           (offerBadgeText ?? '').trim().isNotEmpty);
 

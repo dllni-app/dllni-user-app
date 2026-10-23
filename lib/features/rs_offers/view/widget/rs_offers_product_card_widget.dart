@@ -27,10 +27,12 @@ class RsOffersProductCardWidget extends StatelessWidget {
           : mapped.restaurantName!.trim(),
       price: mapped.resolvedDisplayPriceValue.formatMoney(),
       offer: FetchRestaurantProductsSearchModelActiveOffer(
-        badgeText: mapped.offerBadgeText,
-        discountType: mapped.offerDiscountType,
-        discountValue: mapped.offerDiscountValue,
-        title: mapped.offerName,
+        badgeText: mapped.displayedSavingsBadge,
+        discountType: mapped.offerIsEffective ? mapped.offerDiscountType : null,
+        discountValue: mapped.offerIsEffective
+            ? mapped.offerDiscountValue
+            : null,
+        title: mapped.offerIsEffective ? mapped.offerName : null,
       ),
       onTap: () {
         if (productId <= 0) return;
@@ -49,7 +51,9 @@ class RsOffersProductCardWidget extends StatelessWidget {
   }
 }
 
-StoreProductItem _toStoreProductItem(FetchRsOffersProductsModelDataItem product) {
+StoreProductItem _toStoreProductItem(
+  FetchRsOffersProductsModelDataItem product,
+) {
   final activeOffers = (product.activeOffers ?? [])
       .where((offer) => offer.isActive == true)
       .toList();
