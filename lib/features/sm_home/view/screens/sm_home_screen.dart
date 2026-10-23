@@ -123,7 +123,9 @@ class OfferCard extends StatelessWidget {
 
 @AutoRoutePage(path: "/sm_home")
 class SmHomeScreen extends StatefulWidget {
-  const SmHomeScreen({super.key});
+  const SmHomeScreen({super.key, this.onBrowse});
+
+  final VoidCallback? onBrowse;
 
   @override
   State<SmHomeScreen> createState() => _SmHomeScreenState();
@@ -170,7 +172,9 @@ class _LoadingPageViewState extends State<LoadingPageView> {
                 dotHeight: 4,
                 dotWidth: 18,
                 spacing: 4,
-                dotColor: SharedPlatformColors.supermarket.withValues(alpha: .34),
+                dotColor: SharedPlatformColors.supermarket.withValues(
+                  alpha: .34,
+                ),
                 activeDotColor: SharedPlatformColors.supermarket,
               ),
               onDotClicked: (index) {},
@@ -305,9 +309,11 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
                                             dotHeight: 4,
                                             dotWidth: 18,
                                             spacing: 4,
-                                            dotColor: SharedPlatformColors.supermarket
+                                            dotColor: SharedPlatformColors
+                                                .supermarket
                                                 .withValues(alpha: .34),
-                                            activeDotColor: SharedPlatformColors.supermarket,
+                                            activeDotColor: SharedPlatformColors
+                                                .supermarket,
                                           ),
                                           onDotClicked: (index) {},
                                         ),
@@ -321,7 +327,7 @@ class _SmHomeScreenState extends State<SmHomeScreen> {
                       },
                     ),
                     SizedBox(height: 24),
-                    NearStoresSection(),
+                    NearStoresSection(onBrowse: widget.onBrowse),
                   ],
                 ),
               ),
