@@ -11,6 +11,7 @@ import '../../../cl_main/view/screens/cl_main_screen.dart';
 import '../../../orders/data/models/cleaning_booking_status.dart';
 import '../../../orders/data/models/cleaning_orders_api_models.dart';
 import '../../../orders/data/models/orders_api_models.dart';
+import '../../../orders/data/models/merchant_order_status_label_ar.dart';
 import '../../../orders/view/manager/bloc/orders_bloc.dart';
 import '../../../orders/view/screens/cleaning_order_details_screen.dart';
 import '../../../orders/view/screens/restaurant_order_tracking_screen.dart';
@@ -234,9 +235,10 @@ class _HomeScreenState extends State<HomeScreen> {
         : (order.orderNumber?.trim().isNotEmpty == true
               ? 'طلب ${order.orderNumber}'
               : 'طلب $sectionLabel');
-    final status = order.statusLabel?.trim().isNotEmpty == true
-        ? order.statusLabel!.trim()
-        : 'قيد المعالجة';
+    final status = merchantOrderStatusLabelAr(
+      order.status,
+      fallback: order.statusLabel,
+    );
     final total = order.amounts?.total ?? 0;
     final meta = <String>[
       if (order.orderNumber?.trim().isNotEmpty == true) order.orderNumber!,

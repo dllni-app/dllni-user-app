@@ -7,6 +7,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/orders_api_models.dart';
+import '../../data/models/merchant_order_status_label_ar.dart';
 
 enum MerchantOrderKind { restaurant, supermarket }
 
@@ -48,36 +49,8 @@ class MerchantOrderSummaryCard extends StatelessWidget {
     return 'لا توجد ملاحظات';
   }
 
-  String get _statusLabel {
-    final status = (order.status ?? '').toLowerCase().trim();
-    switch (status) {
-      case 'pending':
-        return 'قيد الانتظار';
-      case 'accepted':
-        return 'تم القبول';
-      case 'preparing':
-        return 'قيد التحضير';
-      case 'ready_for_pickup':
-        return 'جاهز للاستلام';
-      case 'picked_up':
-        return 'تم الاستلام';
-      case 'delivered':
-        return 'تم التوصيل';
-      case 'completed':
-        return 'مكتمل';
-      case 'cancelled':
-      case 'canceled':
-        return 'ملغي';
-      case 'rejected':
-        return 'مرفوض';
-      case 'processing':
-        return 'قيد المعالجة';
-      default:
-        final label = order.statusLabel?.trim();
-        if (label != null && label.isNotEmpty) return label;
-        return status.isEmpty ? 'قيد المعالجة' : status;
-    }
-  }
+  String get _statusLabel =>
+      merchantOrderStatusLabelAr(order.status, fallback: order.statusLabel);
 
   Color get _statusColor {
     final status = (order.status ?? '').toLowerCase().trim();
