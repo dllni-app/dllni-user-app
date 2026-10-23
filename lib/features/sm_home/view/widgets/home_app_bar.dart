@@ -58,20 +58,27 @@ class _HomeAppBarState extends State<HomeAppBar> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 2,
                   children: [
-                    Text(
-                      'مرحباً بعودتك 👋',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 16 / 12,
-                      ),
+                    ValueListenableBuilder(
+                      valueListenable: UserSessionStore.userNotifier,
+                      builder: (context, user, _) {
+                        return Text(
+                          user == null ? 'مرحباً بك 👋' : 'مرحباً بعودتك 👋',
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            height: 16 / 12,
+                          ),
+                        );
+                      },
                     ),
                     ValueListenableBuilder(
                       valueListenable: UserSessionStore.userNotifier,
                       builder: (context, user, _) {
                         return Text(
-                          UserSessionStore.displayName(user),
+                          user == null
+                              ? 'زائر'
+                              : UserSessionStore.displayName(user),
                           style: TextStyle(
                             color: SharedPlatformColors.supermarket,
                             fontSize: 18,

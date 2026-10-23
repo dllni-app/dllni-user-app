@@ -50,13 +50,15 @@ dynamic _smSummaryAsDynamic(dynamic value) {
 class SmStoreProductSummaryImage {
   int? id;
   String? url;
+  String? size;
 
-  SmStoreProductSummaryImage({this.id, this.url});
+  SmStoreProductSummaryImage({this.id, this.url, this.size});
 
   factory SmStoreProductSummaryImage.fromJson(Map<String, dynamic> json) {
     return SmStoreProductSummaryImage(
       id: _smSummaryAsInt(json['id']),
       url: _smSummaryAsString(json['url']),
+      size: _smSummaryAsString(json['size']),
     );
   }
 }
@@ -116,7 +118,7 @@ class SmStoreProductSummary {
     'imageUrl': imageUrl,
     'image': image == null
         ? null
-        : {'id': image!.id, 'url': image!.url},
+        : {'id': image!.id, 'url': image!.url, 'size': image!.size},
     'masterProductId': masterProductId,
   };
 }
