@@ -35,7 +35,8 @@ class DeepLinkParser {
   }
 
   static bool isSupportedDeepLink(Uri uri) {
-    if (canonicalHost(uri) != AppConfig.deepLinkCanonicalHost) {
+    if (canonicalHost(uri) != AppConfig.deepLinkCanonicalHost &&
+        canonicalHost(uri) != 'dllni.mustafafares.com') {
       return false;
     }
 
