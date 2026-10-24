@@ -17,7 +17,12 @@ class UserLocationService {
       if (!enabled) {
         return (latitude: null, longitude: null);
       }
-      final pos = await Geolocator.getCurrentPosition();
+      // Do not block marketplace discovery indefinitely when GPS has no fix.
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
       return (latitude: pos.latitude, longitude: pos.longitude);
     } catch (_) {
       return (latitude: null, longitude: null);

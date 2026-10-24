@@ -8,11 +8,12 @@ import 'package:toastification/toastification.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../../../core/utils/app_images.dart';
 import '../../../sm_discover/domain/usecases/change_product_favorite_use_case.dart';
 import '../../../sm_discover/view/manager/bloc/sm_discover_bloc.dart';
 import '../../data/models/sm_store_product_summary.dart';
+import '../../data/models/supermarket_image_quality.dart';
 import '../screens/sm_product_details_screen.dart';
+import 'unavailable_product_image.dart';
 
 class ProductCard extends StatefulWidget {
   final SmStoreProductSummary product;
@@ -59,9 +60,14 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = widget.product.imageUrl?.trim().isNotEmpty == true
-        ? widget.product.imageUrl!
-        : (widget.product.image?.url ?? '').trim();
+    final isTinyPlaceholder = isTinySupermarketPlaceholder(
+      widget.product.image?.size,
+    );
+    final imageUrl = isTinyPlaceholder
+        ? ''
+        : (widget.product.imageUrl?.trim().isNotEmpty == true
+              ? widget.product.imageUrl!
+              : (widget.product.image?.url ?? '').trim());
     final discountedStr = widget.product.discountedPrice == null
         ? ''
         : widget.product.discountedPrice.toString().trim();
@@ -71,9 +77,6 @@ class _ProductCardState extends State<ProductCard> {
     return GestureDetector(
       onTap: () async {
         if (widget.product.id == null) return;
-        final navImageUrl = widget.product.imageUrl?.trim().isNotEmpty == true
-            ? widget.product.imageUrl!
-            : (widget.product.image?.url ?? '').trim();
         final result = await context.pushRoute(
           "/product",
           arguments: SmProductDetailsScreenArgs(
@@ -81,7 +84,7 @@ class _ProductCardState extends State<ProductCard> {
             starter: SmStarterProductDetailsData(
               masterId: widget.product.masterProductId,
               name: widget.product.name,
-              imageUrl: navImageUrl.isNotEmpty ? navImageUrl : null,
+              imageUrl: imageUrl.isNotEmpty ? imageUrl : null,
               price: widget.product.price,
               discountedPrice: widget.product.discountedPrice
                   ?.toString()
@@ -114,21 +117,24 @@ class _ProductCardState extends State<ProductCard> {
           children: [
             Column(
               children: [
-                AppImage.network(
-                  imageUrl,
-                  height: 120,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  errorWidget: AppImage.asset(
-                    AppImages.defaultProduct,
-                    width: 80,
-                    height: 80,
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
-                    fit: BoxFit.contain,
-                    errorWidget: Icon(Icons.store_outlined),
-                  ),
-                ),
+                imageUrl.isEmpty
+                    ? const UnavailableProductImage(
+                        height: 120,
+                        width: double.infinity,
+                      )
+                    : AppImage.network(
+                        imageUrl,
+                        height: 120,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                        errorWidget: const UnavailableProductImage(
+                          height: 120,
+                          width: double.infinity,
+                        ),
+                      ),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(12),

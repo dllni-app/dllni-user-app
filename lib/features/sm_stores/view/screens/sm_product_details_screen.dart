@@ -18,11 +18,13 @@ import '../../../sm_discover/domain/usecases/change_product_favorite_use_case.da
 import '../../../sm_discover/view/manager/bloc/sm_discover_bloc.dart';
 import '../../data/models/get_compare_products_model.dart';
 import '../../data/models/get_supermarket_product_details_model.dart';
+import '../../data/models/supermarket_image_quality.dart';
 import '../../domain/usecases/get_compare_products_use_case.dart';
 import '../manager/bloc/sm_stores_bloc.dart';
 import '../widgets/dialogs/related_products_dialog.dart';
 import '../widgets/dialogs/shopping_lists_dialog.dart';
 import '../widgets/supermarket_product_customization_section.dart';
+import '../widgets/unavailable_product_image.dart';
 
 String _smDescriptionText(SupermarketProductDetailsProduct? product) {
   final d = product?.description;
@@ -36,9 +38,27 @@ List<String> _smImageUrls(
   SmStarterProductDetailsData? starter,
 ) {
   final urls = <String>[];
+  final unusableUrls = <String>{};
+
+  void flagTinyMedia(SupermarketProductDetailsMedia? media) {
+    if (media == null || !isTinySupermarketPlaceholder(media.size)) return;
+    if (media.url?.trim().isNotEmpty == true) {
+      unusableUrls.add(media.url!.trim());
+    }
+    if (media.thumbnailUrl?.trim().isNotEmpty == true) {
+      unusableUrls.add(media.thumbnailUrl!.trim());
+    }
+  }
+
+  flagTinyMedia(product?.image);
+  for (final media
+      in product?.images ?? const <SupermarketProductDetailsMedia>[]) {
+    flagTinyMedia(media);
+  }
+
   void add(String? u) {
     final t = (u ?? '').trim();
-    if (t.isEmpty || urls.contains(t)) return;
+    if (t.isEmpty || unusableUrls.contains(t) || urls.contains(t)) return;
     urls.add(t);
   }
 
@@ -280,33 +300,61 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  ProductActionButton(
-                    icon: Icons.compare_arrows,
-                    onTap: () => _openCompareDialog(context),
-                  ),
-                  const SizedBox(width: 8),
-                  ProductActionButton(
-                    icon: Icons.playlist_add,
-                    onTap: () => _openShoppingListsDialog(context),
-                  ),
-                  const SizedBox(width: 8),
                   ProductActionButton(
                     icon: Icons.shopping_cart_outlined,
                     onTap: () => context.pushRoute('/cart'),
                   ),
-                  const SizedBox(width: 8),
-                  ProductActionButton(
-                    icon: Icons.share,
-                    onTap: () {
-                      final id = widget.args.productId;
-                      if (id <= 0) return;
-                      unawaited(
-                        shareDeepLinkUrl(productUrl(id), context: context),
-                      );
+                  PopupMenuButton<int>(
+                    tooltip: 'المزيد من إجراءات المنتج',
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (action) {
+                      switch (action) {
+                        case 0:
+                          _openCompareDialog(context);
+                          return;
+                        case 1:
+                          _openShoppingListsDialog(context);
+                          return;
+                        case 2:
+                          final id = widget.args.productId;
+                          if (id > 0) {
+                            unawaited(
+                              shareDeepLinkUrl(
+                                productUrl(id),
+                                context: context,
+                              ),
+                            );
+                          }
+                          return;
+                      }
                     },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 0,
+                        child: ListTile(
+                          leading: Icon(Icons.compare_arrows),
+                          title: Text('مقارنة المنتج'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 1,
+                        child: ListTile(
+                          leading: Icon(Icons.playlist_add),
+                          title: Text('إضافة إلى قائمة التسوق'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 2,
+                        child: ListTile(
+                          leading: Icon(Icons.share_outlined),
+                          title: Text('مشاركة المنتج'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
                 ],
               ),
               body: showFullScreenLoading
@@ -333,19 +381,13 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(
-                              height: 350,
+                              height: imageUrls.isEmpty ? 220 : 350,
                               child: Stack(
                                 children: [
                                   Positioned.fill(
                                     child: imageUrls.isEmpty
-                                        ? Container(
-                                            color: const Color(0xFFF5F5F5),
-                                            alignment: Alignment.center,
-                                            child: const Icon(
-                                              Icons.image_outlined,
-                                              size: 56,
-                                              color: Color(0xFF9CA3AF),
-                                            ),
+                                        ? const UnavailableProductImage(
+                                            iconSize: 48,
                                           )
                                         : PageView.builder(
                                             controller: _imagePageController,
@@ -359,17 +401,10 @@ class _SmProductDetailsScreenState extends State<SmProductDetailsScreen> {
                                               return AppImage.network(
                                                 imageUrls[index],
                                                 fit: BoxFit.cover,
-                                                errorWidget: Container(
-                                                  color: const Color(
-                                                    0xFFF5F5F5,
-                                                  ),
-                                                  alignment: Alignment.center,
-                                                  child: const Icon(
-                                                    Icons.image_outlined,
-                                                    size: 56,
-                                                    color: Color(0xFF9CA3AF),
-                                                  ),
-                                                ),
+                                                errorWidget:
+                                                    const UnavailableProductImage(
+                                                      iconSize: 48,
+                                                    ),
                                               );
                                             },
                                           ),

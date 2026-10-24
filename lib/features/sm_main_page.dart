@@ -57,7 +57,14 @@ class _SmMainPageState extends State<SmMainPage>
           physics: NeverScrollableScrollPhysics(),
           controller: tabController,
           children: [
-            SmHomeScreen(),
+            SmHomeScreen(
+              onBrowse: () {
+                if (selectedTab != 1) {
+                  setState(() => selectedTab = 1);
+                  tabController.animateTo(1);
+                }
+              },
+            ),
             SmDiscoverScreen(
               params: SmDiscoverScreenParams(expandSearch: expandSearch),
             ),

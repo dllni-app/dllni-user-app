@@ -9,9 +9,12 @@ import '../../../../core/widgets/loading_list.dart';
 import '../../domain/usecases/get_nearby_stores_use_case.dart';
 import '../manager/bloc/sm_home_bloc.dart';
 import 'store_card.dart';
+import 'nearby_stores_empty_state.dart';
 
 class NearStoresSection extends StatelessWidget {
-  const NearStoresSection({super.key});
+  const NearStoresSection({super.key, this.onBrowse});
+
+  final VoidCallback? onBrowse;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +48,21 @@ class NearStoresSection extends StatelessWidget {
             buildWhen: (previous, current) =>
                 previous.nearbyStoresStatus != current.nearbyStoresStatus,
             builder: (context, state) {
-              if (state.nearbyStoresStatus == BlocStatus.loading) {
+              if (state.nearbyStoresStatus == null) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 28),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 12),
+                        Text('جارٍ تحديد موقعك والبحث عن المتاجر...'),
+                      ],
+                    ),
+                  ),
+                );
+              } else if (state.nearbyStoresStatus == BlocStatus.loading) {
                 return LoadingGrid(
                   heightCard: 180,
                   borderRadius: 24,
@@ -63,16 +80,9 @@ class NearStoresSection extends StatelessWidget {
                   },
                 );
               } else if (state.nearbyStoresStatus == BlocStatus.success) {
-                return state.nearbyStores!.stores!.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: EdgeInsets.zero,
-                          child: AppText.labelMedium(
-                            'لا يوجد متاجر قريبة منك',
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      )
+                final stores = state.nearbyStores?.stores ?? [];
+                return stores.isEmpty
+                    ? NearbyStoresEmptyState(onBrowse: onBrowse)
                     : GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -83,11 +93,10 @@ class NearStoresSection extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
-                        itemBuilder: (_, index) => StoreCard(
-                          store: state.nearbyStores!.stores![index],
-                        ),
+                        itemBuilder: (_, index) =>
+                            StoreCard(store: stores[index]),
                         // separatorBuilder: (_, _) => SizedBox(height: 12),
-                        itemCount: state.nearbyStores!.stores!.length,
+                        itemCount: stores.length,
                       );
               }
               return SizedBox.shrink();
