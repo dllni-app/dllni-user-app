@@ -20,6 +20,7 @@ void main() {
 
       expect(check.allowed, isFalse);
       expect(check.visibility, CleaningRebookEditVisibility.locked);
+      expect(check.isLeadTimeLocked, isTrue);
     });
 
     test('hides when current time is after scheduled service time', () {

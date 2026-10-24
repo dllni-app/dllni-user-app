@@ -8,6 +8,7 @@ abstract class CleaningBookingStatus {
   static const awaitingCustomerCompletion = 'awaiting_customer_completion';
   static const timeExtensionRequested = 'time_extension_requested';
   static const underDispute = 'under_dispute';
+  static const partiallyCompleted = 'partially_completed';
   static const completed = 'completed';
   static const cancelled = 'cancelled';
 }

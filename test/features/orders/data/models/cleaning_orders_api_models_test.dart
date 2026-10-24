@@ -5,6 +5,53 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CleaningOrderDetailModel parsing', () {
+    test('parses customer edit capability and locks partial bookings', () {
+      final editable = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 11,
+          'status': 'pending',
+          'canEdit': true,
+        },
+      }).data!;
+      final partial = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
+        'data': <String, dynamic>{
+          'id': 12,
+          'status': 'partially_completed',
+          'can_edit': false,
+          'bookingKind': 'supervised_team',
+        },
+      }).data!;
+      final editableTeam = fetchCleaningOrderDetailsModelFromJson(
+        <String, dynamic>{
+          'data': <String, dynamic>{
+            'id': 14,
+            'status': 'pending',
+            'canEdit': true,
+            'bookingKind': 'supervised_team',
+          },
+        },
+      ).data!;
+
+      expect(editable.canEdit, isTrue);
+      expect(editable.customerMutationsLocked, isFalse);
+      final inProgress = fetchCleaningOrderDetailsModelFromJson(
+        <String, dynamic>{
+          'data': <String, dynamic>{
+            'id': 13,
+            'status': 'in_progress',
+            'canEdit': false,
+          },
+        },
+      ).data!;
+      expect(partial.canEdit, isFalse);
+      expect(partial.customerMutationsLocked, isTrue);
+      expect(partial.isSupervisedTeam, isTrue);
+      expect(partial.shouldUseSupervisedTeamCustomerScreen, isFalse);
+      expect(inProgress.canEdit, isFalse);
+      expect(inProgress.customerMutationsLocked, isFalse);
+      expect(editableTeam.shouldUseSupervisedTeamCustomerScreen, isTrue);
+    });
+
     test('ignores a non-open-time backend payload', () {
       final detail = fetchCleaningOrderDetailsModelFromJson(<String, dynamic>{
         'data': <String, dynamic>{
@@ -466,6 +513,13 @@ void main() {
           CleaningBookingStatus.awaitingWorkerStartConfirmation,
         ),
         'بانتظار تأكيد مقدم الخدمة لبدء العمل',
+      );
+    });
+
+    test('labels partial completion explicitly', () {
+      expect(
+        cleaningOrderStatusLabelAr(CleaningBookingStatus.partiallyCompleted),
+        'اكتمل جزء من الخدمة',
       );
     });
 

@@ -27,10 +27,17 @@ class _HomeCubeState extends State<HomeCube> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.offers.isEmpty) return const SizedBox.shrink();
+    final offers = widget.offers.isEmpty
+        ? <UserOfferItem>[
+            UserOfferItem(
+              title: 'اكتشف خدماتنا',
+              description: 'خدمات التنظيف والمطاعم والتسوق والتوصيل',
+            ),
+          ]
+        : widget.offers;
     final padded = List<UserOfferItem>.generate(
       4,
-      (index) => widget.offers[index % widget.offers.length],
+      (index) => offers[index % offers.length],
     );
     final width = math.min(MediaQuery.sizeOf(context).width - 40, 380.0);
     return Semantics(

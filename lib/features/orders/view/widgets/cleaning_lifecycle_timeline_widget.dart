@@ -135,6 +135,9 @@ class CleaningLifecycleTimelineWidget extends StatelessWidget {
     if (normalized == CleaningBookingStatus.cancelled) {
       return _CancelledTimelineCard();
     }
+    if (normalized == CleaningBookingStatus.partiallyCompleted) {
+      return const _PartiallyCompletedTimelineCard();
+    }
 
     final activeIndex = cleaningLifecycleStageIndex(status);
     return Container(
@@ -264,6 +267,34 @@ class CleaningLifecycleTimelineWidget extends StatelessWidget {
       return 'اكتملت الخدمة ويمكنك مراجعة التقييم.';
     }
     return 'تابع حالة الطلب من هذا المسار.';
+  }
+}
+
+class _PartiallyCompletedTimelineCard extends StatelessWidget {
+  const _PartiallyCompletedTimelineCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('cleaning_partial_completion_timeline'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SharedPlatformColors.border),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('اكتمل جزء من الخدمة'),
+          SizedBox(height: 6),
+          Text(
+            'تم حفظ الإكمال الجزئي للطلب. لا يمكن تعديل الطلب أو تأكيد اكتماله من هذه الحالة.',
+            textAlign: TextAlign.start,
+          ),
+        ],
+      ),
+    );
   }
 }
 

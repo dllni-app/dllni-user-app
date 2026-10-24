@@ -82,4 +82,42 @@ void main() {
     expect(find.text('طلب إنهاء'), findsOneWidget);
     expect(tester.getSize(find.text('طلب تمديد')).height, greaterThan(0));
   });
+
+  testWidgets('read-only state keeps open-time summary but hides actions', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(375, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            body: SingleChildScrollView(
+              child: CleaningOpenTimeLiveCard(
+                orderId: 42,
+                showActions: false,
+                initialValue: CleaningOpenTimeModel(
+                  isPricingFinal: false,
+                  serverNow: DateTime(2026, 9, 12, 10),
+                  ceilingEndsAt: DateTime(2026, 9, 12, 13),
+                  liveAmount: 250,
+                  currency: 'SYP',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('الطلب بوقت مفتوح'), findsOneWidget);
+    expect(find.text('المبلغ الجاري'), findsOneWidget);
+    expect(find.text('طلب تمديد'), findsNothing);
+    expect(find.text('طلب إنهاء'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

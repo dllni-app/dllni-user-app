@@ -133,6 +133,8 @@ String cleaningOrderStatusLabelAr(
       return 'بانتظار تأكيد الإكمال';
     case CleaningBookingStatus.timeExtensionRequested:
       return 'طلب تمديد الوقت';
+    case CleaningBookingStatus.partiallyCompleted:
+      return 'اكتمل جزء من الخدمة';
     case CleaningBookingStatus.completed:
       return 'مكتمل';
     case CleaningBookingStatus.cancelled:
@@ -752,9 +754,15 @@ class CleaningOrderDetailModel {
   final int? workerId;
   final String bookingKind;
   bool get isSupervisedTeam => bookingKind == 'supervised_team';
+  bool get customerMutationsLocked =>
+      (status ?? '').trim().toLowerCase() ==
+      CleaningBookingStatus.partiallyCompleted;
+  bool get shouldUseSupervisedTeamCustomerScreen =>
+      isSupervisedTeam && !customerMutationsLocked;
 
   final String? bookingNumber;
   final String? status;
+  final bool? canEdit;
   final String? propertyType;
   final CleaningPropertyDetailsModel? propertyDetails;
   final double? addressLatitude;
@@ -823,6 +831,7 @@ class CleaningOrderDetailModel {
     this.bookingKind = 'standard',
     this.bookingNumber,
     this.status,
+    this.canEdit,
     this.propertyType,
     this.propertyDetails,
     this.addressLatitude,
@@ -895,6 +904,7 @@ class CleaningOrderDetailModel {
         _pick(m, const <String>['bookingNumber', 'booking_number']),
       ),
       status: _toStringValue(_pick(m, const <String>['status'])),
+      canEdit: _toBool(_pick(m, const <String>['canEdit', 'can_edit'])),
       propertyType: _toStringValue(
         _pick(m, const <String>['propertyType', 'property_type']),
       ),

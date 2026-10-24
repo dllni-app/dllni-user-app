@@ -22,6 +22,18 @@ void main() {
         'خدمة تنظيف شقة',
       );
     });
+
+    test('translates known location labels and preserves custom names', () {
+      expect(CleaningEventAssistanceHelper.venueTypeLabelAr('house'), 'منزل');
+      expect(
+        CleaningEventAssistanceHelper.venueTypeLabelAr(' Apartment '),
+        'شقة',
+      );
+      expect(
+        CleaningEventAssistanceHelper.venueTypeLabelAr('My Office'),
+        'My Office',
+      );
+    });
   });
 
   group('CleaningPropertyDetailsModel event parsing', () {

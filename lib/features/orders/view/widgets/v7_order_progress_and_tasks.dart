@@ -24,6 +24,18 @@ class V7OrderLifecyclePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = (order.status ?? '').toLowerCase().trim();
+    if (status == CleaningBookingStatus.partiallyCompleted) {
+      return const V7OrderPanel(
+        key: Key('cleaning_order_partial_timeline'),
+        title: 'اكتمل جزء من الخدمة',
+        subtitle: 'الحالة المسجلة للطلب',
+        leading: Icon(Icons.hourglass_bottom_rounded, color: Color(0xFFAB691C)),
+        child: Text(
+          'تم حفظ الإكمال الجزئي لهذا الطلب. لا يمكن تعديل الطلب أو تأكيد اكتماله من هذه الحالة.',
+          textAlign: TextAlign.start,
+        ),
+      );
+    }
     if (status == CleaningBookingStatus.underDispute) {
       // A dispute can start in different lifecycle stages. Never invent
       // completed worker, travel, or cleaning milestones in this state.

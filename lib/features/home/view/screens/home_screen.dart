@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:common_package/common_package.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -34,21 +37,30 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late final ProfileBloc profileBloc;
   late final HomeBloc homeBloc;
   late final OrdersBloc cleaningOrdersBloc;
   late final OrdersBloc restaurantOrdersBloc;
   late final OrdersBloc supermarketOrdersBloc;
+  late final StreamSubscription<RemoteMessage>
+  _foregroundNotificationSubscription;
+  late final StreamSubscription<RemoteMessage> _openedNotificationSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     profileBloc = getIt<ProfileBloc>();
     homeBloc = getIt<HomeBloc>();
     cleaningOrdersBloc = getIt<OrdersBloc>();
     restaurantOrdersBloc = getIt<OrdersBloc>();
     supermarketOrdersBloc = getIt<OrdersBloc>();
+    _foregroundNotificationSubscription = FirebaseMessaging.onMessage.listen(
+      (_) => _refreshNotificationCount(),
+    );
+    _openedNotificationSubscription = FirebaseMessaging.onMessageOpenedApp
+        .listen((_) => _refreshNotificationCount());
 
     homeBloc.add(
       FetchUserOffersEvent(params: FetchUserOffersParams(), isReload: true),
@@ -61,12 +73,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_foregroundNotificationSubscription.cancel());
+    unawaited(_openedNotificationSubscription.cancel());
     homeBloc.close();
     cleaningOrdersBloc.close();
     restaurantOrdersBloc.close();
     supermarketOrdersBloc.close();
     profileBloc.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshNotificationCount();
+    }
+  }
+
+  void _refreshNotificationCount() {
+    if (!mounted || !AuthGate.isAuthenticated) return;
+    profileBloc.add(
+      FetchNotificationsEvent(
+        params: FetchNotificationsParams(),
+        isReload: true,
+      ),
+    );
   }
 
   void _refreshAuthenticatedContext() {
@@ -354,11 +386,10 @@ class _HomeScreenState extends State<HomeScreen> {
             state.userOffers.list.isEmpty) {
           return const _HomeLoadingCard(height: 170);
         }
-        if (state.userOffers.list.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const AppSectionHeading(title: 'العروض المختارة'),
+            const AppSectionHeading(title: 'اكتشف خدماتنا'),
             const SizedBox(height: 8),
             HomeCube(offers: state.userOffers.list),
           ],

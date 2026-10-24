@@ -142,11 +142,15 @@ class _CleaningOrderDetailsScreenState
       return const V7OrderLoadingView(message: 'لا تتوفر تفاصيل هذا الطلب');
     }
 
-    if (order.isSupervisedTeam) {
-      return SupervisedTeamCustomerScreen(orderId: order.id ?? _activeOrderId);
+    if (order.shouldUseSupervisedTeamCustomerScreen) {
+      return SupervisedTeamCustomerScreen(
+        orderId: order.id ?? _activeOrderId,
+        order: order,
+      );
     }
 
     final status = _normStatus(order.status);
+    final customerMutationsLocked = order.customerMutationsLocked;
     final terminal =
         status == CleaningBookingStatus.completed ||
         status == CleaningBookingStatus.cancelled;
@@ -166,6 +170,8 @@ class _CleaningOrderDetailsScreenState
       scheduledTime: order.scheduledTime,
     );
     final hiddenEdit =
+        order.canEdit == false ||
+        customerMutationsLocked ||
         _blocksReschedule(order) ||
         _isRebooking ||
         leadTime.isPastScheduledTime;
@@ -187,6 +193,7 @@ class _CleaningOrderDetailsScreenState
       CleaningBookingStatus.cancelled => V7OrderTone.danger,
       CleaningBookingStatus.timeExtensionRequested => V7OrderTone.warning,
       CleaningBookingStatus.underDispute => V7OrderTone.warning,
+      CleaningBookingStatus.partiallyCompleted => V7OrderTone.warning,
       _ => V7OrderTone.info,
     };
     final message = switch (status) {
@@ -210,6 +217,8 @@ class _CleaningOrderDetailsScreenState
         'تتم مراجعة المشكلة التي أبلغت عنها. تابع تحديثات الطلب.',
       CleaningBookingStatus.completed =>
         'اكتملت الخدمة، شكراً لاستخدام ع الندهة.',
+      CleaningBookingStatus.partiallyCompleted =>
+        'اكتمل جزء من الخدمة. لا يمكن تعديل الطلب أو تأكيد اكتماله في هذه الحالة.',
       CleaningBookingStatus.cancelled => 'تم إلغاء هذا الطلب.',
       _ => 'تابع حالة طلبك وتفاصيل الخدمة هنا.',
     };
@@ -254,7 +263,8 @@ class _CleaningOrderDetailsScreenState
             ? Icons.celebration_outlined
             : Icons.cleaning_services_outlined,
       ),
-      V7OrderLifecyclePanel(order: order),
+      if (status != CleaningBookingStatus.partiallyCompleted)
+        V7OrderLifecyclePanel(order: order),
       if (searching)
         V7OrderPanel(
           title: 'جارٍ إيجاد مقدم خدمة',
@@ -277,15 +287,19 @@ class _CleaningOrderDetailsScreenState
           order.preferredWorker != null)
         CleaningPreferredWorkerCardWidget(
           worker: order.preferredWorker!,
-          onCallWorker: _callWorker,
+          onCallWorker:
+              !terminal && !customerMutationsLocked && leadTime.isLeadTimeLocked
+              ? _callWorker
+              : null,
         ),
-      if (order.lastHourTeamDecision?['required'] == true)
+      if (!customerMutationsLocked &&
+          order.lastHourTeamDecision?['required'] == true)
         CleaningLastHourTeamDecisionCard(
           decision: order.lastHourTeamDecision!,
           isSubmitting: _isLastHourDecisionSubmitting,
           onChoose: _submitLastHourDecision,
         ),
-      if (order.scheduleChangeRequest != null)
+      if (!customerMutationsLocked && order.scheduleChangeRequest != null)
         CleaningScheduleChangeResolutionCard(
           change: order.scheduleChangeRequest!,
           requiredWorkers: order.numberOfWorkers ?? 1,
@@ -370,7 +384,12 @@ class _CleaningOrderDetailsScreenState
             if ((order.locationName ?? '').trim().isNotEmpty &&
                 order.locationName!.trim() !=
                     (order.propertyDetails?.address ?? '').trim())
-              V7OrderInfoRow(label: 'المكان', value: order.locationName!),
+              V7OrderInfoRow(
+                label: 'المكان',
+                value: CleaningEventAssistanceHelper.venueTypeLabelAr(
+                  order.locationName,
+                ),
+              ),
             V7OrderInfoRow(
               label: 'العنوان',
               value: order.propertyDetails?.address ?? 'غير محدد',
@@ -389,19 +408,25 @@ class _CleaningOrderDetailsScreenState
           ],
         ),
       ),
-      if (order.worker != null && !order.isMultiWorkerTeam)
+      if (order.worker != null &&
+          !order.isMultiWorkerTeam &&
+          !terminal &&
+          !customerMutationsLocked)
         V7OrderWorkerPanel(
           name: order.worker?.name ?? 'مقدم الخدمة',
           avatarUrl: order.worker?.avatarUrl,
           rating: order.worker?.averageRating,
-          onCall: (order.worker?.phone?.trim().isNotEmpty ?? false)
+          onCall:
+              leadTime.isLeadTimeLocked &&
+                  (order.worker?.phone?.trim().isNotEmpty ?? false)
               ? () => _callWorker(order.worker?.phone)
               : null,
         ),
-      if (order.isMultiWorkerTeam && order.acceptedWorkerAssignments.isNotEmpty)
+      if (order.isMultiWorkerTeam &&
+          !terminal &&
+          order.acceptedWorkerAssignments.isNotEmpty)
         CleaningAcceptedWorkersSectionWidget(
           assignments: order.acceptedWorkerAssignments,
-          onCallWorker: _callWorker,
         ),
       if (!CleaningEventAssistanceHelper.isEventAssistance(
             order.propertyType,
@@ -421,17 +446,22 @@ class _CleaningOrderDetailsScreenState
           guestCount: order.propertyDetails?.guestCount,
           helpDescription: order.propertyDetails?.customService,
           specialRequirements: order.propertyDetails?.specialRequirement,
-          onOpenSessions: () async {
-            await Navigator.of(context).push<void>(
-              MaterialPageRoute(
-                builder: (_) =>
-                    MultiDayCleaningOrderDetailsScreen(orderId: _activeOrderId),
-              ),
-            );
-            if (mounted) await _fetchDetails(showLoading: false);
-          },
+          onOpenSessions: customerMutationsLocked
+              ? null
+              : () async {
+                  await Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => MultiDayCleaningOrderDetailsScreen(
+                        orderId: _activeOrderId,
+                      ),
+                    ),
+                  );
+                  if (mounted) await _fetchDetails(showLoading: false);
+                },
         )
-      else if (order.openTime == null && order.contractVersion != 2)
+      else if (!customerMutationsLocked &&
+          order.openTime == null &&
+          order.contractVersion != 2)
         CleaningRecurringScheduleLauncherWidget(
           orderId: _activeOrderId,
           onReturn: () => _fetchDetails(showLoading: false),
@@ -465,14 +495,14 @@ class _CleaningOrderDetailsScreenState
         CleaningOpenTimeLiveCard(
           orderId: order.id ?? _activeOrderId,
           initialValue: order.openTime!,
+          showActions: !customerMutationsLocked,
         ),
       V7OrderPricePanel(
-        basePrice: order.contractVersion == 2
+        cleaningAndTravelPrice:
+            order.contractVersion == 2 ||
+                ((order.basePrice ?? 0) + (order.travelFee ?? 0) <= 0)
             ? null
-            : order.basePrice?.formatMoney(),
-        travelFee: order.contractVersion == 2
-            ? null
-            : order.travelFee?.formatMoney(),
+            : ((order.basePrice ?? 0) + (order.travelFee ?? 0)).formatMoney(),
         addonsTotal:
             order.contractVersion != 2 &&
                 !hasItemizedExtras &&
@@ -761,7 +791,9 @@ class _CleaningOrderDetailsScreenState
 
   bool _blocksCancel(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
-    return s == CleaningBookingStatus.awaitingStartVerification ||
+    return order.customerMutationsLocked ||
+        s == CleaningBookingStatus.partiallyCompleted ||
+        s == CleaningBookingStatus.awaitingStartVerification ||
         s == CleaningBookingStatus.awaitingWorkerStartConfirmation ||
         s == CleaningBookingStatus.awaitingCustomerCompletion ||
         s == CleaningBookingStatus.inProgress ||
@@ -771,7 +803,9 @@ class _CleaningOrderDetailsScreenState
 
   bool _blocksReschedule(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
-    return s == CleaningBookingStatus.completed ||
+    return order.customerMutationsLocked ||
+        s == CleaningBookingStatus.partiallyCompleted ||
+        s == CleaningBookingStatus.completed ||
         s == CleaningBookingStatus.cancelled ||
         s == CleaningBookingStatus.underDispute ||
         s == CleaningBookingStatus.awaitingStartVerification ||

@@ -67,6 +67,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('partial completion has its own read-only lifecycle message', (
+    tester,
+  ) async {
+    await render(
+      tester,
+      CleaningOrderDetailModel(
+        id: 33,
+        status: CleaningBookingStatus.partiallyCompleted,
+        canEdit: false,
+      ),
+    );
+
+    expect(
+      find.byKey(const Key('cleaning_order_partial_timeline')),
+      findsOneWidget,
+    );
+    expect(find.text('اكتمل جزء من الخدمة'), findsOneWidget);
+    expect(find.text('تم استلام الطلب'), findsNothing);
+    expect(find.text('اكتمال الطلب'), findsNothing);
+    expect(find.textContaining('لا يمكن تعديل الطلب'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('disputed order does not invent worker arrival or completion', (
     tester,
   ) async {

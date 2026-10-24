@@ -40,8 +40,7 @@ void main() {
                   ),
                 ),
                 V7OrderPricePanel(
-                  basePrice: null,
-                  travelFee: null,
+                  cleaningAndTravelPrice: null,
                   addonsTotal: null,
                   total: null,
                 ),
@@ -53,7 +52,7 @@ void main() {
       expect(find.text('بانتظار عامل'), findsOneWidget);
       expect(find.text('11 تشرين الأول 2026'), findsOneWidget);
       expect(find.text('سيتم تحديد التكلفة'), findsOneWidget);
-      expect(find.text('الدفع نقداً'), findsOneWidget);
+      expect(find.text('الدفع نقداً'), findsNothing);
       await tester.tap(find.text('متابعة الطلب'));
       expect(actionCount, 1);
       expect(tester.takeException(), isNull);

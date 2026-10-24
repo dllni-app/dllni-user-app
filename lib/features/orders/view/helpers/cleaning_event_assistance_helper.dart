@@ -64,12 +64,14 @@ class CleaningEventAssistanceHelper {
 
   static String formatHours(double? hours) {
     if (hours == null) return '-';
-    final normalized = hours % 1 == 0 ? hours.toInt().toString() : hours.toString();
+    final normalized = hours % 1 == 0
+        ? hours.toInt().toString()
+        : hours.toString();
     return '$normalized ساعة';
   }
 
   static String venueTypeLabelAr(String? venueType) {
-    switch ((venueType ?? '').toLowerCase()) {
+    switch ((venueType ?? '').trim().toLowerCase()) {
       case 'apartment':
         return 'شقة';
       case 'villa':

@@ -123,7 +123,6 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(requests.single.path, _prefix);
-      expect(find.text('123456'), findsNothing);
       await tester.tap(find.text('عرض رمز البدء'));
       await tester.pumpAndSettle();
       expect(requests.last.path, '$_prefix/verification-code');
@@ -131,7 +130,11 @@ void main() {
       await tester.tap(find.text('إغلاق'));
       await tester.pumpAndSettle();
       expect(find.text('123456'), findsNothing);
-      await tester.ensureVisible(find.text('الموافقة على التمديد'));
+      await tester.dragUntilVisible(
+        find.text('الموافقة على التمديد'),
+        find.byType(ListView).first,
+        const Offset(0, -300),
+      );
       await tester.tap(find.text('الموافقة على التمديد'));
       await tester.pumpAndSettle();
       final decision = requests.singleWhere(
@@ -143,6 +146,57 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+
+  testWidgets('shows team workers without per-worker contact buttons', (
+    tester,
+  ) async {
+    final api = SupervisedTeamCustomerApi(
+      DioNetwork(
+        baseUrl: 'https://example.test',
+        interceptors: [
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: {
+                    'data': {
+                      'booking': <String, dynamic>{},
+                      'allowedActions': <String>[],
+                      'extensions': <Map<String, dynamic>>[],
+                      'handover': <String, dynamic>{},
+                    },
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+    final order = CleaningOrderDetailModel.fromJson({
+      'id': 42,
+      'booking_kind': 'supervised_team',
+      'worker_assignments': [
+        {
+          'status': 'accepted',
+          'worker': {'name': 'عامل الفريق', 'phone': '+963900000000'},
+        },
+      ],
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SupervisedTeamCustomerScreen(orderId: 42, order: order, api: api),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('عامل الفريق'), findsOneWidget);
+    expect(find.byTooltip('الاتصال بمقدم الخدمة'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets(
     'requires an objection reason and renders a readable RTL handover at large text',

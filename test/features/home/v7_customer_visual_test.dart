@@ -44,6 +44,23 @@ void main() {
     expect(find.byType(HomeCube), findsOneWidget);
   });
 
+  testWidgets('home cube shows a neutral service banner without offers', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: HomeCube(offers: [])),
+      ),
+    );
+
+    expect(find.text('اكتشف خدماتنا'), findsOneWidget);
+    expect(
+      find.text('خدمات التنظيف والمطاعم والتسوق والتوصيل'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'V7 service entry shows four categories and preserves callbacks',
     (tester) async {

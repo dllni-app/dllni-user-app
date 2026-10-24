@@ -11,6 +11,7 @@ class CleaningOpenTimeLiveCard extends StatefulWidget {
     required this.initialValue,
     this.sessionId,
     this.onChanged,
+    this.showActions = true,
     super.key,
   });
 
@@ -18,6 +19,7 @@ class CleaningOpenTimeLiveCard extends StatefulWidget {
   final CleaningOpenTimeModel initialValue;
   final int? sessionId;
   final ValueChanged<CleaningOpenTimeModel>? onChanged;
+  final bool showActions;
 
   @override
   State<CleaningOpenTimeLiveCard> createState() =>
@@ -191,7 +193,9 @@ class _CleaningOpenTimeLiveCardState extends State<CleaningOpenTimeLiveCard> {
                 isError: true,
               ),
             ],
-            if (isRunning && !requiresSessionSelection) ...[
+            if (widget.showActions &&
+                isRunning &&
+                !requiresSessionSelection) ...[
               const SizedBox(height: 16),
               Row(
                 children: [

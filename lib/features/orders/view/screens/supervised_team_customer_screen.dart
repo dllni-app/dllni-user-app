@@ -6,16 +6,20 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/utils/cleaning_date_time_ui_format.dart';
+import '../../data/models/cleaning_orders_api_models.dart';
 import '../../data/source/supervised_team_customer_api.dart';
+import '../widgets/cleaning_accepted_workers_section_widget.dart';
 
 class SupervisedTeamCustomerScreen extends StatefulWidget {
   const SupervisedTeamCustomerScreen({
     super.key,
     required this.orderId,
+    this.order,
     this.api,
   });
 
   final int orderId;
+  final CleaningOrderDetailModel? order;
   final SupervisedTeamCustomerApi? api;
 
   @override
@@ -186,6 +190,10 @@ class _SupervisedTeamCustomerScreenState
                       'نهاية الوقت المحدد: ${CleaningDateTimeUiFormat.timeFromDateTime(DateTime.parse(booking['scheduledEndAt'] as String).toLocal())}',
                     ),
                 ]),
+                if (widget.order?.acceptedWorkerAssignments.isNotEmpty == true)
+                  CleaningAcceptedWorkersSectionWidget(
+                    assignments: widget.order!.acceptedWorkerAssignments,
+                  ),
                 if (actions.contains('view_verification_code'))
                   _panel('رمز بدء الخدمة', [
                     const Text(

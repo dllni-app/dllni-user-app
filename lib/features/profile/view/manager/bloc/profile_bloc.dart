@@ -382,15 +382,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             break;
           }
         }
-        final fallbackDefault = addresses.isNotEmpty
-            ? addresses.first
-            : null;
+        final fallbackDefault = addresses.isNotEmpty ? addresses.first : null;
         emit(
           state.copyWith(
             addressesStatus: BlocStatus.success,
             addresses: addresses,
             defaultAddress: defaultAddress ?? fallbackDefault,
-
           ),
         );
       },
@@ -479,13 +476,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
               data: mapped,
               total: result.meta?.total ?? pagination.total,
               perPage: result.meta?.perPage ?? perPage,
-
             ),
-            unreadNotification: result.countUnread
+            unreadNotification: result.countUnread,
           ),
         );
         if (event.markAllReadOnSuccess) {
-          final hasUnread = (result.countUnread ?? 0) > 0 ||
+          final hasUnread =
+              (result.countUnread ?? 0) > 0 ||
               mapped.any((item) => item.isRead != true);
           if (hasUnread) {
             add(MarkAllNotificationsReadEvent(silent: true));
@@ -498,21 +495,19 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   Future<void> _markAllNotificationsRead(
     MarkAllNotificationsReadEvent event,
     Emitter<ProfileState> emit,
-  )
-  async {
+  ) async {
     if (!event.silent) {
       emit(
         state.copyWith(
           markAllNotificationsReadStatus: BlocStatus.loading,
           clearNotificationActionError: true,
-          unreadNotification: 0
+          unreadNotification: 0,
         ),
       );
     }
     final response = await markAllNotificationsReadUseCase(NoParams());
     await response.fold(
       (failure) async {
-        if (event.silent) return;
         emit(
           state.copyWith(
             clearMarkAllNotificationsReadStatus: true,
@@ -532,7 +527,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             notificationsPagination: state.notificationsPagination.copyWith(
               list: updatedNotifications,
             ),
-            unreadNotification: 0
+            unreadNotification: 0,
           ),
         );
       },

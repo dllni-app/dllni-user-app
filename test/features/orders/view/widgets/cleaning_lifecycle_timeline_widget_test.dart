@@ -53,6 +53,41 @@ void main() {
     expect(cleaningLifecycleStageIndex(CleaningBookingStatus.completed), 5);
   });
 
+  test('partial completion has no customer lifecycle action', () {
+    expect(
+      cleaningLifecyclePrimaryAction(
+        CleaningBookingStatus.partiallyCompleted,
+      ).kind,
+      CleaningLifecycleActionKind.none,
+    );
+  });
+
+  testWidgets('partial completion timeline does not imply receipt or finish', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            body: CleaningLifecycleTimelineWidget(
+              status: CleaningBookingStatus.partiallyCompleted,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const Key('cleaning_partial_completion_timeline')),
+      findsOneWidget,
+    );
+    expect(find.text('اكتمل جزء من الخدمة'), findsOneWidget);
+    expect(find.text('البحث عن العمال'), findsNothing);
+    expect(find.text('اكتمل الطلب'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('timeline renders status text on a narrow phone', (
     WidgetTester tester,
   ) async {

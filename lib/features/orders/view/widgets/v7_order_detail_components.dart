@@ -363,8 +363,7 @@ class V7OrderWorkerPanel extends StatelessWidget {
 class V7OrderPricePanel extends StatelessWidget {
   const V7OrderPricePanel({
     super.key,
-    required this.basePrice,
-    required this.travelFee,
+    required this.cleaningAndTravelPrice,
     required this.addonsTotal,
     required this.total,
     this.materialsPrice,
@@ -373,7 +372,10 @@ class V7OrderPricePanel extends StatelessWidget {
     this.totalLabel = 'الإجمالي',
     this.pendingNote = 'قد يتغير الإجمالي عند اكتمال تفاصيل الخدمة.',
   });
-  final String? basePrice, travelFee, addonsTotal, total;
+
+  /// Precomputed from numeric booking amounts before currency formatting.
+  final String? cleaningAndTravelPrice;
+  final String? addonsTotal, total;
   final String? materialsPrice, specializedPrice;
   final bool finalPrice;
   final String totalLabel, pendingNote;
@@ -385,18 +387,17 @@ class V7OrderPricePanel extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        V7OrderInfoRow(
-          label: 'قيمة الخدمة',
-          value: basePrice ?? 'لم تُحدد بعد',
-        ),
+        if (cleaningAndTravelPrice != null)
+          V7OrderInfoRow(
+            label: 'خدمة التنظيف والتنقل',
+            value: cleaningAndTravelPrice!,
+          ),
         if (materialsPrice != null)
           V7OrderInfoRow(label: 'مواد التنظيف', value: materialsPrice!),
         if (specializedPrice != null)
           V7OrderInfoRow(label: 'الخدمات المتخصصة', value: specializedPrice!),
         if (addonsTotal != null)
           V7OrderInfoRow(label: 'الإضافات', value: addonsTotal!),
-        if (travelFee != null)
-          V7OrderInfoRow(label: 'رسوم التنقل', value: travelFee!),
         const Divider(height: 24, color: AlnadhaTokens.border),
         Container(
           key: const Key('order_price_total_card'),
@@ -415,18 +416,6 @@ class V7OrderPricePanel extends StatelessWidget {
           const SizedBox(height: 7),
           Text(pendingNote, style: AlnadhaTokens.caption),
         ],
-        const SizedBox(height: 9),
-        Row(
-          children: [
-            const Icon(
-              Icons.payments_outlined,
-              size: 19,
-              color: AlnadhaTokens.primary,
-            ),
-            const SizedBox(width: 8),
-            Text('الدفع نقداً', style: AlnadhaTokens.caption),
-          ],
-        ),
       ],
     ),
   );
