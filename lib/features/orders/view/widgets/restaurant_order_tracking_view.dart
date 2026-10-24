@@ -46,7 +46,22 @@ class RestaurantOrderTrackingView extends StatelessWidget {
 
   String _money(double v) => '${v.toStringAsFixed(0)} ل.س';
 
+  bool get _isSelfPickup {
+    final type = (order.fulfillment?.type ?? '').toLowerCase().trim();
+    final receiveMode = (order.fulfillment?.receiveMode ?? '').toLowerCase().trim();
+    return type == 'pickup' || type == 'self_pickup' ||
+        receiveMode == 'pickup' || receiveMode == 'self_pickup';
+  }
+
   String _etaLabel() {
+    if (_isSelfPickup) {
+      if (_isTerminal()) return 'تم استلام الطلب';
+      final eta = tracking?.eta;
+      if (eta != null && eta.minutes > 0) return 'undefined دقيقة';
+      final scheduled = order.fulfillment?.scheduledAt;
+      if (scheduled != null && scheduled.isNotEmpty) return scheduled;
+      return 'بانتظار تقدير المطعم';
+    }
     final status =
         (deliveryOrder?.status ?? order.deliverySummary?.status ?? '')
             .toLowerCase();
@@ -149,7 +164,12 @@ class RestaurantOrderTrackingView extends StatelessWidget {
                         orderNumber: order.orderNumber ?? '—',
                       ),
                       const SizedBox(height: 12),
-                      RestaurantOrderEtaCard(etaText: _etaLabel()),
+                      RestaurantOrderEtaCard(
+                        etaText: _etaLabel(),
+                        title: _isSelfPickup
+                            ? (_isTerminal() ? 'حالة الاستلام' : 'الوقت المتوقع لتجهيز الطلب')
+                            : 'الوقت المتوقع للوصول',
+                      ),
                       if (order.deliveryOrderId != null) ...[
                         const SizedBox(height: 12),
                         OutlinedButton.icon(

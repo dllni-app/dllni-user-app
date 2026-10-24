@@ -122,6 +122,38 @@ class RestaurantOrderStatusStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final terminalStatus = (tracking?.latestToStatus ?? order.status ?? '')
+        .toLowerCase()
+        .trim();
+    // A cancelled/rejected order is terminal, not back at the "submitted" step.
+    if (terminalStatus == 'cancelled' || terminalStatus == 'rejected') {
+      final rejected = terminalStatus == 'rejected';
+      return Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xffFEF2F2),
+          border: Border.all(color: const Color(0xffFECACA)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(rejected ? Icons.block_rounded : Icons.cancel_outlined,
+                color: const Color(0xffB91C1C), size: 30),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                rejected ? 'تم رفض الطلب من المطعم' : 'تم إلغاء الطلب',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xffB91C1C),
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     final isDelivery = _isDeliveryOrder(order);
     final steps = _buildSteps(isDelivery);
     final current = _currentIndex(isDelivery).clamp(0, steps.length - 1);

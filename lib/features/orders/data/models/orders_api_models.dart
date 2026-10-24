@@ -283,9 +283,29 @@ class OrderResourceModel {
   bool get hasDeliveryTracking => deliveryOrderId != null;
 
   String? get deliveryStatusLabel {
-    final label = deliverySummary?.statusLabelAr;
-    if (label != null && label.trim().isNotEmpty) return label;
-    return null;
+    final label = deliverySummary?.statusLabelAr?.trim();
+    // Some API versions return raw status codes in statusLabelAr.
+    // Never expose English enum codes directly to Arabic-speaking customers.
+    if (label != null && label.isNotEmpty &&
+        RegExp(r'[\u0600-\u06FF]').hasMatch(label)) {
+      return label;
+    }
+    final status = (deliverySummary?.status ?? label ?? '').toLowerCase().trim();
+    return switch (status) {
+      'new' || 'pending' => 'بانتظار تجهيز الطلب',
+      'waiting_merchant_ready' => 'بانتظار تجهيز المطعم',
+      'searching_for_driver' || 'searching_driver' || 'dispatching' =>
+        'جاري البحث عن مندوب',
+      'offered' => 'تم إرسال عرض إلى مندوب',
+      'accepted' || 'driver_assigned' => 'تم تعيين مندوب',
+      'ready_for_pickup' => 'جاهز للاستلام من المطعم',
+      'in_progress' || 'on_the_way' => 'المندوب في الطريق',
+      'picked_up' || 'handover_complete' => 'تم استلام الطلب من المطعم',
+      'delivered' || 'completed' => 'تم توصيل الطلب',
+      'cancelled' || 'canceled' || 'rejected' || 'stopped' => 'ملغي',
+      'returned_to_merchant' => 'أُعيد الطلب إلى المطعم',
+      _ => label?.isNotEmpty == true ? 'قيد تحديث التوصيل' : null,
+    };
   }
 }
 

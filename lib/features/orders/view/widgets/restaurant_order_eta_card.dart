@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import 'restaurant_order_tracking_colors.dart';
 
 class RestaurantOrderEtaCard extends StatelessWidget {
-  const RestaurantOrderEtaCard({super.key, required this.etaText});
+  const RestaurantOrderEtaCard({super.key, required this.etaText, this.title = 'الوقت المتوقع للوصول'});
 
   final String etaText;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class RestaurantOrderEtaCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.labelLarge('الوقت المتوقع للوصول', color: RestaurantOrderTrackingColors.grey),
+                AppText.labelLarge(title, color: RestaurantOrderTrackingColors.grey),
                 const SizedBox(height: 6),
                 AppText.titleSmall(etaText, color: RestaurantOrderTrackingColors.primary, fontWeight: FontWeight.bold),
               ],

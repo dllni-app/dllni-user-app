@@ -578,10 +578,16 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     );
     if (!mounted || selected == null) return;
 
+    // Reverse geocoding is an external service that may be unreachable.
+    // Preserve a meaningful map-derived address with exact coordinates, even
+    // when Nominatim is offline, so delivery checkout is not blocked.
+    final fallbackAddress =
+        'موقع على الخريطة (${selected.latitude.toStringAsFixed(6)}, '
+        '${selected.longitude.toStringAsFixed(6)})';
     setState(() {
       _latitude = selected.latitude;
       _longitude = selected.longitude;
-      _addressController.clear();
+      _addressController.text = fallbackAddress;
     });
     try {
       final response = await Dio().get<Map<String, dynamic>>(
@@ -600,9 +606,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       setState(() {
         final resolved =
             response.data?['display_name']?.toString().trim() ?? '';
-        _addressController.text = resolved.length > 255
-            ? resolved.substring(0, 255)
-            : resolved;
+        // Do not overwrite text manually edited while the request was pending.
+        if (resolved.isNotEmpty && _addressController.text == fallbackAddress) {
+          _addressController.text =
+              resolved.length > 255 ? resolved.substring(0, 255) : resolved;
+        }
       });
     } catch (error) {
       if (!mounted) return;
@@ -653,6 +661,23 @@ class _AddressMapPickerScreen extends StatefulWidget {
 
 class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
   LatLng? _selected;
+  bool _mapTilesUnavailable = false;
+  int _mapTileRequestGeneration = 0;
+
+  void _showTileError() {
+    if (_mapTilesUnavailable || !mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _mapTilesUnavailable) return;
+      setState(() => _mapTilesUnavailable = true);
+    });
+  }
+
+  void _retryMapTiles() {
+    setState(() {
+      _mapTilesUnavailable = false;
+      _mapTileRequestGeneration++;
+    });
+  }
   bool _isResolvingInitialLocation = false;
 
   bool get _hasInitialCoordinates =>
@@ -690,6 +715,8 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
                     ),
                     children: [
                       TileLayer(
+                        key: ValueKey('map-tiles-$_mapTileRequestGeneration'),
+                        errorTileCallback: (_, _, _) => _showTileError(),
                         urlTemplate:
                             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.dllni.user',
@@ -717,6 +744,33 @@ class _AddressMapPickerScreenState extends State<_AddressMapPickerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_mapTilesUnavailable) ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xffFFF7ED),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.wifi_off_outlined,
+                            color: Color(0xff9A3412)),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'تعذّر تحميل صور الخريطة. تحقّق من اتصال الإنترنت؛ ما زال بالإمكان تأكيد الموقع المحدد.',
+                            style: TextStyle(color: Color(0xff9A3412)),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _retryMapTiles,
+                          child: const Text('إعادة المحاولة'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 if (selected != null)
                   Text(
                     'Lat: ${selected.latitude.toStringAsFixed(6)}  •  Lng: ${selected.longitude.toStringAsFixed(6)}',
