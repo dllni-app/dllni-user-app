@@ -8,6 +8,7 @@ import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/themes/v7_artwork.dart';
 import '../../data/models/orders_api_models.dart';
 import '../../data/models/merchant_order_status_label_ar.dart';
+import '../../data/models/delivery_status_label_ar.dart';
 
 enum MerchantOrderKind { restaurant, supermarket }
 
@@ -127,7 +128,10 @@ class MerchantOrderSummaryCard extends StatelessWidget {
       0,
       (sum, item) => sum + (item.quantity > 0 ? item.quantity : 1),
     );
-    final canTrack = onTrack != null && _isDelivery;
+    // A delivery-mode order may still lack a linked delivery order.
+    // Do not navigate with the supermarket order ID as a delivery ID.
+    final canTrack =
+        onTrack != null && _isDelivery && order.deliveryOrderId != null;
 
     return Material(
       color: Colors.transparent,
@@ -332,9 +336,10 @@ class MerchantOrderSummaryCard extends StatelessWidget {
                               child: _BottomInfo(
                                 icon: FontAwesomeIcons.motorcycle,
                                 title: 'التوصيل',
-                                value:
-                                    order.deliveryStatusLabel ??
-                                    'متابعة حالة التوصيل',
+                                value: deliveryStatusLabelAr(
+                                  order.deliverySummary?.status,
+                                  fallback: order.deliveryStatusLabel,
+                                ),
                               ),
                             ),
                           ],

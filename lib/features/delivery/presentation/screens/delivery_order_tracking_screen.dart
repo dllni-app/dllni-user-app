@@ -68,8 +68,7 @@ class _DeliveryOrderTrackingScreenState
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) =>
-          getIt<DeliveryTrackingCubit>()..load(widget.args.orderId),
+      create: (_) => getIt<DeliveryTrackingCubit>()..load(widget.args.orderId),
       child: Directionality(
         textDirection: ui.TextDirection.rtl,
         child: Scaffold(
@@ -131,6 +130,11 @@ class _DeliveryOrderTrackingScreenState
 
                 final tracking = order.tracking;
                 final status = tracking?.currentStatus ?? order.status;
+                final deliveryStopped = const <String>{
+                  'stopped',
+                  'rejected',
+                  'cancelled',
+                }.contains((status ?? '').toLowerCase());
                 final rawStages = tracking?.stages.isNotEmpty == true
                     ? tracking!.stages
                     : tracking?.timeline ?? order.timeline;
@@ -170,7 +174,9 @@ class _DeliveryOrderTrackingScreenState
                             _StatusHeader(
                               orderNumber: order.orderNumber ?? '—',
                               statusLabel: order.displayStatusLabel,
-                              etaLabel: order.etaLabel,
+                              etaLabel: deliveryStopped
+                                  ? 'خدمة التوصيل متوقفة لهذا الطلب'
+                                  : order.etaLabel,
                               status: status,
                               stopReason: order.stopReason,
                               fee: order.deliveryFee,
@@ -182,10 +188,23 @@ class _DeliveryOrderTrackingScreenState
                                 ? const _TrackingMapUnavailableCard()
                                 : DeliveryTrackingMap(map: map),
                             const SizedBox(height: 14),
-                            DeliveryStatusStepper(
-                              stages: stages,
-                              stopReason: order.stopReason,
-                            ),
+                            if (deliveryStopped)
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF7ED),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Text(
+                                  'لم تكتمل مراحل التوصيل. هذه حالة طلب المندوب فقط، ويمكن متابعة حالة تجهيز طلب المتجر من صفحة طلباتي.',
+                                  textAlign: TextAlign.center,
+                                ),
+                              )
+                            else
+                              DeliveryStatusStepper(
+                                stages: stages,
+                                stopReason: order.stopReason,
+                              ),
                             if (driver != null) ...[
                               const SizedBox(height: 14),
                               DeliveryDriverCard(driver: driver),
@@ -194,9 +213,11 @@ class _DeliveryOrderTrackingScreenState
                                 tracking?.dropoff != null) ...[
                               const SizedBox(height: 14),
                               _AddressCard(
-                                pickup: tracking?.pickup?.address ??
+                                pickup:
+                                    tracking?.pickup?.address ??
                                     order.pickupAddress,
-                                dropoff: tracking?.dropoff?.address ??
+                                dropoff:
+                                    tracking?.dropoff?.address ??
                                     order.dropoffAddress,
                               ),
                             ],
@@ -223,8 +244,12 @@ class _DeliveryOrderTrackingScreenState
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: const Color(0xffDC2626),
-                                  side: const BorderSide(color: Color(0xffDC2626)),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  side: const BorderSide(
+                                    color: Color(0xffDC2626),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                 ),
                                 icon: const Icon(Icons.sos_outlined),
                                 label: const Text(
@@ -395,7 +420,8 @@ class _StatusHeader extends StatelessWidget {
       'cancelled' => 'تم إلغاء طلب التوصيل',
       'rejected' => 'تعذر قبول طلب التوصيل',
       'stopped' => deliveryTrackingStatusLabelAr(
-        status, stopReason: stopReason,
+        status,
+        stopReason: stopReason,
       ),
       _ => 'جاري تحديث حالة التوصيل',
     };
@@ -481,7 +507,10 @@ class _AddressCard extends StatelessWidget {
               children: [
                 Icon(Icons.store_rounded, size: 18, color: Color(0xffF59E0B)),
                 SizedBox(width: 8),
-                Text('نقطة الاستلام', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  'نقطة الاستلام',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -493,7 +522,10 @@ class _AddressCard extends StatelessWidget {
               children: [
                 Icon(Icons.home_rounded, size: 18, color: Color(0xFF1E2A78)),
                 SizedBox(width: 8),
-                Text('نقطة التسليم', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  'نقطة التسليم',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -517,7 +549,9 @@ class _EventsCard extends StatelessWidget {
       backgroundColor: Colors.white,
       collapsedBackgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      collapsedShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       title: const Text(
         'سجل التحديثات',
         style: TextStyle(fontWeight: FontWeight.w700),
@@ -580,11 +614,7 @@ class _EventsCard extends StatelessWidget {
 }
 
 class _FeeCard extends StatelessWidget {
-  const _FeeCard({
-    required this.fee,
-    required this.currency,
-    this.distanceKm,
-  });
+  const _FeeCard({required this.fee, required this.currency, this.distanceKm});
 
   final double fee;
   final String currency;
