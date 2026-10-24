@@ -41,6 +41,6 @@ class AppConfig {
   /// builds can override this with --dart-define or use their branch default.
   static const String deepLinkCanonicalHost = String.fromEnvironment(
     'DEEP_LINK_CANONICAL_HOST',
-    defaultValue: 'dllni.mustafafares.com',
+    defaultValue: 'alnadha.net',
   );
 }

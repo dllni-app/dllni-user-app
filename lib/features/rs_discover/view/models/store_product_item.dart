@@ -1,3 +1,5 @@
+import '../../../../core/pricing/restaurant_discount_label.dart';
+
 class StoreProductItem {
   StoreProductItem({
     this.id,
@@ -15,21 +17,27 @@ class StoreProductItem {
     this.cartItemId,
     this.imageUrl,
     this.restaurantName,
-    this.offerName,
+    String? offerName,
     String? offerBadgeText,
     String? offerUrgencyTag,
-    this.offerDiscountType,
-    this.offerDiscountValue,
+    String? offerDiscountType,
+    num? offerDiscountValue,
     bool? isOfferActive,
     this.isFavorited = false,
   }) : displayPriceValue = displayPriceValue,
        oldPriceValue = oldPriceValue,
        offer = offer ?? _fallbackOfferLabel(displayPriceValue, oldPriceValue),
-       offerBadgeText = offerBadgeText ??
+       offerName = offerName,
+       offerBadgeText =
+           offerBadgeText ??
            _fallbackOfferLabel(displayPriceValue, oldPriceValue),
-       offerUrgencyTag = offerUrgencyTag ??
+       offerUrgencyTag =
+           offerUrgencyTag ??
            _fallbackOfferUrgency(displayPriceValue, oldPriceValue),
-       isOfferActive = isOfferActive ??
+       offerDiscountType = offerDiscountType,
+       offerDiscountValue = offerDiscountValue,
+       isOfferActive =
+           isOfferActive ??
            _hasDiscountedPrice(displayPriceValue, oldPriceValue);
 
   final int? id;
@@ -63,6 +71,24 @@ class StoreProductItem {
         value > 0 &&
         (type == 'percentage' || type == 'fixed_amount');
   }
+
+  bool get offerIsEffective => RestaurantDiscountLabel.offerApplies(
+    original: resolvedOldPriceValue,
+    payable: resolvedDisplayPriceValue,
+    type: offerDiscountType,
+    value: offerDiscountValue,
+    isActive: isOfferActive == true,
+  );
+
+  /// Use the actual price saving, not a less generous un-applied offer.
+  String? get displayedSavingsBadge =>
+      RestaurantDiscountLabel.savingsBadge(
+        resolvedOldPriceValue,
+        resolvedDisplayPriceValue,
+      ) ??
+      (offerIsEffective ? offerBadgeText : null);
+
+  String? get applicableOfferTitle => offerIsEffective ? offerUrgencyTag : null;
 
   bool get _hasServerDiscount {
     final display = displayPriceValue;

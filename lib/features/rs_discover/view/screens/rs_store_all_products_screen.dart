@@ -219,10 +219,10 @@ class _AllProductsCardState extends State<_AllProductsCard> {
       price: product.displayPriceValue.formatMoney(),
 
       offer: FetchRestaurantProductsSearchModelActiveOffer(
-        badgeText: product.offerBadgeText,
-        discountType: product.offerDiscountType,
-        discountValue: product.offerDiscountValue,
-        title: product.offerUrgencyTag,
+        badgeText: product.displayedSavingsBadge,
+        discountType: product.offerIsEffective ? product.offerDiscountType : null,
+        discountValue: product.offerIsEffective ? product.offerDiscountValue : null,
+        title: product.applicableOfferTitle,
       ),
       onTap: () => context.pushRoute(
         '/rs_product',
