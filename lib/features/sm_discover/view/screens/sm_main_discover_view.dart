@@ -139,12 +139,11 @@ class _SmMainDiscoverViewState extends State<SmMainDiscoverView> {
                       child: Row(
                         children: [
                           AppText(
-                            'ترتيب حسب: ' +
-                                (_selectedSort == 'alphabet'
+                            'ترتيب حسب: ${_selectedSort == 'alphabet'
                                     ? 'الترتيب الأبجدي'
                                     : _selectedSort == 'rating'
                                     ? 'الأعلى تقييماً'
-                                    : 'الأقرب إلي'),
+                                    : 'الأقرب إلي'}',
                             style: const TextStyle(
                               color: SharedPlatformColors.supermarket,
                               fontSize: 14,

@@ -74,8 +74,8 @@ class _SmOffersScreenState extends State<SmOffersScreen> {
                       final offer = offers[index];
                       final storeId = offer.store?.id;
                       final discount = offer.discountPercent != null
-                          ? offer.discountPercent.toString() + '%'
-                          : (offer.discountValue?.toString() ?? '') + ' ل.س';
+                          ? '${offer.discountPercent}%'
+                          : '${offer.discountValue?.toString() ?? ''} ل.س';
                       return Card(
                         clipBehavior: Clip.antiAlias,
                         child: ListTile(
@@ -93,7 +93,7 @@ class _SmOffersScreenState extends State<SmOffersScreen> {
                           ),
                           title: Text(offer.name ?? 'عرض'),
                           subtitle: Text(
-                            (offer.description ?? '') + '\nخصم ' + discount,
+                            '${offer.description ?? ''}\nخصم $discount',
                           ),
                           isThreeLine: true,
                           trailing: const Icon(Icons.chevron_left),

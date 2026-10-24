@@ -26,7 +26,7 @@ class ShimmerWidget extends StatelessWidget {
     return Padding(
       padding: padding,
       child: Shimmer.fromColors(
-        baseColor:context.primary.withOpacity(.5),
+        baseColor:context.primary.withValues(alpha: .5),
         highlightColor: context.primary,
         child: Container(
           width: width,

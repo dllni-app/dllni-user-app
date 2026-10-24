@@ -138,7 +138,7 @@ class OrderDetailsCard extends StatelessWidget {
 }
 
 class _ProductRow extends StatelessWidget {
-  const _ProductRow({super.key});
+  const _ProductRow();
 
   @override
   Widget build(BuildContext context) {

@@ -347,7 +347,7 @@ class _FlutterCubeTransitionState extends State<FlutterCubeTransition>
       transform: Matrix4.identity()
         ..setEntry(3, 2, _perspectiveValue) // Apply perspective
         ..rotateY(totalRotationY)
-        ..translate(0.0, 0.0, -_halfSize), // Move face outward
+        ..translateByDouble(0.0, 0.0, -_halfSize, 1.0), // Move face outward
       child: Opacity(opacity: opacity, child: _buildFaceContainer(data)),
     );
   }

@@ -1,14 +1,12 @@
 import 'dart:convert';
 
-BrowseProductsModelDataItem browseProductsModelDataItemFromJson(str) =>
+BrowseProductsModelDataItem browseProductsModelDataItemFromJson(dynamic str) =>
     BrowseProductsModelDataItem.fromJson(str);
 
-BrowseProductsModelDataItemImage browseProductsModelDataItemImageFromJson(
-  str,
-) => BrowseProductsModelDataItemImage.fromJson(str);
+BrowseProductsModelDataItemImage browseProductsModelDataItemImageFromJson(dynamic str,) => BrowseProductsModelDataItemImage.fromJson(str);
 
 BrowseProductsModelDataItemImagesItem
-browseProductsModelDataItemImagesItemFromJson(str) =>
+browseProductsModelDataItemImagesItemFromJson(dynamic str) =>
     BrowseProductsModelDataItemImagesItem.fromJson(str);
 
 String browseProductsModelDataItemImagesItemToJson(
@@ -19,9 +17,7 @@ String browseProductsModelDataItemImageToJson(
   BrowseProductsModelDataItemImage data,
 ) => json.encode(data.toJson());
 
-BrowseProductsModelDataItemStore browseProductsModelDataItemStoreFromJson(
-  str,
-) => BrowseProductsModelDataItemStore.fromJson(str);
+BrowseProductsModelDataItemStore browseProductsModelDataItemStoreFromJson(dynamic str,) => BrowseProductsModelDataItemStore.fromJson(str);
 
 String browseProductsModelDataItemStoreToJson(
   BrowseProductsModelDataItemStore data,
@@ -30,21 +26,19 @@ String browseProductsModelDataItemStoreToJson(
 String browseProductsModelDataItemToJson(BrowseProductsModelDataItem data) =>
     json.encode(data.toJson());
 
-BrowseProductsModel browseProductsModelFromJson(str) =>
+BrowseProductsModel browseProductsModelFromJson(dynamic str) =>
     BrowseProductsModel.fromJson(str);
 
-BrowseProductsModelLinks browseProductsModelLinksFromJson(str) =>
+BrowseProductsModelLinks browseProductsModelLinksFromJson(dynamic str) =>
     BrowseProductsModelLinks.fromJson(str);
 
 String browseProductsModelLinksToJson(BrowseProductsModelLinks data) =>
     json.encode(data.toJson());
 
-BrowseProductsModelMeta browseProductsModelMetaFromJson(str) =>
+BrowseProductsModelMeta browseProductsModelMetaFromJson(dynamic str) =>
     BrowseProductsModelMeta.fromJson(str);
 
-BrowseProductsModelMetaLinksItem browseProductsModelMetaLinksItemFromJson(
-  str,
-) => BrowseProductsModelMetaLinksItem.fromJson(str);
+BrowseProductsModelMetaLinksItem browseProductsModelMetaLinksItemFromJson(dynamic str,) => BrowseProductsModelMetaLinksItem.fromJson(str);
 
 String browseProductsModelMetaLinksItemToJson(
   BrowseProductsModelMetaLinksItem data,
@@ -71,13 +65,6 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
 dynamic _asDynamic(dynamic value) {
   if (value == null) return null;
@@ -112,12 +99,6 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 String? _asString(dynamic value) {
   if (value == null) return null;

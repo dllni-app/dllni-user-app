@@ -261,7 +261,7 @@ class _MultiDayCleaningOrderDetailsScreenState
       hint: 'سبب الإلغاء',
       confirmLabel: 'إلغاء اليوم',
     );
-    if (reason == null) return;
+    if (!mounted || reason == null) return;
 
     final approved = await _confirmDialog(
       title: widget.recurring
@@ -294,7 +294,7 @@ class _MultiDayCleaningOrderDetailsScreenState
       hint: 'سبب تخطي الزيارة',
       confirmLabel: 'متابعة',
     );
-    if (reason == null) return;
+    if (!mounted || reason == null) return;
 
     final approved = await _confirmDialog(
       title: 'تأكيد تخطي الزيارة ${session.sequence}',
@@ -323,7 +323,7 @@ class _MultiDayCleaningOrderDetailsScreenState
       hint: 'سبب الإيقاف المؤقت',
       confirmLabel: 'متابعة',
     );
-    if (reason == null) return;
+    if (!mounted || reason == null) return;
 
     final today = DateUtils.dateOnly(DateTime.now());
     final range = await showDateRangePicker(
@@ -923,9 +923,7 @@ class _MultiDayCleaningOrderDetailsScreenState
               V7OrderInfoRow(
                 label: 'الجلسات المكتملة',
                 value:
-                    schedule.completedDaysCount.toString() +
-                    ' من ' +
-                    schedule.daysCount.toString(),
+                    '${schedule.completedDaysCount} من ${schedule.daysCount}',
               ),
               if (schedule.skippedDaysCount > 0)
                 V7OrderInfoRow(
@@ -934,7 +932,7 @@ class _MultiDayCleaningOrderDetailsScreenState
                 ),
               V7OrderInfoRow(
                 label: 'إجمالي الساعات',
-                value: _hours(schedule.totalHours) + ' ساعة',
+                value: '${_hours(schedule.totalHours)} ساعة',
               ),
               if (next != null)
                 V7OrderInfoRow(
@@ -945,9 +943,7 @@ class _MultiDayCleaningOrderDetailsScreenState
                 V7OrderInfoRow(
                   label: 'التكلفة الإجمالية',
                   value:
-                      _money(_envelope!.totalPrice!) +
-                      ' ' +
-                      (_envelope?.currency ?? ''),
+                      '${_money(_envelope!.totalPrice!)} ${_envelope?.currency ?? ''}',
                   emphasized: true,
                 ),
             ],
@@ -1143,10 +1139,10 @@ class _MultiDayCleaningOrderDetailsScreenState
         session.id != null && session.id == widget.initialSessionId;
     final busy = _busySessionId == session.id;
     final title = session.isOpenTime
-        ? 'الجلسة ' + session.sequence.toString()
+        ? 'الجلسة ${session.sequence}'
         : widget.recurring
-        ? 'الزيارة ' + session.sequence.toString()
-        : 'اليوم ' + session.sequence.toString();
+        ? 'الزيارة ${session.sequence}'
+        : 'اليوم ${session.sequence}';
 
     return V7OrderPanel(
       title: title,
@@ -1184,7 +1180,7 @@ class _MultiDayCleaningOrderDetailsScreenState
           ],
           V7OrderInfoRow(
             label: 'المدة',
-            value: _hours(session.hours) + ' ساعة',
+            value: '${_hours(session.hours)} ساعة',
           ),
           if (names.isNotEmpty)
             V7OrderInfoRow(label: 'مقدم الخدمة', value: names.join('، ')),
@@ -1192,17 +1188,13 @@ class _MultiDayCleaningOrderDetailsScreenState
             V7OrderInfoRow(
               label: 'تكلفة الجلسة',
               value:
-                  _money(session.pricing!.totalPrice!) +
-                  ' ' +
-                  (session.pricing?.currency ?? _envelope?.currency ?? ''),
+                  '${_money(session.pricing!.totalPrice!)} ${session.pricing?.currency ?? _envelope?.currency ?? ''}',
               emphasized: true,
             ),
           if (session.openTime != null && session.id != null) ...[
             const SizedBox(height: 12),
             CleaningOpenTimeLiveCard(
-              key: ValueKey<String>(
-                'open-time-session-' + session.id.toString(),
-              ),
+              key: ValueKey<String>('open-time-session-${session.id}'),
               orderId: widget.orderId,
               sessionId: session.id,
               initialValue: session.openTime!,
@@ -1231,9 +1223,7 @@ class _MultiDayCleaningOrderDetailsScreenState
             V7OrderInfoRow(
               label: 'رسوم إلغاء الجلسة',
               value:
-                  _money(cancellationFee) +
-                  ' ' +
-                  (session.pricing?.currency ?? _envelope?.currency ?? ''),
+                  '${_money(cancellationFee)} ${session.pricing?.currency ?? _envelope?.currency ?? ''}',
             ),
           if (session.isCancelled &&
               session.cancellationReason?.trim().isNotEmpty == true)

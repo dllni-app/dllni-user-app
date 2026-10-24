@@ -57,7 +57,7 @@ class SupermarketProductCustomizationSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      requiredGroup ? name + ' *' : name,
+                      requiredGroup ? '$name *' : name,
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     ...modifiers.map((rawModifier) {
@@ -83,7 +83,7 @@ class SupermarketProductCustomizationSection extends StatelessWidget {
                         value: isSelected,
                         title: Text(modifier['name']?.toString() ?? ''),
                         subtitle: price > 0
-                            ? Text('+' + price.toStringAsFixed(0) + ' ل.س')
+                            ? Text('+${price.toStringAsFixed(0)} ل.س')
                             : null,
                         onChanged: cannotDeselect || (!isSelected && atMax)
                             ? null
@@ -117,7 +117,7 @@ class SupermarketProductCustomizationSection extends StatelessWidget {
           if (alternatives.isNotEmpty) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<int?>(
-              value: substituteProductId,
+              initialValue: substituteProductId,
               decoration: const InputDecoration(
                 labelText: 'بديل في حال عدم التوفر (اختياري)',
                 border: OutlineInputBorder(),

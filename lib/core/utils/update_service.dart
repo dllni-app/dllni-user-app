@@ -186,26 +186,4 @@ class UpdateService {
     return false;
   }
 
-  static String _mapErrorMessage(Object error) {
-    if (error is String && error.trim().isNotEmpty) {
-      return error.trim();
-    }
-
-    final message = error.toString().trim();
-    if (message.isNotEmpty && !message.startsWith('Exception:')) {
-      return message;
-    }
-
-    if (message.startsWith('Exception:')) {
-      final cleaned = message.replaceFirst('Exception:', '').trim();
-      if (cleaned.isNotEmpty) {
-        return cleaned;
-      }
-    }
-
-    return Platform.isAndroid
-        ? 'تعذر التحقق من التحديثات. يرجى تثبيت التطبيق من Google Play.'
-        : 'تعذر التحقق من التحديثات. يرجى تثبيت التطبيق من App Store.';
-  }
-
 }

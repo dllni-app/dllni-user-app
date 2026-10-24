@@ -139,10 +139,6 @@ class _StoreProductCardState extends State<StoreProductCard> {
   Widget build(BuildContext context) {
     final safeImage = (product.imageUrl ?? '').trim();
     final safeRestaurant = restaurantName.trim().isNotEmpty ? restaurantName.trim() : 'مطعم';
-    final safeOffer = ((product.offerBadgeText ?? product.offer ?? '').trim()).isNotEmpty
-        ? (product.offerBadgeText ?? product.offer ?? '').trim()
-        : 'عرض';
-
     return RsAppProductCard(
       image: safeImage,
       productId: product.id!,
@@ -150,10 +146,10 @@ class _StoreProductCardState extends State<StoreProductCard> {
       restaurant: safeRestaurant,
       price: product.displayPriceValue.formatMoney(),
       offer: FetchRestaurantProductsSearchModelActiveOffer(
-        badgeText: product.offerBadgeText,
-        discountType: product.offerDiscountType,
-        discountValue: product.offerDiscountValue,
-        title: product.offerUrgencyTag,
+        badgeText: product.displayedSavingsBadge,
+        discountType: product.offerIsEffective ? product.offerDiscountType : null,
+        discountValue: product.offerIsEffective ? product.offerDiscountValue : null,
+        title: product.applicableOfferTitle,
       ),
       onTap: () => context.pushRoute(
         '/rs_product',

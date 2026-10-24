@@ -7,6 +7,7 @@ import 'package:dllni_user_app/core/cart/cart_products_count_cubit.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/pricing/restaurant_discount_label.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:toastification/toastification.dart';
@@ -125,12 +126,20 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
           final description = _description(details);
           final displayPrice = _displayPrice(details);
           final oldPrice = _oldPrice(details);
-          final previewOfferTitle =
-              (widget.params.product.offerName ?? '').trim();
+          final offerIsEffective = widget.params.product.hasVisibleOfferDetails;
+          final previewOfferTitle = offerIsEffective
+              ? (widget.params.product.offerName ?? '').trim()
+              : 'السعر المخفّض للوجبة';
           final previewOfferBadge =
-              (widget.params.product.offerBadgeText ?? '').trim();
+              RestaurantDiscountLabel.savingsBadge(oldPrice, displayPrice) ??
+              (offerIsEffective
+                  ? (widget.params.product.offerBadgeText ?? '').trim()
+                  : '');
           final showPreviewOffer =
-              widget.params.product.hasVisibleOfferDetails;
+              offerIsEffective ||
+              (oldPrice != null &&
+                  displayPrice != null &&
+                  displayPrice < oldPrice);
           final modifierGroups =
               details?.modifierGroups ??
               const <RestaurantProductDetailsModifierGroup>[];
@@ -335,7 +344,9 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                           ),
                           SizedBox(height: 6),
                           AppText(
-                            details?.product?.restaurant?.name?.trim().isNotEmpty ==
+                            details?.product?.restaurant?.name
+                                        ?.trim()
+                                        .isNotEmpty ==
                                     true
                                 ? details!.product!.restaurant!.name!.trim()
                                 : _restaurantName,
@@ -369,14 +380,12 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: SharedPlatformColors.restaurant.withValues(
-                                  alpha: .08,
-                                ),
+                                color: SharedPlatformColors.restaurant
+                                    .withValues(alpha: .08),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: SharedPlatformColors.restaurant.withValues(
-                                    alpha: .2,
-                                  ),
+                                  color: SharedPlatformColors.restaurant
+                                      .withValues(alpha: .2),
                                 ),
                               ),
                               child: Row(
@@ -410,7 +419,9 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: SharedPlatformColors.restaurant,
-                                        borderRadius: BorderRadius.circular(999),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
                                       ),
                                       child: AppText(
                                         previewOfferBadge,
@@ -925,7 +936,9 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
         ...source.where((item) => item.restaurant?.id != restaurantId),
         ...source.where((item) => item.restaurant?.id == restaurantId),
       ];
-      final sameRestaurantIds = _sameRestaurantProducts.map((e) => e.id).toSet();
+      final sameRestaurantIds = _sameRestaurantProducts
+          .map((e) => e.id)
+          .toSet();
       final seenIds = <int>{
         widget.params.product.productId,
         ...sameRestaurantIds,
@@ -960,11 +973,7 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
   }
 
   String? _restaurantDetailsProductImage(RestaurantDetailsProduct product) {
-    final candidates = [
-      product.primaryImage,
-      product.imageUrl,
-      product.image,
-    ];
+    final candidates = [product.primaryImage, product.imageUrl, product.image];
     for (final candidate in candidates) {
       final value = candidate?.trim() ?? '';
       if (value.isNotEmpty) return value;
@@ -1086,13 +1095,6 @@ class _RsProductDetailsScreenState extends State<RsProductDetailsScreen> {
         );
       },
     );
-  }
-
-  String _priceText(num? value) {
-    if (value == null) return '-';
-    final clean = value % 1 == 0 ? value.toInt().toString() : value.toString();
-    final currency = (widget.params.product.currency ?? '').trim();
-    return currency.isEmpty ? clean : '$clean $currency';
   }
 
   void _removeSavedNote(int index) {

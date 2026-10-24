@@ -24,7 +24,6 @@ import '../../../domain/usecases/update_store_cart_item_quantity_use_case.dart';
 import 'dart:async';
 import '../../../domain/usecases/fetch_supermarket_cart_use_case.dart';
 import '../../../data/models/fetch_supermarket_cart_model.dart';
-import 'package:common_package/helpers/pagination_helper.dart';
 import '../../../domain/usecases/remove_supermarket_cart_use_case.dart';
 import '../../../data/models/remove_supermarket_cart_model.dart';
 import '../../../domain/usecases/get_single_supermarket_cart_use_case.dart';

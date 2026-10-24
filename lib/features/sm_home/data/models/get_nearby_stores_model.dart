@@ -17,13 +17,6 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
 num? _asNum(dynamic value) {
   if (value == null) return null;
@@ -47,10 +40,6 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-List<dynamic>? _asDynamicList(dynamic value) {
-  if (value is! List) return null;
-  return value.map(_asDynamic).toList();
-}
 
 dynamic _asDynamic(dynamic value) {
   if (value == null) return null;
@@ -70,13 +59,13 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-GetNearbyStoresModel getNearbyStoresModelFromJson(str) =>
+GetNearbyStoresModel getNearbyStoresModelFromJson(dynamic str) =>
     GetNearbyStoresModel.fromJson(str);
 
 String getNearbyStoresModelToJson(GetNearbyStoresModel data) =>
     json.encode(data.toJson());
 
-GetNearbyStoresModelStoresItem getNearbyStoresModelStoresItemFromJson(str) =>
+GetNearbyStoresModelStoresItem getNearbyStoresModelStoresItemFromJson(dynamic str) =>
     GetNearbyStoresModelStoresItem.fromJson(str);
 
 String getNearbyStoresModelStoresItemToJson(

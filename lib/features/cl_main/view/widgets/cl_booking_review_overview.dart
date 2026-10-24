@@ -17,6 +17,7 @@ class ClBookingReviewOverview extends StatelessWidget {
     required this.services,
     this.recurring = false,
     this.roomSizeBreakdown,
+    this.roomNamesByCode = const <String, String>{},
     this.roomCleaningModes = const <String, String>{},
   });
 
@@ -29,7 +30,24 @@ class ClBookingReviewOverview extends StatelessWidget {
   final List<String> services;
   final bool recurring;
   final CleaningRoomSizeBreakdown? roomSizeBreakdown;
+  final Map<String, String> roomNamesByCode;
   final Map<String, String> roomCleaningModes;
+
+  static const _legacyRoomLabels = <String, String>{
+    'bedroom': 'غرف النوم',
+    'bathroom': 'الحمامات',
+    'kitchen': 'المطابخ',
+    'living_room': 'الصالات',
+    'balcony': 'الشرفات',
+    'corridor': 'الممرات',
+    'shed': 'المستودعات',
+  };
+
+  String _roomLabel(String code) {
+    final captured = roomNamesByCode[code]?.trim();
+    if (captured != null && captured.isNotEmpty) return captured;
+    return _legacyRoomLabels[code] ?? code.replaceAll('_', ' ');
+  }
 
   int get _deepRoomCount =>
       roomCleaningModes.values.where((value) => value == 'deep').length;
@@ -58,15 +76,7 @@ class ClBookingReviewOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rooms = roomSizeBreakdown == null
-        ? 0
-        : roomSizeBreakdown!.bedroom.total +
-              roomSizeBreakdown!.bathroom.total +
-              roomSizeBreakdown!.kitchen.total +
-              roomSizeBreakdown!.livingRoom.total +
-              roomSizeBreakdown!.balcony.total +
-              roomSizeBreakdown!.corridor.total +
-              roomSizeBreakdown!.shed.total;
+    final rooms = roomSizeBreakdown?.totalUnits ?? 0;
     return ClServiceSectionCardWidget(
       title: 'راجع تفاصيل الحجز',
       step: 0,
@@ -86,19 +96,14 @@ class ClBookingReviewOverview extends StatelessWidget {
               label: 'المكان',
               value: '$rooms غرف ومساحات',
             ),
-            for (final entry in <(String, int)>[
-              ('غرف النوم', roomSizeBreakdown?.bedroom.total ?? 0),
-              ('الحمامات', roomSizeBreakdown?.bathroom.total ?? 0),
-              ('المطابخ', roomSizeBreakdown?.kitchen.total ?? 0),
-              ('الصالات', roomSizeBreakdown?.livingRoom.total ?? 0),
-              ('الشرفات', roomSizeBreakdown?.balcony.total ?? 0),
-              ('الممرات', roomSizeBreakdown?.corridor.total ?? 0),
-              ('المستودعات', roomSizeBreakdown?.shed.total ?? 0),
-            ])
-              if (entry.$2 > 0)
+            for (final roomType in roomSizeBreakdown!.roomTypes)
+              if (roomSizeBreakdown!.bucketFor(roomType).total > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 5),
-                  child: Text(entry.$1 + ': ' + entry.$2.toString()),
+                  child: Text(
+                    '${_roomLabel(roomType.apiKey)}: '
+                    '${roomSizeBreakdown!.bucketFor(roomType).total}',
+                  ),
                 ),
           ],
           if (roomCleaningModes.isNotEmpty) ...[

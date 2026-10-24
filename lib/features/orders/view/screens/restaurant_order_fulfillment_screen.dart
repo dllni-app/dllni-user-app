@@ -777,15 +777,7 @@ class _ReceiveScheduleCard extends StatelessWidget {
     final parsed = DateTime.tryParse(scheduledAt ?? '');
     final label = parsed == null
         ? 'اختر التاريخ والوقت'
-        : parsed.year.toString() +
-              '/' +
-              parsed.month.toString().padLeft(2, '0') +
-              '/' +
-              parsed.day.toString().padLeft(2, '0') +
-              '  ' +
-              parsed.hour.toString().padLeft(2, '0') +
-              ':' +
-              parsed.minute.toString().padLeft(2, '0');
+        : '${parsed.year}/${parsed.month.toString().padLeft(2, '0')}/${parsed.day.toString().padLeft(2, '0')}  ${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}';
 
     return Container(
       padding: const EdgeInsets.all(12),

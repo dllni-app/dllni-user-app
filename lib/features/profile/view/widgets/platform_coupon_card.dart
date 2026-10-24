@@ -11,19 +11,14 @@ class PlatformCouponCard extends StatelessWidget {
 
   String _amount(double? value) {
     if (value == null) return 'غير محدد';
-    return (value % 1 == 0
+    return '${value % 1 == 0
             ? value.toStringAsFixed(0)
-            : value.toStringAsFixed(2)) +
-        ' ل.س';
+            : value.toStringAsFixed(2)} ل.س';
   }
 
   String _date(DateTime? value) {
     if (value == null) return 'دون تاريخ انتهاء';
-    return value.day.toString().padLeft(2, '0') +
-        '/' +
-        value.month.toString().padLeft(2, '0') +
-        '/' +
-        value.year.toString();
+    return '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
   }
 
   Color get _soft => switch (coupon.section) {
@@ -42,10 +37,9 @@ class PlatformCouponCard extends StatelessWidget {
     final value = coupon.discountValue;
     if (value == null) return 'قيمة الخصم غير محددة';
     if (coupon.discountType == 'percentage') {
-      return (value % 1 == 0
+      return '${value % 1 == 0
               ? value.toStringAsFixed(0)
-              : value.toStringAsFixed(1)) +
-          '%';
+              : value.toStringAsFixed(1)}%';
     }
     return _amount(value);
   }

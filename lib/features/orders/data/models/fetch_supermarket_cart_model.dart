@@ -25,12 +25,6 @@ double? _asDouble(dynamic value) {
   return null;
 }
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -70,22 +64,20 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-FetchSupermarketCartModel fetchSupermarketCartModelFromJson(str) =>
+FetchSupermarketCartModel fetchSupermarketCartModelFromJson(dynamic str) =>
     FetchSupermarketCartModel.fromJson(str);
 
 String fetchSupermarketCartModelToJson(FetchSupermarketCartModel data) =>
     json.encode(data.toJson());
 
-FetchSupermarketCartModelDataItem fetchSupermarketCartModelDataItemFromJson(
-  str,
-) => FetchSupermarketCartModelDataItem.fromJson(str);
+FetchSupermarketCartModelDataItem fetchSupermarketCartModelDataItemFromJson(dynamic str,) => FetchSupermarketCartModelDataItem.fromJson(str);
 
 String fetchSupermarketCartModelDataItemToJson(
   FetchSupermarketCartModelDataItem data,
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemAmounts
-fetchSupermarketCartModelDataItemAmountsFromJson(str) =>
+fetchSupermarketCartModelDataItemAmountsFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemAmounts.fromJson(str);
 
 String fetchSupermarketCartModelDataItemAmountsToJson(
@@ -93,7 +85,7 @@ String fetchSupermarketCartModelDataItemAmountsToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemItemsItem
-fetchSupermarketCartModelDataItemItemsItemFromJson(str) =>
+fetchSupermarketCartModelDataItemItemsItemFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemItemsItem.fromJson(str);
 
 String fetchSupermarketCartModelDataItemItemsItemToJson(
@@ -101,7 +93,7 @@ String fetchSupermarketCartModelDataItemItemsItemToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemItemsItemProduct
-fetchSupermarketCartModelDataItemItemsItemProductFromJson(str) =>
+fetchSupermarketCartModelDataItemItemsItemProductFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemItemsItemProduct.fromJson(str);
 
 String fetchSupermarketCartModelDataItemItemsItemProductToJson(
@@ -109,7 +101,7 @@ String fetchSupermarketCartModelDataItemItemsItemProductToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemItemsItemProductStore
-fetchSupermarketCartModelDataItemItemsItemProductStoreFromJson(str) =>
+fetchSupermarketCartModelDataItemItemsItemProductStoreFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemItemsItemProductStore.fromJson(str);
 
 String fetchSupermarketCartModelDataItemItemsItemProductStoreToJson(
@@ -117,7 +109,7 @@ String fetchSupermarketCartModelDataItemItemsItemProductStoreToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemItemsItemProductCategory
-fetchSupermarketCartModelDataItemItemsItemProductCategoryFromJson(str) =>
+fetchSupermarketCartModelDataItemItemsItemProductCategoryFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemItemsItemProductCategory.fromJson(str);
 
 String fetchSupermarketCartModelDataItemItemsItemProductCategoryToJson(
@@ -125,7 +117,7 @@ String fetchSupermarketCartModelDataItemItemsItemProductCategoryToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemItemsItemStore
-fetchSupermarketCartModelDataItemItemsItemStoreFromJson(str) =>
+fetchSupermarketCartModelDataItemItemsItemStoreFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemItemsItemStore.fromJson(str);
 
 String fetchSupermarketCartModelDataItemItemsItemStoreToJson(
@@ -133,7 +125,7 @@ String fetchSupermarketCartModelDataItemItemsItemStoreToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemItemsItemMerchant
-fetchSupermarketCartModelDataItemItemsItemMerchantFromJson(str) =>
+fetchSupermarketCartModelDataItemItemsItemMerchantFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemItemsItemMerchant.fromJson(str);
 
 String fetchSupermarketCartModelDataItemItemsItemMerchantToJson(
@@ -141,7 +133,7 @@ String fetchSupermarketCartModelDataItemItemsItemMerchantToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemStore
-fetchSupermarketCartModelDataItemStoreFromJson(str) =>
+fetchSupermarketCartModelDataItemStoreFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemStore.fromJson(str);
 
 String fetchSupermarketCartModelDataItemStoreToJson(
@@ -149,7 +141,7 @@ String fetchSupermarketCartModelDataItemStoreToJson(
 ) => json.encode(data.toJson());
 
 FetchSupermarketCartModelDataItemMerchant
-fetchSupermarketCartModelDataItemMerchantFromJson(str) =>
+fetchSupermarketCartModelDataItemMerchantFromJson(dynamic str) =>
     FetchSupermarketCartModelDataItemMerchant.fromJson(str);
 
 String fetchSupermarketCartModelDataItemMerchantToJson(

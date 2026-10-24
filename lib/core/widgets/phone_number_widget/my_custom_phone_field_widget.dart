@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -27,7 +26,7 @@ class CountryPickerDialog extends StatefulWidget {
   });
 
   @override
-  _CountryPickerDialogState createState() => _CountryPickerDialogState();
+  State<CountryPickerDialog> createState() => _CountryPickerDialogState();
 }
 
 enum IconPosition { leading, trailing }
@@ -127,7 +126,7 @@ class MyCustomIntlField extends StatefulWidget {
   });
 
   @override
-  _IntlPhoneFieldState createState() => _IntlPhoneFieldState();
+  State<MyCustomIntlField> createState() => _IntlPhoneFieldState();
 }
 
 // تعديل اسم الكلاس ليطابق الاصل مع الاستخدام الصحيح للـ PickerDialogStyle
@@ -174,7 +173,9 @@ class SvgAsset extends StatelessWidget {
   Widget build(BuildContext context) {
     return SvgPicture.asset(
       assetName,
-      color: color,
+      colorFilter: color == null
+          ? null
+          : ColorFilter.mode(color!, BlendMode.srcIn),
       width: width,
       height: height,
       fit: BoxFit.contain,
@@ -590,35 +591,5 @@ class _IntlPhoneFieldState extends State<MyCustomIntlField> {
         ),
       ),
     );
-  }
-
-  Future<void> _changeCountry() async {
-    filteredCountries = _countryList;
-    await showDialog(
-      context: context,
-      useRootNavigator: false,
-      builder: (context) => StatefulBuilder(
-        builder: (ctx, setState) => CountryPickerDialog(
-          languageCode: context.locale.languageCode,
-          style: widget.pickerDialogStyle,
-          filteredCountries: filteredCountries,
-          countryList: _countryList,
-          selectedCountry: _selectedCountry,
-          onCountryChanged: (Country country) {
-            _selectedCountry = country;
-            widget.onCountryChanged?.call(country);
-            setState(() {});
-          },
-        ),
-      ),
-    );
-    if (mounted) setState(() {});
-  }
-
-  // دالة لفحص هل العلم مسار صورة أم emoji
-  bool _isAssetPath(String flag) {
-    return flag.contains('assets/') ||
-        flag.endsWith('.png') ||
-        flag.endsWith('.jpg');
   }
 }

@@ -17,20 +17,7 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -47,10 +34,6 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-List<dynamic>? _asDynamicList(dynamic value) {
-  if (value is! List) return null;
-  return value.map(_asDynamic).toList();
-}
 
 dynamic _asDynamic(dynamic value) {
   if (value == null) return null;
@@ -70,17 +53,17 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-GetFeaturedOffersModel getFeaturedOffersModelFromJson(str) => GetFeaturedOffersModel.fromJson(str);
+GetFeaturedOffersModel getFeaturedOffersModelFromJson(dynamic str) => GetFeaturedOffersModel.fromJson(str);
 
 String getFeaturedOffersModelToJson(GetFeaturedOffersModel data) => json.encode(data.toJson());
 
 
-GetFeaturedOffersModelOffersItem getFeaturedOffersModelOffersItemFromJson(str) => GetFeaturedOffersModelOffersItem.fromJson(str);
+GetFeaturedOffersModelOffersItem getFeaturedOffersModelOffersItemFromJson(dynamic str) => GetFeaturedOffersModelOffersItem.fromJson(str);
 
 String getFeaturedOffersModelOffersItemToJson(GetFeaturedOffersModelOffersItem data) => json.encode(data.toJson());
 
 
-GetFeaturedOffersModelOffersItemStore getFeaturedOffersModelOffersItemStoreFromJson(str) => GetFeaturedOffersModelOffersItemStore.fromJson(str);
+GetFeaturedOffersModelOffersItemStore getFeaturedOffersModelOffersItemStoreFromJson(dynamic str) => GetFeaturedOffersModelOffersItemStore.fromJson(str);
 
 String getFeaturedOffersModelOffersItemStoreToJson(GetFeaturedOffersModelOffersItemStore data) => json.encode(data.toJson());
 

@@ -281,8 +281,9 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                           final categories =
                               state.restaurantCategories?.categories ??
                               const [];
-                          if (categories.isEmpty)
+                          if (categories.isEmpty) {
                             return const SizedBox.shrink();
+                          }
 
                           return CategoriesBar(
                             selectedCategory: selectedCategory,
@@ -290,8 +291,9 @@ class _RsHomeScreenState extends State<RsHomeScreen> {
                             onCategorySelected: (index) {
                               selectedCategory = index;
                               setState(() {});
-                              if (index < 0 || index >= categories.length)
+                              if (index < 0 || index >= categories.length) {
                                 return;
+                              }
                               context.pushRoute(
                                 '/rshomecategoryproducts',
                                 arguments: RsHomeCategoryProductsScreenParams(

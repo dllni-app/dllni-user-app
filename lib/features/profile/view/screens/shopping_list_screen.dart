@@ -34,13 +34,13 @@ class _ShoppingListCard extends StatelessWidget {
         ? schedule.periods!.first
         : null;
     final time = (first?.fromTime ?? '').trim();
-    final suffix = time.isEmpty ? '' : ' • ' + time;
-    if (schedule.frequencyType == 'once') return 'لمرة واحدة' + suffix;
+    final suffix = time.isEmpty ? '' : ' • $time';
+    if (schedule.frequencyType == 'once') return 'لمرة واحدة$suffix';
     if (schedule.frequencyType == 'monthly') {
       final days = schedule.monthDays;
       return days != null && days.isNotEmpty
-          ? 'شهرياً • اليوم ' + days.first.toString() + suffix
-          : 'شهرياً' + suffix;
+          ? 'شهرياً • اليوم ${days.first}$suffix'
+          : 'شهرياً$suffix';
     }
     if (schedule.frequencyType == 'weekly') {
       const names = <int, String>{
@@ -58,9 +58,9 @@ class _ShoppingListCard extends StatelessWidget {
               .whereType<String>()
               .join('، ') ??
           '';
-      return days.isEmpty ? 'أسبوعياً' + suffix : days + suffix;
+      return days.isEmpty ? 'أسبوعياً$suffix' : days + suffix;
     }
-    return 'مجدولة' + suffix;
+    return 'مجدولة$suffix';
   }
 
   @override
@@ -129,7 +129,7 @@ class _ShoppingListCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      (item.itemsCount ?? 0).toString() + ' منتجات',
+                      '${item.itemsCount ?? 0} منتجات',
                       style: const TextStyle(
                         color: SharedPlatformColors.muted,
                         fontSize: 12,

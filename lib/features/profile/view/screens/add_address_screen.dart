@@ -201,8 +201,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   String? _selectedNeighborhood;
   final _directionsController = TextEditingController();
   final _phoneController = TextEditingController();
-  List<String> _neighborhoods = [];
-  String _neighborhoodSearchQuery = '';
 
   String _selectedType = 'المنزل';
   bool _isDefault = true;
@@ -212,24 +210,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   bool get _hasSelectedLocation => _latitude != null && _longitude != null;
   bool get _isEditMode => widget.params.addressItem != null;
-
-  List<String> get _filteredNeighborhoods {
-    final query = _neighborhoodSearchQuery.trim().toLowerCase();
-    final selected = _selectedNeighborhood?.trim();
-    final filtered = query.isEmpty
-        ? List<String>.from(_neighborhoods)
-        : _neighborhoods
-              .where((item) => item.toLowerCase().contains(query))
-              .toList(growable: true);
-
-    if (selected != null &&
-        selected.isNotEmpty &&
-        !filtered.contains(selected)) {
-      filtered.add(selected);
-    }
-
-    return filtered;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -556,30 +536,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     _phoneController.text = _phoneController.text.replaceAll('+963', '');
   }
 
-  Future<void> _loadNeighborhoods({String city = 'حلب'}) async {
-    try {
-      final neighborhoods = await getNeighborhoods(city);
-      if (!mounted) return;
-      setState(() {
-        _neighborhoods = neighborhoods;
-        final selected = _selectedNeighborhood;
-        if (selected != null &&
-            selected.isNotEmpty &&
-            !_neighborhoods.contains(selected)) {
-          _neighborhoods = [..._neighborhoods, selected];
-        }
-      });
-    } catch (error) {
-      log('error: $error');
-      if (!mounted) return;
-      AppToast.showToast(
-        context: context,
-        message: 'خطأ في جلب الأحياء ${error.toString()}',
-        type: ToastificationType.error,
-      );
-    }
-  }
-
   CreatedAddressSelectionHint _buildCreatedAddressHint() {
     return CreatedAddressSelectionHint(
       label: _selectedType,
@@ -603,14 +559,6 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       final textLength = controller.text.length;
       controller.selection = TextSelection.collapsed(offset: textLength);
     });
-  }
-
-  String? _requiredCityValidator(String? value) {
-    return value == null || value.trim().isEmpty ? 'يرجى اختيار المدينة' : null;
-  }
-
-  String? _requiredNeighborhoodValidator(String? value) {
-    return value == null || value.trim().isEmpty ? 'يرجى اختيار الحي' : null;
   }
 
   String? _requiredDirectionsValidator(String? value) {

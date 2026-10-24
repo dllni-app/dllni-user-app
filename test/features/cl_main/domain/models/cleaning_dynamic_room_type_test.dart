@@ -16,11 +16,28 @@ void main() {
       CleaningRoomType.fromCode('study_room').hashCode,
       CleaningRoomType.fromCode('study_room').hashCode,
     );
-    expect(
-      () => CleaningRoomType.fromCode('invalid-hyphen'),
-      throwsArgumentError,
-    );
+    expect(CleaningRoomType.fromCode('utility-9').apiKey, 'utility-9');
   });
+
+  test(
+    'room code grammar accepts max-width ASCII and rejects invalid codes',
+    () {
+      final maxCode = 'a${'b' * 61}-9';
+      expect(maxCode, hasLength(64));
+      expect(CleaningRoomType.fromCode(maxCode).apiKey, maxCode);
+
+      for (final invalid in [
+        '${maxCode}x',
+        'Uppercase',
+        'room_é',
+        'room.name',
+        '9room',
+        'room\n',
+      ]) {
+        expect(() => CleaningRoomType.fromCode(invalid), throwsArgumentError);
+      }
+    },
+  );
 
   test(
     'custom room survives counts, size, mode, hours and V2 serialization',
@@ -102,6 +119,52 @@ void main() {
             .roomKey,
         'utility_room.small.1',
       );
+    },
+  );
+
+  test(
+    'max-width hyphenated code survives breakdown and V2 draft keys intact',
+    () {
+      final code = 'a${'b' * 61}-9';
+      final roomType = CleaningRoomType.fromCode(code);
+      final progressiveState = const CleaningProgressiveRoomState().setCount(
+        roomType,
+        1,
+      );
+      expect(progressiveState.roomCleaningModes, {
+        '$code.medium.1': CleaningType.regularCleaning.cleaningModeValue,
+      });
+      final breakdown = const CleaningRoomSizeBreakdown().setCount(
+        roomType,
+        CleaningRoomSize.medium,
+        1,
+      );
+      expect(breakdown.toBackendJson().keys, [code]);
+
+      var draft = CleaningBookingDraft.fromRooms([
+        CleaningProgressiveRoomUnit(
+          roomType: roomType,
+          index: 999,
+          size: CleaningRoomSize.medium,
+        ),
+      ], DateTime(2026, 10, 24));
+      final payload = draft.toJson();
+      final room = (payload['rooms'] as List).single as Map;
+      final visit = (payload['visits'] as List).single as Map;
+      final schedule = (visit['roomSchedules'] as List).single as Map;
+
+      expect(room['roomKey'], '$code.999');
+      expect(room['roomType'], code);
+      expect(schedule['roomKey'], '$code.999');
+      expect(schedule['scheduleKey'], 'visit.1.$code.999');
+      expect((room['roomKey'] as String).length, 68);
+      expect((schedule['scheduleKey'] as String).length, 76);
+
+      for (var visitSequence = 2; visitSequence <= 30; visitSequence++) {
+        draft = draft.addVisit(DateTime(2026, 10, 24 + visitSequence));
+      }
+      expect(draft.schedules.last.scheduleKey, 'visit.30.$code.999');
+      expect(draft.schedules.last.scheduleKey.length, 77);
     },
   );
 

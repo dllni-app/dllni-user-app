@@ -17,20 +17,7 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -70,22 +57,22 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-GetShoppingListModel getShoppingListModelFromJson(str) => GetShoppingListModel.fromJson(str);
+GetShoppingListModel getShoppingListModelFromJson(dynamic str) => GetShoppingListModel.fromJson(str);
 
 String getShoppingListModelToJson(GetShoppingListModel data) => json.encode(data.toJson());
 
 
-GetShoppingListModelDataItem getShoppingListModelDataItemFromJson(str) => GetShoppingListModelDataItem.fromJson(str);
+GetShoppingListModelDataItem getShoppingListModelDataItemFromJson(dynamic str) => GetShoppingListModelDataItem.fromJson(str);
 
 String getShoppingListModelDataItemToJson(GetShoppingListModelDataItem data) => json.encode(data.toJson());
 
 
-GetShoppingListModelDataItemSchedule getShoppingListModelDataItemScheduleFromJson(str) => GetShoppingListModelDataItemSchedule.fromJson(str);
+GetShoppingListModelDataItemSchedule getShoppingListModelDataItemScheduleFromJson(dynamic str) => GetShoppingListModelDataItemSchedule.fromJson(str);
 
 String getShoppingListModelDataItemScheduleToJson(GetShoppingListModelDataItemSchedule data) => json.encode(data.toJson());
 
 
-GetShoppingListModelDataItemSchedulePeriodsItem getShoppingListModelDataItemSchedulePeriodsItemFromJson(str) => GetShoppingListModelDataItemSchedulePeriodsItem.fromJson(str);
+GetShoppingListModelDataItemSchedulePeriodsItem getShoppingListModelDataItemSchedulePeriodsItemFromJson(dynamic str) => GetShoppingListModelDataItemSchedulePeriodsItem.fromJson(str);
 
 String getShoppingListModelDataItemSchedulePeriodsItemToJson(GetShoppingListModelDataItemSchedulePeriodsItem data) => json.encode(data.toJson());
 

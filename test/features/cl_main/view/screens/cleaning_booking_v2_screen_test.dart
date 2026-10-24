@@ -367,7 +367,7 @@ void main() {
         hydrated.schedules.every((s) => s.workMinutes != null),
         isTrue,
         reason: hydrated.schedules
-            .map((s) => s.roomKey + ':' + s.workMinutes.toString())
+            .map((s) => '${s.roomKey}:${s.workMinutes}')
             .join(','),
       );
       final durationLabel = find.byKey(const Key('booking_total_duration'));

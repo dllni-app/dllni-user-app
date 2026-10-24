@@ -91,7 +91,7 @@ List<CleaningRoomType> selectableRoomTypes(
 }) {
   final types = <CleaningRoomType>[];
   for (final item in catalog) {
-    if (!item.active || !RegExp(r'^[a-z][a-z0-9_]*$').hasMatch(item.code)) {
+    if (!item.active || !CleaningRoomType.isValidCode(item.code)) {
       continue;
     }
     final type = CleaningRoomType.fromCode(item.code);

@@ -80,8 +80,8 @@ class _AcceptedWorkerRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   [
-                    if (rating != null) 'التقييم ' + rating.toStringAsFixed(1),
-                    if (count > 0) count.toString() + ' غرف',
+                    if (rating != null) 'التقييم ${rating.toStringAsFixed(1)}',
+                    if (count > 0) '$count غرف',
                   ].join(' • '),
                   style: const TextStyle(
                     fontSize: 12,

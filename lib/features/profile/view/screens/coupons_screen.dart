@@ -145,7 +145,7 @@ class _CouponsScreenState extends State<CouponsScreen> {
                             20,
                           ),
                           itemCount: visibleCoupons.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) =>
                               PlatformCouponCard(coupon: visibleCoupons[index]),

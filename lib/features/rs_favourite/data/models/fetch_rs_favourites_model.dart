@@ -70,37 +70,37 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-FetchRsFavouritesModel fetchRsFavouritesModelFromJson(str) => FetchRsFavouritesModel.fromJson(str);
+FetchRsFavouritesModel fetchRsFavouritesModelFromJson(dynamic str) => FetchRsFavouritesModel.fromJson(str);
 
 String fetchRsFavouritesModelToJson(FetchRsFavouritesModel data) => json.encode(data.toJson());
 
 
-FetchRsFavouritesModelMeta fetchRsFavouritesModelMetaFromJson(str) => FetchRsFavouritesModelMeta.fromJson(str);
+FetchRsFavouritesModelMeta fetchRsFavouritesModelMetaFromJson(dynamic str) => FetchRsFavouritesModelMeta.fromJson(str);
 
 String fetchRsFavouritesModelMetaToJson(FetchRsFavouritesModelMeta data) => json.encode(data.toJson());
 
 
-FetchRsFavouritesModelMetaLinksItem fetchRsFavouritesModelMetaLinksItemFromJson(str) => FetchRsFavouritesModelMetaLinksItem.fromJson(str);
+FetchRsFavouritesModelMetaLinksItem fetchRsFavouritesModelMetaLinksItemFromJson(dynamic str) => FetchRsFavouritesModelMetaLinksItem.fromJson(str);
 
 String fetchRsFavouritesModelMetaLinksItemToJson(FetchRsFavouritesModelMetaLinksItem data) => json.encode(data.toJson());
 
 
-FetchRsFavouritesModelLinks fetchRsFavouritesModelLinksFromJson(str) => FetchRsFavouritesModelLinks.fromJson(str);
+FetchRsFavouritesModelLinks fetchRsFavouritesModelLinksFromJson(dynamic str) => FetchRsFavouritesModelLinks.fromJson(str);
 
 String fetchRsFavouritesModelLinksToJson(FetchRsFavouritesModelLinks data) => json.encode(data.toJson());
 
 
-FetchRsFavouritesModelDataItem fetchRsFavouritesModelDataItemFromJson(str) => FetchRsFavouritesModelDataItem.fromJson(str);
+FetchRsFavouritesModelDataItem fetchRsFavouritesModelDataItemFromJson(dynamic str) => FetchRsFavouritesModelDataItem.fromJson(str);
 
 String fetchRsFavouritesModelDataItemToJson(FetchRsFavouritesModelDataItem data) => json.encode(data.toJson());
 
 
-FetchRsFavouritesModelDataItemCuisineTypesItem fetchRsFavouritesModelDataItemCuisineTypesItemFromJson(str) => FetchRsFavouritesModelDataItemCuisineTypesItem.fromJson(str);
+FetchRsFavouritesModelDataItemCuisineTypesItem fetchRsFavouritesModelDataItemCuisineTypesItemFromJson(dynamic str) => FetchRsFavouritesModelDataItemCuisineTypesItem.fromJson(str);
 
 String fetchRsFavouritesModelDataItemCuisineTypesItemToJson(FetchRsFavouritesModelDataItemCuisineTypesItem data) => json.encode(data.toJson());
 
 
-FetchRsFavouritesModelDataItemListingOffer fetchRsFavouritesModelDataItemListingOfferFromJson(str) => FetchRsFavouritesModelDataItemListingOffer.fromJson(str);
+FetchRsFavouritesModelDataItemListingOffer fetchRsFavouritesModelDataItemListingOfferFromJson(dynamic str) => FetchRsFavouritesModelDataItemListingOffer.fromJson(str);
 
 String fetchRsFavouritesModelDataItemListingOfferToJson(FetchRsFavouritesModelDataItemListingOffer data) => json.encode(data.toJson());
 

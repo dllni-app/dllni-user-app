@@ -222,7 +222,7 @@ class _LuckyBoxSuggestionsScreenState extends State<LuckyBoxSuggestionsScreen> {
                               )
                             : ListView.separated(
                                 itemCount: items.length,
-                                separatorBuilder: (_, __) =>
+                                separatorBuilder: (_, _) =>
                                     const SizedBox(height: 10),
                                 itemBuilder: (context, index) {
                                   final item = items[index];
@@ -638,7 +638,7 @@ class _ProductImage extends StatelessWidget {
       width: 58,
       height: 58,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const ColoredBox(
+      errorBuilder: (_, _, _) => const ColoredBox(
         color: Color(0xffF3F4F6),
         child: SizedBox(width: 58, height: 58),
       ),

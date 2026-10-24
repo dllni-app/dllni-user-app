@@ -37,7 +37,7 @@ class ClRoomPeriodsEditor extends StatelessWidget {
       'living_room' => 'غرفة معيشة',
       _ => p.room.displayName ?? p.room.roomType.apiKey.replaceAll('_', ' '),
     };
-    return name + ' ' + p.room.index.toString();
+    return '$name ${p.room.index}';
   }
 
   Future<void> _copy(
@@ -49,14 +49,9 @@ class ClRoomPeriodsEditor extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('تطبيق الاختيارات على الفترات'),
         content: Text(
-          'هل تريد نسخ ' +
-              (phase == ClPeriodEditingPhase.materials
+          'هل تريد نسخ ${phase == ClPeriodEditingPhase.materials
                   ? 'مواد التنظيف'
-                  : 'الخدمات المتخصصة') +
-              ' من ' +
-              _label(source) +
-              ' إلى بقية الفترات؟ ستُستبدل الاختيارات المماثلة فقط، '
-                  'وبعد النسخ يمكنك تعديل كل فترة لوحدها.',
+                  : 'الخدمات المتخصصة'} من ${_label(source)} إلى بقية الفترات؟ ستُستبدل الاختيارات المماثلة فقط، وبعد النسخ يمكنك تعديل كل فترة لوحدها.',
         ),
         actions: [
           TextButton(
@@ -268,9 +263,7 @@ class ClRoomPeriodsEditor extends StatelessWidget {
                 );
                 if (time != null) {
                   final value =
-                      time.hour.toString().padLeft(2, '0') +
-                      ':' +
-                      time.minute.toString().padLeft(2, '0');
+                      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
                   _update(p.copyWith(scheduledTime: value));
                 }
               },
@@ -282,10 +275,7 @@ class ClRoomPeriodsEditor extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Text(
-            'المدة المتوقعة: ' +
-                ((workMinutesByRoom[p.clientKey]! + p.workers - 1) ~/ p.workers)
-                    .toString() +
-                ' دقيقة · تتغير مباشرة بحسب عدد العمال',
+            'المدة المتوقعة: ${(workMinutesByRoom[p.clientKey]! + p.workers - 1) ~/ p.workers} دقيقة · تتغير مباشرة بحسب عدد العمال',
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
@@ -316,18 +306,13 @@ class ClRoomPeriodsEditor extends StatelessWidget {
     children: [
       for (final p in drafts.periods)
         Card(
-          key: ValueKey('room_period_' + p.clientKey + '_' + phase.name),
+          key: ValueKey('room_period_${p.clientKey}_${phase.name}'),
           margin: const EdgeInsets.only(bottom: 12),
           child: ExpansionTile(
             initiallyExpanded: drafts.periods.length == 1,
             title: Text(_label(p)),
             subtitle: Text(
-              p.room.cleaningType.title +
-                  ' · ' +
-                  p.room.size.apiValue +
-                  ' · ' +
-                  p.workers.toString() +
-                  ' عامل',
+              '${p.room.cleaningType.title} · ${p.room.size.apiValue} · ${p.workers} عامل',
             ),
             childrenPadding: const EdgeInsets.symmetric(horizontal: 12),
             children: [

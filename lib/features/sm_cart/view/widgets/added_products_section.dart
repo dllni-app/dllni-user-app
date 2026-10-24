@@ -181,7 +181,7 @@ class ProductCard extends StatelessWidget {
 }
 
 class _TextButtonWithIcon extends StatelessWidget {
-  const _TextButtonWithIcon({super.key, required this.label, required this.icon, this.onTap, this.color = SharedPlatformColors.primary});
+  const _TextButtonWithIcon({required this.label, required this.icon, this.onTap, this.color = SharedPlatformColors.primary});
 
   final String label;
   final FaIconData icon;
@@ -214,7 +214,7 @@ class _TextButtonWithIcon extends StatelessWidget {
 }
 
 class _CounterChip extends StatefulWidget {
-  const _CounterChip({required this.onChanged, this.initialCount = 1});
+  const _CounterChip({required this.onChanged}) : initialCount = 1;
 
   final int initialCount;
   final void Function(int value) onChanged;

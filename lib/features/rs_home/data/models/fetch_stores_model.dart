@@ -17,20 +17,7 @@ int? _asInt(dynamic value) {
   return null;
 }
 
-double? _asDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is num) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
 
-num? _asNum(dynamic value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) return num.tryParse(value);
-  return null;
-}
 
 bool? _asBool(dynamic value) {
   if (value == null) return null;
@@ -47,10 +34,6 @@ bool? _asBool(dynamic value) {
   return null;
 }
 
-List<dynamic>? _asDynamicList(dynamic value) {
-  if (value is! List) return null;
-  return value.map(_asDynamic).toList();
-}
 
 dynamic _asDynamic(dynamic value) {
   if (value == null) return null;
@@ -70,32 +53,32 @@ dynamic _asDynamic(dynamic value) {
   return value.toString();
 }
 
-FetchStoresModel fetchStoresModelFromJson(str) => FetchStoresModel.fromJson(str);
+FetchStoresModel fetchStoresModelFromJson(dynamic str) => FetchStoresModel.fromJson(str);
 
 String fetchStoresModelToJson(FetchStoresModel data) => json.encode(data.toJson());
 
 
-FetchStoresModelMeta fetchStoresModelMetaFromJson(str) => FetchStoresModelMeta.fromJson(str);
+FetchStoresModelMeta fetchStoresModelMetaFromJson(dynamic str) => FetchStoresModelMeta.fromJson(str);
 
 String fetchStoresModelMetaToJson(FetchStoresModelMeta data) => json.encode(data.toJson());
 
 
-FetchStoresModelMetaLinksItem fetchStoresModelMetaLinksItemFromJson(str) => FetchStoresModelMetaLinksItem.fromJson(str);
+FetchStoresModelMetaLinksItem fetchStoresModelMetaLinksItemFromJson(dynamic str) => FetchStoresModelMetaLinksItem.fromJson(str);
 
 String fetchStoresModelMetaLinksItemToJson(FetchStoresModelMetaLinksItem data) => json.encode(data.toJson());
 
 
-FetchStoresModelLinks fetchStoresModelLinksFromJson(str) => FetchStoresModelLinks.fromJson(str);
+FetchStoresModelLinks fetchStoresModelLinksFromJson(dynamic str) => FetchStoresModelLinks.fromJson(str);
 
 String fetchStoresModelLinksToJson(FetchStoresModelLinks data) => json.encode(data.toJson());
 
 
-FetchStoresModelDataItem fetchStoresModelDataItemFromJson(str) => FetchStoresModelDataItem.fromJson(str);
+FetchStoresModelDataItem fetchStoresModelDataItemFromJson(dynamic str) => FetchStoresModelDataItem.fromJson(str);
 
 String fetchStoresModelDataItemToJson(FetchStoresModelDataItem data) => json.encode(data.toJson());
 
 
-FetchStoresModelDataItemOwner fetchStoresModelDataItemOwnerFromJson(str) => FetchStoresModelDataItemOwner.fromJson(str);
+FetchStoresModelDataItemOwner fetchStoresModelDataItemOwnerFromJson(dynamic str) => FetchStoresModelDataItemOwner.fromJson(str);
 
 String fetchStoresModelDataItemOwnerToJson(FetchStoresModelDataItemOwner data) => json.encode(data.toJson());
 

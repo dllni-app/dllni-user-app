@@ -124,8 +124,9 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
 
     if (isLoadMore) {
       if (state.restaurants.isEndPage ||
-          state.restaurants.status == BlocStatus.loading)
+          state.restaurants.status == BlocStatus.loading) {
         return;
+      }
       emit(
         state.copyWith(
           restaurants: state.restaurants.setLoading(isReload: false),
@@ -226,8 +227,9 @@ class RsDiscoverBloc extends Bloc<RsDiscoverEvent, RsDiscoverState> {
 
     if (isLoadMore) {
       if (state.products.isEndPage ||
-          state.products.status == BlocStatus.loading)
+          state.products.status == BlocStatus.loading) {
         return;
+      }
       emit(
         state.copyWith(products: state.products.setLoading(isReload: false)),
       );

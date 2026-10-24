@@ -1,4 +1,5 @@
 import 'package:common_package/common_package.dart';
+import 'package:dllni_user_app/core/extensions/extentions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -309,7 +310,7 @@ class _RsSearchViewV2State extends State<RsSearchViewV2> {
       backgroundColor: Colors.transparent,
       builder: (_) => const SmartSearchSheet(isSupermarket: false),
     );
-    if (!mounted || words == null || words.isEmpty) return;
+    if (!context.mounted || words == null || words.isEmpty) return;
     _submitSearch(context, words.join(' , '));
   }
 
@@ -377,12 +378,12 @@ class _MealSearchCard extends StatelessWidget {
       restaurant: (mapped.restaurantName ?? '').trim().isEmpty
           ? 'مطعم'
           : mapped.restaurantName!.trim(),
-      price: mapped.priceText,
+      price: mapped.resolvedDisplayPriceValue?.formatMoney() ?? mapped.priceText,
       offer: FetchRestaurantProductsSearchModelActiveOffer(
-        badgeText: mapped.offerBadgeText,
-        discountType: mapped.offerDiscountType,
-        discountValue: mapped.offerDiscountValue,
-        title: mapped.offerName,
+        badgeText: mapped.displayedSavingsBadge,
+        discountType: mapped.offerIsEffective ? mapped.offerDiscountType : null,
+        discountValue: mapped.offerIsEffective ? mapped.offerDiscountValue : null,
+        title: mapped.offerIsEffective ? mapped.offerName : null,
       ),
       cartProductsCount: product.cartProductsCount,
       onTap: () {
