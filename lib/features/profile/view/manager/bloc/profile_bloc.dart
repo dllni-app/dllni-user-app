@@ -514,6 +514,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             notificationActionError: failure.message,
           ),
         );
+        add(FetchNotificationsEvent(params: FetchNotificationsParams(), isReload: true));
       },
       (_) async {
         final updatedNotifications = state.notifications

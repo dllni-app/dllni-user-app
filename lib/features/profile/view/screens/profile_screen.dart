@@ -1,10 +1,7 @@
-import 'dart:convert';
-
 import 'package:common_package/common_package.dart';
 import 'package:dllni_user_app/core/auth/auth_gate.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/realtime/cleaning_booking_pusher_service.dart';
-import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
 import 'package:dllni_user_app/core/widgets/support_whatsapp_launcher.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
@@ -19,21 +16,6 @@ import '../widgets/profile_summary_card.dart';
 import '../widgets/section_card.dart';
 import '../widgets/section_title.dart';
 import 'notifications_screen.dart';
-
-LoggedInUserModel? _readLoggedInUser() {
-  final raw = SharedPreferencesHelper.getData(
-    key: UserSessionKeys.loggedInUser,
-  );
-  if (raw == null) return null;
-
-  try {
-    final decoded = jsonDecode('$raw');
-    if (decoded is! Map) return null;
-    return LoggedInUserModel.fromJson(Map<String, dynamic>.from(decoded));
-  } catch (_) {
-    return null;
-  }
-}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -50,7 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isDeletingAccount = false;
 
   LoggedInUserModel get _personalDetailsParams =>
-      _readLoggedInUser() ?? LoggedInUserModel();
+      UserSessionStore.currentUser ?? LoggedInUserModel();
 
   Future<void> _openSupport() => launchSupportWhatsApp(context);
 
@@ -393,12 +375,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.casino_outlined,
                         accent: const Color(0xFF172554),
                         onTap: () => context.pushRoute('/luckyboxsetup'),
-                      ),
-                      _ProfileToolTile(
-                        title: 'العروض',
-                        icon: Icons.percent_rounded,
-                        accent: const Color(0xFF172554),
-                        onTap: () => context.pushRoute('/coupons'),
                       ),
                     ],
                   ),

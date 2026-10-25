@@ -27,6 +27,7 @@ import 'package:dllni_user_app/features/profile/domain/models/address_list_item.
 class BookingTransport implements HttpClientAdapter {
   bool failCreate = false;
   bool invalidSchedule = false;
+  int materialPreviewCount = 1;
   final List<Map<String, dynamic>> submissions = [];
   final List<Map<String, dynamic>> estimates = [];
   @override
@@ -63,7 +64,11 @@ class BookingTransport implements HttpClientAdapter {
           'contractVersion': 2,
           'materialsPreview': {
             'items': [
-              {'materialTypeId': 4, 'name': 'منظف الأرضيات'},
+              for (var i = 0; i < materialPreviewCount; i++)
+                {
+                  'materialTypeId': 4 + i,
+                  'name': i == 0 ? 'منظف الأرضيات' : 'مادة إضافية رقم ${i + 1}',
+                },
             ],
             'roomWorkMinutes': {'bedroom.1': 240, 'bedroom.2': 120},
             'catalogStatus': 'ready',
@@ -659,6 +664,59 @@ void main() {
   });
 
   testWidgets(
+    'special service clearly marks selection and bills quantity only once',
+    (tester) async {
+      await showStep(tester, 1);
+      final action = find.byKey(const Key('special_service_action_8'));
+      expect(
+        find.descendant(of: action, matching: find.text('+')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('special_service_8')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('special_service_save')));
+      await tester.pumpAndSettle();
+      final selected =
+          (saved['v2BookingServices'] as List<PeriodSpecialistService>).single;
+      expect(selected.targetRoomKeys, hasLength(1));
+      final card = tester.widget<Container>(
+        find.byKey(const Key('special_service_card_8')),
+      );
+      final border = (card.decoration! as BoxDecoration).border! as Border;
+      expect(border.top.width, 2);
+      expect(
+        find.descendant(of: action, matching: find.text('تعديل')),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('materials collapse even when customer has partial materials', (
+    tester,
+  ) async {
+    transport.materialPreviewCount = 5;
+    await showStep(tester, 0);
+    expect(find.byKey(const Key('booking_material_8')), findsNothing);
+    final toggle = find.byKey(const Key('booking_expand_materials'));
+    await tester.ensureVisible(toggle);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('booking_material_8')), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const Key('material_choice_customer_partial')),
+    );
+    await tester.tap(find.byKey(const Key('material_choice_customer_partial')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(toggle);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('booking_material_8')), findsNothing);
+    expect(find.textContaining('عرض جميع المواد المطلوبة'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
     'review includes room modes, partial materials and targeted specialist services',
     (tester) async {
       saved['v2MaterialChoice'] = CleaningMaterialChoice.customerPartial;
@@ -685,6 +743,16 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+
+  testWidgets('review shows signed server total instead of pending text', (
+    tester,
+  ) async {
+    await showStep(tester, 3);
+    expect(find.textContaining('350'), findsWidgets);
+    expect(find.text('بانتظار تحديث الإجمالي'), findsNothing);
+    expect(transport.estimates, isNotEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('monthly pattern skips missing day without moving to month end', (
     tester,

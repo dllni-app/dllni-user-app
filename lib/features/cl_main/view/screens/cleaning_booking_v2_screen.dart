@@ -170,11 +170,32 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
         .expand((period) => period.services)
         .toList();
     final storedServices = saved?['v2BookingServices'];
-    _bookingServices.addAll(
-      storedServices is List<PeriodSpecialistService>
-          ? storedServices
-          : previousServices,
-    );
+    // Earlier builds unintentionally attached every add-on to all rooms.
+    // The API bills service quantity once *per target room*, so a carpet area
+    // of 31 m² was charged and scheduled repeatedly for four bedrooms.
+    // The booking-wide quantity needs one operational anchor, not every room.
+    final restoredServices = storedServices is List<PeriodSpecialistService>
+        ? storedServices
+        : previousServices;
+    final roomKeys = _draft.rooms.map((room) => room.key).toSet();
+    for (final service in restoredServices) {
+      final targets = service.targetRoomKeys;
+      final legacyAllRoomSelection =
+          roomKeys.length > 1 &&
+          targets.toSet().containsAll(roomKeys) &&
+          roomKeys.containsAll(targets);
+      _bookingServices.add(
+        legacyAllRoomSelection
+            ? PeriodSpecialistService(
+                serviceKey: service.serviceKey,
+                serviceId: service.serviceId,
+                targetRoomKeys: [targets.first],
+                quantity: service.quantity,
+                dirtiness: service.dirtiness,
+              )
+            : service,
+      );
+    }
     _servicesReviewed = true; // Empty special services is valid.
     _draft = _applyBookingSelections(
       planCleaningTeam(_draft, workerCount: _teamWorkers),
@@ -193,13 +214,20 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
     SessionExpiredHandler.registerRecovery(this, _prepareAuthRecovery);
     // Persist the normalized team plan without requesting an early price quote.
     _save();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Materials are required for the selected rooms regardless of address,
       // material supplier or final price quotation availability.
-      _loadMaterialsPreview();
+      await _loadMaterialsPreview();
+      if (!mounted) return;
       _loadSpecialServicesCatalog();
       if (_address.value == null) {
         _prefetchDefaultAddress();
+      }
+      // A customer can re-open a saved booking directly on the review step.
+      // Without this refresh the total would remain "pending" indefinitely
+      // until the user pressed the manual refresh button.
+      if (_step == 3 && !_uncertainSubmission) {
+        await _refreshQuote();
       }
     });
   }
@@ -396,7 +424,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
     }
   }
 
-  Future<void> _refreshQuote() async {
+  Future<void> _refreshQuote({int reconciliationPass = 0}) async {
     if (!mounted ||
         _uncertainSubmission ||
         _address.value?.hasCompleteServiceLocation != true ||
@@ -453,7 +481,24 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
       });
       _save();
       if (!sameContract) {
-        await _refreshQuote();
+        // The API may regroup time periods after adding a special service.
+        // Bound the automatic convergence so the UI cannot quote endlessly
+        // and leave the price card looking permanently unfinished.
+        if (reconciliationPass < 5) {
+          await _refreshQuote(reconciliationPass: reconciliationPass + 1);
+        } else if (mounted) {
+          setState(() {
+            _quoting = false;
+            _error =
+                'تغيّرت مواعيد الغرف بعد إضافة الخدمات. راجع مواعيدك وحدّث السعر من جديد.';
+          });
+        }
+      } else if (response.quoteSignature == null) {
+        setState(() {
+          _quoting = false;
+          _error =
+              'تحتاج فترات التنظيف إلى مراجعة بعد احتساب الخدمات الإضافية. راجع المواعيد ثم حدّث السعر.';
+        });
       } else {
         _expiry?.cancel();
         final expiry = response.quoteExpiresAt;
@@ -1349,9 +1394,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'المدة الإجمالية المتوقعة: ${minutes >= 60
-                            ? '${minutes ~/ 60} ساعة و${minutes % 60} دقيقة'
-                            : '$minutes دقيقة'}',
+                    'المدة الإجمالية المتوقعة: ${minutes >= 60 ? '${minutes ~/ 60} ساعة و${minutes % 60} دقيقة' : '$minutes دقيقة'}',
                     key: const Key('booking_total_duration'),
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
@@ -1779,11 +1822,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
               ),
             for (final material
                 in _previewReady
-                    ? (_materialsExpanded ||
-                              _materialChoice ==
-                                  CleaningMaterialChoice.customerPartial
-                          ? lines
-                          : lines.take(3))
+                    ? (_materialsExpanded ? lines : lines.take(3))
                     : <CleaningMaterialLineModel>[])
               if (_materialChoice == CleaningMaterialChoice.customerPartial &&
                   material.materialTypeId != null)
@@ -1935,7 +1974,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                     CleaningMaterialChoice.customerAll =>
                       'لا حاجة لإضافة مواد للطلب',
                     CleaningMaterialChoice.customerPartial =>
-                      'ضع علامة على المواد الموجودة عندك؛ نوفّر الباقي',
+                      'حدّد المواد الناقصة عندك؛ نوفّرها لك',
                     CleaningMaterialChoice.platformAll =>
                       'نوفر المواد المطلوبة لهذا الطلب',
                   }),
@@ -1969,11 +2008,30 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
         ),
       for (final service in _services.where((service) => service.id != null))
         Container(
+          key: Key('special_service_card_${service.id}'),
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color:
+                _bookingServices.any(
+                  (selected) => selected.serviceId == service.id,
+                )
+                ? SharedPlatformColors.cleaningSoft
+                : Colors.white,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AlnadhaTokens.border),
+            border: Border.all(
+              color:
+                  _bookingServices.any(
+                    (selected) => selected.serviceId == service.id,
+                  )
+                  ? SharedPlatformColors.cleaning
+                  : AlnadhaTokens.border,
+              width:
+                  _bookingServices.any(
+                    (selected) => selected.serviceId == service.id,
+                  )
+                  ? 2
+                  : 1,
+            ),
           ),
           child: Material(
             color: Colors.transparent,
@@ -2036,7 +2094,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                             (selected) => selected.serviceId == service.id,
                           )
                           ? 'تعديل'
-                          : 'إضافة',
+                          : '+',
                     ),
                   ),
                 ],
@@ -2084,7 +2142,15 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
     CleaningServiceModel service, {
     PeriodSpecialistService? existing,
   }) async {
-    final targets = <String>{for (final room in _draft.rooms) room.key};
+    // Each entered quantity belongs to a single service selection. Assign a
+    // single operational room anchor instead of multiplying quantity and
+    // duration by the number of unrelated rooms in the home.
+    final targets = <String>{
+      if (existing != null && existing.targetRoomKeys.isNotEmpty)
+        existing.targetRoomKeys.first
+      else if (_draft.rooms.isNotEmpty)
+        _draft.rooms.first.key,
+    };
     double quantity = existing?.quantity ?? 1;
     final unit = service.unitCode ?? service.pricingUnit;
     final allowsFractions = {
@@ -2298,8 +2364,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('عدد العمال: $_teamWorkers'),
-              if (duration != null)
-                Text('المدة المتوقعة: $duration دقيقة'),
+              if (duration != null) Text('المدة المتوقعة: $duration دقيقة'),
               Text(
                 _preferred && _workerIds.isNotEmpty
                     ? 'تم تحديد تفضيل لعامل سبق التعامل معه.'
@@ -2419,10 +2484,10 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                         padding: const EdgeInsets.symmetric(vertical: 5),
                         child: Text(
                           '• ${_serviceSummary(selection)}${selection.dirtiness == 'heavy'
-                                  ? ' · اتساخ شديد'
-                                  : selection.dirtiness == 'light'
-                                  ? ' · اتساخ بسيط'
-                                  : ''}',
+                              ? ' · اتساخ شديد'
+                              : selection.dirtiness == 'light'
+                              ? ' · اتساخ بسيط'
+                              : ''}',
                         ),
                       ),
                   ],
@@ -2463,9 +2528,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
               const SizedBox(height: 8),
               Text(
                 _quoteCurrent
-                    ? '${_quote!.pricing?.totalPrice?.toStringAsFixed(0) ?? '—'} ${(_quote!.pricing?.currency ?? 'SYP') == 'SYP'
-                              ? 'ل.س'
-                              : (_quote!.pricing?.currency ?? '')}'
+                    ? '${_quote!.pricing?.totalPrice?.toStringAsFixed(0) ?? '—'} ${(_quote!.pricing?.currency ?? 'SYP') == 'SYP' ? 'ل.س' : (_quote!.pricing?.currency ?? '')}'
                     : 'بانتظار تحديث الإجمالي',
                 key: const Key('booking_total'),
                 style: const TextStyle(

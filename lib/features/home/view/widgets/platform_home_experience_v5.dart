@@ -23,7 +23,7 @@ class PlatformHomeExperienceV5 extends StatelessWidget {
     children: [
       const AppSectionHeading(
         title: 'الخدمات',
-        description: 'اختر الخدمة التي تحتاجها',
+        description: 'خدمات يومية تساعدك توفّر وقتك وتطلب براحة بال',
       ),
       const SizedBox(height: 12),
       Row(
@@ -33,8 +33,8 @@ class PlatformHomeExperienceV5 extends StatelessWidget {
               key: const Key('platform_home_v5_cleaning_tile'),
               section: AppSection.cleaning,
               icon: Icons.cleaning_services_outlined,
-              title: 'التنظيفات',
-              detail: 'تنظيف منزلك ومناسباتك',
+              title: 'الخدمات المنزلية',
+              detail: 'تنظيف لبيتك ومساعدة بمناسباتك',
               onTap: onCleaning,
             ),
           ),

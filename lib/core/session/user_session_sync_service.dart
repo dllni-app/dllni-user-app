@@ -13,10 +13,15 @@ class UserSessionSyncService {
 
   static Future<void> syncOnStartup() async {
     await UserSessionStore.restoreFromDisk();
+    await refreshAuthenticatedUser();
+  }
 
-    final authToken = (SharedPreferencesHelper.getData(key: UserSessionKeys.token) ?? '')
-        .toString()
-        .trim();
+  /// Resolve the identity associated with the currently persisted bearer token.
+  static Future<void> refreshAuthenticatedUser() async {
+    final authToken =
+        (SharedPreferencesHelper.getData(key: UserSessionKeys.token) ?? '')
+            .toString()
+            .trim();
     if (authToken.isEmpty) {
       return;
     }
@@ -30,15 +35,18 @@ class UserSessionSyncService {
         (response) async {
           final user = response.user;
           if (user == null) return;
+          final activeToken =
+              (SharedPreferencesHelper.getData(key: UserSessionKeys.token) ??
+                      '')
+                  .toString()
+                  .trim();
+          if (activeToken != authToken) return;
           await UserSessionStore.writeAndMirror(user);
           log('Background user sync completed.');
         },
       );
     } catch (error, stackTrace) {
-      log(
-        'Background user sync failed: $error',
-        stackTrace: stackTrace,
-      );
+      log('Background user sync failed: $error', stackTrace: stackTrace);
     }
   }
 }

@@ -58,6 +58,10 @@ android {
 
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
+            } else {
+                // Enable installable release-mode APKs for internal testing when
+                // no production keystore is configured.
+                signingConfig = signingConfigs.getByName("debug")
             }
         }
     }

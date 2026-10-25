@@ -79,11 +79,11 @@ void main() {
           ),
         ),
       );
-      expect(find.text('التنظيفات'), findsOneWidget);
+      expect(find.text('الخدمات المنزلية'), findsOneWidget);
       expect(find.text('المطاعم'), findsOneWidget);
       expect(find.text('السوبرماركت'), findsOneWidget);
       expect(find.text('التوصيل'), findsOneWidget);
-      await tester.tap(find.text('التنظيفات'));
+      await tester.tap(find.text('الخدمات المنزلية'));
       expect(cleaningTaps, 1);
     },
   );
@@ -114,7 +114,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('التنظيفات'), findsOneWidget);
+    expect(find.text('الخدمات المنزلية'), findsOneWidget);
     expect(find.text('التوصيل'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

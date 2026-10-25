@@ -5,6 +5,7 @@ import 'package:dllni_user_app/core/deeplink/deep_link_service.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/session/user_session_keys.dart';
 import 'package:dllni_user_app/core/session/user_session_store.dart';
+import 'package:dllni_user_app/core/session/user_session_sync_service.dart';
 import 'package:dllni_user_app/features/auth/data/models/login_response_model.dart';
 import 'package:dllni_user_app/core/widgets/app_phone_number_field.dart';
 import 'package:dllni_user_app/features/auth/view/manager/bloc/auth_bloc.dart';
@@ -26,6 +27,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 Future<void> persistLoginSessionData(LoginResponseModel result) async {
+  // Discard any previous account's identity before persisting the new token.
+  await UserSessionStore.clear();
   final token = result.token?.trim() ?? '';
   if (token.isNotEmpty) {
     await SharedPreferencesHelper.saveData(
@@ -47,6 +50,9 @@ Future<void> persistLoginSessionData(LoginResponseModel result) async {
   final user = result.data;
   if (user != null) {
     await UserSessionStore.writeAndMirror(user);
+  }
+  if (token.isNotEmpty) {
+    await UserSessionSyncService.refreshAuthenticatedUser();
   }
 }
 

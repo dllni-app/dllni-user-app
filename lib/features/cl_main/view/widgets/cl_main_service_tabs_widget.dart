@@ -23,7 +23,7 @@ class ClMainServiceTabsWidget extends StatelessWidget {
       Expanded(
         child: _DiscoveryTab(
           key: const Key('cl_main_cleaning_tab'),
-          title: 'التنظيفات',
+          title: 'تنظيف المنازل',
           icon: Icons.cleaning_services_outlined,
           selected: selectedIndex == cleaningIndex,
           onTap: () => onChanged(cleaningIndex),

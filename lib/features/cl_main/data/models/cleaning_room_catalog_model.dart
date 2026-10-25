@@ -12,6 +12,8 @@ class CleaningRoomCatalogItem {
     required this.active,
     required this.sortOrder,
     required this.suggestedMinutesBySize,
+    this.regularDescription = '',
+    this.deepDescription = '',
   });
 
   final String code;
@@ -20,6 +22,10 @@ class CleaningRoomCatalogItem {
   final bool active;
   final int sortOrder;
   final Map<String, dynamic> suggestedMinutesBySize;
+
+  /// Exact cleaning scope authored in Filament for this type of room.
+  final String regularDescription;
+  final String deepDescription;
 
   double suggestedHours(String size, String mode) {
     final values = suggestedMinutesBySize[size];
@@ -36,6 +42,12 @@ class CleaningRoomCatalogItem {
       name: (json['name'] ?? json['nameAr'] ?? json['name_ar'] ?? '')
           .toString(),
       iconKey: (json['iconKey'] ?? json['icon_key'] ?? '').toString(),
+      regularDescription:
+          (json['regularDescription'] ?? json['regular_description'] ?? '')
+              .toString(),
+      deepDescription:
+          (json['deepDescription'] ?? json['deep_description'] ?? '')
+              .toString(),
       active: (json['isActive'] ?? json['is_active'] ?? true) != false,
       sortOrder:
           (json['sortOrder'] ?? json['sort_order'] as num?)?.toInt() ?? 0,

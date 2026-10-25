@@ -122,8 +122,11 @@ class _HomeAppBarState extends State<HomeAppBar> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('التنظيفات', style: AlnadhaTokens.sectionTitle),
-                  Text('اختر الخدمة المناسبة لك', style: AlnadhaTokens.caption),
+                  Text('الخدمات', style: AlnadhaTokens.sectionTitle),
+                  Text(
+                    'خدمة تناسب وقتك وتريح بالك',
+                    style: AlnadhaTokens.caption,
+                  ),
                 ],
               ),
             ),

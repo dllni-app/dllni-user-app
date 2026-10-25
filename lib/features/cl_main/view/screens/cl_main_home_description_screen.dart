@@ -348,6 +348,11 @@ class _ClMainHomeDescriptionScreenState
         'تنظيف أعمق للتفاصيل والزوايا والأوساخ المتراكمة.',
       ),
     };
+    // The admin's published scope is authoritative; local copy is only used
+    // for old API deployments or when this catalog request is unavailable.
+    final roomDefinition = _roomCatalog[type.apiKey];
+    final regularScope = roomDefinition?.regularDescription.trim();
+    final deepScope = roomDefinition?.deepDescription.trim();
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -372,13 +377,21 @@ class _ClMainHomeDescriptionScreenState
                 'حوسة — تنظيف اعتيادي',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              Text(descriptions.$1),
+              Text(
+                regularScope == null || regularScope.isEmpty
+                    ? descriptions.$1
+                    : regularScope,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'تعزيل — تنظيف عميق',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              Text(descriptions.$2),
+              Text(
+                deepScope == null || deepScope.isEmpty
+                    ? descriptions.$2
+                    : deepScope,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'غسيل الكنب والسجاد والأجهزة من الداخل خدمات منفصلة عند توفرها.',

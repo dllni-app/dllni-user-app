@@ -11,6 +11,7 @@ import '../../../../core/session/user_session_store.dart';
 import '../../../../core/themes/shared_platform_colors.dart';
 import '../../../../core/widgets/design_system/design_system.dart';
 import '../../../cl_main/view/screens/cl_main_screen.dart';
+import '../../../cl_main/view/screens/cleaning_first_welcome.dart';
 import '../../../orders/data/models/cleaning_booking_status.dart';
 import '../../../orders/data/models/cleaning_orders_api_models.dart';
 import '../../../orders/data/models/orders_api_models.dart';
@@ -69,6 +70,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (AuthGate.isAuthenticated) {
       _refreshAuthenticatedContext();
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showFirstWelcome());
+  }
+
+  Future<void> _showFirstWelcome() async {
+    if (!await CleaningFirstWelcome.shouldPresent()) return;
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => CleaningFirstWelcome(
+          // All services are already selectable on the home page.
+          onStart: () {},
+        ),
+      ),
+    );
   }
 
   @override
@@ -126,7 +141,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await Future<void>.delayed(const Duration(milliseconds: 300));
   }
 
-  void _openCleaning() {
+  Future<void> _openCleaning() async {
+    if (await CleaningFirstWelcome.shouldPresentServices()) {
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => CleaningFirstWelcome(
+            servicesSection: true,
+            onStart: () {
+              if (mounted) _navigateToCleaning();
+            },
+          ),
+        ),
+      );
+      return;
+    }
+    if (mounted) _navigateToCleaning();
+  }
+
+  void _navigateToCleaning() {
     context.pushRoute(
       '/clmain',
       arguments: ClMainScreenParams(profileBloc: profileBloc),
@@ -389,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const AppSectionHeading(title: 'اكتشف خدماتنا'),
+            const AppSectionHeading(title: 'خدمات تناسب يومك'),
             const SizedBox(height: 8),
             HomeCube(offers: state.userOffers.list),
           ],

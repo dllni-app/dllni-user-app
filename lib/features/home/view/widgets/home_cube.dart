@@ -39,14 +39,16 @@ class _HomeCubeState extends State<HomeCube> {
       4,
       (index) => offers[index % offers.length],
     );
-    final width = math.min(MediaQuery.sizeOf(context).width - 40, 380.0);
+    // Keep the rotation plane square rather than the stretched banner used
+    // previously. The available width is capped for large phones/tablets.
+    final width = math.min(MediaQuery.sizeOf(context).width - 40, 280.0);
     return Semantics(
       label: 'العروض الإعلانية، اسحب لاستعراض الأوجه الأربعة',
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: FlutterCubeTransition(
-          width: width * .74,
-          height: 192,
+          width: width,
+          height: width,
           secondsToSwipe: const Duration(seconds: 4),
           animationDuration: const Duration(milliseconds: 250),
           animationCurve: Curves.easeOutCubic,

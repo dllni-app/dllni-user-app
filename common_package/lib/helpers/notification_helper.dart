@@ -25,7 +25,6 @@ class _ResolvedRoute {
 const String _lifecycleMarkerKey = '_notification_lifecycle';
 const String _basicChannelKey = 'basic_channel';
 const String _notificationIcon = 'resource://drawable/notification_icon';
-const String _notificationLargeIcon = 'resource://mipmap/launcher_icon';
 
 List<NotificationChannel> get _basicNotificationChannels => [
   NotificationChannel(
@@ -67,7 +66,6 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   //     body: message.notification?.body ?? message.data['body'] ?? '',
   //     payload: payload,
   //     icon: _notificationIcon,
-  //     largeIcon: _notificationLargeIcon,
   //   ),
   // );
 }
@@ -242,7 +240,7 @@ class NotificationHelper {
 
   static Future<void> _persistToken(String tokenKey, String token) async {
     await SharedPreferencesHelper.saveData(key: tokenKey, value: token);
-    log('FCM Token: $token');
+    log('FCM token persisted.');
     await _notifyTokenAvailable(token);
   }
 
@@ -300,7 +298,6 @@ class NotificationHelper {
         body: message.notification?.body ?? message.data['body'] ?? '',
         payload: payload,
         icon: _notificationIcon,
-        largeIcon: _notificationLargeIcon,
       ),
     );
   }
