@@ -102,4 +102,31 @@ void main() {
       hasLength(1),
     );
   });
+  testWidgets(
+    'shows the commission-inclusive price of one large deep bedroom without a minimum warning',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ClServiceOrderSummarySectionWidget(
+              basePrice: 1470,
+              travelFee: 300,
+              addonsTotal: 0,
+              totalPrice: 2138,
+              adminMargin: 368,
+              minimumOrderPrice: 1500,
+              minimumOrderApplied: false,
+              currency: 'SYP',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('1,838'), findsOneWidget);
+      expect(find.textContaining('2,138'), findsOneWidget);
+      expect(find.textContaining('أقل قيمة لطلب التنظيف هي'), findsNothing);
+    },
+  );
+
+
 }
