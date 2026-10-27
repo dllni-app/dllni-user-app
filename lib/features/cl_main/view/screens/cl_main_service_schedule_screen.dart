@@ -16,7 +16,6 @@ import '../../data/models/cleaning_services_response_model.dart';
 import '../../data/models/cleaning_suite_config_model.dart';
 import '../../data/source/cl_main_remote_data_source.dart';
 import '../../domain/models/cl_worker_room_assignment.dart';
-import '../../domain/models/cl_worker_room_assignment_result.dart';
 import '../../domain/models/cleaning_assignment_mode.dart';
 import '../../domain/models/cleaning_recurring_session.dart';
 import '../../domain/models/cleaning_type.dart';
@@ -41,7 +40,6 @@ import '../widgets/cl_scheduled_previous_workers_section_widget.dart';
 import '../widgets/cl_service_address_section_widget.dart';
 import '../widgets/cl_service_assignment_mode_section_widget.dart';
 import '../widgets/cl_service_worker_count_selector_widget.dart';
-import '../widgets/cl_service_worker_room_assignment_widget.dart';
 import '../widgets/cl_service_coupon_section_widget.dart';
 import '../widgets/cl_service_gender_preference_section_widget.dart';
 import '../widgets/cl_service_order_summary_section_widget.dart';
@@ -183,9 +181,7 @@ class _ClMainServiceScheduleScreenState
                 '${period.room.roomType.apiKey} ${period.room.index} · ${period.room.cleaningType.title}',
               ),
               subtitle: Text(
-                '${period.scheduledDate.toIso8601String().substring(0, 10)} · ${period.scheduledTime} · ${period.workers} عامل · ${period.providedByPlatform
-                        ? 'مواد من المنصة'
-                        : 'مواد من العميل'} · ${period.specialServices.length} خدمات',
+                '${period.scheduledDate.toIso8601String().substring(0, 10)} · ${period.scheduledTime} · ${period.workers} عامل · ${period.providedByPlatform ? 'مواد من المنصة' : 'مواد من العميل'} · ${period.specialServices.length} خدمات',
               ),
               trailing: Text(
                 (() {
@@ -214,7 +210,6 @@ class _ClMainServiceScheduleScreenState
       const <CleaningRecurringSessionInput>[];
   List<CleaningOpenTimeSessionRequest> _openTimeSessions =
       const <CleaningOpenTimeSessionRequest>[];
-  bool _manualRoomAssignmentEnabled = false;
   bool _customerProvidesMaterials = true;
   Set<int> _missingMaterialTypeIds = <int>{};
   int _scheduleStep = 0;
@@ -821,8 +816,7 @@ class _ClMainServiceScheduleScreenState
                                       Text(
                                         estimate?.pricing?.totalPrice == null
                                             ? 'جارٍ حساب السعر...'
-                                            : '${estimate!.pricing!.totalPrice!
-                                                      .toStringAsFixed(0)} ل.س',
+                                            : '${estimate!.pricing!.totalPrice!.toStringAsFixed(0)} ل.س',
                                         style: const TextStyle(
                                           fontSize: 25,
                                           fontWeight: FontWeight.w800,
@@ -1107,7 +1101,6 @@ class _ClMainServiceScheduleScreenState
               final safeCount = state.numberOfWorkers.clamp(1, maxWorkers);
               bloc.add(SetAssignmentModeEvent(mode: mode));
               bloc.add(ClearWorkerRoomAssignmentsEvent());
-              setState(() => _manualRoomAssignmentEnabled = false);
               _requestUpdatedEstimate(
                 state.copyWith(
                   assignmentMode: mode,
@@ -1122,7 +1115,6 @@ class _ClMainServiceScheduleScreenState
 
             bloc.add(SetAssignmentModeEvent(mode: mode));
             bloc.add(ClearWorkerRoomAssignmentsEvent());
-            setState(() => _manualRoomAssignmentEnabled = false);
             _requestUpdatedEstimate(
               state.copyWith(
                 assignmentMode: mode,
@@ -1170,15 +1162,13 @@ class _ClMainServiceScheduleScreenState
             maxCount: maxWorkers,
             onChanged: (count) {
               bloc.add(SetNumberOfWorkersEvent(count: count));
-              if (!_manualRoomAssignmentEnabled) {
-                bloc.add(ClearWorkerRoomAssignmentsEvent());
-              }
+              bloc.add(ClearWorkerRoomAssignmentsEvent());
               _requestUpdatedEstimate(
                 state.copyWith(
                   assignmentMode: CleaningAssignmentMode.openCount,
                   numberOfWorkers: count,
                   clearSelectedWorkers: true,
-                  clearWorkerRoomAssignments: !_manualRoomAssignmentEnabled,
+                  clearWorkerRoomAssignments: true,
                 ),
                 selectedWorkerIds: const <int>[],
               );
@@ -1186,74 +1176,6 @@ class _ClMainServiceScheduleScreenState
           ),
           const SizedBox(height: 10),
           _workerDurationHint(state.numberOfWorkers, estimate),
-        ],
-        if (roomUnits.isNotEmpty &&
-            (state.numberOfWorkers > 1 ||
-                (state.assignmentMode ==
-                        CleaningAssignmentMode.preferredWorker &&
-                    state.selectedWorkerIds.isNotEmpty))) ...[
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: SwitchListTile.adaptive(
-              value: _manualRoomAssignmentEnabled,
-              onChanged: (enabled) {
-                setState(() => _manualRoomAssignmentEnabled = enabled);
-                if (!enabled) {
-                  bloc.add(ClearWorkerRoomAssignmentsEvent());
-                  _requestUpdatedEstimate(
-                    state.copyWith(clearWorkerRoomAssignments: true),
-                  );
-                }
-              },
-              title: const Text(
-                'تحديد الغرف لكل عامل',
-                textAlign: TextAlign.start,
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              subtitle: const Text(
-                'اترك هذا الخيار مغلقاً إذا لم تكن لديك تفضيلات.',
-                textAlign: TextAlign.start,
-              ),
-            ),
-          ),
-          if (_manualRoomAssignmentEnabled) ...[
-            const SizedBox(height: 12),
-            ClServiceWorkerRoomAssignmentWidget(
-              units: roomUnits,
-              numberOfWorkers: state.numberOfWorkers,
-              slotByRoomKey: state.workerRoomAssignments,
-              fieldErrors: state.assignmentFieldErrors,
-              submittedAssignments: buildWorkerRoomAssignmentsJson(
-                slotByRoomKey: state.workerRoomAssignments,
-                units: roomUnits,
-                preferredWorkerId: state.primarySelectedWorkerId,
-                assignmentMode: state.numberOfWorkers > 1
-                    ? CleaningAssignmentMode.openCount
-                    : state.assignmentMode,
-              ),
-              onAssign: (roomKey, workerSlot) {
-                bloc.add(
-                  SetWorkerRoomSlotEvent(
-                    roomKey: roomKey,
-                    workerSlot: workerSlot,
-                  ),
-                );
-                _requestUpdatedEstimate(
-                  state.copyWith(
-                    workerRoomAssignments: {
-                      ...state.workerRoomAssignments,
-                      roomKey: workerSlot,
-                    },
-                  ),
-                );
-              },
-            ),
-          ],
         ],
       ],
     );
@@ -1410,9 +1332,6 @@ class _ClMainServiceScheduleScreenState
         _recurringWorkerScope =
             draft['recurringWorkerScope'] as CleaningRecurringWorkerScope? ??
             _recurringWorkerScope;
-        _manualRoomAssignmentEnabled =
-            draft['manualRoomAssignment'] as bool? ??
-            _manualRoomAssignmentEnabled;
       }
       if (_isPeriodBooking) _isRecurring = false;
       // A restored worker/review step needs a fresh address- and worker-scoped
@@ -1480,8 +1399,7 @@ class _ClMainServiceScheduleScreenState
         )
         ..['recurringCalculationMode'] = _recurringCalculationMode
         ..['recurringHoursPerVisit'] = _recurringHoursPerVisit
-        ..['recurringWorkerScope'] = _recurringWorkerScope
-        ..['manualRoomAssignment'] = _manualRoomAssignmentEnabled;
+        ..['recurringWorkerScope'] = _recurringWorkerScope;
     }
     _scheduleScrollController.dispose();
     _fromTimeController.dispose();
@@ -2800,22 +2718,6 @@ class _ClMainServiceScheduleScreenState
                     ? CleaningAssignmentMode.preferredWorker
                     : CleaningAssignmentMode.openCount))
         : state.assignmentMode;
-    final normalizedAssignments = estimate?.workerRoomAssignments ?? const [];
-    final explicitAssignments = buildWorkerRoomAssignmentsJson(
-      slotByRoomKey: state.workerRoomAssignments,
-      units: enumerateRoomUnits(args.roomSizeBreakdown),
-      preferredWorkerId: selectedWorkerIds.length == 1
-          ? selectedWorkerIds.first
-          : null,
-      assignmentMode: requestAssignmentMode,
-    );
-    final workerRoomAssignments =
-        _manualRoomAssignmentEnabled && explicitAssignments.isNotEmpty
-        ? explicitAssignments
-        : normalizedAssignments.isNotEmpty
-        ? workerRoomAssignmentsToRequestJson(normalizedAssignments)
-        : explicitAssignments;
-
     bloc.add(
       CreateCleaningOrderEvent(
         params: CreateCleaningOrderParams(
@@ -2853,9 +2755,6 @@ class _ClMainServiceScheduleScreenState
               : null,
           recurringWorkerScope: _recurringWorkerScope,
           cleaningServices: _selectedCleaningServicesPayload(),
-          workerRoomAssignments: workerRoomAssignments.isEmpty
-              ? null
-              : workerRoomAssignments,
           couponCode: _appliedCouponCode,
           notes: _bookingNotesController.text.trim(),
           serviceExtras: _serviceExtras,
@@ -2963,7 +2862,6 @@ class _ClMainServiceScheduleScreenState
         _isRecurring && estimateWorkerScope == CleaningRecurringWorkerScope.any
         ? const <int>[]
         : rawWorkerIds;
-    final preferredWorkerId = workerIds.isEmpty ? null : workerIds.first;
     final stateWorkerCount = state.numberOfWorkers < 1
         ? 1
         : state.numberOfWorkers;
@@ -2987,13 +2885,6 @@ class _ClMainServiceScheduleScreenState
         : (requestedWorkers > 1
               ? CleaningAssignmentMode.openCount
               : state.assignmentMode);
-    final workerRoomAssignments = buildWorkerRoomAssignmentsJson(
-      slotByRoomKey: state.workerRoomAssignments,
-      units: enumerateRoomUnits(args.roomSizeBreakdown),
-      preferredWorkerId: preferredWorkerId,
-      assignmentMode: assignmentMode,
-    );
-
     bloc.add(
       EstimateCleaningPriceEvent(
         params: EstimateCleaningPriceParams(
@@ -3021,9 +2912,6 @@ class _ClMainServiceScheduleScreenState
               ? _recurringHoursPerVisit
               : null,
           recurringWorkerScope: estimateWorkerScope,
-          workerRoomAssignments: workerRoomAssignments.isEmpty
-              ? null
-              : workerRoomAssignments,
           serviceExtras: _serviceExtras,
         ),
       ),

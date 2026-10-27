@@ -341,10 +341,13 @@ class EstimatePricingModel {
   final double? basePrice;
   final double? travelFee;
   final double? addonsTotal;
+  final double? materialsTotal;
+  final double? specialServicesTotal;
   final double? totalPrice;
   final double? distanceKm;
   final double? adminMargin;
   final bool? isPricingFinal;
+  final bool travelFeePending;
   final double? minimumOrderPrice;
   final bool minimumOrderApplied;
   final String? currency;
@@ -357,10 +360,13 @@ class EstimatePricingModel {
     this.basePrice,
     this.travelFee,
     this.addonsTotal,
+    this.materialsTotal,
+    this.specialServicesTotal,
     this.totalPrice,
     this.distanceKm,
     this.adminMargin,
     this.isPricingFinal,
+    this.travelFeePending = false,
     this.minimumOrderPrice,
     this.minimumOrderApplied = false,
     this.currency,
@@ -386,12 +392,21 @@ class EstimatePricingModel {
       basePrice: _toDouble(json['basePrice'] ?? json['base_price']),
       travelFee: _toDouble(json['travelFee'] ?? json['travel_fee']),
       addonsTotal: _toDouble(json['addonsTotal'] ?? json['addons_total']),
+      materialsTotal: _toDouble(
+        json['materialsTotal'] ?? json['materials_total'],
+      ),
+      specialServicesTotal: _toDouble(
+        json['specialServicesTotal'] ?? json['special_services_total'],
+      ),
       totalPrice: _toDouble(json['totalPrice'] ?? json['total_price']),
       distanceKm: _toDouble(json['distanceKm'] ?? json['distance_km']),
       adminMargin: _toDouble(json['adminMargin'] ?? json['admin_margin']),
       isPricingFinal: _toBool(
         json['isPricingFinal'] ?? json['is_pricing_final'],
       ),
+      travelFeePending:
+          _toBool(json['travelFeePending'] ?? json['travel_fee_pending']) ??
+          false,
       minimumOrderPrice: _toDouble(
         pricingAlgorithm['minimumOrderPrice'] ??
             pricingAlgorithm['minimum_order_price'],

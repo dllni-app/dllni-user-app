@@ -38,7 +38,6 @@ import '../../domain/usecases/confirm_cleaning_completion_use_case.dart';
 import '../../domain/usecases/extend_cleaning_completion_time_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_order_details_use_case.dart';
 import '../../domain/usecases/fetch_cleaning_worker_profile_use_case.dart';
-import '../../domain/usecases/patch_cleaning_room_assignments_use_case.dart';
 import '../../domain/usecases/reject_cleaning_completion_use_case.dart';
 import '../helpers/cleaning_event_assistance_helper.dart';
 import '../helpers/cleaning_extension_decision_presenter.dart';
@@ -110,7 +109,6 @@ class _CleaningOrderDetailsScreenState
   bool _realtimeAuthWarningShown = false;
   bool _reopenCompletionAfterRefresh = false;
   bool _isRebooking = false;
-  bool _isPatchingRoomAssignments = false;
   bool _isLastHourDecisionSubmitting = false;
   Timer? _detailsFallbackRefreshDebounce;
   Timer? _detailsPollTimer;
@@ -435,10 +433,6 @@ class _CleaningOrderDetailsScreenState
           (order.roomAssignments ?? const []).isNotEmpty)
         CleaningRoomAssignmentsSectionWidget(
           roomAssignments: order.roomAssignments!,
-          acceptedWorkers: order.acceptedWorkerAssignments,
-          isEditable: _canEditRoomAssignments(order),
-          isSaving: _isPatchingRoomAssignments,
-          onAssignRoom: _assignRoom,
         ),
       if (CleaningEventAssistanceHelper.isEventAssistance(order.propertyType))
         V7EventOrderPanel(
@@ -752,43 +746,6 @@ class _CleaningOrderDetailsScreenState
     });
   }
 
-  Future<void> _assignRoom(int roomId, int? workerId) async {
-    if (_isPatchingRoomAssignments) return;
-    setState(() => _isPatchingRoomAssignments = true);
-
-    final response = await getIt<PatchCleaningRoomAssignmentsUseCase>()(
-      PatchCleaningRoomAssignmentsParams(
-        orderId: _activeOrderId,
-        assignments: [
-          CleaningRoomAssignmentUpdate(roomId: roomId, workerId: workerId),
-        ],
-      ),
-    );
-
-    if (!mounted) return;
-    response.fold(
-      (failure) {
-        setState(() => _isPatchingRoomAssignments = false);
-        AppToast.showToast(
-          context: context,
-          message: failure.message,
-          type: ToastificationType.error,
-        );
-      },
-      (result) {
-        setState(() {
-          _isPatchingRoomAssignments = false;
-          _order = result.data ?? _order;
-        });
-        AppToast.showToast(
-          context: context,
-          message: 'تم تحديث توزيع الغرف',
-          type: ToastificationType.success,
-        );
-      },
-    );
-  }
-
   bool _blocksCancel(CleaningOrderDetailModel order) {
     final s = _normStatus(order.status);
     return order.customerMutationsLocked ||
@@ -920,12 +877,6 @@ class _CleaningOrderDetailsScreenState
       );
       Navigator.of(context).pop(true);
     }
-  }
-
-  bool _canEditRoomAssignments(CleaningOrderDetailModel order) {
-    final s = _normStatus(order.status);
-    return s == CleaningBookingStatus.pending ||
-        s == CleaningBookingStatus.workerAssigned;
   }
 
   Future<void> _changeAddress(CleaningOrderDetailModel order) async {

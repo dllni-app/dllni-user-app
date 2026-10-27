@@ -1103,7 +1103,10 @@ class CleaningOrderDetailModel {
         m['workerAssignments'] ?? m['worker_assignments'],
       ).map(CleaningWorkerAssignmentModel.fromJson).toList(growable: false),
       roomAssignments: _toMapList(
-        m['roomAssignments'] ?? m['room_assignments'],
+        m['roomTasks'] ??
+            m['room_tasks'] ??
+            m['roomAssignments'] ??
+            m['room_assignments'],
       ).map(CleaningRoomAssignmentModel.fromJson).toList(growable: false),
       myAssignment: m['myAssignment'] == null && m['my_assignment'] == null
           ? null

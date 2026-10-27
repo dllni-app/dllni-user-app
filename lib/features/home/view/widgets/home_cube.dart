@@ -6,9 +6,7 @@ import 'package:flutter_cube_transition/flutter_cube_transition.dart';
 
 import '../../../../core/themes/shared_platform_colors.dart';
 
-/// V6 shared-home advertising cube with four real offer faces.
-/// HomeScreen uses this directly and obtains offers from the existing HomeBloc.
-/// Missing media/text falls back to neutral service information, not fake offers.
+/// Advertising cube with a reserved viewport for its projected faces.
 class HomeCube extends StatefulWidget {
   const HomeCube({super.key, required this.offers});
   final List<UserOfferItem> offers;
@@ -27,47 +25,70 @@ class _HomeCubeState extends State<HomeCube> {
 
   @override
   Widget build(BuildContext context) {
-    final offers = widget.offers.isEmpty
-        ? <UserOfferItem>[
-            UserOfferItem(
-              title: 'اكتشف خدماتنا',
-              description: 'خدمات التنظيف والمطاعم والتسوق والتوصيل',
-            ),
-          ]
-        : widget.offers;
-    final padded = List<UserOfferItem>.generate(
-      4,
-      (index) => offers[index % offers.length],
-    );
-    // Keep the rotation plane square rather than the stretched banner used
-    // previously. The available width is capped for large phones/tablets.
-    final width = math.min(MediaQuery.sizeOf(context).width - 40, 280.0);
+    final serviceFaces = <UserOfferItem>[
+      UserOfferItem(
+        title: 'التنظيف المنزلي',
+        description: 'بيت مرتّب ووقت أكثر إلك',
+      ),
+      UserOfferItem(title: 'المطاعم', description: 'أكلك المفضل لباب البيت'),
+      UserOfferItem(title: 'التسوّق', description: 'كل احتياجاتك بمكان واحد'),
+      UserOfferItem(title: 'التوصيل', description: 'مشاويرك علينا'),
+    ];
+    // A single backend campaign must not appear to be a frozen cube by
+    // repeating the same artwork on all four faces. Fill unused faces with
+    // honest service discovery content, never with invented promotions.
+    final padded = <UserOfferItem>[
+      ...widget.offers.take(4),
+      ...serviceFaces,
+    ].take(4).toList(growable: false);
     return Semantics(
-      label: 'العروض الإعلانية، اسحب لاستعراض الأوجه الأربعة',
+      label: 'تعرّف على خدمات ع الندهة، اسحب المكعب لاستعراض الخدمات',
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: FlutterCubeTransition(
-          width: width,
-          height: width,
-          secondsToSwipe: const Duration(seconds: 4),
-          animationDuration: const Duration(milliseconds: 250),
-          animationCurve: Curves.easeOutCubic,
-          enableHapticFeedback: true,
-          perspectiveStrength: .0015,
-          showControls: false,
-          borderVisible: false,
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          textAlign: Alignment.topLeft,
-          borderRadius: BorderRadius.circular(20),
-          dragSensitivity: .006,
-          dragThreshold: .6,
-          faceTextStyle: const TextStyle(
-            fontSize: 1,
-            color: Colors.transparent,
-          ),
-          faces: {
-            for (var i = 0; i < _faces.length; i++)
-              _faces[i]: _faceForOffer(padded[i]),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Leave room for the perspective projection throughout rotation.
+            final side = math.min(constraints.maxWidth / 1.42, 260.0);
+            return Center(
+              child: SizedBox(
+                key: const Key('home_cube_safe_viewport'),
+                width: side * 1.42,
+                height: side * 1.4,
+                child: ClipRect(
+                  child: Center(
+                    child: FlutterCubeTransition(
+                      width: side,
+                      height: side,
+                      initialRotationY: 0,
+                      obliqueFaceContentThreshold: .55,
+                      secondsToSwipe: const Duration(seconds: 5),
+                      animationDuration: const Duration(milliseconds: 280),
+                      animationCurve: Curves.easeOutCubic,
+                      enableHapticFeedback: false,
+                      perspectiveStrength: .00125,
+                      showControls: false,
+                      borderVisible: false,
+                      faceShadowColor: const Color(0x220D2454),
+                      faceShadowBlurRadius: 8,
+                      faceShadowSpreadRadius: 0,
+                      margin: EdgeInsets.zero,
+                      textAlign: Alignment.center,
+                      borderRadius: BorderRadius.circular(24),
+                      dragSensitivity: .007,
+                      dragThreshold: .5,
+                      faceTextStyle: const TextStyle(
+                        fontSize: 1,
+                        color: Colors.transparent,
+                      ),
+                      faces: {
+                        for (var i = 0; i < _faces.length; i++)
+                          _faces[i]: _faceForOffer(padded[i]),
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            );
           },
         ),
       ),
@@ -86,7 +107,7 @@ class _HomeCubeState extends State<HomeCube> {
     return CubeFaceData(
       color: SharedPlatformColors.primary,
       text: '',
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -139,7 +160,7 @@ class _HomeCubeState extends State<HomeCube> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 3),
                   ],
                   if (title.isNotEmpty)
                     Text(
@@ -161,7 +182,7 @@ class _HomeCubeState extends State<HomeCube> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 12,
                         height: 1.4,
                       ),
                     ),

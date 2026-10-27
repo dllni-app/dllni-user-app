@@ -52,6 +52,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
   List<CleaningMaterialLineModel> _materials = [];
   final Map<String, List<CleaningMaterialLineModel>> _periodMaterials = {};
   List<CleaningServiceModel> _services = [];
+  final Map<String, int> _baseRoomWorkMinutes = {};
   bool _loadingServices = false;
   bool _servicesCatalogError = false;
   List<PreviousWorkerModel> _previousWorkers = [];
@@ -357,8 +358,46 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
     );
   }
 
+  /// Match the server's room scheduling rule: a selected specialist service
+  /// adds work to its target room before we place the next room in the same
+  /// worker's lane. Prices remain server-authoritative.
+  CleaningBookingDraft _planSelectedWork(
+    CleaningBookingDraft draft, {
+    required int workerCount,
+  }) {
+    if (_baseRoomWorkMinutes.isEmpty) {
+      return planCleaningTeam(draft, workerCount: workerCount);
+    }
+    final effective = Map<String, int>.from(_baseRoomWorkMinutes);
+    for (final selection in _bookingServices) {
+      CleaningServiceModel? service;
+      for (final candidate in _services) {
+        if (candidate.id == selection.serviceId) {
+          service = candidate;
+          break;
+        }
+      }
+      final extra =
+          ((service?.estimatedDurationMinutes ?? 0) * selection.quantity)
+              .ceil();
+      if (extra <= 0) continue;
+      for (final roomKey in selection.targetRoomKeys) {
+        effective[roomKey] = (effective[roomKey] ?? 60) + extra;
+      }
+    }
+    return planCleaningTeam(
+      draft,
+      workerCount: workerCount,
+      effectiveWorkMinutesByRoom: effective,
+    );
+  }
+
   void _changeDraft(CleaningBookingDraft revised) {
-    setState(() => _draft = _applyBookingSelections(revised));
+    setState(
+      () => _draft = _applyBookingSelections(
+        _planSelectedWork(revised, workerCount: _teamWorkers),
+      ),
+    );
     _inputChanged();
   }
 
@@ -374,11 +413,15 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
         GetCleaningServicesParams(category: 'special_service'),
       );
       if (!mounted) return;
-      setState(
-        () => _services = catalog.data
+      setState(() {
+        _services = catalog.data
             .where((service) => service.isActive != false && service.id != null)
-            .toList(),
-      );
+            .toList();
+        _draft = _applyBookingSelections(
+          _planSelectedWork(_draft, workerCount: _teamWorkers),
+        );
+      });
+      if (_bookingServices.isNotEmpty) _inputChanged();
     } on DioException catch (_) {
       if (mounted) setState(() => _servicesCatalogError = true);
     } on Failure catch (_) {
@@ -405,8 +448,9 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
         );
       }
       if (preview.roomWorkMinutes.isNotEmpty) {
+        _baseRoomWorkMinutes.addAll(preview.roomWorkMinutes);
         updatedDraft = _applyBookingSelections(
-          planCleaningTeam(updatedDraft, workerCount: _teamWorkers),
+          _planSelectedWork(updatedDraft, workerCount: _teamWorkers),
         );
       }
       setState(() {
@@ -1138,7 +1182,7 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
       }
     }
     return _applyBookingSelections(
-      planCleaningTeam(draft, workerCount: _teamWorkers),
+      _planSelectedWork(draft, workerCount: _teamWorkers),
     );
   }
 
@@ -1394,12 +1438,21 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'المدة الإجمالية المتوقعة: ${minutes >= 60 ? '${minutes ~/ 60} ساعة و${minutes % 60} دقيقة' : '$minutes دقيقة'}',
+                    'المدة المتوقعة للزيارة مع الفريق المختار: ${minutes >= 60 ? '${minutes ~/ 60} ساعة و${minutes % 60} دقيقة' : '$minutes دقيقة'}',
                     key: const Key('booking_total_duration'),
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       color: SharedPlatformColors.cleaning,
                     ),
+                  ),
+                ),
+              if (minutes != null && minutes <= 480)
+                const Padding(
+                  padding: EdgeInsets.only(top: 5),
+                  child: Text(
+                    'المدة المتوقعة ضمن حد 8 ساعات. لا تُجمع ساعات الغرف المتتالية كأنها أعمال متزامنة.',
+                    key: Key('booking_duration_explanation'),
+                    style: AlnadhaTokens.caption,
                   ),
                 ),
               if (_bookingServices.isNotEmpty && minutes != null)
@@ -2325,6 +2378,16 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
     ),
   );
 
+  Widget _reviewPriceRow(String label, double value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        Expanded(child: Text(label, style: AlnadhaTokens.caption)),
+        Text('${value.toStringAsFixed(0)} ل.س', style: AlnadhaTokens.caption),
+      ],
+    ),
+  );
+
   Widget _review() {
     final duration = cleaningTeamDurationMinutes(_draft);
     final materialNames = [
@@ -2522,14 +2585,30 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'الإجمالي النهائي لجميع المواعيد',
+                'ملخص تكلفة جميع المواعيد',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
+              if (_quoteCurrent && _quote!.pricing?.travelFeePending == true)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    'المبلغ الحالي لا يشمل أجور التنقل التي تُحدد بعد تعيين العامل. ليس السعر النهائي للطلب.',
+                    key: Key('booking_travel_fee_pending'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: SharedPlatformColors.cleaningInk,
+                    ),
+                  ),
+                ),
               const SizedBox(height: 8),
               Text(
                 _quoteCurrent
                     ? '${_quote!.pricing?.totalPrice?.toStringAsFixed(0) ?? '—'} ${(_quote!.pricing?.currency ?? 'SYP') == 'SYP' ? 'ل.س' : (_quote!.pricing?.currency ?? '')}'
-                    : 'بانتظار تحديث الإجمالي',
+                    : _quoting
+                    ? 'جارٍ احتساب السعر…'
+                    : _error != null
+                    ? 'تعذّر حساب الإجمالي'
+                    : 'السعر قيد التحديث',
                 key: const Key('booking_total'),
                 style: const TextStyle(
                   fontSize: 24,
@@ -2537,6 +2616,41 @@ class _CleaningBookingV2ScreenState extends State<CleaningBookingV2Screen> {
                   color: SharedPlatformColors.cleaningInk,
                 ),
               ),
+              if (_quoteCurrent && _quote!.pricing != null) ...[
+                const SizedBox(height: 12),
+                if (_quote!.pricing!.basePrice != null)
+                  _reviewPriceRow('قيمة الخدمة', _quote!.pricing!.basePrice!),
+                if ((_quote!.pricing!.materialsTotal ?? 0) > 0)
+                  _reviewPriceRow(
+                    'مواد التنظيف',
+                    _quote!.pricing!.materialsTotal!,
+                  ),
+                if ((_quote!.pricing!.specialServicesTotal ?? 0) > 0)
+                  _reviewPriceRow(
+                    'الخدمات الخاصة',
+                    _quote!.pricing!.specialServicesTotal!,
+                  ),
+                _reviewPriceRow(
+                  _quote!.pricing!.travelFeePending
+                      ? 'بدل المواصلات غير المحدد بعد'
+                      : 'بدل المواصلات',
+                  _quote!.pricing!.travelFee ?? 0,
+                ),
+                if ((_quote!.pricing!.adminMargin ?? 0) > 0)
+                  _reviewPriceRow(
+                    'هامش الإدارة',
+                    _quote!.pricing!.adminMargin!,
+                  ),
+              ],
+              if (!_quoteCurrent)
+                const Padding(
+                  padding: EdgeInsets.only(top: 7),
+                  child: Text(
+                    'لن يُرسل الطلب قبل عرض السعر النهائي من الخادم. إذا ظهر خطأ في المدة، راجع حجم الفريق أو موعد الغرف.',
+                    key: Key('booking_price_help'),
+                    style: AlnadhaTokens.caption,
+                  ),
+                ),
               if (!_quoteCurrent)
                 TextButton.icon(
                   onPressed: _quoting ? null : _refreshQuote,

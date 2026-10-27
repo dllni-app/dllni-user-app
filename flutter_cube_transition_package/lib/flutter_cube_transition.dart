@@ -4,8 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
 enum SwipDirection { left, right }
+
 /// An interactive 3D cube that responds to horizontal drag gestures
 /// Optimized for performance with better memory management and smoother animations
 class FlutterCubeTransition extends StatefulWidget {
@@ -30,6 +30,20 @@ class FlutterCubeTransition extends StatefulWidget {
   final Duration? secondsToSwipe;
   final SwipDirection swipDirection;
 
+  /// Optional initial viewing angle so two faces are visible at rest.
+  final double initialRotationY;
+
+  /// Optional subtler shadows for compact cubes embedded in a home card.
+  final Color? faceShadowColor;
+  final double? faceShadowBlurRadius;
+  final double? faceShadowSpreadRadius;
+
+  /// When set, fades the content of a face while it turns edge-on, without
+  /// hiding the solid cube surface. This keeps text readable on small cubes.
+  /// The value is the face-normal cosine where the content starts fading in.
+  /// Leave null for the original behavior.
+  final double? obliqueFaceContentThreshold;
+
   const FlutterCubeTransition({
     super.key,
     this.width = 280,
@@ -51,7 +65,12 @@ class FlutterCubeTransition extends StatefulWidget {
     this.textPadding,
     this.margin = const EdgeInsets.all(8.0),
     this.secondsToSwipe,
-    this.swipDirection = SwipDirection.right
+    this.swipDirection = SwipDirection.right,
+    this.initialRotationY = 0,
+    this.faceShadowColor,
+    this.faceShadowBlurRadius,
+    this.faceShadowSpreadRadius,
+    this.obliqueFaceContentThreshold,
   });
 
   @override
@@ -87,6 +106,8 @@ class _FlutterCubeTransitionState extends State<FlutterCubeTransition>
   @override
   void initState() {
     super.initState();
+    _currentRotationY = widget.initialRotationY;
+    _baseRotationY = widget.initialRotationY;
     _initializeCache();
     _initializeAnimation();
   }
@@ -98,6 +119,11 @@ class _FlutterCubeTransitionState extends State<FlutterCubeTransition>
         oldWidget.height != widget.height ||
         oldWidget.perspectiveStrength != widget.perspectiveStrength) {
       _initializeCache();
+    }
+    if (oldWidget.initialRotationY != widget.initialRotationY) {
+      _baseRotationY = widget.initialRotationY;
+      _currentRotationY = widget.initialRotationY;
+      _dragOffsetY = 0;
     }
   }
 
@@ -339,6 +365,16 @@ class _FlutterCubeTransitionState extends State<FlutterCubeTransition>
     final double totalRotationY = _currentRotationY + faceRotation;
     final double opacity = _calculateFaceOpacity(totalRotationY);
 
+    final threshold = widget.obliqueFaceContentThreshold;
+    final double contentOpacity = threshold == null
+        ? 1
+        : ((math.cos(totalRotationY) - threshold) /
+                (1 - threshold).clamp(0.01, 1.0))
+            .clamp(0.0, 1.0);
+    // Do not wash out the decorative side into a pale translucent slab when
+    // its compressed text is hidden. Keep the 3D cube surface fully opaque.
+    final double surfaceOpacity = threshold == null ? opacity : 1.0;
+
     // Skip rendering faces that are not visible
     if (opacity <= 0.01) return const SizedBox.shrink();
 
@@ -348,12 +384,19 @@ class _FlutterCubeTransitionState extends State<FlutterCubeTransition>
         ..setEntry(3, 2, _perspectiveValue) // Apply perspective
         ..rotateY(totalRotationY)
         ..translateByDouble(0.0, 0.0, -_halfSize, 1.0), // Move face outward
-      child: Opacity(opacity: opacity, child: _buildFaceContainer(data)),
+      child: Opacity(
+        opacity: surfaceOpacity,
+        child: _buildFaceContainer(data, face, contentOpacity),
+      ),
     );
   }
 
   /// Build face container with styling
-  Widget _buildFaceContainer(CubeFaceData data) {
+  Widget _buildFaceContainer(
+    CubeFaceData data,
+    CubeFace face,
+    double contentOpacity,
+  ) {
     return Container(
       width: widget.width,
       height: widget.height,
@@ -367,9 +410,11 @@ class _FlutterCubeTransitionState extends State<FlutterCubeTransition>
         borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(_isDragging ? 204 : 153),
-            blurRadius: _isDragging ? 20 : 15,
-            spreadRadius: _isDragging ? 5 : 3,
+            color: widget.faceShadowColor ??
+                Colors.black.withAlpha(_isDragging ? 204 : 153),
+            blurRadius: widget.faceShadowBlurRadius ?? (_isDragging ? 20 : 15),
+            spreadRadius:
+                widget.faceShadowSpreadRadius ?? (_isDragging ? 5 : 3),
           ),
         ],
       ),
@@ -378,19 +423,23 @@ class _FlutterCubeTransitionState extends State<FlutterCubeTransition>
         borderRadius: data.borderRadius ??
             widget.borderRadius ??
             BorderRadius.circular(8),
-        child: Stack(
-          children: [
-            if (data.child != null) data.child!,
-            Align(
-              alignment: widget.textAlign!,
-              child: Padding(
-                padding: widget.textPadding ?? const EdgeInsets.all(8.0),
-                child: Text(data.text,
-                    style: widget.faceTextStyle ?? _defaultTextStyle,
-                    textAlign: TextAlign.center),
+        child: Opacity(
+          key: Key('cube_face_content_${face.name}'),
+          opacity: contentOpacity,
+          child: Stack(
+            children: [
+              if (data.child != null) data.child!,
+              Align(
+                alignment: widget.textAlign!,
+                child: Padding(
+                  padding: widget.textPadding ?? const EdgeInsets.all(8.0),
+                  child: Text(data.text,
+                      style: widget.faceTextStyle ?? _defaultTextStyle,
+                      textAlign: TextAlign.center),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

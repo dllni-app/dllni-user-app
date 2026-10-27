@@ -5,6 +5,7 @@ import 'package:common_package/helpers/dio_network.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:dllni_user_app/core/di/injection.dart';
 import 'package:dllni_user_app/core/models/cleaning_gender_preference.dart';
 import 'package:dllni_user_app/features/cl_main/data/repository/cl_main_repo_impl.dart';
@@ -27,6 +28,7 @@ import 'package:dllni_user_app/features/profile/domain/models/address_list_item.
 class BookingTransport implements HttpClientAdapter {
   bool failCreate = false;
   bool invalidSchedule = false;
+  bool travelFeePending = false;
   int materialPreviewCount = 1;
   final List<Map<String, dynamic>> submissions = [];
   final List<Map<String, dynamic>> estimates = [];
@@ -48,6 +50,7 @@ class BookingTransport implements HttpClientAdapter {
               'description': 'تنظيف الكنب والعناية بالأقمشة',
               'unitCode': 'seat',
               'supportsDirtiness': true,
+              'estimatedDurationMinutes': 90,
             },
           ],
         }),
@@ -121,7 +124,16 @@ class BookingTransport implements HttpClientAdapter {
           'quoteExpiresAt': DateTime.now()
               .add(const Duration(minutes: 15))
               .toIso8601String(),
-          'pricing': {'totalPrice': 350, 'currency': 'SYP'},
+          'pricing': {
+            'basePrice': 300,
+            'addonsTotal': 0,
+            'travelFee': 0,
+            'adminMargin': 50,
+            'totalPrice': 350,
+            'travelFeePending': travelFeePending,
+            'isPricingFinal': !travelFeePending,
+            'currency': 'SYP',
+          },
           'schedulingPolicy': {'minimumWorkers': 1, 'maximumWorkers': 20},
           'materialsPreview': [
             {'materialTypeId': 4, 'name': 'منظف الأرضيات'},
@@ -244,6 +256,12 @@ void main() {
     final draft = saved['bookingV2'] as CleaningBookingDraft;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('ar'), Locale('en')],
         onGenerateRoute: (settings) {
           if (settings.name == '/cleaning-order-details') {
             return MaterialPageRoute<void>(
@@ -692,6 +710,28 @@ void main() {
     },
   );
 
+  testWidgets('specialist time moves the next room without adding a worker', (
+    tester,
+  ) async {
+    await showStep(tester, 1);
+    await tester.tap(find.byKey(const Key('special_service_8')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('special_service_save')));
+    await tester.pumpAndSettle();
+
+    final draft = saved['bookingV2'] as CleaningBookingDraft;
+    final first = draft.schedules.firstWhere(
+      (schedule) => schedule.roomKey == 'bedroom.1',
+    );
+    final second = draft.schedules.firstWhere(
+      (schedule) => schedule.roomKey == 'bedroom.2',
+    );
+    expect(first.workMinutes, 330); // Base 240 + service 90.
+    expect(second.start, first.end);
+    expect(draft.peakWorkers, 1);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('materials collapse even when customer has partial materials', (
     tester,
   ) async {
@@ -753,6 +793,80 @@ void main() {
     expect(transport.estimates, isNotEmpty);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets(
+    'shows route-based transport as pending instead of claiming a final total',
+    (tester) async {
+      transport.travelFeePending = true;
+      await showStep(tester, 3);
+      expect(
+        find.byKey(const Key('booking_travel_fee_pending')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('350'), findsWidgets);
+      expect(
+        find.textContaining('المبلغ الحالي لا يشمل أجور التنقل'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('هامش الإدارة'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'changing the appointment date from review updates signed quote and create payload',
+    (tester) async {
+      final today = DateTime.now();
+      final initial = DateTime(today.year, today.month + 1, 10, 9);
+      final desired = DateTime(today.year, today.month + 1, 11, 9);
+      var booking = sharedPeriod();
+      for (final schedule in booking.schedules.toList()) {
+        booking = booking.replaceSchedule(schedule.copyWith(start: initial));
+      }
+      saved['bookingV2'] = booking;
+      await showStep(tester, 3);
+
+      final edit = find.byTooltip('تعديل العنوان والموعد');
+      await tester.ensureVisible(edit);
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      final date = find.byKey(const Key('booking_date'));
+      await tester.ensureVisible(date);
+      await tester.tap(date);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('${desired.day}').last);
+      await tester.tap(find.textContaining('حسن').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        (saved['bookingV2'] as CleaningBookingDraft).schedules.first.start
+            .toIso8601String()
+            .substring(0, 10),
+        desired.toIso8601String().substring(0, 10),
+      );
+      await tester.tap(find.text('متابعة'));
+      await tester.pumpAndSettle();
+
+      final estimatedDate =
+          ((transport.estimates.last['visits'] as List).first
+              as Map)['roomSchedules'][0]['scheduledDate'];
+      expect(estimatedDate, desired.toIso8601String().substring(0, 10));
+      expect(
+        find.textContaining(desired.toIso8601String().substring(0, 10)),
+        findsWidgets,
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('booking_submit')));
+      await tester.tap(find.byKey(const Key('booking_submit')));
+      await tester.pumpAndSettle();
+      expect(transport.submissions, isNotEmpty);
+      final submittedDate =
+          ((transport.submissions.last['visits'] as List).first
+              as Map)['roomSchedules'][0]['scheduledDate'];
+      expect(submittedDate, desired.toIso8601String().substring(0, 10));
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   testWidgets('monthly pattern skips missing day without moving to month end', (
     tester,

@@ -6,6 +6,7 @@ import 'cleaning_booking_draft.dart';
 CleaningBookingDraft planCleaningTeam(
   CleaningBookingDraft draft, {
   required int workerCount,
+  Map<String, int> effectiveWorkMinutesByRoom = const {},
 }) {
   if (workerCount < 1) throw ArgumentError.value(workerCount, 'workerCount');
   if (draft.schedules.isEmpty) return draft;
@@ -16,7 +17,13 @@ CleaningBookingDraft planCleaningTeam(
     final start = rooms
         .map((s) => s.start)
         .reduce((a, b) => a.isBefore(b) ? a : b);
-    final durations = [for (final s in rooms) s.workMinutes ?? 60];
+    // The backend schedules the full room workload, including optional
+    // specialist services. Using only the base room minutes causes the next
+    // room to start too early, producing a false simultaneous-worker error.
+    final durations = [
+      for (final s in rooms)
+        effectiveWorkMinutesByRoom[s.roomKey] ?? s.workMinutes ?? 60,
+    ];
     if (workerCount >= rooms.length) {
       final workers = List<int>.filled(rooms.length, 1);
       for (var extra = rooms.length; extra < workerCount; extra++) {
@@ -30,7 +37,13 @@ CleaningBookingDraft planCleaningTeam(
         workers[heaviest]++;
       }
       for (var i = 0; i < rooms.length; i++) {
-        updated.add(rooms[i].copyWith(start: start, workers: workers[i]));
+        updated.add(
+          rooms[i].copyWith(
+            start: start,
+            workers: workers[i],
+            workMinutes: durations[i],
+          ),
+        );
       }
     } else {
       final laneEnds = List<int>.filled(workerCount, 0);
@@ -43,6 +56,7 @@ CleaningBookingDraft planCleaningTeam(
           rooms[i].copyWith(
             start: start.add(Duration(minutes: laneEnds[freeLane])),
             workers: 1,
+            workMinutes: durations[i],
           ),
         );
         laneEnds[freeLane] += durations[i];

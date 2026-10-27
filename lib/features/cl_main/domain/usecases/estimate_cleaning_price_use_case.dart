@@ -8,7 +8,6 @@ import '../models/cleaning_event_session.dart';
 import '../models/cleaning_recurring_session.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
-import '../models/cl_worker_room_assignment_result.dart';
 import '../repository/cl_main_repo.dart';
 
 export '../../data/models/estimate_price_response_model.dart';
@@ -302,12 +301,8 @@ class EstimateCleaningPriceParams with Params {
       body['roomPeriods'] = roomPeriods;
     }
 
-    final assignments = workerRoomAssignments == null
-        ? null
-        : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
-    if (assignments != null && assignments.isNotEmpty) {
-      body['workerRoomAssignments'] = assignments;
-    }
+    // The server quotes the entire room task list, never individual room seats.
+    body.remove('workerRoomAssignments');
     return body;
   }
 

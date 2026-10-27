@@ -9,7 +9,6 @@ import '../models/cleaning_event_session.dart';
 import '../models/cleaning_recurring_session.dart';
 import '../models/cleaning_room_size_breakdown.dart';
 import '../models/cleaning_type.dart';
-import '../models/cl_worker_room_assignment_result.dart';
 import '../models/work_environment_confirmation.dart';
 import '../repository/cl_main_repo.dart';
 
@@ -396,12 +395,9 @@ class CreateCleaningOrderParams with Params {
       body['roomPeriods'] = roomPeriods;
       if (quoteSignature != null) body['quoteSignature'] = quoteSignature;
     }
-    final assignments = roomPeriods != null || workerRoomAssignments == null
-        ? null
-        : filterNonEmptyWorkerRoomAssignmentMaps(workerRoomAssignments!);
-    if (assignments != null && assignments.isNotEmpty) {
-      body['workerRoomAssignments'] = assignments;
-    }
+    // Per-worker room ownership was removed from the booking API. Keep room
+    // requirements, never send the legacy assignment field (HTTP 422).
+    body.remove('workerRoomAssignments');
     return body;
   }
 }

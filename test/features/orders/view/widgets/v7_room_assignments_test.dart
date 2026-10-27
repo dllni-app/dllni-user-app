@@ -4,7 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('rooms shown read-only when the server disallows editing', (
+  test(
+    'customer model reads shared booking roomTasks instead of assignments',
+    () {
+      final order = CleaningOrderDetailModel.fromJson({
+        'id': 40,
+        'roomTasks': [
+          {'id': 5, 'roomKey': 'kitchen.medium.1', 'displayLabel': 'المطبخ'},
+          {'id': 6, 'roomKey': 'bedroom.small.1', 'displayLabel': 'غرفة نوم'},
+        ],
+      });
+      expect(order.roomAssignments, hasLength(2));
+      expect(order.roomAssignments!.first.displayLabel, 'المطبخ');
+    },
+  );
+
+  testWidgets('shows all requested rooms without worker ownership or editing', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -15,54 +30,21 @@ void main() {
               CleaningRoomAssignmentModel(
                 id: 5,
                 displayLabel: 'المطبخ',
-                assignedWorkerId: 13,
+                assignedWorkerId:
+                    13, // historical payload cannot re-enable editing
               ),
+              CleaningRoomAssignmentModel(id: 6, displayLabel: 'غرفة نوم'),
             ],
-            acceptedWorkers: [CleaningWorkerAssignmentModel(workerId: 13)],
-            isEditable: false,
-            isSaving: false,
-            onAssignRoom: (_, _) {},
           ),
         ),
       ),
     );
+
     expect(find.text('المطبخ'), findsOneWidget);
+    expect(find.text('غرفة نوم'), findsOneWidget);
+    expect(find.text('الغرف المطلوبة'), findsOneWidget);
     expect(find.byType(PopupMenuButton<int>), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-  testWidgets('editable room forwards selected worker to callback', (
-    tester,
-  ) async {
-    int? selectedRoom;
-    int? selectedWorker;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: CleaningRoomAssignmentsSectionWidget(
-            roomAssignments: [
-              CleaningRoomAssignmentModel(
-                id: 5,
-                displayLabel: 'المطبخ',
-                assignedWorkerId: null,
-              ),
-            ],
-            acceptedWorkers: [CleaningWorkerAssignmentModel(workerId: 13)],
-            isEditable: true,
-            isSaving: false,
-            onAssignRoom: (room, worker) {
-              selectedRoom = room;
-              selectedWorker = worker;
-            },
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.byTooltip('تحديد العامل'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('العامل #13').last);
-    await tester.pumpAndSettle();
-    expect(selectedRoom, 5);
-    expect(selectedWorker, 13);
+    expect(find.textContaining('العامل #13'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

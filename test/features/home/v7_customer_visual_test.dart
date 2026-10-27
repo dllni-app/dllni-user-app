@@ -44,7 +44,7 @@ void main() {
     expect(find.byType(HomeCube), findsOneWidget);
   });
 
-  testWidgets('home cube shows a neutral service banner without offers', (
+  testWidgets('home cube shows service faces without an outer banner', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -53,11 +53,8 @@ void main() {
       ),
     );
 
-    expect(find.text('اكتشف خدماتنا'), findsOneWidget);
-    expect(
-      find.text('خدمات التنظيف والمطاعم والتسوق والتوصيل'),
-      findsOneWidget,
-    );
+    expect(find.text('خدمات على ذوقك'), findsNothing);
+    expect(find.byKey(const Key('home_cube_safe_viewport')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -92,7 +92,8 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
         : (rooms.firstOrNull?['scheduledTime']?.toString() ?? '');
     final materials = <String>{
       for (final period in periods)
-        _supplier((period['materials'] as Map?)?['choice']?.toString() ?? ''),
+        if ((period['materials'] as Map?)?['choice'] != null)
+          _supplier((period['materials'] as Map)['choice'].toString()),
     };
     final supplies = [
       for (final period in periods) ..._maps(period['platformMaterials']),
@@ -126,20 +127,28 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(visitDate),
+                if (visitDate.isNotEmpty)
+                  Text(
+                    visitDate,
+                    style: const TextStyle(color: Color(0xFF64748B)),
+                  ),
               ],
             ),
             if (time.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'الموعد: من $time${_time(end).isEmpty ? '' : ' إلى ${_time(end)}'}',
+                  '$time${_time(end).isEmpty ? '' : ' – ${_time(end)}'}',
+                  style: const TextStyle(
+                    color: Color(0xFF475569),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             const Divider(height: 26),
-            const Text(
-              'الغرف والأعمال المطلوبة',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            Text(
+              'الغرف المطلوبة (${rooms.length})',
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             for (final schedule in rooms)
               Padding(
@@ -162,9 +171,16 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                           Text(
-                            '${_size(schedule['roomKey']?.toString() ?? '')} · ${_mode(schedule['roomKey']?.toString() ?? '')} · العمال: ${schedule['numberOfWorkers'] ?? '—'}${schedule['estimatedDurationMinutes'] == null
-                                    ? ''
-                                    : ' · ${schedule['estimatedDurationMinutes']} دقيقة'}',
+                            [
+                                  _size(schedule['roomKey']?.toString() ?? ''),
+                                  _mode(schedule['roomKey']?.toString() ?? ''),
+                                ]
+                                .where(
+                                  (part) =>
+                                      part.isNotEmpty && part != 'غير محدد',
+                                )
+                                .join(' · '),
+                            style: const TextStyle(color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
@@ -172,7 +188,7 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                   ],
                 ),
               ),
-            if (materials.isNotEmpty) ...[
+            if (materials.isNotEmpty || supplies.isNotEmpty) ...[
               const Divider(height: 26),
               const Text(
                 'مواد التنظيف',
@@ -187,11 +203,7 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    '• ${supply['name'] ?? 'مادة تنظيف'}${supply['quantity'] == null
-                            ? ''
-                            : ' · ${_quantity(supply['quantity'])} ${_unitLabel(
-                                    (supply['unit'] ?? '').toString(),
-                                  )}'}',
+                    '• ${supply['name'] ?? 'مادة تنظيف'}${supply['quantity'] == null ? '' : ' · ${_quantity(supply['quantity'])} ${_unitLabel((supply['unit'] ?? '').toString())}'}',
                   ),
                 ),
             ],
@@ -205,15 +217,11 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '• ${_serviceName(service)} · ${service['targetRoomKeys'] is List
-                            ? (service['targetRoomKeys'] as List)
-                                  .map((key) => _roomName(key.toString()))
-                                  .join('، ')
-                            : ''} · الكمية ${service['quantity'] ?? 1}${service['dirtinessLevel'] == 'heavy'
-                            ? ' · اتساخ شديد'
-                            : service['dirtinessLevel'] == 'light'
-                            ? ' · اتساخ بسيط'
-                            : ''}',
+                    '• ${_serviceName(service)} · ${service['targetRoomKeys'] is List ? (service['targetRoomKeys'] as List).map((key) => _roomName(key.toString())).join('، ') : ''} · الكمية ${service['quantity'] ?? 1}${service['dirtinessLevel'] == 'heavy'
+                        ? ' · اتساخ شديد'
+                        : service['dirtinessLevel'] == 'light'
+                        ? ' · اتساخ بسيط'
+                        : ''}',
                   ),
                 ),
             ],
@@ -232,7 +240,7 @@ class CleaningTimePeriodsSummary extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            'مواعيد الخدمة وتفاصيل الغرف',
+            'تفاصيل الزيارات',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
         ),

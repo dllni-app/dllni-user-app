@@ -55,6 +55,34 @@ void main() {
     expect(body.containsKey('preferredWorkerIds'), isFalse);
   });
 
+  test('legacy worker-room slots are never sent to the backend', () {
+    final params = CreateCleaningOrderParams(
+      addressId: 1,
+      propertyType: 'apartment',
+      bedrooms: 1,
+      rooms: 1,
+      bathrooms: 1,
+      livingRoomSize: 'small',
+      address: 'حلب - الحمدانية',
+      locationName: 'المنزل',
+      addressLatitude: null,
+      addressLongitude: null,
+      scheduledDate: '2026-10-31',
+      scheduledTime: '09:00',
+      assignmentMode: CleaningAssignmentMode.openCount,
+      numberOfWorkers: 2,
+      workerRoomAssignments: const <Map<String, dynamic>>[
+        {
+          'workerSlot': 1,
+          'rooms': [
+            {'roomKey': 'bedroom.small.1'},
+          ],
+        },
+      ],
+    );
+    expect(params.getBody().containsKey('workerRoomAssignments'), isFalse);
+  });
+
   test('hourly worker create payload is a standalone open-time order', () {
     final params = CreateCleaningOrderParams.hourlyWorker(
       addressId: 12,
@@ -78,5 +106,4 @@ void main() {
     expect(openTime['expectedMaxMinutes'], 240);
     expect(body.containsKey('cleaning_services'), isFalse);
   });
-
 }
