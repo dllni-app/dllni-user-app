@@ -83,6 +83,28 @@ void main() {
       ]);
     });
 
+    test('skipped merchant return steps stay hidden even with timestamps', () {
+      final stages = [
+        stage('created', completed: true),
+        stage('picked_up', completed: true),
+        stage('returning_to_merchant',
+            timestamp: '2026-10-27T14:00:00Z'),
+        stage('returned_to_merchant'),
+        stage('delivered', completed: true),
+        stage('completed', completed: true),
+        stage('stopped', active: true),
+        stage('cancelled'),
+      ];
+
+      expect(
+        visibleDeliveryTrackingStages(
+          stages,
+          currentStatus: 'completed',
+        ).map((stage) => stage.key),
+        ['created', 'picked_up', 'delivered', 'completed'],
+      );
+    });
+
     test('return flow appears after failure and hides unachieved delivery', () {
       final all = [
         stage('created', completed: true),

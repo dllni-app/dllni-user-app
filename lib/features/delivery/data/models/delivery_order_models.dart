@@ -185,27 +185,41 @@ List<DeliveryTimelineStageModel> visibleDeliveryTrackingStages(
     'no_driver_found',
   };
 
-  return stages.where((stage) {
+  // Only show milestones that were actually reached. The backend may include
+  // optional branches in the stage catalog even when a successful delivery
+  // bypassed them (for example the merchant-return workflow).
+  final lastCompletedIndex = stages.lastIndexWhere((stage) => stage.completed);
+  return stages.asMap().entries.where((entry) {
+    final index = entry.key;
+    final stage = entry.value;
     final key = (stage.key ?? '').trim().toLowerCase();
-    final happened = stage.completed ||
-        stage.active ||
+    final hasEvent = stage.completed ||
         (stage.timestamp?.trim().isNotEmpty ?? false);
-    if (exceptional.contains(key)) {
-      return happened ||
-          key == status ||
-          (key == 'cancelled' && status == 'rejected') ||
-          (key == 'returning_to_merchant' &&
-              status == 'returned_to_merchant');
+    final isCurrent = key == status ||
+        (key == 'cancelled' && status == 'rejected') ||
+        (key == 'returning_to_merchant' &&
+            status == 'returned_to_merchant');
+
+    // An uncompleted, inactive step before a completed later milestone was
+    // skipped. Do not display it as a purple "skipped" timeline entry.
+    if (index < lastCompletedIndex &&
+        !stage.completed &&
+        !stage.active &&
+        !isCurrent) {
+      return false;
     }
-    // A returned, cancelled or stopped delivery must not suggest that
-    // normal delivery/completion milestones are still going to happen.
+    if (exceptional.contains(key)) {
+      // An active flag alone is not evidence of a real exceptional event.
+      return hasEvent || isCurrent;
+    }
     if (unsuccessfulOutcomes.contains(status) &&
-        !happened &&
+        !hasEvent &&
+        !isCurrent &&
         (key == 'delivered' || key == 'completed')) {
       return false;
     }
     return true;
-  }).toList(growable: false);
+  }).map((entry) => entry.value).toList(growable: false);
 }
 
 class DeliveryOrderModel {
