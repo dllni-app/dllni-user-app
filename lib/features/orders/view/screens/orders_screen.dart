@@ -97,7 +97,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
         builder: (context, state) {
           return Scaffold(
             backgroundColor: const Color(0xFFF6F7F9),
-            body: OrdersListTab(
+            body: SafeArea(
+              bottom: false,
+              child: OrdersListTab(
               state: state,
               initialSegmentIndex: widget.initialSegmentIndex,
               scrollController: _scrollController,
@@ -108,6 +110,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   OrdersSectionChangedEvent(index),
                 );
               },
+              ),
             ),
           );
         },

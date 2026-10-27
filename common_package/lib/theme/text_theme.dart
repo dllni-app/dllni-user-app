@@ -21,4 +21,4 @@ TextTheme textTheme = TextTheme(
   labelLarge: TextStyle(fontSize: 14.0.sp, fontWeight: FontWeight.w300, height: 1.5, color: Colors.black),
   labelMedium: TextStyle(fontSize: 12.0.sp, fontWeight: FontWeight.w300, height: 1.4, color: Colors.black),
   labelSmall: TextStyle(fontSize: 10.0.sp, fontWeight: FontWeight.w300, height: 1.3, color: Colors.black),
-);
+).apply(fontFamily: 'Cairo');
