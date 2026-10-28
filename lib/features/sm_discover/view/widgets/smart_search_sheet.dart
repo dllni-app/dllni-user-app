@@ -66,10 +66,24 @@ class _SmartSearchSheetState extends State<SmartSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
-    final maxH = MediaQuery.sizeOf(context).height * 0.88;
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottom),
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final safeAreaBottom = MediaQuery.paddingOf(context).bottom;
+    final availableHeight = max<double>(
+      0.0,
+      MediaQuery.sizeOf(context).height -
+          keyboardInset -
+          MediaQuery.paddingOf(context).top,
+    );
+    final maxH = availableHeight * 0.88;
+
+    // Keep the sheet above the keyboard regardless of where it was opened.
+    // Handle the inset here instead of at individual showModalBottomSheet calls.
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(
+        bottom: keyboardInset > 0 ? keyboardInset : safeAreaBottom,
+      ),
       child: DecoratedBox(
         decoration: const BoxDecoration(
           color: Colors.white,
