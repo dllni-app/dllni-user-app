@@ -465,12 +465,8 @@ class _RsAppSimpleAppBarWithSearchState
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => AnimatedPadding(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-        child: const SmartSearchSheet(isSupermarket: false),
-      ),
+      useRootNavigator: true,
+      builder: (ctx) => const SmartSearchSheet(isSupermarket: false),
     );
     if (!mounted || words == null || words.isEmpty) return;
     final query = words.join(' , ');
