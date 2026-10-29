@@ -43,8 +43,6 @@ class _OrderVotingScreenBody extends StatefulWidget {
 class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
   final TextEditingController _mealController = TextEditingController();
   final TextEditingController _suggestionsController = TextEditingController();
-  final TextEditingController _restaurantTypeController =
-      TextEditingController();
   final TextEditingController _durationController = TextEditingController();
   final FocusNode _mealFocusNode = FocusNode();
 
@@ -55,10 +53,8 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
   bool _isSectionTwoExpanded = true;
 
   final List<VoteProductSuggestionModel> _selectedSuggestions = [];
-  VoteCuisineTypeModel? _selectedRestaurantType;
   int? _selectedDurationMinutes;
 
-  List<VoteCuisineTypeModel> _restaurantTypes = const <VoteCuisineTypeModel>[];
   List<int> _durations = const <int>[];
 
   @override
@@ -76,7 +72,6 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
     _mealFocusNode.dispose();
     _mealController.dispose();
     _suggestionsController.dispose();
-    _restaurantTypeController.dispose();
     _durationController.dispose();
     super.dispose();
   }
@@ -135,33 +130,6 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
       _suggestionsController.text = _selectedSuggestions.isEmpty
           ? ''
           : 'تم اختيار ${_selectedSuggestions.length}';
-    });
-  }
-
-  Future<void> _pickRestaurantType(ProfileBloc bloc) async {
-    if (_mealController.text.trim().isEmpty) {
-      _showSnackBar('اكتب ما تود أكله ثم اضغط تم أو اخرج من الحقل');
-      return;
-    }
-    _ensureVoteSuggestionsForPickers();
-    final options = await _showCuisineBottomSheet(bloc);
-    if (!mounted || options == null) {
-      return;
-    }
-    final selectedName = options.isEmpty ? null : options.first;
-    final types =
-        context.read<ProfileBloc>().state.voteSuggestions?.cuisineTypes ??
-        const <VoteCuisineTypeModel>[];
-    VoteCuisineTypeModel? value;
-    for (final type in types) {
-      if (type.name == selectedName) {
-        value = type;
-        break;
-      }
-    }
-    setState(() {
-      _selectedRestaurantType = value;
-      _restaurantTypeController.text = value?.name ?? '';
     });
   }
 
@@ -384,225 +352,6 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                   .toList();
                               Navigator.of(modalContext).pop(selected);
                             },
-                            style: ElevatedButton.styleFrom(
-                              elevation: 0,
-                              backgroundColor: SharedPlatformColors.restaurant,
-                              foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: AppText.labelLarge(
-                              'تأكيد',
-                              color: context.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<Set<String>?> _showCuisineBottomSheet(ProfileBloc bloc) async {
-    final current = <String>{
-      if (_selectedRestaurantType?.name != null) _selectedRestaurantType!.name!,
-    };
-    return showModalBottomSheet<Set<String>>(
-      context: context,
-      backgroundColor: context.onPrimary,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (modalContext, setModalState) {
-            return BlocBuilder<ProfileBloc, ProfileState>(
-              bloc: bloc,
-              builder: (context, state) {
-                final title = AppText.titleMedium(
-                  'حدد نوع المطعم',
-                  fontWeight: FontWeight.w700,
-                  color: SharedPlatformColors.restaurant,
-                );
-
-                final isLoading =
-                    state.voteSuggestionsStatus == null ||
-                    state.voteSuggestionsStatus == BlocStatus.loading;
-
-                if (isLoading) {
-                  return SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        18,
-                        24,
-                        18,
-                        24,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          title,
-                          const SizedBox(height: 24),
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 12),
-                          AppText.bodyMedium(
-                            'جاري التحميل…',
-                            color: const Color(0xff6B7280),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (state.voteSuggestionsStatus == BlocStatus.failed) {
-                  return SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        18,
-                        16,
-                        18,
-                        18,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          title,
-                          const SizedBox(height: 12),
-                          AppText.bodyMedium(
-                            state.errorMessage ?? 'تعذر التحميل',
-                            color: const Color(0xff6B7280),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () =>
-                                _commitMealSearch(forceRetry: true),
-                            style: ElevatedButton.styleFrom(
-                              elevation: 0,
-                              backgroundColor: SharedPlatformColors.restaurant,
-                              foregroundColor: context.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: AppText.labelLarge(
-                              'إعادة المحاولة',
-                              color: context.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                final types =
-                    state.voteSuggestions?.cuisineTypes ??
-                    const <VoteCuisineTypeModel>[];
-                final labels = types
-                    .map((e) => e.name ?? '')
-                    .where((e) => e.isNotEmpty)
-                    .toList();
-
-                if (labels.isEmpty) {
-                  return SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        18,
-                        16,
-                        18,
-                        18,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          title,
-                          const SizedBox(height: 12),
-                          AppText.bodyMedium(
-                            'لا توجد أنواع مطاعم',
-                            color: const Color(0xff6B7280),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.of(modalContext).pop(),
-                              child: const Text('إغلاق'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                final maxListHeight = MediaQuery.sizeOf(context).height * 0.45;
-
-                return SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      18,
-                      16,
-                      18,
-                      18,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        title,
-                        const SizedBox(height: 10),
-                        ConstrainedBox(
-                          constraints: BoxConstraints(maxHeight: maxListHeight),
-                          child: RadioGroup<String>(
-                            groupValue: current.isEmpty ? null : current.first,
-                            onChanged: (value) {
-                              setModalState(() {
-                                current
-                                  ..clear()
-                                  ..addAll(value == null ? [] : [value]);
-                              });
-                            },
-                            child: ListView(
-                              shrinkWrap: true,
-                              children: labels.map((option) {
-                                return ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: AppText.bodyMedium(option),
-                                  trailing: Radio<String>(
-                                    value: option,
-                                    activeColor: SharedPlatformColors.restaurant,
-                                  ),
-                                  onTap: () {
-                                    setModalState(() {
-                                      current
-                                        ..clear()
-                                        ..add(option);
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () =>
-                                Navigator.of(modalContext).pop(current),
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
                               backgroundColor: SharedPlatformColors.restaurant,
@@ -882,7 +631,6 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
         .toSet();
     setState(() {
       _durations = incoming.durationMinutesPresets;
-      _restaurantTypes = incoming.cuisineTypes;
       _selectedSuggestions.removeWhere((e) {
         final id = e.id;
         return id == null || !validIds.contains(id);
@@ -892,11 +640,6 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
       } else {
         _suggestionsController.text =
             'تم اختيار ${_selectedSuggestions.length}';
-      }
-      if (_selectedRestaurantType != null &&
-          !_restaurantTypes.any((e) => e.id == _selectedRestaurantType!.id)) {
-        _selectedRestaurantType = null;
-        _restaurantTypeController.clear();
       }
       if (_selectedDurationMinutes != null &&
           !_durations.contains(_selectedDurationMinutes)) {
@@ -918,7 +661,6 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
           foodCategoryHint: _mealController.text.trim().isEmpty
               ? null
               : _mealController.text.trim(),
-          cuisineTypeId: _selectedRestaurantType?.id,
           options: _selectedSuggestions
               .map((e) => {'label': e.name ?? '', 'productId': e.id})
               .toList(),
@@ -1173,24 +915,6 @@ class _OrderVotingScreenBodyState extends State<_OrderVotingScreenBody> {
                                 ),
                                 const SizedBox(height: 14),
                               ],
-                              BlocBuilder<ProfileBloc, ProfileState>(
-                                builder: (context, state) {
-                                  return FilledTextField(
-                                    label: 'نوع المطعم',
-                                    controller: _restaurantTypeController,
-                                    readOnly: true,
-                                    onTap: () {
-                                      _pickRestaurantType(
-                                        context.read<ProfileBloc>(),
-                                      );
-                                    },
-                                    suffixIcon: const Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 14),
                               BlocBuilder<ProfileBloc, ProfileState>(
                                 builder: (context, state) {
                                   return FilledTextField(
