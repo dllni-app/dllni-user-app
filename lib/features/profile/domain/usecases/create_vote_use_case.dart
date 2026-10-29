@@ -33,7 +33,7 @@ class CreateVoteParams with Params {
   BodyMap getBody() => {
     'durationMinutes': durationMinutes,
     if (foodCategoryHint != null) 'foodCategoryHint': foodCategoryHint,
-    'cuisineTypeId': cuisineTypeId,
+    if (cuisineTypeId != null) 'cuisineTypeId': cuisineTypeId,
     'options': options,
   };
 }
