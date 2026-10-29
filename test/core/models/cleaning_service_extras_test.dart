@@ -63,6 +63,30 @@ void main() {
   });
 
   group('cleaning extras response parsing', () {
+    test(
+      'keeps the authoritative maximum hourly estimate distinct from the minimum charge',
+      () {
+        final sixHours = CleaningOpenTimeModel.fromJson(<String, dynamic>{
+          'hourlyRate': 150,
+          'requestedWorkerCount': 1,
+          'expectedMaxMinutes': 360,
+          'preliminaryAmount': 150,
+          'maximumEstimatedAmount': 900,
+        });
+        final eightHours = CleaningOpenTimeModel.fromJson(<String, dynamic>{
+          'hourlyRate': 150,
+          'requestedWorkerCount': 1,
+          'expectedMaxMinutes': 480,
+          'preliminaryAmount': 150,
+          'maximumEstimatedAmount': 1200,
+        });
+        expect(sixHours.totalPrice, 150);
+        expect(sixHours.expectedMaxMinutes, 360);
+        expect(sixHours.maximumEstimatedAmount, 900);
+        expect(eightHours.totalPrice, 150);
+        expect(eightHours.maximumEstimatedAmount, 1200);
+      },
+    );
     test('parses canonical material and special-service snapshots', () {
       final materials = cleaningMaterialLinesFromJson(<Map<String, dynamic>>[
         <String, dynamic>{

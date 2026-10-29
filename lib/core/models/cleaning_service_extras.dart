@@ -378,6 +378,7 @@ class CleaningOpenTimeModel {
     this.actualDuration,
     this.billableDuration,
     this.totalPrice,
+    this.maximumEstimatedAmount,
     this.currency,
     this.isPricingFinal,
     this.serverNow,
@@ -401,6 +402,9 @@ class CleaningOpenTimeModel {
   final double? actualDuration;
   final double? billableDuration;
   final double? totalPrice;
+
+  /// Backend-calculated price for the selected maximum duration.
+  final double? maximumEstimatedAmount;
   final String? currency;
   final bool? isPricingFinal;
   final DateTime? serverNow;
@@ -466,6 +470,9 @@ class CleaningOpenTimeModel {
             json['final_amount'] ??
             json['preliminaryAmount'] ??
             json['preliminary_amount'],
+      ),
+      maximumEstimatedAmount: _cleaningExtrasDouble(
+        json['maximumEstimatedAmount'] ?? json['maximum_estimated_amount'],
       ),
       currency: _cleaningExtrasString(json['currency']),
       isPricingFinal: _cleaningExtrasBool(

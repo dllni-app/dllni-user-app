@@ -59,6 +59,7 @@ import '../widgets/cleaning_team_search_banner_widget.dart';
 import '../widgets/cleaning_last_hour_team_decision_card.dart';
 import '../widgets/cleaning_lifecycle_timeline_widget.dart';
 import '../widgets/cleaning_worker_tracking_map.dart';
+import '../widgets/v2_visit_customer_verification_panel.dart';
 import 'supervised_team_customer_screen.dart';
 import 'cleaning_order_reschedule_screen.dart';
 import 'cleaning_order_sos_screen.dart';
@@ -175,7 +176,18 @@ class _CleaningOrderDetailsScreenState
         leadTime.isPastScheduledTime;
     final editLocked =
         _blocksReschedule(order) || _isRebooking || !leadTime.allowed;
-    final primary = cleaningLifecyclePrimaryAction(order.status);
+    final isV2Group =
+        order.contractVersion == 2 && (order.numberOfWorkers ?? 1) > 1;
+    // A V2 group customer displays the supervisor's 6-digit code, rather
+    // than entering the legacy worker's 4-digit security code.
+    final primary =
+        isV2Group && status == CleaningBookingStatus.awaitingStartVerification
+        ? const CleaningLifecycleActionSpec(
+            kind: CleaningLifecycleActionKind.waitingForWorkerStart,
+            label: 'تحديث حالة تحقق المشرف',
+            icon: Icons.refresh_rounded,
+          )
+        : cleaningLifecyclePrimaryAction(order.status);
     final statusLabel = searching
         ? ((workerCount ?? 1) > 1
               ? 'جارٍ تجهيز فريق التنظيف'
@@ -202,7 +214,9 @@ class _CleaningOrderDetailsScreenState
       CleaningBookingStatus.workerAssigned =>
         'تم قبول الطلب. يمكنك متابعة التفاصيل والتواصل مع مقدم الخدمة.',
       CleaningBookingStatus.awaitingStartVerification =>
-        'العامل جاهز للبدء. اتبع خطوة تأكيد رمز الأمان عند ظهوره.',
+        isV2Group
+            ? 'رمز بدء الزيارة يظهر لك عندما يطلبه المشرف بعد اكتمال حضور الفريق. اعرض الرمز للمشرف في الموقع.'
+            : 'العامل جاهز للبدء. اتبع خطوة تأكيد رمز الأمان عند ظهوره.',
       CleaningBookingStatus.awaitingWorkerStartConfirmation =>
         'تم تأكيد رمز الأمان. بانتظار بدء الخدمة.',
       CleaningBookingStatus.inProgress =>
@@ -263,6 +277,18 @@ class _CleaningOrderDetailsScreenState
       ),
       if (status != CleaningBookingStatus.partiallyCompleted)
         V7OrderLifecyclePanel(order: order),
+      if (isV2Group &&
+          status == CleaningBookingStatus.awaitingStartVerification)
+        for (final sequence in <int>{
+          for (final visit in order.bookingVisits)
+            if (int.tryParse('${visit['sequence']}') case final int value)
+              if (value > 0) value,
+          if (order.bookingVisits.isEmpty) 1,
+        })
+          V2VisitCustomerVerificationPanel(
+            bookingId: order.id ?? _activeOrderId,
+            visitSequence: sequence,
+          ),
       if (searching)
         V7OrderPanel(
           title: 'جارٍ إيجاد مقدم خدمة',
@@ -518,7 +544,7 @@ class _CleaningOrderDetailsScreenState
         total: order.totalPrice?.formatMoney(),
         finalPrice: order.isPricingFinal == true,
         totalLabel: order.openTime != null && order.isPricingFinal != true
-            ? 'الإجمالي المتوقع'
+            ? 'الحد الأدنى الحالي للفوترة'
             : 'الإجمالي',
         pendingNote: order.contractVersion == 2
             ? 'السعر المعتمد عند تأكيد الطلب.'

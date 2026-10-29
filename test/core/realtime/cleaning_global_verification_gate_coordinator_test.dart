@@ -27,6 +27,50 @@ void main() {
     });
 
     test(
+      'V2 group orders do not trigger unsupported start or completion gates',
+      () {
+        final orders = <CleaningOrderModel>[
+          CleaningOrderModel(
+            id: 84,
+            bookingKind: 'standard',
+            numberOfWorkers: 2,
+            status: CleaningBookingStatus.awaitingStartVerification,
+          ),
+          CleaningOrderModel(
+            id: 85,
+            bookingKind: 'standard',
+            numberOfWorkers: 2,
+            status: CleaningBookingStatus.awaitingCustomerCompletion,
+          ),
+          CleaningOrderModel(
+            id: 80,
+            bookingKind: 'standard',
+            numberOfWorkers: 1,
+            status: CleaningBookingStatus.awaitingStartVerification,
+          ),
+          CleaningOrderModel(
+            id: 81,
+            bookingKind: 'standard',
+            numberOfWorkers: 1,
+            status: CleaningBookingStatus.awaitingCustomerCompletion,
+          ),
+        ];
+        expect(
+          CleaningGlobalVerificationGateCoordinator.findAwaitingVerificationOrderIds(
+            orders,
+          ),
+          <int>[80],
+        );
+        expect(
+          CleaningGlobalVerificationGateCoordinator.findAwaitingCompletionOrderIds(
+            orders,
+          ),
+          <int>[81],
+        );
+      },
+    );
+
+    test(
       'findAwaitingVerificationOrderIds ignores awaiting worker start confirmation',
       () {
         final ids =

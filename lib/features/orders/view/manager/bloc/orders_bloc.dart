@@ -182,7 +182,8 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState> {
       final pagination = state.cleaningOrders;
       if (isLoadMore && pagination.isEndPage) return;
       if (event.silentRefresh) {
-        if (pagination.status == BlocStatus.loading) return;
+        // Polling must never replace or cancel an initial/reload fetch.
+        if (pagination.status != BlocStatus.success) return;
         final perPage = pagination.perPage;
         final response = await fetchCleaningOrdersUseCase(
           FetchCleaningOrdersParams(perPage: perPage, page: 1),

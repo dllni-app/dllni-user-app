@@ -125,8 +125,13 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
     );
   }
 
-  double? get _currentQuote =>
-      _estimate?.openTime?.totalPrice ?? _estimate?.pricing?.totalPrice;
+  // Open-time billing is settled from actual work. The API's totalPrice is
+  // the minimum billable amount, not the estimate for the selected duration.
+  double? get _currentQuote {
+    final openTime = _estimate?.openTime;
+    if (openTime == null) return _estimate?.pricing?.totalPrice;
+    return openTime.maximumEstimatedAmount ?? openTime.totalPrice;
+  }
 
   void _editBooking() {
     ++_estimateRevision;
@@ -568,7 +573,7 @@ class _ClHourlyWorkerScreenState extends State<ClHourlyWorkerScreen> {
 
     final currency = openTime.currency ?? _estimate?.pricing?.currency ?? 'SYP';
     final rate = openTime.hourlyRate ?? 0;
-    final total = openTime.totalPrice ?? _estimate?.pricing?.totalPrice ?? 0;
+    final total = _currentQuote ?? 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

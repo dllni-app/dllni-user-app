@@ -120,8 +120,11 @@ class _OrdersListTabState extends State<OrdersListTab> {
       _cleaningPollTimer ??= Timer.periodic(_cleaningPollInterval, (_) {
         if (!mounted) return;
         if (widget.state.selectedTabIndex != 2) return;
+        // Keep the first load alive until it resolves. A reload event cancels
+        // the active pagination handler, even while its HTTP call is running.
+        if (widget.state.cleaningOrders.status != BlocStatus.success) return;
         context.read<OrdersBloc>().add(
-          FetchOrdersEvent(isReload: true, silentRefresh: true),
+          FetchOrdersEvent(silentRefresh: true),
         );
       });
       return;

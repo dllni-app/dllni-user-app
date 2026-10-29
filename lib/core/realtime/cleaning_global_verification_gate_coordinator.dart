@@ -72,6 +72,10 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         .where(
           (order) =>
               !order.isSupervisedTeam &&
+              // Initialized V2 team execution is explicitly unavailable in
+              // Laravel; never ask the customer for a start code the worker
+              // cannot request or use. Keep single-worker bookings eligible.
+              (order.numberOfWorkers ?? 1) <= 1 &&
               (order.status ?? '').toLowerCase() ==
                   CleaningBookingStatus.awaitingStartVerification,
         )
@@ -88,6 +92,7 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
         .where(
           (order) =>
               !order.isSupervisedTeam &&
+              (order.numberOfWorkers ?? 1) <= 1 &&
               (order.status ?? '').toLowerCase() ==
                   CleaningBookingStatus.awaitingCustomerCompletion,
         )
@@ -681,7 +686,11 @@ class CleaningGlobalVerificationGateCoordinator with WidgetsBindingObserver {
     final details = await _fetchOrderDetails(orderId);
     if (!_started || _gatePromptOpen) return;
 
-    if (details == null || details.isSupervisedTeam) return;
+    if (details == null ||
+        details.isSupervisedTeam ||
+        (details.numberOfWorkers ?? 1) > 1) {
+      return;
+    }
     final status = (details.status ?? '').toLowerCase();
     if (status != CleaningBookingStatus.awaitingStartVerification) {
       _syncGateSessionWithDetails(details);
